@@ -62,16 +62,14 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     protected static final Header GRPC_ACCEPT_ENCODING = HeaderValues.create(HeaderNames.ACCEPT_ENCODING, "gzip");
     protected static final Header GRPC_CONTENT_TYPE = HeaderValues.create(HeaderNames.CONTENT_TYPE, "application/grpc");
 
-    protected static final int READ_TIMEOUT_SECONDS = 10;
-    protected static final int BUFFER_SIZE_BYTES = 1024;
-    protected static final int WAIT_TIME_MILLIS = 2000;
-    protected static final Duration WAIT_TIME_MILLIS_DURATION = Duration.ofMillis(WAIT_TIME_MILLIS);
-
     protected static final BufferData EMPTY_BUFFER_DATA = BufferData.empty();
 
     private final GrpcClientImpl grpcClient;
     private final MethodDescriptor<ReqT, ResT> methodDescriptor;
     private final CallOptions callOptions;
+    private final int initBufferSize;
+    private final Duration pollWaitTime;
+    private final boolean abortPollTimeExpired;
 
     private final MethodDescriptor.Marshaller<ReqT> requestMarshaller;
     private final MethodDescriptor.Marshaller<ResT> responseMarshaller;
@@ -87,6 +85,17 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         this.callOptions = callOptions;
         this.requestMarshaller = methodDescriptor.getRequestMarshaller();
         this.responseMarshaller = methodDescriptor.getResponseMarshaller();
+        this.initBufferSize = grpcClient.prototype().protocolConfig().initBufferSize();
+        this.pollWaitTime = grpcClient.prototype().protocolConfig().pollWaitTime();
+        this.abortPollTimeExpired = grpcClient.prototype().protocolConfig().abortPollTimeExpired();
+    }
+
+    protected boolean abortPollTimeExpired() {
+        return abortPollTimeExpired;
+    }
+
+    protected Duration pollWaitTime() {
+        return pollWaitTime;
     }
 
     protected Http2ClientConnection connection() {
@@ -139,7 +148,8 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
 
                     @Override
                     public Duration readTimeout() {
-                        return grpcClient.prototype().readTimeout().orElse(Duration.ofSeconds(READ_TIMEOUT_SECONDS));
+                        return grpcClient.prototype().readTimeout().orElse(
+                                grpcClient.prototype().protocolConfig().pollWaitTime());
                     }
                 },
                 null,       // Http2ClientConfig
@@ -219,7 +229,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     }
 
     protected byte[] serializeMessage(ReqT message) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(BUFFER_SIZE_BYTES);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(initBufferSize);
         try (InputStream is = requestMarshaller().stream(message)) {
             is.transferTo(baos);
         } catch (IOException e) {

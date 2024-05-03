@@ -109,7 +109,7 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                 boolean endOfStream = false;
                 while (isRemoteOpen()) {
                     socket().log(LOGGER, DEBUG, "[Writing thread] polling sending queue");
-                    BufferData bufferData = sendingQueue.poll(WAIT_TIME_MILLIS, TimeUnit.MILLISECONDS);
+                    BufferData bufferData = sendingQueue.poll(pollWaitTime().toMillis(), TimeUnit.MILLISECONDS);
                     if (bufferData != null) {
                         if (bufferData == EMPTY_BUFFER_DATA) {     // end marker
                             socket().log(LOGGER, DEBUG, "[Writing thread] sending queue end marker found");
@@ -153,9 +153,14 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                     // attempt to read and queue
                     Http2FrameData frameData;
                     try {
-                        frameData = clientStream().readOne(WAIT_TIME_MILLIS_DURATION);
+                        frameData = clientStream().readOne(pollWaitTime());
                     } catch (StreamTimeoutException e) {
-                        socket().log(LOGGER, ERROR, "[Reading thread] read timeout");
+                        // abort or retry based on config settings
+                        if (abortPollTimeExpired()) {
+                            socket().log(LOGGER, ERROR, "[Reading thread] HTTP/2 stream timeout, aborting");
+                            throw e;    // caught below
+                        }
+                        socket().log(LOGGER, ERROR, "[Reading thread] HTTP/2 stream timeout, retrying");
                         continue;
                     }
                     if (frameData != null) {
@@ -166,6 +171,8 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
 
                 socket().log(LOGGER, DEBUG, "[Reading thread] closing listener");
                 responseListener().onClose(Status.OK, EMPTY_METADATA);
+            } catch (StreamTimeoutException e) {
+                responseListener().onClose(Status.DEADLINE_EXCEEDED, EMPTY_METADATA);
             } catch (Throwable e) {
                 socket().log(LOGGER, ERROR, e.getMessage(), e);
                 responseListener().onClose(Status.UNKNOWN, EMPTY_METADATA);

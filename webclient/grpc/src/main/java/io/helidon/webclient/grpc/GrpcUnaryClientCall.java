@@ -99,9 +99,15 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
             // attempt to read and queue
             Http2FrameData frameData;
             try {
-                frameData = clientStream().readOne(WAIT_TIME_MILLIS_DURATION);
+                frameData = clientStream().readOne(pollWaitTime());
             } catch (StreamTimeoutException e) {
-                socket().log(LOGGER, ERROR, "read timeout");
+                // abort or retry based on config settings
+                if (abortPollTimeExpired()) {
+                    socket().log(LOGGER, ERROR, "[Reading thread] HTTP/2 stream timeout, aborting");
+                    responseListener().onClose(Status.DEADLINE_EXCEEDED, EMPTY_METADATA);
+                    break;
+                }
+                socket().log(LOGGER, ERROR, "[Reading thread] HTTP/2 stream timeout, retrying");
                 continue;
             }
             if (frameData != null) {

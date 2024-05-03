@@ -26,8 +26,9 @@ import io.helidon.webclient.api.HttpClientConfig;
 @Prototype.Blueprint
 @Prototype.Configured
 interface GrpcClientConfigBlueprint extends HttpClientConfig, Prototype.Factory<GrpcClient> {
+
     /**
-     * WebSocket specific configuration.
+     * gRPC specific configuration.
      *
      * @return protocol specific configuration
      */
