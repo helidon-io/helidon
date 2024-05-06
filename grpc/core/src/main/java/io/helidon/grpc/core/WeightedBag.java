@@ -174,7 +174,6 @@ public class WeightedBag<T> implements Iterable<T> {
 
     /**
      * Add an element to the bag with a specific weight.
-     * <p>
      *
      * @param value  the element to add
      * @param weight the weight of the element

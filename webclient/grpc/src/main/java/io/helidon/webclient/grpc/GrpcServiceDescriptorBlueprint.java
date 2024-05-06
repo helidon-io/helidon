@@ -29,11 +29,28 @@ import io.grpc.ClientInterceptor;
 @Prototype.Blueprint
 interface GrpcServiceDescriptorBlueprint {
 
+    /**
+     * Service name.
+     *
+     * @return the server name
+     */
     String serviceName();
 
+    /**
+     * Map of names to gRPC method descriptors.
+     *
+     * @return method map
+     */
     @Option.Singular
     Map<String, GrpcClientMethodDescriptor> methods();
 
+    /**
+     * Descriptor for a given method.
+     *
+     * @param name method name
+     * @return method descriptor
+     * @throws NoSuchElementException if not found
+     */
     default GrpcClientMethodDescriptor method(String name) {
         GrpcClientMethodDescriptor descriptor = methods().get(name);
         if (descriptor == null) {
@@ -42,8 +59,18 @@ interface GrpcServiceDescriptorBlueprint {
         return descriptor;
     }
 
+    /**
+     * Ordered list of method interceptors.
+     *
+     * @return list of interceptors
+     */
     @Option.Singular
     List<ClientInterceptor> interceptors();
 
+    /**
+     * Credentials for this call, if any.
+     *
+     * @return optional credentials
+     */
     Optional<CallCredentials> callCredentials();
 }

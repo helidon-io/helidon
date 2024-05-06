@@ -20,7 +20,6 @@ import java.time.Duration;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.socket.SocketOptions;
 import io.helidon.webclient.spi.ProtocolConfig;
 
 /**
@@ -30,11 +29,21 @@ import io.helidon.webclient.spi.ProtocolConfig;
 @Prototype.Configured
 interface GrpcClientProtocolConfigBlueprint extends ProtocolConfig {
 
+    /**
+     * Type identifying this protocol.
+     *
+     * @return protocol type
+     */
     @Override
     default String type() {
         return GrpcProtocolProvider.CONFIG_KEY;
     }
 
+    /**
+     * Name identifying this client protocol. Defaults to type.
+     *
+     * @return name of client protocol
+     */
     @Option.Configured
     @Option.Default(GrpcProtocolProvider.CONFIG_KEY)
     @Override
@@ -45,7 +54,7 @@ interface GrpcClientProtocolConfigBlueprint extends ProtocolConfig {
      * Whether this is a fatal error or not is controlled by {@link #abortPollTimeExpired()}.
      *
      * @return poll time as a duration
-     * @see SocketOptions#readTimeout()
+     * @see io.helidon.common.socket.SocketOptions#readTimeout()
      */
     @Option.Configured
     @Option.Default("PT10S")
