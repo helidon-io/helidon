@@ -17,7 +17,7 @@
 helidon:
   on-new-thread:
     executor-service:
-      thread-name-prefix: "my-platform-thread"
+      thread-name-prefix: "my-thread"
       core-pool-size: 1
       max-pool-size: 2
       queue-capacity: 10

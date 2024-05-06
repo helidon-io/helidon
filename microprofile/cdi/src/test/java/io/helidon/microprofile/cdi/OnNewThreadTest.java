@@ -34,6 +34,7 @@ import static org.hamcrest.Matchers.is;
 class OnNewThreadTest {
 
     static SeContainer seContainer;
+    static OnNewThreadBean bean;
 
     @BeforeAll
     @SuppressWarnings("unchecked")
@@ -43,6 +44,7 @@ class OnNewThreadTest {
                 .addExtensions(OnNewThreadExtension.class)
                 .addBeanClasses(OnNewThreadBean.class)
                 .initialize();
+        bean = CDI.current().select(OnNewThreadBean.class).get();
     }
 
     @AfterAll
@@ -53,33 +55,28 @@ class OnNewThreadTest {
     static class OnNewThreadBean {
 
         @OnNewThread
-        boolean cpuIntensive() {
-            Thread thread = Thread.currentThread();
-            return !thread.isVirtual() && thread.getName().startsWith("my-platform-thread");
+        Thread cpuIntensive() {
+            return Thread.currentThread();
         }
 
         @OnNewThread(ThreadType.PLATFORM)
-        boolean cpuIntensiveWithType() {
-            Thread thread = Thread.currentThread();
-            return !thread.isVirtual() && thread.getName().startsWith("my-platform-thread");
+        Thread cpuIntensiveWithType() {
+            return Thread.currentThread();
         }
 
         @OnNewThread(timeout = 10000)
-        boolean evenMoreCpuIntensive() {
-            Thread thread = Thread.currentThread();
-            return !thread.isVirtual() && thread.getName().startsWith("my-platform-thread");
+        Thread evenMoreCpuIntensive() {
+            return Thread.currentThread();
         }
 
         @OnNewThread(ThreadType.VIRTUAL)
-        boolean onVirtualThread() {
-            Thread thread = Thread.currentThread();
-            return thread.isVirtual() && thread.getName().startsWith("my-platform-thread");
+        Thread onVirtualThread() {
+            return Thread.currentThread();
         }
 
         @OnNewThread(value = ThreadType.EXECUTOR, executorName = "my-executor")
-        boolean onMyExecutor() {
-            Thread thread = Thread.currentThread();
-            return !thread.isVirtual() && thread.getName().startsWith("pool");
+        Thread onMyExecutor() {
+            return Thread.currentThread();
         }
 
         @Produces
@@ -91,31 +88,36 @@ class OnNewThreadTest {
 
     @Test
     void cpuIntensiveTest() {
-        OnNewThreadBean bean = CDI.current().select(OnNewThreadBean.class).get();
-        assertThat(bean.cpuIntensive(), is(true));
+        Thread thread = bean.cpuIntensive();
+        assertThat(thread.isVirtual(), is(false));
+        assertThat(thread.getName().startsWith("my-thread"), is(true));
     }
 
     @Test
     void cpuIntensiveWithTypeTest() {
-        OnNewThreadBean bean = CDI.current().select(OnNewThreadBean.class).get();
-        assertThat(bean.cpuIntensiveWithType(), is(true));
+        Thread thread = bean.cpuIntensiveWithType();
+        assertThat(thread.isVirtual(), is(false));
+        assertThat(thread.getName().startsWith("my-thread"), is(true));
     }
 
     @Test
     void evenMoreCpuIntensiveTest() {
-        OnNewThreadBean bean = CDI.current().select(OnNewThreadBean.class).get();
-        assertThat(bean.evenMoreCpuIntensive(), is(true));
+        Thread thread = bean.evenMoreCpuIntensive();
+        assertThat(thread.isVirtual(), is(false));
+        assertThat(thread.getName().startsWith("my-thread"), is(true));
     }
 
     @Test
     void onVirtualThread() {
-        OnNewThreadBean bean = CDI.current().select(OnNewThreadBean.class).get();
-        assertThat(bean.onVirtualThread(), is(true));
+        Thread thread = bean.onVirtualThread();
+        assertThat(thread.isVirtual(), is(true));
+        assertThat(thread.getName().startsWith("my-thread"), is(true));
     }
 
     @Test
     void onMyExecutor() {
-        OnNewThreadBean bean = CDI.current().select(OnNewThreadBean.class).get();
-        assertThat(bean.onMyExecutor(), is(true));
+        Thread thread = bean.onMyExecutor();
+        assertThat(thread.isVirtual(), is(false));
+        assertThat(thread.getName().startsWith("pool"), is(true));
     }
 }
