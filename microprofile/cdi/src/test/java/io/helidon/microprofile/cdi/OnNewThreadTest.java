@@ -15,9 +15,12 @@
  */
 package io.helidon.microprofile.cdi;
 
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import jakarta.enterprise.inject.Produces;
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
@@ -79,6 +82,16 @@ class OnNewThreadTest {
             return Thread.currentThread();
         }
 
+        @OnNewThread
+        Optional<String> verifyContextVirtual() {
+            return Contexts.context().flatMap(context -> context.get("hello", String.class));
+        }
+
+        @OnNewThread(ThreadType.PLATFORM)
+        Optional<String> verifyContextPlatform() {
+            return Contexts.context().flatMap(context -> context.get("hello", String.class));
+        }
+
         @Produces
         @Named("my-executor")
         ExecutorService myExecutor() {
@@ -119,5 +132,21 @@ class OnNewThreadTest {
         Thread thread = bean.onMyExecutor();
         assertThat(thread.isVirtual(), is(false));
         assertThat(thread.getName().startsWith("pool"), is(true));
+    }
+
+    @Test
+    void verifyContextVirtual() {
+        Context context = Contexts.globalContext();
+        context.register("hello", "world");
+        Optional<String> optional = Contexts.runInContext(context, bean::verifyContextVirtual);
+        assertThat(optional.orElseThrow(), is("world"));
+    }
+
+    @Test
+    void verifyContextPlatform() {
+        Context context = Contexts.globalContext();
+        context.register("hello", "world");
+        Optional<String> optional = Contexts.runInContext(context, bean::verifyContextPlatform);
+        assertThat(optional.orElseThrow(), is("world"));
     }
 }
