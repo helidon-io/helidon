@@ -42,7 +42,7 @@ import org.eclipse.microprofile.config.ConfigProvider;
 class OnNewThreadInterceptor {
 
     private static final String ON_NEW_THREAD = "on-new-thread";
-    private static final String EXECUTOR_SERVICE_CONFIG = "helidon.on-new-thread.executor-service";
+    private static final String EXECUTOR_SERVICE_CONFIG = "mp.on-new-thread.executor-service";
 
     private static final LazyValue<ExecutorService> PLATFORM_EXECUTOR_SERVICE
             = LazyValue.create(() -> {

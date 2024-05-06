@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-helidon:
+mp:
   on-new-thread:
     executor-service:
       thread-name-prefix: "my-thread"
