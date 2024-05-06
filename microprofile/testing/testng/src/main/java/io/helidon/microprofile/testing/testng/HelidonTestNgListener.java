@@ -16,10 +16,8 @@
 
 package io.helidon.microprofile.testing.testng;
 
-import java.io.IOException;
 import java.io.Serial;
 import java.io.StringReader;
-import java.io.UncheckedIOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Array;
@@ -32,7 +30,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 
 import io.helidon.config.mp.MpConfigSources;
@@ -340,7 +337,7 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
                 }
             });
             if (configMeta.type != null && configMeta.block != null) {
-                builder.withSources(configSource(configMeta.type, configMeta.block));
+                builder.withSources(MpConfigSources.create(configMeta.type, new StringReader(configMeta.block)));
             }
             config = builder
                     .withSources(MpConfigSources.create(configMeta.additionalKeys))
@@ -349,23 +346,6 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
                     .addDiscoveredConverters()
                     .build();
             configProviderResolver.registerConfig(config, Thread.currentThread().getContextClassLoader());
-        }
-    }
-
-    private ConfigSource configSource(String type, String block) {
-        String lowerCase = type.toLowerCase();
-        if ("properties".equals(lowerCase)) {
-            Properties p = new Properties();
-            try {
-                p.load(new StringReader(block));
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
-            return MpConfigSources.create("PropertiesAddConfigBlock", p);
-        } else if ("yaml".equals(lowerCase)) {
-            return YamlMpConfigSource.create("YamlAddConfigBlock", new StringReader(block));
-        } else {
-            throw new IllegalArgumentException(type + " is not supported");
         }
     }
 

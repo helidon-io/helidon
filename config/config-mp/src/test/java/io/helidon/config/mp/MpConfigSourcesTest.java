@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.config.mp;
 
 import java.io.ByteArrayInputStream;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
@@ -106,6 +107,21 @@ public class MpConfigSourcesTest {
     void testMpConfigSourcesNullConfig() {
         NullPointerException npe = assertThrows(NullPointerException.class, () -> MpConfigSources.create((Config) null));
         assertThat(npe.getMessage(), is("Config cannot be null"));
+    }
+
+    @Test
+    void testPropertiesMetaConfigProvider() {
+        typeChecks("ProPerties", """
+                another1.key=another1.value
+                another2.key=another2.value
+            """);
+    }
+
+    private void typeChecks(String type, String content) {
+        org.eclipse.microprofile.config.spi.ConfigSource source =
+                MpConfigSources.create(type, new StringReader(content));
+        assertThat(source.getValue("another1.key"), is("another1.value"));
+        assertThat(source.getValue("another2.key"), is("another2.value"));
     }
 
     private static final class NodeImpl implements ConfigSource, NodeConfigSource {

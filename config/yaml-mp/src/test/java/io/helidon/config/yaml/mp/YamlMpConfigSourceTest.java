@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import java.io.StringReader;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.Enumeration;
+
+import io.helidon.config.mp.MpConfigSources;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.Test;
@@ -65,6 +67,22 @@ public class YamlMpConfigSourceTest {
         validateConfig(source);
     }
 
+    @Test
+    void testYamlMetaConfigProvider() {
+        typeChecks("YaMl", """
+            another1:
+                key: "another1.value"
+            another2:
+                key: "another2.value"
+            """);
+    }
+
+    private void typeChecks(String type, String content) {
+        org.eclipse.microprofile.config.spi.ConfigSource source =
+                MpConfigSources.create(type, new StringReader(content));
+        assertThat(source.getValue("another1.key"), is("another1.value"));
+        assertThat(source.getValue("another2.key"), is("another2.value"));
+    }
     private void validateConfig(ConfigSource source) {
         assertThat(source.getValue("yaml.string"), is("String"));
         assertThat(source.getValue("yaml.number"), is("10"));
