@@ -21,7 +21,7 @@
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
     <step name="Packaging and Deployment" optional="true">
-        <exec src="/features/docker/inputs.xml"/>
+        <exec src="docker/inputs.xml"/>
         <inputs>
             <boolean id="k8s"
                      name="Kubernetes Support"

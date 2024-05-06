@@ -106,7 +106,7 @@
                         })
                         .get("/loggedout", (req, res) -> res.send("You have been logged out"))]]></value>
                     </list>
-                    <list key="module-requires">
+                    <list key="module-requires" order="101">
                         <value>io.helidon.security</value>
                         <value>io.helidon.security.providers.oidc</value>
                     </list>
@@ -201,8 +201,8 @@ Build and run the application and then try the endpoints:
                                 .orElse("Security context is null"));
                         res.next();
                     })
-            .register(StaticContentService.create("/WEB"))
-]]></value>
+            .register(StaticContentService.create("/WEB"))]]>
+                        </value>
                     </list>
                     <list key="Main-logging">
                         <value><![CDATA[
@@ -332,8 +332,8 @@ Update the following files with your client id (it should support http://localho
                     </list>
                     <list key="Main-routing-builder">
                         <value><![CDATA[.addFeature(SecurityHttpFeature.create(clientConfig.get("security.web-server")))
-                .register(new JwtOverrideService())
-]]></value>
+                .register(new JwtOverrideService())]]>
+                        </value>
                     </list>
                     <list key="Main-routing">
                         <value><![CDATA[        Config clientConfig = Config.create(ConfigSources.classpath("client-service-jwt.yaml"));]]></value>
@@ -449,8 +449,8 @@ curl -u "jill:changeit" http://localhost:8080/override
                     <list key="Main-routing-builder">
                         <value><![CDATA[.addFeature(security)
                 .get("/service1*", SecurityFeature.rolesAllowed("user"))
-                .register(new Service1())
-]]></value>
+                .register(new Service1())]]>
+                        </value>
                     </list>
                     <list key="main-class-content">
                         <value><![CDATA[

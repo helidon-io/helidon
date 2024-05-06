@@ -36,14 +36,13 @@
                             <value key="groupId">io.helidon.microprofile</value>
                             <value key="artifactId">helidon-microprofile-fault-tolerance</value>
                         </map>
-                        <!-- TODO: this is a workaround - should be added if no metrics or metrics.provider == micrometer -->
                         <map>
                             <value key="groupId">io.helidon.microprofile.metrics</value>
                             <value key="artifactId">helidon-microprofile-metrics</value>
                         </map>
                     </list>
                     <list key="module-requires">
-                        <value>io.helidon.microprofile.faulttolerance</value>
+                        <value order="104">io.helidon.microprofile.faulttolerance</value>
                     </list>
                     <list key="maven-plugins">
                         <value><![CDATA[
@@ -85,7 +84,7 @@
                         <value>jakarta.ws.rs.HttpMethod</value>
                     </list>
                     <list key="module-requires">
-                        <value>io.helidon.microprofile.cors</value>
+                        <value order="103">io.helidon.microprofile.cors</value>
                     </list>
                     <list key="FileServiceTest-annotations" if="${media} contains 'multipart'">
                         <value>@AddExtension(CorsCdiExtension.class)</value>

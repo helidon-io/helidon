@@ -20,15 +20,9 @@
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
-    <!--  Include every files into generated project  -->
-    <source src="/features/common/sources.xml"/>
+
+    <source src="/features/common/includes/sources.xml"/>
     <output>
-        <templates engine="mustache" transformations="mustache" if="${application-yaml}">
-            <directory>files</directory>
-            <includes>
-                <include>src/*/resources/**/application.yaml.mustache</include>
-            </includes>
-        </templates>
         <templates engine="mustache" transformations="mustache">
             <directory>files</directory>
             <includes>
@@ -37,17 +31,14 @@
         </templates>
         <model>
             <value key="parent-artifactId">helidon-mp</value>
+            <value key="helidon-test">true</value>
             <list key="dependencies">
                 <map>
                     <value key="groupId">io.smallrye</value>
                     <value key="artifactId">jandex</value>
                     <value key="scope">runtime</value>
                 </map>
-                <map>
-                    <value key="groupId">jakarta.activation</value>
-                    <value key="artifactId">jakarta.activation-api</value>
-                </map>
-                <map>
+                <map order="801">
                     <value key="groupId">io.helidon.microprofile.bundles</value>
                     <value key="artifactId">helidon-microprofile-core</value>
                 </map>
@@ -66,9 +57,6 @@
                     <value key="artifactId">hamcrest-all</value>
                     <value key="scope">test</value>
                 </map>
-            </list>
-            <list key="dependencies">
-
             </list>
             <list key="readme-exercise-the-application">
                 <value order="999"><![CDATA[
@@ -114,6 +102,11 @@ Hello World!
             <list key="MainTest-static-imports">
                 <value>static org.hamcrest.MatcherAssert.assertThat</value>
                 <value>static org.hamcrest.Matchers.is</value>
+            </list>
+            <list key="microprofile-config-entries">
+                <value><![CDATA[# Application properties. This is the default greeting
+app.greeting=Hello]]>
+                </value>
             </list>
         </model>
     </output>

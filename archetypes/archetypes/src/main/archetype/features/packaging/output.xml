@@ -20,80 +20,8 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
-    <methods>
-        <method name="k8s">
-            <output if="${k8s}">
-                <templates engine="mustache" transformations="mustache">
-                    <directory>files</directory>
-                    <includes>
-                        <include>app.yaml.mustache</include>
-                    </includes>
-                </templates>
-                <model>
-                    <list key="readme-sections">
-                        <value order="50" template="mustache">
-                            <![CDATA[
-## Run the application in Kubernetes
-
-If you don’t have access to a Kubernetes cluster, you can [install one](https://helidon.io/docs/latest/#/about/kubernetes) on your desktop.
-
-### Verify connectivity to cluster
-
-```
-kubectl cluster-info                        # Verify which cluster
-kubectl get pods                            # Verify connectivity to cluster
-```
-{{#k8s-readme-sections}}
-{{#first}}
-
-{{/first}}
-{{.}}
-{{/k8s-readme-sections}}
-
-### Deploy the application to Kubernetes
-
-```
-kubectl create -f app.yaml                  # Deploy application
-kubectl get pods                            # Wait for quickstart pod to be RUNNING
-kubectl get service  {{artifactId}}         # Get service info
-```
-
-Note the PORTs. You can now exercise the application as you did before but use the second
-port number (the NodePort) instead of 8080.
-
-After you’re done, cleanup.
-
-```
-kubectl delete -f app.yaml
-```
-                                ]]>
-                        </value>
-                    </list>
-                </model>
-            </output>
-        </method>
-        <method name="v8o">
-            <output if="${v8o}">
-                <templates engine="mustache" transformations="mustache">
-                    <directory>files</directory>
-                    <includes>
-                        <include>v8o.yaml.mustache</include>
-                    </includes>
-                </templates>
-            </output>
-        </method>
-        <method name="jpms">
-            <output if="${jpms}">
-                <templates engine="mustache" transformations="mustache,packaged">
-                    <directory>files</directory>
-                    <includes>
-                        <include>src/main/java/**/module-info.java.mustache</include>
-                    </includes>
-                </templates>
-            </output>
-        </method>
-    </methods>
-    <call method="k8s"/>
-    <call method="v8o"/>
-    <call method="jpms"/>
+    <exec src="docker/output.xml" if="${docker}"/>
+    <exec src="k8s/output.xml" if="${k8s}"/>
+    <exec src="v8o/output.xml" if="${v8o}"/>
+    <exec src="jpms/output.xml" if="${jpms}"/>
 </archetype-script>

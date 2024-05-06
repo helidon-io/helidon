@@ -24,31 +24,32 @@
             <output if="${metrics}">
                 <model if="${metrics.builtin}">
                     <list key="dependencies">
-                        <map if="${flavor} == 'se'">
+                        <map>
                             <value key="groupId">io.helidon.webserver.observe</value>
                             <value key="artifactId">helidon-webserver-observe-metrics</value>
                         </map>
-                        <map if="${flavor} == 'se'">
+                        <map>
                             <value key="groupId">io.helidon.metrics</value>
                             <value key="artifactId">helidon-metrics-system-meters</value>
                             <value key="scope">runtime</value>
                         </map>
                     </list>
-                    <list key="Abstract-tests" if="${flavor} == 'se'">
-                        <value><![CDATA[
+                    <list key="Abstract-tests">
+                        <value order="101"><![CDATA[
     @Test
     void testMetricsObserver() {
         try (Http1ClientResponse response = client.get("/observe/metrics").request()) {
             assertThat(response.status(), is(Status.OK_200));
         }
     }
-]]></value>
+]]>
+                        </value>
                     </list>
                     <list key="module-requires">
-                        <value if="${flavor} == 'se'">io.helidon.webserver.observe.metrics</value>
-                        <value if="${flavor} == 'se'">io.helidon.metrics.api</value>
+                        <value>io.helidon.webserver.observe.metrics</value>
+                        <value>io.helidon.metrics.api</value>
                     </list>
-                    <list key="readme-sections" if="${flavor} == 'se'">
+                    <list key="readme-sections">
                         <value><![CDATA[
 ## Try metrics
 

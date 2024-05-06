@@ -21,19 +21,10 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
     <exec src="common/output.xml"/>
-    <exec src="docker/output.xml" if="${docker}"/>
-    <exec src="extra/output.xml"/>
     <exec src="media/output.xml"/>
+    <exec src="extra/output.xml"/>
     <exec src="observability/output.xml"/>
     <exec src="packaging/output.xml"/>
     <exec src="security/output.xml" if="${security}"/>
     <exec src="database/output.xml" if="${db}"/>
-
-    <!--  TODO: this is a hack to remove test for database  -->
-    <!--  TODO: Remove it and use testcontainers instead  -->
-    <output if="!(${db})">
-        <model>
-            <value key="helidon-test">true</value>
-        </model>
-    </output>
 </archetype-script>

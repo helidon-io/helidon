@@ -19,9 +19,7 @@
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
-    <!--  TODO: This output generate the template for the Main class and a few pom content  -->
-    <!--  TODO: We might wanna use a template file to improve readability and limit nested template  -->
-    <source src="/features/common/sources.xml"/>
+    <source src="/features/common/includes/sources.xml"/>
     <output>
         <model>
             <value key="mainClass">${package}.Main</value>
@@ -76,25 +74,28 @@
                 <value>io.helidon.config.Config</value>
             </list>
             <list key="module-requires">
-                <value>io.helidon.webserver</value>
-                <value>io.helidon.http</value>
-                <value>io.helidon.config</value>
+                <value order="101">io.helidon.webserver</value>
+                <value order="101">io.helidon.http</value>
+                <value order="101">io.helidon.config</value>
             </list>
             <list key="Main-routing-builder">
                 <value><![CDATA[.register("/greet", new GreetService())]]></value>
             </list>
             <list key="application-yaml-entries">
                 <value><![CDATA[app:
-    greeting: "Hello"]]></value>
+    greeting: "Hello"]]>
+                </value>
             </list>
             <value key="main-class-javadoc"><![CDATA[
 /**
  * The application main class.
- */]]></value>
+ */]]>
+            </value>
             <value key="main-method-javadoc"><![CDATA[/**
      * Application main entry point.
      * @param args command line arguments.
-     */]]></value>
+     */]]>
+            </value>
             <list key="main-class-fields">
                 <value order="0"><![CDATA[
     /**
@@ -102,7 +103,8 @@
      */
     private Main() {
     }
-]]></value>
+]]>
+                </value>
             </list>
             <list key="main-method-content">
                 <value template="mustache"><![CDATA[
@@ -134,7 +136,8 @@
         {{#Main-logging}}
         {{.}}
         {{/Main-logging}}
-]]></value>
+]]>
+                </value>
             </list>
             <list key="main-class-content">
                 <value template="mustache"><![CDATA[
@@ -152,7 +155,7 @@
     }]]></value>
             </list>
             <list key="Main-routing-builder">
-                <value><![CDATA[.get("/simple-greet", (req, res) -> res.send("Hello World!"))]]></value>
+                <value order="1"><![CDATA[.get("/simple-greet", (req, res) -> res.send("Hello World!"))]]></value>
             </list>
             <list key="Abstract-tests">
                 <value><![CDATA[
@@ -176,7 +179,7 @@ Hello World!
                 </value>
             </list>
             <list key="module-requires">
-                <value>io.helidon.logging.common</value>
+                <value order="0">io.helidon.logging.common</value>
             </list>
         </model>
     </output>

@@ -69,7 +69,7 @@ otel.traces.exporter={{tracing.provider}}
 otel.service.name=helidon-tracing-service]]></value>
             </list>
             <list key="module-requires">
-                <value>io.helidon.microprofile.telemetry</value>
+                <value order="102">io.helidon.microprofile.telemetry</value>
             </list>
             <list key="readme-exercise-the-application">
                 <value><![CDATA[

@@ -36,7 +36,8 @@
                     <list key="db-connection">
                         <value><![CDATA[    url: "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE"
     username: sa
-    password:]]></value>
+    password:]]>
+                        </value>
                     </list>
                     <value key="start-db" template="mustache"><![CDATA[
 H2:
@@ -44,14 +45,14 @@ H2:
 docker run --rm --name h2 -p 9092:9082 -p 8082:8082 nemerosa/h2
 ```
 For details, see https://www.h2database.com/html/cheatSheet.html
-]]></value>
+]]>
+                    </value>
                 </model>
             </output>
         </method>
         <method name="mysql">
             <output if="${db.server} == 'mysql'">
                 <model>
-                    <value key="helidon-test">false</value>
                     <value key="readme-description">Helidon SE application that uses the dbclient API with MySQL database.</value>
                     <value key="integration-artifactId">helidon-integrations-db-mysql</value>
                     <value key="db">MySQL</value>
@@ -69,7 +70,8 @@ For details, see https://www.h2database.com/html/cheatSheet.html
                     <list key="db-connection">
                         <value><![CDATA[    url: jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false
     username: user
-    password: changeit]]></value>
+    password: changeit]]>
+                        </value>
                     </list>
                     <value key="start-db" template="mustache"><![CDATA[
 MySQL:
@@ -81,14 +83,14 @@ docker run --rm --name mysql -p 3306:3306 \
     -e MYSQL_PASSWORD=changeit \
     mysql:5.7
 ```
-]]></value>
+]]>
+                    </value>
                 </model>
             </output>
         </method>
         <method name="oracle">
             <output if="${db.server} == 'oracledb'">
                 <model>
-                    <value key="helidon-test">false</value>
                     <value key="readme-description">Helidon se application that uses the dbclient API with OracleDB database.</value>
                     <value key="integration-artifactId">ojdbc</value>
                     <value key="db">OracleDB</value>
@@ -102,7 +104,8 @@ docker run --rm --name mysql -p 3306:3306 \
                     <list key="db-connection">
                         <value><![CDATA[    url: jdbc:oracle:thin:@localhost:1521/XE
     username: system
-    password: oracle]]></value>
+    password: oracle]]>
+                        </value>
                     </list>
                     <value key="start-db"><![CDATA[
 Oracle:
@@ -110,7 +113,8 @@ Oracle:
 docker run --rm --name xe -p 1521:1521 -p 8888:8080 wnameless/oracle-xe-11g-r2
 ```
 For details on an Oracle Docker image, see https://github.com/oracle/docker-images/tree/master/OracleDatabase/SingleInstance
-]]></value>
+]]>
+                    </value>
                 </model>
             </output>
         </method>
@@ -155,7 +159,8 @@ Mongodb:
 ```
 docker run --rm --name mongo -p 27017:27017 mongo
 ```
-]]></value>
+]]>
+                    </value>
                 </model>
             </output>
         </method>
@@ -185,7 +190,6 @@ docker run --rm --name mongo -p 27017:27017 mongo
                 </model>
             </output>
         </method>
-        <!-- TODO: Here is an intersection .. database/health -->
         <method name="health">
             <output if="${health}">
                 <model>
@@ -209,7 +213,8 @@ docker run --rm --name mongo -p 27017:27017 mongo
                                      .addCheck(DbClientHealthCheck.create(dbClient, config.get("db.health-check")))
                                      .build())
                 .build();
-]]></value>
+]]>
+                        </value>
                     </list>
                     <list key="Main-server-builder">
                         <value>.addFeature(observe)</value>
@@ -283,7 +288,8 @@ docker run --rm --name mongo -p 27017:27017 mongo
                 <value order="200"><![CDATA[
         DbClient dbClient = DbClient.create(config.get("db"));
         Contexts.globalContext().register(dbClient);
-]]></value>
+]]>
+                </value>
             </list>
             <list key="Main-routing-builder">
                 <value>.register("/db", new PokemonService())</value>
@@ -295,7 +301,7 @@ docker run --rm --name mongo -p 27017:27017 mongo
             <list key="MainTest-other-imports">
                 <value>jakarta.json.Json</value>
                 <value>jakarta.json.JsonArray</value>
-                <value>jakarta.json.JsonObject</value>
+                <value if="${media} contains 'json' &amp;&amp; ${media.json-lib} != 'jsonp'">jakarta.json.JsonObject</value>
                 <value>jakarta.json.JsonBuilderFactory</value>
                 <value>jakarta.json.JsonReader</value>
             </list>
@@ -365,7 +371,8 @@ docker run --rm --name mongo -p 27017:27017 mongo
         response = client.get("/db/pokemon/7").request(String.class);
         assertThat(response.status(), is(Status.NOT_FOUND_404));
     }
-]]></value>
+]]>
+                </value>
                 <value order="50"><![CDATA[
     private static List<String> pokemonNames() {
         try (JsonReader reader = Json.createReader(PokemonService.class.getResourceAsStream("/pokemons.json"))) {
@@ -378,7 +385,8 @@ docker run --rm --name mongo -p 27017:27017 mongo
             return reader.readArray().stream().map(e -> e.asJsonObject().getString("name")).toList();
         }
     }
-]]></value>
+]]>
+                </value>
             </list>
             <list key="module-requires">
                 <value>io.helidon.dbclient</value>
@@ -411,12 +419,14 @@ curl -i -X PUT -d '{"id":7,"name":"Raticate","idType":2}' http://localhost:8080/
 # Delete Pokémon with id 7
 curl -i -X DELETE http://localhost:8080/db/pokemon/7
 ```
-]]></value>
+]]>
+                </value>
             </list>
             <list key="readme-run-notes">
                 <value><![CDATA[
 This example requires a database, see [Database Setup](#database-setup).
-]]></value>
+]]>
+                </value>
             </list>
             <list key="readme-sections">
                 <value template="mustache"><![CDATA[
@@ -427,7 +437,8 @@ Start your database before running this example.
 
 Example docker commands to start databases in temporary containers:
 {{start-db}}
-]]></value>
+]]>
+                </value>
             </list>
             <list key="gitignore">
                 <value>ObjectStore/</value>

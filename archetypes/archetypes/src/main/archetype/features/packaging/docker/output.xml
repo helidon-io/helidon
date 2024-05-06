@@ -19,10 +19,9 @@
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
-    <!--  TODO: moving native-image and jlink-image to subdirectory would solve the condition issue  -->
     <methods>
         <method name="docker">
-            <output if="${docker}">
+            <output>
                 <files>
                     <directory>files</directory>
                     <includes>
@@ -69,7 +68,7 @@ Exercise the application as described above.
             </output>
         </method>
         <method name="native-image">
-            <output if="${docker}">
+            <output>
                 <templates engine="mustache" transformations="mustache,native-image" if="${docker.native-image}">
                     <directory>files</directory>
                     <includes>
@@ -106,7 +105,7 @@ Exercise the application as described above.
             </output>
         </method>
         <method name="jlink">
-            <output if="${docker}">
+            <output>
                 <templates engine="mustache" transformations="mustache" if="${docker.jlink-image}">
                     <directory>files</directory>
                     <includes>

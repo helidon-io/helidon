@@ -80,5 +80,15 @@
                 </inputs>
             </boolean>
         </inputs>
+        <output>
+            <model>
+                <list key="dependencies" if="${flavor} == 'mp' &amp;&amp; ${extra} contains 'fault-tolerance'">
+                    <map if="!(${metrics}) || ${metrics.provider} == 'micrometer'">
+                        <value key="groupId">io.helidon.microprofile.metrics</value>
+                        <value key="artifactId">helidon-microprofile-metrics</value>
+                    </map>
+                </list>
+            </model>
+        </output>
     </step>
 </archetype-script>

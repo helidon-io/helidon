@@ -36,7 +36,7 @@
                         </map>
                     </list>
                     <list key="MainTest-methods">
-                        <value><![CDATA[
+                        <value order="0"><![CDATA[
     @Test
     void testGreet() {
         Message message = target
@@ -75,7 +75,7 @@
                         </map>
                     </list>
                     <list key="MainTest-methods">
-                        <value><![CDATA[
+                        <value order="0"><![CDATA[
     @Test
     void testGreet() {
         Message message = target
@@ -132,7 +132,6 @@
     <call method="jsonb"/>
     <call method="jackson"/>
     <call method="multipart"/>
-    <!-- Call media utility files to grab proper media templates -->
     <source src="/features/media/media-sources.xml"/>
     <output>
         <!-- TODO https://github.com/oracle/helidon-build-tools/issues/609 -->

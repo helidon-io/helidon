@@ -37,7 +37,7 @@
             </output>
         </method>
     </methods>
-    <exec src="multi-module.xml"/>
+    <exec src="includes/multi-module.xml"/>
     <call method="module-dir-noop-transformation"/>
     <call method="module-dir-transformation"/>
     <output>

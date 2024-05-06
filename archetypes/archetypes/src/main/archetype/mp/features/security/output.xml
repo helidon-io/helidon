@@ -39,8 +39,8 @@
                         <value file="files/application.oidc.yaml"/>
                     </list>
                     <list key="module-requires">
-                        <value>io.helidon.security</value>
-                        <value>io.helidon.security.annotations</value>
+                        <value order="101">io.helidon.security</value>
+                        <value order="101">io.helidon.security.annotations</value>
                     </list>
                     <list key="readme-sections">
                         <value><![CDATA[
@@ -76,7 +76,7 @@ to your tenant and application configuration.
                         <value template="mustache">mp.jwt.verify.publickey.location=${mp.jwt.verify.issuer}/v1/keys</value>
                     </list>
                     <list key="module-requires">
-                        <value >io.helidon.microprofile.jwt.auth</value>
+                        <value>io.helidon.microprofile.jwt.auth</value>
                     </list>
                 </model>
             </output>
@@ -115,6 +115,12 @@ to your tenant and application configuration.
     <call method="security-google"/>
     <call method="security-signature"/>
     <output if="${security}">
+        <templates engine="mustache" transformations="mustache">
+            <directory>files</directory>
+            <includes>
+                <include>src/*/resources/**/application.yaml.mustache</include>
+            </includes>
+        </templates>
         <model>
             <list key="dependencies">
                 <map>

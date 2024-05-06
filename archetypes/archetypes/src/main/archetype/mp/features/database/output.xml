@@ -189,7 +189,8 @@ H2:
 docker run --rm --name h2 -p 9092:9082 -p 8082:8082 nemerosa/h2
 ```
 For details, see https://www.h2database.com/html/cheatSheet.html
-]]></value>
+]]>
+                    </value>
                     <list key="main-persistence-properties">
                         <map if="${db.jpa-impl} == 'hibernate'">
                             <value key="name">hibernate.column_ordering_strategy</value>
@@ -265,7 +266,8 @@ For details, see https://www.h2database.com/html/cheatSheet.html
                 .get(JsonArray.class);
         return pokemons.size();
     }
-]]></value>
+]]>
+                        </value>
                     </list>
                     <list key="main-persistence-properties">
                         <map>
@@ -285,6 +287,7 @@ For details, see https://www.h2database.com/html/cheatSheet.html
                 <file source="files/src/main/resources/META-INF/init_script.sql.default"
                       target="src/main/resources/META-INF/init_script.sql"/>
                 <model>
+                    <value key="helidon-test" order="1000">false</value>
                     <value key="readme-description">Helidon MP application that uses the dbclient API with MySQL database.</value>
                     <value key="integration-artifactId">helidon-integrations-db-mysql</value>
                     <value key="db">MySQL</value>
@@ -298,7 +301,8 @@ docker run --rm --name mysql -p 3306:3306 \
     -e MYSQL_PASSWORD=changeit \
     mysql:5.7
 ```
-]]></value>
+]]>
+                    </value>
                     <list key="main-persistence-properties">
                         <map if="${db.jpa-impl} == 'hibernate'">
                             <value key="name">hibernate.column_ordering_strategy</value>
@@ -330,6 +334,7 @@ docker run --rm --name mysql -p 3306:3306 \
                 <file source="files/src/main/resources/META-INF/init_script.sql.oracle"
                       target="src/main/resources/META-INF/init_script.sql"/>
                 <model>
+                    <value key="helidon-test" order="1000">false</value>
                     <value key="readme-description">Helidon MP application that uses the dbclient API with OracleDB database.</value>
                     <value key="readme-native-docker">docker run --rm --name xe -p 1521:1521 -p 8888:8080 -e ORACLE_PWD=oracle wnameless/oracle-xe-11g-r2</value>
                     <value key="readme-native-url">url: jdbc:oracle:thin:@localhost:1521/XE</value>
@@ -341,7 +346,8 @@ Oracle:
 docker run --rm --name xe -p 1521:1521 -p 8888:8080 wnameless/oracle-xe-11g-r2
 ```
 For details on an Oracle Docker image, see https://github.com/oracle/docker-images/tree/master/OracleDatabase/SingleInstance
-]]></value>
+]]>
+                    </value>
                     <list key="main-persistence-properties">
                         <map if="${db.jpa-impl} == 'hibernate'">
                             <value key="name">hibernate.column_ordering_strategy</value>
@@ -480,7 +486,8 @@ Start your database before running this example.
 
 Example docker commands to start databases in temporary containers:
 {{start-db}}
-]]></value>
+]]>
+                </value>
             </list>
             <list key="gitignore">
                 <value>ObjectStore/</value>

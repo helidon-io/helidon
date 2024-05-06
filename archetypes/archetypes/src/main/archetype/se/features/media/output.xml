@@ -44,7 +44,8 @@
         assertThat(response.status(), is(Status.OK_200));
         assertThat(response.entity().getString("message"), is("Hello World!"));
     }
-    ]]></value>
+]]>
+                        </value>
                     </list>
                     <list key="module-requires" if="!(${media} contains 'multipart')">
                         <value>jakarta.json</value>
@@ -142,7 +143,7 @@
                         <value>io.helidon.webserver.staticcontent.StaticContentService</value>
                     </list>
                     <list key="Main-routing-builder">
-                        <value order="1"><![CDATA[.any("/", (req, res) -> {
+                        <value order="0"><![CDATA[.any("/", (req, res) -> {
                     res.status(Status.MOVED_PERMANENTLY_301);
                     res.header(HeaderValues.createCached(HeaderNames.LOCATION, "/ui"));
                     res.send();
@@ -173,7 +174,6 @@
     <call method="jsonb"/>
     <call method="jackson"/>
     <call method="multipart"/>
-    <!-- Call media utility files to grab proper media templates -->
     <source src="/features/media/media-sources.xml"/>
     <output>
         <!-- TODO https://github.com/oracle/helidon-build-tools/issues/609 -->

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+
+    <methods>
+        <method name="jpms">
+            <output if="${jpms}">
+                <templates engine="mustache" transformations="mustache,packaged">
+                    <directory>/features/common/files</directory>
+                    <includes>
+                        <include>src/main/java/**/Main.java.mustache</include>
+                    </includes>
+                </templates>
+                <model>
+                    <value key="mainClass">${package}.Main</value>
+                    <value key="main-class-javadoc"><![CDATA[
+/**
+ * Main entry point of the application.
+ * <p>
+ * Note that this class is required when using modules as the module main class must be in a package that is either exported
+ * or opened by the module, see {@link java.lang.module.ModuleDescriptor#read(java.io.InputStream, java.util.function.Supplier)}.
+ * <p>
+ * This class provides a proper module main class and calls the {@link io.helidon.Main#main(String[]) built-in main class}.
+ */]]></value>
+                    <value key="main-method-javadoc"><![CDATA[
+    /**
+     * Main method. Starts CDI (and the application).
+     *
+     * @param args ignored
+     */]]></value>
+                    <list key="main-class-fields">
+                        <value><![CDATA[
+    /**
+    * Cannot be instantiated.
+    */
+    private Main() {
+    }
+]]></value>
+                    </list>
+                    <list key="main-method-content">
+                        <value><![CDATA[        io.helidon.Main.main(args);]]></value>
+                    </list>
+                </model>
+            </output>
+        </method>
+    </methods>
+    <call method="jpms"/>
+</archetype-script>
