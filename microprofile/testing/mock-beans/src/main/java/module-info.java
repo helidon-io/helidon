@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import io.helidon.microprofile.testing.mockbeans.MockBeansCdiExtension;
-
 /**
  * Mock Beans extension module to run CDI tests.
  */
@@ -28,5 +26,6 @@ module io.helidon.microprofile.testing.mockbeans {
 
     exports io.helidon.microprofile.testing.mockbeans;
 
-    provides jakarta.enterprise.inject.spi.Extension with MockBeansCdiExtension;
+    provides jakarta.enterprise.inject.spi.Extension
+        with io.helidon.microprofile.testing.mockbeans.MockBeansCdiExtension;
 }
