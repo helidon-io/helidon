@@ -16,8 +16,9 @@
 package io.helidon.microprofile.testing.mockbeans;
 
 import java.lang.reflect.Field;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -38,7 +39,7 @@ import org.mockito.Mockito;
  */
 public class MockBeansCdiExtension implements Extension {
 
-    private final Set<Class<?>> mocks = new HashSet<>();
+    private final Map<Class<?>, MockBean> mocks = new HashMap<>();
 
     void processMockBean(@Observes @WithAnnotations(MockBean.class) ProcessAnnotatedType<?> obj) throws Exception {
         var configurator = obj.configureAnnotatedType();
@@ -49,7 +50,7 @@ public class MockBeansCdiExtension implements Extension {
                 // Adds @Inject to be more user friendly
                 field.add(InjectLiteral.INSTANCE);
                 Class<?> fieldType = f.getType();
-                mocks.add(fieldType);
+                mocks.put(fieldType, mockBean);
             }
         });
         configurator.constructors().forEach(constructor -> {
@@ -62,16 +63,16 @@ public class MockBeansCdiExtension implements Extension {
             MockBean mockBean = parameter.getAnnotation(MockBean.class);
             if (mockBean != null) {
                 Class<?> parameterType = parameter.getJavaParameter().getType();
-                mocks.add(parameterType);
+                mocks.put(parameterType, mockBean);
             }
         });
     }
 
     void registerOtherBeans(@Observes AfterBeanDiscovery event, BeanManager beanManager) {
         // Register all mocks
-        mocks.forEach(type -> {
+        mocks.entrySet().forEach(entry -> {
             event.addBean()
-                .addType(type)
+                .addType(entry.getKey())
                 .scope(ApplicationScoped.class)
                 .alternative(true)
                 .createWith(inst -> {
@@ -80,9 +81,9 @@ public class MockBeansCdiExtension implements Extension {
                         Bean<?> bean = beans.iterator().next();
                         MockSettings mockSettings = (MockSettings) beanManager.getReference(bean, MockSettings.class,
                                 beanManager.createCreationalContext(null));
-                        return Mockito.mock(type, mockSettings);
+                        return Mockito.mock(entry.getKey(), mockSettings);
                     } else {
-                        return Mockito.mock(type);
+                        return Mockito.mock(entry.getKey(), Mockito.withSettings().defaultAnswer(entry.getValue().answer()));
                     }
                 })
                 .priority(0);

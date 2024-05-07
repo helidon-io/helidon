@@ -21,6 +21,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.mockito.Answers;
+
 /**
  * A field annotated with @MockBean will be mocked by Mockito
  * and injected in every place it is referenced.
@@ -29,4 +31,10 @@ import java.lang.annotation.Target;
 @Target({ElementType.FIELD, ElementType.PARAMETER})
 public @interface MockBean {
 
+    /**
+     * The {@link Answers} type to use on the mock.
+     * Defaults to {@link Answers#RETURNS_DEFAULTS}
+     * @return the answer type
+     */
+    Answers answer() default Answers.RETURNS_DEFAULTS;
 }
