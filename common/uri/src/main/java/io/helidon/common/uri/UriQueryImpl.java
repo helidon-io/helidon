@@ -148,11 +148,11 @@ final class UriQueryImpl implements UriQuery {
     public OptionalValue<String> first(String name) {
         ensureDecoded();
         List<String> values = decodedQueryParams.get(name);
-        if (values == null) {
+        if (values == null || values.isEmpty()) {
             return OptionalValue.create(MapperManager.global(), name, GenericType.STRING, "uri", "query");
         }
-        String value = values.isEmpty() ? "" : values.iterator().next();
-        return OptionalValue.create(MapperManager.global(), name, value, GenericType.STRING, "uri", "query");
+        return OptionalValue.create(MapperManager.global(), name, values.iterator().next(),
+                GenericType.STRING, "uri", "query");
     }
 
     @Override
