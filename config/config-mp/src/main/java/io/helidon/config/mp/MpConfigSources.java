@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,11 @@ package io.helidon.config.mp;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -31,11 +34,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.ServiceLoader;
 import java.util.Set;
 
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.MutabilitySupport;
+import io.helidon.config.mp.spi.MpMetaConfigProvider;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
@@ -62,6 +68,31 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
  * </ul>
  */
 public final class MpConfigSources {
+
+    static final Map<String, MpMetaConfigProvider> MP_META_PROVIDERS;
+
+    static {
+        List<MpMetaConfigProvider> mpMetaConfigProviders =
+                HelidonServiceLoader.builder(ServiceLoader.load(MpMetaConfigProvider.class))
+                        .addService(new MpEnvironmentVariablesMetaConfigProvider())
+                        .addService(new MpSystemPropertiesMetaConfigProvider())
+                        .addService(new MpPropertiesMetaConfigProvider())
+                        .build()
+                        .asList();
+
+        // Helidon service loader uses Weight and Weighted by default, we want to use priorities here
+        Priorities.sort(mpMetaConfigProviders, Prioritized.DEFAULT_PRIORITY);
+
+        Map<String, MpMetaConfigProvider> theMap = new HashMap<>();
+        // ordered by priority
+        for (MpMetaConfigProvider mpMetaConfigProvider : mpMetaConfigProviders) {
+            for (String supportedType : mpMetaConfigProvider.supportedTypes()) {
+                theMap.putIfAbsent(supportedType, mpMetaConfigProvider);
+            }
+        }
+        MP_META_PROVIDERS = Map.copyOf(theMap);
+    }
+
     private MpConfigSources() {
     }
 
@@ -353,6 +384,50 @@ public final class MpConfigSources {
      */
     public static ConfigSource create(Config config) {
         return new MpHelidonConfigSource(Objects.requireNonNull(config, "Config cannot be null"));
+    }
+
+    /**
+     * Config source base on a Reader instance for the given type.
+     * This method will not close the reader.
+     *
+     * @param type of the given reader (properties, YAML, etc).
+     * @param reader with the configuration.
+     * @return a new MicroProfile config source
+     */
+    public static ConfigSource create(String type, Reader reader) {
+        Objects.requireNonNull(type, "Type cannot be null");
+        Objects.requireNonNull(reader, "Reader cannot be null");
+        MpMetaConfigProvider provider = MP_META_PROVIDERS.get(type);
+        if (provider == null) {
+            throw new IllegalArgumentException("There is no MpMetaConfigProvider registered for type " + type
+                    + ". Make sure the desired provider exists in modulepath/classpath.");
+        }
+        return provider.create(reader);
+    }
+
+    /**
+     * Config source base on a URL for the given type.
+     * This method will not close the reader.
+     *
+     * @param type of the given URL (properties, YAML, etc).
+     * @param url with resource.
+     * @return a new MicroProfile config source
+     */
+    public static ConfigSource create(String type, URL url) {
+        Objects.requireNonNull(type, "Type cannot be null");
+        Objects.requireNonNull(url, "URL cannot be null");
+        MpMetaConfigProvider provider = MP_META_PROVIDERS.get(type);
+
+        if (provider == null) {
+            throw new IllegalArgumentException("There is no MpMetaConfigProvider registered for type " + type
+                    + " in " + url + ". Make sure the desired provider exists in modulepath/classpath.");
+        }
+
+        try (InputStreamReader reader = new InputStreamReader(url.openConnection().getInputStream(), StandardCharsets.UTF_8)) {
+            return provider.create(reader);
+        } catch (Exception e) {
+            throw new ConfigException("Failed to configure " + type + " config source", e);
+        }
     }
 
     /**

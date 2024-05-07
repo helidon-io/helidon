@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.config.yaml.mp;
 
+import java.io.Reader;
 import java.util.List;
 import java.util.Set;
 
@@ -32,7 +33,7 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
 public class YamlMetaConfigProvider implements MpMetaConfigProvider, Prioritized {
     @Override
     public Set<String> supportedTypes() {
-        return Set.of("yaml");
+        return Set.of("yaml", "yml");
     }
 
     @Override
@@ -50,5 +51,10 @@ public class YamlMetaConfigProvider implements MpMetaConfigProvider, Prioritized
     @Override
     public int priority() {
         return 300;
+    }
+
+    @Override
+    public ConfigSource create(Reader content) {
+        return YamlMpConfigSource.create("YamlMetaConfigProvider", content);
     }
 }
