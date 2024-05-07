@@ -316,7 +316,8 @@ class HelidonJunitExtension implements BeforeAllCallback,
 
             configMeta.additionalSources.forEach(it -> {
                 String fileName = it.trim();
-                String type = fileName.substring(fileName.lastIndexOf('.') + 1);
+                int idx = fileName.lastIndexOf('.');
+                String type = idx > -1 ? fileName.substring(idx + 1) : "properties";
                 try {
                     Enumeration<URL> urls = Thread.currentThread().getContextClassLoader().getResources(fileName);
                     urls.asIterator().forEachRemaining(url -> builder.withSources(MpConfigSources.create(type, url)));

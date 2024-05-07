@@ -33,7 +33,7 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
 public class YamlMetaConfigProvider implements MpMetaConfigProvider, Prioritized {
     @Override
     public Set<String> supportedTypes() {
-        return Set.of("yaml");
+        return Set.of("yaml", "yml");
     }
 
     @Override
