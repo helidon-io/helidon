@@ -15,9 +15,11 @@
 #
 
 mp:
-  on-new-thread:
-    executor-service:
-      thread-name-prefix: "my-thread"
+  run-on-thread:
+    platform:
+      thread-name-prefix: "my-platform-thread"
       core-pool-size: 1
       max-pool-size: 2
       queue-capacity: 10
+    virtual:
+      thread-name-prefix: "my-virtual-thread"

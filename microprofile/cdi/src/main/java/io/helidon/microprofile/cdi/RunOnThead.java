@@ -34,7 +34,7 @@ import jakarta.interceptor.InterceptorBinding;
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Inherited
 @InterceptorBinding
-public @interface OnNewThread {
+public @interface RunOnThead {
 
     /**
      * Type of thread to use for invocation.

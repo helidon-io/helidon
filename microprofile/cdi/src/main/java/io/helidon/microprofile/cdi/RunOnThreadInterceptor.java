@@ -37,20 +37,21 @@ import org.eclipse.microprofile.config.ConfigProvider;
  * Intercepts calls to bean methods to be executed on a new thread.
  */
 @Interceptor
-@OnNewThread
+@RunOnThead
 @Priority(Interceptor.Priority.PLATFORM_AFTER + 10)
-class OnNewThreadInterceptor {
+class RunOnThreadInterceptor {
 
-    private static final String ON_NEW_THREAD = "on-new-thread";
-    private static final String EXECUTOR_SERVICE_CONFIG = "mp.on-new-thread.executor-service";
+    private static final String RUN_ON_THREAD = "run-on-thread";
+    private static final String RUN_ON_VIRTUAL_THREAD = "mp.run-on-thread.virtual";
+    private static final String RUN_ON_PLATFORM_THREAD = "mp.run-on-thread.platform";
 
     private static final LazyValue<ExecutorService> PLATFORM_EXECUTOR_SERVICE
             = LazyValue.create(() -> {
                     Config mpConfig = ConfigProvider.getConfig();
                     io.helidon.config.Config config = MpConfig.toHelidonConfig(mpConfig);
                     return ThreadPoolSupplier.builder()
-                                             .threadNamePrefix(ON_NEW_THREAD)
-                                             .config(config.get(EXECUTOR_SERVICE_CONFIG))
+                                             .threadNamePrefix(RUN_ON_THREAD)
+                                             .config(config.get(RUN_ON_PLATFORM_THREAD))
                                              .virtualThreads(false)        // overrides to platform threads
                                              .build()
                                              .get();
@@ -60,16 +61,20 @@ class OnNewThreadInterceptor {
             = LazyValue.create(() -> {
                 Config mpConfig = ConfigProvider.getConfig();
                 io.helidon.config.Config config = MpConfig.toHelidonConfig(mpConfig);
+                String threadNamePrefix = config.get(RUN_ON_VIRTUAL_THREAD)
+                                                .get("thread-name-prefix")
+                                                .asString()
+                                                .asOptional()
+                                                .orElse(RUN_ON_THREAD);
                 return ThreadPoolSupplier.builder()
-                                         .threadNamePrefix(ON_NEW_THREAD)
-                                         .config(config.get(EXECUTOR_SERVICE_CONFIG))
-                                         .virtualThreads(true)              // overrides to virtual threads
+                                         .threadNamePrefix(threadNamePrefix)
+                                         .virtualThreads(true)
                                          .build()
                                          .get();
             });
 
     @Inject
-    private OnNewThreadExtension extension;
+    private RunOnThreadExtension extension;
 
     /**
      * Intercepts a call to bean method annotated by {@code @OnNewThread}.
@@ -79,23 +84,23 @@ class OnNewThreadInterceptor {
      * @throws Throwable If a problem occurs.
      */
     @AroundInvoke
-    public Object runOnNewThread(InvocationContext context) throws Throwable {
-        OnNewThread onNewThread = extension.getAnnotation(context.getMethod());
-        return switch (onNewThread.value()) {
+    public Object runOnThread(InvocationContext context) throws Throwable {
+        RunOnThead runOnThread = extension.getAnnotation(context.getMethod());
+        return switch (runOnThread.value()) {
             case PLATFORM -> PLATFORM_EXECUTOR_SERVICE.get()
                     .submit(context::proceed)
-                    .get(onNewThread.timeout(), onNewThread.unit());
+                    .get(runOnThread.timeout(), runOnThread.unit());
             case VIRTUAL -> VIRTUAL_EXECUTOR_SERVICE.get()
                     .submit(context::proceed)
-                    .get(onNewThread.timeout(), onNewThread.unit());
-            case EXECUTOR -> findExecutor(onNewThread.executorName())
+                    .get(runOnThread.timeout(), runOnThread.unit());
+            case EXECUTOR -> findExecutor(runOnThread.executorName())
                     .submit(context::proceed)
-                    .get(onNewThread.timeout(), onNewThread.unit());
+                    .get(runOnThread.timeout(), runOnThread.unit());
         };
     }
 
     /**
-     * Find executor by name. Validation in {@link OnNewThreadExtension#validateAnnotations(BeanManager, Object)}.
+     * Find executor by name. Validation in {@link RunOnThreadExtension#validateAnnotations(BeanManager, Object)}.
      *
      * @param executorName name of executor
      * @return executor instance looked up via CDI
