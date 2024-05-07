@@ -111,7 +111,7 @@ public class MpConfigSourcesTest {
 
     @Test
     void testPropertiesMetaConfigProvider() {
-        typeChecks("ProPerties", """
+        typeChecks("properties", """
                 another1.key=another1.value
                 another2.key=another2.value
             """);

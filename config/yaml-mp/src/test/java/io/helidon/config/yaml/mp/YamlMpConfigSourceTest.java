@@ -69,7 +69,7 @@ public class YamlMpConfigSourceTest {
 
     @Test
     void testYamlMetaConfigProvider() {
-        typeChecks("YaMl", """
+        typeChecks("yaml", """
             another1:
                 key: "another1.value"
             another2:

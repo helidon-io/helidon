@@ -28,7 +28,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.testng.annotations.Test;
 
 @HelidonTest
-@AddConfigBlock(type = "Yaml", value = """
+@AddConfigBlock(type = "yaml", value = """
     another1:
       key: "another1.value"
     another2:

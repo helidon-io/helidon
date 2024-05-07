@@ -18,9 +18,11 @@ package io.helidon.config.mp;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -390,17 +392,42 @@ public final class MpConfigSources {
      *
      * @param type of the given reader (properties, YAML, etc).
      * @param reader with the configuration.
-     * @return a new MicroProfile Config config source
+     * @return a new MicroProfile config source
      */
     public static ConfigSource create(String type, Reader reader) {
         Objects.requireNonNull(type, "Type cannot be null");
         Objects.requireNonNull(reader, "Reader cannot be null");
-        MpMetaConfigProvider provider = MP_META_PROVIDERS.get(type.toLowerCase());
+        MpMetaConfigProvider provider = MP_META_PROVIDERS.get(type);
         if (provider == null) {
             throw new IllegalArgumentException("There is no MpMetaConfigProvider registered for type " + type
                     + ". Make sure the desired provider exists in modulepath/classpath.");
         }
         return provider.create(reader);
+    }
+
+    /**
+     * Config source base on a URL for the given type.
+     * This method will not close the reader.
+     *
+     * @param type of the given URL (properties, YAML, etc).
+     * @param url with resource.
+     * @return a new MicroProfile config source
+     */
+    public static ConfigSource create(String type, URL url) {
+        Objects.requireNonNull(type, "Type cannot be null");
+        Objects.requireNonNull(url, "URL cannot be null");
+        MpMetaConfigProvider provider = MP_META_PROVIDERS.get(type);
+
+        if (provider == null) {
+            throw new IllegalArgumentException("There is no MpMetaConfigProvider registered for type " + type
+                    + " in " + url + ". Make sure the desired provider exists in modulepath/classpath.");
+        }
+
+        try (InputStreamReader reader = new InputStreamReader(url.openConnection().getInputStream(), StandardCharsets.UTF_8)) {
+            return provider.create(reader);
+        } catch (Exception e) {
+            throw new ConfigException("Failed to configure " + type + " config source", e);
+        }
     }
 
     /**

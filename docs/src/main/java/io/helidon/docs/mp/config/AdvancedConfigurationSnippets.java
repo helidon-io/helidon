@@ -15,7 +15,6 @@
  */
 package io.helidon.docs.mp.config;
 
-import java.io.Reader;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.List;
@@ -153,11 +152,6 @@ class AdvancedConfigurationSnippets {
                 return List.of(); // <8>
             }
             throw new ConfigException("Meta configuration could not find non-optional config source on " + location); // <9>
-        }
-
-        @Override
-        public ConfigSource create(Reader content) {
-            throw new UnsupportedOperationException("CustomMpMetaConfigProvider does not support #create.");
         }
     }
     // end::snippet_4[]

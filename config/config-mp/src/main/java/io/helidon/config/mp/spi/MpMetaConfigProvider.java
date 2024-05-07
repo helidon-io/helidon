@@ -52,5 +52,8 @@ public interface MpMetaConfigProvider {
      * @param content a reader with the content data
      * @return config source
      */
-    ConfigSource create(Reader content);
+    default ConfigSource create(Reader content) {
+        throw new UnsupportedOperationException("Create method is not supported by "
+                + getClass().getName());
+    }
 }

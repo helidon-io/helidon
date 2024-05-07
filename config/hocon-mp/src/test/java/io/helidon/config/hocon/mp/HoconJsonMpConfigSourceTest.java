@@ -75,7 +75,7 @@ class HoconJsonMpConfigSourceTest {
 
     @Test
     void testJsonMetaConfigProvider() {
-        typeChecks("JSOn", """
+        typeChecks("json", """
                 {
                 another1.key: "another1.value",
                 another2.key: "another2.value"

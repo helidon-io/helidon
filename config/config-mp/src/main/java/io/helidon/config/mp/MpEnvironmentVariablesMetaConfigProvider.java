@@ -16,7 +16,6 @@
 
 package io.helidon.config.mp;
 
-import java.io.Reader;
 import java.util.List;
 import java.util.Set;
 
@@ -44,8 +43,4 @@ class MpEnvironmentVariablesMetaConfigProvider implements MpMetaConfigProvider, 
         return 300;
     }
 
-    @Override
-    public ConfigSource create(Reader content) {
-        return MpConfigSources.environmentVariables();
-    }
 }

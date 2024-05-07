@@ -15,7 +15,6 @@
  */
 package io.helidon.integrations.oci.secrets.mp.configsource;
 
-import java.io.Reader;
 import java.util.List;
 import java.util.Set;
 
@@ -92,11 +91,6 @@ public final class OciSecretsMpMetaConfigProvider implements MpMetaConfigProvide
     @SuppressWarnings("deprecation")
     public Set<String> supportedTypes() {
         return this.p.supported();
-    }
-
-    @Override
-    public ConfigSource create(Reader content) {
-        throw new UnsupportedOperationException("Operation not supported");
     }
 
 }
