@@ -37,20 +37,20 @@ import org.eclipse.microprofile.config.ConfigProvider;
  * Intercepts calls to bean methods to be executed on a new thread.
  */
 @Interceptor
-@RunOnThead
+@ExecuteOn
 @Priority(Interceptor.Priority.PLATFORM_AFTER + 10)
-class RunOnThreadInterceptor {
+class ExecuteOnInterceptor {
 
-    private static final String RUN_ON_THREAD = "run-on-thread";
-    private static final String RUN_ON_VIRTUAL_THREAD = "mp.run-on-thread.virtual";
-    private static final String RUN_ON_PLATFORM_THREAD = "mp.run-on-thread.platform";
+    private static final String EXECUTE_ON = "execute-on";
+    private static final String RUN_ON_VIRTUAL_THREAD = EXECUTE_ON + ".virtual";
+    private static final String RUN_ON_PLATFORM_THREAD = EXECUTE_ON + ".platform";
 
     private static final LazyValue<ExecutorService> PLATFORM_EXECUTOR_SERVICE
             = LazyValue.create(() -> {
                     Config mpConfig = ConfigProvider.getConfig();
                     io.helidon.config.Config config = MpConfig.toHelidonConfig(mpConfig);
                     return ThreadPoolSupplier.builder()
-                                             .threadNamePrefix(RUN_ON_THREAD)
+                                             .threadNamePrefix(EXECUTE_ON)
                                              .config(config.get(RUN_ON_PLATFORM_THREAD))
                                              .virtualThreads(false)        // overrides to platform threads
                                              .build()
@@ -65,7 +65,7 @@ class RunOnThreadInterceptor {
                                                 .get("thread-name-prefix")
                                                 .asString()
                                                 .asOptional()
-                                                .orElse(RUN_ON_THREAD);
+                                                .orElse(EXECUTE_ON);
                 return ThreadPoolSupplier.builder()
                                          .threadNamePrefix(threadNamePrefix)
                                          .virtualThreads(true)
@@ -74,7 +74,7 @@ class RunOnThreadInterceptor {
             });
 
     @Inject
-    private RunOnThreadExtension extension;
+    private ExecuteOnExtension extension;
 
     /**
      * Intercepts a call to bean method annotated by {@code @OnNewThread}.
@@ -84,23 +84,23 @@ class RunOnThreadInterceptor {
      * @throws Throwable If a problem occurs.
      */
     @AroundInvoke
-    public Object runOnThread(InvocationContext context) throws Throwable {
-        RunOnThead runOnThread = extension.getAnnotation(context.getMethod());
-        return switch (runOnThread.value()) {
+    public Object executeOn(InvocationContext context) throws Throwable {
+        ExecuteOn executeOn = extension.getAnnotation(context.getMethod());
+        return switch (executeOn.value()) {
             case PLATFORM -> PLATFORM_EXECUTOR_SERVICE.get()
                     .submit(context::proceed)
-                    .get(runOnThread.timeout(), runOnThread.unit());
+                    .get(executeOn.timeout(), executeOn.unit());
             case VIRTUAL -> VIRTUAL_EXECUTOR_SERVICE.get()
                     .submit(context::proceed)
-                    .get(runOnThread.timeout(), runOnThread.unit());
-            case EXECUTOR -> findExecutor(runOnThread.executorName())
+                    .get(executeOn.timeout(), executeOn.unit());
+            case EXECUTOR -> findExecutor(executeOn.executorName())
                     .submit(context::proceed)
-                    .get(runOnThread.timeout(), runOnThread.unit());
+                    .get(executeOn.timeout(), executeOn.unit());
         };
     }
 
     /**
-     * Find executor by name. Validation in {@link RunOnThreadExtension#validateAnnotations(BeanManager, Object)}.
+     * Find executor by name. Validation in {@link ExecuteOnExtension#validateAnnotations(BeanManager, Object)}.
      *
      * @param executorName name of executor
      * @return executor instance looked up via CDI

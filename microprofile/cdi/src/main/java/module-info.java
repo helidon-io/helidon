@@ -71,7 +71,7 @@ module io.helidon.microprofile.cdi {
             with io.helidon.microprofile.cdi.ExecutorServices;
 
     provides jakarta.enterprise.inject.spi.Extension
-            with io.helidon.microprofile.cdi.RunOnThreadExtension;
+            with io.helidon.microprofile.cdi.ExecuteOnExtension;
 
     opens io.helidon.microprofile.cdi to weld.core.impl;
 	

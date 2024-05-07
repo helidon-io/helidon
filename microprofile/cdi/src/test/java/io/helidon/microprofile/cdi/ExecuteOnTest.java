@@ -30,11 +30,11 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.microprofile.cdi.RunOnThead.ThreadType;
+import static io.helidon.microprofile.cdi.ExecuteOn.ThreadType;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-class RunOnThreadTest {
+class ExecuteOnTest {
 
     static SeContainer seContainer;
     static OnNewThreadBean bean;
@@ -44,7 +44,7 @@ class RunOnThreadTest {
     static void startCdi() {
         seContainer = SeContainerInitializer.newInstance()
                 .disableDiscovery()
-                .addExtensions(RunOnThreadExtension.class)
+                .addExtensions(ExecuteOnExtension.class)
                 .addBeanClasses(OnNewThreadBean.class)
                 .initialize();
         bean = CDI.current().select(OnNewThreadBean.class).get();
@@ -57,37 +57,32 @@ class RunOnThreadTest {
 
     static class OnNewThreadBean {
 
-        @RunOnThead
+        @ExecuteOn(ThreadType.PLATFORM)
         Thread cpuIntensive() {
             return Thread.currentThread();
         }
 
-        @RunOnThead(ThreadType.PLATFORM)
-        Thread cpuIntensiveWithType() {
-            return Thread.currentThread();
-        }
-
-        @RunOnThead(timeout = 10000)
+        @ExecuteOn(value = ThreadType.PLATFORM, timeout = 10000)
         Thread evenMoreCpuIntensive() {
             return Thread.currentThread();
         }
 
-        @RunOnThead(ThreadType.VIRTUAL)
+        @ExecuteOn(ThreadType.VIRTUAL)
         Thread onVirtualThread() {
             return Thread.currentThread();
         }
 
-        @RunOnThead(value = ThreadType.EXECUTOR, executorName = "my-executor")
+        @ExecuteOn(value = ThreadType.EXECUTOR, executorName = "my-executor")
         Thread onMyExecutor() {
             return Thread.currentThread();
         }
 
-        @RunOnThead
+        @ExecuteOn(ThreadType.VIRTUAL)
         Optional<String> verifyContextVirtual() {
             return Contexts.context().flatMap(context -> context.get("hello", String.class));
         }
 
-        @RunOnThead(ThreadType.PLATFORM)
+        @ExecuteOn(ThreadType.PLATFORM)
         Optional<String> verifyContextPlatform() {
             return Contexts.context().flatMap(context -> context.get("hello", String.class));
         }
@@ -102,13 +97,6 @@ class RunOnThreadTest {
     @Test
     void cpuIntensiveTest() {
         Thread thread = bean.cpuIntensive();
-        assertThat(thread.isVirtual(), is(false));
-        assertThat(thread.getName().startsWith("my-platform-thread"), is(true));
-    }
-
-    @Test
-    void cpuIntensiveWithTypeTest() {
-        Thread thread = bean.cpuIntensiveWithType();
         assertThat(thread.isVirtual(), is(false));
         assertThat(thread.getName().startsWith("my-platform-thread"), is(true));
     }

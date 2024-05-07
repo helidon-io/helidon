@@ -14,12 +14,11 @@
 # limitations under the License.
 #
 
-mp:
-  run-on-thread:
-    platform:
-      thread-name-prefix: "my-platform-thread"
-      core-pool-size: 1
-      max-pool-size: 2
-      queue-capacity: 10
-    virtual:
-      thread-name-prefix: "my-virtual-thread"
+execute-on:
+  platform:
+    thread-name-prefix: "my-platform-thread"
+    core-pool-size: 1
+    max-pool-size: 2
+    queue-capacity: 10
+  virtual:
+    thread-name-prefix: "my-virtual-thread"

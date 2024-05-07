@@ -37,9 +37,9 @@ import jakarta.enterprise.inject.spi.ProcessManagedBean;
 import jakarta.enterprise.inject.spi.ProcessSyntheticBean;
 
 /**
- * CDI extension to support the {@link RunOnThead} annotation.
+ * CDI extension to support the {@link ExecuteOn} annotation.
  */
-public class RunOnThreadExtension implements Extension {
+public class ExecuteOnExtension implements Extension {
 
     private final LazyValue<Map<Method, AnnotatedMethod<?>>> methodMap = LazyValue.create(ConcurrentHashMap::new);
 
@@ -53,7 +53,7 @@ public class RunOnThreadExtension implements Extension {
 
     private void registerMethods(AnnotatedType<?> type) {
         for (AnnotatedMethod<?> annotatedMethod : type.getMethods()) {
-            if (annotatedMethod.isAnnotationPresent(RunOnThead.class)) {
+            if (annotatedMethod.isAnnotationPresent(ExecuteOn.class)) {
                 methodMap.get().put(annotatedMethod.getJavaMember(), annotatedMethod);
             }
         }
@@ -64,30 +64,30 @@ public class RunOnThreadExtension implements Extension {
     }
 
     private static void validateExecutor(BeanManager bm, AnnotatedMethod<?> method) {
-        RunOnThead runOnThread = method.getAnnotation(RunOnThead.class);
-        if (runOnThread.value() == RunOnThead.ThreadType.EXECUTOR) {
-            String executorName = runOnThread.executorName();
+        ExecuteOn executeOn = method.getAnnotation(ExecuteOn.class);
+        if (executeOn.value() == ExecuteOn.ThreadType.EXECUTOR) {
+            String executorName = executeOn.executorName();
             Set<Bean<?>> beans = bm.getBeans(ExecutorService.class, NamedLiteral.of(executorName));
             if (beans.isEmpty()) {
                 throw new IllegalArgumentException("Unable to resolve named executor service '"
-                        + runOnThread.value() + "' at "
+                        + executeOn.value() + "' at "
                         + method.getJavaMember().getDeclaringClass().getName() + "::"
                         + method.getJavaMember().getName());
             }
         }
     }
 
-    RunOnThead getAnnotation(Method method) {
+    ExecuteOn getAnnotation(Method method) {
         AnnotatedMethod<?> annotatedMethod = methodMap.get().get(method);
         if (annotatedMethod != null) {
-            return annotatedMethod.getAnnotation(RunOnThead.class);
+            return annotatedMethod.getAnnotation(ExecuteOn.class);
         }
         throw new IllegalArgumentException("Unable to map method " + method);
     }
 
     void registerInterceptors(@Observes BeforeBeanDiscovery discovery, BeanManager bm) {
-        discovery.addAnnotatedType(bm.createAnnotatedType(RunOnThreadInterceptor.class),
-                RunOnThreadInterceptor.class.getName());
+        discovery.addAnnotatedType(bm.createAnnotatedType(ExecuteOnInterceptor.class),
+                ExecuteOnInterceptor.class.getName());
     }
 
     void clearMethodMap() {
