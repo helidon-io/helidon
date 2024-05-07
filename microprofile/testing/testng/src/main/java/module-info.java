@@ -29,7 +29,6 @@ module io.helidon.microprofile.testing.testng {
     requires jakarta.ws.rs;
     requires microprofile.config.api;
     requires org.testng;
-    requires org.mockito;
 
     requires static io.helidon.microprofile.server;
     requires static jersey.cdi1x;

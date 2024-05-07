@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.testing.junit5;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import io.helidon.microprofile.testing.mockbeans.MockBeansCdiExtension;
 
 /**
- * A field annotated with @MockBean will be mocked by Mockito
- * and injected in every place it is referenced.
+ * Mock Beans extension module to run CDI tests.
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.FIELD, ElementType.PARAMETER})
-public @interface MockBean {
+module io.helidon.microprofile.testing.mockbeans {
 
+    requires jakarta.inject;
+    requires org.mockito;
+
+    requires transitive jakarta.cdi;
+
+    exports io.helidon.microprofile.testing.mockbeans;
+
+    provides jakarta.enterprise.inject.spi.Extension with MockBeansCdiExtension;
 }

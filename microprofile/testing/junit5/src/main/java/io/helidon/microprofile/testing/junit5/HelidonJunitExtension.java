@@ -31,7 +31,6 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -49,16 +48,11 @@ import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
 import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
-import jakarta.enterprise.inject.spi.AnnotatedParameter;
-import jakarta.enterprise.inject.spi.Bean;
-import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.enterprise.inject.spi.Extension;
 import jakarta.enterprise.inject.spi.InjectionPoint;
-import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
 import jakarta.enterprise.inject.spi.ProcessInjectionPoint;
-import jakarta.enterprise.inject.spi.WithAnnotations;
 import jakarta.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
 import jakarta.enterprise.util.AnnotationLiteral;
 import jakarta.inject.Inject;
@@ -83,8 +77,6 @@ import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
-import org.mockito.MockSettings;
-import org.mockito.Mockito;
 
 
 /**
@@ -302,11 +294,6 @@ class HelidonJunitExtension implements BeforeAllCallback,
                                                    + " injection into fields or constructor is not supported, as each"
                                                    + " test method uses a different CDI container. Field " + field
                                                    + " is annotated with @Inject");
-            } else if (field.getAnnotation(MockBean.class) != null) {
-                throw new RuntimeException("When a class is annotated with @HelidonTest(resetPerTest=true),"
-                        + " injection into fields or constructor is not supported, as each"
-                        + " test method uses a different CDI container. Field " + field
-                        + " is annotated with @MockBean");
             }
         }
 
@@ -317,11 +304,6 @@ class HelidonJunitExtension implements BeforeAllCallback,
                                                    + " injection into fields or constructor is not supported, as each"
                                                    + " test method uses a different CDI container. Field " + field
                                                    + " is annotated with @Inject");
-            } else if (field.getAnnotation(MockBean.class) != null) {
-                throw new RuntimeException("When a class is annotated with @HelidonTest(resetPerTest=true),"
-                        + " injection into fields or constructor is not supported, as each"
-                        + " test method uses a different CDI container. Field " + field
-                        + " is annotated with @MockBean");
             }
         }
     }
@@ -548,12 +530,12 @@ class HelidonJunitExtension implements BeforeAllCallback,
         private final List<AddBean> addBeans;
 
         private final HashMap<String, Annotation> socketAnnotations = new HashMap<>();
-        private final Set<Class<?>> mocks = new HashSet<>();
 
         private AddBeansExtension(Class<?> testClass, List<AddBean> addBeans) {
             this.testClass = testClass;
             this.addBeans = addBeans;
         }
+
 
         void processSocketInjectionPoints(@Observes ProcessInjectionPoint<?, WebTarget> event) throws Exception{
              InjectionPoint injectionPoint = event.getInjectionPoint();
@@ -565,36 +547,10 @@ class HelidonJunitExtension implements BeforeAllCallback,
                         break;
                     }
                 }
+
         }
 
-        void processMockBean(@Observes @WithAnnotations(MockBean.class) ProcessAnnotatedType<?> obj) throws Exception {
-            var configurator = obj.configureAnnotatedType();
-            configurator.fields().forEach(field -> {
-                MockBean mockBean = field.getAnnotated().getAnnotation(MockBean.class);
-                if (mockBean != null) {
-                    Field f = field.getAnnotated().getJavaMember();
-                    // Adds @Inject to be more user friendly
-                    field.add(Literal.INSTANCE);
-                    Class<?> fieldType = f.getType();
-                    mocks.add(fieldType);
-                }
-            });
-            configurator.constructors().forEach(constructor -> {
-                processMockBeanParameters(constructor.getAnnotated().getParameters());
-            });
-        }
-
-        private void processMockBeanParameters(List<? extends AnnotatedParameter<?>> parameters) {
-            parameters.stream().forEach(parameter -> {
-                MockBean mockBean = parameter.getAnnotation(MockBean.class);
-                if (mockBean != null) {
-                    Class<?> parameterType = parameter.getJavaParameter().getType();
-                    mocks.add(parameterType);
-                }
-            });
-        }
-
-        void registerOtherBeans(@Observes AfterBeanDiscovery event, BeanManager beanManager) {
+        void registerOtherBeans(@Observes AfterBeanDiscovery event) {
 
             Client client = ClientBuilder.newClient();
 
@@ -613,25 +569,6 @@ class HelidonJunitExtension implements BeforeAllCallback,
                     .scope(ApplicationScoped.class)
                     .createWith(context -> getWebTarget(client, "@default"));
 
-            // Register all mocks
-            mocks.forEach(type -> {
-                event.addBean()
-                    .addType(type)
-                    .scope(ApplicationScoped.class)
-                    .alternative(true)
-                    .createWith(inst -> {
-                        Set<Bean<?>> beans = beanManager.getBeans(MockSettings.class);
-                        if (!beans.isEmpty()) {
-                            Bean<?> bean = beans.iterator().next();
-                            MockSettings mockSettings = (MockSettings) beanManager.getReference(bean, MockSettings.class,
-                                    beanManager.createCreationalContext(null));
-                            return Mockito.mock(type, mockSettings);
-                        } else {
-                            return Mockito.mock(type);
-                        }
-                    })
-                    .priority(0);
-            });
         }
 
         @SuppressWarnings("unchecked")
@@ -830,15 +767,4 @@ class HelidonJunitExtension implements BeforeAllCallback,
         }
     }
 
-    /**
-     * Supports inline instantiation of the {@link Inject} annotation.
-     */
-    private static final class Literal extends AnnotationLiteral<Inject> implements Inject {
-
-        private static final Literal INSTANCE = new Literal();
-
-        @Serial
-        private static final long serialVersionUID = 1L;
-
-    }
 }

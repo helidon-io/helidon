@@ -35,5 +35,6 @@
     <modules>
         <module>junit5</module>
         <module>testng</module>
+        <module>mock-beans</module>
     </modules>
 </project>
