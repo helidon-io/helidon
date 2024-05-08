@@ -34,24 +34,26 @@ import javax.crypto.spec.OAEPParameterSpec;
 import javax.crypto.spec.PSource;
 import javax.crypto.spec.SecretKeySpec;
 
-import io.helidon.integrations.oci.sdk.runtime.OciExtension;
 import io.helidon.integrations.oci.tls.certificates.spi.OciPrivateKeyDownloader;
+import io.helidon.service.registry.Service;
 
+import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
 import com.oracle.bmc.keymanagement.KmsCryptoClient;
 import com.oracle.bmc.keymanagement.model.ExportKeyDetails;
 import com.oracle.bmc.keymanagement.requests.ExportKeyRequest;
 import com.oracle.bmc.keymanagement.responses.ExportKeyResponse;
-import jakarta.inject.Singleton;
 
 /**
  * Implementation of the {@link OciPrivateKeyDownloader} that will use OCI's KMS to export a key.
  */
-@Singleton
+@Service.Provider
 class DefaultOciPrivateKeyDownloader implements OciPrivateKeyDownloader {
     private final PrivateKey wrappingPrivateKey;
     private final String wrappingPublicKeyPem;
+    private final AbstractAuthenticationDetailsProvider authProvider;
 
-    DefaultOciPrivateKeyDownloader() {
+    DefaultOciPrivateKeyDownloader(AbstractAuthenticationDetailsProvider authProvider) {
+        this.authProvider = authProvider;
         try {
             KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
             generator.initialize(2048);
@@ -72,7 +74,7 @@ class DefaultOciPrivateKeyDownloader implements OciPrivateKeyDownloader {
         Objects.requireNonNull(vaultCryptoEndpoint);
         try (KmsCryptoClient client = KmsCryptoClient.builder()
                 .endpoint(vaultCryptoEndpoint.toString())
-                .build(OciExtension.ociAuthenticationProvider().get())) {
+                .build(authProvider)) {
             ExportKeyResponse exportKeyResponse =
                     client.exportKey(ExportKeyRequest.builder()
                                              .exportKeyDetails(ExportKeyDetails.builder()

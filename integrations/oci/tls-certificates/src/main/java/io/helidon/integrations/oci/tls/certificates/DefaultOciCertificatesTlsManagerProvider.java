@@ -23,7 +23,6 @@ import io.helidon.common.tls.spi.TlsManagerProvider;
 /**
  * The service provider for {@link OciCertificatesTlsManager}.
  */
-//@Singleton - this is config driven, not pico driven - need to rectify this
 public class DefaultOciCertificatesTlsManagerProvider implements TlsManagerProvider {
 
     /**

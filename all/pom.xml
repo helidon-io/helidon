@@ -642,6 +642,10 @@
             <artifactId>helidon-integrations-micrometer-cdi</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.integrations.oci</groupId>
+            <artifactId>helidon-integrations-oci</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.integrations.oci.sdk</groupId>
             <artifactId>helidon-integrations-oci-sdk-cdi</artifactId>
         </dependency>

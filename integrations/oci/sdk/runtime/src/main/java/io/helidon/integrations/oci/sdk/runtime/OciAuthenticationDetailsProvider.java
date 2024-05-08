@@ -205,7 +205,7 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
          */
         CONFIG_FILE(VAL_CONFIG_FILE,
                     ConfigFileAuthenticationDetailsProvider.class,
-                    (configBean) -> configBean.fileConfigIsPresent()
+                   (configBean) -> configBean.fileConfigIsPresent()
                             && (configBean.configPath().isEmpty() || canReadPath(configBean.configPath().orElse(null))),
                     (configBean) -> {
                         // https://github.com/oracle/oci-java-sdk/blob/master/bmc-common/src/main/java/com/oracle/bmc/auth/ConfigFileAuthenticationDetailsProvider.java
