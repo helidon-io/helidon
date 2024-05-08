@@ -113,35 +113,6 @@
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>io.helidon.inject</groupId>
-                <artifactId>helidon-inject-maven-plugin</artifactId>
-                <version>${helidon.version}</version>
-                <executions>
-                    <execution>
-                        <id>compile</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>application-create</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>testCompile</id>
-                        <phase>test-compile</phase>
-                        <goals>
-                            <goal>test-application-create</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <!-- this would only be needed if we/someone turns on PermittedProviderTypes -->
-<!--                <configuration>-->
-<!--                    <permittedProviderTypes>NAMED</permittedProviderTypes>-->
-<!--                    <permittedProviderTypeNames>-->
-<!--                        <permittedProviderTypeName>io.helidon.integrations.oci.sdk.runtime.*</permittedProviderTypeName>-->
-<!--                        <permittedProviderTypeName>generated.com.oracle.bmc.*</permittedProviderTypeName>-->
-<!--                    </permittedProviderTypeNames>-->
-<!--                </configuration>-->
-            </plugin>
         </plugins>
     </build>
 

@@ -22,8 +22,10 @@ import io.helidon.inject.api.Contract;
  * Provides a convenient contract for checking whether the current runtime environment is running on/inside an OCI compute node.
  *
  * @see OciExtension
+ * @deprecated replaced with {@code helidon-integrations-oci} module
  */
 @Contract
+@Deprecated(forRemoval = true, since = "4.1.0")
 public interface OciAvailability {
 
     /**

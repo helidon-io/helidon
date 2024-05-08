@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,23 +27,28 @@ import java.util.List;
 import java.util.Objects;
 
 import io.helidon.common.pki.PemReader;
-import io.helidon.integrations.oci.sdk.runtime.OciExtension;
 import io.helidon.integrations.oci.tls.certificates.spi.OciCertificatesDownloader;
+import io.helidon.service.registry.Service;
 
+import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
 import com.oracle.bmc.certificates.CertificatesClient;
 import com.oracle.bmc.certificates.requests.GetCertificateAuthorityBundleRequest;
 import com.oracle.bmc.certificates.requests.GetCertificateBundleRequest;
 import com.oracle.bmc.certificates.responses.GetCertificateAuthorityBundleResponse;
 import com.oracle.bmc.certificates.responses.GetCertificateBundleResponse;
-import jakarta.inject.Singleton;
 
 import static io.helidon.integrations.oci.tls.certificates.spi.OciCertificatesDownloader.create;
 
 /**
  * Implementation of the {@link OciCertificatesDownloader} that will use OCI's Certificates Service to download certs.
  */
-@Singleton
+@Service.Provider
 class DefaultOciCertificatesDownloader implements OciCertificatesDownloader {
+    private final AbstractAuthenticationDetailsProvider authProvider;
+
+    DefaultOciCertificatesDownloader(AbstractAuthenticationDetailsProvider authProvider) {
+        this.authProvider = authProvider;
+    }
 
     @Override
     public Certificates loadCertificates(String certOcid) {
@@ -65,9 +70,9 @@ class DefaultOciCertificatesDownloader implements OciCertificatesDownloader {
         }
     }
 
-    static Certificates loadCerts(String certOcid) {
+    Certificates loadCerts(String certOcid) {
         try (CertificatesClient client = CertificatesClient.builder()
-                .build(OciExtension.ociAuthenticationProvider().get())) {
+                .build(authProvider)) {
             GetCertificateBundleResponse res =
                     client.getCertificateBundle(GetCertificateBundleRequest.builder()
                                                         .certificateId(certOcid)
@@ -82,10 +87,10 @@ class DefaultOciCertificatesDownloader implements OciCertificatesDownloader {
         }
     }
 
-    static X509Certificate loadCACert(String caCertOcid) {
+    X509Certificate loadCACert(String caCertOcid) {
         GetCertificateAuthorityBundleResponse res;
         try (CertificatesClient client = CertificatesClient.builder()
-                .build(OciExtension.ociAuthenticationProvider().get())) {
+                .build(authProvider)) {
             res = client.getCertificateAuthorityBundle(GetCertificateAuthorityBundleRequest.builder()
                                                                .certificateAuthorityId(caCertOcid)
                                                                .build());
@@ -109,7 +114,7 @@ class DefaultOciCertificatesDownloader implements OciCertificatesDownloader {
         if (certs.size() != 1) {
             throw new IllegalStateException("Expected a single certificate in stream but found: " + certs.size());
         }
-        return certs.get(0);
+        return certs.getFirst();
     }
 
     // use the eTag, defaulting to the hash of the certs if not present

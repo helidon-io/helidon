@@ -16,7 +16,10 @@
 
 /**
  * Helidon Injection Integrations to support OCI Runtime module.
+ *
+ * @deprecated replaced with {@code helidon-integrations-oci} module
  */
+@Deprecated(forRemoval = true, since = "4.1.0")
 module io.helidon.integrations.oci.sdk.runtime {
 
     requires io.helidon.builder.api;

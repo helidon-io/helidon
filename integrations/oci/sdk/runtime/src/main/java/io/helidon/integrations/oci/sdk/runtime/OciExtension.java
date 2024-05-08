@@ -118,7 +118,10 @@ import static java.util.function.Predicate.not;
  * @see <a
  * href="https://docs.oracle.com/en-us/iaas/tools/java/latest/index.html"
  * target="_top">Oracle Cloud Infrastructure Java SDK</a>
+ *
+ * @deprecated replaced with {@code helidon-integrations-oci} module
  */
+@Deprecated(forRemoval = true, since = "4.1.0")
 public final class OciExtension {
     /**
      * The name for the OCI bootstrap configuration file (value = {@value}).
