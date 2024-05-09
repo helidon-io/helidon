@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-FROM container-registry.oracle.com/java/openjdk:17 as build
+FROM container-registry.oracle.com/java/jdk-no-fee-term:17 as build
 
 WORKDIR /usr/share
 
@@ -41,7 +41,7 @@ RUN wget -q -O helidon_repo.zip https://github.com/${HELIDON_REPOSITORY}/archive
 RUN mvn install -pl :helidon-lra-coordinator-server -am -DskipTests && \
     echo "Helidon LRA Coordinator build successfully finished"
 
-FROM container-registry.oracle.com/java/openjdk:17
+FROM container-registry.oracle.com/java/jdk-no-fee-term:17
 WORKDIR /helidon
 
 COPY --from=build /helidon/lra/coordinator/server/target/helidon-lra-coordinator-server.jar ./
