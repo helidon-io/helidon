@@ -37,6 +37,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.helidon.config.ConfigSources;
 import io.helidon.config.mp.spi.MpConfigFilter;
 
 import org.eclipse.microprofile.config.Config;
@@ -91,6 +92,8 @@ class MpConfigImpl implements Config {
         this.converters.putIfAbsent(String.class, value -> value);
         this.configProfile = profile;
 
+        dumpConfigSources(this.sources);
+
         this.valueResolving = getOptionalValue("mp.config.property.expressions.enabled", Boolean.class)
                 .or(() -> getOptionalValue("helidon.config.value-resolving.enabled", Boolean.class))
                 .orElse(true);
@@ -105,15 +108,29 @@ class MpConfigImpl implements Config {
         });
     }
 
+    private void dumpConfigSources(List<ConfigSource> sources) {
+        System.out.println("CCCC ConfigSources");
+        for (ConfigSource source : sources) {
+            System.out.println("     " + source.getOrdinal() + " " + source.getName());
+        }
+    }
+
     @Override
     public ConfigValue getConfigValue(String key) {
-        if (configProfile == null) {
-            return findConfigValue(key)
-                    .orElseGet(() -> new ConfigValueImpl(key, null, null, null, 0));
-        }
-        return findConfigValue("%" + configProfile + "." + key)
-                .or(() -> findConfigValue(key))
+
+        ConfigValue value = findConfigValue(key)
                 .orElseGet(() -> new ConfigValueImpl(key, null, null, null, 0));
+
+        if (configProfile == null) {
+            return value;
+        }
+
+        ConfigValue profileValue = findConfigValue("%" + configProfile + "." + key)
+                .orElseGet(() -> new ConfigValueImpl(key, null, null, null, 0));
+
+        System.out.println("CCCCC " + "key=" + key + " value=" + value);
+        System.out.println("CCCCC " + "key=" + key + " profileValue=" + profileValue);
+        return value.getSourceOrdinal() > profileValue.getSourceOrdinal() ? value : profileValue;
     }
 
     @Override
@@ -126,12 +143,7 @@ class MpConfigImpl implements Config {
     @SuppressWarnings("unchecked")
     @Override
     public <T> Optional<T> getOptionalValue(String propertyName, Class<T> propertyType) {
-        if (configProfile == null) {
-            return optionalValue(propertyName, propertyType);
-        }
-
-        return optionalValue("%" + configProfile + "." + propertyName, propertyType)
-                .or(() -> optionalValue(propertyName, propertyType));
+        return optionalValue(propertyName, propertyType);
     }
 
     @SuppressWarnings("unchecked")
@@ -187,9 +199,9 @@ class MpConfigImpl implements Config {
                 return Optional.empty();
             }
         } else {
-            return findConfigValue(propertyName)
-                    .map(ConfigValue::getValue)
-                    .map(it -> convert(propertyName, propertyType, it));
+            Optional<ConfigValue> value = Optional.of(getConfigValue(propertyName));
+            return value.map(ConfigValue::getValue)
+                 .map(it -> convert(propertyName, propertyType, it));
         }
     }
 
@@ -314,6 +326,7 @@ class MpConfigImpl implements Config {
     }
 
     private Optional<ConfigValue> findConfigValue(String propertyName) {
+
         for (ConfigSource source : sources) {
             String value = source.getValue(propertyName);
 
