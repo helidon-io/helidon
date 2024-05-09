@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,75 +16,26 @@
 
 package io.helidon.tracing.providers.jaeger;
 
-import io.helidon.common.context.Contexts;
-import io.helidon.common.context.spi.DataPropagationProvider;
-import io.helidon.tracing.Scope;
-import io.helidon.tracing.Span;
-import io.helidon.tracing.Tracer;
-import io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracerProvider;
+import io.helidon.tracing.providers.opentelemetry.OpenTelemetryDataPropagationProvider;
 
 /**
  * A data propagation provider for Jaeger. Makes sure span are properly propagated
  * across threads managed by {@link io.helidon.common.context.ContextAwareExecutorService}.
+ * <p>
+ *     Because the Jaeger client uses OpenTelemetry, our data propagation for Jaeger is identical
+ *     to that for OTel.
+ * </p>
  */
-public class JaegerDataPropagationProvider implements DataPropagationProvider<JaegerDataPropagationProvider.JaegerContext> {
-    private static final System.Logger LOGGER = System.getLogger(JaegerDataPropagationProvider.class.getName());
+public class JaegerDataPropagationProvider extends OpenTelemetryDataPropagationProvider {
 
-    /**
-     * Jaeger Context.
-     */
-    public static class JaegerContext {
-        private final Span span;
-        private final Tracer tracer;
-        private Scope scope;
-
-        JaegerContext(Tracer tracer, Span span) {
-            this.tracer = tracer;
-            this.span = span;
-        }
-
-        Scope scope() {
-            return scope;
-        }
-    }
-
-    /**
-     * Closes scope in primary thread and returns a context to activate
-     * new scope in secondary thread.
-     *
-     * @return active span.
-     */
     @Override
     public JaegerContext data() {
-        return Contexts.context().map(context -> context.get(Span.class).map(span -> {
-            Tracer tracer = context.get(Tracer.class).orElseGet(OpenTelemetryTracerProvider::globalTracer);
-            return new JaegerContext(tracer, span);
-        }).orElse(null)).orElse(null);
+        return new JaegerContext(super.data());
     }
 
-    /**
-     * Activates scope in secondary thread.
-     *
-     * @param context the context.
-     */
-    @Override
-    public void propagateData(JaegerContext context) {
-        if (context != null) {
-            context.scope = Span.current().map(Span::activate).orElse(null);
-        }
-    }
-
-    /**
-     * Closes scope in secondary thread.
-     */
-    @Override
-    public void clearData(JaegerContext context) {
-        if (context != null && context.scope != null) {
-            try {
-                context.scope.close();
-            } catch (Exception e) {
-                LOGGER.log(System.Logger.Level.TRACE, "Cannot close tracing span", e);
-            }
+    public static class JaegerContext extends OpenTelemetryDataPropagationProvider.OpenTelemetryContext {
+        JaegerContext(OpenTelemetryContext delegate) {
+            super(delegate.tracer(), delegate.span());
         }
     }
 }
