@@ -33,6 +33,9 @@ public class JaegerDataPropagationProvider extends OpenTelemetryDataPropagationP
         return new JaegerContext(super.data());
     }
 
+    /**
+     * Jaeger context.
+     */
     public static class JaegerContext extends OpenTelemetryDataPropagationProvider.OpenTelemetryContext {
         JaegerContext(OpenTelemetryContext delegate) {
             super(delegate.tracer(), delegate.span());
