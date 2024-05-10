@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,9 @@ import java.util.Set;
 import jakarta.annotation.Priority;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
-@Priority(400)
+@Priority(MpSystemPropertiesSource.MY_DEFAULT_ORDINAL)
 class MpSystemPropertiesSource implements ConfigSource {
+    static final int MY_DEFAULT_ORDINAL = 400;
     private final Properties props;
 
     MpSystemPropertiesSource() {
@@ -55,6 +56,16 @@ class MpSystemPropertiesSource implements ConfigSource {
     @Override
     public String getName() {
         return "System Properties";
+    }
+
+    @Override
+    public int getOrdinal() {
+        String configOrdinal = getValue(CONFIG_ORDINAL);
+        if (configOrdinal == null) {
+            return MY_DEFAULT_ORDINAL;
+        } else {
+            return ConfigSource.super.getOrdinal();
+        }
     }
 
     @Override
