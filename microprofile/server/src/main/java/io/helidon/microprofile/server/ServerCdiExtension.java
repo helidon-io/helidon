@@ -24,15 +24,12 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
@@ -128,7 +125,6 @@ public class ServerCdiExtension implements Extension, Resource {
 
     private Context context;
 
-    private final Set<Routing.Builder> routingsWithKPIMetrics = new HashSet<>();
     private long cracRestoreTime = -1;
     private final CompletableFuture<org.crac.Context<? extends Resource>> restored = new CompletableFuture<>();
 
@@ -476,11 +472,11 @@ public class ServerCdiExtension implements Extension, Resource {
         try {
             Core.checkpointRestore();
         } catch (UnsupportedOperationException e) {
-            LOGGER.log(java.util.logging.Level.FINEST, "CRaC feature is not available", e);
+            LOGGER.log(Level.DEBUG, "CRaC feature is not available", e);
         } catch (RestoreException e) {
-            LOGGER.log(java.util.logging.Level.SEVERE, "CRaC restore wasn't successful!", e);
+            LOGGER.log(Level.ERROR, "CRaC restore wasn't successful!", e);
         } catch (CheckpointException e) {
-            LOGGER.log(java.util.logging.Level.SEVERE, "CRaC checkpoint creation wasn't successful!", e);
+            LOGGER.log(Level.ERROR, "CRaC checkpoint creation wasn't successful!", e);
         }
 
         try {
@@ -771,6 +767,6 @@ public class ServerCdiExtension implements Extension, Resource {
     @Override
     public void afterRestore(org.crac.Context<? extends Resource> context) throws Exception {
         cracRestoreTime = System.currentTimeMillis();
-        LOGGER.log(java.util.logging.Level.INFO, "CRaC snapshot restored!");
+        LOGGER.log(Level.INFO, "CRaC snapshot restored!");
     }
 }

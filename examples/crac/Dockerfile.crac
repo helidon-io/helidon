@@ -13,31 +13,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-FROM debian:stretch-slim as ubuntu-crac
+FROM container-registry.oracle.com/os/oraclelinux:9-slim as olinux-crac
 
 WORKDIR /usr/share
 
 ARG CHECKPOINT_DIR
 
-ENV CRAC_ARTEFACT=openjdk-17-crac+3_linux-x64
-ENV JAVA_HOME=/usr/share/$CRAC_ARTEFACT
+ENV JDK_NAME=jdk-21.0.3-crac
+ENV JAVA_HOME=/usr/share/$JDK_NAME
 ENV CR_DIR=${CONT_IMG_VER:-/crac-checkpoint/cr}
 
 # Install CRaC
-RUN apt-get -qq update && apt-get install -y wget
-RUN wget https://github.com/CRaC/openjdk-builds/releases/download/17-crac%2B3/$CRAC_ARTEFACT.tar.gz \
-&& tar zxf $CRAC_ARTEFACT.tar.gz \
-&& ln -s $JAVA_HOME/bin/java /bin/
+RUN microdnf -y update && microdnf -y install wget tar gzip
+RUN wget -O crac-jdk.tar.gz "https://download.bell-sw.com/java/21.0.3+11/bellsoft-jdk21.0.3+11-linux-amd64-crac.tar.gz"
+RUN tar zxf ./crac-jdk.tar.gz -C /usr/share && ln -s $JAVA_HOME/bin/java /bin/
 
-FROM ubuntu-crac
+FROM olinux-crac
 WORKDIR /helidon
 
 ADD target/*.jar .
 ADD target/libs libs
 ADD runtimeCRaC.sh .
-RUN chmod +x ./runtimeCRaC.sh
+RUN chmod +x ./runtimeCRaC.sh && ls -la /helidon
 
-ENTRYPOINT ["./runtimeCRaC.sh"]
+CMD ["sh","./runtimeCRaC.sh"]
 
 EXPOSE 7001
 

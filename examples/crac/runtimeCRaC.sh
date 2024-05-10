@@ -32,6 +32,7 @@ then
 
     echo "=== Pre-starting Helidon MP app ==="
 	  set +e
+	  mkdir -p "/crac-checkpoint/cr"
     $JAVA_HOME/bin/java -XX:CRaCCheckpointTo=/crac-checkpoint/cr -jar ./*.jar
     set -e
 
