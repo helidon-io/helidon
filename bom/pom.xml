@@ -1030,7 +1030,7 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.microprofile.testing</groupId>
-                <artifactId>helidon-microprofile-testing-mock-beans</artifactId>
+                <artifactId>helidon-microprofile-testing-mocking</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <!-- Logging -->

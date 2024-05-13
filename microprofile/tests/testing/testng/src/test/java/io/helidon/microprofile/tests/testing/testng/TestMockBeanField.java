@@ -25,7 +25,7 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.client.WebTarget;
 
-import io.helidon.microprofile.testing.mockbeans.MockBean;
+import io.helidon.microprofile.testing.mocking.MockBean;
 import io.helidon.microprofile.testing.testng.AddBean;
 import io.helidon.microprofile.testing.testng.HelidonTest;
 

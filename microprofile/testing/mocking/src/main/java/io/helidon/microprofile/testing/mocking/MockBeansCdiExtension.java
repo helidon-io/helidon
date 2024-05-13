@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.testing.mockbeans;
+package io.helidon.microprofile.testing.mocking;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
@@ -35,7 +35,7 @@ import org.mockito.MockSettings;
 import org.mockito.Mockito;
 
 /**
- * CDI extension for Mock Beans implementation.
+ * CDI extension for Mocking implementation.
  */
 public class MockBeansCdiExtension implements Extension {
 

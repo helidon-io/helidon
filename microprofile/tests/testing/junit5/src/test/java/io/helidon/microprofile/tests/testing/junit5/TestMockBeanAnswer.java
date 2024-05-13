@@ -27,7 +27,7 @@ import jakarta.ws.rs.client.WebTarget;
 
 import io.helidon.microprofile.testing.junit5.AddBean;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
-import io.helidon.microprofile.testing.mockbeans.MockBean;
+import io.helidon.microprofile.testing.mocking.MockBean;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.Answers;

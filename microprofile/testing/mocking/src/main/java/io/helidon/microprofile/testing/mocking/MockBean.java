@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.testing.mockbeans;
+package io.helidon.microprofile.testing.mocking;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

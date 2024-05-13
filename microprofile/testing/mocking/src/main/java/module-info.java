@@ -15,6 +15,17 @@
  */
 
 /**
- * Helidon implementation of mock beans.
+ * Mock Beans extension module to run CDI tests.
  */
-package io.helidon.microprofile.testing.mockbeans;
+module io.helidon.microprofile.testing.mocking {
+
+    requires jakarta.inject;
+    requires org.mockito;
+
+    requires transitive jakarta.cdi;
+
+    exports io.helidon.microprofile.testing.mocking;
+
+    provides jakarta.enterprise.inject.spi.Extension
+        with io.helidon.microprofile.testing.mocking.MockBeansCdiExtension;
+}
