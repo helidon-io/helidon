@@ -110,6 +110,18 @@ public class MpConfigSourcesTest {
     }
 
     @Test
+    void testSystemPropertiesConfigSourceDefaultOrdinal() {
+        org.eclipse.microprofile.config.spi.ConfigSource configSource = MpConfigSources.systemProperties();
+        assertThat(configSource.getOrdinal(), is(400));
+    }
+
+    @Test
+    void testEnvironmentVariablesConfigSourceDefaultOrdinal() {
+        org.eclipse.microprofile.config.spi.ConfigSource configSource = MpConfigSources.environmentVariables();
+        assertThat(configSource.getOrdinal(), is(300));
+    }
+
+    @Test
     void testPropertiesMetaConfigProvider() {
         typeChecks("properties", """
                 another1.key=another1.value
