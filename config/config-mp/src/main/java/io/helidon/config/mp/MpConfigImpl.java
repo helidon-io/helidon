@@ -92,8 +92,6 @@ class MpConfigImpl implements Config {
         this.converters.putIfAbsent(String.class, value -> value);
         this.configProfile = profile;
 
-        dumpConfigSources(this.sources);
-
         this.valueResolving = getOptionalValue("mp.config.property.expressions.enabled", Boolean.class)
                 .or(() -> getOptionalValue("helidon.config.value-resolving.enabled", Boolean.class))
                 .orElse(true);
@@ -106,13 +104,6 @@ class MpConfigImpl implements Config {
             // do not do this first, as we would end up in using an uninitialized filter
             this.filters.add(it);
         });
-    }
-
-    private void dumpConfigSources(List<ConfigSource> sources) {
-        System.out.println("CCCC ConfigSources");
-        for (ConfigSource source : sources) {
-            System.out.println("     " + source.getOrdinal() + " " + source.getName());
-        }
     }
 
     @Override
@@ -128,8 +119,6 @@ class MpConfigImpl implements Config {
         ConfigValue profileValue = findConfigValue("%" + configProfile + "." + key)
                 .orElseGet(() -> new ConfigValueImpl(key, null, null, null, 0));
 
-        System.out.println("CCCCC " + "key=" + key + " value=" + value);
-        System.out.println("CCCCC " + "key=" + key + " profileValue=" + profileValue);
         return value.getSourceOrdinal() > profileValue.getSourceOrdinal() ? value : profileValue;
     }
 
