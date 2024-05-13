@@ -76,14 +76,15 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-20.04 ]
+        java_version: [${{ env.JAVA_VERSION }}, latest ]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
+      - name: Set up JDK ${{ matrix.java_version }}
         uses: actions/setup-java@v4.1.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_VERSION }}
+          java-version: ${{ matrix.java_version }}
           cache: maven
       - name: Maven build
         run: etc/scripts/github-build.sh
@@ -92,14 +93,15 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-20.04, macos-14 ]
+        java_version: [${{ env.JAVA_VERSION }}, latest ]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
+      - name: Set up JDK ${{ matrix.java_version }}
         uses: actions/setup-java@v4.1.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_VERSION }}
+          java-version: ${{ matrix.java_version }}
           cache: maven
       - name: Maven build
         run: |
@@ -112,14 +114,15 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-20.04 ]
+        java_version: [${{ env.JAVA_VERSION }}, latest ]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
+      - name: Set up JDK ${{ matrix.java_version }}
         uses: actions/setup-java@v4.1.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_VERSION }}
+          java-version: ${{ matrix.java_version }}
           cache: maven
       - name: Maven build
         run: etc/scripts/mp-tck.sh
