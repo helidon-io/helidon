@@ -930,6 +930,11 @@
                 <version>${version.lib.graalvm}</version>
             </dependency>
             <dependency>
+                <groupId>org.graalvm.nativeimage</groupId>
+                <artifactId>svm</artifactId>
+                <version>${version.lib.graalvm}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.graphql-java</groupId>
                 <artifactId>graphql-java</artifactId>
                 <version>${version.lib.graphql-java}</version>
