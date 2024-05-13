@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,9 @@ import javax.annotation.Priority;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
-@Priority(300)
+@Priority(MpEnvironmentVariablesSource.MY_DEFAULT_ORDINAL)
 class MpEnvironmentVariablesSource implements ConfigSource {
+    static final int MY_DEFAULT_ORDINAL = 300;
     private static final Pattern DISALLOWED_CHARS = Pattern.compile("[^a-zA-Z0-9_]");
     private static final String UNDERSCORE = "_";
 
@@ -69,6 +70,16 @@ class MpEnvironmentVariablesSource implements ConfigSource {
             result = env.get(rule3);
             return new Cached(result);
         }).value;
+    }
+
+    @Override
+    public int getOrdinal() {
+        String configOrdinal = getValue(CONFIG_ORDINAL);
+        if (configOrdinal == null) {
+            return MY_DEFAULT_ORDINAL;
+        } else {
+            return ConfigSource.super.getOrdinal();
+        }
     }
 
     @Override
