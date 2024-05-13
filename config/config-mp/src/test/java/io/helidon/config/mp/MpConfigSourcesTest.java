@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -105,6 +105,18 @@ public class MpConfigSourcesTest {
     void testMpConfigSourcesNullConfig() {
         NullPointerException npe = assertThrows(NullPointerException.class, () -> MpConfigSources.create((Config) null));
         assertThat(npe.getMessage(), is("Config cannot be null"));
+    }
+
+    @Test
+    void testSystemPropertiesConfigSourceDefaultOrdinal() {
+        org.eclipse.microprofile.config.spi.ConfigSource configSource = MpConfigSources.systemProperties();
+        assertThat(configSource.getOrdinal(), is(400));
+    }
+
+    @Test
+    void testEnvironmentVariablesConfigSourceDefaultOrdinal() {
+        org.eclipse.microprofile.config.spi.ConfigSource configSource = MpConfigSources.environmentVariables();
+        assertThat(configSource.getOrdinal(), is(300));
     }
 
     private static final class NodeImpl implements ConfigSource, NodeConfigSource {
