@@ -37,7 +37,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.helidon.config.ConfigSources;
 import io.helidon.config.mp.spi.MpConfigFilter;
 
 import org.eclipse.microprofile.config.Config;
@@ -343,7 +342,7 @@ class MpConfigImpl implements Config {
                         .map(it -> new ConfigValueImpl(propertyName, it, rawValue, source.getName(), source.getOrdinal()));
             } catch (NoSuchElementException e) {
                 // Property expression does not resolve
-                return Optional.empty();
+                return Optional.of(new ConfigValueImpl(propertyName, null, rawValue, source.getName(), source.getOrdinal()));
             }
         }
 
