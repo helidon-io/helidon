@@ -43,7 +43,7 @@ endif::[]
 
 // microprofile specifications
 :version-lib-microprofile-lra-api: 2.0
-:version-lib-microprofile-config: 3.0.3
+:version-lib-microprofile-config: 3.1
 :version-lib-microprofile-fault-tolerance-api: 4.0.2
 :version-lib-microprofile-graphql: 2.0
 :version-lib-microprofile-health: 4.0

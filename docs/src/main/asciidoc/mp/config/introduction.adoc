@@ -243,4 +243,4 @@ Step-by-step guide about using {spec-name} in your Helidon MP application.
 == Reference
 
 * link:{microprofile-config-spec-url}[{spec-name} Specifications]
-* link:{microprofile-fault-tolerance-javadoc-url}[{spec-name} Javadocs]
+* link:{microprofile-config-javadoc-url}[{spec-name} Javadocs]
