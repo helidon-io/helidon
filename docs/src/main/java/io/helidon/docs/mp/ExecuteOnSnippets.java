@@ -15,13 +15,14 @@
  */
 package io.helidon.docs.mp;
 
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.core.MediaType;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import io.helidon.microprofile.cdi.ExecuteOn;
+import jakarta.enterprise.inject.Produces;
+import jakarta.inject.Named;
+
+import static io.helidon.microprofile.cdi.ExecuteOn.ThreadType;
 
 @SuppressWarnings("ALL")
 class ExecuteOnSnippets {
@@ -62,7 +63,7 @@ class ExecuteOnSnippets {
     // tag::snippet_3[]
     public class MyVirtualBean {
 
-        @ExecuteOn(VIRTUAL)
+        @ExecuteOn(ThreadType.VIRTUAL)
         void someTask() {
             // run task on virtual thread
         }
