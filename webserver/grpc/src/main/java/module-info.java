@@ -35,6 +35,7 @@ module io.helidon.webserver.grpc {
     requires io.helidon.builder.api;
     requires io.helidon.webserver.http2;
     requires java.logging;
+    requires com.google.common;
 
     requires static io.helidon.common.features.api;
 
