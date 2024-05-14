@@ -18,6 +18,23 @@
         ]
     },
     {
+        "name": "org.hibernate.boot.beanvalidation.TypeSafeActivator",
+        "methods": [
+            {
+                "name" : "activate",
+                "parameterTypes" : [
+                    "org.hibernate.boot.beanvalidation.ActivationContext"
+                ]
+            },
+            {
+                "name" : "validateSuppliedFactory",
+                "parameterTypes" : [
+                    "java.lang.Object"
+                ]
+            }
+        ]
+    },
+    {
         "name": "org.hibernate.boot.cfgxml.internal.CfgXmlAccessServiceImpl",
         "allPublicMethods": true
     },
@@ -27,6 +44,18 @@
             {
                 "name": "<init>",
                 "parameterTypes": []
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.boot.model.relational.ColumnOrderingStrategy",
+        "allDeclaredMethods": true
+    },
+    {
+        "name": "org.hibernate.boot.model.relational.ColumnOrderingStrategyLegacy",
+        "methods": [
+            {
+                "name" : "<init>"
             }
         ]
     },
