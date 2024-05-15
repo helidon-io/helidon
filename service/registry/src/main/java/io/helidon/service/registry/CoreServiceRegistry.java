@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
 import io.helidon.service.registry.GeneratedService.Descriptor;
 
 /**
@@ -55,12 +56,12 @@ class CoreServiceRegistry implements ServiceRegistry {
         // add me
         ServiceRegistry__ServiceDescriptor registryDescriptor = ServiceRegistry__ServiceDescriptor.INSTANCE;
         processedDescriptorTypes.add(registryDescriptor.descriptorType());
-        addContracts(providers, registryDescriptor.contracts(), new BoundInstance(registryDescriptor, this));
+        addContracts(providers, registryDescriptor.contracts(), new BoundInstance(registryDescriptor, Optional.of(this)));
 
         // add explicit instances
         config.serviceInstances().forEach((descriptor, instance) -> {
             if (processedDescriptorTypes.add(descriptor.descriptorType())) {
-                BoundInstance bi = new BoundInstance(descriptor, instance);
+                BoundInstance bi = new BoundInstance(descriptor, Optional.of(instance));
                 addContracts(providers, descriptor.contracts(), bi);
             }
         });
@@ -95,29 +96,30 @@ class CoreServiceRegistry implements ServiceRegistry {
         this.providersByContract = Map.copyOf(providers);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public <T> T get(TypeName contract) {
-        var provider = firstProvider(contract)
+        return this.<T>first(contract)
                 .orElseThrow(() -> new ServiceRegistryException("Contract " + contract.fqName()
                                                                         + " is not supported, there are no service "
                                                                         + "descriptors in this registry that can satisfy it."));
-        return (T) provider.instance();
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public <T> Optional<T> first(TypeName contract) {
-        return firstProvider(contract)
-                .map(ServiceProvider::instance)
+        return allProviders(contract)
+                .stream()
+                .flatMap(it -> it.instance().stream())
+                .findFirst()
                 .map(it -> (T) it);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public <T> List<T> all(TypeName contract) {
-        return allProviders(contract).stream()
-                .map(ServiceProvider::instance)
+        return allProviders(contract)
+                .stream()
+                .flatMap(it -> it.instance().stream())
                 .map(it -> (T) it)
                 .collect(Collectors.toList());
     }
@@ -155,16 +157,8 @@ class CoreServiceRegistry implements ServiceRegistry {
         return new ArrayList<>(serviceProviders);
     }
 
-    private Optional<ServiceProvider> firstProvider(TypeName contract) {
-        Set<ServiceProvider> serviceProviders = providersByContract.get(contract);
-        if (serviceProviders == null) {
-            return Optional.empty();
-        }
-        ServiceProvider first = serviceProviders.iterator().next();
-        return Optional.of(first);
-    }
-
-    private Object instance(Descriptor<?> descriptor) {
+    @SuppressWarnings("unchecked")
+    private Optional<Object> instance(Descriptor<?> descriptor) {
         List<? extends Dependency> dependencies = descriptor.dependencies();
         Map<Dependency, Object> collectedDependencies = new HashMap<>();
 
@@ -180,7 +174,11 @@ class CoreServiceRegistry implements ServiceRegistry {
             }
         }
 
-        return descriptor.instantiate(DependencyContext.create(collectedDependencies));
+        Object serviceInstance = descriptor.instantiate(DependencyContext.create(collectedDependencies));
+        if (descriptor.contracts().contains(TypeNames.SUPPLIER)) {
+            return Optional.ofNullable(((Supplier<Object>) serviceInstance).get());
+        }
+        return Optional.of(serviceInstance);
     }
 
     private Object dependencyNoSupplier(TypeName dependencyType, TypeName contract) {
@@ -197,14 +195,14 @@ class CoreServiceRegistry implements ServiceRegistry {
     private interface ServiceProvider {
         Descriptor<?> descriptor();
 
-        Object instance();
+        Optional<Object> instance();
 
         double weight();
 
         TypeName descriptorType();
     }
 
-    private record BoundInstance(Descriptor<?> descriptor, Object instance) implements ServiceProvider {
+    private record BoundInstance(Descriptor<?> descriptor, Optional<Object> instance) implements ServiceProvider {
         @Override
         public double weight() {
             return descriptor.weight();
@@ -218,17 +216,17 @@ class CoreServiceRegistry implements ServiceRegistry {
 
     private record BoundDescriptor(CoreServiceRegistry registry,
                                    Descriptor<?> descriptor,
-                                   LazyValue<Object> lazyInstance,
+                                   LazyValue<Optional<Object>> lazyInstance,
                                    ReentrantLock lock) implements ServiceProvider {
 
         private BoundDescriptor(CoreServiceRegistry registry,
                                 Descriptor<?> descriptor,
-                                LazyValue<Object> lazyInstance) {
+                                LazyValue<Optional<Object>> lazyInstance) {
             this(registry, descriptor, lazyInstance, new ReentrantLock());
         }
 
         @Override
-        public Object instance() {
+        public Optional<Object> instance() {
             if (lazyInstance.isLoaded()) {
                 return lazyInstance.get();
             }
@@ -258,12 +256,12 @@ class CoreServiceRegistry implements ServiceRegistry {
 
     private record DiscoveredDescriptor(CoreServiceRegistry registry,
                                         DescriptorMetadata metadata,
-                                        LazyValue<Object> lazyInstance,
+                                        LazyValue<Optional<Object>> lazyInstance,
                                         ReentrantLock lock) implements ServiceProvider {
 
         private DiscoveredDescriptor(CoreServiceRegistry registry,
                                      DescriptorMetadata metadata,
-                                     LazyValue<Object> lazyInstance) {
+                                     LazyValue<Optional<Object>> lazyInstance) {
             this(registry, metadata, lazyInstance, new ReentrantLock());
         }
 
@@ -273,7 +271,7 @@ class CoreServiceRegistry implements ServiceRegistry {
         }
 
         @Override
-        public Object instance() {
+        public Optional<Object> instance() {
             if (lazyInstance.isLoaded()) {
                 return lazyInstance.get();
             }
