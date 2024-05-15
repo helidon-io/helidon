@@ -32,11 +32,6 @@
         Integration with Jaeger tracing
     </description>
 
-    <properties>
-        <!-- The default for the following is 5000 ms. Reducing it speeds up tests significantly. -->
-        <otel.bsp.schedule.delay>100</otel.bsp.schedule.delay>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>io.helidon.common</groupId>
@@ -182,7 +177,7 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <id>trace-level-attribute-test</id>
+                        <id>tracer-builder-tests</id>
                         <goals>
                             <goal>test</goal>
                         </goals>
