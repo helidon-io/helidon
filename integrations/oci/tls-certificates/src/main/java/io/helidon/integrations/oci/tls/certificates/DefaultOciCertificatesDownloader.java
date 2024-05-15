@@ -26,6 +26,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.common.pki.PemReader;
 import io.helidon.integrations.oci.tls.certificates.spi.OciCertificatesDownloader;
 import io.helidon.service.registry.Service;
@@ -43,6 +45,7 @@ import static io.helidon.integrations.oci.tls.certificates.spi.OciCertificatesDo
  * Implementation of the {@link OciCertificatesDownloader} that will use OCI's Certificates Service to download certs.
  */
 @Service.Provider
+@Weight(Weighted.DEFAULT_WEIGHT - 10)
 class DefaultOciCertificatesDownloader implements OciCertificatesDownloader {
     private final AbstractAuthenticationDetailsProvider authProvider;
 
