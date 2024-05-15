@@ -49,8 +49,16 @@ public final class Service {
      *     <li>{@code Contract} - obtain an instance of a service providing that contract</li>
      *     <li>{@code Optional<Contract>} - the other service may not be available</li>
      *     <li>{@code List<Contract>} - obtain all instances of services providing the contract</li>
-     *     <li>{@code Supplier<Contract>} - and suppliers of all above, to break instantiation chaining, and to support cyclic
+     *     <li>{@code Supplier<Contract>} - and <b>suppliers of all above</b>, to break instantiation chaining, and to support cyclic
      *                  service references, just make sure you call the {@code get} method outside of the constructor</li>
+     * </ul>
+     *
+     * A service provider may implement the contract in two ways:
+     * <ul>
+     *     <li>Direct implementation of interface (or extending an abstract class)</li>
+     *     <li>Implementing a {@link java.util.function.Supplier} of the contract; when using supplier, service registry
+     *     supports the capability to return {@code null} to mark this service as "empty" and not providing anything; such
+     *     a service will be ignored and only other implementations would be used</li>
      * </ul>
      */
     @Documented
