@@ -98,7 +98,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         try {
             ServerCall<REQ, RES> serverCall = createServerCall();
             ServerCallHandler<REQ, RES> callHandler = route.callHandler();
-            listener = callHandler.startCall(serverCall, toMetadata(headers));
+            listener = callHandler.startCall(serverCall, GrpcHeadersUtil.toMetadata(headers));
             listener.onReady();
         } catch (Throwable e) {
             LOGGER.log(ERROR, "Failed to initialize grpc protocol handler", e);
@@ -246,9 +246,5 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 return route.method();
             }
         };
-    }
-
-    private Metadata toMetadata(Http2Headers headers) {
-        return null;
     }
 }

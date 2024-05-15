@@ -15,46 +15,46 @@
  */
 package io.helidon.webserver.grpc;
 
+import java.util.Base64;
+
 import io.helidon.http.HeaderNames;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.http2.Http2Headers;
 
-import io.grpc.InternalMetadata;
 import io.grpc.Metadata;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 class GrpcHeadersUtil {
 
-    private static final byte[] BINARY_SUFFIX = Metadata.BINARY_HEADER_SUFFIX.getBytes(US_ASCII);
-
     private GrpcHeadersUtil() {
     }
 
     static void updateHeaders(WritableHeaders<?> writable, Metadata headers) {
-        byte[][] byteHeaders = InternalMetadata.serialize(headers);
-        for (int i = 0; i < byteHeaders.length; i += 2) {
-            byte[] key = byteHeaders[i];
-            byte[] value = byteHeaders[i + 1];
-            if (endsWith(key, BINARY_SUFFIX)) {
-                writable.add(HeaderNames.create(new String(key, US_ASCII)),
-                             InternalMetadata.BASE64_ENCODING_OMIT_PADDING.encode(value));
+        Base64.Encoder encoder = Base64.getEncoder();
+        headers.keys().forEach(name -> {
+            if (name.endsWith(Metadata.BINARY_HEADER_SUFFIX)) {
+                byte[] binary = headers.get(Metadata.Key.of(name, Metadata.BINARY_BYTE_MARSHALLER));
+                writable.add(HeaderNames.create(name, new String(encoder.encode(binary), US_ASCII)));
             } else {
-                writable.add(HeaderNames.create(new String(key, US_ASCII)),
-                             new String(value, US_ASCII));
+                String ascii = headers.get(Metadata.Key.of(name, Metadata.ASCII_STRING_MARSHALLER));
+                writable.add(HeaderNames.create(name, ascii));
             }
-        }
+        });
     }
 
-    private static boolean endsWith(byte[] buffer, byte[] suffix) {
-        int from = buffer.length - suffix.length;
-        if (from >= 0) {
-            for (int i = from; i < buffer.length; i++) {
-                if (buffer[i] != suffix[i - from]) {
-                    return false;
-                }
+    static Metadata toMetadata(Http2Headers headers) {
+        Base64.Decoder decoder = Base64.getDecoder();
+        Metadata metadata = new Metadata();
+        headers.httpHeaders().forEach(header -> {
+            String name = header.name();
+            if (name.endsWith(Metadata.BINARY_HEADER_SUFFIX)) {
+                metadata.put(Metadata.Key.of(name, Metadata.BINARY_BYTE_MARSHALLER),
+                             decoder.decode(name.getBytes(US_ASCII)));
+            } else {
+                metadata.put(Metadata.Key.of(name, Metadata.ASCII_STRING_MARSHALLER), name);
             }
-            return true;
-        }
-        return false;
+        });
+        return metadata;
     }
 }
