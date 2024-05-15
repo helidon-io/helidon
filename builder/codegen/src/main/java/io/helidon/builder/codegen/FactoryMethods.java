@@ -151,12 +151,30 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
 
         // first look at declared type and blueprint
         String methodName = "create" + capitalize(typeHandler.name());
+
+        // check the blueprint itself, and then check the custom methods type
         Optional<TypeName> returnType = findFactoryMethodByParamType(blueprint,
                                                                      COMMON_CONFIG,
                                                                      methodName);
 
+        TypeName typeWithFactoryMethod = blueprint.typeName();
+
+        if (returnType.isEmpty()) {
+            if (blueprint.hasAnnotation(Types.PROTOTYPE_CUSTOM_METHODS)) {
+                Optional<TypeInfo> typeInfo = blueprint.annotation(Types.PROTOTYPE_CUSTOM_METHODS)
+                        .typeValue()
+                        .flatMap(ctx::typeInfo);
+                if (typeInfo.isPresent()) {
+                    TypeInfo customMethods = typeInfo.get();
+                    typeWithFactoryMethod = customMethods.typeName();
+                    returnType = findFactoryMethodByParamType(customMethods,
+                                                               COMMON_CONFIG,
+                                                               methodName);
+                }
+            }
+        }
+
         if (returnType.isPresent()) {
-            TypeName typeWithFactoryMethod = blueprint.typeName();
             return Optional.of(new FactoryMethod(typeWithFactoryMethod,
                                                  returnType.get(),
                                                  methodName,
