@@ -16,28 +16,19 @@
 
 package io.helidon.integrations.oci;
 
-import java.util.Optional;
-import java.util.function.Supplier;
-
-import io.helidon.common.LazyValue;
-import io.helidon.common.Weight;
-import io.helidon.common.Weighted;
-import io.helidon.integrations.oci.spi.OciRegion;
-import io.helidon.service.registry.Service;
+import io.helidon.builder.api.Prototype;
+import io.helidon.common.config.Config;
 
 import com.oracle.bmc.Region;
 
-@Service.Provider
-@Weight(Weighted.DEFAULT_WEIGHT - 10)
-class RegionProviderConfig implements OciRegion {
-    private final LazyValue<Optional<Region>> region;
-
-    RegionProviderConfig(Supplier<OciConfig> config) {
-        this.region = LazyValue.create(() -> config.get().region());
+final class OciConfigSupport {
+    private OciConfigSupport() {
     }
 
-    @Override
-    public Optional<Region> region() {
-        return region.get();
+    @Prototype.FactoryMethod
+    static Region createRegion(Config config) {
+        return config.asString()
+                .map(Region::fromRegionCodeOrId)
+                .get();
     }
 }
