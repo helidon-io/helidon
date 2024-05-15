@@ -42,17 +42,6 @@
     </dependencies>
 
     <build>
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-            </resource>
-            <resource>
-                <directory>src/main/templates</directory>
-                <filtering>true</filtering>
-                <targetPath>${project.build.directory}/generated-sources/templates</targetPath>
-            </resource>
-        </resources>
-
         <plugins>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -66,7 +55,8 @@
                         </goals>
                         <configuration>
                             <sources>
-                                <source>${project.build.directory}/generated-sources/templates</source>
+                                <source>src/main/java</source>
+                                <source>src/main/templates</source>
                             </sources>
                         </configuration>
                     </execution>
