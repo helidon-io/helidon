@@ -17,7 +17,6 @@
 package io.helidon.integrations.oci;
 
 import java.util.Optional;
-import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
@@ -28,12 +27,21 @@ import io.helidon.service.registry.Service;
 import com.oracle.bmc.Region;
 
 @Service.Provider
-@Weight(Weighted.DEFAULT_WEIGHT - 10)
-class RegionProviderConfig implements OciRegion {
+@Weight(Weighted.DEFAULT_WEIGHT - 100)
+class RegionProviderSdk implements OciRegion {
     private final LazyValue<Optional<Region>> region;
 
-    RegionProviderConfig(Supplier<OciConfig> config) {
-        this.region = LazyValue.create(() -> config.get().region());
+    RegionProviderSdk() {
+        this.region = LazyValue.create(() -> Optional.ofNullable(regionFromImds()));
+    }
+
+    /**
+     * There is a 30 second timeout configured, so this has a relatively low weight.
+     * We want a different way to get the region if available.
+     */
+    static Region regionFromImds() {
+        Region.registerFromInstanceMetadataService();
+        return Region.getRegionFromImds();
     }
 
     @Override
