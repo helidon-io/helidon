@@ -442,6 +442,8 @@ public final class Prototype {
     /**
      * Add additional interfaces to implement by the prototype. Provide correct types (fully qualified) for generics.
      */
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.CLASS)
     public @interface Implement {
         /**
          * Interfaces to implement, such as {@code java.lang.Comparable<io.helidon.common.types.TypeName>}.
@@ -451,5 +453,17 @@ public final class Prototype {
         String[] value();
     }
 
+    /**
+     * Generate support for Service Registry ({@code helidon-service-registry}) for any option that is annotated
+     * as {@link io.helidon.builder.api.Option.Provider}.
+     * When enabled (i.e. when this annotation is present), the service registry would be used to discover any service
+     * implementations including implementations discovered by service loader - appropriate {@code service.loader}
+     * metadata file will be generated for the service provider interfaces.
+     */
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.CLASS)
+    public @interface RegistrySupport {
+        boolean value() default true;
+    }
 }
 
