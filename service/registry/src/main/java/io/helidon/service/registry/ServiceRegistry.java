@@ -172,4 +172,22 @@ public interface ServiceRegistry {
      * @return a supplier of list of instances
      */
     <T> Supplier<List<T>> supplyAll(TypeName contract);
+
+    /**
+     * Provide a value for a specific service info instance.
+     * This method uses instance equality for service info, so be careful to use the singleton instance
+     * from the service descriptor, or instances provided by {@link #allServices(Class)}.
+     *
+     * @param serviceInfo service info instance
+     * @return value of the service described by the service info provided (always a single value), in case the
+     * @param <T> type of the expected instance, we just cast to it, so this may cause runtime issues if assigned to invalid
+     *            type
+     */
+    <T> Optional<T> get(ServiceInfo serviceInfo);
+
+    default List<ServiceInfo> allServices(Class<?> contract) {
+        return allServices(TypeName.create(contract));
+    }
+
+    List<ServiceInfo> allServices(TypeName contract);
 }
