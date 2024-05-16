@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,15 @@ class MpEnvironmentVariablesSource implements ConfigSource {
         this.env = Map.copyOf(System.getenv());
     }
 
+    /**
+     * Access internal cache, used for testing.
+     *
+     * @return internal cache
+     */
+    Map<String, Cached> cache() {
+        return cache;
+    }
+
     @Override
     public Set<String> getPropertyNames() {
         return env.keySet();
@@ -50,7 +59,7 @@ class MpEnvironmentVariablesSource implements ConfigSource {
     public String getValue(String propertyName) {
         // environment variable config source is immutable - we can safely cache all requested keys, so we
         // do not execute the regular expression on every get
-        return cache.computeIfAbsent(propertyName, theKey -> {
+        Cached cached = cache.computeIfAbsent(propertyName, theKey -> {
             // According to the spec, we have three ways of looking for a property
             // 1. Exact match
             String result = env.get(propertyName);
@@ -66,8 +75,12 @@ class MpEnvironmentVariablesSource implements ConfigSource {
             // 3. replace same as above, but uppercase
             String rule3 = rule2.toUpperCase();
             result = env.get(rule3);
-            return new Cached(result);
-        }).value;
+            if (result != null) {
+                return new Cached(result);
+            }
+            return null;    // does not cache misses
+        });
+        return cached == null ? null : cached.value;
     }
 
     @Override
