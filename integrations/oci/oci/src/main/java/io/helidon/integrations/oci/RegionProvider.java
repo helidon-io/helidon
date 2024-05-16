@@ -27,7 +27,7 @@ import com.oracle.bmc.Region;
 
 @Service.Provider
 @Service.ExternalContracts(Region.class)
-class RegionProvider implements Supplier<Region> {
+class RegionProvider implements Supplier<Optional<Region>> {
     private final List<OciRegion> regionProviders;
 
     RegionProvider(List<OciRegion> regionProviders) {
@@ -35,13 +35,13 @@ class RegionProvider implements Supplier<Region> {
     }
 
     @Override
-    public Region get() {
+    public Optional<Region> get() {
         for (OciRegion regionProvider : regionProviders) {
             Optional<Region> region = regionProvider.region();
             if (region.isPresent()) {
-                return region.get();
+                return region;
             }
         }
-        return null;
+        return Optional.empty();
     }
 }

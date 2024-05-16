@@ -30,7 +30,7 @@ import com.oracle.bmc.Region;
  * <p>
  * Allows customization of discovery of authentication details provider and of region.
  */
-@Prototype.Configured("oci")
+@Prototype.Configured("helidon.oci")
 @Prototype.Blueprint
 @Prototype.CustomMethods(OciConfigSupport.class)
 interface OciConfigBlueprint {

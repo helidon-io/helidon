@@ -57,8 +57,8 @@ public final class Service {
      * <ul>
      *     <li>Direct implementation of interface (or extending an abstract class)</li>
      *     <li>Implementing a {@link java.util.function.Supplier} of the contract; when using supplier, service registry
-     *     supports the capability to return {@code null} to mark this service as "empty" and not providing anything; such
-     *     a service will be ignored and only other implementations would be used</li>
+     *     supports the capability to return {@link java.util.Optional} in case the service cannot provide a value; such
+     *     a service will be ignored and only other implementations (with lower weight) would be used</li>
      * </ul>
      */
     @Documented

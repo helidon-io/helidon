@@ -32,7 +32,6 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypeNames;
 import io.helidon.service.registry.GeneratedService.Descriptor;
 
 /**
@@ -157,7 +156,6 @@ class CoreServiceRegistry implements ServiceRegistry {
         return new ArrayList<>(serviceProviders);
     }
 
-    @SuppressWarnings("unchecked")
     private Optional<Object> instance(Descriptor<?> descriptor) {
         List<? extends Dependency> dependencies = descriptor.dependencies();
         Map<Dependency, Object> collectedDependencies = new HashMap<>();
@@ -175,10 +173,18 @@ class CoreServiceRegistry implements ServiceRegistry {
         }
 
         Object serviceInstance = descriptor.instantiate(DependencyContext.create(collectedDependencies));
-        if (descriptor.contracts().contains(TypeNames.SUPPLIER)) {
-            return Optional.ofNullable(((Supplier<Object>) serviceInstance).get());
+        if (serviceInstance instanceof Supplier<?> supplier) {
+            return fromSupplierValue(supplier.get());
         }
         return Optional.of(serviceInstance);
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private Optional<Object> fromSupplierValue(Object value) {
+        if (value instanceof Optional optValue) {
+            return optValue;
+        }
+        return Optional.of(value);
     }
 
     private Object dependencyNoSupplier(TypeName dependencyType, TypeName contract) {

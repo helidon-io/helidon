@@ -30,13 +30,13 @@ import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
 
 @Service.Provider
 @Service.ExternalContracts(AbstractAuthenticationDetailsProvider.class)
-class AtnDetailsProvider implements Supplier<AbstractAuthenticationDetailsProvider> {
+class AtnDetailsProvider implements Supplier<Optional<AbstractAuthenticationDetailsProvider>> {
 
-    private final LazyValue<AbstractAuthenticationDetailsProvider> provider;
+    private final LazyValue<Optional<AbstractAuthenticationDetailsProvider>> provider;
 
     AtnDetailsProvider(OciConfig ociConfig, List<OciAtnStrategy> atnDetailsProviders) {
         String chosenStrategy = ociConfig.atnStrategy();
-        LazyValue<AbstractAuthenticationDetailsProvider> providerLazyValue = null;
+        LazyValue<Optional<AbstractAuthenticationDetailsProvider>> providerLazyValue = null;
 
         if (OciConfigBlueprint.STRATEGY_AUTO.equals(chosenStrategy)) {
             // auto, chose from existing
@@ -44,21 +44,21 @@ class AtnDetailsProvider implements Supplier<AbstractAuthenticationDetailsProvid
                 for (OciAtnStrategy atnDetailsProvider : atnDetailsProviders) {
                     Optional<AbstractAuthenticationDetailsProvider> provider = atnDetailsProvider.provider();
                     if (provider.isPresent()) {
-                        return provider.get();
+                        return provider;
                     }
                 }
-                return null;
+                return Optional.empty();
             });
         } else {
             List<String> strategies = new ArrayList<>();
 
             for (OciAtnStrategy atnDetailsProvider : atnDetailsProviders) {
                 if (chosenStrategy.equals(atnDetailsProvider.strategy())) {
-                    providerLazyValue = LazyValue.create(() -> atnDetailsProvider.provider()
+                    providerLazyValue = LazyValue.create(() -> Optional.of(atnDetailsProvider.provider()
                             .orElseThrow(() -> new ConfigException("Strategy \""
                                                                            + chosenStrategy
                                                                            + "\" did not provide an authentication provider, "
-                                                                           + "yet it is requested through configuration.")));
+                                                                           + "yet it is requested through configuration."))));
                     break;
                 }
                 strategies.add(atnDetailsProvider.strategy());
@@ -75,7 +75,7 @@ class AtnDetailsProvider implements Supplier<AbstractAuthenticationDetailsProvid
     }
 
     @Override
-    public AbstractAuthenticationDetailsProvider get() {
+    public Optional<AbstractAuthenticationDetailsProvider> get() {
         return provider.get();
     }
 }
