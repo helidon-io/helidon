@@ -21,22 +21,20 @@ import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.is;
 
 class MpEnvironmentVariablesSourceTest {
 
+    private static final int MAX_GROWTH = 10;
+
     @Test
-    void testCacheMissGrowth() {
-        MpEnvironmentVariablesSource source = new MpEnvironmentVariablesSource();
+    void testCacheMaxGrowth() {
+        MpEnvironmentVariablesSource source = new MpEnvironmentVariablesSource(MAX_GROWTH);
         assertThat(source.cache().size(), is(0));
-        IntStream.range(0, 10).forEach(i -> {
+        IntStream.range(0, 5 * MAX_GROWTH).forEach(i -> {
             String random = UUID.randomUUID().toString().toLowerCase();
-            assertThat(source.cache().keySet(), not(contains(random)));
-            source.getValue(random);        // lookup miss, should not cache
-            assertThat(source.cache().keySet(), not(contains(random)));
+            source.getValue(random);        // should cache and discard oldest after MAX_GROWTH
         });
-        assertThat(source.cache().size(), is(0));
+        assertThat(source.cache().size(), is(MAX_GROWTH));
     }
 }

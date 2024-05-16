@@ -17,9 +17,11 @@
 package io.helidon.config.mp;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
+
+import io.helidon.common.configurable.LruCache;
 
 import jakarta.annotation.Priority;
 import org.eclipse.microprofile.config.spi.ConfigSource;
@@ -28,12 +30,18 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
 class MpEnvironmentVariablesSource implements ConfigSource {
     private static final Pattern DISALLOWED_CHARS = Pattern.compile("[^a-zA-Z0-9_]");
     private static final String UNDERSCORE = "_";
+    private static final int MAX_CACHE_SIZE = 10000;
 
     private final Map<String, String> env;
-    private final Map<String, Cached> cache = new ConcurrentHashMap<>();
+    private final LruCache<String, Cached> cache;
 
     MpEnvironmentVariablesSource() {
+        this(MAX_CACHE_SIZE);
+    }
+
+    MpEnvironmentVariablesSource(int cacheSize) {
         this.env = Map.copyOf(System.getenv());
+        this.cache = LruCache.<String, Cached>builder().capacity(cacheSize).build();
     }
 
     /**
@@ -41,7 +49,7 @@ class MpEnvironmentVariablesSource implements ConfigSource {
      *
      * @return internal cache
      */
-    Map<String, Cached> cache() {
+    LruCache<String, Cached> cache() {
         return cache;
     }
 
@@ -59,28 +67,24 @@ class MpEnvironmentVariablesSource implements ConfigSource {
     public String getValue(String propertyName) {
         // environment variable config source is immutable - we can safely cache all requested keys, so we
         // do not execute the regular expression on every get
-        Cached cached = cache.computeIfAbsent(propertyName, theKey -> {
+        return cache.computeValue(propertyName, () -> {
             // According to the spec, we have three ways of looking for a property
             // 1. Exact match
             String result = env.get(propertyName);
             if (null != result) {
-                return new Cached(result);
+                return Optional.of(new Cached(result));
             }
             // 2. replace non alphanumeric characters with _
             String rule2 = rule2(propertyName);
             result = env.get(rule2);
             if (null != result) {
-                return new Cached(result);
+                return Optional.of(new Cached(result));
             }
             // 3. replace same as above, but uppercase
             String rule3 = rule2.toUpperCase();
             result = env.get(rule3);
-            if (result != null) {
-                return new Cached(result);
-            }
-            return null;    // does not cache misses
-        });
-        return cached == null ? null : cached.value;
+            return Optional.of(new Cached(result));
+        }).map(cached -> cached.value).orElse(null);
     }
 
     @Override
