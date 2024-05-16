@@ -46,7 +46,7 @@ class OciIntegrationTest {
     private ServiceRegistry registry;
 
     void setUp(Config config) {
-        OciConfigProvider.config(OciConfig.create(config.get("oci")));
+        OciConfigProvider.config(OciConfig.create(config.get("helidon.oci")));
         registryManager = ServiceRegistryManager.create();
         registry = registryManager.registry();
     }
@@ -87,7 +87,7 @@ class OciIntegrationTest {
     @Test
     void testRegionFromConfig() {
         String yamlConfig = """
-                oci.region: us-phoenix-1
+                helidon.oci.region: us-phoenix-1
                 """;
         Config config = Config.just(ConfigSources.create(yamlConfig, MediaTypes.APPLICATION_YAML));
         setUp(config);
@@ -98,7 +98,7 @@ class OciIntegrationTest {
     @Test
     void testConfigStrategyAvailable() {
         String yamlConfig = """
-                oci:
+                helidon.oci:
                   config-strategy:
                     # region must be real, so it can be parsed
                     region: us-phoenix-1
@@ -145,7 +145,7 @@ class OciIntegrationTest {
     @Test
     void testConfigFileStrategyAvailable() {
         String yamlConfig = """
-                oci:
+                helidon.oci:
                   config-file-strategy:
                     path: src/test/resources/test-oci-config
                     profile: MY_PROFILE

@@ -14,4 +14,5 @@
 # limitations under the License.
 #
 
-auth-strategies: ["instance-principals", "config-file", "resource-principal", "config"]
+helidon.oci:
+  allowed-atn-strategies: ["instance-principals", "config-file", "resource-principal", "config"]
