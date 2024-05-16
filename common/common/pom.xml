@@ -44,6 +44,27 @@
     <build>
         <plugins>
             <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-resources</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/generated-sources/templates</outputDirectory>
+                            <resources>          
+                                <resource>
+                                    <directory>src/main/templates</directory>
+                                    <filtering>true</filtering>
+                                </resource>
+                            </resources>              
+                        </configuration>            
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
                 <executions>
@@ -55,13 +76,12 @@
                         </goals>
                         <configuration>
                             <sources>
-                                <source>src/main/java</source>
-                                <source>src/main/templates</source>
+                                <source>${project.build.directory}/generated-sources/templates</source>
                             </sources>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
-        </plugins>
+      </plugins>
     </build>
 </project>
