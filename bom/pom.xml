@@ -1028,6 +1028,11 @@
                 <artifactId>helidon-messaging-mock</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.testing</groupId>
+                <artifactId>helidon-microprofile-testing-mocking</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- Logging -->
             <dependency>
                 <groupId>io.helidon.logging</groupId>

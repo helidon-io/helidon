@@ -774,6 +774,10 @@
             <artifactId>helidon-messaging-mock</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.microprofile.testing</groupId>
+            <artifactId>helidon-microprofile-testing-mocking</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.logging</groupId>
             <artifactId>helidon-logging-common</artifactId>
         </dependency>
