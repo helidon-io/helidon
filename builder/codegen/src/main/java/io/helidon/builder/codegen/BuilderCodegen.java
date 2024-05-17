@@ -22,13 +22,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import io.helidon.builder.codegen.ValidationTask.ValidateConfiguredType;
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenEvent;
 import io.helidon.codegen.CodegenException;
+import io.helidon.codegen.CodegenFiler;
 import io.helidon.codegen.CodegenUtil;
+import io.helidon.codegen.FilerTextResource;
 import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.Javadoc;
@@ -51,6 +54,8 @@ class BuilderCodegen implements CodegenExtension {
     private final Set<TypeName> runtimeTypes = new HashSet<>();
     // all blueprint types (for validation)
     private final Set<TypeName> blueprintTypes = new HashSet<>();
+    // all types from service loader that should be supported by ServiceRegistry
+    private final Set<String> serviceLoaderContracts = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
 
     private final CodegenContext ctx;
 
@@ -83,6 +88,9 @@ class BuilderCodegen implements CodegenExtension {
     public void processingOver(RoundContext roundContext) {
         process(roundContext);
 
+        // now create service.loader
+        updateServiceLoaderResource();
+
         // we must collect validation information after all types are generated - so
         // we also listen on @Generated, so there is another round of annotation processing where we have all
         // types nice and ready
@@ -112,6 +120,23 @@ class BuilderCodegen implements CodegenExtension {
                 ctx.logger().log(builder.build());
             }
         }
+    }
+
+    private void updateServiceLoaderResource() {
+        CodegenFiler filer = ctx.filer();
+        FilerTextResource serviceLoaderResource = filer.textResource("META-INF/helidon/service.loader");
+        List<String> lines = new ArrayList<>(serviceLoaderResource.lines());
+        if (lines.isEmpty()) {
+            lines.add("# List of service contracts we want to support either from service registry, or from service loader");
+        }
+        for (String serviceLoaderContract : this.serviceLoaderContracts) {
+            if (!lines.contains(serviceLoaderContract)) {
+                lines.add(serviceLoaderContract);
+            }
+        }
+
+        serviceLoaderResource.lines(lines);
+        serviceLoaderResource.write();
     }
 
     private void process(RoundContext roundContext, TypeInfo blueprint) {
@@ -227,6 +252,14 @@ class BuilderCodegen implements CodegenExtension {
                                       classModel,
                                       blueprint.typeName(),
                                       blueprint.originatingElement().orElse(blueprint.typeName()));
+
+        if (typeContext.typeInfo().supportsServiceRegistry() && typeContext.propertyData().hasProvider()) {
+            for (PrototypeProperty property : typeContext.propertyData().properties()) {
+                if (property.configuredOption().provider()) {
+                    this.serviceLoaderContracts.add(property.configuredOption().providerType().genericTypeName().fqName());
+                }
+            }
+        }
     }
 
     private static void addCreateDefaultMethod(AnnotationDataBlueprint blueprintDef,

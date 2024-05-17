@@ -95,6 +95,13 @@ public abstract class ServiceLoader__ServiceDescriptor implements GeneratedServi
         }
 
         @Override
+        public String toString() {
+            return providerInterface + "/"
+                    + providerImpl
+                    + "(" + weight + ")";
+        }
+
+        @Override
         public TypeName serviceType() {
             return providerImpl;
         }

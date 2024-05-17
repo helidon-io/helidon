@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 class ServiceCodegenTypesTest {
     @Test
     void testTypes() {
-        // it is really important to test ALL constants on the class, so let's use relfection
+        // it is really important to test ALL constants on the class, so let's use reflection
         Field[] declaredFields = ServiceCodegenTypes.class.getDeclaredFields();
 
         Set<String> toCheck = new HashSet<>();
