@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -45,9 +46,11 @@ class CoreServiceRegistry implements ServiceRegistry {
                     .thenComparing(ServiceProvider::descriptorType);
 
     private final Map<TypeName, Set<ServiceProvider>> providersByContract;
+    private final Map<ServiceInfo, ServiceProvider> providersByService;
 
     CoreServiceRegistry(ServiceRegistryConfig config, ServiceDiscovery serviceDiscovery) {
         Map<TypeName, Set<ServiceProvider>> providers = new HashMap<>();
+        Map<ServiceInfo, ServiceProvider> providersByService = new IdentityHashMap<>();
 
         // each just once
         Set<TypeName> processedDescriptorTypes = new HashSet<>();
@@ -61,6 +64,7 @@ class CoreServiceRegistry implements ServiceRegistry {
         config.serviceInstances().forEach((descriptor, instance) -> {
             if (processedDescriptorTypes.add(descriptor.descriptorType())) {
                 BoundInstance bi = new BoundInstance(descriptor, Optional.of(instance));
+                providersByService.put(descriptor, bi);
                 addContracts(providers, descriptor.contracts(), bi);
             }
         });
@@ -69,6 +73,7 @@ class CoreServiceRegistry implements ServiceRegistry {
         for (Descriptor<?> descriptor : config.serviceDescriptors()) {
             if (processedDescriptorTypes.add(descriptor.descriptorType())) {
                 BoundDescriptor bd = new BoundDescriptor(this, descriptor, LazyValue.create(() -> instance(descriptor)));
+                providersByService.put(descriptor, bd);
                 addContracts(providers, descriptor.contracts(), bd);
             }
         }
@@ -85,14 +90,16 @@ class CoreServiceRegistry implements ServiceRegistry {
                 }
                 continue;
             }
-            if (processedDescriptorTypes.add(descriptorMeta.descriptorType())) {
+            if (processedDescriptorTypes.add(descriptorMeta.descriptor().serviceType())) {
                 DiscoveredDescriptor dd = new DiscoveredDescriptor(this,
                                                                    descriptorMeta,
                                                                    LazyValue.create(() -> instance(descriptorMeta.descriptor())));
+                providersByService.put(descriptorMeta.descriptor(), dd);
                 addContracts(providers, descriptorMeta.contracts(), dd);
             }
         }
         this.providersByContract = Map.copyOf(providers);
+        this.providersByService = providersByService;
     }
 
     @Override
@@ -136,6 +143,24 @@ class CoreServiceRegistry implements ServiceRegistry {
     @Override
     public <T> Supplier<List<T>> supplyAll(TypeName contract) {
         return LazyValue.create(() -> all(contract));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> Optional<T> get(ServiceInfo serviceInfo) {
+        return Optional.ofNullable(providersByService.get(serviceInfo))
+                .flatMap(ServiceProvider::instance)
+                .map(it -> (T) it);
+    }
+
+    @Override
+    public List<ServiceInfo> allServices(TypeName contract) {
+        return Optional.ofNullable(providersByContract.get(contract))
+                .orElseGet(Set::of)
+                .stream()
+                .map(ServiceProvider::descriptor)
+                .collect(Collectors.toUnmodifiableList());
+
     }
 
     private static void addContracts(Map<TypeName, Set<ServiceProvider>> providers,

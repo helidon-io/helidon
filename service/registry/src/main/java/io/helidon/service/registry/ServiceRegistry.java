@@ -179,15 +179,31 @@ public interface ServiceRegistry {
      * from the service descriptor, or instances provided by {@link #allServices(Class)}.
      *
      * @param serviceInfo service info instance
-     * @return value of the service described by the service info provided (always a single value), in case the
+     * @return value of the service described by the service info provided (always a single value), as there is support
+     *          for providers that are {@link java.util.function.Supplier} of an instance, and that may return
+     *          {@link java.util.Optional}, we may not get a value, hence we return {@link java.util.Optional} as well
      * @param <T> type of the expected instance, we just cast to it, so this may cause runtime issues if assigned to invalid
      *            type
      */
     <T> Optional<T> get(ServiceInfo serviceInfo);
 
+    /**
+     * Get all services for a specific contract. The list may be empty if there are no services available.
+     * To get an instance, use {@link #get(ServiceInfo)}.
+     *
+     * @param contract contract we look for
+     * @return list of service metadata of services that satisfy the provided contract
+     */
     default List<ServiceInfo> allServices(Class<?> contract) {
         return allServices(TypeName.create(contract));
     }
 
+    /**
+     * Get all services for a specific contract. The list may be empty if there are no services available.
+     * To get an instance, use {@link #get(ServiceInfo)}.
+     *
+     * @param contract contract we look for
+     * @return list of service metadata of services that satisfy the provided contract
+     */
     List<ServiceInfo> allServices(TypeName contract);
 }
