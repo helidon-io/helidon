@@ -35,7 +35,7 @@ class TestAnnotation {
     private SeContainer seContainer;
 
     @Test
-    void checkBadAnnotationHandling() {
+    void checkBadAnnotationHandlingOnMethodLevel() {
 
         SeContainerInitializer initializer = SeContainerInitializer.newInstance();
         initializer.addBeanClasses(CorsResourceWithBadAnnotation.class);
@@ -55,9 +55,27 @@ class TestAnnotation {
         }
     }
 
+    @Test
+    void checkBadAnnotationHandlingOnClassLevel() {
+        SeContainerInitializer initializer = SeContainerInitializer.newInstance();
+        initializer.addBeanClasses(CorsResourceWithClassLevelCrossOriginWithoutOptionMethods.class);
+
+        try {
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                    seContainer = initializer.initialize());
+            assertThat(exception.getMessage(), allOf(
+                    containsString("should have at least one @OPTIONS method"),
+                    containsString(CorsResourceWithClassLevelCrossOriginWithoutOptionMethods.class.getSimpleName())));
+        } finally {
+            if (seContainer != null) {
+                seContainer.close();
+            }
+        }
+    }
+
     @RequestScoped
     @Path("/cors1")
-    static class CorsResourceWithBadAnnotation {
+    private static class CorsResourceWithBadAnnotation {
 
         // The following @CrossOrigin should trigger an error during start-up annotation processing
         // because it is not on an @OPTIONS method.
@@ -85,5 +103,25 @@ class TestAnnotation {
         @CrossOrigin()
         public void optionsForMainPath() {
         }
+    }
+
+    @RequestScoped
+    // The following @CrossOrigin should trigger an error during start-up annotation processing
+    // because there is no @OPTIONS methods in this resource.
+    @CrossOrigin(value = {"http://foo.bar", "http://bar.foo"})
+    private static class CorsResourceWithClassLevelCrossOriginWithoutOptionMethods {
+
+
+        @PUT
+        @Path("/subpath")
+        public Response put() {
+            return Response.ok().build();
+        }
+
+        @GET
+        public Response get() {
+            return Response.ok().build();
+        }
+
     }
 }
