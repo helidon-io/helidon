@@ -17,6 +17,7 @@
 package io.helidon.integrations.oci;
 
 import java.lang.System.Logger.Level;
+import java.net.URI;
 import java.util.Optional;
 
 import io.helidon.common.LazyValue;
@@ -65,7 +66,15 @@ class AtnStrategyResourcePrincipal implements OciAtnStrategy {
                 }
                 return Optional.empty();
             }
-            return Optional.of(ResourcePrincipalAuthenticationDetailsProvider.builder().build());
+            var builder = ResourcePrincipalAuthenticationDetailsProvider.builder()
+                    .timeoutForEachRetry((int) config.atnTimeout().toMillis());
+
+            // we expect the full metadata base URI (including http:// and /opc/v2/)
+            config.imdsBaseUri()
+                    .map(URI::toString)
+                    .ifPresent(builder::metadataBaseUrl);
+
+            return Optional.of(builder.build());
         });
     }
 }

@@ -16,6 +16,7 @@
 
 package io.helidon.integrations.oci;
 
+import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
@@ -113,4 +114,23 @@ interface OciConfigBlueprint {
     @Option.Configured
     @Option.Default("PT0.1S")
     Duration imdsTimeout();
+
+    /**
+     * The OCI IMDS URI (http URL pointing to the metadata service, if customization needed.
+     *
+     * @return the OCI IMDS URI
+     */
+    @Option.Configured
+    Optional<URI> imdsBaseUri();
+
+    /**
+     * Timeout of authentication operations, where applicable.
+     * This is a timeout for each operation (if there are retries, each timeout will be this duration).
+     * Defaults to 10 seconds.
+     *
+     * @return authentication operation timeout
+     */
+    @Option.Configured
+    @Option.Default("PT10S")
+    Duration atnTimeout();
 }

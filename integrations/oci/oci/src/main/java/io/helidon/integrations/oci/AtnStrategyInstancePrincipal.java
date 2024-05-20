@@ -19,6 +19,7 @@ package io.helidon.integrations.oci;
 import java.io.IOException;
 import java.lang.System.Logger.Level;
 import java.net.InetAddress;
+import java.net.URI;
 import java.time.Duration;
 import java.util.Optional;
 
@@ -63,18 +64,25 @@ class AtnStrategyInstancePrincipal implements OciAtnStrategy {
 
     private static LazyValue<Optional<AbstractAuthenticationDetailsProvider>> createProvider(OciConfig config) {
         return LazyValue.create(() -> {
-            if (imdsVailable(config)) {
-                return Optional.of(InstancePrincipalsAuthenticationDetailsProvider.builder().build());
+            if (imdsAvailable(config)) {
+                var builder = InstancePrincipalsAuthenticationDetailsProvider.builder()
+                        .timeoutForEachRetry((int) config.atnTimeout().toMillis());
+
+                config.imdsBaseUri()
+                        .map(URI::toString)
+                        .ifPresent(builder::metadataBaseUrl);
+
+                return Optional.of(builder.build());
             }
             return Optional.empty();
         });
     }
 
-    private static boolean imdsVailable(OciConfig config) {
+    private static boolean imdsAvailable(OciConfig config) {
         Duration timeout = config.imdsTimeout();
 
         try {
-            if (InetAddress.getByName(IMDS_ADDRESS)
+            if (InetAddress.getByName(config.imdsBaseUri().map(URI::getHost).orElse(IMDS_ADDRESS))
                     .isReachable((int) timeout.toMillis())) {
                 return RegionProviderSdk.regionFromImds() != null;
             }
