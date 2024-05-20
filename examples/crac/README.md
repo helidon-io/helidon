@@ -10,7 +10,7 @@ therefore CRaC checkpoint needs to be created in runtime.
 mvn clean package
 docker build --build-arg CR_DIR=~/cr -t crac-helloworld . -f Dockerfile.crac
 # First time ran, checkpoint is created, stop with Ctrl-C
-docker run --privileged -p 7001:7001 --name crac-helloworld crac-helloworld
+docker run --privileged --network host --name crac-helloworld crac-helloworld
 # Second time starting from checkpoint, stop with Ctrl-C
 docker start -i crac-helloworld
 ```

@@ -19,14 +19,15 @@ WORKDIR /usr/share
 
 ARG CHECKPOINT_DIR
 
-ENV JDK_NAME=jdk-21.0.3-crac
+ENV JDK_NAME=zulu22.30.13-ca-crac-jdk22.0.1-linux_x64
 ENV JAVA_HOME=/usr/share/$JDK_NAME
 ENV CR_DIR=${CONT_IMG_VER:-/crac-checkpoint/cr}
 
 # Install CRaC
 RUN microdnf -y update && microdnf -y install wget tar gzip
-RUN wget -O crac-jdk.tar.gz "https://download.bell-sw.com/java/21.0.3+11/bellsoft-jdk21.0.3+11-linux-amd64-crac.tar.gz"
+RUN wget -O crac-jdk.tar.gz "https://cdn.azul.com/zulu/bin/${JDK_NAME}.tar.gz"
 RUN tar zxf ./crac-jdk.tar.gz -C /usr/share && ln -s $JAVA_HOME/bin/java /bin/
+RUN ls -la /usr/share
 
 FROM olinux-crac
 WORKDIR /helidon
