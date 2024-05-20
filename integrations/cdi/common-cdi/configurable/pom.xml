@@ -28,6 +28,10 @@
     <artifactId>helidon-integrations-cdi-configurable</artifactId>
     <name>Helidon CDI Integrations Common Configurable</name>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
 
         <!-- Compile-scoped dependencies. -->

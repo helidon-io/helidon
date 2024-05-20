@@ -256,21 +256,23 @@ public abstract class AbstractConfigurableExtension<T> implements Extension {
      * @see #addBean(BeanConfigurator, Named, Properties)
      */
     protected final void initializeNamedProperties() {
-        this.namedProperties.clear();
-        Set<? extends String> allConfigPropertyNames = this.configPropertyNames();
+        Map<String, ComputedProperties> computedProperties = new HashMap<>();
+        Set<String> allConfigPropertyNames = configPropertyNames();
         if (!allConfigPropertyNames.isEmpty()) {
             for (String configPropertyName : allConfigPropertyNames) {
-                Optional<String> propertyValue = this.configPropertyValue(configPropertyName);
+                Optional<String> propertyValue = configPropertyValue(configPropertyName);
                 if (propertyValue.isPresent()) {
-                    Matcher matcher = this.matcher(configPropertyName);
+                    Matcher matcher = matcher(configPropertyName);
                     if (matcher != null && matcher.matches()) {
-                        this.namedProperties.computeIfAbsent(this.name(matcher), n -> new Properties())
-                            .setProperty(this.propertyName(matcher), propertyValue.get());
+                        computedProperties.computeIfAbsent(name(matcher), n -> new ComputedProperties(this::configPropertyValue))
+                                .computedKeys().put(propertyName(matcher), configPropertyName);
                     }
                 }
             }
         }
-        this.namedProperties.putAll(this.explicitlySetProperties);
+        namedProperties.clear();
+        namedProperties.putAll(computedProperties);
+        namedProperties.putAll(explicitlySetProperties);
     }
 
     /**
