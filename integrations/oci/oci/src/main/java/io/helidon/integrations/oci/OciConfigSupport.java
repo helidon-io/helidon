@@ -22,6 +22,11 @@ import io.helidon.common.config.Config;
 import com.oracle.bmc.Region;
 
 final class OciConfigSupport {
+    /**
+     * Primary hostname of metadata service.
+     */
+    static final String IMDS_HOSTNAME = "169.254.169.254";
+
     private OciConfigSupport() {
     }
 

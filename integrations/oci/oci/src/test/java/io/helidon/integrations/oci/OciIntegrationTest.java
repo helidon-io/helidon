@@ -61,7 +61,13 @@ class OciIntegrationTest {
 
     @Test
     void testNoStrategyAvailable() {
-        Config config = Config.empty();
+        String yamlConfig = """
+                helidon.oci:
+                  config-file-strategy:
+                    # we must use a file that does not exist, if this machine has actual oci config file
+                    path: src/test/resources/test-oci-config-not-there
+                """;
+        Config config = Config.just(ConfigSources.create(yamlConfig, MediaTypes.APPLICATION_YAML));
         setUp(config);
 
         OciAtnStrategy atnStrategy = registry.get(AtnStrategyConfig.class);
@@ -106,6 +112,9 @@ class OciIntegrationTest {
                     passphrase: passphrase
                     tenant-id: tenant
                     user-id: user
+                  config-file-strategy:
+                    # we must use a file that does not exist, if this machine has actual oci config file
+                    path: src/test/resources/test-oci-config-not-there
                 """;
         Config config = Config.just(ConfigSources.create(yamlConfig, MediaTypes.APPLICATION_YAML));
         setUp(config);
