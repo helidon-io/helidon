@@ -256,7 +256,7 @@ public abstract class AbstractConfigurableExtension<T> implements Extension {
      * @see #addBean(BeanConfigurator, Named, Properties)
      */
     protected final void initializeNamedProperties() {
-        Map<String, ConfiguredProperties> configuredProperties = new HashMap<>();
+        Map<String, ComputedProperties> computedProperties = new HashMap<>();
         Set<String> allConfigPropertyNames = configPropertyNames();
         if (!allConfigPropertyNames.isEmpty()) {
             for (String configPropertyName : allConfigPropertyNames) {
@@ -264,14 +264,14 @@ public abstract class AbstractConfigurableExtension<T> implements Extension {
                 if (propertyValue.isPresent()) {
                     Matcher matcher = matcher(configPropertyName);
                     if (matcher != null && matcher.matches()) {
-                        configuredProperties.computeIfAbsent(name(matcher), n -> new ConfiguredProperties(config))
-                                .configKey(propertyName(matcher), configPropertyName);
+                        computedProperties.computeIfAbsent(name(matcher), n -> new ComputedProperties(this::configPropertyValue))
+                                .computedKeys().put(propertyName(matcher), configPropertyName);
                     }
                 }
             }
         }
         namedProperties.clear();
-        namedProperties.putAll(configuredProperties);
+        namedProperties.putAll(computedProperties);
         namedProperties.putAll(explicitlySetProperties);
     }
 

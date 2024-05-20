@@ -24,24 +24,23 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import org.eclipse.microprofile.config.Config;
-
 /**
- * A lazy read-only {@link Properties} implementation backed by a {@link Config} instance.
+ * A lazy read-only {@link Properties} implementation backed by a {@link Function}.
  */
-final class ConfiguredProperties extends Properties {
+final class ComputedProperties extends Properties {
 
     private static final VarHandle ENTRIES;
 
     static {
         try {
-            ENTRIES = MethodHandles.lookup().findVarHandle(ConfiguredProperties.class, "entries", Map.class);
+            ENTRIES = MethodHandles.lookup().findVarHandle(ComputedProperties.class, "entries", Map.class);
         } catch (ReflectiveOperationException e) {
             throw new ExceptionInInitializerError(e);
         }
@@ -49,22 +48,26 @@ final class ConfiguredProperties extends Properties {
 
     @SuppressWarnings("unused")
     private volatile Map<Object, Object> entries;
-    private final Map<Object, String> keys = new HashMap<>();
-    private final Config config;
+    private final Map<Object, Object> computedKeys = new HashMap<>();
+    private final Function<String, Optional<String>> function;
 
-    ConfiguredProperties(Config config) {
-        this.config = config;
+    ComputedProperties(Function<String, Optional<String>> function) {
+        this.function = function;
     }
 
-    void configKey(String propertyName, String configKey) {
-        keys.put(propertyName, configKey);
+    Map<Object, Object> computedKeys() {
+        return computedKeys;
     }
 
     private Map<Object, Object> entries() {
         Map<Object, Object> entries = this.entries; // volatile read
         if (entries == null) {
             Map<Object, Object> map = new HashMap<>();
-            keys.forEach((name, key) -> map.put(name, config.getOptionalValue(key, String.class).orElse(null)));
+            computedKeys.forEach((key, computedKey) -> {
+                if (computedKey instanceof String s) {
+                    map.put(key, function.apply(s).orElse(null));
+                }
+            });
             entries = Collections.unmodifiableMap(map);
             if (!ENTRIES.compareAndSet(this, null, entries)) { // volatile assignment, maybe
                 entries = this.entries; // volatile read; will only happen because this.entries will be non-null
@@ -74,8 +77,8 @@ final class ConfiguredProperties extends Properties {
     }
 
     @Override
-    public String getProperty(String name) {
-        if (entries().get(name) instanceof String s) {
+    public String getProperty(String key) {
+        if (entries().get(key) instanceof String s) {
             return s;
         }
         return null;
@@ -83,17 +86,17 @@ final class ConfiguredProperties extends Properties {
 
     @Override
     public int size() {
-        return keys.size();
+        return computedKeys.size();
     }
 
     @Override
     public boolean isEmpty() {
-        return keys.isEmpty();
+        return computedKeys.isEmpty();
     }
 
     @Override
     public Enumeration<Object> keys() {
-        return Collections.enumeration(keys.keySet());
+        return Collections.enumeration(computedKeys.keySet());
     }
 
     @Override
@@ -113,18 +116,12 @@ final class ConfiguredProperties extends Properties {
 
     @Override
     public boolean containsKey(Object key) {
-        if (key instanceof String s) {
-            return keys.containsKey(s);
-        }
-        return false;
+        return computedKeys.containsKey(key);
     }
 
     @Override
     public Object get(Object key) {
-        if (key instanceof String s) {
-            return getProperty(s);
-        }
-        return null;
+        return entries().get(key);
     }
 
     @Override
@@ -134,7 +131,7 @@ final class ConfiguredProperties extends Properties {
 
     @Override
     public Set<Object> keySet() {
-        return keys.keySet();
+        return computedKeys.keySet();
     }
 
     @Override
