@@ -62,6 +62,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     protected static final Header GRPC_ACCEPT_ENCODING = HeaderValues.create(HeaderNames.ACCEPT_ENCODING, "gzip");
     protected static final Header GRPC_CONTENT_TYPE = HeaderValues.create(HeaderNames.CONTENT_TYPE, "application/grpc");
 
+    protected static final BufferData PING_FRAME = BufferData.create("PING");
     protected static final BufferData EMPTY_BUFFER_DATA = BufferData.empty();
 
     private final GrpcClientImpl grpcClient;
@@ -70,6 +71,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     private final int initBufferSize;
     private final Duration pollWaitTime;
     private final boolean abortPollTimeExpired;
+    private final Duration heartbeatPeriod;
 
     private final MethodDescriptor.Marshaller<ReqT> requestMarshaller;
     private final MethodDescriptor.Marshaller<ResT> responseMarshaller;
@@ -88,6 +90,11 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         this.initBufferSize = grpcClient.prototype().protocolConfig().initBufferSize();
         this.pollWaitTime = grpcClient.prototype().protocolConfig().pollWaitTime();
         this.abortPollTimeExpired = grpcClient.prototype().protocolConfig().abortPollTimeExpired();
+        this.heartbeatPeriod = grpcClient.prototype().protocolConfig().heartbeatPeriod();
+    }
+
+    protected Duration heartbeatPeriod() {
+        return heartbeatPeriod;
     }
 
     protected boolean abortPollTimeExpired() {

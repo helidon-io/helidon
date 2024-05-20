@@ -16,6 +16,8 @@
 
 package io.helidon.webclient.grpc;
 
+import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -56,6 +58,7 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
 
     private volatile Future<?> readStreamFuture;
     private volatile Future<?> writeStreamFuture;
+    private volatile Future<?> heartbeatFuture;
 
     GrpcClientCall(GrpcClientImpl grpcClient, MethodDescriptor<ReqT, ResT> methodDescriptor, CallOptions callOptions) {
         super(grpcClient, methodDescriptor, callOptions);
@@ -75,6 +78,7 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
         responseListener().onClose(Status.CANCELLED, EMPTY_METADATA);
         readStreamFuture.cancel(true);
         writeStreamFuture.cancel(true);
+        heartbeatFuture.cancel(true);
         close();
     }
 
@@ -100,6 +104,29 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
     }
 
     protected void startStreamingThreads() {
+        // heartbeat thread
+        Duration period = heartbeatPeriod();
+        if (!period.isZero()) {
+            heartbeatFuture = executor.submit(() -> {
+                try {
+                    startWriteBarrier.await();
+                    socket().log(LOGGER, DEBUG, "[Heartbeat thread] started with period " + period);
+
+                    while (isRemoteOpen()) {
+                        Thread.sleep(period);
+                        if (sendingQueue.isEmpty()) {
+                            sendingQueue.add(PING_FRAME);
+                            socket().log(LOGGER, DEBUG, "[Heartbeat thread] heartbeat queued");
+                        }
+                    }
+                } catch (Throwable t) {
+                    socket().log(LOGGER, DEBUG, "[Heartbeat thread] exception " + t.getMessage());
+                }
+            });
+        } else {
+            heartbeatFuture = CompletableFuture.completedFuture(null);
+        }
+
         // write streaming thread
         writeStreamFuture = executor.submit(() -> {
             try {
@@ -111,7 +138,11 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                     socket().log(LOGGER, DEBUG, "[Writing thread] polling sending queue");
                     BufferData bufferData = sendingQueue.poll(pollWaitTime().toMillis(), TimeUnit.MILLISECONDS);
                     if (bufferData != null) {
-                        if (bufferData == EMPTY_BUFFER_DATA) {     // end marker
+                        if (bufferData == PING_FRAME) {                   // ping frame
+                            clientStream().sendPing();
+                            continue;
+                        }
+                        if (bufferData == EMPTY_BUFFER_DATA) {            // end marker
                             socket().log(LOGGER, DEBUG, "[Writing thread] sending queue end marker found");
                             if (!endOfStream) {
                                 socket().log(LOGGER, DEBUG, "[Writing thread] sending empty buffer to end stream");
@@ -208,24 +239,11 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
         }
     }
 
-    /**
-     * Handles a read timeout by either aborting or continuing, depending on how the client
-     * is configured. If not aborting, it will attempt to send a PING frame to check the
-     * connection health before attempting to proceed.
-     *
-     * @param e a stream timeout exception
-     */
     private void handleStreamTimeout(StreamTimeoutException e) {
-        // abort or retry based on config settings
         if (abortPollTimeExpired()) {
             socket().log(LOGGER, ERROR, "[Reading thread] HTTP/2 stream timeout, aborting");
             throw e;    // caught below
         }
-
-        // check connection health before proceeding
-        clientStream().sendPing();
-
-        // log and continue if ping did not throw exception
         socket().log(LOGGER, ERROR, "[Reading thread] HTTP/2 stream timeout, retrying");
     }
 }

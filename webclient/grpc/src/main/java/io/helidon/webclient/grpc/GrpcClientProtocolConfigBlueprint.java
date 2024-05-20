@@ -52,9 +52,6 @@ interface GrpcClientProtocolConfigBlueprint extends ProtocolConfig {
     /**
      * How long to wait for the next HTTP/2 data frame to arrive in underlying stream.
      * Whether this is a fatal error or not is controlled by {@link #abortPollTimeExpired()}.
-     * If {@link #abortPollTimeExpired()} is set to {@code false}, the connection
-     * health will first be verified by attempting to send a PING frame before
-     * attempting a new read.
      *
      * @return poll time as a duration
      * @see io.helidon.common.socket.SocketOptions#readTimeout()
@@ -73,6 +70,16 @@ interface GrpcClientProtocolConfigBlueprint extends ProtocolConfig {
     @Option.Configured
     @Option.Default("false")
     boolean abortPollTimeExpired();
+
+    /**
+     * How often to send a heartbeat (HTTP/2 ping) to check if the connection is still
+     * alive. Set the heartbeat to 0 to turn this feature off.
+     *
+     * @return heartbeat period
+     */
+    @Option.Configured
+    @Option.Default("PT5S")
+    Duration heartbeatPeriod();
 
     /**
      * Initial buffer size used to serialize gRPC request payloads. Buffers shall grow

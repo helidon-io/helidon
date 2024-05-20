@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 @ServerTest
 class GrpcConnectionErrorTest extends GrpcBaseTest {
-    private static final long TIMEOUT_SECONDS = 1000;
+    private static final long TIMEOUT_SECONDS = 10;
 
     private final WebServer server;
     private final GrpcClient grpcClient;
@@ -54,8 +54,7 @@ class GrpcConnectionErrorTest extends GrpcBaseTest {
                                 .keystore(Resource.create("client.p12"))))
                 .build();
         GrpcClientProtocolConfig config = GrpcClientProtocolConfig.builder()
-                .pollWaitTime(Duration.ofSeconds(2))    // detects connection issues
-                .abortPollTimeExpired(false)            // checks health with PING
+                .heartbeatPeriod(Duration.ofSeconds(1))     // detects failure faster
                 .build();
         this.grpcClient = GrpcClient.builder()
                 .tls(clientTls)
