@@ -52,6 +52,9 @@ interface GrpcClientProtocolConfigBlueprint extends ProtocolConfig {
     /**
      * How long to wait for the next HTTP/2 data frame to arrive in underlying stream.
      * Whether this is a fatal error or not is controlled by {@link #abortPollTimeExpired()}.
+     * If {@link #abortPollTimeExpired()} is set to {@code false}, the connection
+     * health will first be verified by attempting to send a PING frame before
+     * attempting a new read.
      *
      * @return poll time as a duration
      * @see io.helidon.common.socket.SocketOptions#readTimeout()

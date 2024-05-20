@@ -127,6 +127,8 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                 }
             } catch (Throwable e) {
                 socket().log(LOGGER, ERROR, e.getMessage(), e);
+                Status errorStatus = Status.UNKNOWN.withDescription(e.getMessage()).withCause(e);
+                responseListener().onClose(errorStatus, EMPTY_METADATA);
             }
             socket().log(LOGGER, DEBUG, "[Writing thread] exiting");
         });
@@ -138,8 +140,17 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                 socket().log(LOGGER, DEBUG, "[Reading thread] started");
 
                 // read response headers
-                clientStream().readHeaders();
+                boolean headersRead = false;
+                do {
+                    try {
+                        clientStream().readHeaders();
+                        headersRead = true;
+                    } catch (StreamTimeoutException e) {
+                        handleStreamTimeout(e);
+                    }
+                } while (!headersRead);
 
+                // read data from stream
                 while (isRemoteOpen()) {
                     // drain queue
                     drainReceivingQueue();
@@ -155,12 +166,7 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                     try {
                         frameData = clientStream().readOne(pollWaitTime());
                     } catch (StreamTimeoutException e) {
-                        // abort or retry based on config settings
-                        if (abortPollTimeExpired()) {
-                            socket().log(LOGGER, ERROR, "[Reading thread] HTTP/2 stream timeout, aborting");
-                            throw e;    // caught below
-                        }
-                        socket().log(LOGGER, ERROR, "[Reading thread] HTTP/2 stream timeout, retrying");
+                        handleStreamTimeout(e);
                         continue;
                     }
                     if (frameData != null) {
@@ -175,7 +181,8 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                 responseListener().onClose(Status.DEADLINE_EXCEEDED, EMPTY_METADATA);
             } catch (Throwable e) {
                 socket().log(LOGGER, ERROR, e.getMessage(), e);
-                responseListener().onClose(Status.UNKNOWN, EMPTY_METADATA);
+                Status errorStatus = Status.UNKNOWN.withDescription(e.getMessage()).withCause(e);
+                responseListener().onClose(errorStatus, EMPTY_METADATA);
             } finally {
                 close();
             }
@@ -199,5 +206,26 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
             socket().log(LOGGER, DEBUG, "[Reading thread] sending response to listener");
             responseListener().onMessage(res);
         }
+    }
+
+    /**
+     * Handles a read timeout by either aborting or continuing, depending on how the client
+     * is configured. If not aborting, it will attempt to send a PING frame to check the
+     * connection health before attempting to proceed.
+     *
+     * @param e a stream timeout exception
+     */
+    private void handleStreamTimeout(StreamTimeoutException e) {
+        // abort or retry based on config settings
+        if (abortPollTimeExpired()) {
+            socket().log(LOGGER, ERROR, "[Reading thread] HTTP/2 stream timeout, aborting");
+            throw e;    // caught below
+        }
+
+        // check connection health before proceeding
+        clientStream().sendPing();
+
+        // log and continue if ping did not throw exception
+        socket().log(LOGGER, ERROR, "[Reading thread] HTTP/2 stream timeout, retrying");
     }
 }

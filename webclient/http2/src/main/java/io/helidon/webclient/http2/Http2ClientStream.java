@@ -40,6 +40,7 @@ import io.helidon.http.http2.Http2FrameTypes;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2HuffmanDecoder;
 import io.helidon.http.http2.Http2LoggingFrameListener;
+import io.helidon.http.http2.Http2Ping;
 import io.helidon.http.http2.Http2Priority;
 import io.helidon.http.http2.Http2RstStream;
 import io.helidon.http.http2.Http2Setting;
@@ -61,6 +62,8 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
 
     private static final System.Logger LOGGER = System.getLogger(Http2ClientStream.class.getName());
     private static final Set<Http2StreamState> NON_CANCELABLE = Set.of(Http2StreamState.CLOSED, Http2StreamState.IDLE);
+    private static final Http2FrameData HTTP2_PING = Http2Ping.create().toFrameData();
+
     private final Http2ClientConnection connection;
     private final Http2Settings serverSettings;
     private final SocketContext ctx;
@@ -341,6 +344,13 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
                                                                streamId);
         Http2FrameData frameData = new Http2FrameData(frameHeader, entityBytes);
         splitAndWrite(frameData);
+    }
+
+    /**
+     * Sends PING frame to server. Can be used to check if connection is healthy.
+     */
+    public void sendPing() {
+        connection.writer().write(HTTP2_PING);
     }
 
     /**
