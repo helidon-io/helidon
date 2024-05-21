@@ -73,12 +73,13 @@ interface GrpcClientProtocolConfigBlueprint extends ProtocolConfig {
 
     /**
      * How often to send a heartbeat (HTTP/2 ping) to check if the connection is still
-     * alive. Set the heartbeat to 0 to turn this feature off.
+     * alive. This is useful for long-running, streaming gRPC calls. It is turned off by
+     * default but can be enabled by setting the period to a value greater than 0.
      *
      * @return heartbeat period
      */
     @Option.Configured
-    @Option.Default("PT5S")
+    @Option.Default("PT0S")
     Duration heartbeatPeriod();
 
     /**
