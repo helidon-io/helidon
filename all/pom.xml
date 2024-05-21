@@ -294,10 +294,6 @@
             <artifactId>helidon-metrics-system-meters</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.metrics</groupId>
-            <artifactId>helidon-metrics-provider-tests</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.metrics.providers</groupId>
             <artifactId>helidon-metrics-providers-micrometer</artifactId>
         </dependency>
@@ -1033,10 +1029,6 @@
         <dependency>
             <groupId>io.helidon.inject</groupId>
             <artifactId>helidon-inject-processor</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject-maven-plugin</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.inject</groupId>

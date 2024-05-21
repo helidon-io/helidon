@@ -381,11 +381,6 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.metrics</groupId>
-                <artifactId>helidon-metrics-provider-tests</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.helidon.metrics.providers</groupId>
                 <artifactId>helidon-metrics-providers-micrometer</artifactId>
                 <version>${helidon.version}</version>
@@ -663,12 +658,6 @@
                 <!-- to add TracerResolver support -->
                 <groupId>io.helidon.tracing</groupId>
                 <artifactId>helidon-tracing-tracer-resolver</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <!-- for testing all providers -->
-                <groupId>io.helidon.tracing</groupId>
-                <artifactId>helidon-tracing-provider-tests</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -1360,11 +1349,6 @@
             <dependency>
                 <groupId>io.helidon.inject</groupId>
                 <artifactId>helidon-inject-processor</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.inject</groupId>
-                <artifactId>helidon-inject-maven-plugin</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
