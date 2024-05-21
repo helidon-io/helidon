@@ -25,6 +25,8 @@ final class OciConfigSupport {
     /**
      * Primary hostname of metadata service.
      */
+    // we do not use the constant, as it is marked as internal, and we only need the IP address anyway
+    // see com.oracle.bmc.auth.AbstractFederationClientAuthenticationDetailsProviderBuilder.METADATA_SERVICE_BASE_URL
     static final String IMDS_HOSTNAME = "169.254.169.254";
 
     private OciConfigSupport() {

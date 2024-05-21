@@ -32,6 +32,8 @@ import io.helidon.service.registry.Service;
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider;
 
+import static io.helidon.integrations.oci.OciConfigSupport.IMDS_HOSTNAME;
+
 /**
  * Instance principal authentication strategy, uses the
  * {@link com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider}.
@@ -41,9 +43,6 @@ import com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider;
 class AtnStrategyInstancePrincipal implements OciAtnStrategy {
     static final String STRATEGY = "instance-principal";
 
-    // we do not use the constant, as it is marked as internal, and we only need the IP address anyway
-    // see com.oracle.bmc.auth.AbstractFederationClientAuthenticationDetailsProviderBuilder.METADATA_SERVICE_BASE_URL
-    private static final String IMDS_ADDRESS = "169.254.169.254";
     private static final System.Logger LOGGER = System.getLogger(AtnStrategyInstancePrincipal.class.getName());
 
     private final LazyValue<Optional<AbstractAuthenticationDetailsProvider>> provider;
@@ -78,18 +77,18 @@ class AtnStrategyInstancePrincipal implements OciAtnStrategy {
         });
     }
 
-    private static boolean imdsAvailable(OciConfig config) {
+    static boolean imdsAvailable(OciConfig config) {
         Duration timeout = config.imdsTimeout();
 
         try {
-            if (InetAddress.getByName(config.imdsBaseUri().map(URI::getHost).orElse(IMDS_ADDRESS))
+            if (InetAddress.getByName(config.imdsBaseUri().map(URI::getHost).orElse(IMDS_HOSTNAME))
                     .isReachable((int) timeout.toMillis())) {
-                return RegionProviderSdk.regionFromImds() != null;
+                return RegionProviderSdk.regionFromImds(config) != null;
             }
             return false;
         } catch (IOException e) {
             LOGGER.log(Level.TRACE,
-                       "imds service is not reachable, or timed out for address: " + IMDS_ADDRESS + ", instance principal "
+                       "imds service is not reachable, or timed out for address: " + IMDS_HOSTNAME + ", instance principal "
                                + "strategy is not available.",
                        e);
             return false;

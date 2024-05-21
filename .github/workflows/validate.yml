@@ -72,6 +72,7 @@ jobs:
       - name: Docs
         run: etc/scripts/docs.sh
   build:
+    environment: pipeline
     timeout-minutes: 60
     strategy:
       matrix:
@@ -86,6 +87,12 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           cache: maven
       - name: Maven build
+        env:
+          HELIDON_OCI_IT_REGION: ${{ secrets.HELIDON_OCI_IT_REGION }}
+          HELIDON_OCI_IT_TENANCY: ${{ secrets.HELIDON_OCI_IT_TENANCY }}
+          HELIDON_OCI_IT_USER: ${{ secrets.HELIDON_OCI_IT_USER }}
+          HELIDON_OCI_IT_FINGERPRINT: ${{ secrets.HELIDON_OCI_IT_FINGERPRINT }}
+          HELIDON_OCI_IT_KEY: ${{ secrets.HELIDON_OCI_IT_KEY }}
         run: etc/scripts/github-build.sh
   examples:
     timeout-minutes: 30
@@ -162,3 +169,4 @@ jobs:
         run: etc/scripts/test-packaging-jlink.sh
       - name: Native-Image packaging
         run: etc/scripts/test-packaging-native.sh
+
