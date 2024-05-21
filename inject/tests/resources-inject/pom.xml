@@ -49,6 +49,7 @@
         <dependency>
             <groupId>io.helidon.inject</groupId>
             <artifactId>helidon-inject-maven-plugin</artifactId>
+            <version>${helidon.version}</version>
             <scope>provided</scope> <!-- reactor dependency ordering only -->
             <optional>true</optional>
         </dependency>

@@ -43,6 +43,7 @@
         <dependency>
             <groupId>io.helidon.metrics</groupId>
             <artifactId>helidon-metrics-provider-tests</artifactId>
+            <version>${helidon.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
