@@ -18,11 +18,9 @@ package io.helidon.microprofile.telemetry;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 
-import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
-import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
 
@@ -89,9 +87,7 @@ class WithSpanInterceptor {
 
         io.helidon.tracing.Span.Builder<?> helidonSpanBuilder = tracer.spanBuilder(spanName)
                 .kind(Span.Kind.INTERNAL);
-        Contexts.context()
-                .flatMap(c -> c.get(SpanContext.class))
-                .ifPresent(helidonSpanBuilder::parent);
+        Span.current().map(Span::context).ifPresent(helidonSpanBuilder::parent);
 
         for (int i = 0; i < method.getParameters().length; i++) {
             Parameter p = method.getParameters()[i];
