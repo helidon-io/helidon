@@ -44,7 +44,6 @@ import static io.helidon.common.testing.junit5.OptionalMatcher.optionalPresent;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 public class OciIntegrationIT {
 
@@ -180,8 +179,6 @@ public class OciIntegrationIT {
     }
 
     private static TestConfiguration testConfiguration() {
-        assumeTrue(System.getenv(ENV_USER) != null, "Missing environment variable '" + ENV_USER + "'");
-
         String user = System.getenv(ENV_USER);
         String fingerprint = System.getenv(ENV_FINGERPRINT);
         String tenancy = System.getenv(ENV_TENANCY);

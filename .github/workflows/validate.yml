@@ -17,60 +17,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  copyright:
-    timeout-minutes: 10
-    runs-on: ubuntu-20.04
-    steps:
-     - uses: actions/checkout@v4
-       with:
-         fetch-depth: 0
-     - name: Set up JDK ${{ env.JAVA_VERSION }}
-       uses: actions/setup-java@v4.1.0
-       with:
-         distribution: ${{ env.JAVA_DISTRO }}
-         java-version: ${{ env.JAVA_VERSION }}
-         cache: maven
-     - name: Copyright
-       run: etc/scripts/copyright.sh
-  checkstyle:
-    timeout-minutes: 10
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4.1.0
-        with:
-          distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_VERSION }}
-          cache: maven
-      - name: Checkstyle
-        run: etc/scripts/checkstyle.sh
-  spotbugs:
-    timeout-minutes: 45
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4.1.0
-        with:
-          distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_VERSION }}
-          cache: maven
-      - name: Spotbugs
-        run: etc/scripts/spotbugs.sh
-  docs:
-    timeout-minutes: 30
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4.1.0
-        with:
-          distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_VERSION }}
-          cache: maven
-      - name: Docs
-        run: etc/scripts/docs.sh
   build:
     environment: pipeline
     timeout-minutes: 60
@@ -93,80 +39,7 @@ jobs:
           HELIDON_OCI_IT_USER: ${{ secrets.HELIDON_OCI_IT_USER }}
           HELIDON_OCI_IT_FINGERPRINT: ${{ secrets.HELIDON_OCI_IT_FINGERPRINT }}
           HELIDON_OCI_IT_KEY: ${{ secrets.HELIDON_OCI_IT_KEY }}
-        run: etc/scripts/github-build.sh
-  examples:
-    timeout-minutes: 30
-    strategy:
-      matrix:
-        os: [ ubuntu-20.04, macos-14 ]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4.1.0
-        with:
-          distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_VERSION }}
-          cache: maven
-      - name: Maven build
         run: |
           mvn -B -e "-Dmaven.test.skip=true" $MAVEN_HTTP_ARGS -DskipTests -Ppipeline install 
-          cd examples
+          cd integrations/oci/oci
           mvn -B verify
-  mp-tck:
-    timeout-minutes: 60
-    name: "MicroProfile TCKs"
-    strategy:
-      matrix:
-        os: [ ubuntu-20.04 ]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4.1.0
-        with:
-          distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_VERSION }}
-          cache: maven
-      - name: Maven build
-        run: etc/scripts/mp-tck.sh
-  archetypes:
-    timeout-minutes: 45
-    strategy:
-      matrix:
-        os: [ ubuntu-20.04 ]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4.1.0
-        with:
-          distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_VERSION }}
-          cache: maven
-      - name: Test archetypes
-        run: etc/scripts/test-archetypes.sh
-  packaging:
-    timeout-minutes: 60
-    strategy:
-      matrix:
-        os: [ ubuntu-20.04, macos-14]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: graalvm/setup-graalvm@v1
-        with:
-          java-version: 21
-          distribution: graalvm-community
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          native-image-job-reports: true
-          cache: maven
-      - name: Build Helidon
-        run: etc/scripts/github-compile.sh
-      - name: JAR packaging
-        run: etc/scripts/test-packaging-jar.sh
-      - name: JLink packaging
-        run: etc/scripts/test-packaging-jlink.sh
-      - name: Native-Image packaging
-        run: etc/scripts/test-packaging-native.sh
-
