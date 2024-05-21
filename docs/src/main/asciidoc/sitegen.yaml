@@ -245,6 +245,12 @@ backend:
                 glyph:
                   type: "icon"
                   value: "access_alarm"
+              - type: "PAGE"
+                title: "Threading"
+                source: "threading.adoc"
+                glyph:
+                  type: "icon"
+                  value: "clear_all"
               - type: "MENU"
                 title: "Security"
                 dir: "security"
