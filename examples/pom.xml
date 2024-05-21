@@ -62,6 +62,7 @@
         <module>translator-app</module>
         <module>webclient</module>
         <module>webserver</module>
+        <module>crac</module>
     </modules>
 
     <build>

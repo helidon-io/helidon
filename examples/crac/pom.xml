@@ -51,21 +51,6 @@
             <artifactId>helidon-logging-jul</artifactId>
             <scope>runtime</scope>
         </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.testing</groupId>
-            <artifactId>helidon-microprofile-testing-junit5</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>

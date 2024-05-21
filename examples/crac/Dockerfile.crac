@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022 Oracle and/or its affiliates.
+# Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ ENV CR_DIR=${CONT_IMG_VER:-/crac-checkpoint/cr}
 RUN microdnf -y update && microdnf -y install wget tar gzip
 RUN wget -O crac-jdk.tar.gz "https://cdn.azul.com/zulu/bin/${JDK_NAME}.tar.gz"
 RUN tar zxf ./crac-jdk.tar.gz -C /usr/share && ln -s $JAVA_HOME/bin/java /bin/
-RUN ls -la /usr/share
 
 FROM olinux-crac
 WORKDIR /helidon
@@ -35,7 +34,7 @@ WORKDIR /helidon
 ADD target/*.jar .
 ADD target/libs libs
 ADD runtimeCRaC.sh .
-RUN chmod +x ./runtimeCRaC.sh && ls -la /helidon
+RUN chmod +x ./runtimeCRaC.sh
 
 CMD ["sh","./runtimeCRaC.sh"]
 

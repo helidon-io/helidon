@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,19 @@
  * limitations under the License.
  */
 
-/**
- * Implicit HelloWorld example (starts server without configuration).
- */
 package io.helidon.microprofile.example.helloworld.implicit;
+
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+
+@Path("/")
+public class CracResource {
+
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    public String message() {
+        return "Hello World";
+    }
+}
