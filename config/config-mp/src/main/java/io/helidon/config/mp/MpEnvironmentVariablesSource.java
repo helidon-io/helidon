@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import io.helidon.common.configurable.LruCache;
+import io.helidon.config.PropertiesFilter;
 
 import jakarta.annotation.Priority;
 import org.eclipse.microprofile.config.spi.ConfigSource;
@@ -41,7 +42,7 @@ class MpEnvironmentVariablesSource implements ConfigSource {
     }
 
     MpEnvironmentVariablesSource(int cacheSize) {
-        this.env = Map.copyOf(System.getenv());
+        this.env = Map.copyOf(PropertiesFilter.create(System.getProperties()).filter(System.getenv()));
         this.cache = LruCache.<String, Cached>builder().capacity(cacheSize).build();
     }
 
