@@ -18,3 +18,4 @@ grpc-client:
   poll-wait-time: PT30S
   abort-poll-time-expired: true
   init-buffer-size: 10000
+  heartbeat-period: PT10S

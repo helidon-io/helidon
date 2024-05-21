@@ -37,6 +37,7 @@ class GrpcConfigProtocolTest {
         assertThat(config.pollWaitTime(), is(Duration.ofSeconds(10)));
         assertThat(config.abortPollTimeExpired(), is(false));
         assertThat(config.initBufferSize(), is(2048));
+        assertThat(config.heartbeatPeriod(), is(Duration.ofSeconds(0)));
     }
 
     @Test
@@ -46,5 +47,6 @@ class GrpcConfigProtocolTest {
         assertThat(config.pollWaitTime(), is(Duration.ofSeconds(30)));
         assertThat(config.abortPollTimeExpired(), is(true));
         assertThat(config.initBufferSize(), is(10000));
+        assertThat(config.heartbeatPeriod(), is(Duration.ofSeconds(10)));
     }
 }

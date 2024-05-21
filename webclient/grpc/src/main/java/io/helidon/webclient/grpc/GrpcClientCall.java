@@ -116,7 +116,6 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                         Thread.sleep(period);
                         if (sendingQueue.isEmpty()) {
                             sendingQueue.add(PING_FRAME);
-                            socket().log(LOGGER, DEBUG, "[Heartbeat thread] heartbeat queued");
                         }
                     }
                 } catch (Throwable t) {
@@ -140,6 +139,7 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                     if (bufferData != null) {
                         if (bufferData == PING_FRAME) {                   // ping frame
                             clientStream().sendPing();
+                            socket().log(LOGGER, DEBUG, "[Writing thread] heartbeat sent");
                             continue;
                         }
                         if (bufferData == EMPTY_BUFFER_DATA) {            // end marker
