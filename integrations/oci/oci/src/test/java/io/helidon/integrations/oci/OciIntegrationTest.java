@@ -94,6 +94,9 @@ class OciIntegrationTest {
     void testRegionFromConfig() {
         String yamlConfig = """
                 helidon.oci.region: us-phoenix-1
+                config-file-strategy:
+                    # we must use a file that does not exist, if this machine has actual oci config file
+                    path: src/test/resources/test-oci-config-not-there
                 """;
         Config config = Config.just(ConfigSources.create(yamlConfig, MediaTypes.APPLICATION_YAML));
         setUp(config);
