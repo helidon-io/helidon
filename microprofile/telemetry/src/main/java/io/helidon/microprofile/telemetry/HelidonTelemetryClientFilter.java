@@ -22,7 +22,6 @@ import io.helidon.tracing.HeaderConsumer;
 import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
-import io.helidon.tracing.SpanContext;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.ClientRequestContext;

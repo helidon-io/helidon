@@ -18,13 +18,11 @@ package io.helidon.microprofile.telemetry;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Optional;
 
 import io.helidon.common.context.Contexts;
 import io.helidon.config.mp.MpConfig;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
-import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
 
 import io.opentelemetry.api.baggage.Baggage;
