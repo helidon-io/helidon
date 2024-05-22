@@ -45,7 +45,7 @@ module io.helidon.microprofile.telemetry {
     requires io.opentelemetry.sdk;
     requires jakarta.annotation;
     requires jakarta.inject;
-    requires java.logging;
+
     requires microprofile.config.api;
     requires opentelemetry.instrumentation.annotations;
 

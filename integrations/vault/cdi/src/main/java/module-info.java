@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ module io.helidon.integrations.vault.cdi {
 
     requires io.helidon.microprofile.cdi;
     requires jakarta.inject;
-    requires java.logging;
+
     requires microprofile.config.api;
 
     requires transitive io.helidon.integrations.vault;

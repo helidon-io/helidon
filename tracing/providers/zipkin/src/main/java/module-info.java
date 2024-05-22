@@ -33,7 +33,7 @@ module io.helidon.tracing.providers.zipkin {
     requires io.helidon.tracing.providers.opentracing;
     requires io.opentracing.noop;
     requires io.opentracing.util;
-    requires java.logging;
+
 
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;

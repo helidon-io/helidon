@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ module io.helidon.security {
 
     requires io.helidon.common.context;
     requires io.helidon.common.uri;
-    requires java.logging;
+
 
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;

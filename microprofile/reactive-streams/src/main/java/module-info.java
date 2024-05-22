@@ -31,7 +31,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.microprofile.reactive {
 
     requires io.helidon.common.reactive;
-    requires java.logging;
+
 
     requires static io.helidon.common.features.api;
 

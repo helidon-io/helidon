@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ module io.helidon.tests.apps.bookstore.mp {
     requires io.helidon.tests.apps.bookstore.common;
     requires jakarta.json.bind;
     requires jakarta.json;
-    requires java.logging;
+
 
     opens io.helidon.tests.apps.bookstore.mp to io.helidon.microprofile.cdi,weld.core.impl;
 

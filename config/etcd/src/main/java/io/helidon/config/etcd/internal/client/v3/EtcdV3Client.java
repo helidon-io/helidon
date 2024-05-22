@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
 import java.util.concurrent.SubmissionPublisher;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.config.etcd.internal.client.EtcdClient;
 import io.helidon.config.etcd.internal.client.EtcdClientException;
@@ -48,7 +46,7 @@ import io.grpc.stub.StreamObserver;
  */
 public class EtcdV3Client implements EtcdClient {
 
-    private static final Logger LOGGER = Logger.getLogger(EtcdV3Client.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(EtcdV3Client.class.getName());
 
     private final Map<String, SubmissionPublisher<Long>> publishers = new ConcurrentHashMap<>();
 
@@ -148,7 +146,7 @@ public class EtcdV3Client implements EtcdClient {
             try {
                 channel.awaitTermination(1, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
-                LOGGER.log(Level.CONFIG, "Error closing gRPC channel, reason: " + e.getLocalizedMessage(), e);
+                LOGGER.log(System.Logger.Level.INFO, "Error closing gRPC channel, reason: " + e.getLocalizedMessage(), e);
             } finally {
                 channel.shutdown();
             }

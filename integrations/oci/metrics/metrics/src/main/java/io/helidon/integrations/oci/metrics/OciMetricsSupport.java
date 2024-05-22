@@ -25,8 +25,6 @@ import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
@@ -49,7 +47,7 @@ import com.oracle.bmc.monitoring.requests.PostMetricDataRequest;
  * OCI Metrics Support.
  */
 public class OciMetricsSupport implements HttpService {
-    private static final Logger LOGGER = Logger.getLogger(OciMetricsSupport.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(OciMetricsSupport.class.getName());
 
     private static final UnitConverter STORAGE_UNIT_CONVERTER = UnitConverter.storageUnitConverter();
     private static final UnitConverter TIME_UNIT_CONVERTER = UnitConverter.timeUnitConverter();
@@ -183,7 +181,7 @@ public class OciMetricsSupport implements HttpService {
 
     private void pushMetrics() {
         List<MetricDataDetails> allMetricDataDetails = ociMetricsData.getMetricDataDetails();
-        LOGGER.finest(String.format("Processing %d metrics", allMetricDataDetails.size()));
+        LOGGER.log(System.Logger.Level.TRACE, String.format("Processing %d metrics", allMetricDataDetails.size()));
 
         if (allMetricDataDetails.size() > 0) {
             while (true) {
@@ -214,11 +212,11 @@ public class OciMetricsSupport implements HttpService {
                 .postMetricDataDetails(postMetricDataDetails)
                 .build();
 
-        LOGGER.finest(String.format("Pushing %d metrics to OCI", metricDataDetailsList.size()));
-        if (LOGGER.isLoggable(Level.FINEST)) {
+        LOGGER.log(System.Logger.Level.TRACE, String.format("Pushing %d metrics to OCI", metricDataDetailsList.size()));
+        if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
             metricDataDetailsList
                     .forEach(m -> {
-                        LOGGER.finest(String.format(
+                        LOGGER.log(System.Logger.Level.TRACE, String.format(
                                 "Metric details: name=%s, namespace=%s, dimensions=%s, "
                                         + "datapoints.timestamp=%s, datapoints.value=%f, metadata=%s",
                                 m.getName(),
@@ -235,9 +233,10 @@ public class OciMetricsSupport implements HttpService {
             this.monitoringClient.setEndpoint(
                     monitoringClient.getEndpoint().replaceFirst("telemetry\\.", "telemetry-ingestion."));
             this.monitoringClient.postMetricData(postMetricDataRequest);
-            LOGGER.finest(String.format("Successfully posted %d metrics to OCI", metricDataDetailsList.size()));
+            LOGGER.log(System.Logger.Level.TRACE,
+                    String.format("Successfully posted %d metrics to OCI", metricDataDetailsList.size()));
         } catch (Throwable e) {
-            LOGGER.warning(String.format("Unable to send metrics to OCI: %s", e.getMessage()));
+            LOGGER.log(System.Logger.Level.WARNING, String.format("Unable to send metrics to OCI: %s", e.getMessage()));
         } finally {
             // restore original endpoint
             this.monitoringClient.setEndpoint(originalMonitoringEndpoint);
@@ -252,16 +251,16 @@ public class OciMetricsSupport implements HttpService {
     @Override
     public void beforeStart() {
         if (!enabled) {
-            LOGGER.info("Metric push to OCI is disabled!");
+            LOGGER.log(System.Logger.Level.INFO, "Metric push to OCI is disabled!");
             return;
         }
 
         if (scopes.isEmpty()) {
-            LOGGER.info("No selected metric scopes to push to OCI");
+            LOGGER.log(System.Logger.Level.INFO, "No selected metric scopes to push to OCI");
             return;
         }
 
-        LOGGER.fine("Starting OCI Metrics agent");
+        LOGGER.log(System.Logger.Level.TRACE, "Starting OCI Metrics agent");
 
         ociMetricsData = new OciMetricsData(
                 scopes, nameFormatter, compartmentId, namespace, resourceGroup, descriptionEnabled);
@@ -272,7 +271,7 @@ public class OciMetricsSupport implements HttpService {
     public void afterStop() {
         // Shutdown executor if created
         if (scheduledExecutorService != null) {
-            LOGGER.fine("Shutting down OCI Metrics agent");
+            LOGGER.log(System.Logger.Level.TRACE, "Shutting down OCI Metrics agent");
             scheduledExecutorService.shutdownNow();
         }
     }
