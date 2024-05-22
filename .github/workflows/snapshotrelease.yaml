@@ -29,7 +29,7 @@ jobs:
         uses: actions/setup-java@v4.1.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_RELEASE }}
+          java-version: ${{ env.JAVA_VERSION }}
           cache: maven
       - name: Build and deploy
         env:
