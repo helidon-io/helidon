@@ -41,6 +41,9 @@ import io.opentelemetry.context.propagation.TextMapPropagator;
 import io.opentelemetry.context.propagation.TextMapSetter;
 
 class OpenTelemetryTracer implements Tracer {
+
+    static final String USE_CURRENT_SPAN_AS_PARENT = "io.helidon.tracing.providers.opentelemetry.currentSpanAsParent";
+
     private static final TextMapGetter GETTER = new Getter();
     private static final TextMapSetter SETTER = new Setter();
 
@@ -75,6 +78,9 @@ class OpenTelemetryTracer implements Tracer {
     public Span.Builder<?> spanBuilder(String name) {
         OpenTelemetrySpanBuilder builder = new OpenTelemetrySpanBuilder(delegate.spanBuilder(name),
                                                                         spanListeners);
+        if (Boolean.getBoolean(USE_CURRENT_SPAN_AS_PARENT)) {
+            Span.current().map(Span::context).ifPresent(builder::parent);
+        }
         tags.forEach(builder::tag);
         return builder;
     }
