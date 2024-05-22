@@ -144,7 +144,7 @@
 
     <properties>
         <version.plugin.clean>3.2.0</version.plugin.clean>
-        <version.plugin.deploy>2.8.2</version.plugin.deploy>
+        <version.plugin.deploy>3.1.1</version.plugin.deploy>
         <version.plugin.gpg>1.6</version.plugin.gpg>
         <version.plugin.install>3.1.1</version.plugin.install>
         <version.plugin.nexus-staging>1.6.13</version.plugin.nexus-staging>
