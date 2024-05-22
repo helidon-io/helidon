@@ -88,17 +88,14 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
         }
 
         //Start new span for container request.
-        Span.Builder<?> helidonSpanBuilder = helidonTracer.spanBuilder(spanName(requestContext))
+        Span helidonSpan = helidonTracer.spanBuilder(spanName(requestContext))
                 .kind(Span.Kind.SERVER)
                 .tag(HTTP_METHOD, requestContext.getMethod())
                 .tag(HTTP_SCHEME, requestContext.getUriInfo().getRequestUri().getScheme())
-                .tag(HTTP_TARGET, resolveTarget(requestContext));
-
-        Optional<SpanContext> spanContextFromRequest =
-                helidonTracer.extract(new RequestContextHeaderProvider(requestContext.getHeaders()));
-        spanContextFromRequest.ifPresent(helidonSpanBuilder::parent);
-
-        Span helidonSpan = helidonSpanBuilder.start();
+                .tag(HTTP_TARGET, resolveTarget(requestContext))
+                .update(builder -> helidonTracer.extract(new RequestContextHeaderProvider(requestContext.getHeaders()))
+                        .ifPresent(builder::parent))
+                .start();
 
         Scope helidonScope = helidonSpan.activate();
 
@@ -126,11 +123,13 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
             if (span == null) {
                 return;
             }
+            Scope scope = (Scope) request.getProperty(SPAN_SCOPE);
+            scope.close();
+
             span.tag(HTTP_STATUS_CODE, response.getStatus());
             span.end();
 
-            Scope scope = (Scope) request.getProperty(SPAN_SCOPE);
-            scope.close();
+
         } finally {
             request.removeProperty(SPAN);
             request.removeProperty(SPAN_SCOPE);

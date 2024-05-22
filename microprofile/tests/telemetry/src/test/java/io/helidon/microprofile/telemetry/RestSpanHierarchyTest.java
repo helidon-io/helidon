@@ -131,6 +131,9 @@ public class RestSpanHierarchyTest {
             io.helidon.tracing.Span mixedSpan = helidonTracer.spanBuilder("mixed_inner")
                     .kind(io.helidon.tracing.Span.Kind.SERVER)
                     .tag("attribute", "value")
+                    .update(builder -> io.helidon.tracing.Span.current()
+                            .map(io.helidon.tracing.Span::context)
+                            .ifPresent(builder::parent))
                     .start();
             mixedSpan.end();
 
@@ -145,6 +148,9 @@ public class RestSpanHierarchyTest {
             io.helidon.tracing.Span mixedSpan = helidonTracerInjected.spanBuilder("mixed_inner_injected")
                     .kind(io.helidon.tracing.Span.Kind.SERVER)
                     .tag("attribute", "value")
+                    .update(builder -> io.helidon.tracing.Span.current()
+                            .map(io.helidon.tracing.Span::context)
+                            .ifPresent(builder::parent))
                     .start();
             mixedSpan.end();
 

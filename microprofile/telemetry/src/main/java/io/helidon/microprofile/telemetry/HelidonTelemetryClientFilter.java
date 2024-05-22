@@ -65,18 +65,15 @@ class HelidonTelemetryClientFilter implements ClientRequestFilter, ClientRespons
 
         //Start new span for Client request.
         // Use the Helidon wrappers so registered span listeners are notified.
-        Span.Builder<?> helidonSpanBuilder = helidonTracer.spanBuilder("HTTP " + clientRequestContext.getMethod())
+        Span helidonSpan = helidonTracer.spanBuilder("HTTP " + clientRequestContext.getMethod())
                 .kind(Span.Kind.CLIENT)
                 .tag(HTTP_METHOD, clientRequestContext.getMethod())
                 .tag(HTTP_SCHEME, clientRequestContext.getUri().getScheme())
-                .tag(HTTP_URL, clientRequestContext.getUri().toString());
-
-        Optional<SpanContext> spanContextFromRequest =
-                helidonTracer.extract(new RequestContextHeaderProvider(clientRequestContext.getStringHeaders()))
-                        .or(() -> Span.current().map(Span::context));
-        spanContextFromRequest.ifPresent(helidonSpanBuilder::parent);
-
-        Span helidonSpan = helidonSpanBuilder.start();
+                .tag(HTTP_URL, clientRequestContext.getUri().toString())
+                .update(builder -> Span.current()
+                        .map(Span::context)
+                        .ifPresent(builder::parent))
+                .start();
 
         Scope helidonScope = helidonSpan.activate();
 
