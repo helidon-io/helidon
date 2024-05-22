@@ -18,6 +18,7 @@ package io.helidon.service.registry;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -42,19 +43,20 @@ public abstract class ServiceLoader__ServiceDescriptor implements GeneratedServi
      * Create a new instance for a specific service provider interface and its implementation.
      *
      * @param providerInterface provider interface type
-     * @param providerImpl      provider implementation type
+     * @param provider          Java Service Loader provider instance
      * @param weight            weight of the provider
      * @return new descriptor
      */
-    public static ServiceLoader__ServiceDescriptor create(TypeName providerInterface,
-                                                          TypeName providerImpl,
-                                                          double weight) {
+    public static GeneratedService.Descriptor<Object> create(TypeName providerInterface,
+                                                             ServiceLoader.Provider<Object> provider,
+                                                             double weight) {
         LOCK.lock();
         try {
+            TypeName providerImpl = TypeName.create(provider.type());
             ProviderKey key = new ProviderKey(providerInterface, providerImpl);
             ServiceLoader__ServiceDescriptor descriptor = INSTANCE_CACHE.get(key);
             if (descriptor == null) {
-                descriptor = new ServiceProviderDescriptor(providerInterface, providerImpl, weight);
+                descriptor = new ServiceProviderDescriptor(providerInterface, providerImpl, provider, weight);
                 INSTANCE_CACHE.put(key, descriptor);
             }
 
@@ -69,13 +71,6 @@ public abstract class ServiceLoader__ServiceDescriptor implements GeneratedServi
         return DESCRIPTOR_TYPE;
     }
 
-    /**
-     * The interface of the service loader provider.
-     *
-     * @return provider interface type
-     */
-    public abstract TypeName providerInterface();
-
     private static class ServiceProviderDescriptor extends ServiceLoader__ServiceDescriptor {
         private final TypeName providerInterface;
         private final Set<TypeName> contracts;
@@ -85,13 +80,13 @@ public abstract class ServiceLoader__ServiceDescriptor implements GeneratedServi
 
         private ServiceProviderDescriptor(TypeName providerInterface,
                                           TypeName providerImpl,
+                                          ServiceLoader.Provider<Object> provider,
                                           double weight) {
-
             this.providerInterface = providerInterface;
             this.contracts = Set.of(providerInterface);
             this.providerImpl = providerImpl;
             this.weight = weight;
-            this.instance = LazyValue.create(this::newInstance);
+            this.instance = LazyValue.create(provider);
         }
 
         @Override
@@ -121,14 +116,6 @@ public abstract class ServiceLoader__ServiceDescriptor implements GeneratedServi
             return weight;
         }
 
-        @Override
-        public TypeName providerInterface() {
-            return providerInterface;
-        }
-
-        private Object newInstance() {
-            return CoreServiceDiscovery.instantiateServiceLoaded(serviceType());
-        }
     }
 
     private record ProviderKey(TypeName providerInterface, TypeName providerImpl) {

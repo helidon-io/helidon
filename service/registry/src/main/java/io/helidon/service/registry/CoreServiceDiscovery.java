@@ -23,10 +23,10 @@ import java.lang.System.Logger.Level;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -68,7 +68,7 @@ class CoreServiceDiscovery implements ServiceDiscovery {
                     .flatMap(CoreServiceDiscovery::loadLines)
                     .filter(not(Line::isEmpty))
                     .filter(not(Line::isComment))
-                    .flatMap(it -> DescriptorMeta.parseServiceProvider(classLoader, it))
+                    .flatMap(DescriptorMeta::parseServiceProvider)
                     .forEach(result::add);
         }
 
@@ -83,41 +83,23 @@ class CoreServiceDiscovery implements ServiceDiscovery {
         return NoopServiceDiscovery.INSTANCE;
     }
 
-    static Object instantiateServiceLoaded(TypeName typeName) {
-        // service loaded is a public class with a public no-args constructor
-        // in Helidon, we always export it; in user's libraries, they would need to open the module
-        // to this module, or export it
-        Class<?> clazz = toClass(typeName);
-
-        try {
-            return clazz.getConstructor()
-                    .newInstance();
-        } catch (ReflectiveOperationException e) {
-            throw new ServiceRegistryException("Could not obtain the instance of service provider implementation "
-                                                       + typeName.fqName() + ", please either export the package it defines it,"
-                                                       + " or open it to io.helidon.service.registry module",
-                                               e);
-        }
-    }
-
     @Override
     public List<DescriptorMetadata> allMetadata() {
         return allDescriptors;
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private static <T> Class<? extends T> toClass(TypeName descriptorType) {
+    private static <T> Class<T> toClass(TypeName className) {
         try {
             ClassLoader cl = Thread.currentThread().getContextClassLoader();
             cl = (cl == null) ? CoreServiceDiscovery.class.getClassLoader() : cl;
 
-            return (Class) cl.loadClass(descriptorType.fqName());
+            return (Class) cl.loadClass(className.fqName());
         } catch (ClassNotFoundException e) {
-            throw new ServiceRegistryException("Resolution of service descriptor \"" + descriptorType.fqName()
+            throw new ServiceRegistryException("Resolution of type \"" + className.fqName()
                                                        + "\" to class failed.",
                                                e);
         }
-
     }
 
     private static Descriptor<?> getDescriptorInstance(TypeName descriptorType) {
@@ -161,31 +143,24 @@ class CoreServiceDiscovery implements ServiceDiscovery {
         }
     }
 
-    private static DescriptorMeta createServiceProviderDescriptor(TypeName providerType, TypeName providerImpl) {
-        Class<?> serviceClass = toClass(providerImpl);
+    private static DescriptorMeta createServiceProviderDescriptor(TypeName providerType,
+                                                                  ServiceLoader.Provider<Object> provider) {
+        Class<?> serviceClass = provider.type();
         double weight = Weights.find(serviceClass, Weighted.DEFAULT_WEIGHT);
 
         if (LOGGER.isLoggable(Level.TRACE)) {
             LOGGER.log(Level.TRACE,
                        "Discovered service provider for type %s: %s, weight: %s".formatted(providerType.fqName(),
-                                                                                           providerImpl.fqName(),
+                                                                                           serviceClass.getName(),
                                                                                            weight));
         }
 
-        Descriptor<Object> descriptor = ServiceLoader__ServiceDescriptor.create(providerType, providerImpl, weight);
+        Descriptor<Object> descriptor = ServiceLoader__ServiceDescriptor.create(providerType, provider, weight);
         return new DescriptorMeta("core",
                                   descriptor.descriptorType(),
                                   weight,
                                   descriptor.contracts(),
                                   LazyValue.create(descriptor));
-    }
-
-    private static boolean isJavaModule(Module module) {
-        String name = module.getName();
-        if (name == null || name.isEmpty()) {
-            return true;
-        }
-        return name.startsWith("java.") || name.startsWith("jdk.");
     }
 
     private record Line(String source, String line, int lineNumber) {
@@ -212,36 +187,17 @@ class CoreServiceDiscovery implements ServiceDiscovery {
             return descriptorSupplier.get();
         }
 
-        private static Stream<DescriptorMeta> parseServiceProvider(ClassLoader classLoader, Line line) {
+        private static Stream<DescriptorMeta> parseServiceProvider(Line line) {
             // io.helidon.config.ConfigSource
             TypeName providerType = TypeName.create(line.line.trim());
-            String providerInterface = providerType.fqName();
 
-            // each line is a service implementation
-            Set<TypeName> implementations = new HashSet<>();
+            Class<Object> providerClass = toClass(providerType);
+            CoreServiceDiscovery.class.getModule()
+                    .addUses(providerClass);
 
-            // all discovered through META-INF/services
-            classLoader.resources("META-INF/services/" + providerInterface)
-                    .flatMap(CoreServiceDiscovery::loadLines)
-                    .filter(not(Line::isEmpty))
-                    .filter(not(Line::isComment))
-                    .map(Line::line)
-                    .map(TypeName::create)
-                    .forEach(implementations::add);
+            ServiceLoader<Object> serviceLoader = ServiceLoader.load(providerClass);
 
-            // and all from modules
-            ModuleLayer.boot()
-                    .modules()
-                    .stream()
-                    .filter(not(CoreServiceDiscovery::isJavaModule))
-                    .map(Module::getDescriptor)
-                    .flatMap(it -> it.provides().stream())
-                    .filter(it -> it.service().equals(providerInterface))
-                    .flatMap(it -> it.providers().stream())
-                    .map(TypeName::create)
-                    .forEach(implementations::add);
-
-            return implementations.stream()
+            return serviceLoader.stream()
                     .map(it -> CoreServiceDiscovery.createServiceProviderDescriptor(providerType, it));
         }
 
