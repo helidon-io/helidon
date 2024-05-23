@@ -161,10 +161,9 @@ include::{sourcedir}/mp/TestingSnippets.java[tag=snippet_2, indent=0]
 
 == Mock Support
 
-One way of using Mocks with Helidon testing framework is to use CDI. The following example shows how to mock a service
-and inject it in a JAX-RS resource. Let's consider a simple service `FooService` with a dummy method `FooService#getFoo` that
-return `foo` as a `String`. And a resource where the service is injected and expose an endpoint at `/foo` that
-get the `String` provided by the service.
+CDI can be used to enable mocking, the following example shows how to mock a service and inject it in a JAX-RS resource.
+Let's consider a simple service `FooService` with a dummy method `FooService#getFoo` that return `foo` as a `String`.
+And a resource where the service is injected and expose an endpoint at `/foo` that get the `String` provided by the service.
 
 [source,java]
 .Code sample
@@ -174,9 +173,8 @@ include::{sourcedir}/mp/MockingSnippets.java[tag=snippet_1, indent=0]
 <1> A simple `foo` Service.
 <2> Inject the service into the resource.
 
-Mockito is a popular mocking framework and will be used to create a mock instance of the service. A new mock is instantiated
-before each test, configured to call real method by default. The producer method `mockFooService` produces a new bean
-with the created mock as an `@Alternative` that will be picked by the CDI and injected instead of the default singleton.
+This example uses Mockito to create mock instances before each test. The method mockFooService is a CDI producer method
+that adds the mock instance as an @Alternative in order to replace the FooService singleton.
 
 [source,java]
 .Code sample
