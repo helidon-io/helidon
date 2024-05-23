@@ -143,6 +143,7 @@
     </developers>
 
     <properties>
+        <version.plugin.build-helper>3.4.0</version.plugin.build-helper>
         <version.plugin.clean>3.2.0</version.plugin.clean>
         <version.plugin.deploy>3.1.1</version.plugin.deploy>
         <version.plugin.gpg>1.6</version.plugin.gpg>
@@ -191,6 +192,11 @@
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>versions-maven-plugin</artifactId>
                     <version>${version.plugin.versions}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>build-helper-maven-plugin</artifactId>
+                    <version>${version.plugin.build-helper}</version>
                 </plugin>
             </plugins>
         </pluginManagement>

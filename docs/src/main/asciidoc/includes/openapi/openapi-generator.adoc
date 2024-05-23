@@ -20,7 +20,6 @@
 :keywords: helidon, {flavor-lc}, openapi, generator
 :feature-name: Helidon {flavor-uc} OpenAPI Generator
 // DO NOT CHANGE THE FOLLOWING - it's used as a minimum release that will not normally change with new releases of the OpenAPI generator
-:first-version-with-strong-helidon-support: 6.2.1
 // Update the following when it is convenient to keep pace with the latest releases of the OpenAPITools generator
 // end::preamble[]
 
@@ -38,8 +37,8 @@ The link:{openapi-spec-url}[OpenAPI specification] provides a standard way to ex
 
 Separately, the link:{openapi-generator-tool-site-url}[OpenAPI generator] project has created a powerful code generator tool which accepts an OpenAPI document and generates client and server code for many languages and frameworks. The Helidon team contributes to this tool to ensure that it provides strong support for Helidon {flavor-uc} clients and servers.
 As a result, you can use the generator to create code that fits smoothly into your Helidon applications.
-The OpenAPI generator release {first-version-with-strong-helidon-support} gained particularly strong support for Helidon.
-This document applies to that release and later ones.
+
+Use the OpenAPI generator release {openapi-generator-version} or later which this document describes.
 
 In the vocabulary of the tool, there are two _generators_ for Helidon:
 
@@ -81,7 +80,7 @@ The rest of this document walks you through <<usage-section,how to use>> each te
 == Maven Coordinates
 Your project does not need any dependencies on the OpenAPI generator.
 
-To use the OpenAPI generator plug-in to generate or regenerate files during your project build, add the following to your project's `pom.xml` file to declare the plug-in. Choose whichever version of the generator plug-in meets your needs as long as it is at least {first-version-with-strong-helidon-support}.
+To use the OpenAPI generator plug-in to generate or regenerate files during your project build, add the following to your project's `pom.xml` file to declare the plug-in. Choose whichever version of the generator plug-in meets your needs as long as it is at least {openapi-generator-version}.
 
 [source,xml,subs="+attributes,+macros"]
 .Declaring the OpenAPI Generator Plug-in
