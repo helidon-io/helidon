@@ -25,7 +25,7 @@ include::{rootdir}/includes/attributes.adoc[]
 
 In Helidon 4.x we have made some major changes to Helidon. Reactive engine has been removed.
 APIS and implementations are rewritten in "blocking" paradigm.
-This guide will help you upgrade a Helidon MP 3.x application to 4.x.
+This guide will help you upgrade a Helidon SE 3.x application to 4.x.
 
 
 == Java 21 Runtime
