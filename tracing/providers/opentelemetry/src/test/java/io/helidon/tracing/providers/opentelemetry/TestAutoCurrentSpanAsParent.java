@@ -23,60 +23,45 @@ import io.opentelemetry.sdk.trace.ReadableSpan;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.nullValue;
 
 class TestAutoCurrentSpanAsParent {
 
     @Test
     void ensureCurrentSpanUsedAsParent() {
-        // Request the legacy behavior in which an active current span was automatically set as the parent of any new span.
-        String originalUseCurrentSpanAsParent = System.setProperty(OpenTelemetryTracer.USE_CURRENT_SPAN_AS_PARENT, "true");
-
-        SpanIds spanIds = testSpans(originalUseCurrentSpanAsParent);
+        // Keep the default behavior of adopting the current span as the parent of a new one.
+        SpanIds spanIds = testSpans(true);
         assertThat("Parent span", spanIds.parentOfSecondSpan, is(spanIds.firstSpanId));
     }
 
     @Test
     void ensureCurrentSpanNotUsedAsParent() {
-        // Do not set the property; we want to test the normal scenario where the property is not assigned and
-        // the active span IS NOT used automatically as the parent of a new span. But make sure that the property is
-        // NOT set (or is at least set to false) so the actual test will exercise what we want.
-        
-        assertThat("Property triggering automatic use of current span as parent for new span",
-                   System.getProperty(OpenTelemetryTracer.USE_CURRENT_SPAN_AS_PARENT),
-                   anyOf(is(nullValue()), is("false")));
-        SpanIds spanIds = testSpans(null);
-        assertThat("Parent span", spanIds.parentOfSecondSpan, is(not(spanIds.firstSpanId)));
+        // Suppress the normal behavior of adopting the current span as the parent of a new one; create a new root span instead.
+        SpanIds spanIds = testSpans(false);
+        assertThat("Parent span", spanIds.parentOfSecondSpan, is("0000000000000000"));
     }
 
-    private SpanIds testSpans(String originalUseCurrentSpanAsParentPropertyValue) {
+    private SpanIds testSpans(boolean useCurrentSpanAsParent) {
         Tracer tracer = Tracer.global();
         Span parentSpan = tracer.spanBuilder("parentSpan").start();
         String parentSpanId = parentSpan.context().spanId();
 
         try {
             try (Scope ignore = parentSpan.activate()) {
-                Span childSpan = tracer.spanBuilder("childSpan").start();
+                Span childSpan = tracer.spanBuilder("childSpan")
+                        .update(builder -> {
+                            if (!useCurrentSpanAsParent) {
+                                builder.unwrap(io.opentelemetry.api.trace.SpanBuilder.class).setNoParent();
+                            }
+                        } ).start();
                 String parentSpanIdAccordingToChild = childSpan.unwrap(ReadableSpan.class).getParentSpanContext().getSpanId();
                 childSpan.end();
                 return new SpanIds(parentSpanId, parentSpanIdAccordingToChild);
             }
         } finally {
-            restoreProperty(originalUseCurrentSpanAsParentPropertyValue);
             parentSpan.end();
         }
     }
 
     private record SpanIds(String firstSpanId, String parentOfSecondSpan) {}
-
-    private void restoreProperty(String savedSetting) {
-        if (savedSetting == null) {
-            System.clearProperty(OpenTelemetryTracer.USE_CURRENT_SPAN_AS_PARENT);
-        } else {
-            System.setProperty(OpenTelemetryTracer.USE_CURRENT_SPAN_AS_PARENT, savedSetting);
-        }
-    }
 }
