@@ -109,14 +109,14 @@ class MpConfigImpl implements Config {
     public ConfigValue getConfigValue(String key) {
 
         ConfigValue value = findConfigValue(key)
-                .orElseGet(() -> new ConfigValueImpl(key, null, null, null, 0));
+                .orElse(new ConfigValueImpl(key, null, null, null, 0));
 
         if (configProfile == null) {
             return value;
         }
 
         ConfigValue profileValue = findConfigValue("%" + configProfile + "." + key)
-                .orElseGet(() -> new ConfigValueImpl(key, null, null, null, 0));
+                .orElse(value);
 
         return value.getSourceOrdinal() > profileValue.getSourceOrdinal() ? value : profileValue;
     }
