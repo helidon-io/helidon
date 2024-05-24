@@ -99,8 +99,8 @@ public final class HelidonOpenTelemetry {
      * @param helidonTracer Helidon {@link io.helidon.tracing.Tracer} to use in creating the wrapping span builder
      * @return Helidon {@link io.helidon.tracing.Span.Builder}
      */
-    public static  io.helidon.tracing.Span.Builder<?> create(SpanBuilder spanBuilder,
-                                                             io.helidon.tracing.Tracer helidonTracer) {
+    public static io.helidon.tracing.Span.Builder<?> create(SpanBuilder spanBuilder,
+                                                            io.helidon.tracing.Tracer helidonTracer) {
 
         return new OpenTelemetrySpanBuilder(spanBuilder, helidonTracer.unwrap(OpenTelemetryTracer.class).spanListeners());
     }
