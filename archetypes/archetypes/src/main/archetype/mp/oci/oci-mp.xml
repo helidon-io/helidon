@@ -72,7 +72,7 @@ This will mount `~/.oci` as a volume in the running docker container.
                 <list key="dependencies">
                     <map>
                         <value key="groupId">org.slf4j</value>
-                        <value key="artifactId">slf4j-simple</value>
+                        <value key="artifactId">slf4j-jdk14</value>
                     </map>
                 </list>
                 <list key="microprofile-config-entries">
