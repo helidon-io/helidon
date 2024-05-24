@@ -153,6 +153,10 @@
                             <value key="artifactId">helidon-integrations-cdi-datasource-hikaricp</value>
                             <value key="scope">runtime</value>
                         </map>
+                        <map>
+                            <value key="groupId">org.slf4j</value>
+                            <value key="artifactId">slf4j-jdk14</value>
+                        </map>
                     </list>
                 </model>
             </output>
