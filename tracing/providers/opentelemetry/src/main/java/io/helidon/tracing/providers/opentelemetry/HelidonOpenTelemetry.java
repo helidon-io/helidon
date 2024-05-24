@@ -30,6 +30,7 @@ import io.helidon.tracing.SpanListener;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.Tracer;
 
 import static io.opentelemetry.context.Context.current;
@@ -89,6 +90,19 @@ public final class HelidonOpenTelemetry {
      */
     public static io.helidon.tracing.Span create(Span span, Baggage baggage) {
         return new OpenTelemetrySpan(span, baggage, SPAN_LISTENERS.get());
+    }
+
+    /**
+     * Wrap an open telemetry span builder.
+     *
+     * @param spanBuilder open telemetry span builder
+     * @param helidonTracer Helidon {@link io.helidon.tracing.Tracer} to use in creating the wrapping span builder
+     * @return Helidon {@link io.helidon.tracing.Span.Builder}
+     */
+    public static io.helidon.tracing.Span.Builder<?> create(SpanBuilder spanBuilder,
+                                                            io.helidon.tracing.Tracer helidonTracer) {
+
+        return new OpenTelemetrySpanBuilder(spanBuilder, helidonTracer.unwrap(OpenTelemetryTracer.class).spanListeners());
     }
 
     /**

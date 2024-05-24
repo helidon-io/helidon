@@ -19,13 +19,11 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 
 import io.helidon.config.Config;
+import io.helidon.tracing.Scope;
+import io.helidon.tracing.Span;
+import io.helidon.tracing.Tracer;
 import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
 
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.SpanBuilder;
-import io.opentelemetry.api.trace.Tracer;
-import io.opentelemetry.context.Context;
-import io.opentelemetry.context.Scope;
 import io.opentelemetry.instrumentation.annotations.SpanAttribute;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import jakarta.annotation.Priority;
@@ -87,9 +85,9 @@ class WithSpanInterceptor {
             spanName = className + "." + method.getName();
         }
 
-        SpanBuilder spanBuilder = tracer.spanBuilder(spanName)
-                .setSpanKind(annotation.kind())
-                .setParent(Context.current());
+        io.helidon.tracing.Span.Builder<?> helidonSpanBuilder = tracer.spanBuilder(spanName)
+                .kind(Span.Kind.INTERNAL);
+        Span.current().map(Span::context).ifPresent(helidonSpanBuilder::parent);
 
         for (int i = 0; i < method.getParameters().length; i++) {
             Parameter p = method.getParameters()[i];
@@ -100,28 +98,28 @@ class WithSpanInterceptor {
                 Object pValue = context.getParameters()[i];
 
                 if (String.class.isAssignableFrom(paramType)) {
-                    spanBuilder.setAttribute(attrName, (String) pValue);
+                    helidonSpanBuilder.tag(attrName, (String) pValue);
                 } else if (Long.class.isAssignableFrom(paramType) || long.class.isAssignableFrom(paramType)) {
-                    spanBuilder.setAttribute(attrName, (Long) pValue);
+                    helidonSpanBuilder.tag(attrName, (Long) pValue);
                 } else if (Double.class.isAssignableFrom(paramType) || double.class.isAssignableFrom(paramType)) {
-                    spanBuilder.setAttribute(attrName, (Double) pValue);
+                    helidonSpanBuilder.tag(attrName, (Double) pValue);
                 } else if (Boolean.class.isAssignableFrom(paramType) || boolean.class.isAssignableFrom(paramType)) {
-                    spanBuilder.setAttribute(attrName, (Boolean) pValue);
+                    helidonSpanBuilder.tag(attrName, (Boolean) pValue);
                 } else {
-                    spanBuilder.setAttribute(attrName, pValue.toString());
+                    helidonSpanBuilder.tag(attrName, pValue.toString());
                 }
             }
         }
 
         // Start new Span
-        Span span = spanBuilder.startSpan();
+        io.helidon.tracing.Span helidonSpan = helidonSpanBuilder.start();
 
-        try (Scope scope = span.makeCurrent()) {
+        try (Scope ignored = helidonSpan.activate()) {
             Object result = context.proceed();
-            span.end();
+            helidonSpan.end();
             return result;
         } catch (Exception e) {
-            span.recordException(e);
+            helidonSpan.end(e);
             throw e;
         }
     }

@@ -18,20 +18,15 @@ package io.helidon.microprofile.telemetry;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 
 import io.helidon.common.context.Contexts;
 import io.helidon.config.mp.MpConfig;
+import io.helidon.tracing.Scope;
+import io.helidon.tracing.Span;
 import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
 
-import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.baggage.Baggage;
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.SpanKind;
-import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Context;
-import io.opentelemetry.context.Scope;
-import io.opentelemetry.context.propagation.TextMapGetter;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -55,36 +50,15 @@ import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_S
 @Provider
 class HelidonTelemetryContainerFilter implements ContainerRequestFilter, ContainerResponseFilter {
     private static final System.Logger LOGGER = System.getLogger(HelidonTelemetryContainerFilter.class.getName());
-    private static final String SPAN = "otel.span.server.span";
-    private static final String SPAN_CONTEXT = "otel.span.server.context";
-    private static final String SPAN_SCOPE = "otel.span.server.scope";
+    private static final String SPAN = Span.class.getName();
+    private static final String SPAN_SCOPE = Scope.class.getName();
     private static final String HTTP_TARGET = "http.target";
 
     private static final String SPAN_NAME_FULL_URL = "telemetry.span.full.url";
 
     private static boolean spanNameFullUrl = false;
 
-    // Extract OpenTelemetry Parent Context from Request headers.
-    private static final TextMapGetter<ContainerRequestContext> CONTEXT_HEADER_INJECTOR;
-
-    static {
-        CONTEXT_HEADER_INJECTOR =
-                new TextMapGetter<>() {
-                    @Override
-                    public String get(ContainerRequestContext containerRequestContext, String s) {
-                        Objects.requireNonNull(containerRequestContext);
-                        return containerRequestContext.getHeaderString(s);
-                    }
-
-                    @Override
-                    public Iterable<String> keys(ContainerRequestContext containerRequestContext) {
-                        return List.copyOf(containerRequestContext.getHeaders().keySet());
-                    }
-                };
-    }
-
-    private final Tracer tracer;
-    private final OpenTelemetry openTelemetry;
+    private final io.helidon.tracing.Tracer helidonTracer;
     private final boolean isAgentPresent;
 
 
@@ -92,9 +66,9 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
     private ResourceInfo resourceInfo;
 
     @Inject
-    HelidonTelemetryContainerFilter(Tracer tracer, OpenTelemetry openTelemetry, org.eclipse.microprofile.config.Config mpConfig) {
-        this.tracer = tracer;
-        this.openTelemetry = openTelemetry;
+    HelidonTelemetryContainerFilter(io.helidon.tracing.Tracer helidonTracer,
+                                    org.eclipse.microprofile.config.Config mpConfig) {
+        this.helidonTracer = helidonTracer;
         isAgentPresent = HelidonOpenTelemetry.AgentDetector.isAgentPresent(MpConfig.toHelidonConfig(mpConfig));
 
         mpConfig.getOptionalValue(SPAN_NAME_FULL_URL, Boolean.class).ifPresent(e -> spanNameFullUrl = e);
@@ -111,26 +85,20 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
             LOGGER.log(System.Logger.Level.TRACE, "Starting Span in a Container Request");
         }
 
-        // Extract Parent Context from request headers to be used from previous filters
-        Context extractedContext = openTelemetry.getPropagators().getTextMapPropagator()
-                .extract(Context.current(), requestContext, CONTEXT_HEADER_INJECTOR);
-
-        Context parentContext = Objects.requireNonNullElseGet(extractedContext, Context::current);
-
         //Start new span for container request.
-        Span span = tracer.spanBuilder(spanName(requestContext))
-                .setParent(parentContext)
-                .setSpanKind(SpanKind.SERVER)
-                .setAttribute(HTTP_METHOD, requestContext.getMethod())
-                .setAttribute(HTTP_SCHEME, requestContext.getUriInfo().getRequestUri().getScheme())
-                .setAttribute(HTTP_TARGET, resolveTarget(requestContext))
-                .startSpan();
+        Span helidonSpan = helidonTracer.spanBuilder(spanName(requestContext))
+                .kind(Span.Kind.SERVER)
+                .tag(HTTP_METHOD, requestContext.getMethod())
+                .tag(HTTP_SCHEME, requestContext.getUriInfo().getRequestUri().getScheme())
+                .tag(HTTP_TARGET, resolveTarget(requestContext))
+                .update(builder -> helidonTracer.extract(new RequestContextHeaderProvider(requestContext.getHeaders()))
+                        .ifPresent(builder::parent))
+                .start();
 
-        Scope scope = span.makeCurrent();
-        requestContext.setProperty(SPAN, span);
-        requestContext.setProperty(SPAN_CONTEXT, Context.current());
-        requestContext.setProperty(SPAN_SCOPE, scope);
+        Scope helidonScope = helidonSpan.activate();
 
+        requestContext.setProperty(SPAN, helidonSpan);
+        requestContext.setProperty(SPAN_SCOPE, helidonScope);
 
         // Handle OpenTelemetry Baggage from the current OpenTelemetry Context.
         handleBaggage(requestContext, Context.current());
@@ -148,19 +116,18 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
             LOGGER.log(System.Logger.Level.TRACE, "Closing Span in a Container Request");
         }
 
-        // Close span for container request.
-        Context context = (Context) request.getProperty(SPAN_CONTEXT);
-        if (context == null) {
-            return;
-        }
-
         try {
             Span span = (Span) request.getProperty(SPAN);
-            span.setAttribute(HTTP_STATUS_CODE, response.getStatus());
-            span.end();
-
+            if (span == null) {
+                return;
+            }
             Scope scope = (Scope) request.getProperty(SPAN_SCOPE);
             scope.close();
+
+            span.tag(HTTP_STATUS_CODE, response.getStatus());
+            span.end();
+
+
         } finally {
             request.removeProperty(SPAN);
             request.removeProperty(SPAN_SCOPE);
