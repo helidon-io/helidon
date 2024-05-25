@@ -81,7 +81,7 @@
                             <execution>
                                 <id>build-native-image</id>
                                 <goals>
-                                    <goal>compile</goal>
+                                    <goal>compile-no-fork</goal>
                                 </goals>
                             </execution>
                         </executions>
