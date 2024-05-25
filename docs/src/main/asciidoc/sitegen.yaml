@@ -277,6 +277,7 @@ backend:
                   value: "analytics"
               - type: "MENU"
                 title: "Testing"
+                dir: "testing"
                 glyph:
                   type: "icon"
                   value: "thumbs_up_down"

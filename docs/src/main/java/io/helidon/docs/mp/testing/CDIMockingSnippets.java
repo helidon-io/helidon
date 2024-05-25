@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.docs.mp;
+package io.helidon.docs.mp.testing;
 
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
@@ -37,7 +37,7 @@ import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.when;
 
 @SuppressWarnings("ALL")
-class MockingSnippets {
+class CDIMockingSnippets {
 
     // tag::snippet_1[]
     @ApplicationScoped
@@ -83,7 +83,7 @@ class MockingSnippets {
         }
 
         @Test
-        void testMockedFoo() {
+        void testMockedService() {
             when(fooService.getFoo()).thenReturn("bar"); // <4>
 
             Response response = target.path("/foo").request().get();
@@ -93,7 +93,7 @@ class MockingSnippets {
         }
 
         @Test
-        void testFoo() {
+        void testService() {
             Response response = target.path("/foo").request().get(); // <5>
 
             assertThat(response.getStatus(), is(200));
