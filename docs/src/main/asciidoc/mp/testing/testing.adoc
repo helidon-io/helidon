@@ -161,6 +161,41 @@ include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_2, indent=0]
 
 == Mock Support
 
+This section describes how to mock objects using Helidon API and in a second phase, using pure CDI.
+
+=== Helidon Mock Support
+
+Helidon has its own API to use mocking with test classes annotated with `@HelidonTest`.
+
+==== Maven Coordinates
+
+To enable Helidon Mock Support add the following dependency to your project’s pom.xml.
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.microprofile.testing</groupId>
+    <artifactId>helidon-microprofile-testing-mocking</artifactId>
+    <scope>test</scope>
+</dependency>
+----
+
+==== API
+
+It consists of one annotation named `@MockBean`, designed to be used on fields and parameters. The implementation
+relies only on CDI and thus it works with either JUnit or TestNG. The annotation has a parameter `answers` used
+to set the default answer for the mocked beans.
+
+==== Example
+
+[source,java]
+.Code sample
+----
+include::{sourcedir}/mp/testing/HelidonMockingSnippets.java[tag=snippet_1, indent=0]
+----
+<1> `service` field annotated with `@MockBean` and `Answers.CALLS_REAL_METHODS` for default answers.
+<2> Test the mocked service with real method response.
+<3> Test the mocked service with modified behavior.
+
 === Mocking objects with pure CDI
 
 CDI can be used to enable mocking, the following example shows how to mock a service and inject it in a JAX-RS resource.
