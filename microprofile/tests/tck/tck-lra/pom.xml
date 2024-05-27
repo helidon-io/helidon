@@ -60,6 +60,11 @@
             <artifactId>helidon-lra-coordinator-server</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.logging</groupId>
+            <artifactId>helidon-logging-jul</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <profiles>
