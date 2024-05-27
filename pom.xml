@@ -224,6 +224,7 @@
         <module>webserver</module>
         <module>websocket</module>
         <module>codegen</module>
+        <module>service</module>
     </modules>
 
     <build>

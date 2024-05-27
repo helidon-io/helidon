@@ -47,7 +47,6 @@
         <module>graphql</module>
         <module>health</module>
         <module>integrations</module>
-        <module>inject</module>
         <module>jbatch</module>
         <module>logging</module>
         <module>media</module>

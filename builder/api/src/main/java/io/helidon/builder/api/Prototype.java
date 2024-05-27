@@ -164,6 +164,8 @@ public final class Prototype {
                                                 allFromServiceLoader,
                                                 existingValue);
         }
+
+
     }
 
     /**
@@ -442,6 +444,8 @@ public final class Prototype {
     /**
      * Add additional interfaces to implement by the prototype. Provide correct types (fully qualified) for generics.
      */
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.CLASS)
     public @interface Implement {
         /**
          * Interfaces to implement, such as {@code java.lang.Comparable<io.helidon.common.types.TypeName>}.
@@ -451,5 +455,29 @@ public final class Prototype {
         String[] value();
     }
 
+    /**
+     * Generate support for Service Registry ({@code helidon-service-registry}) for any option that is annotated
+     * as {@link io.helidon.builder.api.Option.Provider}.
+     * When enabled (i.e. when this annotation is present), the service registry would be used to discover any service
+     * implementations including implementations discovered by service loader - appropriate {@code service.loader}
+     * metadata file will be generated for the service provider interfaces.
+     * <p>
+     * Simply add this annotation to your {@link io.helidon.builder.api.Prototype.Blueprint} type to enable service registry.
+     * Note that if this annotation is NOT present, service registry would not be used, and {@link java.util.ServiceLoader}
+     * is used instead.
+     * <p>
+     * When using this annotation, you cannot use {@code serviceRegistry} as a custom option in your blueprint, as it will
+     * be added by the annotation processor, to allow customization of the registry instance.
+     */
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.CLASS)
+    public @interface RegistrySupport {
+        /**
+         * Whether to enable (default) or disable (set to {@code false}) registry support for this blueprint.
+         *
+         * @return whether the registry support should be enabled
+         */
+        boolean value() default true;
+    }
 }
 

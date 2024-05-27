@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,12 +23,10 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.builder.api.RuntimeType;
-import io.helidon.inject.api.Contract;
 
 /**
  * Retry supports retry policies to be applied on an execution of asynchronous tasks.
  */
-@Contract
 @RuntimeType.PrototypedBy(RetryConfig.class)
 public interface Retry extends FtHandler, RuntimeType.Api<RetryConfig> {
     /**

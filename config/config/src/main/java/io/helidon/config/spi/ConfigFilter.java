@@ -18,6 +18,7 @@ package io.helidon.config.spi;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigItem;
+import io.helidon.service.registry.Service;
 
 /**
  * Filter that can transform elementary configuration ({@code String}) values
@@ -53,6 +54,7 @@ import io.helidon.config.ConfigItem;
  * @see Config.Builder#addFilter(java.util.function.Function)
  */
 @FunctionalInterface
+@Service.Contract
 public interface ConfigFilter {
 
     /**

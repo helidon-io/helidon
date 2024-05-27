@@ -220,6 +220,12 @@ final class GenerateAbstractBuilder {
         }
 
         TypeName returnType = TypeName.createFromGenericDeclaration("BUILDER");
+
+        if (typeContext.propertyData().hasProvider() && typeContext.typeInfo().supportsServiceRegistry()) {
+            // generate setter for service registry
+            serviceRegistrySetter(classBuilder);
+        }
+
         // first setters
         for (PrototypeProperty child : properties) {
             if (isConfigProperty(child)) {
@@ -286,6 +292,37 @@ final class GenerateAbstractBuilder {
                     .addContentLine(".ofNullable(config);");
             classBuilder.addMethod(method);
         }
+    }
+
+    private static void serviceRegistrySetter(InnerClass.Builder classBuilder) {
+        /*
+        public BUILDER config(Config config) {
+            this.config = config;
+            config.get("server").as(String.class).ifPresent(this::server);
+            return self();
+        }
+         */
+        Javadoc javadoc = Javadoc.builder()
+                .addLine("Provide an explicit registry instance to use. ")
+                .addLine("<p/>")
+                .addLine("If not configured, the {@link "
+                                 + Types.GLOBAL_SERVICE_REGISTRY.fqName()
+                                 + "} would be used to discover services.")
+                .build();
+
+        Method.Builder builder = Method.builder()
+                .name("serviceRegistry")
+                .javadoc(javadoc)
+                .returnType(TypeArgument.create("BUILDER"), "updated builder instance")
+                .addParameter(param -> param.name("registry")
+                        .type(Types.SERVICE_REGISTRY)
+                        .description("service registry instance"))
+                .addContent(Objects.class)
+                .addContentLine(".requireNonNull(registry);")
+                .addContentLine("this.serviceRegistry = registry;")
+                .addContentLine("return self();");
+
+        classBuilder.addMethod(builder);
     }
 
     private static void createConfigMethod(InnerClass.Builder classBuilder, TypeContext typeContext,
@@ -474,6 +511,11 @@ final class GenerateAbstractBuilder {
         if (isBuilder && (typeContext.configuredData().configured() || hasConfig(typeContext.propertyData().properties()))) {
             classBuilder.addField(builder -> builder.type(Types.COMMON_CONFIG).name("config"));
         }
+        if (isBuilder
+                && typeContext.typeInfo().supportsServiceRegistry()
+                && typeContext.propertyData().hasProvider()) {
+            classBuilder.addField(builder -> builder.type(Types.SERVICE_REGISTRY).name("serviceRegistry"));
+        }
         for (PrototypeProperty child : typeContext.propertyData().properties()) {
             if (isBuilder && child.configuredOption().hasAllowedValues()) {
                 String allowedValues = child.configuredOption().allowedValues()
@@ -527,62 +569,46 @@ final class GenerateAbstractBuilder {
                 .ifPresent(it -> preBuildBuilder.addContentLine("super.preBuildPrototype();"));
         if (typeContext.propertyData().hasProvider()) {
             boolean configured = typeContext.configuredData().configured();
+
             if (configured) {
                 // need to have a non-null config instance
-                preBuildBuilder.addContentLine("var config = this.config == null ? Config.empty() : this.config;");
+                preBuildBuilder.addContent("var config = this.config == null ? ")
+                                .addContent(Types.COMMON_CONFIG)
+                                        .addContentLine(".empty() : this.config;");
             }
+
+            if (typeContext.typeInfo().supportsServiceRegistry()) {
+                preBuildBuilder.addContent("var registry = this.serviceRegistry == null ? ")
+                                .addContent(Types.GLOBAL_SERVICE_REGISTRY)
+                                        .addContentLine(".registry() : this.serviceRegistry;");
+            }
+
             for (PrototypeProperty property : typeContext.propertyData().properties()) {
+                boolean propertyConfigured = property.configuredOption().configured();
+
                 AnnotationDataOption configuredOption = property.configuredOption();
                 if (configuredOption.provider()) {
                     boolean defaultDiscoverServices = configuredOption.providerDiscoverServices();
 
                     // using a code block, so we can reuse the same variable names for multiple providers
-                    preBuildBuilder.addContentLine("{");
                     TypeName providerType = configuredOption.providerType();
-                    preBuildBuilder.addContent("var serviceLoader = ")
-                            .addContent(HelidonServiceLoader.class)
-                            .addContent(".create(")
-                            .addContent(ServiceLoader.class)
-                            .addContent(".load(")
-                            .addContent(providerType.genericTypeName())
-                            .addContentLine(".class));");
-                    if (configured) {
-                        TypeName typeName = property.typeHandler().declaredType();
-                        if (typeName.isList() || typeName.isSet()) {
-                            preBuildBuilder.addContent("this.add")
-                                    .addContent(capitalize(property.name()))
-                                    .addContent("(discoverServices(config, \"")
-                                    .addContent(configuredOption.configKey())
-                                    .addContent("\", serviceLoader, ")
-                                    .addContent(providerType.genericTypeName())
-                                    .addContent(".class, ")
-                                    .addContent(property.typeHandler().actualType().genericTypeName())
-                                    .addContent(".class, ")
-                                    .addContent(property.name())
-                                    .addContent("DiscoverServices, ")
-                                    .addContent(property.name())
-                                    .addContentLine("));");
-                        } else {
-                            preBuildBuilder.addContent("discoverService(config, \"")
-                                    .addContent(configuredOption.configKey())
-                                    .addContent("\", serviceLoader, ")
-                                    .addContent(providerType)
-                                    .addContent(".class, ")
-                                    .addContent(property.typeHandler().actualType().genericTypeName())
-                                    .addContent(".class, ")
-                                    .addContent(property.name())
-                                    .addContent("DiscoverServices, @java.util.Optional@.ofNullable(")
-                                    .addContent(property.name())
-                                    .addContent(")).ifPresent(this::")
-                                    .addContent(property.setterName())
-                                    .addContentLine(");");
-                        }
+
+                    if (typeContext.typeInfo().supportsServiceRegistry()) {
+                        serviceRegistryPropertyDiscovery(preBuildBuilder,
+                                                         property,
+                                                         propertyConfigured,
+                                                         configuredOption,
+                                                         providerType,
+                                                         defaultDiscoverServices);
                     } else {
-                        if (defaultDiscoverServices) {
-                            preBuildBuilder.addContentLine("this." + property.name() + "(serviceLoader.asList());");
-                        }
+                        serviceLoaderPropertyDiscovery(preBuildBuilder,
+                                                       property,
+                                                       propertyConfigured,
+                                                       configuredOption,
+                                                       providerType,
+                                                       defaultDiscoverServices);
                     }
-                    preBuildBuilder.addContentLine("}");
+
                 }
             }
         }
@@ -592,6 +618,130 @@ final class GenerateAbstractBuilder {
                     .addContentLine("().decorate(this);");
         }
         classBuilder.addMethod(preBuildBuilder);
+    }
+
+    private static void serviceLoaderPropertyDiscovery(Method.Builder preBuildBuilder,
+                                                       PrototypeProperty property,
+                                                       boolean propertyConfigured,
+                                                       AnnotationDataOption configuredOption,
+                                                       TypeName providerType,
+                                                       boolean defaultDiscoverServices) {
+        preBuildBuilder.addContentLine("{");
+        preBuildBuilder.addContent("var serviceLoader = ")
+                .addContent(HelidonServiceLoader.class)
+                .addContent(".create(")
+                .addContent(ServiceLoader.class)
+                .addContent(".load(")
+                .addContent(providerType.genericTypeName())
+                .addContentLine(".class));");
+        if (propertyConfigured) {
+            TypeName typeName = property.typeHandler().declaredType();
+            if (typeName.isList() || typeName.isSet()) {
+                preBuildBuilder.addContent("this.add")
+                        .addContent(capitalize(property.name()))
+                        .addContent("(discoverServices(config, \"")
+                        .addContent(configuredOption.configKey())
+                        .addContent("\", serviceLoader, ")
+                        .addContent(providerType.genericTypeName())
+                        .addContent(".class, ")
+                        .addContent(property.typeHandler().actualType().genericTypeName())
+                        .addContent(".class, ")
+                        .addContent(property.name())
+                        .addContent("DiscoverServices, ")
+                        .addContent(property.name())
+                        .addContentLine("));");
+            } else {
+                preBuildBuilder.addContent("discoverService(config, \"")
+                        .addContent(configuredOption.configKey())
+                        .addContent("\", serviceLoader, ")
+                        .addContent(providerType)
+                        .addContent(".class, ")
+                        .addContent(property.typeHandler().actualType().genericTypeName())
+                        .addContent(".class, ")
+                        .addContent(property.name())
+                        .addContent("DiscoverServices, ")
+                        .addContent(Optional.class)
+                        .addContent(".ofNullable(")
+                        .addContent(property.name())
+                        .addContent(")).ifPresent(this::")
+                        .addContent(property.setterName())
+                        .addContentLine(");");
+            }
+        } else {
+            if (defaultDiscoverServices) {
+                preBuildBuilder.addContentLine("this." + property.name() + "(serviceLoader.asList());");
+            }
+        }
+        preBuildBuilder.addContentLine("}");
+    }
+
+    private static void serviceRegistryPropertyDiscovery(Method.Builder preBuildBuilder,
+                                                         PrototypeProperty property,
+                                                         boolean propertyConfigured,
+                                                         AnnotationDataOption configuredOption,
+                                                         TypeName providerType,
+                                                         boolean defaultDiscoverServices) {
+        if (propertyConfigured) {
+            TypeName typeName = property.typeHandler().declaredType();
+            if (typeName.isList() || typeName.isSet()) {
+                preBuildBuilder.addContent("this.add")
+                        .addContent(capitalize(property.name()))
+                        .addContent("(")
+                        .addContent(Types.GENERATED_SERVICE)
+                        .addContentLine(".discoverServices(config,")
+                        .increaseContentPadding()
+                        .increaseContentPadding()
+                        .increaseContentPadding()
+                        .addContent("\"")
+                        .addContent(configuredOption.configKey())
+                        .addContentLine("\",")
+                        .addContentLine("registry,")
+                        .addContent(providerType.genericTypeName())
+                        .addContentLine(".class,")
+                        .addContent(property.typeHandler().actualType().genericTypeName())
+                        .addContentLine(".class,")
+                        .addContent(property.name())
+                        .addContentLine("DiscoverServices,")
+                        .addContent(property.name())
+                        .addContentLine("));")
+                        .decreaseContentPadding()
+                        .decreaseContentPadding()
+                        .decreaseContentPadding();
+            } else {
+                preBuildBuilder
+                        .addContent(Types.GENERATED_SERVICE)
+                        .addContentLine(".discoverService(config,")
+                        .increaseContentPadding()
+                        .increaseContentPadding()
+                        .increaseContentPadding()
+                        .addContent("\"")
+                        .addContent(configuredOption.configKey())
+                        .addContentLine("\",")
+                        .addContentLine("registry,")
+                        .addContent(providerType)
+                        .addContentLine(".class,")
+                        .addContent(property.typeHandler().actualType().genericTypeName())
+                        .addContentLine(".class,")
+                        .addContent(property.name())
+                        .addContentLine("DiscoverServices,")
+                        .addContent(Optional.class)
+                        .addContent(".ofNullable(")
+                        .addContent(property.name())
+                        .addContentLine("))")
+                        .decreaseContentPadding()
+                        .decreaseContentPadding()
+                        .addContent(".ifPresent(this::")
+                        .addContent(property.setterName())
+                        .addContentLine(");")
+                        .decreaseContentPadding();
+            }
+        } else {
+            if (defaultDiscoverServices) {
+                preBuildBuilder.addContent("this." + property.name() + "(registry.all(")
+                        .addContent(providerType.genericTypeName())
+                        .addContentLine(".class));");
+            }
+        }
     }
 
     private static void validatePrototypeMethod(InnerClass.Builder classBuilder, TypeContext typeContext) {

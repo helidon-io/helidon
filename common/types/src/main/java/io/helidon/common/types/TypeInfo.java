@@ -66,6 +66,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
     abstract class BuilderBase<BUILDER extends TypeInfo.BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends TypeInfo> implements Prototype.Builder<BUILDER, PROTOTYPE> {
 
         private final List<Annotation> annotations = new ArrayList<>();
+        private final List<Annotation> inheritedAnnotations = new ArrayList<>();
         private final List<TypeInfo> interfaceTypeInfo = new ArrayList<>();
         private final List<TypedElementInfo> elementInfo = new ArrayList<>();
         private final List<TypedElementInfo> otherElementInfo = new ArrayList<>();
@@ -111,6 +112,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             module(prototype.module());
             originatingElement(prototype.originatingElement());
             addAnnotations(prototype.annotations());
+            addInheritedAnnotations(prototype.inheritedAnnotations());
             return self();
         }
 
@@ -137,6 +139,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             builder.module().ifPresent(this::module);
             builder.originatingElement().ifPresent(this::originatingElement);
             addAnnotations(builder.annotations());
+            addInheritedAnnotations(builder.inheritedAnnotations());
             return self();
         }
 
@@ -731,10 +734,11 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         }
 
         /**
-         * The list of known annotations for this element. Note that "known" implies that the annotation is visible, which depends
-         * upon the context in which it was build.
+         * List of declared and known annotations for this element.
+         * Note that "known" implies that the annotation is visible, which depends
+         * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
          *
-         * @param annotations the list of annotations on this element
+         * @param annotations the list of annotations declared on this element
          * @return updated builder instance
          * @see #annotations()
          */
@@ -746,10 +750,11 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         }
 
         /**
-         * The list of known annotations for this element. Note that "known" implies that the annotation is visible, which depends
-         * upon the context in which it was build.
+         * List of declared and known annotations for this element.
+         * Note that "known" implies that the annotation is visible, which depends
+         * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
          *
-         * @param annotations the list of annotations on this element
+         * @param annotations the list of annotations declared on this element
          * @return updated builder instance
          * @see #annotations()
          */
@@ -760,10 +765,11 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         }
 
         /**
-         * The list of known annotations for this element. Note that "known" implies that the annotation is visible, which depends
-         * upon the context in which it was build.
+         * List of declared and known annotations for this element.
+         * Note that "known" implies that the annotation is visible, which depends
+         * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
          *
-         * @param annotation the list of annotations on this element
+         * @param annotation the list of annotations declared on this element
          * @return updated builder instance
          * @see #annotations()
          */
@@ -774,10 +780,11 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         }
 
         /**
-         * The list of known annotations for this element. Note that "known" implies that the annotation is visible, which depends
-         * upon the context in which it was build.
+         * List of declared and known annotations for this element.
+         * Note that "known" implies that the annotation is visible, which depends
+         * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
          *
-         * @param consumer the list of annotations on this element
+         * @param consumer the list of annotations declared on this element
          * @return updated builder instance
          * @see #annotations()
          */
@@ -786,6 +793,77 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             var builder = Annotation.builder();
             consumer.accept(builder);
             this.annotations.add(builder.build());
+            return self();
+        }
+
+        /**
+         * List of all inherited annotations for this element. Inherited annotations are annotations declared
+         * on annotations of this element that are also marked as {@link java.lang.annotation.Inherited}.
+         * <p>
+         * The returned list does not contain {@link #annotations()}. If a meta-annotation is present on multiple
+         * annotations, it will be returned once for each such declaration.
+         *
+         * @param inheritedAnnotations list of all meta annotations of this element
+         * @return updated builder instance
+         * @see #inheritedAnnotations()
+         */
+        public BUILDER inheritedAnnotations(List<? extends Annotation> inheritedAnnotations) {
+            Objects.requireNonNull(inheritedAnnotations);
+            this.inheritedAnnotations.clear();
+            this.inheritedAnnotations.addAll(inheritedAnnotations);
+            return self();
+        }
+
+        /**
+         * List of all inherited annotations for this element. Inherited annotations are annotations declared
+         * on annotations of this element that are also marked as {@link java.lang.annotation.Inherited}.
+         * <p>
+         * The returned list does not contain {@link #annotations()}. If a meta-annotation is present on multiple
+         * annotations, it will be returned once for each such declaration.
+         *
+         * @param inheritedAnnotations list of all meta annotations of this element
+         * @return updated builder instance
+         * @see #inheritedAnnotations()
+         */
+        public BUILDER addInheritedAnnotations(List<? extends Annotation> inheritedAnnotations) {
+            Objects.requireNonNull(inheritedAnnotations);
+            this.inheritedAnnotations.addAll(inheritedAnnotations);
+            return self();
+        }
+
+        /**
+         * List of all inherited annotations for this element. Inherited annotations are annotations declared
+         * on annotations of this element that are also marked as {@link java.lang.annotation.Inherited}.
+         * <p>
+         * The returned list does not contain {@link #annotations()}. If a meta-annotation is present on multiple
+         * annotations, it will be returned once for each such declaration.
+         *
+         * @param inheritedAnnotation list of all meta annotations of this element
+         * @return updated builder instance
+         * @see #inheritedAnnotations()
+         */
+        public BUILDER addInheritedAnnotation(Annotation inheritedAnnotation) {
+            Objects.requireNonNull(inheritedAnnotation);
+            this.inheritedAnnotations.add(inheritedAnnotation);
+            return self();
+        }
+
+        /**
+         * List of all inherited annotations for this element. Inherited annotations are annotations declared
+         * on annotations of this element that are also marked as {@link java.lang.annotation.Inherited}.
+         * <p>
+         * The returned list does not contain {@link #annotations()}. If a meta-annotation is present on multiple
+         * annotations, it will be returned once for each such declaration.
+         *
+         * @param consumer list of all meta annotations of this element
+         * @return updated builder instance
+         * @see #inheritedAnnotations()
+         */
+        public BUILDER addInheritedAnnotation(Consumer<Annotation.Builder> consumer) {
+            Objects.requireNonNull(consumer);
+            var builder = Annotation.builder();
+            consumer.accept(builder);
+            this.inheritedAnnotations.add(builder.build());
             return self();
         }
 
@@ -955,13 +1033,27 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         }
 
         /**
-         * The list of known annotations for this element. Note that "known" implies that the annotation is visible, which depends
-         * upon the context in which it was build.
+         * List of declared and known annotations for this element.
+         * Note that "known" implies that the annotation is visible, which depends
+         * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
          *
          * @return the annotations
          */
         public List<Annotation> annotations() {
             return annotations;
+        }
+
+        /**
+         * List of all inherited annotations for this element. Inherited annotations are annotations declared
+         * on annotations of this element that are also marked as {@link java.lang.annotation.Inherited}.
+         * <p>
+         * The returned list does not contain {@link #annotations()}. If a meta-annotation is present on multiple
+         * annotations, it will be returned once for each such declaration.
+         *
+         * @return the inherited annotations
+         */
+        public List<Annotation> inheritedAnnotations() {
+            return inheritedAnnotations;
         }
 
         @Override
@@ -974,7 +1066,8 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
                     + "elementModifiers=" + elementModifiers + ","
                     + "accessModifier=" + accessModifier + ","
                     + "module=" + module + ","
-                    + "annotations=" + annotations
+                    + "annotations=" + annotations + ","
+                    + "inheritedAnnotations=" + inheritedAnnotations
                     + "}";
         }
 
@@ -1067,6 +1160,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             private final AccessModifier accessModifier;
             private final ElementKind kind;
             private final List<Annotation> annotations;
+            private final List<Annotation> inheritedAnnotations;
             private final List<TypeInfo> interfaceTypeInfo;
             private final List<TypedElementInfo> elementInfo;
             private final List<TypedElementInfo> otherElementInfo;
@@ -1104,6 +1198,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
                 this.module = builder.module();
                 this.originatingElement = builder.originatingElement();
                 this.annotations = List.copyOf(builder.annotations());
+                this.inheritedAnnotations = List.copyOf(builder.inheritedAnnotations());
             }
 
             @Override
@@ -1187,6 +1282,11 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             }
 
             @Override
+            public List<Annotation> inheritedAnnotations() {
+                return inheritedAnnotations;
+            }
+
+            @Override
             public String toString() {
                 return "TypeInfo{"
                         + "typeName=" + typeName + ","
@@ -1196,7 +1296,8 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
                         + "elementModifiers=" + elementModifiers + ","
                         + "accessModifier=" + accessModifier + ","
                         + "module=" + module + ","
-                        + "annotations=" + annotations
+                        + "annotations=" + annotations + ","
+                        + "inheritedAnnotations=" + inheritedAnnotations
                         + "}";
             }
 
@@ -1215,7 +1316,8 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
                         && Objects.equals(elementModifiers, other.elementModifiers())
                         && Objects.equals(accessModifier, other.accessModifier())
                         && Objects.equals(module, other.module())
-                        && Objects.equals(annotations, other.annotations());
+                        && Objects.equals(annotations, other.annotations())
+                        && Objects.equals(inheritedAnnotations, other.inheritedAnnotations());
             }
 
             @Override
@@ -1227,7 +1329,8 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
                                     elementModifiers,
                                     accessModifier,
                                     module,
-                                    annotations);
+                                    annotations,
+                                    inheritedAnnotations);
             }
 
         }

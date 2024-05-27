@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,20 +22,26 @@ import java.io.UncheckedIOException;
 import java.security.cert.X509Certificate;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.integrations.oci.tls.certificates.spi.OciCertificatesDownloader;
+import io.helidon.service.registry.Service;
 
-import jakarta.inject.Singleton;
-
-@Singleton
+@Service.Provider
 @Weight(Weighted.DEFAULT_WEIGHT + 1)
-class TestOciCertificatesDownloader extends DefaultOciCertificatesDownloader {
+class TestOciCertificatesDownloader implements OciCertificatesDownloader {
     static String version = "1";
 
-    static int callCount_loadCertificates;
-    static int callCount_loadCACertificate;
+    static volatile int callCount_loadCertificates;
+    static volatile int callCount_loadCACertificate;
+
+    private final Supplier<DefaultOciCertificatesDownloader> realDownloader;
+
+    TestOciCertificatesDownloader(Supplier<DefaultOciCertificatesDownloader> realDownloader) {
+        this.realDownloader = realDownloader;
+    }
 
     @Override
     public Certificates loadCertificates(String certOcid) {
@@ -43,13 +49,13 @@ class TestOciCertificatesDownloader extends DefaultOciCertificatesDownloader {
 
         try {
             if (OciTestUtils.ociRealUsage()) {
-                return super.loadCertificates(certOcid);
+                return realDownloader.get().loadCertificates(certOcid);
             } else {
                 TimeUnit.MILLISECONDS.sleep(1); // make sure metrics timestamp changes
                 Objects.requireNonNull(certOcid);
                 try (InputStream certIs =
                         TestOciCertificatesDownloader.class.getClassLoader().getResourceAsStream("test-keys/serverCert.pem")) {
-                    return OciCertificatesDownloader.create(version, new X509Certificate[] {toCertificate(certIs)});
+                    return OciCertificatesDownloader.create(version, new X509Certificate[] {DefaultOciCertificatesDownloader.toCertificate(certIs)});
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -66,13 +72,13 @@ class TestOciCertificatesDownloader extends DefaultOciCertificatesDownloader {
 
         try {
             if (OciTestUtils.ociRealUsage()) {
-                return super.loadCACertificate(caCertOcid);
+                return realDownloader.get().loadCACertificate(caCertOcid);
             } else {
                 TimeUnit.MILLISECONDS.sleep(1); // make sure metrics timestamp changes
                 Objects.requireNonNull(caCertOcid);
                 try (InputStream caCertIs =
                         TestOciCertificatesDownloader.class.getClassLoader().getResourceAsStream("test-keys/ca.pem")) {
-                    return toCertificate(caCertIs);
+                    return DefaultOciCertificatesDownloader.toCertificate(caCertIs);
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
                 }

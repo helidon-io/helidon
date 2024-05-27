@@ -16,6 +16,7 @@
 
 package io.helidon.common.types;
 
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.time.Duration;
 import java.util.Collection;
@@ -72,6 +73,10 @@ public final class TypeNames {
      * Type name for {@link java.lang.annotation.Retention}.
      */
     public static final TypeName RETENTION = TypeName.create(Retention.class);
+    /**
+     * Type name for {@link java.lang.annotation.Inherited}.
+     */
+    public static final TypeName INHERITED = TypeName.create(Inherited.class);
 
     /*
     Primitive types and their boxed counterparts

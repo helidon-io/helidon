@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,12 @@ package io.helidon.integrations.oci.tls.certificates.spi;
 import java.net.URI;
 import java.security.PrivateKey;
 
-import io.helidon.inject.api.Contract;
+import io.helidon.service.registry.Service;
 
 /**
  * The contract used for downloading private keys from OCI.
  */
-@Contract
+@Service.Contract
 public interface OciPrivateKeyDownloader {
 
     /**

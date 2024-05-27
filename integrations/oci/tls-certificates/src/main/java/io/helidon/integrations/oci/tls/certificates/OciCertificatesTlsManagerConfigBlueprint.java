@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,15 +20,14 @@ import java.net.URI;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Blueprint configuration for {@link OciCertificatesTlsManager}.
  */
 @Prototype.Blueprint
-@Configured
+@Prototype.Configured
 interface OciCertificatesTlsManagerConfigBlueprint extends Prototype.Factory<OciCertificatesTlsManager> {
 
     /**
@@ -37,7 +36,7 @@ interface OciCertificatesTlsManagerConfigBlueprint extends Prototype.Factory<Oci
      *
      * @return the schedule for reload
      */
-    @ConfiguredOption
+    @Option.Configured
     String schedule();
 
     /**
@@ -47,7 +46,7 @@ interface OciCertificatesTlsManagerConfigBlueprint extends Prototype.Factory<Oci
      *
      * @return the address for the key management service / vault crypto usage
      */
-    @ConfiguredOption
+    @Option.Configured
     URI vaultCryptoEndpoint();
 
     /**
@@ -56,7 +55,7 @@ interface OciCertificatesTlsManagerConfigBlueprint extends Prototype.Factory<Oci
      *
      * @return the address for the key management service / vault management usage
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<URI> vaultManagementEndpoint();
 
     /**
@@ -64,7 +63,7 @@ interface OciCertificatesTlsManagerConfigBlueprint extends Prototype.Factory<Oci
      *
      * @return the compartment OCID
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<String> compartmentOcid();
 
     /**
@@ -72,7 +71,7 @@ interface OciCertificatesTlsManagerConfigBlueprint extends Prototype.Factory<Oci
      *
      * @return certificate authority OCID
      */
-    @ConfiguredOption
+    @Option.Configured
     String caOcid();
 
     /**
@@ -80,7 +79,7 @@ interface OciCertificatesTlsManagerConfigBlueprint extends Prototype.Factory<Oci
      *
      * @return certificate OCID
      */
-    @ConfiguredOption
+    @Option.Configured
     String certOcid();
 
     /**
@@ -88,7 +87,7 @@ interface OciCertificatesTlsManagerConfigBlueprint extends Prototype.Factory<Oci
      *
      * @return key OCID
      */
-    @ConfiguredOption
+    @Option.Configured
     String keyOcid();
 
     /**
@@ -96,7 +95,7 @@ interface OciCertificatesTlsManagerConfigBlueprint extends Prototype.Factory<Oci
      *
      * @return key password
      */
-    @ConfiguredOption
+    @Option.Configured
     Supplier<char[]> keyPassword();
 
 }

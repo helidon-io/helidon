@@ -66,6 +66,12 @@ final class ContentSupport {
                     .addContentLine(")");
         }
 
+        for (Annotation annotation : element.inheritedAnnotations()) {
+            contentBuilder.addContent(".addInheritedAnnotation(")
+                    .addContentCreate(annotation)
+                    .addContentLine(")");
+        }
+
         AccessModifier accessModifier = element.accessModifier();
         if (accessModifier != AccessModifier.PACKAGE_PRIVATE) {
             contentBuilder.addContent(".accessModifier(")

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
 
         private final List<Annotation> annotations = new ArrayList<>();
         private final List<Annotation> elementTypeAnnotations = new ArrayList<>();
+        private final List<Annotation> inheritedAnnotations = new ArrayList<>();
         private final List<TypeName> componentTypes = new ArrayList<>();
         private final List<TypedElementInfo> parameterArguments = new ArrayList<>();
         private final Set<TypeName> throwsChecked = new LinkedHashSet<>();
@@ -116,6 +117,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             addThrowsChecked(prototype.throwsChecked());
             originatingElement(prototype.originatingElement());
             addAnnotations(prototype.annotations());
+            addInheritedAnnotations(prototype.inheritedAnnotations());
             return self();
         }
 
@@ -142,6 +144,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             addThrowsChecked(builder.throwsChecked());
             builder.originatingElement().ifPresent(this::originatingElement);
             addAnnotations(builder.annotations());
+            addInheritedAnnotations(builder.inheritedAnnotations());
             return self();
         }
 
@@ -596,10 +599,11 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         }
 
         /**
-         * The list of known annotations for this element. Note that "known" implies that the annotation is visible, which depends
-         * upon the context in which it was build.
+         * List of declared and known annotations for this element.
+         * Note that "known" implies that the annotation is visible, which depends
+         * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
          *
-         * @param annotations the list of annotations on this element
+         * @param annotations the list of annotations declared on this element
          * @return updated builder instance
          * @see #annotations()
          */
@@ -611,10 +615,11 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         }
 
         /**
-         * The list of known annotations for this element. Note that "known" implies that the annotation is visible, which depends
-         * upon the context in which it was build.
+         * List of declared and known annotations for this element.
+         * Note that "known" implies that the annotation is visible, which depends
+         * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
          *
-         * @param annotations the list of annotations on this element
+         * @param annotations the list of annotations declared on this element
          * @return updated builder instance
          * @see #annotations()
          */
@@ -625,10 +630,11 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         }
 
         /**
-         * The list of known annotations for this element. Note that "known" implies that the annotation is visible, which depends
-         * upon the context in which it was build.
+         * List of declared and known annotations for this element.
+         * Note that "known" implies that the annotation is visible, which depends
+         * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
          *
-         * @param annotation the list of annotations on this element
+         * @param annotation the list of annotations declared on this element
          * @return updated builder instance
          * @see #annotations()
          */
@@ -639,10 +645,11 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         }
 
         /**
-         * The list of known annotations for this element. Note that "known" implies that the annotation is visible, which depends
-         * upon the context in which it was build.
+         * List of declared and known annotations for this element.
+         * Note that "known" implies that the annotation is visible, which depends
+         * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
          *
-         * @param consumer the list of annotations on this element
+         * @param consumer the list of annotations declared on this element
          * @return updated builder instance
          * @see #annotations()
          */
@@ -651,6 +658,77 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             var builder = Annotation.builder();
             consumer.accept(builder);
             this.annotations.add(builder.build());
+            return self();
+        }
+
+        /**
+         * List of all inherited annotations for this element. Inherited annotations are annotations declared
+         * on annotations of this element that are also marked as {@link java.lang.annotation.Inherited}.
+         * <p>
+         * The returned list does not contain {@link #annotations()}. If a meta-annotation is present on multiple
+         * annotations, it will be returned once for each such declaration.
+         *
+         * @param inheritedAnnotations list of all meta annotations of this element
+         * @return updated builder instance
+         * @see #inheritedAnnotations()
+         */
+        public BUILDER inheritedAnnotations(List<? extends Annotation> inheritedAnnotations) {
+            Objects.requireNonNull(inheritedAnnotations);
+            this.inheritedAnnotations.clear();
+            this.inheritedAnnotations.addAll(inheritedAnnotations);
+            return self();
+        }
+
+        /**
+         * List of all inherited annotations for this element. Inherited annotations are annotations declared
+         * on annotations of this element that are also marked as {@link java.lang.annotation.Inherited}.
+         * <p>
+         * The returned list does not contain {@link #annotations()}. If a meta-annotation is present on multiple
+         * annotations, it will be returned once for each such declaration.
+         *
+         * @param inheritedAnnotations list of all meta annotations of this element
+         * @return updated builder instance
+         * @see #inheritedAnnotations()
+         */
+        public BUILDER addInheritedAnnotations(List<? extends Annotation> inheritedAnnotations) {
+            Objects.requireNonNull(inheritedAnnotations);
+            this.inheritedAnnotations.addAll(inheritedAnnotations);
+            return self();
+        }
+
+        /**
+         * List of all inherited annotations for this element. Inherited annotations are annotations declared
+         * on annotations of this element that are also marked as {@link java.lang.annotation.Inherited}.
+         * <p>
+         * The returned list does not contain {@link #annotations()}. If a meta-annotation is present on multiple
+         * annotations, it will be returned once for each such declaration.
+         *
+         * @param inheritedAnnotation list of all meta annotations of this element
+         * @return updated builder instance
+         * @see #inheritedAnnotations()
+         */
+        public BUILDER addInheritedAnnotation(Annotation inheritedAnnotation) {
+            Objects.requireNonNull(inheritedAnnotation);
+            this.inheritedAnnotations.add(inheritedAnnotation);
+            return self();
+        }
+
+        /**
+         * List of all inherited annotations for this element. Inherited annotations are annotations declared
+         * on annotations of this element that are also marked as {@link java.lang.annotation.Inherited}.
+         * <p>
+         * The returned list does not contain {@link #annotations()}. If a meta-annotation is present on multiple
+         * annotations, it will be returned once for each such declaration.
+         *
+         * @param consumer list of all meta annotations of this element
+         * @return updated builder instance
+         * @see #inheritedAnnotations()
+         */
+        public BUILDER addInheritedAnnotation(Consumer<Annotation.Builder> consumer) {
+            Objects.requireNonNull(consumer);
+            var builder = Annotation.builder();
+            consumer.accept(builder);
+            this.inheritedAnnotations.add(builder.build());
             return self();
         }
 
@@ -811,13 +889,27 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         }
 
         /**
-         * The list of known annotations for this element. Note that "known" implies that the annotation is visible, which depends
-         * upon the context in which it was build.
+         * List of declared and known annotations for this element.
+         * Note that "known" implies that the annotation is visible, which depends
+         * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
          *
          * @return the annotations
          */
         public List<Annotation> annotations() {
             return annotations;
+        }
+
+        /**
+         * List of all inherited annotations for this element. Inherited annotations are annotations declared
+         * on annotations of this element that are also marked as {@link java.lang.annotation.Inherited}.
+         * <p>
+         * The returned list does not contain {@link #annotations()}. If a meta-annotation is present on multiple
+         * annotations, it will be returned once for each such declaration.
+         *
+         * @return the inherited annotations
+         */
+        public List<Annotation> inheritedAnnotations() {
+            return inheritedAnnotations;
         }
 
         /**
@@ -916,6 +1008,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             private final ElementKind kind;
             private final List<Annotation> annotations;
             private final List<Annotation> elementTypeAnnotations;
+            private final List<Annotation> inheritedAnnotations;
             private final List<TypeName> componentTypes;
             private final List<TypedElementInfo> parameterArguments;
             private final Optional<TypeName> enclosingType;
@@ -951,6 +1044,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
                 this.throwsChecked = Collections.unmodifiableSet(new LinkedHashSet<>(builder.throwsChecked()));
                 this.originatingElement = builder.originatingElement();
                 this.annotations = List.copyOf(builder.annotations());
+                this.inheritedAnnotations = List.copyOf(builder.inheritedAnnotations());
             }
 
             @Override
@@ -1044,6 +1138,11 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             }
 
             @Override
+            public List<Annotation> inheritedAnnotations() {
+                return inheritedAnnotations;
+            }
+
+            @Override
             public boolean equals(Object o) {
                 if (o == this) {
                     return true;
@@ -1057,12 +1156,20 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
                         && Objects.equals(enclosingType, other.enclosingType())
                         && Objects.equals(parameterArguments, other.parameterArguments())
                         && Objects.equals(throwsChecked, other.throwsChecked())
-                        && Objects.equals(annotations, other.annotations());
+                        && Objects.equals(annotations, other.annotations())
+                        && Objects.equals(inheritedAnnotations, other.inheritedAnnotations());
             }
 
             @Override
             public int hashCode() {
-                return Objects.hash(typeName, elementName, kind, enclosingType, parameterArguments, throwsChecked, annotations);
+                return Objects.hash(typeName,
+                                    elementName,
+                                    kind,
+                                    enclosingType,
+                                    parameterArguments,
+                                    throwsChecked,
+                                    annotations,
+                                    inheritedAnnotations);
             }
 
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,10 @@
 
 /**
  * Helidon Injection Integrations to support OCI Runtime module.
+ *
+ * @deprecated replaced with {@code helidon-integrations-oci} module
  */
+@Deprecated(forRemoval = true, since = "4.1.0")
 module io.helidon.integrations.oci.sdk.runtime {
 
     requires io.helidon.builder.api;

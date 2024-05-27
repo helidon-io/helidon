@@ -203,7 +203,12 @@ record TypeContext(
                 .className("Builder")
                 .build();
 
-        TypeInformation typeInformation = new TypeInformation(blueprint,
+        boolean supportsServiceRegistry = blueprint.findAnnotation(Types.PROTOTYPE_SERVICE_REGISTRY)
+                .flatMap(Annotation::booleanValue)
+                .orElse(false);
+
+        TypeInformation typeInformation = new TypeInformation(supportsServiceRegistry,
+                                                              blueprint,
                                                               prototype,
                                                               prototypeBuilder,
                                                               prototypeImpl,
@@ -407,6 +412,7 @@ record TypeContext(
     }
 
     record TypeInformation(
+            boolean supportsServiceRegistry,
             TypeInfo blueprintType,
             TypeName prototype,
             TypeName prototypeBuilder,
