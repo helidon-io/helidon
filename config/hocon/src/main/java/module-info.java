@@ -29,7 +29,6 @@ import io.helidon.config.hocon.HoconConfigParser;
 module io.helidon.config.hocon {
 
     requires io.helidon.common;
-
     requires typesafe.config;
 
     requires static io.helidon.common.features.api;

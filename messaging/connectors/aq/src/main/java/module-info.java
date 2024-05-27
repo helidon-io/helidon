@@ -32,7 +32,6 @@ module io.helidon.messaging.connectors.aq {
     requires aqapi;
     requires io.helidon.common.configurable;
     requires io.helidon.messaging.jms.shim;
-
     requires javax.jms.api;
     requires jakarta.messaging;
 

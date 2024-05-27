@@ -23,7 +23,6 @@ module io.helidon.microprofile.messaging.metrics {
     requires jakarta.cdi;
     requires jakarta.inject;
 
-
     requires transitive io.helidon.microprofile.messaging;
     requires transitive io.helidon.microprofile.metrics;
     requires transitive microprofile.reactive.messaging.api;

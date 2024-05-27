@@ -21,7 +21,6 @@
 module helidon.messaging.mock {
 
     requires hamcrest.all;
-
     requires microprofile.config.api;
     requires org.reactivestreams;
 

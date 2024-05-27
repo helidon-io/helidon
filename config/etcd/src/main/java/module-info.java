@@ -30,7 +30,6 @@ module io.helidon.config.etcd {
     requires io.helidon.common.media.type;
     requires io.helidon.common;
 
-
     requires static java.annotation;
 
     requires transitive io.helidon.config;

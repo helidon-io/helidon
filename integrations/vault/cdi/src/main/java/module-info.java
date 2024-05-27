@@ -24,7 +24,6 @@ module io.helidon.integrations.vault.cdi {
 
     requires io.helidon.microprofile.cdi;
     requires jakarta.inject;
-
     requires microprofile.config.api;
 
     requires transitive io.helidon.integrations.vault;

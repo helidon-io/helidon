@@ -33,7 +33,6 @@ module io.helidon.tracing.jersey.client {
     requires io.helidon.tracing.config;
     requires io.helidon.tracing;
     requires jakarta.annotation;
-
     requires jersey.common;
 
     requires static io.helidon.common.features.api;

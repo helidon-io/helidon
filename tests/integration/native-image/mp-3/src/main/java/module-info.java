@@ -18,7 +18,6 @@
  * Quickstart MicroProfile example.
  */
 module helidon.tests.nimage.quickstartmp {
-	
 
     requires io.helidon.microprofile.bundle;
 

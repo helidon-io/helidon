@@ -22,7 +22,6 @@ module io.helidon.messaging.connectors.wls {
 
     requires io.helidon.messaging.connectors.jms;
     requires jakarta.messaging;
-
     requires java.naming;
 
     requires static jakarta.cdi;

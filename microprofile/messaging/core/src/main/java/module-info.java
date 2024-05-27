@@ -37,7 +37,6 @@ module io.helidon.microprofile.messaging {
     requires io.helidon.microprofile.reactive;
     requires io.helidon.microprofile.server;
     requires jakarta.inject;
-
     requires microprofile.reactive.messaging.api;
     requires microprofile.reactive.streams.operators.api;
 

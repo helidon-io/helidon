@@ -22,7 +22,6 @@ module io.helidon.webserver.security {
     requires io.helidon.security.integration.common;
     requires io.helidon.webserver;
 
-
     requires transitive io.helidon.builder.api;
     requires transitive io.helidon.common;
     requires transitive io.helidon.common.config;

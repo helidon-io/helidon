@@ -27,8 +27,6 @@ import io.helidon.common.features.api.HelidonFlavor;
 )
 module io.helidon.integrations.vault.secrets.database {
 
-
-
     requires static io.helidon.common.features.api;
 
     requires transitive io.helidon.integrations.vault;

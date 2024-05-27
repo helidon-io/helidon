@@ -22,7 +22,6 @@ module io.helidon.integrations.micronaut.cdi {
 
     requires io.helidon.common;
     requires jakarta.inject;
-
     requires microprofile.config.api;
 
     requires transitive io.micronaut.aop;

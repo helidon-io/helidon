@@ -35,7 +35,6 @@ module io.helidon.webserver.grpc {
     requires io.helidon.builder.api;
     requires io.helidon.webserver.http2;
 
-
     requires static io.helidon.common.features.api;
 
     requires transitive com.google.protobuf;

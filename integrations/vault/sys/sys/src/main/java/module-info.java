@@ -32,7 +32,6 @@ module io.helidon.integrations.vault.sys {
     requires io.helidon.integrations.common.rest;
     requires io.helidon.integrations.vault.auths.common;
 
-
     requires static io.helidon.common.features.api;
 
     requires transitive io.helidon.integrations.vault;

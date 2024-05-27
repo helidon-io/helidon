@@ -32,7 +32,6 @@ module io.helidon.microprofile.reactive {
 
     requires io.helidon.common.reactive;
 
-
     requires static io.helidon.common.features.api;
 
     requires transitive microprofile.reactive.streams.operators.api;

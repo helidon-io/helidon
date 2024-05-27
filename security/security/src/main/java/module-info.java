@@ -32,7 +32,6 @@ module io.helidon.security {
     requires io.helidon.common.context;
     requires io.helidon.common.uri;
 
-
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
 

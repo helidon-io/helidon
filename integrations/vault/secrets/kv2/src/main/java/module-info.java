@@ -30,7 +30,6 @@ module io.helidon.integrations.vault.secrets.kv {
     requires io.helidon.http;
     requires io.helidon.integrations.common.rest;
 
-
     requires static io.helidon.common.features.api;
 
     requires transitive io.helidon.integrations.vault;

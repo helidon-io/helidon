@@ -29,7 +29,6 @@ module io.helidon.integrations.vault.secrets.kvone {
 
     requires io.helidon.integrations.common.rest;
 
-
     requires static io.helidon.common.features.api;
 
     requires transitive io.helidon.integrations.vault;

@@ -21,7 +21,6 @@
 module io.helidon.microprofile.messaging.health {
 
     requires jakarta.inject;
-
     requires microprofile.health.api;
 
     requires transitive io.helidon.microprofile.health;

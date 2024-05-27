@@ -26,7 +26,6 @@ module io.helidon.jersey.connector {
     requires io.helidon.webclient;
     requires io.helidon.webclient.http2;
     requires jakarta.ws.rs;
-
     requires jersey.common;
 
     requires transitive jersey.client;

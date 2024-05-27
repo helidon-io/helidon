@@ -28,7 +28,6 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.config.yaml {
 
     requires io.helidon.common;
-
     requires org.yaml.snakeyaml;
 
     requires static io.helidon.common.features.api;

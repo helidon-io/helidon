@@ -23,7 +23,6 @@ module io.helidon.microprofile.oidc {
     requires io.helidon.microprofile.server;
     requires io.helidon.security.providers.oidc;
 
-
     requires transitive jakarta.cdi;
 
     exports io.helidon.microprofile.oidc;

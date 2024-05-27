@@ -19,7 +19,6 @@
  */
 module io.helidon.cors {
 	
-
     requires io.helidon.http;
     requires io.helidon.common.config;
 

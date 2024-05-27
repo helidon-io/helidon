@@ -35,7 +35,6 @@ module io.helidon.tests.apps.bookstore.se {
     requires io.helidon.webserver;
     requires jakarta.json;
 
-
     exports io.helidon.tests.apps.bookstore.se;
 	
 }

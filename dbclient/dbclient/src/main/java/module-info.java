@@ -31,7 +31,6 @@ import io.helidon.common.features.api.Preview;
 )
 module io.helidon.dbclient {
 
-
     requires java.sql;
 
     requires static io.helidon.common.features.api;

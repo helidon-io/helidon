@@ -21,7 +21,6 @@ module io.helidon.security.integration.common {
 
     requires io.helidon.common.context;
 
-
     requires transitive io.helidon.security;
     requires transitive io.helidon.tracing.config;
     requires transitive io.helidon.tracing;

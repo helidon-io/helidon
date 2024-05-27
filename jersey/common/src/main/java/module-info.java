@@ -22,7 +22,6 @@ module io.helidon.jersey.common {
     requires io.helidon.common;
     requires jakarta.annotation;
     requires jakarta.ws.rs;
-
     requires jersey.common;
     requires jersey.server;
 

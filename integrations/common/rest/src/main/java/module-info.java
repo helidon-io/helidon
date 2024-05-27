@@ -32,7 +32,6 @@ module io.helidon.integrations.common.rest {
     requires io.helidon.tracing;
     requires io.helidon.webclient;
 
-
     requires transitive io.helidon.common;
     requires transitive jakarta.json;
 

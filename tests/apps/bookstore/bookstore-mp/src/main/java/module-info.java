@@ -28,7 +28,6 @@ module io.helidon.tests.apps.bookstore.mp {
     requires jakarta.json.bind;
     requires jakarta.json;
 
-
     opens io.helidon.tests.apps.bookstore.mp to io.helidon.microprofile.cdi,weld.core.impl;
 
     exports io.helidon.tests.apps.bookstore.mp;

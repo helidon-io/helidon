@@ -32,7 +32,6 @@ module io.helidon.integrations.neo4j {
 
     requires io.helidon.common;
 
-
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
 
