@@ -28,18 +28,20 @@ then
     ldd --version | grep ldd
     # Workaround for https://github.com/checkpoint-restore/criu/issues/1696
     # see https://github.com/checkpoint-restore/criu/pull/1706
-    export GLIBC_TUNABLES=glibc.pthread.rseq=0
+    # export GLIBC_TUNABLES=glibc.pthread.rseq=0
 
     echo "=== Pre-starting Helidon MP app ==="
 	  set +e
 	  mkdir -p "/crac-checkpoint/cr"
-    $JAVA_HOME/bin/java -XX:CRaCCheckpointTo=/crac-checkpoint/cr -jar ./*.jar
+	  ./warmUp.sh &
+    $JAVA_HOME/bin/java -XX:CRaCCheckpointTo=$CR_DIR -jar ./*.jar
     set -e
 
     echo "=== CRaC checkpoint created, checking log dump for errors ==="
     cat $CR_DIR/dump*.log | grep "Warn\|Err\|succ"
 else
 echo "==== Starting directly from CRaC checkpoint ===="
+./measure.sh &
 exec $JAVA_HOME/bin/java -XX:CRaCRestoreFrom=$CR_DIR
 fi
 

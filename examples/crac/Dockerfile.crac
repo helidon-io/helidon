@@ -23,8 +23,11 @@ ENV JDK_NAME=zulu22.30.13-ca-crac-jdk22.0.1-linux_x64
 ENV JAVA_HOME=/usr/share/$JDK_NAME
 ENV CR_DIR=${CONT_IMG_VER:-/crac-checkpoint/cr}
 
+# Install wrk
+RUN microdnf -y update && microdnf -y install perl wget tar gzip curl git openssl-devel
+RUN git clone https://github.com/wg/wrk.git && cd wrk && make && cp wrk /usr/local/bin/
+
 # Install CRaC
-RUN microdnf -y update && microdnf -y install wget tar gzip
 RUN wget -O crac-jdk.tar.gz "https://cdn.azul.com/zulu/bin/${JDK_NAME}.tar.gz"
 RUN tar zxf ./crac-jdk.tar.gz -C /usr/share && ln -s $JAVA_HOME/bin/java /bin/
 RUN ln -s $JAVA_HOME/bin/jcmd /bin/ && ln -s $JAVA_HOME/bin/jps /bin/
@@ -35,7 +38,9 @@ WORKDIR /helidon
 ADD target/*.jar .
 ADD target/libs libs
 ADD runtimeCRaC.sh .
-RUN chmod +x ./runtimeCRaC.sh
+ADD warmUp.sh .
+ADD measure.sh .
+RUN chmod +x ./*.sh
 
 CMD ["sh","./runtimeCRaC.sh"]
 
