@@ -45,6 +45,7 @@
         <version.plugin.helidon-cli>4.0.6</version.plugin.helidon-cli>
         <version.plugin.jandex>3.1.2</version.plugin.jandex>
         <version.plugin.jar>3.0.2</version.plugin.jar>
+        <version.plugin.nativeimage>0.10.2</version.plugin.nativeimage>
         <version.plugin.os>1.5.0.Final</version.plugin.os>
         <version.plugin.protobuf>0.5.1</version.plugin.protobuf>
         <version.plugin.resources>2.7</version.plugin.resources>
@@ -194,6 +195,11 @@
                     <artifactId>helidon-cli-maven-plugin</artifactId>
                     <version>${version.plugin.helidon-cli}</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.graalvm.buildtools</groupId>
+                    <artifactId>native-maven-plugin</artifactId>
+                    <version>${version.plugin.nativeimage}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
@@ -240,14 +246,43 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>io.helidon.build-tools</groupId>
-                        <artifactId>helidon-maven-plugin</artifactId>
+                        <groupId>org.graalvm.buildtools</groupId>
+                        <artifactId>native-maven-plugin</artifactId>
+                        <version>${version.plugin.nativeimage}</version>
                         <executions>
                             <execution>
-                                <id>native-image</id>
+                                <id>resource-config</id>
+                                <phase>package</phase>
                                 <goals>
-                                    <goal>native-image</goal>
+                                    <goal>generateResourceConfig</goal>
                                 </goals>
+                                <configuration>
+                                    <!-- generate records for all module's resources -->
+                                    <isDetectionEnabled>true</isDetectionEnabled>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>build-native-image</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>compile-no-fork</goal>
+                                </goals>
+                                <configuration>
+                                    <!-- generate an argument file for native image - great for troubleshooting -->
+                                    <useArgFile>true</useArgFile>
+                                    <!-- this needs to be defined to have a single set of jars on classpath,
+                                    default approach would add classpath of module (from maven) and from jar (manifest) -->
+                                    <classesDirectory>${project.build.outputDirectory}</classesDirectory>
+                                    <imageName>${project.build.finalName}</imageName>
+                                    <fallback>false</fallback>
+                                    <metadataRepository>
+                                        <enabled>false</enabled>
+                                    </metadataRepository>
+                                    <buildArgs>
+                                        <!-- Some native image features use the svm dependencies which require additional exports -->
+                                        <arg>--add-exports=org.graalvm.nativeimage.builder/com.oracle.svm.core.configure=ALL-UNNAMED</arg>
+                                    </buildArgs>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
