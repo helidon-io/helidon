@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.metrics.providers</groupId>
         <artifactId>helidon-metrics-providers-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.0.9-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-metrics-providers-micrometer</artifactId>
     <name>Helidon Metrics Providers Micrometer</name>
