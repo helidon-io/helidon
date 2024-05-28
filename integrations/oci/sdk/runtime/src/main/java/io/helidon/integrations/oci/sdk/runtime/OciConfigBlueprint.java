@@ -87,6 +87,8 @@ import static io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsPr
 // note: this is intended to be a replica to the properties carried from the cdi integrations previously done for MP
 @Prototype.Blueprint
 @Configured(root = true, prefix = OciConfigBlueprint.CONFIG_KEY)
+@Deprecated(forRemoval = true, since = "4.1.0")
+@Prototype.Annotated("java.lang.Deprecated(forRemoval = true, since = \"4.1.0\")")
 interface OciConfigBlueprint {
     /**
      * Config key of this config.

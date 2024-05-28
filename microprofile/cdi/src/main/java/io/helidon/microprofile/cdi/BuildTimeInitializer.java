@@ -34,7 +34,14 @@ final class BuildTimeInitializer {
     static {
         // need to initialize logging as soon as possible
         LogConfig.initClass();
-        createContainer();
+
+        try {
+            createContainer();
+        } catch (Throwable e) {
+            System.getLogger(BuildTimeInitializer.class.getName())
+                    .log(System.Logger.Level.ERROR, "Failed to initialize CDI container", e);
+            throw e;
+        }
     }
 
     private BuildTimeInitializer() {
