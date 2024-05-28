@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
@@ -79,6 +80,10 @@ import jakarta.enterprise.inject.spi.ProcessProducerField;
 import jakarta.enterprise.inject.spi.ProcessProducerMethod;
 import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.ext.ParamConverterProvider;
+import org.crac.CheckpointException;
+import org.crac.Core;
+import org.crac.Resource;
+import org.crac.RestoreException;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.glassfish.jersey.internal.inject.Bindings;
 import org.glassfish.jersey.internal.inject.InjectionManager;
@@ -92,7 +97,7 @@ import static jakarta.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
 /**
  * Extension to handle web server configuration and lifecycle.
  */
-public class ServerCdiExtension implements Extension {
+public class ServerCdiExtension implements Extension, Resource {
     private static final System.Logger LOGGER = System.getLogger(ServerCdiExtension.class.getName());
     private static final System.Logger STARTUP_LOGGER = System.getLogger("io.helidon.microprofile.startup.server");
     private static final AtomicBoolean IN_PROGRESS_OR_RUNNING = new AtomicBoolean();
@@ -119,6 +124,10 @@ public class ServerCdiExtension implements Extension {
     private volatile boolean started;
 
     private Context context;
+
+    private long cracRestoreTime = -1;
+    private final CompletableFuture<org.crac.Context<? extends Resource>> restored = new CompletableFuture<>();
+
 
     /**
      * Default constructor required by {@link java.util.ServiceLoader}.
@@ -461,6 +470,18 @@ public class ServerCdiExtension implements Extension {
         }
         webserver = serverBuilder.build();
 
+        if ("onStart".equalsIgnoreCase(System.getProperty("io.helidon.crac.checkpoint"))) {
+            try {
+                Core.checkpointRestore();
+            } catch (UnsupportedOperationException e) {
+                LOGGER.log(Level.DEBUG, "CRaC feature is not available", e);
+            } catch (RestoreException e) {
+                LOGGER.log(Level.ERROR, "CRaC restore wasn't successful!", e);
+            } catch (CheckpointException e) {
+                LOGGER.log(Level.ERROR, "CRaC checkpoint creation wasn't successful!", e);
+            }
+        }
+
         try {
             webserver.start();
             started = true;
@@ -476,9 +497,14 @@ public class ServerCdiExtension implements Extension {
         String host = "0.0.0.0".equals(listenHost) ? "localhost" : listenHost;
         String note = "0.0.0.0".equals(listenHost) ? " (and all other host addresses)" : "";
 
+
+        String startupTimeReport = cracRestoreTime == -1
+                ? " in " + initializationElapsedTime + " milliseconds (since JVM startup). "
+                : " in " + (System.currentTimeMillis() - cracRestoreTime) + " milliseconds (since CRaC restore).";
+
         LOGGER.log(Level.INFO, () -> "Server started on "
                 + protocol + "://" + host + ":" + port
-                + note + " in " + initializationElapsedTime + " milliseconds (since JVM startup).");
+                + note + startupTimeReport);
 
         // this is not needed at runtime, collect garbage
         serverBuilder = null;
@@ -756,5 +782,18 @@ public class ServerCdiExtension implements Extension {
         }
 
         return serverNamedRoutingBuilder(routingName);
+    }
+
+    @Override
+    public void beforeCheckpoint(org.crac.Context<? extends Resource> context) throws Exception {
+        LOGGER.log(Level.INFO, "Creating CRaC snapshot after "
+                + ManagementFactory.getRuntimeMXBean().getUptime()
+                + "ms of runtime.");
+    }
+
+    @Override
+    public void afterRestore(org.crac.Context<? extends Resource> context) throws Exception {
+        cracRestoreTime = System.currentTimeMillis();
+        LOGGER.log(Level.INFO, "CRaC snapshot restored!");
     }
 }
