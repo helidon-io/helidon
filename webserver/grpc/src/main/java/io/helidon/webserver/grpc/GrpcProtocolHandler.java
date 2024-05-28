@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpPrologue;
@@ -54,7 +55,6 @@ import io.grpc.ServerCallHandler;
 import io.grpc.Status;
 
 import static io.helidon.http.HeaderNames.CONTENT_TYPE;
-import static io.helidon.http.HeaderNames.create;
 import static io.helidon.http.http2.Http2Flag.DataFlags;
 import static io.helidon.http.http2.Http2Flag.END_OF_HEADERS;
 import static io.helidon.http.http2.Http2Flag.END_OF_STREAM;
@@ -64,8 +64,8 @@ import static java.lang.System.Logger.Level.ERROR;
 class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProtocolHandler {
     private static final System.Logger LOGGER = System.getLogger(GrpcProtocolHandler.class.getName());
 
-    private static final HeaderName GRPC_ENCODING = create("grpc-encoding");
-    private static final HeaderName GRPC_ACCEPT_ENCODING = create("grpc-accept-encoding");
+    private static final HeaderName GRPC_ENCODING = HeaderNames.create("grpc-encoding");
+    private static final HeaderName GRPC_ACCEPT_ENCODING = HeaderNames.create("grpc-accept-encoding");
     private static final Header GRPC_CONTENT_TYPE = HeaderValues.createCached(CONTENT_TYPE, "application/grpc");
     private static final Header GRPC_ENCODING_IDENTITY = HeaderValues.createCached(GRPC_ENCODING, "identity");
 
@@ -81,15 +81,13 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private final Http2Settings serverSettings;
     private final Http2Settings clientSettings;
     private final Grpc<REQ, RES> route;
-
-    private final StreamFlowControl flowControl;
-    private Http2StreamState currentStreamState;
-    private ServerCall.Listener<REQ> listener;
-
-    private BufferData entityBytes;
     private final AtomicInteger numMessages = new AtomicInteger();
     private final LinkedBlockingQueue<REQ> listenerQueue = new LinkedBlockingQueue<>();
+    private final StreamFlowControl flowControl;
 
+    private Http2StreamState currentStreamState;
+    private ServerCall.Listener<REQ> listener;
+    private BufferData entityBytes;
     private Compressor compressor;
     private Decompressor decompressor;
 
