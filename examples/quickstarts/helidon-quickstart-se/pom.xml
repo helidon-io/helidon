@@ -27,7 +27,7 @@
         <version>4.0.0-SNAPSHOT</version>
         <relativePath>../../../applications/se/pom.xml</relativePath>
     </parent>
-    <groupId>io.helidon.examples</groupId>
+    <groupId>io.helidon.examples.quickstarts</groupId>
     <artifactId>helidon-quickstart-se</artifactId>
     <version>4.0.0-SNAPSHOT</version>
     <name>Helidon Examples Quickstart SE</name>
