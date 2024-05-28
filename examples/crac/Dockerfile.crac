@@ -27,6 +27,7 @@ ENV CR_DIR=${CONT_IMG_VER:-/crac-checkpoint/cr}
 RUN microdnf -y update && microdnf -y install wget tar gzip
 RUN wget -O crac-jdk.tar.gz "https://cdn.azul.com/zulu/bin/${JDK_NAME}.tar.gz"
 RUN tar zxf ./crac-jdk.tar.gz -C /usr/share && ln -s $JAVA_HOME/bin/java /bin/
+RUN ln -s $JAVA_HOME/bin/jcmd /bin/ && ln -s $JAVA_HOME/bin/jps /bin/
 
 FROM olinux-crac
 WORKDIR /helidon

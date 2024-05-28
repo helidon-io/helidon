@@ -34,6 +34,7 @@ module io.helidon.webserver {
     requires io.helidon.logging.common;
     requires java.management;
     requires io.helidon;
+    requires crac;
 
     requires transitive io.helidon.common.buffers;
     requires transitive io.helidon.common.context;

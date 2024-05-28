@@ -469,14 +469,16 @@ public class ServerCdiExtension implements Extension, Resource {
         }
         webserver = serverBuilder.build();
 
-        try {
-            Core.checkpointRestore();
-        } catch (UnsupportedOperationException e) {
-            LOGGER.log(Level.DEBUG, "CRaC feature is not available", e);
-        } catch (RestoreException e) {
-            LOGGER.log(Level.ERROR, "CRaC restore wasn't successful!", e);
-        } catch (CheckpointException e) {
-            LOGGER.log(Level.ERROR, "CRaC checkpoint creation wasn't successful!", e);
+        if ("onStart".equalsIgnoreCase(System.getProperty("io.helidon.crac.checkpoint"))) {
+            try {
+                Core.checkpointRestore();
+            } catch (UnsupportedOperationException e) {
+                LOGGER.log(Level.DEBUG, "CRaC feature is not available", e);
+            } catch (RestoreException e) {
+                LOGGER.log(Level.ERROR, "CRaC restore wasn't successful!", e);
+            } catch (CheckpointException e) {
+                LOGGER.log(Level.ERROR, "CRaC checkpoint creation wasn't successful!", e);
+            }
         }
 
         try {

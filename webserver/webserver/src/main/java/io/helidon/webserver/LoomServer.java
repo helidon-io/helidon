@@ -47,7 +47,10 @@ import io.helidon.spi.HelidonShutdownHandler;
 import io.helidon.webserver.http.DirectHandlers;
 import io.helidon.webserver.spi.ServerFeature;
 
-class LoomServer implements WebServer {
+import org.crac.Core;
+import org.crac.Resource;
+
+class LoomServer implements WebServer, Resource {
     private static final System.Logger LOGGER = System.getLogger(LoomServer.class.getName());
     private static final String EXIT_ON_STARTED_KEY = "exit.on.started";
     private static final AtomicInteger WEBSERVER_COUNTER = new AtomicInteger(1);
@@ -101,6 +104,7 @@ class LoomServer implements WebServer {
         });
 
         listeners = Map.copyOf(listenerMap);
+        Core.getGlobalContext().register(this);
     }
 
     @Override
@@ -270,6 +274,42 @@ class LoomServer implements WebServer {
         }
         this.startFutures = futures;
         return result;
+    }
+
+    @Override
+    public void beforeCheckpoint(org.crac.Context<? extends Resource> context) throws Exception {
+        try {
+            lifecycleLock.lockInterruptibly();
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Interrupted", e);
+        }
+        try {
+            if (running.get()) {
+                for (ServerListener listener : listeners.values()) {
+                    listener.suspend();
+                }
+            }
+        } finally {
+            lifecycleLock.unlock();
+        }
+    }
+
+    @Override
+    public void afterRestore(org.crac.Context<? extends Resource> context) throws Exception {
+        try {
+            lifecycleLock.lockInterruptibly();
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Interrupted", e);
+        }
+        try {
+            if (running.get()) {
+                for (ServerListener listener : listeners.values()) {
+                    listener.resume();
+                }
+            }
+        } finally {
+            lifecycleLock.unlock();
+        }
     }
 
     private record ListenerFuture(ServerListener listener, Future<?> future) {
