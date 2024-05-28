@@ -11,6 +11,51 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [4.0.9]
+
+This release contains important bugfixes and ehancements and is recommended for all users of Helidon 4. 
+
+Java 21 is required to use Helidon 4.0.9.
+
+### CHANGES
+
+- Common: Parameters.first(String) generates java.lang.IndexOutOfB… [8723](https://github.com/helidon-io/helidon/pull/8723)
+- Config: Cannot read config from environment with environment modules variables [8786](https://github.com/helidon-io/helidon/pull/8786)
+- Config: LazyConfigSource is now queried when an unknown node is requested [8707](https://github.com/helidon-io/helidon/pull/8707)
+- Config: Switched implementation of MpEnvironmentVariablesSource to use an LRU cache [8768](https://github.com/helidon-io/helidon/pull/8768)
+- Config: fix `getOrdinal` for system property and environment variable config sources  [8744](https://github.com/helidon-io/helidon/pull/8744)
+- gRPC: Improvements to gRPC server-side support [8765](https://github.com/helidon-io/helidon/pull/8765)
+- MP Threading: New annotation @ExecuteOn  [8643](https://github.com/helidon-io/helidon/pull/8643)
+- Native image: AbstractConfigurableExtension native-image fix [8771](https://github.com/helidon-io/helidon/pull/8771)
+- Native image: Force hibernate to use no-op bytecode provider with native-image [8740](https://github.com/helidon-io/helidon/pull/8740)
+- Native image: Register additional hibernate classes for reflection [8758](https://github.com/helidon-io/helidon/pull/8758)
+- Native-image: Fix native-image properties layout. [8808](https://github.com/helidon-io/helidon/pull/8808)
+- Native-image: Use native-image:compile-no-fork instead of native-image:compile [8802](https://github.com/helidon-io/helidon/pull/8802)
+- OCI: Refactor OCI metrics library a bit [8745](https://github.com/helidon-io/helidon/pull/8745)
+- Testing: @HelidonTest / @AddConfig* Provide a config parser by type #8718  [8721](https://github.com/helidon-io/helidon/pull/8721)
+- Testing: Ability to Inject MockBeans in Helidon #7694 [8674](https://github.com/helidon-io/helidon/pull/8674)
+- Testing: Add text block support [8655](https://github.com/helidon-io/helidon/pull/8655)
+- Tracing: Associate tracer-level tags with Jaeger process level (instead of span level) [8764](https://github.com/helidon-io/helidon/pull/8764)
+- Tracing: Fix problems with tracing data propagation [8742](https://github.com/helidon-io/helidon/pull/8742)
+- Tracing: Harden WebClientSecurity against absent or disabled tracing [8809](https://github.com/helidon-io/helidon/pull/8809)
+- Tracing: Use Helidon tracer, span builder, span types instead of OTel ones so we can trigger span listeners [8778](https://github.com/helidon-io/helidon/pull/8778)
+- Build: Plugin updates [8687](https://github.com/helidon-io/helidon/pull/8687)
+- Build: Update setup-java for snapshot workflow [8788](https://github.com/helidon-io/helidon/pull/8788)
+- Build: cleanup helidon-bom and helidon-all [8783](https://github.com/helidon-io/helidon/pull/8783)
+- Build: helidon-common sources JAR contains absolute paths #8761 [8762](https://github.com/helidon-io/helidon/pull/8762)
+- Build: upgrade MacOS runner to 14 and fix protoc version [8717](https://github.com/helidon-io/helidon/pull/8717)
+- Dependencies: Bump deploy plugin to 3.1.1 [8790](https://github.com/helidon-io/helidon/pull/8790)
+- Dependencies: Upgrade microprofile rest client to 3.0.1 [8730](https://github.com/helidon-io/helidon/pull/8730)
+- Dependencies: Upgrades to Jersey to 3.1.7 [8798](https://github.com/helidon-io/helidon/pull/8798)
+- Docs: New document that describes the ExecuteOn annotation [8756](https://github.com/helidon-io/helidon/pull/8756)
+- Docs: include SE upgrade guide in docs navbar [8795](https://github.com/helidon-io/helidon/pull/8795)
+- Examples: Capitalized received message in io.helidon.examples.webserver.websocket.MessageBoardEndpoint (#8725) [8731](https://github.com/helidon-io/helidon/pull/8731)
+- Examples: Update Dockerfiles to use jdk-no-fee-term instead of openjdk [8733](https://github.com/helidon-io/helidon/pull/8733)
+- Examples: Use LevelChangePropagator in examples/logging/slf4j (#7737) [8656](https://github.com/helidon-io/helidon/pull/8656)
+- Examples: Archetype - Add SLF4J dependency [8792](https://github.com/helidon-io/helidon/pull/8792)
+- Tests: Add tests for building native-image for quickstart examples [8719](https://github.com/helidon-io/helidon/pull/8719)
+- Tests: Fix tests/integration/native-image/mp-2 [8801](https://github.com/helidon-io/helidon/pull/8801)
+
 ## [4.0.8]
 
 This release contains important bugfixes and ehancements and is recommended for all users of Helidon 4. 
@@ -1172,6 +1217,7 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/oracle/helidon/pull/4737)
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
+[4.0.8]: https://github.com/oracle/helidon/compare/4.0.8...4.0.9
 [4.0.8]: https://github.com/oracle/helidon/compare/4.0.7...4.0.8
 [4.0.7]: https://github.com/oracle/helidon/compare/4.0.6...4.0.7
 [4.0.6]: https://github.com/oracle/helidon/compare/4.0.5...4.0.6
