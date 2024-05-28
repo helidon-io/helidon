@@ -76,9 +76,9 @@ class ServerListener implements ListenerContext {
     private final Router router;
     private final HelidonTaskExecutor readerExecutor;
     private final ExecutorService sharedExecutor;
-    private final Thread serverThread;
+    private Thread serverThread;
     private final DirectHandlers directHandlers;
-    private final CompletableFuture<Void> closeFuture;
+    private CompletableFuture<Void> closeFuture;
     private final Tls tls;
     private final SocketOptions connectionOptions;
     private final InetSocketAddress configuredAddress;
@@ -92,6 +92,7 @@ class ServerListener implements ListenerContext {
     private final Map<String, ServerConnection> activeConnections = new ConcurrentHashMap<>();
 
     private volatile boolean running;
+    private volatile boolean inCheckpoint;
     private volatile int connectedPort;
     private volatile ServerSocket serverSocket;
 
@@ -146,19 +147,13 @@ class ServerListener implements ListenerContext {
                 .build());
         this.gracePeriod = listenerConfig.shutdownGracePeriod();
 
-        this.serverThread = Thread.ofPlatform()
-                .inheritInheritableThreadLocals(true)
-                .daemon(false)
-                .name("server-" + socketName + "-listener")
-                .unstarted(this::listen);
+        initServerThread();
 
         // to read requests and execute tasks
         this.readerExecutor = ExecutorsFactory.newServerListenerReaderExecutor();
 
         // to do anything else (writers etc.)
         this.sharedExecutor = ExecutorsFactory.newServerListenerSharedExecutor();
-
-        this.closeFuture = new CompletableFuture<>();
 
         int port = listenerConfig.port();
         if (port < 1) {
@@ -172,6 +167,15 @@ class ServerListener implements ListenerContext {
                                                         listenerConfig,
                                                         this::activeConnections);
         ith.start();
+    }
+
+    private void initServerThread() {
+        this.closeFuture = new CompletableFuture<>();
+        this.serverThread = Thread.ofPlatform()
+                .inheritInheritableThreadLocals(true)
+                .daemon(false)
+                .name("server-" + socketName + "-listener")
+                .unstarted(this::listen);
     }
 
     @Override
@@ -226,43 +230,51 @@ class ServerListener implements ListenerContext {
             return;
         }
         running = false;
+        suspend(true);
+        router.afterStop();
+    }
+
+    private void suspend(boolean shutdownExecutors) {
         try {
             // Stop listening for connections
             serverSocket.close();
 
-            // Shutdown reader executor
-            readerExecutor.terminate(gracePeriod.toMillis(), TimeUnit.MILLISECONDS);
-            if (!readerExecutor.isTerminated()) {
-                LOGGER.log(DEBUG, "Some tasks in reader executor did not terminate gracefully");
-                readerExecutor.forceTerminate();
-            }
-
-            // Shutdown shared executor
-            try {
-                sharedExecutor.shutdown();
-                boolean done = sharedExecutor.awaitTermination(gracePeriod.toMillis(), TimeUnit.MILLISECONDS);
-                if (!done) {
-                    List<Runnable> running = sharedExecutor.shutdownNow();
-                    if (!running.isEmpty()) {
-                        LOGGER.log(DEBUG, running.size() + " tasks in shared executor did not terminate gracefully");
-                    }
+            if (shutdownExecutors) {
+                // Shutdown reader executor
+                readerExecutor.terminate(gracePeriod.toMillis(), TimeUnit.MILLISECONDS);
+                if (!readerExecutor.isTerminated()) {
+                    LOGGER.log(DEBUG, "Some tasks in reader executor did not terminate gracefully");
+                    readerExecutor.forceTerminate();
                 }
-            } catch (InterruptedException e) {
-                // falls through
-            }
 
+                // Shutdown shared executor
+                try {
+                    sharedExecutor.shutdown();
+                    boolean done = sharedExecutor.awaitTermination(gracePeriod.toMillis(), TimeUnit.MILLISECONDS);
+                    if (!done) {
+                        List<Runnable> running = sharedExecutor.shutdownNow();
+                        if (!running.isEmpty()) {
+                            LOGGER.log(DEBUG, running.size() + " tasks in shared executor did not terminate gracefully");
+                        }
+                    }
+                } catch (InterruptedException e) {
+                    // falls through
+                }
+            }
         } catch (IOException e) {
             LOGGER.log(INFO, "Exception thrown on socket close", e);
         }
         serverThread.interrupt();
         closeFuture.join();
-        router.afterStop();
     }
 
     @SuppressWarnings("resource")
     void start() {
         router.beforeStart();
+        startIt();
+    }
 
+    private void startIt() {
         try {
             SSLServerSocket sslServerSocket = tls.enabled() ? tls.createServerSocket() : null;
             serverSocket = tls.enabled() ? sslServerSocket : new ServerSocket();
@@ -361,7 +373,7 @@ class ServerListener implements ListenerContext {
                                                     tls);
                     readerExecutor.execute(handler);
                 } catch (RejectedExecutionException e) {
-                    LOGGER.log(ERROR, "Executor rejected handler for new connection");
+                    LOGGER.log(ERROR, "Executor rejected handler for new connection", e);
 
                     // the socket was never handled
                     try {
@@ -391,12 +403,16 @@ class ServerListener implements ListenerContext {
                 if (!e.getMessage().contains("Socket closed")) {
                     LOGGER.log(ERROR, "Got a socket exception while listening, this server socket is terminating now", e);
                 }
-                if (running) {
+                if (inCheckpoint) {
+                    break;
+                } else if (running) {
                     stop();
                 }
             } catch (Throwable e) {
                 LOGGER.log(ERROR, "Got a throwable while listening, this server socket is terminating now", e);
-                if (running) {
+                if (inCheckpoint) {
+                    break;
+                } else if (running) {
                     stop();
                 }
             }
@@ -408,5 +424,18 @@ class ServerListener implements ListenerContext {
 
     private List<ServerConnection> activeConnections() {
         return new ArrayList<>(activeConnections.values());
+    }
+
+    void suspend() {
+        inCheckpoint = true;
+        suspend(false);
+        serverThread = null;
+        closeFuture = null;
+    }
+
+    void resume() {
+        initServerThread();
+        startIt();
+        inCheckpoint = false;
     }
 }
