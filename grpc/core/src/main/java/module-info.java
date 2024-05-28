@@ -19,15 +19,12 @@
  */
 module io.helidon.grpc.core {
 
-    requires transitive io.helidon.common.context;
-    requires transitive io.helidon.common.config;
+    requires io.helidon.common;
     requires transitive io.grpc;
     requires transitive io.grpc.stub;
     requires transitive com.google.protobuf;
     requires transitive io.grpc.protobuf;
     requires transitive io.grpc.protobuf.lite;
-
-    requires jakarta.annotation;
 
     exports io.helidon.grpc.core;
 }

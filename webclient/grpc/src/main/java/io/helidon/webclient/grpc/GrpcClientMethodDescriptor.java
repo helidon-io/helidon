@@ -315,8 +315,8 @@ public final class GrpcClientMethodDescriptor {
         private final MethodDescriptor.Builder<?, ?> descriptor;
         private Class<?> requestType;
         private Class<?> responseType;
-        private final WeightedBag<ClientInterceptor> interceptors = WeightedBag.withDefaultWeight(InterceptorWeights.USER);
-        private MarshallerSupplier defaultMarshallerSupplier = MarshallerSupplier.defaultInstance();
+        private final WeightedBag<ClientInterceptor> interceptors = WeightedBag.create(InterceptorWeights.USER);
+        private MarshallerSupplier defaultMarshallerSupplier = MarshallerSupplier.create();
         private MarshallerSupplier marshallerSupplier;
         private CallCredentials callCredentials;
         private MethodHandler<?, ?> methodHandler;
@@ -364,7 +364,7 @@ public final class GrpcClientMethodDescriptor {
         }
 
         Builder defaultMarshallerSupplier(MarshallerSupplier supplier) {
-            this.defaultMarshallerSupplier = Objects.requireNonNullElseGet(supplier, MarshallerSupplier::defaultInstance);
+            this.defaultMarshallerSupplier = Objects.requireNonNullElseGet(supplier, MarshallerSupplier::create);
             return this;
         }
 

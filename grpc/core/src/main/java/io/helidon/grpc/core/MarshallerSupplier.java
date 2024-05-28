@@ -16,9 +16,7 @@
 
 package io.helidon.grpc.core;
 
-import com.google.protobuf.MessageLite;
 import io.grpc.MethodDescriptor;
-import io.grpc.protobuf.lite.ProtoLiteUtils;
 
 /**
  * A supplier of {@link MethodDescriptor.Marshaller} instances for specific
@@ -38,53 +36,11 @@ public interface MarshallerSupplier {
     <T> MethodDescriptor.Marshaller<T> get(Class<T> clazz);
 
     /**
-     * Obtain the default marshaller.
+     * Creates a default marshaller supplier.
      *
-     * @return the default marshaller
+     * @return the default marshaller supplier
      */
-    static MarshallerSupplier defaultInstance() {
-        return new DefaultMarshallerSupplier();
-    }
-
-    /**
-     * The default {@link MarshallerSupplier}.
-     */
-    class DefaultMarshallerSupplier implements MarshallerSupplier {
-
-        private final ProtoMarshallerSupplier proto = new ProtoMarshallerSupplier();
-
-        @Override
-        public <T> MethodDescriptor.Marshaller<T> get(Class<T> clazz) {
-            if (MessageLite.class.isAssignableFrom(clazz)) {
-                return proto.get(clazz);
-            }
-            String msg = String.format(
-                    "Class %s must be a valid ProtoBuf message, or a custom marshaller for it must be specified explicitly",
-                    clazz.getName());
-            throw new IllegalArgumentException(msg);
-        }
-    }
-
-    /**
-     * A {@link MarshallerSupplier} implementation that
-     * supplies Protocol Buffer marshaller instances.
-     */
-    class ProtoMarshallerSupplier implements MarshallerSupplier {
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public <T> MethodDescriptor.Marshaller<T> get(Class<T> clazz) {
-            try {
-                java.lang.reflect.Method getDefaultInstance = clazz.getDeclaredMethod("getDefaultInstance");
-                MessageLite instance = (MessageLite) getDefaultInstance.invoke(clazz);
-
-                return (MethodDescriptor.Marshaller<T>) ProtoLiteUtils.marshaller(instance);
-            } catch (Exception e) {
-                String msg = String.format(
-                        "Attempting to use class %s, which is not a valid Protocol buffer message, with a default marshaller",
-                        clazz.getName());
-                throw new IllegalArgumentException(msg);
-            }
-        }
+    static MarshallerSupplier create() {
+        return DefaultMarshallerSupplier.create();
     }
 }

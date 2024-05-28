@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 
@@ -28,13 +29,10 @@ import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 
 /**
- * A bag of values ordered by weight.
+ * A bag of values ordered by weight. All weights must be greater or equal to 0.
  * <p>
- * The higher the weight the higher the weight. For cases where weight is the same,
+ * The higher the weight the higher the priority. For cases where the weight is the same,
  * elements are returned in the order that they were added to the bag.
- * <p>
- * Elements added with negative weights are assumed to have no weight and
- * will be least significant in order.
  *
  * @param <T> the type of elements in the bag
  * @see io.helidon.common.Weight
@@ -42,44 +40,41 @@ import io.helidon.common.Weighted;
 public class WeightedBag<T> implements Iterable<T> {
 
     private final Map<Double, List<T>> contents;
-    private final List<T> noWeightedList;
     private final double defaultWeight;
 
-    private WeightedBag(Map<Double, List<T>> contents, List<T> noweightList, double defaultWeight) {
+    private WeightedBag(Map<Double, List<T>> contents, double defaultWeight) {
         this.contents = contents;
-        this.noWeightedList = noweightList;
+        if (defaultWeight < 0.0) {
+            throw new IllegalArgumentException("Weights must be greater or equal to 0");
+        }
         this.defaultWeight = defaultWeight;
     }
 
     /**
-     * Create a new {@link WeightedBag} where elements added with no weight will be last
-     * in the order.
+     * Create a new {@link WeightedBag} where elements added with no weight will be
+     * given a default weight of 0.
      *
      * @param <T> the type of elements in the bag
-     * @return a new {@link WeightedBag} where elements
-     *         dded with no weight will be last in the
-     *         order
+     * @return a new {@link WeightedBag} where elements added
+     *         with no weight will be given {@link Weighted#DEFAULT_WEIGHT}
      */
     public static <T> WeightedBag<T> create() {
-        return withDefaultWeight(-1.0);
+        return create(Weighted.DEFAULT_WEIGHT);
     }
 
     /**
-     * Create a new {@link WeightedBag} where elements added with no weight will be given
-     * a default weight value.
+     * Create a new {@link WeightedBag} where elements added with no weight will be
+     * given a default weight of 0.
      *
-     * @param weight  the default weight value to assign
-     *                to elements added with no weight
-     * @param <T>     the type of elements in the bag
-     *
-     * @return a new {@link WeightedBag} where elements
-     *         added with no weight will be given
-     *         a default weight value
+     * @param defaultWeight default weight for elements
+     * @param <T> the type of elements in the bag
+     * @return a new {@link WeightedBag} where elements added
+     *         with no weight will be given {@link Weighted#DEFAULT_WEIGHT}
      */
-    public static <T> WeightedBag<T> withDefaultWeight(double weight) {
+    public static <T> WeightedBag<T> create(double defaultWeight) {
         return new WeightedBag<>(new TreeMap<>(
                 (o1, o2) -> Double.compare(o2, o1)),        // reversed for weights
-                new ArrayList<>(), weight);
+                defaultWeight);
     }
 
     /**
@@ -88,18 +83,7 @@ public class WeightedBag<T> implements Iterable<T> {
      * @return outcome of test
      */
     public boolean isEmpty() {
-        return contents.isEmpty() && noWeightedList.isEmpty();
-    }
-
-    /**
-     * Obtain a copy of this {@link WeightedBag}.
-     *
-     * @return a copy of this {@link WeightedBag}
-     */
-    public WeightedBag<T> copyMe() {
-        WeightedBag<T> copy = WeightedBag.create();
-        copy.merge(this);
-        return copy;
+        return contents.isEmpty();
     }
 
     /**
@@ -108,9 +92,7 @@ public class WeightedBag<T> implements Iterable<T> {
      * @return an immutable copy of this {@link WeightedBag}
      */
     public WeightedBag<T> readOnly() {
-        return new WeightedBag<>(Collections.unmodifiableMap(contents),
-                                 Collections.unmodifiableList(noWeightedList),
-                                 defaultWeight);
+        return new WeightedBag<>(Collections.unmodifiableMap(contents), defaultWeight);
     }
 
     /**
@@ -120,7 +102,6 @@ public class WeightedBag<T> implements Iterable<T> {
      */
     public void merge(WeightedBag<? extends T> bag) {
         bag.contents.forEach((weight, value) -> addAll(value, weight));
-        this.noWeightedList.addAll(bag.noWeightedList);
     }
 
     /**
@@ -139,7 +120,7 @@ public class WeightedBag<T> implements Iterable<T> {
     }
 
     /**
-     * Add elements to the bag.
+     * Add elements to the bag with a given weight.
      *
      * @param values  the elements to add
      * @param weight  the weight to assign to the elements
@@ -160,16 +141,15 @@ public class WeightedBag<T> implements Iterable<T> {
      * @param value  the element to add
      */
     public void add(T value) {
-        if (value != null) {
-            double weight;
-            if (value instanceof Weighted weighted) {
-                weight = weighted.weight();
-            } else {
-                Weight annotation = value.getClass().getAnnotation(Weight.class);
-                weight = annotation == null ? defaultWeight : annotation.value();
-            }
-            add(value, weight);
+        Objects.requireNonNull(value);
+        double weight;
+        if (value instanceof Weighted weighted) {
+            weight = weighted.weight();
+        } else {
+            Weight annotation = value.getClass().getAnnotation(Weight.class);
+            weight = (annotation == null) ? defaultWeight : annotation.value();
         }
+        add(value, weight);
     }
 
     /**
@@ -179,13 +159,18 @@ public class WeightedBag<T> implements Iterable<T> {
      * @param weight the weight of the element
      */
     public void add(T value, double weight) {
-        if (value != null) {
-            if (weight < 0.0) {
-                noWeightedList.add(value);
-            } else {
-                contents.compute(weight, (key, list) -> combine(list, value));
-            }
+        Objects.requireNonNull(value);
+        if (weight < 0.0) {
+            throw new IllegalArgumentException("Weights must be greater or equal to 0");
         }
+        contents.compute(weight, (key, list) -> {
+            List<T> newList = list;
+            if (newList == null) {
+                newList = new ArrayList<>();
+            }
+            newList.add(value);
+            return newList;
+        });
     }
 
     /**
@@ -196,23 +181,13 @@ public class WeightedBag<T> implements Iterable<T> {
      *         an ordered {@link Stream}
      */
     public Stream<T> stream() {
-        Stream<T> stream = contents.entrySet()
+        return contents.entrySet()
                 .stream()
                 .flatMap(e -> e.getValue().stream());
-
-        return Stream.concat(stream, noWeightedList.stream());
     }
 
     @Override
     public Iterator<T> iterator() {
         return stream().iterator();
-    }
-
-    private List<T> combine(List<T> list, T value) {
-        if (list == null) {
-            list = new ArrayList<>();
-        }
-        list.add(value);
-        return list;
     }
 }

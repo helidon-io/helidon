@@ -24,11 +24,12 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class WeightedBagTest {
 
     @Test
-    public void shouldReturnElementsInOrder() {
+    void shouldReturnElementsInOrder() {
         WeightedBag<String> bag = WeightedBag.create();
         bag.add("Three", 3.0);
         bag.add("Two", 2.0);
@@ -37,7 +38,7 @@ class WeightedBagTest {
     }
 
     @Test
-    public void shouldReturnElementsInOrderWithinSameWeight() {
+    void shouldReturnElementsInOrderWithinSameWeight() {
         WeightedBag<String> bag = WeightedBag.create();
         bag.add("Two", 2.0);
         bag.add("TwoToo", 2.0);
@@ -45,16 +46,16 @@ class WeightedBagTest {
     }
 
     @Test
-    public void shouldReturnNoWeightElementsLast() {
+    void shouldReturnNoWeightElementsLast() {
         WeightedBag<String> bag = WeightedBag.create();
-        bag.add("Three", 3.0);
-        bag.add("Last");
-        bag.add("One", 1.0);
+        bag.add("Three", 300.0);
+        bag.add("Last");        // default weight 100
+        bag.add("One", 200.0);
         assertThat(bag, contains("Three", "One", "Last"));
     }
 
     @Test
-    public void shouldGetWeightFromAnnotation() {
+    void shouldGetWeightFromAnnotation() {
         WeightedBag<Object> bag = WeightedBag.create();
         Value value = new Value();
         bag.add("One", 1.0);
@@ -64,7 +65,7 @@ class WeightedBagTest {
     }
 
     @Test
-    public void shouldGetWeightFromWeighted() {
+    void shouldGetWeightFromWeighted() {
         WeightedBag<Object> bag = WeightedBag.create();
         WeightedValue value = new WeightedValue();
         bag.add("One", 1.0);
@@ -74,7 +75,7 @@ class WeightedBagTest {
     }
 
     @Test
-    public void shouldUseWeightFromWeightedOverAnnotation() {
+    void shouldUseWeightFromWeightedOverAnnotation() {
         WeightedBag<Object> bag = WeightedBag.create();
         AnnotatedWeightedValue value = new AnnotatedWeightedValue();
         bag.add("One", 1.0);
@@ -84,8 +85,8 @@ class WeightedBagTest {
     }
 
     @Test
-    public void shouldUseDefaultWeight() {
-        WeightedBag<Object> bag = WeightedBag.withDefaultWeight(2);
+    void shouldUseDefaultWeight() {
+        WeightedBag<Object> bag = WeightedBag.create(2.0);
         bag.add("One", 1.0);
         bag.add("Three", 3.0);
         bag.add("Two");
@@ -93,14 +94,14 @@ class WeightedBagTest {
     }
 
     @Test
-    public void shouldAddAll() {
+    void shouldAddAll() {
         WeightedBag<Object> bag = WeightedBag.create();
         bag.addAll(Arrays.asList("Three", "Two", "One"));
         assertThat(bag, contains("Three", "Two", "One"));
     }
 
     @Test
-    public void shouldAddAllWithWeight() {
+    void shouldAddAllWithWeight() {
         WeightedBag<Object> bag = WeightedBag.create();
         bag.add("First", 1.0);
         bag.add("Last", 3.0);
@@ -109,7 +110,7 @@ class WeightedBagTest {
     }
 
     @Test
-    public void shouldMerge() {
+    void shouldMerge() {
         WeightedBag<Object> bagOne = WeightedBag.create();
         WeightedBag<Object> bagTwo = WeightedBag.create();
 
@@ -125,6 +126,18 @@ class WeightedBagTest {
 
         bagOne.merge(bagTwo);
         assertThat(bagOne, contains("H", "D", "F", "G", "B", "C", "A", "E"));
+    }
+
+    @Test
+    void badValue() {
+        WeightedBag<Object> bag = WeightedBag.create();
+        assertThrows(NullPointerException.class, () -> bag.add(null, 1.0));
+    }
+
+    @Test
+    void badWeight() {
+        WeightedBag<Object> bag = WeightedBag.create();
+        assertThrows(IllegalArgumentException.class, () -> bag.add("First", -1.0));
     }
 
     @Weight(2.0)

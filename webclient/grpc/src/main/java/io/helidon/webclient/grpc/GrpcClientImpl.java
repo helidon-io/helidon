@@ -34,11 +34,11 @@ class GrpcClientImpl implements GrpcClient {
         this.clientConfig = clientConfig;
     }
 
-    public WebClient webClient() {
+    WebClient webClient() {
         return webClient;
     }
 
-    public Http2Client http2Client() {
+    Http2Client http2Client() {
         return http2Client;
     }
 

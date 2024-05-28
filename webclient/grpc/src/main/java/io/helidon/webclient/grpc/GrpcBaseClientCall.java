@@ -93,38 +93,6 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         this.heartbeatPeriod = grpcClient.prototype().protocolConfig().heartbeatPeriod();
     }
 
-    protected Duration heartbeatPeriod() {
-        return heartbeatPeriod;
-    }
-
-    protected boolean abortPollTimeExpired() {
-        return abortPollTimeExpired;
-    }
-
-    protected Duration pollWaitTime() {
-        return pollWaitTime;
-    }
-
-    protected Http2ClientConnection connection() {
-        return connection;
-    }
-
-    protected MethodDescriptor.Marshaller<ReqT> requestMarshaller() {
-        return requestMarshaller;
-    }
-
-    protected GrpcClientStream clientStream() {
-        return clientStream;
-    }
-
-    protected Listener<ResT> responseListener() {
-        return responseListener;
-    }
-
-    protected HelidonSocket socket() {
-        return socket;
-    }
-
     @Override
     public void start(Listener<ResT> responseListener, Metadata metadata) {
         LOGGER.log(DEBUG, "start called");
@@ -243,5 +211,37 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
             throw new UncheckedIOException(e);
         }
         return baos.toByteArray();
+    }
+
+    protected Duration heartbeatPeriod() {
+        return heartbeatPeriod;
+    }
+
+    protected boolean abortPollTimeExpired() {
+        return abortPollTimeExpired;
+    }
+
+    protected Duration pollWaitTime() {
+        return pollWaitTime;
+    }
+
+    protected Http2ClientConnection connection() {
+        return connection;
+    }
+
+    protected MethodDescriptor.Marshaller<ReqT> requestMarshaller() {
+        return requestMarshaller;
+    }
+
+    protected GrpcClientStream clientStream() {
+        return clientStream;
+    }
+
+    protected Listener<ResT> responseListener() {
+        return responseListener;
+    }
+
+    protected HelidonSocket socket() {
+        return socket;
     }
 }

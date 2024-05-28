@@ -31,11 +31,7 @@
     <dependencies>
         <dependency>
             <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-context</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-config</artifactId>
+            <artifactId>helidon-common</artifactId>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
@@ -43,11 +39,11 @@
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
-            <artifactId>grpc-core</artifactId>
+            <artifactId>grpc-protobuf</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-protobuf</artifactId>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
@@ -58,10 +54,6 @@
                     <artifactId>j2objc-annotations</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

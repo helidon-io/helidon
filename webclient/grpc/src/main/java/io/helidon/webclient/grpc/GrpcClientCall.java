@@ -242,7 +242,7 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
     private void handleStreamTimeout(StreamTimeoutException e) {
         if (abortPollTimeExpired()) {
             socket().log(LOGGER, ERROR, "[Reading thread] HTTP/2 stream timeout, aborting");
-            throw e;    // caught below
+            throw e;
         }
         socket().log(LOGGER, ERROR, "[Reading thread] HTTP/2 stream timeout, retrying");
     }
