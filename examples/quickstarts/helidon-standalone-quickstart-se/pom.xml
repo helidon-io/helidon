@@ -23,11 +23,11 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.helidon.examples.quickstarts</groupId>
     <artifactId>helidon-standalone-quickstart-se</artifactId>
-    <version>4.0.9-SNAPSHOT</version>
+    <version>4.0.9</version>
     <name>Helidon Examples Standalone Quickstart SE</name>
 
     <properties>
-        <helidon.version>4.0.9-SNAPSHOT</helidon.version>
+        <helidon.version>4.0.9</helidon.version>
         <helidon.test.config.profile>test</helidon.test.config.profile>
         <mainClass>io.helidon.examples.quickstart.se.Main</mainClass>
 

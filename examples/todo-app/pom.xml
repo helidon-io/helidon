@@ -24,13 +24,13 @@
     <parent>
         <groupId>io.helidon.examples</groupId>
         <artifactId>helidon-examples-project</artifactId>
-        <version>4.0.9-SNAPSHOT</version>
+        <version>4.0.9</version>
     </parent>
 
     <groupId>io.helidon.examples.todos</groupId>
     <artifactId>example-todo-app-project</artifactId>
     <packaging>pom</packaging>
-    <version>4.0.9-SNAPSHOT</version>
+    <version>4.0.9</version>
     <name>Helidon Examples TODO Demo</name>
 
     <description>
