@@ -41,5 +41,4 @@ module io.helidon.webserver.observe.log {
 
     provides io.helidon.webserver.observe.spi.ObserveProvider
             with io.helidon.webserver.observe.log.LogObserveProvider;
-        
 }

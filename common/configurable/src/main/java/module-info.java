@@ -24,7 +24,6 @@ module io.helidon.common.configurable {
     requires io.helidon.builder.api;
     requires io.helidon.common.context;
     requires java.management;
-    requires java.logging;
 
     requires transitive io.helidon.common.config;
     requires transitive io.helidon.common;

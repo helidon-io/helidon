@@ -21,7 +21,6 @@ module io.helidon {
     // this is required due to a bug in JDK (see Main for details and link)
     requires java.logging;
 
-
     requires io.helidon.common;
     requires io.helidon.logging.common;
 
