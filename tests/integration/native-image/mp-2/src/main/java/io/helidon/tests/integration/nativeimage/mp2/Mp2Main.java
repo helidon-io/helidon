@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 package io.helidon.tests.integration.nativeimage.mp2;
 
 import io.helidon.common.Errors;
-import io.helidon.microprofile.cdi.Main;
+import io.helidon.microprofile.server.Server;
 
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
@@ -41,27 +41,39 @@ public final class Mp2Main {
      * @param args command line arguments.
      */
     public static void main(final String[] args) {
-        // start CDI
-        Main.main(args);
+        Server server = Server.create().start();
 
+        boolean failed = false;
         long now = System.currentTimeMillis();
-        test();
+        try {
+            test(server.port());
+        } catch (Exception e) {
+            e.printStackTrace(System.out);
+            failed = true;
+        }
         long time = System.currentTimeMillis() - now;
         System.out.println("Tests finished in " + time + " millis");
+
+        server.stop();
+
+        if (failed) {
+            System.exit(-1);
+        }
     }
 
-    private static void test() {
-        Client client = ClientBuilder.newClient();
-        WebTarget target = client.target("http://localhost:8087");
+    private static void test(int port) {
+        WebTarget target;
+        try (Client client = ClientBuilder.newClient()) {
+            target = client.target("http://localhost:" + port);
+            Errors.Collector collector = Errors.collector();
 
-        Errors.Collector collector = Errors.collector();
+            // testing all modules
+            validateJaxrs(collector, target);
+            validateDb(collector, target);
 
-        // testing all modules
-        validateJaxrs(collector, target);
-        validateDb(collector, target);
-
-        collector.collect()
-                .checkValid();
+            collector.collect()
+                    .checkValid();
+        }
     }
 
     private static void validateJaxrs(Errors.Collector collector, WebTarget target) {
