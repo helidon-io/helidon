@@ -123,7 +123,8 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
 
     // Default proxy class name suffix
     public static final String PROXY_SUFFIX = "$Proxy$";
-    public static final String DEFAULT_PROXY_PACKAGE = "org.jboss.weld.proxies";
+    public static final String WELD_PROXY_PREFIX = "org.jboss.weld.generated.proxies";
+    public static final String DEFAULT_PROXY_PACKAGE = WELD_PROXY_PREFIX + ".default";
 
     private final Class<?> beanType;
     private final Set<Class<?>> additionalInterfaces = new LinkedHashSet<Class<?>>();
@@ -154,6 +155,7 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
     protected static final String INVOKE_METHOD_NAME = "invoke";
     protected static final String METHOD_HANDLER_FIELD_NAME = "methodHandler";
     static final String JAVA = "java";
+    static final String JAKARTA = "jakarta";
     static final String NULL = "the class package is null";
     static final String SIGNED = "the class is signed";
 
@@ -481,7 +483,9 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
             proxyClassName = proxyClassName + suffix;
         }
         if (proxyClassName.startsWith(JAVA)) {
-            proxyClassName = proxyClassName.replaceFirst(JAVA, "org.jboss.weld");
+            proxyClassName = proxyClassName.replaceFirst(JAVA, WELD_PROXY_PREFIX);
+        } else if (proxyClassName.startsWith(JAKARTA)) {
+            proxyClassName = proxyClassName.replaceFirst(JAKARTA, WELD_PROXY_PREFIX);
         }
         Class<T> proxyClass = null;
         Class<?> originalClass = bean != null ? bean.getBeanClass() : proxiedBeanType;
