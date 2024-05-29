@@ -56,23 +56,12 @@
             <artifactId>oci-java-sdk-vault</artifactId>
         </dependency>
         <dependency>
-            <groupId>jakarta.inject</groupId>
-            <artifactId>jakarta.inject-api</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-metadata</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.builder</groupId>
             <artifactId>helidon-builder-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-registry</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
@@ -83,24 +72,16 @@
             <artifactId>helidon-common-key-util</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.integrations.oci.sdk</groupId>
-            <artifactId>helidon-integrations-oci-sdk-runtime</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.fault-tolerance</groupId>
             <artifactId>helidon-fault-tolerance</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-yaml</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.scheduling</groupId>
             <artifactId>helidon-scheduling</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.inject.configdriven</groupId>
-            <artifactId>helidon-inject-configdriven-runtime</artifactId>
+            <groupId>io.helidon.integrations.oci</groupId>
+            <artifactId>helidon-integrations-oci</artifactId>
         </dependency>
 
         <!-- needed to actually use OCI SDK -->
@@ -109,7 +90,6 @@
             <artifactId>oci-java-sdk-common-httpclient-jersey3</artifactId>
             <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>io.helidon.common.testing</groupId>
             <artifactId>helidon-common-testing-junit5</artifactId>
@@ -126,21 +106,10 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile.cdi</groupId>
-            <artifactId>helidon-microprofile-cdi</artifactId>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-yaml</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.testing</groupId>
-            <artifactId>helidon-microprofile-testing-junit5</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.bundles</groupId>
-            <artifactId>helidon-microprofile</artifactId>
-            <scope>test</scope>
-        </dependency>
-
     </dependencies>
 
     <build>
@@ -148,82 +117,59 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>default-testCompile</id>
-                        <goals>
-                            <goal>testCompile</goal>
-                        </goals>
-                        <configuration>
-                            <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                            <compilerArgs>
-                                <arg>-Ainject.ignoreUnsupportedAnnotations=true</arg>
-                            </compilerArgs>
-                            <annotationProcessorPaths>
-                                <path>
-                                    <groupId>io.helidon.inject.configdriven</groupId>
-                                    <artifactId>helidon-inject-configdriven-processor</artifactId>
-                                    <version>${helidon.version}</version>
-                                </path>
-                                <path>
-                                    <groupId>io.helidon.builder</groupId>
-                                    <artifactId>helidon-builder-processor</artifactId>
-                                    <version>${helidon.version}</version>
-                                </path>
-                                <path>
-                                    <groupId>io.helidon.common.processor</groupId>
-                                    <artifactId>helidon-common-processor-helidon-copyright</artifactId>
-                                    <version>${helidon.version}</version>
-                                </path>
-                                <path>
-                                    <groupId>io.helidon.config</groupId>
-                                    <artifactId>helidon-config-metadata-processor</artifactId>
-                                    <version>${helidon.version}</version>
-                                </path>
-                            </annotationProcessorPaths>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>default-compile</id>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                        <configuration>
-                            <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                            <annotationProcessorPaths>
-                                <path>
-                                    <groupId>io.helidon.inject.configdriven</groupId>
-                                    <artifactId>helidon-inject-configdriven-processor</artifactId>
-                                    <version>${helidon.version}</version>
-                                </path>
-                                <path>
-                                    <groupId>io.helidon.builder</groupId>
-                                    <artifactId>helidon-builder-processor</artifactId>
-                                    <version>${helidon.version}</version>
-                                </path>
-                                <path>
-                                    <groupId>io.helidon.common.processor</groupId>
-                                    <artifactId>helidon-common-processor-helidon-copyright</artifactId>
-                                    <version>${helidon.version}</version>
-                                </path>
-                            </annotationProcessorPaths>
-                        </configuration>
-                    </execution>
-                </executions>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>io.helidon.codegen</groupId>
+                            <artifactId>helidon-codegen-apt</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.builder</groupId>
+                            <artifactId>helidon-builder-codegen</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.service</groupId>
+                            <artifactId>helidon-service-codegen</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.codegen</groupId>
+                            <artifactId>helidon-codegen-helidon-copyright</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.config</groupId>
+                            <artifactId>helidon-config-metadata-processor</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
                 <dependencies>
                     <dependency>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-apt</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
                         <groupId>io.helidon.builder</groupId>
-                        <artifactId>helidon-builder-processor</artifactId>
+                        <artifactId>helidon-builder-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
-                        <groupId>io.helidon.inject.configdriven</groupId>
-                        <artifactId>helidon-inject-configdriven-processor</artifactId>
+                        <groupId>io.helidon.service</groupId>
+                        <artifactId>helidon-service-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
-                        <groupId>io.helidon.common.processor</groupId>
-                        <artifactId>helidon-common-processor-helidon-copyright</artifactId>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-helidon-copyright</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.config</groupId>
+                        <artifactId>helidon-config-metadata-processor</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                 </dependencies>

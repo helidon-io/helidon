@@ -848,6 +848,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.integrations.oci</groupId>
+                <artifactId>helidon-integrations-oci</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.integrations.oci.sdk</groupId>
                 <artifactId>helidon-integrations-oci-sdk-cdi</artifactId>
                 <version>${helidon.version}</version>
@@ -1376,6 +1381,18 @@
             <dependency>
                 <groupId>io.helidon.inject.configdriven</groupId>
                 <artifactId>helidon-inject-configdriven-processor</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+
+            <!-- Service registry -->
+            <dependency>
+                <groupId>io.helidon.service</groupId>
+                <artifactId>helidon-service-registry</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.service</groupId>
+                <artifactId>helidon-service-codegen</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 

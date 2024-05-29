@@ -28,23 +28,11 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.faulttolerance {
 
     requires io.helidon.common;
-    requires io.helidon.common.types;
     requires io.helidon.common.configurable;
     requires io.helidon.config;
-    requires io.helidon.inject.api;
     requires io.helidon.builder.api;
 
-    requires static jakarta.inject;
     requires static io.helidon.common.features.api;
-    requires static io.helidon.inject.configdriven.api;
-    // needed to compile generated types
-    requires static io.helidon.inject.configdriven.runtime;
-    requires static io.helidon.inject.runtime;
-
 
     exports io.helidon.faulttolerance;
-
-    // inject module
-    provides io.helidon.inject.api.ModuleComponent with io.helidon.faulttolerance.Injection$$Module;
-
 }

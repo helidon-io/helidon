@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.util.function.Function;
 
 import io.helidon.common.media.type.MediaType;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
+import io.helidon.service.registry.Service;
 
 /**
  * Transforms config {@link io.helidon.config.spi.ConfigParser.Content} into a {@link ConfigNode.ObjectNode} that
@@ -49,6 +50,7 @@ import io.helidon.config.spi.ConfigNode.ObjectNode;
  * @see io.helidon.config.spi.ParsableSource
  * @see io.helidon.config.ConfigParsers ConfigParsers - access built-in implementations.
  */
+@Service.Contract
 public interface ConfigParser {
     /**
      * Returns set of supported media types by the parser.

@@ -23,11 +23,9 @@ import java.util.concurrent.ExecutorService;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.inject.configdriven.api.ConfigBean;
 
 @Prototype.Blueprint(decorator = CircuitBreakerConfigBlueprint.BuilderDecorator.class)
 @Prototype.Configured("fault-tolerance.circuit-breakers")
-@ConfigBean(wantDefault = true, repeatable = true)
 interface CircuitBreakerConfigBlueprint extends Prototype.Factory<CircuitBreaker> {
     int DEFAULT_ERROR_RATIO = 60;
     int DEFAULT_SUCCESS_THRESHOLD = 1;

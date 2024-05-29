@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,6 +87,8 @@ import static io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsPr
 // note: this is intended to be a replica to the properties carried from the cdi integrations previously done for MP
 @Prototype.Blueprint
 @Configured(root = true, prefix = OciConfigBlueprint.CONFIG_KEY)
+@Deprecated(forRemoval = true, since = "4.1.0")
+@Prototype.Annotated("java.lang.Deprecated(forRemoval = true, since = \"4.1.0\")")
 interface OciConfigBlueprint {
     /**
      * Config key of this config.

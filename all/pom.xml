@@ -638,6 +638,10 @@
             <artifactId>helidon-integrations-micrometer-cdi</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.integrations.oci</groupId>
+            <artifactId>helidon-integrations-oci</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.integrations.oci.sdk</groupId>
             <artifactId>helidon-integrations-oci-sdk-cdi</artifactId>
         </dependency>
@@ -1049,6 +1053,14 @@
         <dependency>
             <groupId>io.helidon.inject.configdriven</groupId>
             <artifactId>helidon-inject-configdriven-processor</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-registry</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-codegen</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.integrations.oci.sdk</groupId>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,14 +20,58 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import io.helidon.builder.api.Prototype;
 
-import static io.helidon.common.types.TypeNames.PRIMITIVES;
-
 final class TypeNameSupport {
+    private static final TypeName PRIMITIVE_BOOLEAN = TypeName.create(boolean.class);
+    private static final TypeName PRIMITIVE_BYTE = TypeName.create(byte.class);
+    private static final TypeName PRIMITIVE_SHORT = TypeName.create(short.class);
+    private static final TypeName PRIMITIVE_INT = TypeName.create(int.class);
+    private static final TypeName PRIMITIVE_LONG = TypeName.create(long.class);
+    private static final TypeName PRIMITIVE_CHAR = TypeName.create(char.class);
+    private static final TypeName PRIMITIVE_FLOAT = TypeName.create(float.class);
+    private static final TypeName PRIMITIVE_DOUBLE = TypeName.create(double.class);
+    private static final TypeName PRIMITIVE_VOID = TypeName.create(void.class);
+    private static final TypeName BOXED_BOOLEAN = TypeName.create(Boolean.class);
+    private static final TypeName BOXED_BYTE = TypeName.create(Byte.class);
+    private static final TypeName BOXED_SHORT = TypeName.create(Short.class);
+    private static final TypeName BOXED_INT = TypeName.create(Integer.class);
+    private static final TypeName BOXED_LONG = TypeName.create(Long.class);
+    private static final TypeName BOXED_CHAR = TypeName.create(Character.class);
+    private static final TypeName BOXED_FLOAT = TypeName.create(Float.class);
+    private static final TypeName BOXED_DOUBLE = TypeName.create(Double.class);
+    private static final TypeName BOXED_VOID = TypeName.create(Void.class);
+
+    // as type names need this class to be initialized, let's have a copy of these
+    private static final Map<String, TypeName> PRIMITIVES = Map.of(
+            "boolean", PRIMITIVE_BOOLEAN,
+            "byte", PRIMITIVE_BYTE,
+            "short", PRIMITIVE_SHORT,
+            "int", PRIMITIVE_INT,
+            "long", PRIMITIVE_LONG,
+            "char", PRIMITIVE_CHAR,
+            "float", PRIMITIVE_FLOAT,
+            "double", PRIMITIVE_DOUBLE,
+            "void", PRIMITIVE_VOID
+    );
+
+    private static final Map<TypeName, TypeName> BOXED_TYPES = Map.of(
+            PRIMITIVE_BOOLEAN, BOXED_BOOLEAN,
+            PRIMITIVE_BYTE, BOXED_BYTE,
+            PRIMITIVE_SHORT, BOXED_SHORT,
+            PRIMITIVE_INT, BOXED_INT,
+            PRIMITIVE_LONG, BOXED_LONG,
+            PRIMITIVE_CHAR, BOXED_CHAR,
+            PRIMITIVE_FLOAT, BOXED_FLOAT,
+            PRIMITIVE_DOUBLE, BOXED_DOUBLE,
+            PRIMITIVE_VOID, BOXED_VOID
+    );
+
     private TypeNameSupport() {
     }
 
@@ -55,7 +99,8 @@ final class TypeNameSupport {
      */
     @Prototype.PrototypeMethod
     static TypeName boxed(TypeName original) {
-        return TypeNames.boxed(original);
+        return Optional.ofNullable(BOXED_TYPES.get(original))
+                .orElse(original);
     }
 
     @Prototype.PrototypeMethod

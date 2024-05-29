@@ -135,11 +135,6 @@
             <groupId>io.helidon.common.testing</groupId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject-testing</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>

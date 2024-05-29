@@ -16,10 +16,12 @@
 
 package io.helidon.codegen;
 
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import io.helidon.codegen.classmodel.ClassModel;
@@ -45,10 +47,22 @@ public interface CodegenFiler {
      *
      * @param resource bytes of the resource file
      * @param location location to write to in the classes output directory
-     * @param originatingElements elements that caused this type to be generated
+     * @param originatingElements elements that caused this file to be generated
      * @return written path, we expect to always run on local file system
      */
     Path writeResource(byte[] resource, String location, Object... originatingElements);
+
+    /**
+     * A text resource that can be updated in the output.
+     * Note that the resource can only be written once per processing round.
+     *
+     * @param location            location to read/write to in the classes output directory
+     * @param originatingElements elements that caused this file to be generated
+     * @return the resource that can be used to update the file
+     */
+    default FilerTextResource textResource(String location, Object... originatingElements) {
+        throw new UnsupportedOperationException("Method textResource not implemented yet on " + getClass().getName());
+    }
 
     /**
      * Write a {@code META-INF/services} file for a specific provider interface and implementation(s).
@@ -66,25 +80,40 @@ public interface CodegenFiler {
         Objects.requireNonNull(providerInterface);
         Objects.requireNonNull(providers);
 
-        String location = "META-INF/services/" + providerInterface.fqName();
         if (providers.isEmpty()) {
-            throw new CodegenException("List of providers is empty, cannot generate " + location);
+            // do not write services file if there is no provider added
+            return;
         }
-        byte[] resourceBytes = (
-                "# " + GeneratedAnnotationHandler.create(generator,
-                                                         providers.getFirst(),
-                                                         TypeName.create(
-                                                                 "MetaInfServicesModuleComponent"),
-                                                         "1",
-                                                         "")
-                        + "\n"
-                        + providers.stream()
-                        .map(TypeName::declaredName)
-                        .collect(Collectors.joining("\n")))
-                .getBytes(StandardCharsets.UTF_8);
 
-        writeResource(resourceBytes,
-                      location,
-                      originatingElements);
+        String location = "META-INF/services/" + providerInterface.fqName();
+
+        var resource = textResource(location, originatingElements);
+
+        List<String> lines = new ArrayList<>(resource.lines());
+        Set<TypeName> existingServices = lines.stream()
+                .map(String::trim)
+                .filter(Predicate.not(it -> it.startsWith("#")))
+                .map(TypeName::create)
+                .collect(Collectors.toSet());
+
+        if (lines.isEmpty()) {
+            // @Generated
+            lines.add("# " + GeneratedAnnotationHandler.create(generator,
+                                                               providers.getFirst(),
+                                                               TypeName.create(
+                                                                       "MetaInfServicesModuleComponent"),
+                                                               "1",
+                                                               ""));
+        }
+
+        for (TypeName provider : providers) {
+            if (existingServices.add(provider)) {
+                // only add the provider if it does not yet exist
+                lines.add(provider.fqName());
+            }
+        }
+
+        resource.lines(lines);
+        resource.write();
     }
 }

@@ -50,6 +50,10 @@
             <artifactId>helidon-common-features</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-registry</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.eclipse.parsson</groupId>
             <artifactId>parsson</artifactId>
         </dependency>
