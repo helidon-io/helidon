@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
-import java.util.logging.Logger;
 
 import io.helidon.common.config.Config;
 import io.helidon.common.config.ConfigValue;
@@ -53,7 +52,7 @@ public class Aggregator {
      */
     public static final String PATHLESS_KEY = "{+}";
 
-    private static final Logger LOGGER = Logger.getLogger(Aggregator.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(Aggregator.class.getName());
 
     // Records paths and configs added via addCrossOriginConfig
     private final List<CrossOriginConfigMatchable> crossOriginConfigMatchables = new ArrayList<>();

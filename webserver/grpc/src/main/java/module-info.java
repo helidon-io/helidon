@@ -34,7 +34,6 @@ module io.helidon.webserver.grpc {
     requires io.grpc.protobuf.lite;
     requires io.helidon.builder.api;
     requires io.helidon.webserver.http2;
-    requires java.logging;
 
     requires static io.helidon.common.features.api;
 

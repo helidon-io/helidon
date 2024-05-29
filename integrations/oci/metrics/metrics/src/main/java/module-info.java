@@ -21,7 +21,6 @@
 module io.helidon.integrations.oci.metrics {
 
     requires io.helidon.http;
-    requires java.logging;
     requires oci.java.sdk.common;
 
     requires static io.helidon.config.metadata;

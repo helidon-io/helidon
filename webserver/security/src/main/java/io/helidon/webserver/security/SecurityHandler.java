@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.config.Config;
@@ -74,7 +72,7 @@ import static io.helidon.security.AuditEvent.AuditParam.plain;
 public final class SecurityHandler implements Handler, RuntimeType.Api<SecurityHandlerConfig> {
     static final String DEFAULT_AUDIT_EVENT_TYPE = "request";
     static final String DEFAULT_AUDIT_MESSAGE_FORMAT = "%3$s %1$s \"%2$s\" %5$s %6$s requested by %4$s";
-    private static final Logger LOGGER = Logger.getLogger(SecurityHandler.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(SecurityHandler.class.getName());
     private static final SecurityHandler DEFAULT_INSTANCE = builder().build();
 
     private final SecurityHandlerConfig config;
@@ -499,7 +497,7 @@ public final class SecurityHandler implements Handler, RuntimeType.Api<SecurityH
             }
         } catch (Exception e) {
             tracing.error(e);
-            LOGGER.log(Level.SEVERE, "Unexpected exception during security processing", e);
+            LOGGER.log(System.Logger.Level.ERROR, "Unexpected exception during security processing", e);
             abortRequest(res, null, Status.INTERNAL_SERVER_ERROR_500.code(), Map.of());
         }
 
@@ -620,7 +618,7 @@ public final class SecurityHandler implements Handler, RuntimeType.Api<SecurityH
 
     private boolean atnAbstainFailure(ServerResponse res, AuthenticationResponse response) {
         if (authenticationOptional.orElse(false)) {
-            LOGGER.finest("Authentication failed, but was optional, so assuming anonymous");
+            LOGGER.log(System.Logger.Level.TRACE, "Authentication failed, but was optional, so assuming anonymous");
             return false;
         }
 
@@ -634,7 +632,7 @@ public final class SecurityHandler implements Handler, RuntimeType.Api<SecurityH
 
     private boolean atnFinishFailure(ServerResponse res, AuthenticationResponse response) {
         if (authenticationOptional.orElse(false)) {
-            LOGGER.finest("Authentication failed, but was optional, so assuming anonymous");
+            LOGGER.log(System.Logger.Level.TRACE, "Authentication failed, but was optional, so assuming anonymous");
             return false;
         } else {
             int defaultStatusCode = Status.UNAUTHORIZED_401.code();

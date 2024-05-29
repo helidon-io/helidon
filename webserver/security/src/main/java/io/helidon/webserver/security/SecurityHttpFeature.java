@@ -19,7 +19,6 @@ package io.helidon.webserver.security;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.logging.Logger;
 
 import io.helidon.common.Weighted;
 import io.helidon.common.config.Config;
@@ -99,7 +98,7 @@ public final class SecurityHttpFeature implements HttpSecurity, HttpFeature, Wei
      */
     public static final String CONTEXT_RESPONSE_HEADERS = "security.responseHeaders";
 
-    private static final Logger LOGGER = Logger.getLogger(SecurityHttpFeature.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(SecurityHttpFeature.class.getName());
 
     private final Security security;
     private final SecurityHandler defaultHandler;
@@ -174,7 +173,7 @@ public final class SecurityHttpFeature implements HttpSecurity, HttpFeature, Wei
     @Override
     public void setup(HttpRouting.Builder rules) {
         if (!security.enabled()) {
-            LOGGER.info("Security is disabled. Not registering any security handlers");
+            LOGGER.log(System.Logger.Level.INFO, "Security is disabled. Not registering any security handlers");
             return;
         }
         rules.security(this);
