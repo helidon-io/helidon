@@ -69,8 +69,6 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
 
     @Override
     public void sendMessage(ReqT message) {
-        socket().log(LOGGER, DEBUG, "sendMessage called");
-
         // should only be called once
         if (requestSent) {
             close(Status.FAILED_PRECONDITION);

@@ -91,8 +91,6 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
 
     @Override
     public void sendMessage(ReqT message) {
-        socket().log(LOGGER, DEBUG, "sendMessage called");
-
         // serialize and queue message for writing
         byte[] serialized = serializeMessage(message);
         BufferData messageData = BufferData.createReadOnly(serialized, 0, serialized.length);
@@ -139,13 +137,10 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                     if (bufferData != null) {
                         if (bufferData == PING_FRAME) {                   // ping frame
                             clientStream().sendPing();
-                            socket().log(LOGGER, DEBUG, "[Writing thread] heartbeat sent");
                             continue;
                         }
                         if (bufferData == EMPTY_BUFFER_DATA) {            // end marker
-                            socket().log(LOGGER, DEBUG, "[Writing thread] sending queue end marker found");
                             if (!endOfStream) {
-                                socket().log(LOGGER, DEBUG, "[Writing thread] sending empty buffer to end stream");
                                 clientStream().writeData(EMPTY_BUFFER_DATA, true);
                             }
                             break;
@@ -234,7 +229,6 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
         while (messageRequest.get() > 0 && !receivingQueue.isEmpty()) {
             messageRequest.getAndDecrement();
             ResT res = toResponse(receivingQueue.remove());
-            socket().log(LOGGER, DEBUG, "[Reading thread] sending response to listener");
             responseListener().onMessage(res);
         }
     }
