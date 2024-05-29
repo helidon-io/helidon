@@ -104,8 +104,7 @@
         <version.lib.micronaut>3.8.7</version.lib.micronaut>
         <version.lib.micronaut.data>3.4.3</version.lib.micronaut.data>
         <version.lib.micronaut.sql>4.8.0</version.lib.micronaut.sql>
-        <!-- FIXME upgrade to 3.1 when it is released in Maven -->
-        <version.lib.microprofile-config>3.0.3</version.lib.microprofile-config>
+        <version.lib.microprofile-config>3.1</version.lib.microprofile-config>
         <!-- FIXME upgrade to 4.1 when it is released in Maven -->
         <version.lib.microprofile-fault-tolerance-api>4.0.2</version.lib.microprofile-fault-tolerance-api>
         <version.lib.microprofile-graphql>2.0</version.lib.microprofile-graphql>

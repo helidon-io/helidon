@@ -19,6 +19,9 @@ package io.helidon.config.mp;
 import java.io.ByteArrayInputStream;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -58,6 +61,52 @@ public class MpConfigSourcesTest {
         assertThat(mpSource.getValue("key.first"), is("first"));
         assertThat(mpSource.getValue("key.second"), is("second"));
         assertThat(mpSource.getValue("key.third"), is("<>{}().,:;/|\\~`?!@#$%^&*-=+*"));
+    }
+
+    @Test
+    void testProfileSpecificProperty() {
+        Map<String, String> values = Map.of(
+            "%dev.vehicle.name", "car",
+            "vehicle.name", "bike",
+            "%dev.vehicle.color", "blue",
+            "vehicle.color", "red",
+            "%dev.vehicle.size", "large"
+        );
+        org.eclipse.microprofile.config.spi.ConfigSource mapSource = MpConfigSources.create(ConfigSources.create(values).build());
+        assertThat(mapSource.getOrdinal(), is(100));
+        assertThat(mapSource.getValue("vehicle.name"), is("bike"));
+
+        // One data source. The profile specific property should take precedence
+        MpConfigImpl config = new MpConfigImpl(List.of(mapSource), new HashMap<>(), Collections.emptyList(), "dev");
+        assertThat(config.getConfigValue("vehicle.name").getValue(), is("car"));
+        assertThat(config.getOptionalValue("vehicle.name", String.class).orElse("error"), is("car"));
+
+        System.setProperty("vehicle.name", "jet");
+        System.setProperty("%dev.vehicle.make", "tucker");
+        org.eclipse.microprofile.config.spi.ConfigSource propertySource = MpConfigSources.systemProperties();
+        assertThat(propertySource.getOrdinal(), is(400));
+        assertThat(propertySource.getValue("vehicle.name"), is("jet"));
+
+        // Create Config from both data sources with the "dev" profile
+        config = new MpConfigImpl(List.of(propertySource, mapSource), new HashMap<>(), Collections.emptyList(), "dev");
+
+        // The vanilla property in the higher ordinal data source should trump the profile specific property in the
+        // lower ordinal data source
+        assertThat(config.getConfigValue("vehicle.name").getValue(), is("jet"));
+        assertThat(config.getOptionalValue("vehicle.name", String.class).orElse("error"), is("jet"));
+
+        // Within one DataSource the profile specific property takes precedence
+        assertThat(config.getConfigValue("vehicle.color").getValue(), is("blue"));
+        assertThat(config.getOptionalValue("vehicle.color", String.class).orElse("error"), is("blue"));
+
+        // Make sure missing vanilla values do not mess things up
+        assertThat(config.getConfigValue("vehicle.size").getValue(), is("large"));
+        assertThat(config.getOptionalValue("vehicle.size", String.class).orElse("error"), is("large"));
+        assertThat(config.getConfigValue("vehicle.make").getValue(), is("tucker"));
+        assertThat(config.getOptionalValue("vehicle.make", String.class).orElse("error"), is("tucker"));
+
+        System.clearProperty("vehicle.name");
+        System.clearProperty("%dev.vehicle.name");
     }
 
     @Test
