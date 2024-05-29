@@ -27,6 +27,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 import java.util.stream.IntStream;
 
 import org.awaitility.core.ConditionTimeoutException;
@@ -274,6 +277,40 @@ class ThreadPoolTest {
                                                       true,
                                                       null
         ), "rejectionPolicy is null");
+    }
+
+    @Test
+    void testCannotChangeMaxPoolSize() {
+        pool = newPool(2, 2, 100, 25);
+        Logger log = Logger.getLogger(ThreadPool.class.getName());
+        assertThat(log.getHandlers().length, is(0));
+        assertThat(log.getUseParentHandlers(), is(true));
+        List<LogRecord> logRecords = new ArrayList<>();
+        Handler handler = new Handler() {
+            @Override
+            public void publish(LogRecord record) {
+                logRecords.add(record);
+            }
+
+            @Override
+            public void flush() {
+            }
+
+            @Override
+            public void close() throws SecurityException {
+            }
+        };
+
+        try {
+            log.addHandler(handler);
+            assertThat(pool.getMaximumPoolSize(), is(2));
+            pool.setMaximumPoolSize(4);
+            assertThat(pool.getMaximumPoolSize(), is(2));
+            assertThat(logRecords.size(), is(1));
+            assertThat(logRecords.get(0).getMessage(), containsString("cannot be changed"));
+        } finally {
+            log.removeHandler(handler);
+        }
     }
 
     @Test

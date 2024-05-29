@@ -116,6 +116,18 @@
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>default-testCompile</id>
+                        <configuration>
+                            <!-- We use JUL from tests, need this for compilation -->
+                            <compilerArgs>
+                                <compilerArg>--add-modules</compilerArg>
+                                <compilerArg>java.logging</compilerArg>
+                            </compilerArgs>
+                        </configuration>
+                    </execution>
+                </executions>
                 <dependencies>
                     <dependency>
                         <groupId>io.helidon.config</groupId>
