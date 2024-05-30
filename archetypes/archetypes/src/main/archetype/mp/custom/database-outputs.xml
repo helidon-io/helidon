@@ -330,9 +330,6 @@ docker run --rm --name mysql -p 3306:3306 \
             <output if="${db.server} == 'oracledb'">
                 <file source="../database/files/src/main/resources/META-INF/init_script.sql.oracle"
                       target="src/main/resources/META-INF/init_script.sql"/>
-                <templates engine="mustache" transformations="mustache,packaged">
-                    <directory>../database/files</directory>
-                </templates>
                 <model>
                     <value key="helidon-test">false</value>
                     <value key="readme-description">Helidon MP application that uses the dbclient API with OracleDB database.</value>
