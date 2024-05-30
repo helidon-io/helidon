@@ -20,4 +20,11 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
+    <step name="Observability" optional="true">
+        <inputs>
+            <exec src="metrics/inputs.xml"/>
+            <exec src="/features/observability/includes/inputs-health.xml"/>
+            <exec src="/features/observability/includes/inputs-tracing.xml"/>
+        </inputs>
+    </step>
 </archetype-script>

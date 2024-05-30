@@ -19,26 +19,20 @@
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
-    <methods>
-        <method name="jaeger">
-            <output if="${tracing}">
-                <model if="${tracing.provider} == 'jaeger'">
-                    <list key="readme-sections">
-                        <value file="files/README.jaeger.md"/>
-                    </list>
-                </model>
-            </output>
-        </method>
-        <method name="zipkin">
-            <output if="${tracing}">
-                <model if="${tracing.provider} == 'zipkin'">
-                    <list key="readme-sections">
-                        <value file="files/README.zipkin.md"/>
-                    </list>
-                </model>
-            </output>
-        </method>
-    </methods>
-    <call method="jaeger"/>
-    <call method="zipkin"/>
+
+    <inputs>
+        <boolean id="health"
+                 name="Health Checks"
+                 description="Monitor your application’s health"
+                 default="false"
+                 optional="true">
+            <inputs>
+                <boolean id="builtin"
+                         name="Built-in Health Checks"
+                         description="Report common health check statuses"
+                         default="true"
+                         optional="true"/>
+            </inputs>
+        </boolean>
+    </inputs>
 </archetype-script>

@@ -25,7 +25,7 @@
     <exec src="/features/security/inputs.xml"/>
     <exec src="../features/database/inputs.xml"/>
     <exec src="/features/extra/inputs.xml"/>
-    <exec src="/features/observability/inputs.xml"/>
+    <exec src="../features/observability/inputs.xml"/>
     <exec src="/features/packaging/inputs.xml"/>
     <exec src="/features/project-customization/inputs.xml"/>
 
