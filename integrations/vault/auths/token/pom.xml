@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.integrations.vault.auths</groupId>
         <artifactId>helidon-integrations-vault-auths-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.1.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-integrations-vault-auths-token</artifactId>
