@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.config.Config;
 import io.helidon.webclient.api.HttpClient;
 import io.helidon.webclient.api.WebClient;
+import io.helidon.webclient.spi.Protocol;
 
 /**
  * HTTP2 client.
@@ -32,6 +33,11 @@ public interface Http2Client extends HttpClient<Http2ClientRequest>, RuntimeType
      * HTTP/2 protocol ID, as used by ALPN.
      */
     String PROTOCOL_ID = "h2";
+    /**
+     * Protocol to use to obtain an instance of http/2 specific client from
+     * {@link io.helidon.webclient.api.WebClient#client(io.helidon.webclient.spi.Protocol)}.
+     */
+    Protocol<Http2Client, Http2ClientProtocolConfig> PROTOCOL = Http2ProtocolProvider::new;
 
     /**
      * A new fluent API builder to customize client setup.
