@@ -39,9 +39,9 @@ public interface GrpcServiceClient {
      *
      * @param methodName method name
      * @param request the request
-     * @return the response
      * @param <ReqT> type of request
      * @param <ResT> type of response
+     * @return the response
      */
     <ReqT, ResT> ResT unary(String methodName, ReqT request);
 
@@ -61,9 +61,9 @@ public interface GrpcServiceClient {
      *
      * @param methodName method name
      * @param request the request
-     * @return the response iterator
      * @param <ReqT> type of request
      * @param <ResT> type of response
+     * @return the response iterator
      */
     <ReqT, ResT> Iterator<ResT> serverStream(String methodName, ReqT request);
 
@@ -83,9 +83,9 @@ public interface GrpcServiceClient {
      *
      * @param methodName method name
      * @param request the request iterator
-     * @return the response
      * @param <ReqT> type of request
      * @param <ResT> type of response
+     * @return the response
      */
     <ReqT, ResT> ResT clientStream(String methodName, Iterator<ReqT> request);
 
@@ -94,9 +94,9 @@ public interface GrpcServiceClient {
      *
      * @param methodName method name
      * @param response the response observer
-     * @return the request observer
      * @param <ReqT> type of request
      * @param <ResT> type of response
+     * @return the request observer
      */
     <ReqT, ResT> StreamObserver<ReqT> clientStream(String methodName, StreamObserver<ResT> response);
 
@@ -105,9 +105,9 @@ public interface GrpcServiceClient {
      *
      * @param methodName method name
      * @param request request iterator
-     * @return response iterator
      * @param <ReqT> type of request
      * @param <ResT> type of response
+     * @return response iterator
      */
     <ReqT, ResT> Iterator<ResT> bidi(String methodName, Iterator<ReqT> request);
 
@@ -116,9 +116,9 @@ public interface GrpcServiceClient {
      *
      * @param methodName method name
      * @param response the response observer
-     * @return the request observer
      * @param <ReqT> type of request
      * @param <ResT> type of response
+     * @return the request observer
      */
     <ReqT, ResT> StreamObserver<ReqT> bidi(String methodName, StreamObserver<ResT> response);
 }

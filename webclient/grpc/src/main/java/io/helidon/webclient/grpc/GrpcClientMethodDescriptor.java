@@ -84,13 +84,13 @@ public final class GrpcClientMethodDescriptor {
      * specified name and {@link io.grpc.MethodDescriptor}.
      *
      * @param serviceName the name of the owning gRPC service
-     * @param name        the simple method name
-     * @param descriptor  the underlying gRPC {@link io.grpc.MethodDescriptor.Builder}
+     * @param name the simple method name
+     * @param descriptor the underlying gRPC {@link io.grpc.MethodDescriptor.Builder}
      * @return A new instance of a {@link GrpcClientMethodDescriptor.Builder}
      */
     public static Builder builder(String serviceName,
-                           String name,
-                           MethodDescriptor.Builder<?, ?> descriptor) {
+                                  String name,
+                                  MethodDescriptor.Builder<?, ?> descriptor) {
         return new Builder(serviceName, name, descriptor);
     }
 
@@ -99,13 +99,13 @@ public final class GrpcClientMethodDescriptor {
      * specified name and {@link io.grpc.MethodDescriptor}.
      *
      * @param serviceName the name of the owning gRPC service
-     * @param name        the simple method name
-     * @param descriptor  the underlying gRPC {@link io.grpc.MethodDescriptor.Builder}
+     * @param name the simple method name
+     * @param descriptor the underlying gRPC {@link io.grpc.MethodDescriptor.Builder}
      * @return a new instance of a {@link GrpcClientMethodDescriptor.Builder}
      */
     public static GrpcClientMethodDescriptor create(String serviceName,
-                                             String name,
-                                             MethodDescriptor.Builder<?, ?> descriptor) {
+                                                    String name,
+                                                    MethodDescriptor.Builder<?, ?> descriptor) {
         return builder(serviceName, name, descriptor).build();
     }
 
@@ -114,7 +114,7 @@ public final class GrpcClientMethodDescriptor {
      * the specified name.
      *
      * @param serviceName the name of the owning gRPC service
-     * @param name        the method name
+     * @param name the method name
      * @return a new instance of a {@link GrpcClientMethodDescriptor.Builder}
      */
     public static Builder unary(String serviceName, String name) {
@@ -126,7 +126,7 @@ public final class GrpcClientMethodDescriptor {
      * the specified name.
      *
      * @param serviceName the name of the owning gRPC service
-     * @param name        the method name
+     * @param name the method name
      * @return a new instance of a {@link GrpcClientMethodDescriptor.Builder}
      */
     public static Builder clientStreaming(String serviceName, String name) {
@@ -138,7 +138,7 @@ public final class GrpcClientMethodDescriptor {
      * the specified name.
      *
      * @param serviceName the name of the owning gRPC service
-     * @param name        the method name
+     * @param name the method name
      * @return a new instance of a {@link GrpcClientMethodDescriptor.Builder}
      */
     public static Builder serverStreaming(String serviceName, String name) {
@@ -150,7 +150,7 @@ public final class GrpcClientMethodDescriptor {
      * the specified name.
      *
      * @param serviceName the name of the owning gRPC service
-     * @param name        the method name
+     * @param name the method name
      * @return a new instance of a {@link GrpcClientMethodDescriptor.Builder}
      */
     public static Builder bidirectional(String serviceName, String name) {
@@ -179,8 +179,8 @@ public final class GrpcClientMethodDescriptor {
      * Creates a new {@link GrpcClientMethodDescriptor.Builder} with the specified name.
      *
      * @param serviceName the name of the owning gRPC service
-     * @param name        the method name
-     * @param methodType  the gRPC method type
+     * @param name the method name
+     * @param methodType the gRPC method type
      * @return a new instance of a {@link GrpcClientMethodDescriptor.Builder}
      */
     public static Builder builder(String serviceName, String name, MethodDescriptor.MethodType methodType) {
@@ -204,7 +204,7 @@ public final class GrpcClientMethodDescriptor {
     /**
      * Returns the {@link io.grpc.MethodDescriptor} of this method.
      *
-     * @param <ReqT>  the request type
+     * @param <ReqT> the request type
      * @param <RespT> the response type
      * @return The {@link io.grpc.MethodDescriptor} of this method.
      */
@@ -241,7 +241,7 @@ public final class GrpcClientMethodDescriptor {
          *
          * @param type The type of parameter of this method.
          * @return this {@link GrpcClientMethodDescriptor.Rules} instance for
-         *              fluent call chaining
+         * fluent call chaining
          */
         Rules requestType(Class<?> type);
 
@@ -250,7 +250,7 @@ public final class GrpcClientMethodDescriptor {
          *
          * @param type The type of parameter of this method.
          * @return this {@link GrpcClientMethodDescriptor.Rules} instance for
-         *              fluent call chaining
+         * fluent call chaining
          */
         Rules responseType(Class<?> type);
 
@@ -280,7 +280,7 @@ public final class GrpcClientMethodDescriptor {
          *
          * @param marshallerSupplier the {@link MarshallerSupplier} for the service
          * @return this {@link GrpcClientMethodDescriptor.Rules} instance
-         *              for fluent call chaining
+         * for fluent call chaining
          */
         Rules marshallerSupplier(MarshallerSupplier marshallerSupplier);
 
@@ -291,16 +291,16 @@ public final class GrpcClientMethodDescriptor {
          *
          * @param callCredentials the {@link io.grpc.CallCredentials} to set.
          * @return this {@link GrpcClientMethodDescriptor.Rules} instance
-         *              for fluent call chaining
+         * for fluent call chaining
          */
         Rules callCredentials(CallCredentials callCredentials);
 
         /**
          * Set the {@link MethodHandler} that can be used to invoke the method.
          *
-         * @param methodHandler  the {2link MethodHandler} to use
+         * @param methodHandler the {2link MethodHandler} to use
          * @return this {@link GrpcClientMethodDescriptor.Rules} instance
-         *              for fluent call chaining
+         * for fluent call chaining
          */
         Rules methodHandler(MethodHandler<?, ?> methodHandler);
     }
@@ -325,8 +325,8 @@ public final class GrpcClientMethodDescriptor {
          * Constructs a new Builder instance.
          *
          * @param serviceName The name of the service ths method belongs to
-         * @param name        the name of this method
-         * @param descriptor  The gRPC method descriptor builder
+         * @param name the name of this method
+         * @param descriptor The gRPC method descriptor builder
          */
         Builder(String serviceName, String name, MethodDescriptor.Builder<?, ?> descriptor) {
             this.name = name;
@@ -415,10 +415,10 @@ public final class GrpcClientMethodDescriptor {
             }
 
             return new GrpcClientMethodDescriptor(name,
-                                              descriptor.build(),
-                                              interceptors,
-                                              callCredentials,
-                                              methodHandler);
+                    descriptor.build(),
+                    interceptors,
+                    callCredentials,
+                    methodHandler);
         }
     }
 }

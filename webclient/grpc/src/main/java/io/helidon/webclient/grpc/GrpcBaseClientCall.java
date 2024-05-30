@@ -157,7 +157,8 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         Executor executor = callOptions.getExecutor();
         if (executor != null) {
             try {
-                executor.execute(() -> {});
+                executor.execute(() -> {
+                });
             } catch (Throwable t) {
                 // ignored
             }

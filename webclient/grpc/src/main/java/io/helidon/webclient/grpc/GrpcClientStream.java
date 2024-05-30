@@ -27,11 +27,11 @@ import io.helidon.webclient.http2.LockingStreamIdSequence;
 class GrpcClientStream extends Http2ClientStream {
 
     GrpcClientStream(Http2ClientConnection connection,
-                      Http2Settings serverSettings,
-                      SocketContext ctx,
-                      Http2StreamConfig http2StreamConfig,
-                      Http2ClientConfig http2ClientConfig,
-                      LockingStreamIdSequence streamIdSeq) {
+                     Http2Settings serverSettings,
+                     SocketContext ctx,
+                     Http2StreamConfig http2StreamConfig,
+                     Http2ClientConfig http2ClientConfig,
+                     LockingStreamIdSequence streamIdSeq) {
         super(connection, serverSettings, ctx, http2StreamConfig, http2ClientConfig, streamIdSeq);
     }
 }

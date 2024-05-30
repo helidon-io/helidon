@@ -25,11 +25,11 @@ import io.grpc.protobuf.ProtoUtils;
  */
 class ProtoMarshallerSupplier implements MarshallerSupplier {
 
-    static ProtoMarshallerSupplier create() {
-        return new ProtoMarshallerSupplier();
+    private ProtoMarshallerSupplier() {
     }
 
-    private ProtoMarshallerSupplier() {
+    static ProtoMarshallerSupplier create() {
+        return new ProtoMarshallerSupplier();
     }
 
     @Override

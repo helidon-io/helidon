@@ -42,8 +42,9 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
     private volatile boolean requestSent;
     private volatile boolean responseSent;
 
-    GrpcUnaryClientCall(GrpcClientImpl grpcClient, MethodDescriptor<ReqT, ResT> methodDescriptor,
-                               CallOptions callOptions) {
+    GrpcUnaryClientCall(GrpcClientImpl grpcClient,
+                        MethodDescriptor<ReqT, ResT> methodDescriptor,
+                        CallOptions callOptions) {
         super(grpcClient, methodDescriptor, callOptions);
     }
 

@@ -49,9 +49,9 @@ public class GrpcProtocolProvider implements ClientProtocolProvider<GrpcClient, 
     @Override
     public GrpcClient protocol(WebClient client, GrpcClientProtocolConfig config) {
         return new GrpcClientImpl(client,
-                                  GrpcClientConfig.builder()
-                                          .from(client.prototype())
-                                          .protocolConfig(config)
-                                          .buildPrototype());
+                GrpcClientConfig.builder()
+                        .from(client.prototype())
+                        .protocolConfig(config)
+                        .buildPrototype());
     }
 }

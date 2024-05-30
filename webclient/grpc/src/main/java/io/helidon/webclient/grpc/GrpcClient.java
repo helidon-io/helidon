@@ -69,8 +69,8 @@ public interface GrpcClient extends RuntimeType.Api<GrpcClientConfig> {
      */
     static GrpcClient create(Consumer<GrpcClientConfig.Builder> consumer) {
         return create(GrpcClientConfig.builder()
-                              .update(consumer)
-                              .buildPrototype());
+                .update(consumer)
+                .buildPrototype());
     }
 
     /**
@@ -112,6 +112,6 @@ public interface GrpcClient extends RuntimeType.Api<GrpcClientConfig> {
      * @return a new gRPC channel
      */
     default Channel channel(Collection<ClientInterceptor> interceptors) {
-        return channel(interceptors.toArray(new ClientInterceptor[] {}));
+        return channel(interceptors.toArray(new ClientInterceptor[]{}));
     }
 }

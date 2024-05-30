@@ -28,9 +28,8 @@ public interface MarshallerSupplier {
     /**
      * Obtain a {@link MethodDescriptor.Marshaller} for a type.
      *
-     * @param clazz  the {@link Class} of the type to obtain the {@link MethodDescriptor.Marshaller} for
-     * @param <T>    the type to be marshalled
-     *
+     * @param clazz the {@link Class} of the type to obtain the {@link MethodDescriptor.Marshaller} for
+     * @param <T> the type to be marshalled
      * @return a {@link MethodDescriptor.Marshaller} for a type
      */
     <T> MethodDescriptor.Marshaller<T> get(Class<T> clazz);

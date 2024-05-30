@@ -23,11 +23,11 @@ import io.grpc.MethodDescriptor;
  */
 class DefaultMarshallerSupplier implements MarshallerSupplier {
 
-    static DefaultMarshallerSupplier create() {
-        return new DefaultMarshallerSupplier();
+    private DefaultMarshallerSupplier() {
     }
 
-    private DefaultMarshallerSupplier() {
+    static DefaultMarshallerSupplier create() {
+        return new DefaultMarshallerSupplier();
     }
 
     private final ProtoMarshallerSupplier proto = ProtoMarshallerSupplier.create();

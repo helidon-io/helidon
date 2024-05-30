@@ -25,32 +25,34 @@ import io.grpc.stub.StreamObserver;
 /**
  * A gRPC method call handler.
  *
- * @param <ReqT>  the request type
+ * @param <ReqT> the request type
  * @param <RespT> the response type
  */
 public interface MethodHandler<ReqT, RespT>
         extends ServerCalls.UnaryMethod<ReqT, RespT>,
-                ServerCalls.ClientStreamingMethod<ReqT, RespT>,
-                ServerCalls.ServerStreamingMethod<ReqT, RespT>,
-                ServerCalls.BidiStreamingMethod<ReqT, RespT> {
+        ServerCalls.ClientStreamingMethod<ReqT, RespT>,
+        ServerCalls.ServerStreamingMethod<ReqT, RespT>,
+        ServerCalls.BidiStreamingMethod<ReqT, RespT> {
     /**
      * Obtain the {@link MethodDescriptor.MethodType gRPC method tyoe} that
      * this {@link MethodHandler} handles.
      *
      * @return the {@link MethodDescriptor.MethodType gRPC method type} that
-     *         this {@link MethodHandler} handles
+     * this {@link MethodHandler} handles
      */
     MethodDescriptor.MethodType type();
 
     /**
      * Obtain the request type.
-     * @return  the request type
+     *
+     * @return the request type
      */
     Class<?> getRequestType();
 
     /**
      * Obtain the response type.
-     * @return  the response type
+     *
+     * @return the response type
      */
     Class<?> getResponseType();
 
@@ -64,7 +66,7 @@ public interface MethodHandler<ReqT, RespT>
     /**
      * Determine whether this is a client side only handler.
      *
-     * @return  {@code true} if this handler can only be used on the client
+     * @return {@code true} if this handler can only be used on the client
      */
     default boolean clientOnly() {
         return false;
@@ -132,10 +134,10 @@ public interface MethodHandler<ReqT, RespT>
         /**
          * Perform a bidirectional client call.
          *
-         * @param methodName  the name of the gRPC method
-         * @param observer    the {@link StreamObserver} that will receive the responses
-         * @param <ReqT>      the request type
-         * @param <RespT>     the response type
+         * @param methodName the name of the gRPC method
+         * @param observer the {@link StreamObserver} that will receive the responses
+         * @param <ReqT> the request type
+         * @param <RespT> the response type
          * @return a {@link StreamObserver} to use to send requests
          */
         <ReqT, RespT> StreamObserver<ReqT> bidiStreaming(String methodName, StreamObserver<RespT> observer);
@@ -148,10 +150,10 @@ public interface MethodHandler<ReqT, RespT>
         /**
          * Perform a client streaming  client call.
          *
-         * @param methodName  the name of the gRPC method
-         * @param observer    the {@link StreamObserver} that will receive the responses
-         * @param <ReqT>      the request type
-         * @param <RespT>     the response type
+         * @param methodName the name of the gRPC method
+         * @param observer the {@link StreamObserver} that will receive the responses
+         * @param <ReqT> the request type
+         * @param <RespT> the response type
          * @return a {@link StreamObserver} to use to send requests
          */
         <ReqT, RespT> StreamObserver<ReqT> clientStreaming(String methodName, StreamObserver<RespT> observer);
@@ -164,11 +166,11 @@ public interface MethodHandler<ReqT, RespT>
         /**
          * Perform a server streaming client call.
          *
-         * @param methodName  the name of the gRPC method
-         * @param request     the request message
-         * @param observer    the {@link StreamObserver} that will receive the responses
-         * @param <ReqT>      the request type
-         * @param <RespT>     the response type
+         * @param methodName the name of the gRPC method
+         * @param request the request message
+         * @param observer the {@link StreamObserver} that will receive the responses
+         * @param <ReqT> the request type
+         * @param <RespT> the response type
          */
         <ReqT, RespT> void serverStreaming(String methodName, ReqT request, StreamObserver<RespT> observer);
     }
@@ -180,10 +182,10 @@ public interface MethodHandler<ReqT, RespT>
         /**
          * Perform a unary client call.
          *
-         * @param methodName  the name of the gRPC method
-         * @param request     the request message
-         * @param <ReqT>      the request type
-         * @param <RespT>     the response type
+         * @param methodName the name of the gRPC method
+         * @param request the request message
+         * @param <ReqT> the request type
+         * @param <RespT> the response type
          * @return a {@link java.util.concurrent.CompletableFuture} that completes when the call completes
          */
         <ReqT, RespT> CompletionStage<RespT> unary(String methodName, ReqT request);

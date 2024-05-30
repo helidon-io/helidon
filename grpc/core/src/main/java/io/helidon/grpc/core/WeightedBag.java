@@ -56,7 +56,7 @@ public class WeightedBag<T> implements Iterable<T> {
      *
      * @param <T> the type of elements in the bag
      * @return a new {@link WeightedBag} where elements added
-     *         with no weight will be given {@link Weighted#DEFAULT_WEIGHT}
+     * with no weight will be given {@link Weighted#DEFAULT_WEIGHT}
      */
     public static <T> WeightedBag<T> create() {
         return create(Weighted.DEFAULT_WEIGHT);
@@ -69,7 +69,7 @@ public class WeightedBag<T> implements Iterable<T> {
      * @param defaultWeight default weight for elements
      * @param <T> the type of elements in the bag
      * @return a new {@link WeightedBag} where elements added
-     *         with no weight will be given {@link Weighted#DEFAULT_WEIGHT}
+     * with no weight will be given {@link Weighted#DEFAULT_WEIGHT}
      */
     public static <T> WeightedBag<T> create(double defaultWeight) {
         return new WeightedBag<>(new TreeMap<>(
@@ -98,7 +98,7 @@ public class WeightedBag<T> implements Iterable<T> {
     /**
      * Merge a {@link WeightedBag} into this {@link WeightedBag}.
      *
-     * @param bag  the bag to merge
+     * @param bag the bag to merge
      */
     public void merge(WeightedBag<? extends T> bag) {
         bag.contents.forEach((weight, value) -> addAll(value, weight));
@@ -111,7 +111,7 @@ public class WeightedBag<T> implements Iterable<T> {
      * annotation then that value will be used to determine weight otherwise the
      * default weight value will be used.
      *
-     * @param values  the elements to add
+     * @param values the elements to add
      */
     public void addAll(Iterable<? extends T> values) {
         for (T value : values) {
@@ -122,8 +122,8 @@ public class WeightedBag<T> implements Iterable<T> {
     /**
      * Add elements to the bag with a given weight.
      *
-     * @param values  the elements to add
-     * @param weight  the weight to assign to the elements
+     * @param values the elements to add
+     * @param weight the weight to assign to the elements
      */
     public void addAll(Iterable<? extends T> values, double weight) {
         for (T value : values) {
@@ -138,7 +138,7 @@ public class WeightedBag<T> implements Iterable<T> {
      * annotation then that value will be used to determine weight otherwise the
      * default weight value will be used.
      *
-     * @param value  the element to add
+     * @param value the element to add
      */
     public void add(T value) {
         Objects.requireNonNull(value);
@@ -155,7 +155,7 @@ public class WeightedBag<T> implements Iterable<T> {
     /**
      * Add an element to the bag with a specific weight.
      *
-     * @param value  the element to add
+     * @param value the element to add
      * @param weight the weight of the element
      */
     public void add(T value, double weight) {
@@ -178,7 +178,7 @@ public class WeightedBag<T> implements Iterable<T> {
      * an ordered {@link Stream}.
      *
      * @return the contents of this {@link WeightedBag} as
-     *         an ordered {@link Stream}
+     * an ordered {@link Stream}
      */
     public Stream<T> stream() {
         return contents.entrySet()
