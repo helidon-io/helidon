@@ -238,7 +238,7 @@ class Http2ServerRequest implements RoutingRequest {
                 .orElse(DEFAULT_REQUESTED_URI_DISCOVERY_CONTEXT)
                 .uriInfo(remotePeer().address().toString(),
                          localPeer().address().toString(),
-                         path.path(),
+                         prologue.uriPath().path(),
                          headers,
                          query(),
                          isSecure());
