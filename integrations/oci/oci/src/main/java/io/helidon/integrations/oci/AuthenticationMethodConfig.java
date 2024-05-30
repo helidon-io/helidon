@@ -22,7 +22,7 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.configurable.Resource;
-import io.helidon.integrations.oci.spi.OciAtnStrategy;
+import io.helidon.integrations.oci.spi.OciAtnMethod;
 import io.helidon.service.registry.Service;
 
 import com.oracle.bmc.Region;
@@ -31,26 +31,26 @@ import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.SimplePrivateKeySupplier;
 
 /**
- * Config based authentication strategy, uses the {@link com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider}.
+ * Config based authentication method, uses the {@link com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider}.
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 10)
 @Service.Provider
-class AtnStrategyConfig implements OciAtnStrategy {
-    static final String STRATEGY = "config";
+class AuthenticationMethodConfig implements OciAtnMethod {
+    static final String METHOD = "config";
 
     private final LazyValue<Optional<AbstractAuthenticationDetailsProvider>> provider;
 
-    AtnStrategyConfig(OciConfig config) {
-        provider = config.configStrategyConfig()
-                .map(configStrategyConfigBlueprint -> LazyValue.create(() -> {
-                    return Optional.of(createProvider(configStrategyConfigBlueprint));
+    AuthenticationMethodConfig(OciConfig config) {
+        provider = config.configMethodConfig()
+                .map(configMethodConfigBlueprint -> LazyValue.create(() -> {
+                    return Optional.of(createProvider(configMethodConfigBlueprint));
                 }))
                 .orElseGet(() -> LazyValue.create(Optional.empty()));
     }
 
     @Override
-    public String strategy() {
-        return STRATEGY;
+    public String method() {
+        return METHOD;
     }
 
     @Override
@@ -58,7 +58,7 @@ class AtnStrategyConfig implements OciAtnStrategy {
         return provider.get();
     }
 
-    private static AbstractAuthenticationDetailsProvider createProvider(ConfigStrategyConfigBlueprint config) {
+    private static AbstractAuthenticationDetailsProvider createProvider(ConfigMethodConfigBlueprint config) {
         Region region = Region.fromRegionCodeOrId(config.region());
 
         var builder = SimpleAuthenticationDetailsProvider.builder();

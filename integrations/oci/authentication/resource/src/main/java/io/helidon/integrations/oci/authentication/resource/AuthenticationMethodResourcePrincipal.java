@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.integrations.oci;
+package io.helidon.integrations.oci.authentication.resource;
 
 import java.lang.System.Logger.Level;
 import java.net.URI;
@@ -23,32 +23,33 @@ import java.util.Optional;
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.integrations.oci.spi.OciAtnStrategy;
+import io.helidon.integrations.oci.OciConfig;
+import io.helidon.integrations.oci.spi.OciAtnMethod;
 import io.helidon.service.registry.Service;
 
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider;
 
 /**
- * Resource authentication strategy, uses the {@link com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider}.
+ * Resource principal authentication method, uses the {@link com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider}.
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 30)
 @Service.Provider
-class AtnStrategyResourcePrincipal implements OciAtnStrategy {
+class AuthenticationMethodResourcePrincipal implements OciAtnMethod {
     static final String RESOURCE_PRINCIPAL_VERSION_ENV_VAR = "OCI_RESOURCE_PRINCIPAL_VERSION";
-    static final String STRATEGY = "resource-principal";
+    static final String METHOD = "resource-principal";
 
-    private static final System.Logger LOGGER = System.getLogger(AtnStrategyResourcePrincipal.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(AuthenticationMethodResourcePrincipal.class.getName());
 
     private final LazyValue<Optional<AbstractAuthenticationDetailsProvider>> provider;
 
-    AtnStrategyResourcePrincipal(OciConfig config) {
+    AuthenticationMethodResourcePrincipal(OciConfig config) {
         provider = createProvider(config);
     }
 
     @Override
-    public String strategy() {
-        return STRATEGY;
+    public String method() {
+        return METHOD;
     }
 
     @Override

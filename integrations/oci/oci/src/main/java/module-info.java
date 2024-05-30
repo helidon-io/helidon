@@ -34,7 +34,7 @@
  *     such as {@code oci.atnStrategy=config_file}</li>
  * </ul>
  *
- * To customize authentication details provider, you can implement {@link io.helidon.integrations.oci.spi.OciAtnStrategy}
+ * To customize authentication details provider, you can implement {@link io.helidon.integrations.oci.spi.OciAtnMethod}
  * service. The out-of-the-box providers have all less than default weight, and are in the
  * following order (strategy: description (weight)):
  * <ul>
@@ -47,10 +47,10 @@
 module io.helidon.integrations.oci {
     requires io.helidon.common.configurable;
     requires io.helidon.service.registry;
-    requires oci.java.sdk.common;
     requires io.helidon.common.config;
-    requires org.bouncycastle.util;
     requires io.helidon.config;
+
+    requires oci.java.sdk.common;
 
     exports io.helidon.integrations.oci;
     exports io.helidon.integrations.oci.spi;

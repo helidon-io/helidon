@@ -23,7 +23,7 @@ import java.util.Optional;
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.integrations.oci.spi.OciAtnStrategy;
+import io.helidon.integrations.oci.spi.OciAtnMethod;
 import io.helidon.service.registry.Service;
 
 import com.oracle.bmc.ConfigFileReader;
@@ -31,25 +31,25 @@ import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
 
 /**
- * Config file based authentication strategy, uses the {@link com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider}.
+ * Config file based authentication method, uses the {@link com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider}.
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 20)
 @Service.Provider
-class AtnStrategyConfigFile implements OciAtnStrategy {
+class AuthenticationMethodConfigFile implements OciAtnMethod {
     static final String DEFAULT_PROFILE_NAME = "DEFAULT";
-    static final String STRATEGY = "config-file";
+    static final String METHOD = "config-file";
 
-    private static final System.Logger LOGGER = System.getLogger(AtnStrategyConfigFile.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(AuthenticationMethodConfigFile.class.getName());
 
     private final LazyValue<Optional<AbstractAuthenticationDetailsProvider>> provider;
 
-    AtnStrategyConfigFile(OciConfig config) {
+    AuthenticationMethodConfigFile(OciConfig config) {
         provider = createProvider(config);
     }
 
     @Override
-    public String strategy() {
-        return STRATEGY;
+    public String method() {
+        return METHOD;
     }
 
     @Override
@@ -60,10 +60,10 @@ class AtnStrategyConfigFile implements OciAtnStrategy {
     private static LazyValue<Optional<AbstractAuthenticationDetailsProvider>> createProvider(OciConfig config) {
         return LazyValue.create(() -> {
             // there are two options to override - the path to config file, and the profile
-            var strategyConfig = config.configFileStrategyConfig();
-            String profile = strategyConfig.map(ConfigFileStrategyConfigBlueprint::profile)
+            var atnMethodConfig = config.configFileMethodConfig();
+            String profile = atnMethodConfig.map(ConfigFileMethodConfigBlueprint::profile)
                     .orElse(DEFAULT_PROFILE_NAME);
-            String configFilePath = strategyConfig.flatMap(ConfigFileStrategyConfigBlueprint::path)
+            String configFilePath = atnMethodConfig.flatMap(ConfigFileMethodConfigBlueprint::path)
                     .orElse(null);
 
             try {

@@ -642,6 +642,18 @@
             <artifactId>helidon-integrations-oci</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.integrations.oci.authentication</groupId>
+            <artifactId>helidon-integrations-oci-authentication-instance</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.oci.authentication</groupId>
+            <artifactId>helidon-integrations-oci-authentication-resource</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.oci.authentication</groupId>
+            <artifactId>helidon-integrations-oci-authentication-oke-workload</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.integrations.oci.sdk</groupId>
             <artifactId>helidon-integrations-oci-sdk-cdi</artifactId>
         </dependency>

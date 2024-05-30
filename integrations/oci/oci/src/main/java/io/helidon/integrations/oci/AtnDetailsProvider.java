@@ -23,7 +23,7 @@ import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.config.ConfigException;
-import io.helidon.integrations.oci.spi.OciAtnStrategy;
+import io.helidon.integrations.oci.spi.OciAtnMethod;
 import io.helidon.service.registry.Service;
 
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
@@ -34,14 +34,14 @@ class AtnDetailsProvider implements Supplier<Optional<AbstractAuthenticationDeta
 
     private final LazyValue<Optional<AbstractAuthenticationDetailsProvider>> provider;
 
-    AtnDetailsProvider(OciConfig ociConfig, List<OciAtnStrategy> atnDetailsProviders) {
-        String chosenStrategy = ociConfig.atnStrategy();
+    AtnDetailsProvider(OciConfig ociConfig, List<OciAtnMethod> atnDetailsProviders) {
+        String chosenAtnMethod = ociConfig.atnMethod();
         LazyValue<Optional<AbstractAuthenticationDetailsProvider>> providerLazyValue = null;
 
-        if (OciConfigBlueprint.STRATEGY_AUTO.equals(chosenStrategy)) {
+        if (OciConfigBlueprint.ATN_METHOD_AUTO.equals(chosenAtnMethod)) {
             // auto, chose from existing
             providerLazyValue = LazyValue.create(() -> {
-                for (OciAtnStrategy atnDetailsProvider : atnDetailsProviders) {
+                for (OciAtnMethod atnDetailsProvider : atnDetailsProviders) {
                     Optional<AbstractAuthenticationDetailsProvider> provider = atnDetailsProvider.provider();
                     if (provider.isPresent()) {
                         return provider;
@@ -52,22 +52,18 @@ class AtnDetailsProvider implements Supplier<Optional<AbstractAuthenticationDeta
         } else {
             List<String> strategies = new ArrayList<>();
 
-            for (OciAtnStrategy atnDetailsProvider : atnDetailsProviders) {
-                if (chosenStrategy.equals(atnDetailsProvider.strategy())) {
-                    providerLazyValue = LazyValue.create(() -> Optional.of(atnDetailsProvider.provider()
-                            .orElseThrow(() -> new ConfigException("Strategy \""
-                                                                           + chosenStrategy
-                                                                           + "\" did not provide an authentication provider, "
-                                                                           + "yet it is requested through configuration."))));
+            for (OciAtnMethod atnDetailsProvider : atnDetailsProviders) {
+                if (chosenAtnMethod.equals(atnDetailsProvider.method())) {
+                    providerLazyValue = LazyValue.create(() -> toProvider(atnDetailsProvider, chosenAtnMethod));
                     break;
                 }
-                strategies.add(atnDetailsProvider.strategy());
+                strategies.add(atnDetailsProvider.method());
             }
 
             if (providerLazyValue == null) {
-                throw new ConfigException("There is a strategy chosen for OCI authentication: \"" + chosenStrategy
-                                                  + "\", yet there is not provider that can provide that strategy. Supported "
-                                                  + "strategies: " + strategies);
+                throw new ConfigException("There is an OCI authentication method chosen: \"" + chosenAtnMethod
+                                                  + "\", yet there is not provider that can provide this method. Supported "
+                                                  + "methods: " + strategies);
             }
         }
 
@@ -77,5 +73,12 @@ class AtnDetailsProvider implements Supplier<Optional<AbstractAuthenticationDeta
     @Override
     public Optional<AbstractAuthenticationDetailsProvider> get() {
         return provider.get();
+    }
+
+    private Optional<AbstractAuthenticationDetailsProvider> toProvider(OciAtnMethod atnDetailsProvider, String chosenMethod) {
+        return Optional.of(atnDetailsProvider.provider()
+                                   .orElseThrow(() -> new ConfigException(
+                                           "Authentication method \"" + chosenMethod + "\" did not provide an "
+                                                   + "authentication provider, yet it is requested through configuration.")));
     }
 }

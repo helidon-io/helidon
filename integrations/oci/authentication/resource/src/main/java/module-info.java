@@ -15,9 +15,14 @@
  */
 
 /**
- * Extension points for OCI integration.
- *
- * @see io.helidon.integrations.oci.spi.OciAtnMethod
- * @see io.helidon.integrations.oci.spi.OciRegion
+ * Support for OCI authentication method based on resource principal.
  */
-package io.helidon.integrations.oci.spi;
+module io.helidon.integrations.oci.authentication.resource {
+    requires io.helidon.common;
+    requires io.helidon.service.registry;
+    requires io.helidon.integrations.oci;
+
+    requires oci.java.sdk.common;
+
+    exports io.helidon.integrations.oci.authentication.resource;
+}

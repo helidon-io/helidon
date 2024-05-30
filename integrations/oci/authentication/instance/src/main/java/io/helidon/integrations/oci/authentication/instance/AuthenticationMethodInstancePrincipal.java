@@ -14,46 +14,40 @@
  * limitations under the License.
  */
 
-package io.helidon.integrations.oci;
+package io.helidon.integrations.oci.authentication.instance;
 
-import java.io.IOException;
-import java.lang.System.Logger.Level;
-import java.net.InetAddress;
 import java.net.URI;
-import java.time.Duration;
 import java.util.Optional;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.integrations.oci.spi.OciAtnStrategy;
+import io.helidon.integrations.oci.HelidonOci;
+import io.helidon.integrations.oci.OciConfig;
+import io.helidon.integrations.oci.spi.OciAtnMethod;
 import io.helidon.service.registry.Service;
 
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider;
 
-import static io.helidon.integrations.oci.OciConfigSupport.IMDS_HOSTNAME;
-
 /**
- * Instance principal authentication strategy, uses the
+ * Instance principal authentication method, uses the
  * {@link com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider}.
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 40)
 @Service.Provider
-class AtnStrategyInstancePrincipal implements OciAtnStrategy {
-    static final String STRATEGY = "instance-principal";
-
-    private static final System.Logger LOGGER = System.getLogger(AtnStrategyInstancePrincipal.class.getName());
+class AuthenticationMethodInstancePrincipal implements OciAtnMethod {
+    static final String METHOD = "instance-principal";
 
     private final LazyValue<Optional<AbstractAuthenticationDetailsProvider>> provider;
 
-    AtnStrategyInstancePrincipal(OciConfig config) {
+    AuthenticationMethodInstancePrincipal(OciConfig config) {
         provider = createProvider(config);
     }
 
     @Override
-    public String strategy() {
-        return STRATEGY;
+    public String method() {
+        return METHOD;
     }
 
     @Override
@@ -63,7 +57,7 @@ class AtnStrategyInstancePrincipal implements OciAtnStrategy {
 
     private static LazyValue<Optional<AbstractAuthenticationDetailsProvider>> createProvider(OciConfig config) {
         return LazyValue.create(() -> {
-            if (imdsAvailable(config)) {
+            if (HelidonOci.imdsAvailable(config)) {
                 var builder = InstancePrincipalsAuthenticationDetailsProvider.builder()
                         .timeoutForEachRetry((int) config.atnTimeout().toMillis());
 
@@ -77,21 +71,4 @@ class AtnStrategyInstancePrincipal implements OciAtnStrategy {
         });
     }
 
-    static boolean imdsAvailable(OciConfig config) {
-        Duration timeout = config.imdsTimeout();
-
-        try {
-            if (InetAddress.getByName(config.imdsBaseUri().map(URI::getHost).orElse(IMDS_HOSTNAME))
-                    .isReachable((int) timeout.toMillis())) {
-                return RegionProviderSdk.regionFromImds(config) != null;
-            }
-            return false;
-        } catch (IOException e) {
-            LOGGER.log(Level.TRACE,
-                       "imds service is not reachable, or timed out for address: " + IMDS_HOSTNAME + ", instance principal "
-                               + "strategy is not available.",
-                       e);
-            return false;
-        }
-    }
 }

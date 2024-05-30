@@ -15,9 +15,6 @@
  */
 
 /**
- * Extension points for OCI integration.
- *
- * @see io.helidon.integrations.oci.spi.OciAtnMethod
- * @see io.helidon.integrations.oci.spi.OciRegion
+ * Support for OCI authentication method based on instance principal.
  */
-package io.helidon.integrations.oci.spi;
+package io.helidon.integrations.oci.authentication.instance;

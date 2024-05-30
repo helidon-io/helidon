@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -13,33 +13,29 @@
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
-  -->
-
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.integrations</groupId>
-        <artifactId>helidon-integrations-project</artifactId>
-        <version>4.1.0-SNAPSHOT</version>
+        <groupId>io.helidon.integrations.oci</groupId>
+        <artifactId>helidon-integrations-oci-project</artifactId>
+        <version>4.0.0-SNAPSHOT</version>
     </parent>
-
-    <groupId>io.helidon.integrations.oci</groupId>
-    <artifactId>helidon-integrations-oci-project</artifactId>
-    <name>Helidon Integrations OCI Project</name>
-
-    <description>OCI integrations</description>
     <packaging>pom</packaging>
 
+    <groupId>io.helidon.integrations.oci.authentication</groupId>
+    <artifactId>helidon-integrations-oci-authentication-project</artifactId>
+    <name>Helidon Integrations OCI Authentication Project</name>
+
+    <description>
+        Additional OCI Authentication providers
+    </description>
+
     <modules>
-        <module>oci</module>
-        <module>authentication</module>
-        <module>metrics</module>
-        <module>secrets-config-source</module>
-        <module>secrets-mp-config-source</module>
-        <module>sdk</module>
-        <module>tls-certificates</module>
-        <module>tests</module>
+        <module>instance</module>
+        <module>resource</module>
+        <module>workload</module>
     </modules>
 </project>

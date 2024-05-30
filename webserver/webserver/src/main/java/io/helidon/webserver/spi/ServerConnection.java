@@ -22,7 +22,8 @@ import java.util.concurrent.Semaphore;
 /**
  * Server connection abstraction, used by any provider to handle a socket connection.
  */
-public interface ServerConnection {
+public interface
+ServerConnection {
     /**
      * Start handling the connection. Data is provided through
      * {@link ServerConnectionSelector#connection(io.helidon.webserver.ConnectionContext)}.

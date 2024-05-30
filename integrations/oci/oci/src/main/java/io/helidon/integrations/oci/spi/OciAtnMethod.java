@@ -27,22 +27,22 @@ import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
  * <p>
  * This service is implemented by:
  * <ul>
- *     <li>Config based strategy</li>
- *     <li>Config file based strategy</li>
- *     <li>Resource principal strategy</li>
- *     <li>Instance principal strategy</li>
+ *     <li>Config based method</li>
+ *     <li>Config file based method</li>
+ *     <li>Resource principal method</li>
+ *     <li>Instance principal method</li>
  * </ul>
  * The first one that provides an instance will be used as the value.
  * To customize, create your own service with a default or higher weight.
  */
 @Service.Contract
-public interface OciAtnStrategy {
+public interface OciAtnMethod {
     /**
-     * The strategy name, can be used to explicitly select a strategy using configuration.
+     * The OCI authentication method name, can be used to explicitly select a method using configuration.
      *
-     * @return strategy name
+     * @return OCI authentication method name
      */
-    String strategy();
+    String method();
 
     /**
      * Provide an instance of the {@link com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider} to be used

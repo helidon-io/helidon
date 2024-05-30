@@ -19,6 +19,7 @@ package io.helidon.integrations.oci;
 import java.util.Optional;
 
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.common.types.TypeName;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.integrations.oci.spi.OciAtnMethod;
@@ -40,7 +41,14 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.not;
 
-class OciIntegrationTest {
+/*
+This class MUST be in the same package, to be able to reset OciConfig before each test
+ */
+class AtnDetailsProvidersTest {
+    private static final TypeName INSTANCE_PRINCIPAL_METHOD_IMPL = TypeName.create(
+            "io.helidon.integrations.oci.authentication.instance.AuthenticationMethodInstancePrincipal");
+    private static final TypeName RESOURCE_PRINCIPAL_METHOD_IMPL = TypeName.create(
+            "io.helidon.integrations.oci.authentication.resource.AuthenticationMethodResourcePrincipal");
 
     private ServiceRegistryManager registryManager;
     private ServiceRegistry registry;
@@ -70,13 +78,21 @@ class OciIntegrationTest {
         Config config = Config.just(ConfigSources.create(yamlConfig, MediaTypes.APPLICATION_YAML));
         setUp(config);
 
-        OciAtnMethod atnStrategy = registry.get(AuthenticationMethodConfig.class);
-        assertThat(atnStrategy.method(), is(AuthenticationMethodConfig.METHOD));
-        assertThat(atnStrategy.provider(), optionalEmpty());
+        OciAtnMethod atnMethod = registry.get(AuthenticationMethodConfig.class);
+        assertThat(atnMethod.method(), is(AuthenticationMethodConfig.METHOD));
+        assertThat(atnMethod.provider(), optionalEmpty());
 
-        atnStrategy = registry.get(AuthenticationMethodConfigFile.class);
-        assertThat(atnStrategy.method(), is(AuthenticationMethodConfigFile.METHOD));
-        assertThat(atnStrategy.provider(), optionalEmpty());
+        atnMethod = registry.get(AuthenticationMethodConfigFile.class);
+        assertThat(atnMethod.method(), is(AuthenticationMethodConfigFile.METHOD));
+        assertThat(atnMethod.provider(), optionalEmpty());
+
+        atnMethod = registry.get(INSTANCE_PRINCIPAL_METHOD_IMPL);
+        assertThat(atnMethod.method(), is("instance-principal"));
+        assertThat(atnMethod.provider(), optionalEmpty());
+
+        atnMethod = registry.get(RESOURCE_PRINCIPAL_METHOD_IMPL);
+        assertThat(atnMethod.method(), is("resource-principal"));
+        assertThat(atnMethod.provider(), optionalEmpty());
 
         assertThat(registry.first(Region.class), is(Optional.empty()));
         assertThat(registry.first(AbstractAuthenticationDetailsProvider.class), is(Optional.empty()));
@@ -89,8 +105,8 @@ class OciIntegrationTest {
                   region: us-phoenix-1
                   authentication:
                     config-file:
-                      # we must use a file that does not exist, if this machine has actual oci config file
-                      path: src/test/resources/test-oci-config-not-there
+                    # we must use a file that does not exist, if this machine has actual oci config file
+                    path: src/test/resources/test-oci-config-not-there
                 """;
         Config config = Config.just(ConfigSources.create(yamlConfig, MediaTypes.APPLICATION_YAML));
         setUp(config);
@@ -116,13 +132,21 @@ class OciIntegrationTest {
         Config config = Config.just(ConfigSources.create(yamlConfig, MediaTypes.APPLICATION_YAML));
         setUp(config);
 
-        OciAtnMethod atnStrategy = registry.get(AuthenticationMethodConfig.class);
-        assertThat(atnStrategy.method(), is(AuthenticationMethodConfig.METHOD));
-        assertThat(atnStrategy.provider(), not(Optional.empty()));
+        OciAtnMethod atnMethod = registry.get(AuthenticationMethodConfig.class);
+        assertThat(atnMethod.method(), is(AuthenticationMethodConfig.METHOD));
+        assertThat(atnMethod.provider(), not(Optional.empty()));
 
-        atnStrategy = registry.get(AuthenticationMethodConfigFile.class);
-        assertThat(atnStrategy.method(), is(AuthenticationMethodConfigFile.METHOD));
-        assertThat(atnStrategy.provider(), optionalEmpty());
+        atnMethod = registry.get(AuthenticationMethodConfigFile.class);
+        assertThat(atnMethod.method(), is(AuthenticationMethodConfigFile.METHOD));
+        assertThat(atnMethod.provider(), optionalEmpty());
+
+        atnMethod = registry.get(INSTANCE_PRINCIPAL_METHOD_IMPL);
+        assertThat(atnMethod.method(), is("instance-principal"));
+        assertThat(atnMethod.provider(), optionalEmpty());
+
+        atnMethod = registry.get(RESOURCE_PRINCIPAL_METHOD_IMPL);
+        assertThat(atnMethod.method(), is("resource-principal"));
+        assertThat(atnMethod.provider(), optionalEmpty());
 
         AbstractAuthenticationDetailsProvider provider = registry.get(AbstractAuthenticationDetailsProvider.class);
 
@@ -151,13 +175,21 @@ class OciIntegrationTest {
         Config config = Config.just(ConfigSources.create(yamlConfig, MediaTypes.APPLICATION_YAML));
         setUp(config);
 
-        OciAtnMethod atnStrategy = registry.get(AuthenticationMethodConfig.class);
-        assertThat(atnStrategy.method(), is(AuthenticationMethodConfig.METHOD));
-        assertThat(atnStrategy.provider(), optionalEmpty());
+        OciAtnMethod atnMethod = registry.get(AuthenticationMethodConfig.class);
+        assertThat(atnMethod.method(), is(AuthenticationMethodConfig.METHOD));
+        assertThat(atnMethod.provider(), optionalEmpty());
 
-        atnStrategy = registry.get(AuthenticationMethodConfigFile.class);
-        assertThat(atnStrategy.method(), is(AuthenticationMethodConfigFile.METHOD));
-        assertThat(atnStrategy.provider(), not(Optional.empty()));
+        atnMethod = registry.get(AuthenticationMethodConfigFile.class);
+        assertThat(atnMethod.method(), is(AuthenticationMethodConfigFile.METHOD));
+        assertThat(atnMethod.provider(), not(Optional.empty()));
+
+        atnMethod = registry.get(INSTANCE_PRINCIPAL_METHOD_IMPL);
+        assertThat(atnMethod.method(), is("instance-principal"));
+        assertThat(atnMethod.provider(), optionalEmpty());
+
+        atnMethod = registry.get(RESOURCE_PRINCIPAL_METHOD_IMPL);
+        assertThat(atnMethod.method(), is("resource-principal"));
+        assertThat(atnMethod.provider(), optionalEmpty());
 
         AbstractAuthenticationDetailsProvider provider = registry.get(AbstractAuthenticationDetailsProvider.class);
 

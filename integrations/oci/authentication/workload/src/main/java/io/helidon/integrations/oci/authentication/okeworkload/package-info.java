@@ -15,9 +15,5 @@
  */
 
 /**
- * Extension points for OCI integration.
- *
- * @see io.helidon.integrations.oci.spi.OciAtnMethod
- * @see io.helidon.integrations.oci.spi.OciRegion
+ * Support for OCI authentication method based on OKE workload identity.
  */
-package io.helidon.integrations.oci.spi;
