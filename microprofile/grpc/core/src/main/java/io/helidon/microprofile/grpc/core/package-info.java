@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,20 +15,6 @@
  */
 
 /**
- * Helidon GRPC core package.
+ * Core gRPC microprofile classes.
  */
-module io.helidon.grpc.core {
-
-    requires java.logging;
-
-    requires io.helidon.common;
-    requires io.helidon.http;
-
-    requires transitive io.grpc;
-    requires transitive io.grpc.stub;
-    requires transitive com.google.protobuf;
-    requires transitive io.grpc.protobuf;
-    requires transitive io.grpc.protobuf.lite;
-
-    exports io.helidon.grpc.core;
-}
+package io.helidon.microprofile.grpc.core;
