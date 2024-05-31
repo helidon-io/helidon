@@ -18,6 +18,7 @@ package io.helidon.docs.mp.guides;
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.testing.junit5.AddBean;
 import io.helidon.microprofile.testing.junit5.AddConfig;
+import io.helidon.microprofile.testing.junit5.AddConfigBlock;
 import io.helidon.microprofile.testing.junit5.AddExtension;
 import io.helidon.microprofile.testing.junit5.DisableDiscovery;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
@@ -89,6 +90,12 @@ class TestingJunit5Snippets {
             @Test
             @AddConfig(key = "app.greeting", value = "Unite")
             void testConfiguredGreeting(WebTarget webTarget) {
+                validate(webTarget, "/greet", "Unite World!");
+            }
+
+            @Test
+            @AddConfigBlock("app.greeting=Unite")
+            void testConfiguredBlockGreeting(WebTarget webTarget) {
                 validate(webTarget, "/greet", "Unite World!");
             }
 
