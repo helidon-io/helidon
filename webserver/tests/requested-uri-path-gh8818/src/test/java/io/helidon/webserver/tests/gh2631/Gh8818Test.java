@@ -22,7 +22,9 @@ import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
@@ -32,17 +34,16 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
 class Gh8818Test {
-    private final Http1Client client;
 
-    Gh8818Test(WebServer server) {
-        this.client = Http1Client.builder()
-                               .baseUri("http://localhost:" + server.port())
-                               .build();
+    private Http1Client client;
+
+    Gh8818Test(Http1Client client) {
+        this.client = client;
     }
 
-    @SetUpServer
-    static void setup(WebServerConfig.Builder builder) {
-        builder.routing(Gh8818::routing);
+   @SetUpRoute
+    static void setupRoute(HttpRouting.Builder routing) {
+        Gh8818.routing(routing);
     }
 
     @Test
