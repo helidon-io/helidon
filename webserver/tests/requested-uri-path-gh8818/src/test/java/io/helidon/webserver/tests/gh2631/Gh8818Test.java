@@ -16,16 +16,10 @@
 
 package io.helidon.webserver.tests.gh2631;
 
-import io.helidon.http.Status;
-import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.http1.Http1Client;
-import io.helidon.webclient.http1.Http1ClientResponse;
-import io.helidon.webserver.WebServer;
-import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
-import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
 
