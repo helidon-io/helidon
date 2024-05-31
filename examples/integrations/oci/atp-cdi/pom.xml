@@ -43,9 +43,12 @@
             <artifactId>helidon-integrations-cdi-datasource-ucp</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.integrations.db</groupId>
+            <artifactId>ojdbc</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.oracle.database.jdbc</groupId>
-            <artifactId>ojdbc11-production</artifactId>
-            <type>pom</type>
+            <artifactId>ucp</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.integrations.oci.sdk</groupId>

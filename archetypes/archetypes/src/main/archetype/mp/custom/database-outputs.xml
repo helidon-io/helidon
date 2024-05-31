@@ -330,12 +330,6 @@ docker run --rm --name mysql -p 3306:3306 \
             <output if="${db.server} == 'oracledb'">
                 <file source="../database/files/src/main/resources/META-INF/init_script.sql.oracle"
                       target="src/main/resources/META-INF/init_script.sql"/>
-                <templates engine="mustache" transformations="mustache,packaged">
-                    <directory>../database/files</directory>
-                    <includes>
-                        <include>src/*/resources/**/serial-config.properties</include>
-                    </includes>
-                </templates>
                 <model>
                     <value key="helidon-test">false</value>
                     <value key="readme-description">Helidon MP application that uses the dbclient API with OracleDB database.</value>
@@ -364,10 +358,14 @@ For details on an Oracle Docker image, see https://github.com/oracle/docker-imag
                     </list>
                     <list key="dependencies">
                         <map>
-                            <value key="groupId">com.oracle.database.jdbc</value>
-                            <value key="artifactId">ojdbc8-production</value>
+                            <value key="groupId">io.helidon.integrations.db</value>
+                            <value key="artifactId">ojdbc</value>
                             <value key="scope">runtime</value>
-                            <value key="type">pom</value>
+                        </map>
+                        <map>
+                            <value key="groupId">com.oracle.database.jdbc</value>
+                            <value key="artifactId">ucp</value>
+                            <value key="scope">runtime</value>
                         </map>
                     </list>
                     <value key="jdbcDataSource">oracle.jdbc.pool.OracleDataSource</value>
