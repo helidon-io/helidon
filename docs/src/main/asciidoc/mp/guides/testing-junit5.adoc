@@ -104,6 +104,10 @@ The testing extension supports a few additional annotations that allow for finer
 
 This is useful when we want to modify configuration or beans between executions. In such a case, injection into fields is not possible, as we would need a different instance for each test.
 | `@AddConfig(key = "app.greeting", value = "Unite")` |  Defines a new configuration (either on class level, or method level) by adding a single configuration key/value.
+| `@AddConfigBlock(type = "properties", value = """ +
+    some.key1=some.value1 +
+    some.key2=some.value2 +
+""")` |  Defines a new configuration (either on class level, or method level) by adding a single configuration key/value.
 | `@Configuration(configSources = "test-config.properties")` | Adds a whole config source from classpath.
 |====================
 
