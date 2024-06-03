@@ -26,7 +26,6 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -47,7 +46,6 @@ class TenantTest {
     }
 
     @Test
-    @Disabled   // issue #8813
     public void test2() throws Exception {
         asyncCalls(() -> baseTarget.path("test2").request()
                 .header("x-tenant-id", "123").get(), null);
