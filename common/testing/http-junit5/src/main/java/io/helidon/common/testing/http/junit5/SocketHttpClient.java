@@ -461,6 +461,25 @@ public class SocketHttpClient implements AutoCloseable {
     }
 
     /**
+     * Send raw data to the server.
+     *
+     * @param content content to send over the socket
+     */
+    public void requestRaw(String content) {
+        if (socket == null) {
+            connect();
+        }
+
+        try {
+            PrintWriter pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
+            pw.print(content);
+            pw.flush();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    /**
      * Write raw proxy protocol header before a request.
      *
      * @param header header to write
