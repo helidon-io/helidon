@@ -34,7 +34,7 @@ public class CorsFeature implements Weighted, ServerFeature, RuntimeType.Api<Cor
     /**
      * Default weight of the feature.
      */
-    public static final double WEIGHT = 950;
+    public static final double WEIGHT = 850;
     static final String CORS_ID = "cors";
     private final CorsConfig config;
 
