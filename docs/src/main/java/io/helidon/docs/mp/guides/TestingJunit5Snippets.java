@@ -93,12 +93,6 @@ class TestingJunit5Snippets {
                 validate(webTarget, "/greet", "Unite World!");
             }
 
-            @Test
-            @AddConfigBlock("app.greeting=Unite")
-            void testConfiguredBlockGreeting(WebTarget webTarget) {
-                validate(webTarget, "/greet", "Unite World!");
-            }
-
             private void validate(WebTarget webTarget,
                                   String path,
                                   String expected) {
@@ -109,6 +103,28 @@ class TestingJunit5Snippets {
 
                 String message = jsonObject.getString("message");
                 assertThat(message, is("Message in JSON"));
+            }
+        }
+
+        @HelidonTest
+        @AddConfigBlock("""
+                some.key1=some.value1
+                some.key2=some.value2
+            """)
+        class AddConfigBlockTest {
+
+            @Inject
+            @ConfigProperty(name = "some.key1")
+            private String value1;
+
+            @Inject
+            @ConfigProperty(name = "some.key2")
+            private String value2;
+
+            @Test
+            void testValue() {
+                assertThat(value1, is("some.value1"));
+                assertThat(value2, is("some.value2"));
             }
         }
         // end::snippet_3[]
