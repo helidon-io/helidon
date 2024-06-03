@@ -41,6 +41,7 @@
         <module>imperative</module>
         <module>mtls</module>
         <module>observe</module>
+        <module>requested-uri-path-gh8818</module>
         <module>resource-limits</module>
         <module>sse</module>
         <module>static-content</module>
