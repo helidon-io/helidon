@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.http</groupId>
         <artifactId>helidon-http-project</artifactId>
-        <version>4.0.9</version>
+        <version>4.0.10-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-http</artifactId>
