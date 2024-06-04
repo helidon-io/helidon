@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>4.0.9</version>
+        <version>4.0.10-SNAPSHOT</version>
     </parent>
     <packaging>pom</packaging>
     <artifactId>helidon-all</artifactId>
