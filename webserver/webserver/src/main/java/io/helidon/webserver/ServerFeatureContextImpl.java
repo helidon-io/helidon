@@ -48,6 +48,7 @@ class ServerFeatureContextImpl implements ServerFeature.ServerFeatureContext {
     private final WebServerConfig serverConfig;
     private final Map<String, ListenerBuildersImpl> socketToBuilders;
     private final Set<String> configuredSockets;
+    private final Map<String, ServerToHttpFeatureBuilder> inProgressBuilders;
 
     private final AtomicReference<Double> weight;
 
@@ -61,6 +62,7 @@ class ServerFeatureContextImpl implements ServerFeature.ServerFeatureContext {
                 .filter(Predicate.not(DEFAULT_SOCKET_NAME::equals))
                 .collect(Collectors.toSet());
         this.weight = weight;
+        this.inProgressBuilders = new HashMap<>();
     }
 
     static ServerFeatureContextImpl create(WebServerConfig serverConfig) {
@@ -73,7 +75,7 @@ class ServerFeatureContextImpl implements ServerFeature.ServerFeatureContext {
 
         Map<String, ListenerBuildersImpl> socketToBuilders = new HashMap<>();
         socketToBuilders.put(DEFAULT_SOCKET_NAME,
-                             new ListenerBuildersImpl(DEFAULT_SOCKET_NAME, serverConfig, httpRouting, routings, weight));
+                             new ListenerBuildersImpl(DEFAULT_SOCKET_NAME, serverConfig, httpRouting, routings));
 
         // for each socket, gather all routing builders
         sockets.forEach((socketName, listener) -> {
@@ -95,7 +97,7 @@ class ServerFeatureContextImpl implements ServerFeature.ServerFeatureContext {
                 builders.add(listenerHttpRouting);
             }
             socketToBuilders.put(socketName,
-                                 new ListenerBuildersImpl(socketName, serverConfig, listenerHttpRouting, builders, weight));
+                                 new ListenerBuildersImpl(socketName, serverConfig, listenerHttpRouting, builders));
         });
 
         return new ServerFeatureContextImpl(serverConfig, socketToBuilders, weight);
@@ -117,22 +119,32 @@ class ServerFeatureContextImpl implements ServerFeature.ServerFeatureContext {
     }
 
     @Override
-    public ListenerBuildersImpl socket(String socketName) {
+    public ServerFeature.SocketBuilders socket(String socketName) {
         return Optional.ofNullable(socketToBuilders.get(socketName))
+                .map(it -> socketBuilderDelegate(socketName, it))
                 .orElseThrow(() -> new NoSuchElementException("There is no socket configuration for socket named \""
                                                                       + socketName + "\""));
+    }
+
+    void setUpFeature(ServerFeature feature) {
+        weight(Weights.find(feature, Weighted.DEFAULT_WEIGHT));
+        /*
+        We need to create a routing that is specific to each feature, and wrap it as an HttpFeature, to honor weight
+        for cases, where a route, service, or a filter is added from a feature - it must be in the correct order
+        This will honor weights across Server features and HTTP features for webserver
+         */
+        feature.setup(this);
+        inProgressBuilders.forEach(this::createHttpFeature);
+        inProgressBuilders.clear();
+        weight(Weighted.DEFAULT_WEIGHT);
     }
 
     void weight(double weight) {
         this.weight.set(weight);
     }
 
-    Router router() {
-        return router(DEFAULT_SOCKET_NAME);
-    }
-
     Router router(String socketName) {
-        ListenerBuildersImpl listener = socket(socketName);
+        ListenerBuildersImpl listener = listenerBuilder(socketName);
 
         boolean containsHttp = listener.routings.stream()
                 .anyMatch(it -> it instanceof HttpRouting.Builder);
@@ -162,6 +174,54 @@ class ServerFeatureContextImpl implements ServerFeature.ServerFeatureContext {
             }
         }
         return httpRouting;
+    }
+
+    private ServerFeature.SocketBuilders socketBuilderDelegate(String socketName, ListenerBuildersImpl listenerBuilders) {
+        return new ServerFeature.SocketBuilders() {
+            @Override
+            public ListenerConfig listener() {
+                return listenerBuilders.listener();
+            }
+
+            @Override
+            public HttpRouting.Builder httpRouting() {
+                return inProgressBuilders.computeIfAbsent(socketName,
+                                                          it -> new ServerToHttpFeatureBuilder(weight.get(),
+                                                                                               listenerBuilders.httpRouting()));
+            }
+
+            @Override
+            public ServerFeature.RoutingBuilders routingBuilders() {
+                ServerFeature.RoutingBuilders delegate = listenerBuilders.routingBuilders();
+                return new ServerFeature.RoutingBuilders() {
+                    @Override
+                    public boolean hasRouting(Class<?> builderType) {
+                        return delegate.hasRouting(builderType);
+                    }
+
+                    @SuppressWarnings("unchecked")
+                    @Override
+                    public <T extends Builder<T, ?>> T routingBuilder(Class<T> builderType) {
+                        if (builderType.equals(HttpRouting.class)) {
+                            return (T) httpRouting();
+                        }
+                        return delegate.routingBuilder(builderType);
+                    }
+                };
+            }
+        };
+    }
+
+    private ListenerBuildersImpl listenerBuilder(String socketName) {
+        return Optional.ofNullable(socketToBuilders.get(socketName))
+                .orElseThrow(() -> new NoSuchElementException("There is no socket configuration for socket named \""
+                                                                      + socketName + "\""));
+    }
+
+    private void createHttpFeature(String socket, ServerToHttpFeatureBuilder builder) {
+        socket(socket)
+                .httpRouting()
+                .addFeature(builder.toFeature());
     }
 
     private static class RoutingBuildersImpl implements ServerFeature.RoutingBuilders {
@@ -202,18 +262,15 @@ class ServerFeatureContextImpl implements ServerFeature.ServerFeatureContext {
         private final ListenerConfig listenerConfig;
         private final HttpRouting.Builder httpRouting;
         private final List<Builder<?, ? extends Routing>> routings;
-        private final AtomicReference<Double> weight;
         private final ServerFeature.RoutingBuilders routingBuilders;
 
         ListenerBuildersImpl(String socketName,
                              ListenerConfig listenerConfig,
                              HttpRouting.Builder httpRouting,
-                             List<Builder<?, ? extends Routing>> routings,
-                             AtomicReference<Double> weight) {
+                             List<Builder<?, ? extends Routing>> routings) {
             this.listenerConfig = listenerConfig;
             this.httpRouting = httpRouting;
             this.routings = routings;
-            this.weight = weight;
 
             this.routingBuilders = RoutingBuildersImpl.create(socketName, routings);
         }
