@@ -71,7 +71,7 @@ This will change the behavior as follows:
 - you cannot inject fields or constructor parameters of the test class itself (as a single instance is shared by more containers)
 
 === Usage - configuration
-In addition to the `@AddConfig` annotation, you can also use
+In addition to the `@AddConfig` and `@AddConfigBlock` annotations, you can also use
 `@Configuration` to configure additional classpath properties config sources using `configSources`, and to
 mark that a custom configuration is desired.
 If `@Configuration(useExisting=true)`, the existing (or default) MicroProfile configuration would be used. In this case
