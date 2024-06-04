@@ -285,6 +285,15 @@ include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_7, indent=0]
 ----
 In this example, the `GET` handler matches requests to `/hello/subpath`.
 
+[[anchor-http-feature]]
+=== Using `HttpFeature`
+
+By implementing the `io.helidon.webserver.http.HttpFeature` interface, you can organize multiple routes and/or filters into
+a feature, that will be setup according to its defined `io.helidon.common.Weight` (or using `io.helidon.common.Weighted`).
+
+Each service has access to the routing builder. HTTP Features are configured for each routing builder. If there is a need
+to configure a feature for multiple sockets, you can use <<Server Features, Server Feature>> instead.
+
 == Request Handling
 
 Implement the logic to handle requests to WebServer in a `Handler`, which is a `FunctionalInterface`.
@@ -485,8 +494,9 @@ Server features support automated discovery, as long as the implementation is av
 Server features can also be added through configuration, as can be seen above in <<Configuration Options, Configuration Options>>,
 configuration key `features`.
 
-All features (both `ServerFeature` and `HttpFeature`) honor weight of the feature (defined either through `@Weight` annotation,
-or by implementing `Weighted` interface) when registering routes, `HttpService`, or `Filter` to the routing.
+All features (both `ServerFeature` and <<anchor-http-feature, HttpFeature>>) honor weight of the feature
+(defined either through `@Weight` annotation, or by implementing `Weighted` interface) when registering routes,
+`HttpService`, or `Filter` to the routing.
 
 The following table shows available server features and their weight. The highest weight is always registered (and invoked)
 first.
