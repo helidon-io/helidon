@@ -38,6 +38,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import io.helidon.common.Errors;
+import io.helidon.common.LazyValue;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
@@ -83,7 +84,7 @@ class TenantAuthenticationHandler {
     private static final System.Logger LOGGER = System.getLogger(TenantAuthenticationHandler.class.getName());
     private static final TokenHandler PARAM_HEADER_HANDLER = TokenHandler.forHeader(OidcConfig.PARAM_HEADER_NAME);
     private static final TokenHandler PARAM_ID_HEADER_HANDLER = TokenHandler.forHeader(OidcConfig.PARAM_ID_HEADER_NAME);
-    private static final SecureRandom RANDOM = new SecureRandom();
+    private static final LazyValue<SecureRandom> RANDOM = LazyValue.create(SecureRandom::new);
 
     private final boolean optional;
     private final OidcConfig oidcConfig;
@@ -824,7 +825,7 @@ class TenantAuthenticationHandler {
         int rightLimit = 122; // letter 'z'
         int targetStringLength = 10;
 
-        return RANDOM.ints(leftLimit, rightLimit + 1)
+        return RANDOM.get().ints(leftLimit, rightLimit + 1)
                 .filter(i -> (i <= 57 || i >= 65) && (i <= 90 || i >= 97))
                 .limit(targetStringLength)
                 .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
