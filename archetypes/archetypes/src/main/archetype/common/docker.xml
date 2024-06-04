@@ -39,6 +39,12 @@
                                 <include>src/*/resources/META-INF/**/*.mustache</include>
                             </includes>
                         </templates>
+                        <files if="${flavor} == 'mp' &amp;&amp; ${media.json-lib} == 'jackson'">
+                            <directory>files</directory>
+                            <includes>
+                                <include>src/**/native-image/**/resource-config.json</include>
+                            </includes>
+                        </files>
                     </output>
                 </boolean>
                 <boolean id="jlink-image" name="JLink Support"
