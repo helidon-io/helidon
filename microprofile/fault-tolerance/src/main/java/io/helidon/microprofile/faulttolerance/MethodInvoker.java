@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,15 +18,17 @@ package io.helidon.microprofile.faulttolerance;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import io.helidon.common.context.Context;
@@ -86,7 +88,8 @@ class MethodInvoker implements FtSupplier<Object> {
      * caches the FT handler as well as some additional variables. This mapping must
      * be shared by all instances of this class.
      */
-    private static final ConcurrentHashMap<MethodStateKey, MethodState> METHOD_STATES = new ConcurrentHashMap<>();
+    private static final MethodStateCache METHOD_STATES = new MethodStateCache();
+
     /**
      * The method being intercepted.
      */
@@ -693,7 +696,7 @@ class MethodInvoker implements FtSupplier<Object> {
     /**
      * A key used to lookup {@code MethodState} instances, which include FT handlers.
      * A class loader is necessary to support multiple applications as seen in the TCKs.
-     * The method class in necessary given that the same method can inherited by different
+     * The method class in necessary given that the same method can inherit by different
      * classes with different FT annotations and should not share handlers. Finally, the
      * method is main part of the key.
      */
@@ -725,6 +728,36 @@ class MethodInvoker implements FtSupplier<Object> {
         @Override
         public int hashCode() {
             return Objects.hash(classLoader, methodClass, method);
+        }
+    }
+
+    /**
+     * Used instead of a {@link java.util.concurrent.ConcurrentHashMap} to avoid some
+     * locking problems.
+     */
+    private static class MethodStateCache {
+
+        private final ReentrantLock lock = new ReentrantLock();
+        private final Map<MethodStateKey, MethodState> cache = new HashMap<>();
+
+        MethodState computeIfAbsent(MethodStateKey key, Function<MethodStateKey, MethodState> function) {
+            lock.lock();
+            try {
+                MethodState methodState = cache.get(key);
+                if (methodState != null) {
+                    return methodState;
+                }
+                MethodState newMethodState = function.apply(key);
+                Objects.requireNonNull(newMethodState);
+                cache.put(key, newMethodState);
+                return newMethodState;
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        void clear() {
+            cache.clear();
         }
     }
 }
