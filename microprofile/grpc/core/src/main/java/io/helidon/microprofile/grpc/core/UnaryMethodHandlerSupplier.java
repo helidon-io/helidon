@@ -32,7 +32,7 @@ import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 
 /**
- * A supplier of {@link io.helidon.grpc.core.MethodHandler}s for unary gRPC methods.
+ * A supplier of {@link MethodHandler}s for unary gRPC methods.
  */
 public class UnaryMethodHandlerSupplier
         extends AbstractMethodHandlerSupplier {

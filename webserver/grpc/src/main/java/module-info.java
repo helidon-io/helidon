@@ -41,6 +41,7 @@ module io.helidon.webserver.grpc {
     requires transitive io.grpc;
     requires transitive io.grpc.stub;
     requires transitive io.helidon.common.config;
+    requires io.helidon.grpc.core;
 
     exports io.helidon.webserver.grpc;
 

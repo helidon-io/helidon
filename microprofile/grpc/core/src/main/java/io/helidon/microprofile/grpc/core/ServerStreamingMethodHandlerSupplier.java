@@ -36,7 +36,7 @@ import io.grpc.stub.StreamObserver;
 import static io.helidon.grpc.core.ResponseHelper.stream;
 
 /**
- * A supplier of {@link io.helidon.grpc.core.MethodHandler}s for server streaming gRPC methods.
+ * A supplier of {@link MethodHandler}s for server streaming gRPC methods.
  */
 public class ServerStreamingMethodHandlerSupplier
         extends AbstractMethodHandlerSupplier {

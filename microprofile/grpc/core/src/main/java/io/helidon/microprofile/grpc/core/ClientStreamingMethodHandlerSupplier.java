@@ -32,7 +32,7 @@ import io.grpc.stub.StreamObserver;
 import static io.helidon.grpc.core.ResponseHelper.completeAsync;
 
 /**
- * A supplier of {@link io.helidon.grpc.core.MethodHandler}s for client streaming gRPC methods.
+ * A supplier of {@link MethodHandler}s for client streaming gRPC methods.
  */
 public class ClientStreamingMethodHandlerSupplier
         extends AbstractMethodHandlerSupplier {

@@ -34,8 +34,8 @@ import io.helidon.grpc.core.MarshallerSupplier;
 @Inherited
 public @interface GrpcMarshaller {
     /**
-     * Obtain the type of the {@link io.helidon.grpc.core.MarshallerSupplier} to use.
-     * @return  the type of the {@link io.helidon.grpc.core.MarshallerSupplier} to use
+     * Obtain the type of the {@link MarshallerSupplier} to use.
+     * @return  the type of the {@link MarshallerSupplier} to use
      */
     String value() default MarshallerSupplier.DEFAULT;
 }

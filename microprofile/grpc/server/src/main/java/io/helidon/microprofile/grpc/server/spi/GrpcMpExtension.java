@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,22 +14,16 @@
  * limitations under the License.
  */
 
+package io.helidon.microprofile.grpc.server.spi;
+
 /**
- * Helidon GRPC core package.
+ * Microprofile service to extend features of the gRPC server.
  */
-module io.helidon.grpc.core {
-
-    requires java.logging;
-
-    requires io.helidon.common;
-    requires io.helidon.http;
-    requires io.helidon.common.context;
-
-    requires transitive io.grpc;
-    requires transitive io.grpc.stub;
-    requires transitive com.google.protobuf;
-    requires transitive io.grpc.protobuf;
-    requires transitive io.grpc.protobuf.lite;
-
-    exports io.helidon.grpc.core;
+public interface GrpcMpExtension {
+    /**
+     * Allow the service to add configuration through the context.
+     *
+     * @param context context to obtain configuration objects
+     */
+    void configure(GrpcMpContext context);
 }

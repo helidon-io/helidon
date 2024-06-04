@@ -20,7 +20,7 @@ import java.util.function.Supplier;
 import io.helidon.grpc.core.MethodHandler;
 
 /**
- * A supplier of {@link io.helidon.grpc.core.MethodHandler}s for {@link AnnotatedMethod}s.
+ * A supplier of {@link MethodHandler}s for {@link AnnotatedMethod}s.
  * <p>
  * Implementation classes may be annotated with {@link jakarta.annotation.Priority}
  * to influence their priority order when determining which supplier is used if
@@ -32,7 +32,7 @@ public interface MethodHandlerSupplier {
 
     /**
      * Determine whether this {@link MethodHandlerSupplier} can supply
-     * a {@link io.helidon.grpc.core.MethodHandler} for a given method and type.
+     * a {@link MethodHandler} for a given method and type.
      *
      * @param method  the {@link AnnotatedMethod} to supply a handler for
      * @return  {@code true} if this supplier can supply a handler for the method
@@ -40,13 +40,13 @@ public interface MethodHandlerSupplier {
     boolean supplies(AnnotatedMethod method);
 
     /**
-     * Supply a {@link io.helidon.grpc.core.MethodHandler} for a method.
+     * Supply a {@link MethodHandler} for a method.
      * @param methodName the gRPC method name
-     * @param method     the method to supply a {@link io.helidon.grpc.core.MethodHandler} for
+     * @param method     the method to supply a {@link MethodHandler} for
      * @param instance   the supplier to supply the actual call handler
      * @param <ReqT>     the request type
      * @param <RespT>    the response type
-     * @return  a {@link io.helidon.grpc.core.MethodHandler} for the method
+     * @return  a {@link MethodHandler} for the method
      * @throws java.lang.NullPointerException if the method is null
      */
     <ReqT, RespT> MethodHandler<ReqT, RespT> get(String methodName, AnnotatedMethod method, Supplier<?> instance);

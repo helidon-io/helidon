@@ -52,8 +52,7 @@ public @interface Grpc {
     /**
      * An {@link jakarta.enterprise.util.AnnotationLiteral} for the {@link Grpc} annotation.
      */
-    class Literal
-            extends AnnotationLiteral<Grpc> implements Grpc {
+    class Literal extends AnnotationLiteral<Grpc> implements Grpc {
 
         /**
          * The singleton instance of {@link Literal}.

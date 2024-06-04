@@ -29,7 +29,7 @@ import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 
 /**
- * A supplier of {@link io.helidon.grpc.core.MethodHandler}s for bi-directional streaming gRPC methods.
+ * A supplier of {@link MethodHandler}s for bi-directional streaming gRPC methods.
  */
 public class BidirectionalMethodHandlerSupplier
         extends AbstractMethodHandlerSupplier {
