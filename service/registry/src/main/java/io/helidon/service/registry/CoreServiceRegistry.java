@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
 import io.helidon.service.registry.GeneratedService.Descriptor;
 
 /**
@@ -93,7 +94,7 @@ class CoreServiceRegistry implements ServiceRegistry {
             if (processedDescriptorTypes.add(descriptorMeta.descriptor().serviceType())) {
                 DiscoveredDescriptor dd = new DiscoveredDescriptor(this,
                                                                    descriptorMeta,
-                                                                   LazyValue.create(() -> instance(descriptorMeta.descriptor())));
+                                                                   instanceSupplier(descriptorMeta));
                 providersByService.put(descriptorMeta.descriptor(), dd);
                 addContracts(providers, descriptorMeta.contracts(), dd);
             }
@@ -132,17 +133,17 @@ class CoreServiceRegistry implements ServiceRegistry {
 
     @Override
     public <T> Supplier<T> supply(TypeName contract) {
-        return LazyValue.create(() -> get(contract));
+        return () -> get(contract);
     }
 
     @Override
     public <T> Supplier<Optional<T>> supplyFirst(TypeName contract) {
-        return LazyValue.create(() -> first(contract));
+        return () -> first(contract);
     }
 
     @Override
     public <T> Supplier<List<T>> supplyAll(TypeName contract) {
-        return LazyValue.create(() -> all(contract));
+        return () -> all(contract);
     }
 
     @SuppressWarnings("unchecked")
@@ -172,6 +173,16 @@ class CoreServiceRegistry implements ServiceRegistry {
         }
     }
 
+    private Supplier<Optional<Object>> instanceSupplier(DescriptorMetadata descriptorMeta) {
+        LazyValue<Optional<Object>> serviceInstance = LazyValue.create(() -> instance(descriptorMeta.descriptor()));
+
+        if (descriptorMeta.contracts().contains(TypeNames.SUPPLIER)) {
+            return () -> instanceFromSupplier(descriptorMeta.descriptor(), serviceInstance);
+        } else {
+            return serviceInstance;
+        }
+    }
+
     private List<ServiceProvider> allProviders(TypeName contract) {
         Set<ServiceProvider> serviceProviders = providersByContract.get(contract);
         if (serviceProviders == null) {
@@ -181,7 +192,33 @@ class CoreServiceRegistry implements ServiceRegistry {
         return new ArrayList<>(serviceProviders);
     }
 
+    private Optional<Object> instanceFromSupplier(Descriptor<?> descriptor, LazyValue<Optional<Object>> serviceInstanceSupplier) {
+        Optional<Object> serviceInstance = serviceInstanceSupplier.get();
+        if (serviceInstance.isEmpty()) {
+            return Optional.empty();
+        }
+        Object actualInstance = serviceInstance.get();
+
+        // the service has a Supplier contract, so its instance should implement a supplier
+        // services are always singleton for us, but the supplier returned value should be requested each time
+        // we use it, to support non-thread-safe instances
+        if (actualInstance instanceof Supplier<?> supplier) {
+            return fromSupplierValue(supplier.get());
+        } else {
+            throw new ServiceRegistryException("Service " + descriptor.serviceType().fqName()
+                                                       + " exposes Supplier as an interface, yet it does not"
+                                                       + " implement it.");
+        }
+    }
+
     private Optional<Object> instance(Descriptor<?> descriptor) {
+        var dependencyContext = collectDependencies(descriptor);
+
+        Object serviceInstance = descriptor.instantiate(dependencyContext);
+        return Optional.of(serviceInstance);
+    }
+
+    private DependencyContext collectDependencies(Descriptor<?> descriptor) {
         List<? extends Dependency> dependencies = descriptor.dependencies();
         Map<Dependency, Object> collectedDependencies = new HashMap<>();
 
@@ -197,11 +234,7 @@ class CoreServiceRegistry implements ServiceRegistry {
             }
         }
 
-        Object serviceInstance = descriptor.instantiate(DependencyContext.create(collectedDependencies));
-        if (serviceInstance instanceof Supplier<?> supplier) {
-            return fromSupplierValue(supplier.get());
-        }
-        return Optional.of(serviceInstance);
+        return DependencyContext.create(collectedDependencies);
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -287,13 +320,13 @@ class CoreServiceRegistry implements ServiceRegistry {
 
     private record DiscoveredDescriptor(CoreServiceRegistry registry,
                                         DescriptorMetadata metadata,
-                                        LazyValue<Optional<Object>> lazyInstance,
+                                        Supplier<Optional<Object>> instanceSupplier,
                                         ReentrantLock lock) implements ServiceProvider {
 
         private DiscoveredDescriptor(CoreServiceRegistry registry,
                                      DescriptorMetadata metadata,
-                                     LazyValue<Optional<Object>> lazyInstance) {
-            this(registry, metadata, lazyInstance, new ReentrantLock());
+                                     Supplier<Optional<Object>> instanceSupplier) {
+            this(registry, metadata, instanceSupplier, new ReentrantLock());
         }
 
         @Override
@@ -303,8 +336,8 @@ class CoreServiceRegistry implements ServiceRegistry {
 
         @Override
         public Optional<Object> instance() {
-            if (lazyInstance.isLoaded()) {
-                return lazyInstance.get();
+            if ((instanceSupplier instanceof LazyValue<?> lv) && lv.isLoaded()) {
+                return instanceSupplier.get();
             }
             if (lock.isHeldByCurrentThread()) {
                 throw new ServiceRegistryException("Cyclic dependency, attempting to obtain an instance of "
@@ -313,7 +346,7 @@ class CoreServiceRegistry implements ServiceRegistry {
             }
             try {
                 lock.lock();
-                return lazyInstance.get();
+                return instanceSupplier.get();
             } finally {
                 lock.unlock();
             }

@@ -58,7 +58,8 @@ public final class Service {
      *     <li>Direct implementation of interface (or extending an abstract class)</li>
      *     <li>Implementing a {@link java.util.function.Supplier} of the contract; when using supplier, service registry
      *     supports the capability to return {@link java.util.Optional} in case the service cannot provide a value; such
-     *     a service will be ignored and only other implementations (with lower weight) would be used</li>
+     *     a service will be ignored and only other implementations (with lower weight) would be used. Supplier will be
+     *     called each time the dependency is used, or each time a method on registry is called to request an instance</li>
      * </ul>
      */
     @Documented

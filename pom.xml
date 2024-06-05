@@ -550,6 +550,9 @@
                                 </ignoredPackagings>
                                 <ignoreNonCompile>true</ignoreNonCompile>
                                 <failOnWarning>true</failOnWarning>
+                                <ignoredDependencies>
+                                    <dependency>io.helidon.common.features:helidon-common-features-api:*</dependency>
+                                </ignoredDependencies>
                             </configuration>
                         </execution>
                     </executions>
