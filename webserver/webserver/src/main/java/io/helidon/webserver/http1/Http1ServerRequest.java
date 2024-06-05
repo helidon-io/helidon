@@ -225,7 +225,7 @@ abstract class Http1ServerRequest implements RoutingRequest {
                 .orElse(DEFAULT_REQUESTED_URI_DISCOVERY_CONTEXT)
                 .uriInfo(remotePeer().address().toString(),
                          localPeer().address().toString(),
-                         path.path(),
+                         path.absolute().path(),
                          headers,
                          query(),
                          isSecure());
