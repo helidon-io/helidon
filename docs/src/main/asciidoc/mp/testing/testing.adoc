@@ -22,7 +22,7 @@
 :description: Helidon Testing with JUnit5
 :keywords: helidon, mp, test, testing, junit
 :feature-name: Testing with JUnit
-:rootdir: {docdir}/..
+:rootdir: {docdir}/../..
 
 include::{rootdir}/includes/mp.adoc[]
 
@@ -32,6 +32,7 @@ include::{rootdir}/includes/mp.adoc[]
 - <<Maven Coordinates, Maven Coordinates>>
 - <<Usage, Usage>>
 - <<Examples, Examples>>
+- <<Mock Support, Mock Support>>
 - <<Additional Information, Additional Information>>
 - <<Reference, Reference>>
 
@@ -136,7 +137,7 @@ In the current example, Helidon container will be launched prior test. The _Bean
 [source,java]
 .Code sample
 ----
-include::{sourcedir}/mp/TestingSnippets.java[tag=snippet_1, indent=0]
+include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_1, indent=0]
 ----
 <1> Start the Helidon container.
 <2> Set disabled Bean Discovery for the current test class.
@@ -151,12 +152,77 @@ To test `@RequestScoped` bean with JaxRs support:
 [source,java]
 .Test `RequestScoped` bean
 ----
-include::{sourcedir}/mp/TestingSnippets.java[tag=snippet_2, indent=0]
+include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_2, indent=0]
 ----
 <1> Start the Helidon container.
 <2> Set disabled Bean discovery.
 <3> Add JaxRs support to the current test class.
 <4> Define a `RequestScoped` bean.
+
+== Mock Support
+
+This section describes how to mock objects using Helidon API and in a second phase, using pure CDI.
+
+=== Helidon Mock Support
+
+Helidon has its own API to use mocking with test classes annotated with `@HelidonTest`.
+
+==== Maven Coordinates
+
+To enable Helidon Mock Support add the following dependency to your project’s pom.xml.
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.microprofile.testing</groupId>
+    <artifactId>helidon-microprofile-testing-mocking</artifactId>
+    <scope>test</scope>
+</dependency>
+----
+
+==== API
+
+It consists of one annotation named `@MockBean`, designed to be used on fields and parameters. The implementation
+relies only on CDI and thus it works with either JUnit or TestNG. The annotation has a parameter `answers` used
+to set the default answer for the mocked beans.
+
+==== Example
+
+[source,java]
+.Code sample
+----
+include::{sourcedir}/mp/testing/HelidonMockingSnippets.java[tag=snippet_1, indent=0]
+----
+<1> `service` field annotated with `@MockBean` and `Answers.CALLS_REAL_METHODS` for default answers.
+<2> Test the mocked service with real method response.
+<3> Test the mocked service with modified behavior.
+
+=== Mocking objects with pure CDI
+
+CDI can be used to enable mocking, the following example shows how to mock a service and inject it in a JAX-RS resource.
+Let's consider a simple service `FooService` with a dummy method `FooService#getFoo` that return `foo` as a `String`.
+And a resource where the service is injected and expose an endpoint at `/foo` that get the `String` provided by the service.
+
+[source,java]
+.Code sample
+----
+include::{sourcedir}/mp/testing/CDIMockingSnippets.java[tag=snippet_1, indent=0]
+----
+<1> A simple `foo` Service.
+<2> Inject the service into the resource.
+
+This example uses Mockito to create mock instances before each test. The method mockFooService is a CDI producer method
+that adds the mock instance as an @Alternative in order to replace the FooService singleton.
+
+[source,java]
+.Code sample
+----
+include::{sourcedir}/mp/testing/CDIMockingSnippets.java[tag=snippet_2, indent=0]
+----
+<1> Set priority to 1 because of `@Alternative`.
+<2> Set `fooService` to a new mock before each tests.
+<3> This makes `FooResource` inject the mock instead of the default singleton.
+<4> Test that the mock is injected with modified behavior.
+<5> Test the real method behavior.
 
 == Additional Information
 

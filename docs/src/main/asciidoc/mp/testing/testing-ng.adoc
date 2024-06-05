@@ -20,7 +20,7 @@
 :description: Helidon Testing with TestNG
 :keywords: helidon, mp, test, testing, testng
 :feature-name: Testing with TestNG
-:rootdir: {docdir}/..
+:rootdir: {docdir}/../..
 
 include::{rootdir}/includes/mp.adoc[]
 
@@ -128,7 +128,7 @@ In the current example, Helidon container will be launched prior test. The _Bean
 [source,java]
 .Code sample
 ----
-include::{sourcedir}/mp/TestingNgSnippets.java[tag=snippet_1, indent=0]
+include::{sourcedir}/mp/testing/TestingNgSnippets.java[tag=snippet_1, indent=0]
 ----
 <1> Start the Helidon container.
 <2> Set disabled Bean Discovery for the current test class.
@@ -143,7 +143,7 @@ To test `@RequestScoped` bean with JaxRs support:
 [source,java]
 .Test `RequestScoped` bean
 ----
-include::{sourcedir}/mp/TestingNgSnippets.java[tag=snippet_2, indent=0]
+include::{sourcedir}/mp/testing/TestingNgSnippets.java[tag=snippet_2, indent=0]
 ----
 <1> Start the Helidon container.
 <2> Set disabled Bean discovery.
