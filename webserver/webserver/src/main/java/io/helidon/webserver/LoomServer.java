@@ -17,6 +17,7 @@
 package io.helidon.webserver;
 
 import java.lang.management.ManagementFactory;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -35,7 +36,6 @@ import java.util.function.Consumer;
 import io.helidon.Main;
 import io.helidon.common.SerializationConfig;
 import io.helidon.common.Version;
-import io.helidon.common.Weighted;
 import io.helidon.common.Weights;
 import io.helidon.common.context.Context;
 import io.helidon.common.features.HelidonFeatures;
@@ -77,13 +77,13 @@ class LoomServer implements WebServer {
         sockets.put(DEFAULT_SOCKET_NAME, serverConfig);
 
         // features ordered by weight
-        List<ServerFeature> features = serverConfig.features();
+        List<ServerFeature> features = new ArrayList<>(serverConfig.features());
+        Weights.sort(features);
+
         ServerFeatureContextImpl featureContext = ServerFeatureContextImpl.create(serverConfig);
         for (ServerFeature feature : features) {
-            featureContext.weight(Weights.find(feature, Weighted.DEFAULT_WEIGHT));
-            feature.setup(featureContext);
+            featureContext.setUpFeature(feature);
         }
-        featureContext.weight(Weighted.DEFAULT_WEIGHT);
 
         Timer idleConnectionTimer = new Timer("helidon-idle-connection-timer", true);
         Map<String, ServerListener> listenerMap = new HashMap<>();
