@@ -36,123 +36,102 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
 
 /**
- * Derived as closely as possible from a user-supplied reproducer. Comments are ours, added for explanation or questions.
+ * Tests that the current tracer and span are propagated through Helidon contexts.
+ * <p>
+ * Derived as closely as possible from a user-supplied reproducer. Basically, logging was changed to use system
+ * logging instead of SLF4J as in the original test and test assertions were converted to use Hamcrest. The key logic
+ * in the test is unchanged.
+ * </p>
  */
 class TestTracerAndSpanPropagation {
-        private static final System.Logger LOGGER = System
-                .getLogger(TestTracerAndSpanPropagation.class.getName());
+    private static final System.Logger LOGGER = System
+            .getLogger(TestTracerAndSpanPropagation.class.getName());
 
-        @Test
-        void concurrentVirtualThreadUseCanary() {
-            Contexts.runInContext(Context.create(), this::actualTest);
-        }
+    @Test
+    void concurrentVirtualThreadUseCanary() {
+        Contexts.runInContext(Context.create(), this::actualTest);
+    }
 
-        private void actualTest() {
+    private void actualTest() {
 
-            final var tracer = buildTracer();
-            LOGGER.log(System.Logger.Level.INFO, "Tracer {0}", tracer);
-            assertThat("Tracer is enabled", tracer.enabled(), is(true));
-            assertThat("Tracer in use is the global tracer", tracer, sameInstance(Tracer.global()));
-            final var rootSpan = tracer.spanBuilder(getClass().getSimpleName()).start();
-            LOGGER.log(System.Logger.Level.INFO, "traceId: {0}", rootSpan.context().traceId());
-            try (var ignored = rootSpan.activate()) {
-                assertThat("rootSpan activate",
-                           Span.current().map(Span::context).map(SpanContext::spanId),
-                           OptionalMatcher.optionalValue(is(rootSpan.context().spanId())));
+        final var tracer = buildTracer();
+        LOGGER.log(System.Logger.Level.INFO, "Tracer {0}", tracer);
+        assertThat("Tracer is enabled", tracer.enabled(), is(true));
+        assertThat("Tracer in use is the global tracer", tracer, sameInstance(Tracer.global()));
+        final var rootSpan = tracer.spanBuilder(getClass().getSimpleName()).start();
+        LOGGER.log(System.Logger.Level.INFO, "traceId: {0}", rootSpan.context().traceId());
+        try (var ignored = rootSpan.activate()) {
+            assertThat("rootSpan activate",
+                       Span.current().map(Span::context).map(SpanContext::spanId),
+                       OptionalMatcher.optionalValue(is(rootSpan.context().spanId())));
 
-                final var ff = new CompletableFuture[1];
-                try (var executor = Contexts.wrap(Executors.newVirtualThreadPerTaskExecutor())) {
-                    final var futures = new CompletableFuture[5];
-                    for (int i = 0; i < 5; i++) {
-                        futures[i] = CompletableFuture
-                                .runAsync(new ChildAction(tracer, rootSpan), executor);
-                    }
-                    for (final var f : futures) {
-                        ff[0] = f;
-                        f.get(1, TimeUnit.SECONDS);
-                    }
-                    LOGGER.log(System.Logger.Level.INFO, "all futures complete");
-
-                } catch (ExecutionException | TimeoutException | InterruptedException e) {
-                    LOGGER.log(System.Logger.Level.ERROR, "Failure: f={0}", ff[0], e);
-                    rootSpan.end(e);
-                    throw new RuntimeException(e);
+            final var ff = new CompletableFuture[1];
+            try (var executor = Contexts.wrap(Executors.newVirtualThreadPerTaskExecutor())) {
+                final var futures = new CompletableFuture[5];
+                for (int i = 0; i < 5; i++) {
+                    futures[i] = CompletableFuture
+                            .runAsync(new ChildAction(tracer, rootSpan), executor);
                 }
-                rootSpan.end();
-                LOGGER.log(System.Logger.Level.INFO, "ended rootSpan");
-            }
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                LOGGER.log(System.Logger.Level.ERROR, "Error on sleep", e);
+                for (final var f : futures) {
+                    ff[0] = f;
+                    f.get(1, TimeUnit.SECONDS);
+                }
+                LOGGER.log(System.Logger.Level.INFO, "all futures complete");
+
+            } catch (ExecutionException | TimeoutException | InterruptedException e) {
+                LOGGER.log(System.Logger.Level.ERROR, "Failure: f={0}", ff[0], e);
+                rootSpan.end(e);
                 throw new RuntimeException(e);
             }
-            LOGGER.log(System.Logger.Level.INFO, "test ended");
+            rootSpan.end();
+            LOGGER.log(System.Logger.Level.INFO, "ended rootSpan");
         }
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            LOGGER.log(System.Logger.Level.ERROR, "Error on sleep", e);
+            throw new RuntimeException(e);
+        }
+        LOGGER.log(System.Logger.Level.INFO, "test ended");
+    }
 
-        record ChildAction(Tracer globalTracer, Span rootSpan) implements Runnable {
+    private Tracer buildTracer() {
+        return Tracer.global();
+    }
 
-            @Override public void run() {
-                final var thread = Thread.currentThread();
-                assertThat("isVirtual false in ChildAction", thread.isVirtual(), is(true));
-                final var threadName = String.valueOf(thread);
-                LOGGER.log(System.Logger.Level.INFO, "Running {0}", threadName);
+    record ChildAction(Tracer globalTracer, Span rootSpan) implements Runnable {
 
-                final var tracer = Objects.requireNonNull(Tracer.global(), "global NOT in ChildAction");
-                assertThat("tracer NOT preserved in ChildAction", tracer, is(sameInstance(globalTracer)));
-                assertThat("Current span from test NOT present in ChildAction",
+        @Override
+        public void run() {
+            final var thread = Thread.currentThread();
+            assertThat("isVirtual false in ChildAction", thread.isVirtual(), is(true));
+            final var threadName = String.valueOf(thread);
+            LOGGER.log(System.Logger.Level.INFO, "Running {0}", threadName);
+
+            final var tracer = Objects.requireNonNull(Tracer.global(), "global NOT in ChildAction");
+            assertThat("tracer NOT preserved in ChildAction", tracer, is(sameInstance(globalTracer)));
+            assertThat("Current span from test NOT present in ChildAction",
+                       Span.current().map(Span::context).map(SpanContext::spanId),
+                       OptionalMatcher.optionalValue(is(rootSpan.context().spanId())));
+
+            final var span = Span.current().get();
+            final var spanContext = span.context();
+            final var childSpan = tracer.spanBuilder(threadName)
+                    .parent(spanContext).start();
+            try (var ignored = childSpan.activate()) {
+
+                assertThat("childSpan NOT activated",
                            Span.current().map(Span::context).map(SpanContext::spanId),
-                           OptionalMatcher.optionalValue(is(rootSpan.context().spanId())));
+                           OptionalMatcher.optionalValue(is(childSpan.context().spanId())));
+                Thread.sleep(10);
+                span.end();
 
-                final var span = Span.current().get();
-                final var spanContext = span.context();
-                final var childSpan = tracer.spanBuilder(threadName)
-                        .parent(spanContext).start();
-                try (var ignored = childSpan.activate()) {
-
-                    assertThat("childSpan NOT activated",
-                               Span.current().map(Span::context).map(SpanContext::spanId),
-                               OptionalMatcher.optionalValue(is(childSpan.context().spanId())));
-                    Thread.sleep(10);
-                    span.end();
-
-                } catch (InterruptedException e) {
-                    span.end(e);
-                    throw new RuntimeException(e);
-                } finally {
-                    LOGGER.log(System.Logger.Level.INFO, "Ended {0}", threadName);
-                }
+            } catch (InterruptedException e) {
+                span.end(e);
+                throw new RuntimeException(e);
+            } finally {
+                LOGGER.log(System.Logger.Level.INFO, "Ended {0}", threadName);
             }
         }
-
-        private Tracer buildTracer() {
-            return Tracer.global();
-
-            // Below used when I have to test completely standalone, Or I get:
-            // java.lang.IllegalStateException: GlobalOpenTelemetry.set has already been called.
-            // GlobalOpenTelemetry.set must be called only once before any calls to GlobalOpenTelemetry.get.
-            // If you are using the OpenTelemetrySdk, use OpenTelemetrySdkBuilder.buildAndRegisterGlobal instead.
-            // Previous invocation set to cause of this exception.
-
-            //        final var config = Config.just(MapConfigSource.create(Map.ofEntries(
-            //                entry("tracing.enabled", "true"),
-            //                entry("tracing.global", "true"),
-            //                entry("tracing.service", "propData409"),
-            //                entry("tracing.log-spans", "false"),
-            //                entry("tracing.protocol", "http"),
-            //                entry("tracing.host", "localhost"),
-            //                entry("tracing.port", "14250"),
-            //                entry("tracing.path", "/api/traces"),
-            //                entry("tracing.propagation", "b3,w3c"),
-            //                entry("tracing.sampler-type", "const"),
-            //                entry("tracing.sampler-param", "1"),
-            //                entry("tracing.expand-exception-logs", "true")
-            //        )));
-            //        return TracerBuilder.create("propData409")
-            //                .enabled(true).registerGlobal(true)
-            //                .collectorProtocol("http")
-            //                .collectorHost("localhost")
-            //                .collectorPath("/api/traces")
-            //                .config(config).build();
-        }
+    }
 }
