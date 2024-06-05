@@ -115,6 +115,19 @@
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
+            <!--
+                Because the Helidon Zipkin provider does not itself implement the Helidon tracing API (it does so through
+                OpenTracing), exempt this build from a test that requires that.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>io.helidon.tracing.providers.tests.TestTracerAndSpanPropagation.java</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>
