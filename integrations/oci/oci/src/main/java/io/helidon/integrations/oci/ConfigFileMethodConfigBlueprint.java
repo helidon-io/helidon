@@ -38,6 +38,6 @@ interface ConfigFileMethodConfigBlueprint {
      * @return the optional OCI configuration/auth profile name
      */
     @Option.Configured
-    @Option.Default(AuthenticationMethodConfigFile.DEFAULT_PROFILE_NAME)
+    @Option.Default(ConfigFileProvider.DEFAULT_PROFILE_NAME)
     String profile();
 }

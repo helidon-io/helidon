@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,7 @@ import java.util.concurrent.Semaphore;
 /**
  * Server connection abstraction, used by any provider to handle a socket connection.
  */
-public interface
-ServerConnection {
+public interface ServerConnection {
     /**
      * Start handling the connection. Data is provided through
      * {@link ServerConnectionSelector#connection(io.helidon.webserver.ConnectionContext)}.

@@ -16,6 +16,7 @@
 
 package io.helidon.integrations.oci.authentication.okeworkload;
 
+import java.lang.System.Logger.Level;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -37,7 +38,9 @@ import com.oracle.bmc.auth.okeworkloadidentity.OkeWorkloadIdentityAuthentication
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 40)
 @Service.Provider
-class AuthenticationMethodWorkload implements OciAtnMethod {
+class AuthenticationMethodOkeWorkload implements OciAtnMethod {
+    private static final System.Logger LOGGER = System.getLogger(AuthenticationMethodOkeWorkload.class.getName());
+
     private static final String METHOD = "oke-workload-identity";
 
     /*
@@ -50,7 +53,7 @@ class AuthenticationMethodWorkload implements OciAtnMethod {
 
     private final LazyValue<Optional<AbstractAuthenticationDetailsProvider>> provider;
 
-    AuthenticationMethodWorkload(OciConfig config) {
+    AuthenticationMethodOkeWorkload(OciConfig config) {
         provider = createProvider(config);
     }
 
@@ -86,8 +89,20 @@ class AuthenticationMethodWorkload implements OciAtnMethod {
         Path certPath = Paths.get(usedPath);
 
         if (!Files.exists(certPath)) {
+            if (LOGGER.isLoggable(Level.TRACE)) {
+                LOGGER.log(Level.TRACE, "OKE Workload Authentication Details Provider is not available, as "
+                        + "the certificate file does not exist: " + certPath.toAbsolutePath());
+            }
             return false;
         }
-        return Files.isRegularFile(certPath);
+        if (Files.isRegularFile(certPath)) {
+            return true;
+        }
+
+        if (LOGGER.isLoggable(Level.TRACE)) {
+            LOGGER.log(Level.TRACE, "OKE Workload Authentication Details Provider is not available, as "
+                    + "the certificate file is not a regular file: " + certPath.toAbsolutePath());
+        }
+        return false;
     }
 }

@@ -16,6 +16,7 @@
 
 package io.helidon.integrations.oci;
 
+import java.lang.System.Logger.Level;
 import java.util.Optional;
 
 import io.helidon.common.LazyValue;
@@ -38,6 +39,8 @@ import com.oracle.bmc.auth.SimplePrivateKeySupplier;
 class AuthenticationMethodConfig implements OciAtnMethod {
     static final String METHOD = "config";
 
+    private static final System.Logger LOGGER = System.getLogger(AuthenticationMethodConfig.class.getName());
+
     private final LazyValue<Optional<AbstractAuthenticationDetailsProvider>> provider;
 
     AuthenticationMethodConfig(OciConfig config) {
@@ -45,7 +48,13 @@ class AuthenticationMethodConfig implements OciAtnMethod {
                 .map(configMethodConfigBlueprint -> LazyValue.create(() -> {
                     return Optional.of(createProvider(configMethodConfigBlueprint));
                 }))
-                .orElseGet(() -> LazyValue.create(Optional.empty()));
+                .orElseGet(() -> {
+                    if (LOGGER.isLoggable(Level.TRACE)) {
+                        LOGGER.log(Level.TRACE, "Configuration for Config based authentication details provider is"
+                                + " not available.");
+                    }
+                    return LazyValue.create(Optional.empty());
+                });
     }
 
     @Override
@@ -83,11 +92,12 @@ class AuthenticationMethodConfig implements OciAtnMethod {
             builder.privateKeySupplier(new SimplePrivateKeySupplier(keyFile));
         }
 
+        config.passphrase().ifPresent(builder::passphraseCharacters);
+
         return builder.region(region)
                 .tenantId(config.tenantId())
                 .userId(config.userId())
                 .fingerprint(config.fingerprint())
-                .passphraseCharacters(config.passphrase())
                 .build();
 
     }

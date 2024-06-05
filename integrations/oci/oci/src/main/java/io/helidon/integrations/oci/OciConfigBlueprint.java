@@ -110,6 +110,14 @@ interface OciConfigBlueprint {
     Optional<ConfigFileMethodConfig> configFileMethodConfig();
 
     /**
+     * Session token method configuration (if provided and used).
+     *
+     * @return information to customize config for {@link #atnMethod()}
+     */
+    @Option.Configured("authentication.session-token")
+    Optional<SessionTokenMethodConfig> sessionTokenMethodConfig();
+
+    /**
      * The OCI IMDS connection timeout. This is used to auto-detect availability.
      * <p>
      * This configuration property is used when attempting to connect to the metadata service.

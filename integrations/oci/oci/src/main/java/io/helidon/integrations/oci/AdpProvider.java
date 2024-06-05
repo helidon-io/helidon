@@ -30,11 +30,11 @@ import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
 
 @Service.Provider
 @Service.ExternalContracts(AbstractAuthenticationDetailsProvider.class)
-class AtnDetailsProvider implements Supplier<Optional<AbstractAuthenticationDetailsProvider>> {
+class AdpProvider implements Supplier<Optional<AbstractAuthenticationDetailsProvider>> {
 
     private final LazyValue<Optional<AbstractAuthenticationDetailsProvider>> provider;
 
-    AtnDetailsProvider(OciConfig ociConfig, List<OciAtnMethod> atnDetailsProviders) {
+    AdpProvider(OciConfig ociConfig, List<OciAtnMethod> atnDetailsProviders) {
         String chosenAtnMethod = ociConfig.atnMethod();
         LazyValue<Optional<AbstractAuthenticationDetailsProvider>> providerLazyValue = null;
 

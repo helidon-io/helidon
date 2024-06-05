@@ -16,7 +16,6 @@
 
 package io.helidon.integrations.oci.authentication.instance;
 
-import java.net.URI;
 import java.util.Optional;
 
 import io.helidon.common.LazyValue;
@@ -28,7 +27,7 @@ import io.helidon.integrations.oci.spi.OciAtnMethod;
 import io.helidon.service.registry.Service;
 
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
-import com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider.InstancePrincipalsAuthenticationDetailsProviderBuilder;
 
 /**
  * Instance principal authentication method, uses the
@@ -37,12 +36,14 @@ import com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider;
 @Weight(Weighted.DEFAULT_WEIGHT - 40)
 @Service.Provider
 class AuthenticationMethodInstancePrincipal implements OciAtnMethod {
-    static final String METHOD = "instance-principal";
+    private static final System.Logger LOGGER = System.getLogger(AuthenticationMethodInstancePrincipal.class.getName());
+    private static final String METHOD = "instance-principal";
 
     private final LazyValue<Optional<AbstractAuthenticationDetailsProvider>> provider;
 
-    AuthenticationMethodInstancePrincipal(OciConfig config) {
-        provider = createProvider(config);
+    AuthenticationMethodInstancePrincipal(OciConfig config,
+                                          InstancePrincipalsAuthenticationDetailsProviderBuilder builder) {
+        provider = createProvider(config, builder);
     }
 
     @Override
@@ -55,17 +56,16 @@ class AuthenticationMethodInstancePrincipal implements OciAtnMethod {
         return provider.get();
     }
 
-    private static LazyValue<Optional<AbstractAuthenticationDetailsProvider>> createProvider(OciConfig config) {
+    private static LazyValue<Optional<AbstractAuthenticationDetailsProvider>>
+    createProvider(OciConfig config,
+                   InstancePrincipalsAuthenticationDetailsProviderBuilder builder) {
         return LazyValue.create(() -> {
             if (HelidonOci.imdsAvailable(config)) {
-                var builder = InstancePrincipalsAuthenticationDetailsProvider.builder()
-                        .timeoutForEachRetry((int) config.atnTimeout().toMillis());
-
-                config.imdsBaseUri()
-                        .map(URI::toString)
-                        .ifPresent(builder::metadataBaseUrl);
-
                 return Optional.of(builder.build());
+            }
+            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                LOGGER.log(System.Logger.Level.TRACE, "OCI Metadata service is not available, "
+                        + "instance principal cannot be used.");
             }
             return Optional.empty();
         });

@@ -16,18 +16,20 @@
 
 package io.helidon.integrations.oci;
 
+import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.ScheduledExecutorService;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.configurable.Resource;
 
 /**
  * Configuration of the {@code config} authentication method.
  */
 @Prototype.Blueprint
 @Prototype.Configured
-interface ConfigMethodConfigBlueprint {
+interface SessionTokenMethodConfigBlueprint {
     /**
      * The OCI region.
      *
@@ -47,18 +49,6 @@ interface ConfigMethodConfigBlueprint {
      */
     @Option.Configured
     String fingerprint();
-
-    /**
-     * The OCI authentication private key resource.
-     * A resource can be defined as a resource on classpath, file on the file system,
-     * base64 encoded text value in config, or plain-text value in config.
-     * <p>
-     * If not defined, we will use {@code .oci/oic_api_key.pem} file in user home directory.
-     *
-     * @return the OCI authentication key file
-     */
-    @Option.Configured
-    Optional<Resource> privateKey();
 
     /**
      * The OCI authentication passphrase.
@@ -93,4 +83,72 @@ interface ConfigMethodConfigBlueprint {
      */
     @Option.Configured
     String userId();
+
+    /**
+     * The OCI authentication private key resource.
+     * A resource can be defined as a resource on classpath, file on the file system,
+     * base64 encoded text value in config, or plain-text value in config.
+     * <p>
+     * If not defined, we will use {@code ".oci/sessions/DEFAULT/oci_api_key.pem} file in user home directory.
+     *
+     * @return the OCI authentication key file
+     */
+    @Option.Configured
+    Optional<Path> privateKeyPath();
+
+    /**
+     * Session token path.
+     * If both this value, and {@link #sessionToken()} is defined, the value of {@link #sessionToken()} is used.
+     *
+     * @return session token path
+     */
+    @Option.Configured
+    Optional<Path> sessionTokenPath();
+
+    /**
+     * Session token value.
+     * If both this value, and {@link #sessionTokenPath()} is defined, this value is used.
+     *
+     * @return session token
+     */
+    @Option.Configured
+    Optional<String> sessionToken();
+
+    /**
+     * Delay of the first refresh.
+     * Defaults to 0, to refresh immediately (implemented in the authentication details provider).
+     *
+     * @return initial refresh delay
+     * @see com.oracle.bmc.auth.SessionTokenAuthenticationDetailsProvider.SessionTokenAuthenticationDetailsProviderBuilder#initialRefreshDelay(long)
+     */
+    @Option.Configured
+    Optional<Duration> initialRefreshDelay();
+
+    /**
+     * Refresh period, i.e. how often refresh occurs.
+     * Defaults to 55 minutes (implemented in the authentication details provider).
+     *
+     * @return refresh period
+     * @see com.oracle.bmc.auth.SessionTokenAuthenticationDetailsProvider.SessionTokenAuthenticationDetailsProviderBuilder#refreshPeriod(long)
+     */
+    @Option.Configured
+    Optional<Duration> refreshPeriod();
+
+    /**
+     * Maximal lifetime of a session.
+     * Defaults to (and maximum is) 24 hours.
+     * Can only be set to a lower value.
+     *
+     * @return lifetime of a session in hours
+     */
+    @Option.Configured
+    Optional<Long> sessionLifetimeHours();
+
+    /**
+     * Customize the scheduled executor service to use for scheduling.
+     * Defaults to a single thread executor service.
+     *
+     * @return scheduled executor service
+     */
+    Optional<ScheduledExecutorService> scheduler();
 }
