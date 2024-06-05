@@ -32,10 +32,15 @@ public class OpenTelemetryDataPropagationProvider
 
     @Override
     public OpenTelemetryContext data() {
-        return Contexts.context().map(context -> context.get(Span.class).map(span -> {
-            Tracer tracer = context.get(Tracer.class).orElseGet(OpenTelemetryTracerProvider::globalTracer);
-            return new OpenTelemetryContext(tracer, span);
-        }).orElse(null)).orElse(null);
+        // Use a tracer from the current context--because there is no notion in OTel of a "current" tracer--or from the
+        // global tracer.
+        Tracer tracer = Contexts.context().flatMap(ctx -> ctx.get(Tracer.class)).orElseGet(Tracer::global);
+
+        // Get the current span only from OTel's notion of the current span. We do not care what span might be set in the
+        // current context, because after that context was constructed user code could have closed the current span or set
+        // a new span as current.
+        Span span = OpenTelemetryTracerProvider.activeSpan().orElse(null);
+        return new OpenTelemetryContext(tracer, span);
     }
 
     @Override
@@ -51,7 +56,7 @@ public class OpenTelemetryDataPropagationProvider
 
     @Override
     public void propagateData(OpenTelemetryContext context) {
-        if (context != null) {
+        if (context != null && context.span != null) {
             context.scope = context.span.activate();
         }
     }
