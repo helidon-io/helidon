@@ -21,6 +21,7 @@ module io.helidon.tracing.provider.tests {
 
     requires java.logging;
     requires io.helidon.tracing;
+    requires io.helidon.common.context;
     requires io.helidon.common.testing.junit5;
 
     requires org.junit.jupiter.api;
