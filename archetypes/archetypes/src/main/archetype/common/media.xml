@@ -72,6 +72,9 @@
                                                 <value key="artifactId">jakarta.xml.bind-api</value>
                                             </map>
                                         </list>
+                                        <list key="initialize-at-build-time" if="${flavor} == 'mp'">
+                                            <value>com.fasterxml.jackson.core</value>
+                                        </list>
                                         <list key="module-requires">
                                             <value>com.fasterxml.jackson.annotation</value>
                                             <value>com.fasterxml.jackson.core</value>
