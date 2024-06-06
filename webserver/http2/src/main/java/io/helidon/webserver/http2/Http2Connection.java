@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -319,6 +319,11 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     // jUnit Http2Settings pkg only visible test accessor.
     Http2Settings serverSettings() {
         return serverSettings;
+    }
+
+    // jUnit Http2Settings pkg only visible test accessor.
+    Http2Settings clientSettings() {
+        return clientSettings;
     }
 
     private void doHandle(Semaphore requestSemaphore) throws InterruptedException {
