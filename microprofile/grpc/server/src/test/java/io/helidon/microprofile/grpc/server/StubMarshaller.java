@@ -29,8 +29,7 @@ import jakarta.inject.Named;
  * This marshaller will not actually work and should not
  * be used as a real marshaller.
  */
-public class StubMarshaller<T>
-        implements MethodDescriptor.Marshaller<T> {
+public class StubMarshaller<T> implements MethodDescriptor.Marshaller<T> {
 
     @Override
     public InputStream stream(T value) {
@@ -43,8 +42,8 @@ public class StubMarshaller<T>
     }
 
     @Named("stub")
-    public static class Supplier
-            implements MarshallerSupplier {
+    public static class Supplier implements MarshallerSupplier {
+
         @Override
         public <T> MethodDescriptor.Marshaller<T> get(Class<T> clazz) {
             return new StubMarshaller<>();

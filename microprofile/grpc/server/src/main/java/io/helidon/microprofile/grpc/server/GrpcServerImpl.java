@@ -16,6 +16,7 @@
 package io.helidon.microprofile.grpc.server;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 import io.helidon.common.context.Context;
@@ -47,17 +48,17 @@ class GrpcServerImpl implements GrpcServer {
 
     @Override
     public CompletionStage<GrpcServer> start() {
-        return null;
+        return CompletableFuture.completedFuture(null);
     }
 
     @Override
     public CompletionStage<GrpcServer> whenShutdown() {
-        return null;
+        return CompletableFuture.completedFuture(null);
     }
 
     @Override
     public CompletionStage<GrpcServer> shutdown() {
-        return null;
+        return CompletableFuture.completedFuture(null);
     }
 
     @Override

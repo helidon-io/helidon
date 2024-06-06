@@ -20,22 +20,20 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.webserver.grpc.MethodDescriptor;
-import io.helidon.webserver.grpc.ServiceDescriptor;
-import io.helidon.microprofile.grpc.core.Grpc;
-import io.helidon.microprofile.grpc.core.GrpcMarshaller;
-import io.helidon.microprofile.grpc.core.GrpcMethod;
-
 import io.grpc.Metadata;
 import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.stub.StreamObserver;
+import io.helidon.microprofile.grpc.core.Grpc;
+import io.helidon.microprofile.grpc.core.GrpcMarshaller;
+import io.helidon.microprofile.grpc.core.GrpcMethod;
+import io.helidon.webserver.grpc.MethodDescriptor;
+import io.helidon.webserver.grpc.ServiceDescriptor;
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.inject.Singleton;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Disabled;
 import org.mockito.ArgumentCaptor;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -47,7 +45,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@Disabled
 public class GrpcServiceBuilderTest {
 
     private BeanManager beanManager;
