@@ -45,23 +45,28 @@ Type: link:{javadoc-base-url}/io.helidon.common.tls/io/helidon/common/tls/Revoca
 |`check-only-end-entity` |boolean |`false` |Only check the revocation status of end-entity certificates.
  Default value is `false`.
 
- @return whether to check only end-entity certificates
+ Whether to check only end-entity certificates
 |`enabled` |boolean |`false` |Flag indicating whether this revocation config is enabled.
 
- @return enabled flag
+ Enabled flag
 |`fallback-enabled` |boolean |`true` |Enable fallback to the less preferred checking option.
+ <br>
+ If the primary method for revocation checking fails to verify the revocation status of a certificate
+ (such as using a CRL or OCSP), the checker will attempt alternative methods. This option ensures
+ whether revocation checking is performed strictly according to the specified method, or should fallback
+ to the one less preferred. OCSP is preferred over the CRL by default.
 
- @return whether to allow fallback to the less preferred checking option
+ Whether to allow fallback to the less preferred checking option
 |`ocsp-responder-uri` |URI |{nbsp} |The URI that identifies the location of the OCSP responder. This
  overrides the `ocsp.responderURL` security property and any
  responder specified in a certificate's Authority Information Access
  Extension, as defined in RFC 5280.
 
- @return OCSP responder URI
+ OCSP responder URI
 |`prefer-crl-over-ocsp` |boolean |`false` |Prefer CRL over OCSP.
- Default value is `false`.
+ Default value is `false`. OCSP is preferred over the CRL by default.
 
- @return whether to prefer CRL over OCSP
+ Whether to prefer CRL over OCSP
 |`soft-fail-enabled` |boolean |`false` |Allow revocation check to succeed if the revocation status cannot be
  determined for one of the following reasons:
 
@@ -71,7 +76,7 @@ Type: link:{javadoc-base-url}/io.helidon.common.tls/io/helidon/common/tls/Revoca
 - The OCSP responder returns one of the following errors
       specified in section 2.3 of RFC 2560: internalError or tryLater.
 
-@return whether soft fail is enabled
+Whether soft fail is enabled
 
 |===
 

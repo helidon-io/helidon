@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ Type: link:{javadoc-base-url}/io.helidon.scheduling/io/helidon/scheduling/Cron.h
 - `0 45 9 ? * *` - Every day at 9:45
 - `0 15 8 ? * MON-FRI` - Every workday at 8:15
 
-@return cron expression
+Cron expression
 
 |===
 
@@ -62,7 +62,7 @@ Type: link:{javadoc-base-url}/io.helidon.scheduling/io/helidon/scheduling/Cron.h
 |`concurrent` |boolean |`true` |Allow concurrent execution if previous task didn't finish before next execution.
  Default value is `true`.
 
- @return true for allow concurrent execution.
+ True for allow concurrent execution.
 
 |===
 

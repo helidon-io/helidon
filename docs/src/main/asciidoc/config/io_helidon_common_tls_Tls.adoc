@@ -44,75 +44,75 @@ Type: link:{javadoc-base-url}/io.helidon.common.tls/io/helidon/common/tls/Tls.ht
 
 |`cipher-suite` |string[&#93; |{nbsp} |Enabled cipher suites for TLS communication.
 
- @return cipher suits to enable, by default (or if list is empty), all available cipher suites
+ Cipher suits to enable, by default (or if list is empty), all available cipher suites
          are enabled
-|`client-auth` |TlsClientAuth (REQUIRED, OPTIONAL, NONE) |`NONE` |Configure requirement for mutual TLS.
+|`client-auth` |TlsClientAuth |`TlsClientAuth.NONE` |Configure requirement for mutual TLS.
 
- @return what type of mutual TLS to use, defaults to TlsClientAuth#NONE
+ What type of mutual TLS to use, defaults to TlsClientAuth.NONE
 |`enabled` |boolean |`true` |Flag indicating whether Tls is enabled.
 
- @return enabled flag
+ Enabled flag
 |`endpoint-identification-algorithm` |string |`HTTPS` |Identification algorithm for SSL endpoints.
 
- @return configure endpoint identification algorithm, or set to `NONE`
+ Configure endpoint identification algorithm, or set to `NONE`
          to disable endpoint identification (equivalent to hostname verification).
-         Defaults to `Tls#ENDPOINT_IDENTIFICATION_HTTPS`
+         Defaults to Tls.ENDPOINT_IDENTIFICATION_HTTPS
 |`internal-keystore-provider` |string |{nbsp} |Provider of the key stores used internally to create a key and trust manager factories.
 
- @return keystore provider, if not defined, provider is not specified
+ Keystore provider, if not defined, provider is not specified
 |`internal-keystore-type` |string |{nbsp} |Type of the key stores used internally to create a key and trust manager factories.
 
- @return keystore type, defaults to java.security.KeyStore#getDefaultType()
+ Keystore type, defaults to java.security.KeyStore.getDefaultType()
 |`key-manager-factory-algorithm` |string |{nbsp} |Algorithm of the key manager factory used when private key is defined.
- Defaults to javax.net.ssl.KeyManagerFactory#getDefaultAlgorithm().
+ Defaults to javax.net.ssl.KeyManagerFactory.getDefaultAlgorithm().
 
- @return algorithm to use
+ Algorithm to use
 |`manager` |io.helidon.common.tls.TlsManager (service provider interface) |{nbsp} |The Tls manager. If one is not explicitly defined in the config then a default manager will be created.
 
- @return the tls manager of the tls instance
+ The tls manager of the tls instance
  @see ConfiguredTlsManager
 |`private-key` |PrivateKey |{nbsp} |Private key to use. For server side TLS, this is required.
  For client side TLS, this is optional (used when mutual TLS is enabled).
 
- @return private key to use
+ Private key to use
 |`protocol` |string |`TLS` |Configure the protocol used to obtain an instance of javax.net.ssl.SSLContext.
 
- @return protocol to use, defaults to `DEFAULT_PROTOCOL`
+ Protocol to use, defaults to DEFAULT_PROTOCOL
 |`protocols` |string[&#93; |{nbsp} |Enabled protocols for TLS communication.
  Example of valid values for `TLS` protocol: `TLSv1.3`, `TLSv1.2`
 
- @return protocols to enable, by default (or if list is empty), all available protocols are enabled
+ Protocols to enable, by default (or if list is empty), all available protocols are enabled
 |`provider` |string |{nbsp} |Use explicit provider to obtain an instance of javax.net.ssl.SSLContext.
 
- @return provider to use, defaults to none (only #protocol() is used by default)
+ Provider to use, defaults to none (only protocol() is used by default)
 |`revocation` |xref:{rootdir}/config/io_helidon_common_tls_RevocationConfig.adoc[RevocationConfig] |{nbsp} |Certificate revocation check configuration.
 
- @return certificate revocation configuration
+ Certificate revocation configuration
 |`secure-random-algorithm` |string |{nbsp} |Algorithm to use when creating a new secure random.
 
- @return algorithm to use, by default uses java.security.SecureRandom constructor
+ Algorithm to use, by default uses java.security.SecureRandom constructor
 |`secure-random-provider` |string |{nbsp} |Provider to use when creating a new secure random.
- When defined, #secureRandomAlgorithm() must be defined as well.
+ When defined, secureRandomAlgorithm() must be defined as well.
 
- @return provider to use, by default no provider is specified
-|`session-cache-size` |int |`1024` |SSL session cache size.
+ Provider to use, by default no provider is specified
+|`session-cache-size` |int |`20480` |SSL session cache size.
 
- @return session cache size, defaults to 1024
-|`session-timeout` |Duration |`PT30M` |SSL session timeout.
+ Session cache size, defaults to DEFAULT_SESSION_CACHE_SIZE.
+|`session-timeout` |Duration |`PT24H` |SSL session timeout.
 
- @return session timeout, defaults to 30 minutes
+ Session timeout, defaults to DEFAULT_SESSION_TIMEOUT.
 |`trust` |X509Certificate[&#93; |{nbsp} |List of certificates that form the trust manager.
 
- @return certificates to be trusted
+ Certificates to be trusted
 |`trust-all` |boolean |`false` |Trust any certificate provided by the other side of communication.
 
  <b>This is a dangerous setting: </b> if set to `true`, any certificate will be accepted, throwing away
  most of the security advantages of TLS. <b>NEVER</b> do this in production.
 
- @return whether to trust all certificates, do not use in production
+ Whether to trust all certificates, do not use in production
 |`trust-manager-factory-algorithm` |string |{nbsp} |Trust manager factory algorithm.
 
- @return algorithm to use
+ Algorithm to use
 
 |===
 

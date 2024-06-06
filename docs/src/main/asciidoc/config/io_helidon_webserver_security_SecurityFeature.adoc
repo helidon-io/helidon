@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -54,22 +54,22 @@ This type provides the following service implementations:
 
 |`defaults` |xref:{rootdir}/config/io_helidon_webserver_security_SecurityHandler.adoc[SecurityHandler] |`SecurityHandler.create()` |The default security handler.
 
- @return security handler defaults
+ Security handler defaults
 |`paths` |xref:{rootdir}/config/io_helidon_webserver_security_PathsConfig.adoc[PathsConfig[&#93;] |{nbsp} |Configuration for webserver paths.
 
- @return path configuration
+ Path configuration
 |`security` |xref:{rootdir}/config/io_helidon_security_Security.adoc[Security] |{nbsp} |Security associated with this feature.
  If not specified here, the feature uses security registered with
- io.helidon.common.context.Contexts#globalContext(), if not found, it creates a new
+ io.helidon.common.context.Contexts.globalContext(), if not found, it creates a new
  instance from root of configuration (using `security` key).
 
  This configuration allows usage of a different security instance for a specific security feature setup.
 
- @return security instance to be used to handle security in this feature configuration
+ Security instance to be used to handle security in this feature configuration
 |`weight` |double |`800.0` |Weight of the security feature. Value is:
- `io.helidon.webserver.security.SecurityFeature#WEIGHT`.
+ io.helidon.webserver.security.SecurityFeature.WEIGHT.
 
- @return weight of the feature
+ Weight of the feature
 
 |===
 

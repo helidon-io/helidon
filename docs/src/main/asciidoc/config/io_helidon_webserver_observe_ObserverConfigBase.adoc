@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ Type: link:{javadoc-base-url}/io.helidon.webserver.observe/io/helidon/webserver/
 
 |`enabled` |boolean |`true` |Whether this observer is enabled.
 
- @return `false` to disable observer
+ `false` to disable observer
 
 |===
 
