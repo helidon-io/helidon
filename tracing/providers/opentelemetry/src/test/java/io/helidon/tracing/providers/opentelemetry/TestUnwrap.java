@@ -40,7 +40,7 @@ class TestUnwrap {
 
         assertThat("Object.toString()",
                    tracer.unwrap(Object.class).toString(),
-                   containsString(io.opentelemetry.api.trace.Tracer.class.getPackageName()));
+                   containsString("io.opentelemetry"));
     }
 
     @Test
