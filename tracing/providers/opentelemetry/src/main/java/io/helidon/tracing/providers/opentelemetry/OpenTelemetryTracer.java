@@ -96,12 +96,13 @@ class OpenTelemetryTracer implements Tracer {
 
     @Override
     public <T> T unwrap(Class<T> tracerClass) {
-        if (tracerClass.isInstance(this)) {
-            return tracerClass.cast(this);
-        }
         if (tracerClass.isAssignableFrom(delegate.getClass())) {
             return tracerClass.cast(delegate);
         }
+        if (tracerClass.isInstance(this)) {
+            return tracerClass.cast(this);
+        }
+
         throw new IllegalArgumentException("Cannot provide an instance of " + tracerClass.getName()
                                                    + ", telemetry tracer is: " + delegate.getClass().getName());
     }

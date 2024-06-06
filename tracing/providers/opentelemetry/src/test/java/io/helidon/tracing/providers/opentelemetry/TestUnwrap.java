@@ -22,6 +22,7 @@ import io.opentelemetry.api.trace.Tracer;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
 
 class TestUnwrap {
@@ -32,6 +33,14 @@ class TestUnwrap {
         assertThat("Tracer unwrapped",
                    tracer.unwrap(Tracer.class),
                    instanceOf(Tracer.class));
+
+        assertThat("Delegate unwrapped",
+                   tracer.unwrap(io.opentelemetry.api.trace.Tracer.class),
+                   instanceOf(io.opentelemetry.api.trace.Tracer.class));
+
+        assertThat("Object.toString()",
+                   tracer.unwrap(Object.class).toString(),
+                   containsString("io.opentelemetry"));
     }
 
     @Test
