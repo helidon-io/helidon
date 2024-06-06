@@ -27,11 +27,14 @@ Possible improvements:
 - @value - if possible, find the actual value (string, int etc.) and add it as `thevalue`
 - @see - create a proper javadoc reference (as for @link)
  */
-class Javadoc {
+final class Javadoc {
     private static final Pattern JAVADOC_CODE = Pattern.compile("\\{@code (.*?)}");
     private static final Pattern JAVADOC_LINK = Pattern.compile("\\{@link (.*?)}");
     private static final Pattern JAVADOC_VALUE = Pattern.compile("\\{@value (.*?)}");
     private static final Pattern JAVADOC_SEE = Pattern.compile("\\{@see (.*?)}");
+
+    private Javadoc() {
+    }
 
     /**
      * Parses a Javadoc comment (provided as a string) into text that can be used for display/docs of the configuration option.
