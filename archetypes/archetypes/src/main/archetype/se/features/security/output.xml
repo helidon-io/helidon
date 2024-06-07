@@ -585,8 +585,8 @@ curl -v -u "john:changeit" http://localhost:8080/service1
             </output>
         </method>
         <method name="security-abac">
-            <output if="${security.atz} contains ['abac']">
-                <model>
+            <output if="${security}">
+                <model if="${security.atz} contains ['abac']">
                     <list key="dependencies">
                         <map>
                             <value key="groupId">io.helidon.security.abac</value>

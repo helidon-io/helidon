@@ -75,12 +75,6 @@ Exercise the application as described above.
                         <include>src/*/resources/META-INF/**/*.mustache</include>
                     </includes>
                 </templates>
-                <files if="${flavor} == 'mp' &amp;&amp; ${media.json-lib} == 'jackson'">
-                    <directory>files</directory>
-                    <includes>
-                        <include>src/**/native-image/**/resource-config.json</include>
-                    </includes>
-                </files>
                 <templates engine="mustache" transformations="mustache" if="${docker.native-image}">
                     <directory>files</directory>
                     <includes>

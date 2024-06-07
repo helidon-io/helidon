@@ -74,6 +74,9 @@
                             <value key="artifactId">jakarta.xml.bind-api</value>
                         </map>
                     </list>
+                    <list key="initialize-at-build-time">
+                        <value>com.fasterxml.jackson.core</value>
+                    </list>
                     <list key="MainTest-methods">
                         <value order="0"><![CDATA[
     @Test

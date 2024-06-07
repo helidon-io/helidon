@@ -104,7 +104,7 @@
     </methods>
     <call method="metric-micrometer-json"/>
     <call method="metric-micrometer"/>
-    <output>
+    <output if="${metrics.provider} == 'micrometer'">
         <model>
             <list key="dependencies">
                 <map>

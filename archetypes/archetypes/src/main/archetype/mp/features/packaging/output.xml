@@ -20,6 +20,6 @@
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
-    <exec src="docker/output.xml" if="${docker}"/>
-    <exec src="jpms/output.xml" if="${jpms}"/>
+    <exec src="docker/output.xml"/>
+    <exec src="jpms/output.xml"/>
 </archetype-script>
