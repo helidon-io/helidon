@@ -17,7 +17,7 @@
 /**
  * Support for OCI authentication method based on OKE workload identity.
  */
-module io.helidon.integrations.oci.authentication.workload {
+module io.helidon.integrations.oci.authentication.okeworkload {
     requires io.helidon.common;
     requires io.helidon.service.registry;
     requires io.helidon.integrations.oci;

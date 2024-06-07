@@ -24,8 +24,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
-import com.oracle.bmc.auth.SessionTokenAuthenticationDetailsProvider.SessionTokenAuthenticationDetailsProviderBuilder;
-
 /**
  * Configuration of the {@code config} authentication method.
  */
@@ -121,7 +119,7 @@ interface SessionTokenMethodConfigBlueprint {
      * Defaults to 0, to refresh immediately (implemented in the authentication details provider).
      *
      * @return initial refresh delay
-     * @see SessionTokenAuthenticationDetailsProviderBuilder#initialRefreshDelay(long)
+     * @see com.oracle.bmc.auth.SessionTokenAuthenticationDetailsProvider.SessionTokenAuthenticationDetailsProviderBuilder#initialRefreshDelay(long)
      */
     @Option.Configured
     Optional<Duration> initialRefreshDelay();
@@ -131,7 +129,7 @@ interface SessionTokenMethodConfigBlueprint {
      * Defaults to 55 minutes (implemented in the authentication details provider).
      *
      * @return refresh period
-     * @see SessionTokenAuthenticationDetailsProviderBuilder#refreshPeriod(long)
+     * @see com.oracle.bmc.auth.SessionTokenAuthenticationDetailsProvider.SessionTokenAuthenticationDetailsProviderBuilder#refreshPeriod(long)
      */
     @Option.Configured
     Optional<Duration> refreshPeriod();

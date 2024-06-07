@@ -18,6 +18,8 @@ package io.helidon.builder.codegen;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.net.URI;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -84,6 +86,8 @@ public class TypesTest {
         checkField(toCheck, checked, fields, "ARRAY_LIST", ArrayList.class);
         checkField(toCheck, checked, fields, "LINKED_HASH_SET", LinkedHashSet.class);
         checkField(toCheck, checked, fields, "CHAR_ARRAY", char[].class);
+        checkField(toCheck, checked, fields, "PATH", Path.class);
+        checkField(toCheck, checked, fields, "URI", URI.class);
         checkField(toCheck, checked, fields, "SERVICE_REGISTRY", ServiceRegistry.class);
         checkField(toCheck, checked, fields, "GLOBAL_SERVICE_REGISTRY", GlobalServiceRegistry.class);
         checkField(toCheck, checked, fields, "GENERATED_SERVICE", GeneratedService.class);

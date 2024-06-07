@@ -57,9 +57,8 @@ interface OciConfigBlueprint {
      * <p>
      * Known and supported authentication strategies for public OCI:
      * <ul>
-     *     <li>{@value #ATN_METHOD_AUTO} - use the list of {@link #allowedAtnMethods()} (in the provided order), and choose
-     *     the first one
-     *     capable of providing data</li>
+     *     <li>{@value #ATN_METHOD_AUTO} - use the list of {@link io.helidon.integrations.oci.OciConfig#allowedAtnMethods()}
+     *          (in the provided order), and choose the first one capable of providing data</li>
      *     <li>{@value AuthenticationMethodConfig#METHOD} -
      *     use configuration of the application to obtain values needed to set up connectivity, uses
      *     {@link com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider}</li>
@@ -83,12 +82,13 @@ interface OciConfigBlueprint {
     String atnMethod();
 
     /**
-     * List of attempted authentication strategies in case {@link #atnMethod()} is set to {@value #ATN_METHOD_AUTO}.
+     * List of attempted authentication strategies in case {@link io.helidon.integrations.oci.OciConfig#atnMethod()} is set
+     * to {@value #ATN_METHOD_AUTO}.
      * <p>
      * In case the list is empty, all available strategies will be tried, ordered by their {@link io.helidon.common.Weight}
      *
      * @return list of authentication strategies to be tried
-     * @see #atnMethod()
+     * @see io.helidon.integrations.oci.OciConfig#atnMethod()
      */
     @Option.Configured
     List<String> allowedAtnMethods();
@@ -96,7 +96,7 @@ interface OciConfigBlueprint {
     /**
      * Config method configuration (if provided and used).
      *
-     * @return information needed for config {@link #atnMethod()}
+     * @return information needed for config {@link io.helidon.integrations.oci.OciConfig#atnMethod()}
      */
     @Option.Configured("authentication.config")
     Optional<ConfigMethodConfig> configMethodConfig();
@@ -104,7 +104,7 @@ interface OciConfigBlueprint {
     /**
      * Config file method configuration (if provided and used).
      *
-     * @return information to customize config for {@link #atnMethod()}
+     * @return information to customize config for {@link io.helidon.integrations.oci.OciConfig#atnMethod()}
      */
     @Option.Configured("authentication.config-file")
     Optional<ConfigFileMethodConfig> configFileMethodConfig();
@@ -112,7 +112,7 @@ interface OciConfigBlueprint {
     /**
      * Session token method configuration (if provided and used).
      *
-     * @return information to customize config for {@link #atnMethod()}
+     * @return information to customize config for {@link io.helidon.integrations.oci.OciConfig#atnMethod()}
      */
     @Option.Configured("authentication.session-token")
     Optional<SessionTokenMethodConfig> sessionTokenMethodConfig();
