@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -44,10 +44,10 @@ Type: link:{javadoc-base-url}/io.helidon.integrations.neo4j/io/helidon/integrati
 
 |`authentication-enabled` |boolean |`true` |Enable authentication.
 |`certificate` |Path |{nbsp} |Set certificate path.
-|`connection-acquisition-timeout` |Duration |`PT1MS` |Set connection acquisition timeout.
+|`connection-acquisition-timeout` |Duration |`PT1M` |Set connection acquisition timeout.
 |`encrypted` |boolean |{nbsp} |Enable encrypted field.
 |`hostname-verification-enabled` |boolean |{nbsp} |Enable hostname verification.
-|`idle-time-before-connection-test` |Duration |`PT-1MS` |Set idle time.
+|`idle-time-before-connection-test` |Duration |`PT1MS` |Set idle time.
 |`log-leaked-sessions` |boolean |{nbsp} |Enable log leaked sessions.
 |`max-connection-lifetime` |Duration |`PT5H` |Set max life time.
 |`max-connection-pool-size` |int |`100` |Set pool size.

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -17,17 +17,17 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 ifndef::rootdir[:rootdir: {docdir}/..]
-:description: Configuration of io.helidon.faulttolerance.Async
-:keywords: helidon, config, io.helidon.faulttolerance.Async
-:basic-table-intro: The table below lists the configuration keys that configure io.helidon.faulttolerance.Async
+:description: Configuration of io.helidon.webclient.grpc.GrpcClient
+:keywords: helidon, config, io.helidon.webclient.grpc.GrpcClient
+:basic-table-intro: The table below lists the configuration keys that configure io.helidon.webclient.grpc.GrpcClient
 include::{rootdir}/includes/attributes.adoc[]
 
-= Async (faulttolerance) Configuration
+= GrpcClient (webclient.grpc) Configuration
 
 // tag::config[]
 
 
-Type: link:{javadoc-base-url}/io.helidon.faulttolerance/io/helidon/faulttolerance/Async.html[io.helidon.faulttolerance.Async]
+Type: link:{javadoc-base-url}/io.helidon.webclient.grpc/io/helidon/webclient/grpc/GrpcClient.html[io.helidon.webclient.grpc.GrpcClient]
 
 
 
@@ -42,10 +42,9 @@ Type: link:{javadoc-base-url}/io.helidon.faulttolerance/io/helidon/faulttoleranc
 |===
 |key |type |default value |description
 
-|`executor-name` |string |{nbsp} |Name of an executor service. This is only honored when service registry is used.
+|`protocol-config` |xref:{rootdir}/config/io_helidon_webclient_grpc_GrpcClientProtocolConfig.adoc[GrpcClientProtocolConfig] |`create()` |gRPC specific configuration.
 
- Name fo the java.util.concurrent.ExecutorService to lookup
- @see #executor()
+ Protocol specific configuration
 
 |===
 

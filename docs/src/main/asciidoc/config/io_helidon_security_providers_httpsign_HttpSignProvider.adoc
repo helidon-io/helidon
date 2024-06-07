@@ -77,20 +77,20 @@ This type provides the following service implementations:
           keys: [
           {
               key-id = "service1"
-              hmac.secret = "${CLEAR=changeit}"
+              hmac.secret = "${CLEAR=password}"
           }]
       }
   }
  }
  </pre>
 |`optional` |boolean |`true` |Set whether the signature is optional. If set to true (default), this provider will
- SecurityResponse.SecurityStatus#ABSTAIN from this request if signature is not
- present. If set to false, this provider will SecurityResponse.SecurityStatus#FAILURE fail
+ SecurityResponse.SecurityStatus.ABSTAIN from this request if signature is not
+ present. If set to false, this provider will SecurityResponse.SecurityStatus.FAILURE fail
  if signature is not present.
 |`outbound` |xref:{rootdir}/config/io_helidon_security_providers_common_OutboundConfig.adoc[OutboundConfig] |{nbsp} |Add outbound targets to this builder.
  The targets are used to chose what to do for outbound communication.
  The targets should have OutboundTargetDefinition attached through
- OutboundTarget.Builder#customObject(Class, Object) to tell us how to sign
+ OutboundTarget.Builder.customObject(Class, Object) to tell us how to sign
  the request.
 
  The same can be done through configuration:
@@ -108,21 +108,21 @@ This type provides the following service implementations:
           # This configures the OutboundTargetDefinition
           signature {
               key-id = "service1"
-              hmac.secret = "${CLEAR=changeit}"
+              hmac.secret = "${CLEAR=password}"
           }
       }]
   }
  }
  </pre>
 |`realm` |string |`helidon` |Realm to use for challenging inbound requests that do not have "Authorization" header
- in case header is HttpSignHeader#AUTHORIZATION and singatures are not optional.
+ in case header is HttpSignHeader.AUTHORIZATION and singatures are not optional.
 |`sign-headers` |xref:{rootdir}/config/io_helidon_security_providers_httpsign_SignedHeadersConfig_HeadersConfig.adoc[HeadersConfig[&#93;] |{nbsp} |Override the default inbound required headers (e.g. headers that MUST be signed and
  headers that MUST be signed IF present).
 
  Defaults:
 
 - get, head, delete methods: date, (request-target), host are mandatory; authorization if present (unless we are
- creating/validating the HttpSignHeader#AUTHORIZATION ourselves
+ creating/validating the HttpSignHeader.AUTHORIZATION ourselves
 - put, post: same as above, with addition of: content-length, content-type and digest if present
  
 - for other methods: date, (request-target)

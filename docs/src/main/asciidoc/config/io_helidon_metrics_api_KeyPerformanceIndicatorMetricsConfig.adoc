@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -44,10 +44,10 @@ Type: link:{javadoc-base-url}/io.helidon.metrics.api/io/helidon/metrics/api/KeyP
 
 |`extended` |boolean |`false` |Whether KPI extended metrics are enabled.
 
- @return true if KPI extended metrics are enabled; false otherwise
+ True if KPI extended metrics are enabled; false otherwise
 |`long-running-requests.threshold` |Duration |`PT10S` |Threshold in ms that characterizes whether a request is long running.
 
- @return threshold in ms indicating a long-running request
+ Threshold in ms indicating a long-running request
 
 |===
 

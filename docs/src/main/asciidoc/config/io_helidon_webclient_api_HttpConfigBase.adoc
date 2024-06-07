@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -44,36 +44,36 @@ Type: link:{javadoc-base-url}/io.helidon.webclient.api/io/helidon/webclient/api/
 
 |`connect-timeout` |Duration |{nbsp} |Connect timeout.
 
- @return connect timeout
+ Connect timeout
  @see io.helidon.common.socket.SocketOptions#connectTimeout()
 |`follow-redirects` |boolean |`true` |Whether to follow redirects.
 
- @return whether to follow redirects
+ Whether to follow redirects
 |`keep-alive` |boolean |`true` |Determines if connection keep alive is enabled (NOT socket keep alive, but HTTP connection keep alive, to re-use
  the same connection for multiple requests).
 
- @return keep alive for this connection
+ Keep alive for this connection
  @see io.helidon.common.socket.SocketOptions#socketKeepAlive()
 |`max-redirects` |int |`10` |Max number of followed redirects.
- This is ignored if #followRedirects() option is `false`.
+ This is ignored if followRedirects() option is `false`.
 
- @return max number of followed redirects
+ Max number of followed redirects
 |`properties` |Map&lt;string, string&gt; |{nbsp} |Properties configured for this client. These properties are propagated through client request, to be used by
  services (and possibly for other purposes).
 
- @return map of client properties
+ Map of client properties
 |`proxy` |xref:{rootdir}/config/io_helidon_webclient_api_Proxy.adoc[Proxy] |{nbsp} |Proxy configuration to be used for requests.
 
- @return proxy to use, defaults to Proxy#noProxy()
+ Proxy to use, defaults to Proxy.noProxy()
 |`read-timeout` |Duration |{nbsp} |Read timeout.
 
- @return read timeout
+ Read timeout
  @see io.helidon.common.socket.SocketOptions#readTimeout()
 |`tls` |xref:{rootdir}/config/io_helidon_common_tls_Tls.adoc[Tls] |{nbsp} |TLS configuration for any TLS request from this client.
  TLS can also be configured per request.
  TLS is used when the protocol is set to `https`.
 
- @return TLS configuration to use
+ TLS configuration to use
 
 |===
 
