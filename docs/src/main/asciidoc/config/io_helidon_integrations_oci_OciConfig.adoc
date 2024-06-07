@@ -44,44 +44,51 @@ This is a standalone configuration type, prefix from configuration root: `helido
 |===
 |key |type |default value |description
 
-|`allowed-atn-strategies` |string[&#93; |{nbsp} |List of attempted authentication strategies in case atnStrategy() is set to STRATEGY_AUTO.
+|`allowed-atn-methods` |string[&#93; |{nbsp} |List of attempted authentication strategies in case atnMethod() is set to ATN_METHOD_AUTO.
 
  In case the list is empty, all available strategies will be tried, ordered by their io.helidon.common.Weight
 
  List of authentication strategies to be tried
- @see #atnStrategy()
-|`atn-strategy` |string |`auto` |Authentication strategy to use. If the configured strategy is not available, an exception
+ See atnMethod()
+|`atn-method` |string |`auto` |Authentication method to use. If the configured method is not available, an exception
  would be thrown for OCI related services.
 
  Known and supported authentication strategies for public OCI:
 
-- STRATEGY_AUTO - use the list of allowedAtnStrategies() (in the provided order), and choose
+- ATN_METHOD_AUTO - use the list of allowedAtnMethods() (in the provided order), and choose
      the first one
      capable of providing data
-- AtnStrategyConfig.STRATEGY -
+- AuthenticationMethodConfig.METHOD -
      use configuration of the application to obtain values needed to set up connectivity, uses
      com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider
-- AtnStrategyConfigFile.STRATEGY - use configuration file of OCI (`home/.oci/config`), uses
+- AuthenticationMethodConfigFile.METHOD - use configuration file of OCI (`home/.oci/config`), uses
      com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider
-- AtnStrategyResourcePrincipal.STRATEGY  - use identity of the OCI resource the service is executed on
+- `resource-principal`  - use identity of the OCI resource the service is executed on
      (fn), uses
-     com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider
-- AtnStrategyInstancePrincipal.STRATEGY - use identity of the OCI instance the service is running on, uses
-     com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider
+     com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider, and is available in a
+     separate module `helidon-integrations-oci-authentication-resource`
+- `instance-principal` - use identity of the OCI instance the service is running on, uses
+     com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider, and is available in a
+     separate module `helidon-integrations-oci-authentication-resource`
+- `workload` - use workload identity of the OCI Kubernetes workload, available in a
+     separate module `helidon-integrations-oci-authentication-workload`
 
-The authentication strategy to apply
+The authentication method to apply
 |`atn-timeout` |Duration |`PT10S` |Timeout of authentication operations, where applicable.
  This is a timeout for each operation (if there are retries, each timeout will be this duration).
  Defaults to 10 seconds.
 
  Authentication operation timeout
-|`config-file-strategy` |xref:{rootdir}/config/io_helidon_integrations_oci_ConfigFileStrategyConfig.adoc[ConfigFileStrategyConfig] |{nbsp} |Config file strategy configuration (if provided and used).
+|`authentication.config` |xref:{rootdir}/config/io_helidon_integrations_oci_ConfigMethodConfig.adoc[ConfigMethodConfig] |{nbsp} |Config method configuration (if provided and used).
 
- Information to customize config for atnStrategy()
-|`config-strategy` |xref:{rootdir}/config/io_helidon_integrations_oci_ConfigStrategyConfig.adoc[ConfigStrategyConfig] |{nbsp} |Config strategy configuration (if provided and used).
+ Information needed for config atnMethod()
+|`authentication.config-file` |xref:{rootdir}/config/io_helidon_integrations_oci_ConfigFileMethodConfig.adoc[ConfigFileMethodConfig] |{nbsp} |Config file method configuration (if provided and used).
 
- Information needed for config atnStrategy()
-|`imds-base-uri` |URI |{nbsp} |The OCI IMDS URI (http URL pointing to the metadata service, if customization needed.
+ Information to customize config for atnMethod()
+|`authentication.session-token` |xref:{rootdir}/config/io_helidon_integrations_oci_SessionTokenMethodConfig.adoc[SessionTokenMethodConfig] |{nbsp} |Session token method configuration (if provided and used).
+
+ Information to customize config for atnMethod()
+|`imds-base-uri` |URI |{nbsp} |The OCI IMDS URI (http URL pointing to the metadata service, if customization needed).
 
  The OCI IMDS URI
 |`imds-timeout` |Duration |`PT0.1S` |The OCI IMDS connection timeout. This is used to auto-detect availability.

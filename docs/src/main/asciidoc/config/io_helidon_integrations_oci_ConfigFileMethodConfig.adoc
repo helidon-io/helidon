@@ -17,17 +17,17 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 ifndef::rootdir[:rootdir: {docdir}/..]
-:description: Configuration of io.helidon.integrations.oci.ConfigFileStrategyConfig
-:keywords: helidon, config, io.helidon.integrations.oci.ConfigFileStrategyConfig
-:basic-table-intro: The table below lists the configuration keys that configure io.helidon.integrations.oci.ConfigFileStrategyConfig
+:description: Configuration of io.helidon.integrations.oci.ConfigFileMethodConfig
+:keywords: helidon, config, io.helidon.integrations.oci.ConfigFileMethodConfig
+:basic-table-intro: The table below lists the configuration keys that configure io.helidon.integrations.oci.ConfigFileMethodConfig
 include::{rootdir}/includes/attributes.adoc[]
 
-= ConfigFileStrategyConfig (integrations.oci) Configuration
+= ConfigFileMethodConfig (integrations.oci) Configuration
 
 // tag::config[]
 
 
-Type: link:{javadoc-base-url}/io.helidon.integrations.oci/io/helidon/integrations/oci/ConfigFileStrategyConfig.html[io.helidon.integrations.oci.ConfigFileStrategyConfig]
+Type: link:{javadoc-base-url}/io.helidon.integrations.oci/io/helidon/integrations/oci/ConfigFileMethodConfig.html[io.helidon.integrations.oci.ConfigFileMethodConfig]
 
 
 

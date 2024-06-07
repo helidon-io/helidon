@@ -24,6 +24,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
+import com.oracle.bmc.auth.SessionTokenAuthenticationDetailsProvider.SessionTokenAuthenticationDetailsProviderBuilder;
+
 /**
  * Configuration of the {@code config} authentication method.
  */
@@ -43,7 +45,7 @@ interface SessionTokenMethodConfigBlueprint {
      * <p>
      * This configuration property must be provided in order to set the <a
      * href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm">API signing key's fingerprint</a>.
-     * See {@linkplain com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider#getFingerprint()} for more details.
+     * See {@link com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider#getFingerprint()} for more details.
      *
      * @return the OCI authentication fingerprint
      */
@@ -119,7 +121,7 @@ interface SessionTokenMethodConfigBlueprint {
      * Defaults to 0, to refresh immediately (implemented in the authentication details provider).
      *
      * @return initial refresh delay
-     * @see com.oracle.bmc.auth.SessionTokenAuthenticationDetailsProvider.SessionTokenAuthenticationDetailsProviderBuilder#initialRefreshDelay(long)
+     * @see SessionTokenAuthenticationDetailsProviderBuilder#initialRefreshDelay(long)
      */
     @Option.Configured
     Optional<Duration> initialRefreshDelay();
@@ -129,7 +131,7 @@ interface SessionTokenMethodConfigBlueprint {
      * Defaults to 55 minutes (implemented in the authentication details provider).
      *
      * @return refresh period
-     * @see com.oracle.bmc.auth.SessionTokenAuthenticationDetailsProvider.SessionTokenAuthenticationDetailsProviderBuilder#refreshPeriod(long)
+     * @see SessionTokenAuthenticationDetailsProviderBuilder#refreshPeriod(long)
      */
     @Option.Configured
     Optional<Duration> refreshPeriod();

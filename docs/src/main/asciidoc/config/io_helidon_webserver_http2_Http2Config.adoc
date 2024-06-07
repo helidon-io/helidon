@@ -64,7 +64,7 @@ This type provides the following service implementations:
 
 
  Duration
- @see <a href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO_8601 Durations</a>
+ See <a href="https://en.wikipedia.org/wiki/ISO_8601.Durations">ISO_8601 Durations</a>
 |`initial-window-size` |int |`1048576` |This setting indicates the sender's maximum window size in bytes for stream-level flow control.
  Default and maximum value is 2<sup>31</sup>-1 = 2147483647 bytes. This setting affects the window size
  of HTTP/2 connection.
@@ -97,13 +97,13 @@ This type provides the following service implementations:
  Default value is `100`.
 
  Maximum number of rapid resets
- @see <a href="https://nvd.nist.gov/vuln/detail/CVE-2023-44487">CVE-2023-44487</a>
+ See <a href="https://nvd.nist.gov/vuln/detail/CVE-2023-44487">CVE-2023-44487</a>
 |`rapid-reset-check-period` |Duration |`PT10S` |Period for counting rapid resets(stream RST sent by client before any data have been sent by server).
  Default value is `PT10S`.
 
  Duration
- @see <a href="https://nvd.nist.gov/vuln/detail/CVE-2023-44487">CVE-2023-44487</a>
- @see <a href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO_8601 Durations</a>
+ See <a href="https://nvd.nist.gov/vuln/detail/CVE-2023-44487">CVE-2023-44487</a>
+ See <a href="https://en.wikipedia.org/wiki/ISO_8601.Durations">ISO_8601 Durations</a>
 |`requested-uri-discovery` |xref:{rootdir}/config/io_helidon_http_RequestedUriDiscoveryContext.adoc[RequestedUriDiscoveryContext] |{nbsp} |Requested URI discovery settings.
 
  Settings for computing the requested URI

@@ -70,7 +70,7 @@ Type: link:{javadoc-base-url}/io.helidon.common.tls/io/helidon/common/tls/Tls.ht
 |`manager` |io.helidon.common.tls.TlsManager (service provider interface) |{nbsp} |The Tls manager. If one is not explicitly defined in the config then a default manager will be created.
 
  The tls manager of the tls instance
- @see ConfiguredTlsManager
+ See ConfiguredTlsManager
 |`private-key` |PrivateKey |{nbsp} |Private key to use. For server side TLS, this is required.
  For client side TLS, this is optional (used when mutual TLS is enabled).
 

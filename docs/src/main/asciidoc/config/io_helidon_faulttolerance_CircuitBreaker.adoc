@@ -53,7 +53,7 @@ If errorRatio is 40, and volume is 10, 4 failed requests will open the circuit.
  Default is DEFAULT_ERROR_RATIO.
 
  Percent of failure that trigger the circuit to open
- @see #volume()
+ See volume()
 |`success-threshold` |int |`1` |How many successful calls will close a half-open circuit.
  Nevertheless, the first failed call will open the circuit again.
  Default is DEFAULT_SUCCESS_THRESHOLD.
@@ -63,7 +63,7 @@ If errorRatio is 40, and volume is 10, 4 failed requests will open the circuit.
  Default is DEFAULT_VOLUME.
 
  How big a window is used to calculate error errorRatio
- @see #errorRatio()
+ See errorRatio()
 
 |===
 

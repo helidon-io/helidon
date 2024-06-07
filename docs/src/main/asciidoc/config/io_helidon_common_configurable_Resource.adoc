@@ -66,8 +66,8 @@ Type: link:{javadoc-base-url}/io.helidon.common.configurable/io/helidon/common/c
 |`uri` |URI |{nbsp} |Resource is available on a java.net.URI.
 
  Of the resource
- @see #proxy()
- @see #useProxy()
+ See proxy()
+ See useProxy()
 |`use-proxy` |boolean |`true` |Whether to use proxy. If set to `false`, proxy will not be used even if configured.
  When set to `true` (default), proxy will be used if configured.
 

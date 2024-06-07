@@ -30,8 +30,9 @@ Possible improvements:
 final class Javadoc {
     private static final Pattern JAVADOC_CODE = Pattern.compile("\\{@code (.*?)}");
     private static final Pattern JAVADOC_LINK = Pattern.compile("\\{@link (.*?)}");
+    private static final Pattern JAVADOC_LINKPLAIN = Pattern.compile("\\{@linkplain (.*?)}");
     private static final Pattern JAVADOC_VALUE = Pattern.compile("\\{@value (.*?)}");
-    private static final Pattern JAVADOC_SEE = Pattern.compile("\\{@see (.*?)}");
+    private static final Pattern JAVADOC_SEE = Pattern.compile("@see (.*?\n)");
 
     private Javadoc() {
     }
@@ -44,6 +45,7 @@ final class Javadoc {
      *     <li>{@code @param} is stripped from the text</li>
      *     <li>Any {@code @code} section: the code tag is removed, and surrounded with {@code '}</li>
      *     <li>Any {@code @link} section: the link tag is removed</li>
+     *     <li>Any {@code @linkplain} section: the linkplain tag is removed</li>
      *     <li>Any {@code @value} section: the value tag is removed, {code #} is replaced with {@code .}</li>
      *     <li>Any {@code @see} section: the see tag is removed, prefixed with {@code See},
      *                  {code #} is replaced with {@code .}</li>
@@ -65,8 +67,10 @@ final class Javadoc {
         }
         // replace all {@code xxx} with 'xxx'
         javadoc = JAVADOC_CODE.matcher(javadoc).replaceAll(it -> javadocCode(it.group(1)));
-        // replace all {@link ...} with just the name
+        // replace all {@link ...} with just the link
         javadoc = JAVADOC_LINK.matcher(javadoc).replaceAll(it -> javadocLink(it.group(1)));
+        // replace all {@link ...} with just the name
+        javadoc = JAVADOC_LINKPLAIN.matcher(javadoc).replaceAll(it -> javadocLink(it.group(1)));
         // replace all {@value ...} with just the reference
         javadoc = JAVADOC_VALUE.matcher(javadoc).replaceAll(it -> javadocValue(it.group(1)));
         // replace all {@see ...} with just the reference
