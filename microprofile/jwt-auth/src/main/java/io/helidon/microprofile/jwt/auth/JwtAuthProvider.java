@@ -69,7 +69,6 @@ import io.helidon.security.SecurityException;
 import io.helidon.security.SecurityResponse;
 import io.helidon.security.Subject;
 import io.helidon.security.SubjectType;
-import io.helidon.security.jwt.ClaimValidator;
 import io.helidon.security.jwt.EncryptedJwt;
 import io.helidon.security.jwt.Jwt;
 import io.helidon.security.jwt.JwtException;
@@ -96,8 +95,9 @@ import org.eclipse.microprofile.auth.LoginConfig;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
-import static io.helidon.security.EndpointConfig.PROPERTY_OUTBOUND_ID;
 import static java.nio.charset.StandardCharsets.UTF_8;
+
+import static io.helidon.security.EndpointConfig.PROPERTY_OUTBOUND_ID;
 
 /**
  * Provider that provides JWT authentication.

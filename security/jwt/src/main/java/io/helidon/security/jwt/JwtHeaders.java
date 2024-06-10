@@ -48,7 +48,7 @@ import jakarta.json.JsonValue;
  * @see #parseToken(String)
  */
 public class JwtHeaders extends JwtClaims {
-    
+
     static final String ALGORITHM = "alg";
     static final String ENCRYPTION = "enc";
     static final String TYPE = "typ";
@@ -65,7 +65,7 @@ public class JwtHeaders extends JwtClaims {
     static final String AGREEMENT_PARTYUINFO = "apu";
     static final String AGREEMENT_PARTYVINFO = "apv";
     static final String EPHEMERAL_PUBLIC_KEY = "epk";
-    
+
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     private final Optional<String> algorithm;
@@ -256,7 +256,11 @@ public class JwtHeaders extends JwtClaims {
         return critical;
     }
 
-
+    /**
+     * Return map of all header claims.
+     *
+     * @return header claims
+     */
     public Map<String, JsonValue> headerClaims() {
         return Collections.unmodifiableMap(headerClaims);
     }
@@ -266,7 +270,7 @@ public class JwtHeaders extends JwtClaims {
      */
     public static class Builder implements io.helidon.common.Builder<Builder, JwtHeaders> {
         private static final GenericType<List<String>> STRING_LIST_TYPE = new GenericType<>() { };
-        
+
         private static final Map<String, KnownField<?>> KNOWN_HEADER_CLAIMS;
         private static final KnownField<String> TYPE_FIELD = KnownField.create(TYPE, Builder::type);
         private static final KnownField<String> ALG_FIELD = KnownField.create(ALGORITHM, Builder::algorithm);

@@ -372,6 +372,7 @@ public final class JwtValidator {
         /**
          * Add new {@link MaxTokenAgeValidator} with the expected max token age.
          *
+         * @param expectedMaxTokenAge expected max token age
          * @return updated builder instance
          */
         public Builder addMaxTokenAgeValidator(Duration expectedMaxTokenAge) {
@@ -464,7 +465,7 @@ public final class JwtValidator {
             return claims;
         }
 
-        static abstract class BaseBuilder<B extends BaseBuilder<B, T>, T>
+        abstract static class BaseBuilder<B extends BaseBuilder<B, T>, T>
                 implements io.helidon.common.Builder<BaseBuilder<B, T>, T> {
 
             private JwtScope scope = JwtScope.PAYLOAD;
@@ -556,7 +557,7 @@ public final class JwtValidator {
             return optional;
         }
 
-        private static abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> extends CommonValidator.BaseBuilder<B, T> {
+        private abstract static class BaseBuilder<B extends BaseBuilder<B, T>, T> extends CommonValidator.BaseBuilder<B, T> {
 
             private boolean mandatory = false;
             private String missingClaimMessage;
@@ -619,7 +620,7 @@ public final class JwtValidator {
             return now == null ? Instant.now() : now;
         }
 
-        static abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> extends OptionalValidator.BaseBuilder<B, T> {
+        abstract static class BaseBuilder<B extends BaseBuilder<B, T>, T> extends OptionalValidator.BaseBuilder<B, T> {
 
             private Instant now = null;
             private Duration allowedTimeSkew = Duration.ofSeconds(5);
@@ -788,7 +789,7 @@ public final class JwtValidator {
     }
 
     /**
-     * Validator of a string field obtained from a
+     * Validator of a string field obtained from the JWT.
      */
     public static final class FieldValidator extends OptionalValidator {
         private final Function<Jwt, Optional<String>> fieldAccessor;
@@ -800,7 +801,6 @@ public final class JwtValidator {
             this.name = builder.name;
             this.fieldAccessor = builder.fieldAccessor;
             this.expectedValue = builder.expectedValue;
-            ;
         }
 
         /**
@@ -1102,7 +1102,7 @@ public final class JwtValidator {
     public static final class MaxTokenAgeValidator extends InstantValidator {
         private final Duration expectedMaxTokenAge;
 
-        public MaxTokenAgeValidator(Builder builder) {
+        private MaxTokenAgeValidator(Builder builder) {
             super(builder);
             this.expectedMaxTokenAge = builder.expectedMaxTokenAge;
         }
@@ -1172,7 +1172,7 @@ public final class JwtValidator {
     public static final class AudienceValidator extends OptionalValidator {
         private final Set<String> expectedAudience;
 
-        public AudienceValidator(Builder builder) {
+        private AudienceValidator(Builder builder) {
             super(builder);
             this.expectedAudience = Set.copyOf(builder.expectedAudience);
         }
