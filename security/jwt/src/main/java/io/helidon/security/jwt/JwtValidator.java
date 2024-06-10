@@ -1124,7 +1124,7 @@ public final class JwtValidator {
             maybeIssueTime.ifPresent(issueTime -> {
                 Instant now = instant();
                 Instant earliest = earliest(issueTime);
-                Instant latest = latest(issueTime).plus(expectedMaxTokenAge);
+                Instant latest = latest(earliest).plus(expectedMaxTokenAge);
                 if (earliest.isBefore(now) && latest.isAfter(now)) {
                     return;
                 }
