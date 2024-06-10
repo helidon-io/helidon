@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,7 @@ module io.helidon.dbclient.jdbc {
     exports io.helidon.dbclient.jdbc.spi;
 
     uses io.helidon.dbclient.jdbc.JdbcClientProvider;
+    uses io.helidon.dbclient.jdbc.spi.JdbcConnectionPoolProvider;
 
     provides io.helidon.dbclient.spi.DbClientProvider
             with io.helidon.dbclient.jdbc.JdbcClientProvider;
