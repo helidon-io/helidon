@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -104,41 +104,14 @@ The REST endpoint is implemented as a JAX-RS resource, and the shared queue (in 
 
 [source,java]
 ----
-@Path("rest")
-public class MessageQueueResource {
-
-    @Inject
-    private MessageQueue messageQueue;
-
-    @POST
-    @Consumes("text/plain")
-    public void push(String s) {
-        messageQueue.push(s);
-    }
-}
+include::{sourcedir}/mp/WebsocketSnippets.java[tag=snippet_1, indent=0]
 ----
 
 Here we opt for the use of an annotated WebSocket endpoint decorated by `@ServerEndpoint` that provides all the meta-data necessary for Helidon to create the endpoint.
 
 [source,java]
 ----
-@ServerEndpoint(
-        value = "/websocket",
-        encoders = { UppercaseEncoder.class })
-public class MessageBoardEndpoint {
-
-    @Inject
-    private MessageQueue messageQueue;
-
-    @OnMessage
-    public void onMessage(Session session, String message) {
-        if (message.equals("SEND")) {
-            while (!messageQueue.isEmpty()) {
-                session.getBasicRemote().sendObject(messageQueue.pop());
-            }
-        }
-    }
-}
+include::{sourcedir}/mp/WebsocketSnippets.java[tag=snippet_2, indent=0]
 ----
 
 Since `MessageBoardEndpoint` is just a POJO, it uses additional annotations for event handlers such as `@OnMessage`. One advantage of this approach, much like in the JAX-RS API, is that method signatures are not fixed. In the snipped above, the parameters (which could be specified in any order!) include the WebSocket session and the message received that triggered the call.
@@ -151,21 +124,7 @@ For instance, if in our example we include the following class:
 
 [source,java]
 ----
-@ApplicationScoped
-@RoutingPath("/web")
-public class MessageBoardApplication implements ServerApplicationConfig {
-    @Override
-    public Set<ServerEndpointConfig> getEndpointConfigs(
-            Set<Class<? extends Endpoint>> endpoints) {
-        assert endpoints.isEmpty();
-        return Collections.emptySet();      // No programmatic endpoints
-    }
-
-    @Override
-    public Set<Class<?>> getAnnotatedEndpointClasses(Set<Class<?>> endpoints) {
-        return endpoints;       // Returned scanned endpoints
-    }
-}
+include::{sourcedir}/mp/WebsocketSnippets.java[tag=snippet_3, indent=0]
 ----
 
 the root path for WebSocket endpoints will be  `"/web"` instead of the default `"/"`. Note that `@RoutingPath` is _not_ a bean defining annotation, thus the need to use `@ApplicationScoped` --which, as before, requires CDI bean discovery mode to be `annotated`. In addition to `@RoutingPath`, these classes can be annotated with `@RoutingName` to associate an endpoint with a Helidon named socket. Please refer to the Javadoc of that annotation for additional information.
@@ -184,22 +143,7 @@ We can modify the `MessageBoardApplication` above and bind it to a non-default s
 
 [source,java]
 ----
-@ApplicationScoped
-@RoutingPath("/web")
-@RoutingName(value = "admin", required = true)
-public class MessageBoardApplication implements ServerApplicationConfig {
-    @Override
-    public Set<ServerEndpointConfig> getEndpointConfigs(
-            Set<Class<? extends Endpoint>> endpoints) {
-        assert endpoints.isEmpty();
-        return Collections.emptySet();      // No programmatic endpoints
-    }
-
-    @Override
-    public Set<Class<?>> getAnnotatedEndpointClasses(Set<Class<?>> endpoints) {
-        return endpoints;       // Returned scanned endpoints
-    }
-}
+include::{sourcedir}/mp/WebsocketSnippets.java[tag=snippet_4, indent=0]
 ----
 
 The value of the `@RoutingName` annotation must match that of a configured application socket as shown in the following `application.yaml` file:

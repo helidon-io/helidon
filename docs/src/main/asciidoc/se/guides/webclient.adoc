@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -96,31 +96,19 @@ WebClient to send request to the greeting application.
 [source,java]
 .Create ClientExample class:
 ----
-package io.helidon.examples.quickstart.se;
-
-public class ClientExample {
-
-    public static void main(String[] args) {
-
-    }
-}
+include::{sourcedir}/se/guides/WebclientSnippets.java[tag=snippet_1, indent=0]
 ----
 
-Add the following code to create a WebClient instance. The builder approach allows you to create the WebClient with
-specific settings and improves the readability and simplicity of the code.
+Add the following code to the main method to create a WebClient instance.
+The builder approach allows you to create the WebClient with specific settings and improves the readability and simplicity of the
+code.
 
 [source,java]
 .Add WebClient instance to the main method:
 ----
-import io.helidon.http.media.jsonp.JsonpSupport;
-import io.helidon.webclient.WebClient;
-
-WebClient webClient = WebClient.builder()
-                .baseUri("http://localhost:8080")   <1>
-                .build();
+include::{sourcedir}/se/guides/WebclientSnippets.java[tag=snippet_2, indent=0]
 ----
 <1> The base URI of the outbound requests.
-
 
 By default, the Helidon quickstart application runs on localhost:8080. If for some reason the host name or port
 number of the quickstart application is changed, make sure that the baseURI is also modified to reflect that change.
@@ -130,13 +118,9 @@ be used to send a GET request to the greeting application.
 [source,java]
 .Send a GET request to the target endpoint:
 ----
-ClientResponseTyped<String> response = webClient.get()    <1>
-                .path("/greet")     <2>
-                .request(String.class);   <3>
-String entityString = response.entity();    <4>
-System.out.println(entityString);
+include::{sourcedir}/se/guides/WebclientSnippets.java[tag=snippet_3, indent=0]
 ----
-<1> Create a HTTP GET request.
+<1> Create an HTTP GET request.
 <2> Target endpoint path.
 <3> Execute the request
 <4> Return response entity handled as a String.
@@ -170,8 +154,8 @@ Open a new command prompt or terminal and run the ClientExample class you just c
 java -cp target/helidon-quickstart-se.jar io.helidon.examples.quickstart.se.ClientExample
 ----
 
-[source,bash]
-.Output:
+[source,json]
+.JSON response:
 ----
 {"message":"Hello World!"}
 ----
@@ -196,16 +180,9 @@ Once the dependency is added, the feature will be automatically loaded as a serv
 easily parse the JSON object.
 
 [source,java]
-.Replace String by JsonObject:
+.Replace String with JsonObject:
 ----
-import javax.json.JsonObject;
-
-
-ClientResponseTyped<JsonObject> response = webClient.get()
-        .path("/greet/David")
-        .request(JsonObject.class);  <1>
-String value = response.entity().getString("message");  <2>
-System.out.println(value);
+include::{sourcedir}/se/guides/WebclientSnippets.java[tag=snippet_4, indent=0]
 ----
 <1> Request a JsonObject as return value.
 <2> Extract the value of the JsonObject with name of `message`.
@@ -219,24 +196,12 @@ Hello David!
 ----
 
 It is also possible to change the greeting word by using a PUT request to `/greet/greeting` path. The request also
-needs to include a body with JSON type and using a structure like `{"greeting" : "value"}`.
+needs to include a body with JSON type and using a structure like `pass:[{"greeting" : "value"}]`.
 
 [source,java]
 .Modify the application greeting:
 ----
-import javax.json.Json;
-
-JsonObject entity = Json.createObjectBuilder() <1>
-        .add("greeting", "Bonjour")
-        .build();
-webClient.put()     <2>
-        .path("/greet/greeting")
-        .submit(entity);  <3>
-ClientResponseTyped<JsonObject> response = webClient.get()     <4>
-        .path("/greet/David")
-        .request(JsonObject.class);
-String entityString = response.entity().getString("message");  <5>
-System.out.println(entityString);
+include::{sourcedir}/se/guides/WebclientSnippets.java[tag=snippet_5, indent=0]
 ----
 <1> Create a JsonObject with key `greeting` and value `bonjour`.
 <2> Create a PUT request.
@@ -273,37 +238,13 @@ To enable support for this feature, the `helidon-webclient-metrics` dependency n
 
 ==== Set up metrics on WebClient instance
 
-Metrics can be registered on the WebClient directly. The following example shows how a `Counter` metric can be defined, created and monitored.
+Metrics can be registered on the WebClient directly.
+The following example shows how a `Counter` metric can be defined, created and monitored.
 
 [source,java]
 .Example of metric creation:
 ----
-import io.helidon.http.Method;
-import io.helidon.metrics.api.Counter;
-import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
-import io.helidon.webclient.api.ClientResponseTyped;
-import io.helidon.webclient.api.WebClient;
-import io.helidon.webclient.metrics.WebClientMetrics;
-import io.helidon.webclient.spi.WebClientService;
-
-public class ClientExample {
-
-    public static void main(String[] args) {
-        final MeterRegistry METER_REGISTRY = Metrics.globalRegistry();
-
-        String metricName = "counter.GET.localhost";       <1>
-
-        Counter counter = METER_REGISTRY.getOrCreate(Counter.builder(metricName));    <2>
-        System.out.println(metricName + ": " + counter.count());
-
-        WebClientService clientServiceMetric = WebClientMetrics.counter()
-                .methods(Method.GET)                // OPTIONAL
-                .success(true)                      // OPTIONAL
-                .errors(true)                       // OPTIONAL
-                .description("Metric Description")  // OPTIONAL
-                .nameFormat("counter.%1$s.%2$s")     <3>
-                .build();                            <4>
+include::{sourcedir}/se/guides/WebclientSnippets.java[tag=snippet_6, indent=0]
 ----
 <1> Specify the metric name.
 <2> From the `MeterRegistry`, create a Counter metric using the specified metric name.
@@ -326,12 +267,7 @@ parameter.
 [source,java]
 .Add the metric service to the WebClient:
 ----
-        WebClient webClient = WebClient.builder()
-                .baseUri("http://localhost:8080")
-                .addService(clientServiceMetric)           <1>
-                .build();
-
-        webClient.get().path("/greet").request();          <2>
+include::{sourcedir}/se/guides/WebclientSnippets.java[tag=snippet_7, indent=0]
 ----
 <1> Register the metric service to the webclient.
 <2> Send an HTTP GET request
@@ -341,7 +277,7 @@ To verify that the metric is set up correctly, print the value of the Counter at
 [source,java]
 .Print the metric count
 ----
-        System.out.println(metricName + ": " + counter.count());
+include::{sourcedir}/se/guides/WebclientSnippets.java[tag=snippet_8, indent=0]
 ----
 
 This will result to an output showing that a metric with the name of `counter.GET.localhost` was created with
@@ -378,30 +314,7 @@ be measured.
 [source,java]
 .Add the metric service to the WebClient via the Configuration:
 ----
-import io.helidon.http.Method;
-import io.helidon.metrics.api.Counter;
-import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
-import io.helidon.webclient.api.WebClient;
-
-public class ClientExample {
-
-    public static void main(String[] args) {
-        final MeterRegistry METER_REGISTRY = Metrics.globalRegistry();
-
-        String counterName = "counter.GET.localhost";             <1>
-
-        Counter counter = METER_REGISTRY.getOrCreate(Counter.builder(counterName));   <2>
-        System.out.println(counterName + ": " + counter.count());
-
-        Config config = Config.create();       <3>
-
-        WebClient webClient = WebClient.builder()
-                        .baseUri("http://localhost:8080")
-                        .config(config.get("client"))       <4>
-                        .build();
-        webClient.get().path("/greet").request();      <5>
-        System.out.println(counterName + ": " + counter.count());  <6>
+include::{sourcedir}/se/guides/WebclientSnippets.java[tag=snippet_9, indent=0]
 ----
 <1> Choose the metric name.
 <2> Create counter metric from `MeterRegistry`.

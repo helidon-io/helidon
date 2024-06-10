@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -48,16 +48,16 @@ This is a standalone configuration type, prefix from configuration root: `securi
 Such as:
 
  - xref:{rootdir}/config/io_helidon_security_providers_idcs_mapper_IdcsRoleMapperProvider.adoc[idcs-role-mapper (IdcsRoleMapperProvider)]
+ - xref:{rootdir}/config/io_helidon_security_providers_jwt_JwtProvider.adoc[jwt (JwtProvider)]
  - xref:{rootdir}/config/io_helidon_security_providers_httpauth_HttpBasicAuthProvider.adoc[http-basic-auth (HttpBasicAuthProvider)]
  - xref:{rootdir}/config/io_helidon_security_providers_idcs_mapper_IdcsMtRoleMapperProvider.adoc[idcs-role-mapper (IdcsMtRoleMapperProvider)]
  - xref:{rootdir}/config/io_helidon_security_providers_google_login_GoogleTokenProvider.adoc[google-login (GoogleTokenProvider)]
  - xref:{rootdir}/config/io_helidon_security_providers_oidc_OidcProvider.adoc[oidc (OidcProvider)]
  - xref:{rootdir}/config/io_helidon_security_providers_httpauth_HttpDigestAuthProvider.adoc[http-digest-auth (HttpDigestAuthProvider)]
- - xref:{rootdir}/config/io_helidon_security_providers_jwt_JwtProvider.adoc[jwt (JwtProvider)]
  - xref:{rootdir}/config/io_helidon_security_providers_header_HeaderAtnProvider.adoc[header-atn (HeaderAtnProvider)]
  - xref:{rootdir}/config/io_helidon_security_providers_abac_AbacProvider.adoc[abac (AbacProvider)]
 
- |{nbsp} |Add a provider, works as #addProvider(io.helidon.security.spi.SecurityProvider, String), where the name is set
+ |{nbsp} |Add a provider, works as addProvider(io.helidon.security.spi.SecurityProvider, String), where the name is set
  to `Class#getSimpleName()`.
 
 |===

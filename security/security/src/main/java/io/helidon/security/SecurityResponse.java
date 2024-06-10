@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -232,6 +232,12 @@ public abstract class SecurityResponse {
          * @return updated builder instance
          */
         public T requestHeaders(Map<String, List<String>> headers) {
+            headers.forEach((header, values) -> {
+                if (values.isEmpty()) {
+                    throw new IllegalArgumentException("Header values cannot be empty, at least one value is required."
+                                                               + "Request header name: " + header);
+                }
+            });
             this.requestHeaders.clear();
             this.requestHeaders.putAll(headers);
             return identity();
@@ -259,6 +265,10 @@ public abstract class SecurityResponse {
          * @return this instance
          */
         public T requestHeader(String header, List<String> values) {
+            if (values.isEmpty()) {
+                throw new IllegalArgumentException("Header values cannot be empty, at least one value is required."
+                                                           + "Request header name: " + header);
+            }
             requestHeaders.put(header, values);
             return identity();
         }
@@ -270,6 +280,12 @@ public abstract class SecurityResponse {
          * @return updated builder instance
          */
         public T responseHeaders(Map<String, List<String>> headers) {
+            headers.forEach((header, values) -> {
+                if (values.isEmpty()) {
+                    throw new IllegalArgumentException("Header values cannot be empty, at least one value is required."
+                                                               + "Response header name: " + header);
+                }
+            });
             this.responseHeaders.clear();
             this.responseHeaders.putAll(headers);
             return identity();
@@ -297,6 +313,10 @@ public abstract class SecurityResponse {
          * @return this instance
          */
         public T responseHeader(String header, List<String> values) {
+            if (values.isEmpty()) {
+                throw new IllegalArgumentException("Header values cannot be empty, at least one value is required."
+                                                           + "Response header name: " + header);
+            }
             responseHeaders.put(header, values);
             return identity();
         }

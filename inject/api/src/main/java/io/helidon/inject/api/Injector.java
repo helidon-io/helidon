@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,9 @@ package io.helidon.inject.api;
  * Note that the reference implementation of Injection only performs non-reflective, compile-time generation of service activators
  * for services that it manages. This Injector contract is mainly provided in order to allow other library extension
  * implementations to extend the model to perform other types of injection point resolution.
+ * @deprecated Helidon inject is deprecated and will be replaced in a future version
  */
+@Deprecated(forRemoval = true, since = "4.0.8")
 public interface Injector {
 
     /**

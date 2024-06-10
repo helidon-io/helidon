@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -430,11 +430,11 @@ docker build -t helidon-metrics-{flavor-lc} .
 kind: Service
 apiVersion: v1
 metadata:
-  name: helidon-metrics // <1>
+  name: helidon-metrics # <1>
   labels:
     app: helidon-metrics
   annotations:
-    prometheus.io/scrape: true // <2>
+    prometheus.io/scrape: "true" # <2>
 spec:
   type: NodePort
   selector:
@@ -449,7 +449,7 @@ apiVersion: apps/v1
 metadata:
   name: helidon-metrics
 spec:
-  replicas: 1 // <3>
+  replicas: 1 # <3>
   selector:
     matchLabels:
       app: helidon-metrics
@@ -486,7 +486,7 @@ kubectl get service/helidon-metrics
 [source,bash]
 ----
 NAME             TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
-helidon-metrics   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s // <1>
+helidon-metrics   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s # <1>
 ----
 <1> A service of type `NodePort` that serves the default routes on port `31143`.
 
@@ -520,12 +520,12 @@ metrics-prometheus-server-5fc5dc86cb-79lk4   2/2     Running   0          46s
 ----
 
 [source,bash]
-.Create a port-forward so you can access the server URL:
+.Create a port-forward, so you can access the server URL:
 ----
 kubectl --namespace default port-forward $POD_NAME 7090:9090
 ----
 
-Now open your browser and navigate to `http://localhost:7090/targets`.  Search for helidon on the page and you will see your
+Now open your browser and navigate to `http://localhost:7090/targets`.  Search for helidon on the page, and you will see your
 Helidon application as one of the Prometheus targets.
 
 ==== Final Cleanup

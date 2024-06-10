@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,13 +22,11 @@ import java.util.Optional;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.configurable.Resource;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Resources from a java keystore (PKCS12, JKS etc.).
  */
-@Configured
+@Prototype.Configured
 @Prototype.Blueprint
 @Prototype.CustomMethods(KeystoreKeysBlueprint.CustomMethods.class)
 interface KeystoreKeysBlueprint {
@@ -46,7 +44,8 @@ interface KeystoreKeysBlueprint {
      *
      * @return keystore resource, from file path, classpath, URL etc.
      */
-    @ConfiguredOption(required = true, key = "resource")
+    @Option.Required
+    @Option.Configured("resource")
     Resource keystore();
 
     /**
@@ -56,7 +55,8 @@ interface KeystoreKeysBlueprint {
      *
      * @return keystore type to load the key
      */
-    @ConfiguredOption(DEFAULT_KEYSTORE_TYPE)
+    @Option.Configured
+    @Option.Default(DEFAULT_KEYSTORE_TYPE)
     String type();
 
     /**
@@ -65,7 +65,7 @@ interface KeystoreKeysBlueprint {
      * @return keystore password to use
      */
     @Option.Confidential
-    @ConfiguredOption
+    @Option.Configured
     Optional<char[]> passphrase();
 
     /**
@@ -73,7 +73,7 @@ interface KeystoreKeysBlueprint {
      *
      * @return alias of the key in the keystore
      */
-    @ConfiguredOption(key = "key.alias")
+    @Option.Configured("key.alias")
     Optional<String> keyAlias();
 
     /**
@@ -83,7 +83,7 @@ interface KeystoreKeysBlueprint {
      *
      * @return pass-phrase of the key
      */
-    @ConfiguredOption(key = "key.passphrase")
+    @Option.Configured("key.passphrase")
     @Option.Confidential
     Optional<char[]> keyPassphrase();
 
@@ -93,7 +93,7 @@ interface KeystoreKeysBlueprint {
      *
      * @return alias under which the certificate is stored in the keystore
      */
-    @ConfiguredOption(key = "cert.alias")
+    @Option.Configured("cert.alias")
     Optional<String> certAlias();
 
     /**
@@ -101,7 +101,7 @@ interface KeystoreKeysBlueprint {
      *
      * @return alias of certificate chain in the keystore
      */
-    @ConfiguredOption(key = "cert-chain.alias")
+    @Option.Configured("cert-chain.alias")
     Optional<String> certChainAlias();
 
     /**
@@ -118,7 +118,8 @@ interface KeystoreKeysBlueprint {
      *
      * @return whether this is a trust store
      */
-    @ConfiguredOption("false")
+    @Option.Configured
+    @Option.DefaultBoolean(false)
     boolean trustStore();
 
     final class CustomMethods {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 
 package io.helidon.webclient.http2;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.webclient.api.HttpClientConfig;
 
 /**
@@ -30,6 +30,6 @@ interface Http2ClientConfigBlueprint extends HttpClientConfig, Prototype.Factory
      *
      * @return protocol specific configuration
      */
-    @ConfiguredOption("create()")
+    @Option.Default("create()")
     Http2ClientProtocolConfig protocolConfig();
 }

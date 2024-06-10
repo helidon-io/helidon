@@ -13,9 +13,9 @@ The service uses Helidon DB Client to access the database.
 
 ## Build and run
 
-```bash
+```shell
 mvn package
-java -jar target/employee-app.jar
+java -jar target/helidon-examples-employee-app.jar
 ```
 
 ## Create script

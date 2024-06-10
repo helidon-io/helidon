@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -60,12 +60,7 @@ For scheduling periodic tasks, it is possible to choose a fixed rate or a Cron e
 [source,java]
 .Scheduling with fixed rate use `Scheduling.fixedRate()` builder.
 ----
-Scheduling.fixedRate()
-        .delay(10)
-        .initialDelay(5)
-        .timeUnit(TimeUnit.MINUTES)
-        .task(inv -> System.out.println("Every 10 minutes, first invocation 5 minutes after start"))
-        .build();
+include::{sourcedir}/se/SchedulingSnippets.java[tag=snippet_1, indent=0]
 ----
 
 Metadata like human-readable interval description or configured values are available through
@@ -74,10 +69,7 @@ FixedRateInvocation provided as task parameter.
 [source,java]
 .Invocation metadata
 ----
-Scheduling.fixedRate()
-        .delay(10)
-        .task(inv -> System.out.println("Method invoked " + inv.description()))
-        .build();
+include::{sourcedir}/se/SchedulingSnippets.java[tag=snippet_2, indent=0]
 ----
 
 include::{rootdir}/config/io_helidon_scheduling_FixedRate.adoc[tag=config,leveloffset=+2]
@@ -90,10 +82,7 @@ For more complicated interval definition, Cron expression can be leveraged with
 [source,java]
 .Scheduling with Cron expression
 ----
-Scheduling.cron()
-    .expression("0 15 8 ? * *")
-    .task(inv -> System.out.println("Executer every day at 8:15"))
-    .build();
+include::{sourcedir}/se/SchedulingSnippets.java[tag=snippet_3, indent=0]
 ----
 
 include::{rootdir}/config/io_helidon_scheduling_Cron.adoc[tag=config,leveloffset=+2]
@@ -113,16 +102,7 @@ Scheduling is configurable with xref:../se/config/introduction.adoc[Helidon Conf
 [source,java]
 .Example of configuring
 ----
-Scheduling.fixedRate()
-    .config(Config.create(() -> ConfigSources.create(
-    """
-    delay: 4
-    delay-type: SINCE_PREVIOUS_END
-    initial-delay: 1
-    time-unit: SECONDS
-    """, MediaTypes.APPLICATION_X_YAML)))
-    .task(inv -> System.out.println("Every 4 minutes, first invocation 1 minutes after start"))
-    .build();
+include::{sourcedir}/se/SchedulingSnippets.java[tag=snippet_4, indent=0]
 ----
 
 
@@ -134,12 +114,7 @@ For simple fixed rate invocation use .
 [source,java]
 .Example of scheduling with fixed rate use `Scheduling.fixedRate()` builder.
 ----
-Scheduling.fixedRate()
-        .delay(10)
-        .initialDelay(5)
-        .timeUnit(TimeUnit.MINUTES)
-        .task(inv -> System.out.println("Every 10 minutes, first invocation 5 minutes after start"))
-        .build();
+include::{sourcedir}/se/SchedulingSnippets.java[tag=snippet_5, indent=0]
 ----
 
 Metadata like human-readable interval description or configured values are available through
@@ -149,10 +124,7 @@ Metadata like human-readable interval description or configured values are avail
 [source,java]
 .Example with invocation metadata
 ----
-Scheduling.fixedRate()
-        .delay(10)
-        .task(inv -> System.out.println("Method invoked " + inv.description()))
-        .build();
+include::{sourcedir}/se/SchedulingSnippets.java[tag=snippet_6, indent=0]
 ----
 
 == Reference

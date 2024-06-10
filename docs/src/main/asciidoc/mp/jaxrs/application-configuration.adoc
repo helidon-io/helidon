@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -36,10 +36,7 @@ Helidon Config.
 [source,java]
 .Jakarta REST - inject a single config property
 ----
-@Inject
-public MyResource(@ConfigProperty(name="app.name") String appName) {
-    this.applicationName = appName;
-}
+include::{sourcedir}/mp/jaxrs/ApplicationConfigurationSnippets.java[tag=snippet_1, indent=0]
 ----
 
 You can also inject the whole configuration instance,
@@ -48,8 +45,5 @@ either `io.helidon.config.Config` or
 [source,java]
 .Jakarta REST - inject config
 ----
-@Inject
-public MyResource(Config config) {
-    this.config = config;
-}
+include::{sourcedir}/mp/jaxrs/ApplicationConfigurationSnippets.java[tag=snippet_2, indent=0]
 ----

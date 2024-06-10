@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -79,16 +79,7 @@ to do is register your services:
 
 [source,java]
 ----
-private static GrpcRouting.Builder createRouting(Config config) {
-    return GrpcRouting.builder()
-            .service(new GreetService(config)) // <1>
-            .service(new EchoService())        // <2>
-            .service(new MathService())        // <3>
-            .unary(Strings.getDescriptor(),    // <4>
-                    "StringService",
-                    "Upper",
-                    Main::grpcUpper);
-}
+include::{sourcedir}/se/grpc/ServerSnippets.java[tag=snippet_1, indent=0]
 ----
 
 <1> Register `GreetService` instance.
@@ -115,7 +106,7 @@ descriptor by providing an instance of `ServerServiceDefinition` to `service` me
 
 In order to implement Protobuf-based service, you would follow the official
 link:https://grpc.io/docs/quickstart/java.html[instructions] on the gRPC
-web site, which boil down to the following:
+website, which boil down to the following:
 
 ===== Define the Service IDL
 
@@ -153,29 +144,7 @@ The service implementation will be very similar to our original implementation:
 
 [source,java]
 ----
-class EchoService implements GrpcService {
-    @Override
-    public Descriptors.FileDescriptor proto() {
-        return Echo.getDescriptor(); // <1>
-    }
-
-    @Override
-    public void update(ServiceDescriptor.Rules rules) {
-        rules.unary("Echo", this::echo); // <2>
-    }
-
-    /**
-     * Echo the message back to the caller.
-     *
-     * @param request   the echo request containing the message to echo
-     * @param observer  the response observer
-     */
-    public void echo(Echo.EchoRequest request, StreamObserver<Echo.EchoResponse> observer) {  // <3>
-        String message = request.getMessage();  // <4>
-        Echo.EchoResponse response = Echo.EchoResponse.newBuilder().setMessage(message).build();  // <5>
-        complete(observer, response);  // <6>
-    }
-}
+include::{sourcedir}/se/grpc/ServerSnippets.java[tag=snippet_2, indent=0]
 ----
 
 <1> Specify the proto descriptor in order to provide necessary type information and
@@ -196,23 +165,14 @@ or via a configuration file.
 
 === Configuring the gRPC Server in the Code
 
-Currently we do not have any custom configuration options for gRPC protocol.
+Currently, we do not have any custom configuration options for gRPC protocol.
 
 To register a routing with Helidon WebServer, simply add the routing to the listener
 (WebServer configuration is itself the default listener configuration)
 
 [source,java]
 ----
-WebServer.builder()
-    .port(8080)
-    .routing(httpRouting -> httpRouting.get("/greet", (req, res) -> res.send("Hi!"))) // <1>
-    .addRouting(GrpcRouting.builder()  // <2>
-                   .unary(String.getDescriptor(),
-                          "StringService",
-                          "Upper",
-                          Main::grpcUpper))
-   .build()
-   .start();
+include::{sourcedir}/se/grpc/ServerSnippets.java[tag=snippet_3, indent=0]
 ----
 
 <1> Configure HTTP routing of the server

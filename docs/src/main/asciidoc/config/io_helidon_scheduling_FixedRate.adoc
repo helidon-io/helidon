@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -39,10 +39,10 @@ Type: link:{javadoc-base-url}/io.helidon.scheduling/io/helidon/scheduling/FixedR
 |===
 |key |type |default value |description
 
-|`delay` |long |{nbsp} |Fixed rate delay between each invocation. Time unit is by default java.util.concurrent.TimeUnit#SECONDS,
- can be specified with io.helidon.scheduling.Scheduling.FixedRateBuilder#timeUnit(java.util.concurrent.TimeUnit).
+|`delay` |long |{nbsp} |Fixed rate delay between each invocation. Time unit is by default java.util.concurrent.TimeUnit.SECONDS,
+ can be specified with io.helidon.scheduling.FixedRateConfig.Builder.timeUnit(java.util.concurrent.TimeUnit).
 
- @return delay between each invocation
+ Delay between each invocation
 
 |===
 
@@ -54,22 +54,22 @@ Type: link:{javadoc-base-url}/io.helidon.scheduling/io/helidon/scheduling/FixedR
 |===
 |key |type |default value |description
 
-|`delay-type` |DelayType (SINCE_PREVIOUS_START, SINCE_PREVIOUS_END) |`@io.helidon.scheduling.FixedRate.DelayType@.SINCE_PREVIOUS_START` |Configure whether the delay between the invocations should be calculated from the time when previous task started or ended.
- Delay type is by default FixedRate.DelayType#SINCE_PREVIOUS_START.
+|`delay-type` |DelayType |`DelayType.SINCE_PREVIOUS_START` |Configure whether the delay between the invocations should be calculated from the time when previous task started or ended.
+ Delay type is by default FixedRate.DelayType.SINCE_PREVIOUS_START.
 
- @return delay type
-|`initial-delay` |long |`0` |Initial delay of the first invocation. Time unit is by default java.util.concurrent.TimeUnit#SECONDS,
+ Delay type
+|`initial-delay` |long |`0` |Initial delay of the first invocation. Time unit is by default java.util.concurrent.TimeUnit.SECONDS,
  can be specified with
- io.helidon.scheduling.Scheduling.FixedRateBuilder#timeUnit(java.util.concurrent.TimeUnit) timeUnit().
+ io.helidon.scheduling.FixedRateConfig.Builder.timeUnit(java.util.concurrent.TimeUnit) timeUnit().
 
- @return initial delay value
-|`time-unit` |TimeUnit (NANOSECONDS, MICROSECONDS, MILLISECONDS, SECONDS, MINUTES, HOURS, DAYS) |`TimeUnit.SECONDS` |java.util.concurrent.TimeUnit TimeUnit used for interpretation of values provided with
- io.helidon.scheduling.Scheduling.FixedRateBuilder#delay(long)
- and io.helidon.scheduling.Scheduling.FixedRateBuilder#initialDelay(long).
+ Initial delay value
+|`time-unit` |TimeUnit |`TimeUnit.TimeUnit.SECONDS` |java.util.concurrent.TimeUnit TimeUnit used for interpretation of values provided with
+ io.helidon.scheduling.FixedRateConfig.Builder.delay(long)
+ and io.helidon.scheduling.FixedRateConfig.Builder.initialDelay(long).
 
- @return time unit for interpreting values
-         in io.helidon.scheduling.Scheduling.FixedRateBuilder#delay(long)
-         and io.helidon.scheduling.Scheduling.FixedRateBuilder#initialDelay(long)
+ Time unit for interpreting values
+         in io.helidon.scheduling.FixedRateConfig.Builder.delay(long)
+         and io.helidon.scheduling.FixedRateConfig.Builder.initialDelay(long)
 
 |===
 

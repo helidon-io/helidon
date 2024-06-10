@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -17,52 +17,15 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 = OpenAPI-based Code Generation
-
 :description: Helidon MP OpenAPI Generator
 :keywords: helidon, mp, microprofile, openapi, generator
 :feature-name: MicroProfile OpenAPI Generator
 :rootdir: {docdir}/../..
-:incdir: {rootdir}/includes/openapi
-:gen-inc: {incdir}/openapi-generator.adoc
 
 include::{rootdir}/includes/mp.adoc[]
-:helidon-client-xref: {restclient-page}
 
-include::{gen-inc}[tag=preamble]
+== Coming Soon
 
-include::{gen-inc}[tags=intro;coords;config;usage;using-generated-code-intro;using-generated-code-server;using-generated-code-client-intro]
+The support for link:{openapi-generator-tool-site-url}[OpenAPI generator] is not available yet.
 
-The Helidon MP client generator creates a MicroProfile REST client interface for each API.
-Each generated API interface is annotated so your code can `@Inject` the API into one of your own beans and then use the interface directly to invoke the remote service. Alternatively, you can also explicitly use the link:{microprofile-rest-client-javadoc-url}/org/eclipse/microprofile/rest/client/RestClientBuilder.html[`RestClientBuilder`] to create an instance programmatically and then invoke its methods to contact the remote service.
-The xref:{restclient-page}[Helidon MP REST Client] documentation describes both approaches in more detail.
-
-In the following example, `ExampleResource` (itself running in a server) invokes a remote Pet service and shows one way to use the generated `PetApi` REST client interface.
-
-
-[source,java]
-.Using the generated `PetApi` from a separate service
-----
-@Path("/exampleServiceCallingService") // <1>
-public class ExampleResource {
-
-    @Inject // <2>
-    @RestClient // <3>
-    private PetApi petApi; // <4>
-
-    @GET
-    @Path("/getPet/{petId}")
-    public Response getPetUsingId(@PathParam("petId") Long petId) {
-        Pet pet = petApi.getPetById(petId); // <5>
-        //...
-    }
-}
-----
-<1> Uses a bean-defining annotation so CDI can inject into this class.
-<2> Requests that CDI inject the following field.
-<3> Identifies to Helidon MP that the following field is a REST client.
-<4> Declares the field using the generated `PetApi` type.
-<5> Invokes the remote service using the injected field and the parameter from the incoming request.
-
-
-include::{gen-inc}[tag=common-references]
-* link:https://github.com/eclipse/microprofile-rest-client[MicroProfile REST Client specification]
+You can track the progress for this feature here: https://github.com/helidon-io/helidon/issues/7943.

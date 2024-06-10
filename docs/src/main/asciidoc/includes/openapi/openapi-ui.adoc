@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -106,7 +106,7 @@ for the Helidon MP QuickStart greeting application.
 endif::mp-flavor[]
 
 .OpenAPI UI Screen for Helidon {flavor-uc} QuickStart Greeting Application
-image::{screen-capture-start}[align="center",title="Example OpenAPI UI Screen"]
+image::{screen-capture-start}[align="center",title="Example OpenAPI UI Screen",role="fit"]
 
 // end::usage-start[]
 
@@ -129,7 +129,7 @@ The next image shows the screen after you submit the "Returns a personalized gre
 Note that the UI shows the actual response from invoking the operation in the "Server response" section. The "Responses" section farther below describes the possible responses from the operation as declared in the OpenAPI document for the application.
 
 .Example OpenAPI UI Screen
-image::{screen-capture-expanded}[align="center",title="Example OpenAPI UI Screen"]
+image::{screen-capture-expanded}[align="center",title="Example OpenAPI UI Screen",role="fit"]
 
 // end::usage-expanded-screen[]
 // end::usage[]

@@ -8,12 +8,12 @@ database.
 
 ## Build and run
 
-```bash
+```shell
 mvn package
 java -jar target/helidon-integrations-examples-datasource-hikaricp-h2.jar
 ```
 
 Try the endpoint:
-```bash
+```shell
 curl http://localhost:8080/tables
 ```

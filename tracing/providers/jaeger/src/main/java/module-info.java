@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = {"Tracing", "Jaeger"}
 )
 module io.helidon.tracing.providers.jaeger {
-
     requires io.helidon.common.configurable;
     requires io.helidon.common.context;
     requires io.helidon.tracing.providers.opentelemetry;
@@ -44,8 +43,13 @@ module io.helidon.tracing.providers.jaeger {
     requires transitive io.helidon.common.config;
     requires transitive io.helidon.common;
     requires transitive io.helidon.tracing;
+    requires io.opentelemetry.context;
+    requires io.opentelemetry.extension.trace.propagation;
+    requires io.opentelemetry.semconv;
 
     exports io.helidon.tracing.providers.jaeger;
+
+    uses io.helidon.tracing.SpanListener;
 
     provides io.helidon.tracing.spi.TracerProvider
             with io.helidon.tracing.providers.jaeger.JaegerTracerProvider;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,11 +30,11 @@ import io.helidon.security.AuditEvent;
  * If no custom audit provider is defined (using
  * {@link io.helidon.security.Security.Builder#addAuditProvider(AuditProvider)}) a default provider will be used.
  * <p>
- * Default audit provider logs most events in {@link java.util.logging.Level#FINEST}.
+ * Default audit provider logs most events in {@link System.Logger.Level#TRACE}.
  * {@link AuditEvent.AuditSeverity#AUDIT_FAILURE}
  * and {@link AuditEvent.AuditSeverity#ERROR}
- * are logged in {@link java.util.logging.Level#SEVERE} and {@link AuditEvent.AuditSeverity#WARN} is logged in {@link
- * java.util.logging.Level#WARNING} level.
+ * are logged in {@link System.Logger.Level#ERROR} and {@link AuditEvent.AuditSeverity#WARN} is logged in {@link
+ * System.Logger.Level#WARNING} level.
  *
  * <p>
  * Format of default audit provider log record (all end of lines are removed from message, not from stack trace):

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,14 @@
 
 package io.helidon.tracing.providers.zipkin;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.ServiceLoader;
+import java.util.function.Consumer;
 
+import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.LazyValue;
+import io.helidon.tracing.SpanListener;
 import io.helidon.tracing.Tag;
 
 import brave.opentracing.BraveTracer;
@@ -39,8 +45,16 @@ import io.opentracing.propagation.Format;
  * @see ZipkinSpanBuilder
  */
 public class ZipkinTracer implements Tracer {
+
+    static final String UNSUPPORTED_OPERATION_MESSAGE = "Span listener attempted to invoke an illegal operation";
+
+    private static final LazyValue<List<SpanListener>> SPAN_LISTENERS =
+            LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(SpanListener.class)).asList());
+
     private final BraveTracer tracer;
     private final List<Tag<?>> tags;
+
+    private final List<SpanListener> spanListeners = new ArrayList<>(SPAN_LISTENERS.get());
 
     /**
      * Create a zipkin tracer from the delegate (BraveTracer) and
@@ -56,7 +70,10 @@ public class ZipkinTracer implements Tracer {
 
     @Override
     public SpanBuilder buildSpan(String operationName) {
-        return new ZipkinSpanBuilder(this, tracer.buildSpan(operationName), tags);
+        return new ZipkinSpanBuilder(this,
+                                     tracer.buildSpan(operationName),
+                                     tags,
+                                     spanListeners);
     }
 
     @Override
@@ -71,7 +88,8 @@ public class ZipkinTracer implements Tracer {
 
     @Override
     public ScopeManager scopeManager() {
-        return new ZipkinScopeManager(tracer.scopeManager());
+        return new ZipkinScopeManager(tracer.scopeManager(),
+                                      spanListeners);
     }
 
     @Override
@@ -90,6 +108,33 @@ public class ZipkinTracer implements Tracer {
             return tracer.activateSpan(((ZipkinSpan) span).unwrap());
         } else {
             return tracer.activateSpan(span);
+        }
+    }
+
+    static void invokeListeners(List<SpanListener> spanListeners, System.Logger logger, Consumer<SpanListener> operation) {
+        if (spanListeners.isEmpty()) {
+            return;
+        }
+        List<Throwable> throwables = new ArrayList<>();
+        for (SpanListener listener : spanListeners) {
+            try {
+                operation.accept(listener);
+            } catch (Throwable t) {
+                throwables.add(t);
+            }
+        }
+
+        Throwable throwableToLog = null;
+        if (throwables.size() == 1) {
+            // If only one exception is present, propagate that one in the log record.
+            throwableToLog = throwables.getFirst();
+        } else if (!throwables.isEmpty()) {
+            // Propagate a RuntimeException with multiple suppressed exceptions in the log record.
+            throwableToLog = new RuntimeException();
+            throwables.forEach(throwableToLog::addSuppressed);
+        }
+        if (throwableToLog != null) {
+            logger.log(System.Logger.Level.WARNING, "Error(s) from listener(s)", throwableToLog);
         }
     }
 }

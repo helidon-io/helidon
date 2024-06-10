@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,13 @@ package io.helidon.metrics.api;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Configuration settings for a scope within the {@value MetricsConfigBlueprint#METRICS_CONFIG_KEY} config section.
  */
-@Configured
+@Prototype.Configured
 @Prototype.Blueprint
 @Prototype.CustomMethods(ScopeConfigSupport.class)
 interface ScopeConfigBlueprint {
@@ -35,7 +34,7 @@ interface ScopeConfigBlueprint {
      *
      * @return scope name
      */
-    @ConfiguredOption
+    @Option.Configured
     String name();
 
     /**
@@ -43,7 +42,8 @@ interface ScopeConfigBlueprint {
      *
      * @return if the scope is enabled
      */
-    @ConfiguredOption(value = "true")
+    @Option.Configured
+    @Option.DefaultBoolean(true)
     boolean enabled();
 
     /**
@@ -51,7 +51,7 @@ interface ScopeConfigBlueprint {
      *
      * @return include expression
      */
-    @ConfiguredOption(key = "filter.include")
+    @Option.Configured("filter.include")
     Optional<Pattern> include();
 
     /**
@@ -59,7 +59,7 @@ interface ScopeConfigBlueprint {
      *
      * @return exclude expression
      */
-    @ConfiguredOption(key = "filter.exclude")
+    @Option.Configured("filter.exclude")
     Optional<Pattern> exclude();
 
     /**

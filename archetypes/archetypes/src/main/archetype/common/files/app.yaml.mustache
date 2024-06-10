@@ -1,0 +1,37 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{artifactId}}
+  labels:
+    app: {{artifactId}}
+spec:
+  type: ClusterIP
+  selector:
+    app: {{artifactId}}
+  ports:
+    - name: tcp
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: {{artifactId}}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{artifactId}}
+  template:
+    metadata:
+      labels:
+        app: {{artifactId}}
+        version: v1
+    spec:
+      containers:
+      - name: {{artifactId}}
+        image: {{artifactId}}
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080

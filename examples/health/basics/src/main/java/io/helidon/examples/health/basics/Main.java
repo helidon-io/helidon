@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +49,7 @@ public final class Main {
         ObserveFeature observe = ObserveFeature.builder()
                 .observersDiscoverServices(true)
                 .addObserver(HealthObserver.builder()
+                                     .details(true)
                                      .useSystemServices(true)
                                      .addCheck(() -> HealthCheckResponse.builder()
                                              .status(HealthCheckResponse.Status.UP)
@@ -65,6 +66,7 @@ public final class Main {
                 .featuresDiscoverServices(false)
                 .addFeature(observe)
                 .routing(Main::routing)
+                .port(8080)
                 .build()
                 .start();
 

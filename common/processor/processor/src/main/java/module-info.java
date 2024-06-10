@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,12 @@
 
 /**
  * Utilities for annotation processors.
+ *
+ * @deprecated use {@code helidon-codegen} instead.
  */
+@Deprecated(forRemoval = true, since = "4.1.0")
 module io.helidon.common.processor {
 
-    requires io.helidon.common.processor.classmodel;
     requires jdk.compiler;
 
     requires transitive io.helidon.common.types;

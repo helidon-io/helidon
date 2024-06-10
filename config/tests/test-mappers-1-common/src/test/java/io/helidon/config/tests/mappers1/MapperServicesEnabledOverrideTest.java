@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ public class MapperServicesEnabledOverrideTest extends AbstractMapperServicesTes
 
     @Test
     public void testLocale() {
-        assertThat(getLocale(), is(new Locale("TEST:cs", "TEST:CZ", "TEST:Praha")));
+        assertThat(getLocale(), is(Locale.of("TEST:cs", "TEST:CZ", "TEST:Praha")));
     }
 
 }

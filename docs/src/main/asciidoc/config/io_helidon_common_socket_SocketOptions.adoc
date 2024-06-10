@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -44,32 +44,32 @@ Type: link:{javadoc-base-url}/io.helidon.common.socket/io/helidon/common/socket/
 
 |`connect-timeout` |Duration |`PT10S` |Socket connect timeout. Default is 10 seconds.
 
- @return connect timeout duration
+ Connect timeout duration
 |`read-timeout` |Duration |`PT30S` |Socket read timeout. Default is 30 seconds.
 
- @return read timeout duration
+ Read timeout duration
 |`socket-keep-alive` |boolean |`true` |Configure socket keep alive.
  Default is `true`.
 
- @return keep alive
+ Keep alive
  @see java.net.StandardSocketOptions#SO_KEEPALIVE
-|`socket-receive-buffer-size` |int |`32768` |Socket receive buffer size.
+|`socket-receive-buffer-size` |int |{nbsp} |Socket receive buffer size.
 
- @return buffer size, in bytes
+ Buffer size, in bytes
  @see java.net.StandardSocketOptions#SO_RCVBUF
 |`socket-reuse-address` |boolean |`true` |Socket reuse address.
  Default is `true`.
 
- @return whether to reuse address
+ Whether to reuse address
  @see java.net.StandardSocketOptions#SO_REUSEADDR
-|`socket-send-buffer-size` |int |`32768` |Socket send buffer size.
+|`socket-send-buffer-size` |int |{nbsp} |Socket send buffer size.
 
- @return buffer size, in bytes
+ Buffer size, in bytes
  @see java.net.StandardSocketOptions#SO_SNDBUF
 |`tcp-no-delay` |boolean |`false` |This option may improve performance on some systems.
  Default is `false`.
 
- @return whether to use TCP_NODELAY, defaults to `false`
+ Whether to use TCP_NODELAY, defaults to `false`
  @see java.net.StandardSocketOptions#TCP_NODELAY
 
 |===

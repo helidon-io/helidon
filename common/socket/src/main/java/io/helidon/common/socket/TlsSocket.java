@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.common.socket;
 
 import java.security.Principal;
 import java.security.cert.Certificate;
+import java.util.Arrays;
 import java.util.Optional;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
@@ -28,11 +29,15 @@ import javax.net.ssl.SSLSocket;
  */
 public final class TlsSocket extends PlainSocket {
     private final SSLSocket sslSocket;
+    private volatile PeerInfo localPeer;
+    private volatile PeerInfo remotePeer;
+    private volatile byte[] lastSslSessionId;
 
     private TlsSocket(SSLSocket socket, String channelId, String serverChannelId) {
         super(socket, channelId, serverChannelId);
 
         this.sslSocket = socket;
+        this.lastSslSessionId = socket.getSession().getId();
     }
 
     /**
@@ -63,12 +68,28 @@ public final class TlsSocket extends PlainSocket {
 
     @Override
     public PeerInfo remotePeer() {
-        return PeerInfoImpl.createRemote(this);
+        if (renegotiated()) {
+            remotePeer = null;
+            localPeer = null;
+        }
+
+        if (remotePeer == null) {
+            this.remotePeer = PeerInfoImpl.createRemote(this);
+        }
+        return this.remotePeer;
     }
 
     @Override
     public PeerInfo localPeer() {
-        return PeerInfoImpl.createLocal(this);
+        if (renegotiated()) {
+            remotePeer = null;
+            localPeer = null;
+        }
+
+        if (localPeer == null) {
+            this.localPeer = PeerInfoImpl.createLocal(this);
+        }
+        return this.localPeer;
     }
 
     @Override
@@ -109,5 +130,23 @@ public final class TlsSocket extends PlainSocket {
 
     Optional<Certificate[]> tlsCertificates() {
         return Optional.of(sslSocket.getSession().getLocalCertificates());
+    }
+
+    /**
+     * Check if TLS renegotiation happened,
+     * if so ssl session id would have changed.
+     *
+     * @return true if tls was renegotiated
+     */
+    boolean renegotiated() {
+        byte[] currentSessionId = sslSocket.getSession().getId();
+
+        // Intentionally avoiding locking and MessageDigest.isEqual
+        if (Arrays.equals(currentSessionId, lastSslSessionId)) {
+            return false;
+        }
+
+        lastSslSessionId = currentSessionId;
+        return true;
     }
 }

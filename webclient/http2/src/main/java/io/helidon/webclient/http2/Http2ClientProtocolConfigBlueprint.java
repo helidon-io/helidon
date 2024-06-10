@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,20 +18,20 @@ package io.helidon.webclient.http2;
 
 import java.time.Duration;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.webclient.spi.ProtocolConfig;
 
 @Prototype.Blueprint(decorator = Http2ClientConfigSupport.ProtocolConfigDecorator.class)
-@Configured
+@Prototype.Configured
 interface Http2ClientProtocolConfigBlueprint extends ProtocolConfig {
     @Override
     default String type() {
         return Http2ProtocolProvider.CONFIG_KEY;
     }
 
-    @ConfiguredOption(Http2ProtocolProvider.CONFIG_KEY)
+    @Option.Configured
+    @Option.Default(Http2ProtocolProvider.CONFIG_KEY)
     @Override
     String name();
 
@@ -51,7 +51,8 @@ interface Http2ClientProtocolConfigBlueprint extends ProtocolConfig {
      *
      * @return whether to use prior knowledge of HTTP/2
      */
-    @ConfiguredOption("false")
+    @Option.Configured
+    @Option.DefaultBoolean(false)
     boolean priorKnowledge();
 
     /**
@@ -61,7 +62,8 @@ interface Http2ClientProtocolConfigBlueprint extends ProtocolConfig {
      *
      * @return data frame size in bytes between 2^14(16_384) and 2^24-1(16_777_215)
      */
-    @ConfiguredOption("16384")
+    @Option.Configured
+    @Option.DefaultInt(16384)
     int maxFrameSize();
 
     /**
@@ -71,7 +73,8 @@ interface Http2ClientProtocolConfigBlueprint extends ProtocolConfig {
      *
      * @return units of octets
      */
-    @ConfiguredOption("-1")
+    @Option.Configured
+    @Option.DefaultLong(-1L)
     long maxHeaderListSize();
 
     /**
@@ -81,7 +84,8 @@ interface Http2ClientProtocolConfigBlueprint extends ProtocolConfig {
      *
      * @return units of octets
      */
-    @ConfiguredOption("65535")
+    @Option.Configured
+    @Option.DefaultInt(65535)
     int initialWindowSize();
 
     /**
@@ -89,7 +93,8 @@ interface Http2ClientProtocolConfigBlueprint extends ProtocolConfig {
      *
      * @return timeout
      */
-    @ConfiguredOption("PT0.1S")
+    @Option.Configured
+    @Option.Default("PT0.1S")
     Duration flowControlBlockTimeout();
 
     /**
@@ -98,7 +103,8 @@ interface Http2ClientProtocolConfigBlueprint extends ProtocolConfig {
      *
      * @return use ping if true
      */
-    @ConfiguredOption("false")
+    @Option.Configured
+    @Option.DefaultBoolean(false)
     boolean ping();
 
     /**
@@ -107,6 +113,7 @@ interface Http2ClientProtocolConfigBlueprint extends ProtocolConfig {
      *
      * @return timeout
      */
-    @ConfiguredOption("PT0.5S")
+    @Option.Configured
+    @Option.Default("PT0.5S")
     Duration pingTimeout();
 }

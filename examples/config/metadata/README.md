@@ -18,7 +18,7 @@ Example:
 
 ## Build and run
 
-```bash
+```shell
 mvn package
 java -jar target/helidon-examples-config-metadata.jar > application.yaml
 ```

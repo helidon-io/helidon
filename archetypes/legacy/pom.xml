@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.archetypes</groupId>
         <artifactId>helidon-archetypes-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.1.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-archetypes-legacy-project</artifactId>
     <name>Helidon Legacy Archetypes</name>
@@ -41,7 +41,7 @@
     <dependencies>
         <dependency>
             <groupId>io.helidon.archetypes</groupId>
-            <artifactId>helidon</artifactId>
+            <artifactId>helidon-archetypes</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -71,7 +71,7 @@
                             <!--suppress UnresolvedMavenProperty -->
                             <enum path="app-type">${app-type}</enum>
                         </presets>
-                        <exec url="mvn://io.helidon.archetypes:helidon:${project.version}!/main.xml"/>
+                        <exec url="mvn://io.helidon.archetypes:helidon-archetypes:${project.version}!/main.xml"/>
                     </entrypoint>
                 </configuration>
             </plugin>

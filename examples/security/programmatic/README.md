@@ -4,7 +4,7 @@ Example of manually using the security APIs.
 
 ## Build and run
 
-```bash
+```shell
 mvn package
 java -jar target/helidon-examples-security-nohttp-programmatic.jar
 ```

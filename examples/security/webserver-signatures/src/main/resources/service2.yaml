@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2020 Oracle and/or its affiliates.
+# Copyright (c) 2016, 2024 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ security:
           keys:
             - key-id: "service1-hmac"
               principal-name: "Service1 - HMAC signature"
-              hmac.secret: "${CLEAR=somePasswordForHmacShouldBeEncrypted}"
+              hmac.secret: "${CLEAR=changeit}"
             - key-id: "service1-rsa"
               principal-name: "Service1 - RSA signature"
               public-key:
@@ -48,7 +48,7 @@ security:
                   # defaults to jdk default
                   # keystore-type: "PKCS12"
                   # password of the keystore
-                  passphrase: "password"
+                  passphrase: "changeit"
                   # alias of the certificate to get public key from
                   cert.alias: "service_cert"
     # Security provider - basic authentication (supports roles)
@@ -56,13 +56,13 @@ security:
         realm: "helidon"
         users:
           - login: "jack"
-            password: "${CLEAR=password}"
+            password: "${CLEAR=changeit}"
             roles: [ "user", "admin" ]
           - login: "jill"
-            password: "${CLEAR=password}"
+            password: "${CLEAR=changeit}"
             roles: [ "user" ]
           - login: "john"
-            password: "${CLEAR=password}"
+            password: "${CLEAR=changeit}"
             roles: []
   web-server:
     # Configuration of integration with web server

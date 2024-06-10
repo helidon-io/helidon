@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,6 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
@@ -83,30 +82,6 @@ import static io.helidon.config.mp.MpMetaConfig.MetaConfigSource;
 class MpConfigBuilder implements Builder<MpConfigBuilder, Config>, ConfigBuilder {
     private static final System.Logger LOGGER = System.getLogger(MpConfigBuilder.class.getName());
     private static final String DEFAULT_CONFIG_SOURCE = "META-INF/microprofile-config.properties";
-
-    private static final Map<String, MpMetaConfigProvider> MP_META_PROVIDERS;
-    static {
-        List<MpMetaConfigProvider> mpMetaConfigProviders =
-                HelidonServiceLoader.builder(ServiceLoader.load(MpMetaConfigProvider.class))
-                        .addService(new MpEnvironmentVariablesMetaConfigProvider())
-                        .addService(new MpSystemPropertiesMetaConfigProvider())
-                        .addService(new MpPropertiesMetaConfigProvider())
-                        .build()
-                        .asList();
-
-        // Helidon service loader uses Weight and Weighted by default, we want to use priorities here
-        Priorities.sort(mpMetaConfigProviders, Prioritized.DEFAULT_PRIORITY);
-
-        Map<String, MpMetaConfigProvider> theMap = new HashMap<>();
-        // ordered by priority
-        for (MpMetaConfigProvider mpMetaConfigProvider : mpMetaConfigProviders) {
-            for (String supportedType : mpMetaConfigProvider.supportedTypes()) {
-                theMap.putIfAbsent(supportedType, mpMetaConfigProvider);
-            }
-        }
-        MP_META_PROVIDERS = Map.copyOf(theMap);
-    }
-
 
     private final List<OrdinalSource> sources = new LinkedList<>();
     private final List<OrdinalConverter> converters = new LinkedList<>();
@@ -253,10 +228,10 @@ class MpConfigBuilder implements Builder<MpConfigBuilder, Config>, ConfigBuilder
         for (io.helidon.config.Config config : configs) {
             String type = config.get("type").asString()
                     .orElseThrow(() -> new ConfigException("Meta configuration sources must have a \"type\" property defined"));
-            MpMetaConfigProvider mpMetaConfigProvider = MP_META_PROVIDERS.get(type);
+            MpMetaConfigProvider mpMetaConfigProvider = MpConfigSources.MP_META_PROVIDERS.get(type);
             if (mpMetaConfigProvider == null) {
                 throw new ConfigException("Wrong meta configuration, type " + type
-                        + " not supported, only supporting: " + MP_META_PROVIDERS.keySet());
+                        + " not supported, only supporting: " + MpConfigSources.MP_META_PROVIDERS.keySet());
             }
 
             List<? extends ConfigSource> delegates = mpMetaConfigProvider.create(type, config, profile);

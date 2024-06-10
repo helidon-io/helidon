@@ -5,14 +5,14 @@ This application allows users to add or read short comments related to a single 
 
 ## Build and run
 
-```bash
+```shell
 mvn package
 java -jar target/helidon-examples-webserver-comment-aas.jar
 ```
 
 Try the application:
 
-```bash
+```shell
 curl http://localhost:8080/comments/java -d "I use Helidon!"
 curl http://localhost:8080/comments/java -d "I use vertx"
 curl http://localhost:8080/comments/java -d "I use spring"

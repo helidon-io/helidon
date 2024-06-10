@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -46,12 +46,16 @@ This type provides the following service implementations:
 |===
 |key |type |default value |description
 
+|`max-frame-length` |int |`1048576` |Max WebSocket frame size supported by the server on a read operation.
+ Default is 1 MB.
+
+ Max frame size to read
 |`name` |string |`websocket` |Name of this configuration.
 
- @return configuration name
+ Configuration name
 |`origins` |string[&#93; |{nbsp} |WebSocket origins.
 
- @return origins
+ Origins
 
 |===
 

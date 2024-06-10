@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,8 @@ import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.uri.UriFragment;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.security.SecurityContext;
@@ -89,6 +91,7 @@ public class GreetService implements HttpService {
                 .get("/redirectPath", this::redirectPath)
                 .get("/redirect/infinite", this::redirectInfinite)
                 .post("/form", this::form)
+                .get("/header", this::header)
                 .post("/form/content", this::formContent)
                 .post("/contentLength", this::contentLength)
                 .put("/contentLength", this::contentLength)
@@ -265,4 +268,18 @@ public class GreetService implements HttpService {
             response.send();
         }
     }
+
+    private void header(ServerRequest request, ServerResponse response) {
+        Header customHeader = request.headers().get(HeaderNames.create("someCustomHeader"));
+        if (customHeader == null) {
+            response.send("Missing \"someCustomHeader\" header!");
+            return;
+        }
+        if (customHeader.allValues().size() == 1) {
+            response.send("\"someCustomHeader\" header was not duplicated!");
+            return;
+        }
+        response.send("\"someCustomHeader\" header was duplicated!");
+    }
+
 }

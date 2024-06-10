@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,7 +84,9 @@ import static io.helidon.inject.tools.TypeTools.isPackagePrivate;
  *
  * This API can also be used to only produce meta-information describing the model without the codegen option - see
  * {@link ActivatorCreatorRequest#codeGenPaths()} for details.
+ * @deprecated Helidon inject is deprecated and will be replaced in a future version
  */
+@Deprecated(forRemoval = true, since = "4.0.8")
 @Singleton
 @Weight(DEFAULT_INJECT_WEIGHT)
 public class ActivatorCreatorDefault extends AbstractCreator implements ActivatorCreator, Weighted {

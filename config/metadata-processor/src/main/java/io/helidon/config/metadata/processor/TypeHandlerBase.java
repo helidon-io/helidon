@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package io.helidon.config.metadata.processor;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
-import java.util.regex.Pattern;
 
 import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -38,8 +37,7 @@ import static io.helidon.config.metadata.processor.UsedTypes.CONFIG;
 
 abstract class TypeHandlerBase {
     static final String UNCONFIGURED_OPTION = "io.helidon.config.metadata.ConfiguredOption.UNCONFIGURED";
-    private static final Pattern JAVADOC_CODE = Pattern.compile("\\{@code (.*?)}");
-    private static final Pattern JAVADOC_LINK = Pattern.compile("\\{@link (.*?)}");
+
     private final ProcessingEnvironment aptEnv;
 
     TypeHandlerBase(ProcessingEnvironment aptEnv) {
@@ -95,21 +93,7 @@ abstract class TypeHandlerBase {
     }
 
     static String javadoc(String docComment) {
-        if (docComment == null) {
-            return "";
-        }
-
-        String javadoc = docComment;
-        int index = javadoc.indexOf("@param");
-        if (index > -1) {
-            javadoc = docComment.substring(0, index);
-        }
-        // replace all {@code xxx} with 'xxx'
-        javadoc = JAVADOC_CODE.matcher(javadoc).replaceAll(it -> '`' + it.group(1) + '`');
-        // replace all {@link ...} with just the name
-        javadoc = JAVADOC_LINK.matcher(javadoc).replaceAll(it -> it.group(1));
-
-        return javadoc.trim();
+        return Javadoc.parse(docComment);
     }
 
     String key(TypedElementInfo elementInfo, ConfiguredOptionData configuredOption) {
@@ -197,15 +181,43 @@ abstract class TypeHandlerBase {
         }
     }
 
+    /*
+    If the type is an enum that is accessible to us, provide its element, otherwise empty
+     */
+    Optional<TypeElement> toEnum(TypeName type) {
+        TypeElement typeElement = aptElements().getTypeElement(type.fqName());
+        if (typeElement == null) {
+            return Optional.empty();
+        }
+        if (typeElement.getKind() != ElementKind.ENUM) {
+            return Optional.empty();
+        }
+
+        return Optional.of(typeElement);
+    }
+
+    List<ConfiguredOptionData.AllowedValue> allowedValuesEnum(ConfiguredOptionData data, TypeElement typeElement) {
+        if (data.allowedValues().isEmpty()) {
+            // this was already processed due to an explicit type defined in the annotation
+            // or allowed values explicitly configured in annotation
+            return data.allowedValues();
+        }
+        return allowedValuesEnum(typeElement);
+    }
+
+    private List<ConfiguredOptionData.AllowedValue> allowedValuesEnum(TypeElement typeElement) {
+        return typeElement.getEnclosedElements()
+                .stream()
+                .filter(element -> element.getKind().equals(ElementKind.ENUM_CONSTANT))
+                .map(element -> new ConfiguredOptionData.AllowedValue(element.toString(),
+                                                                      javadoc(aptElements().getDocComment(element))))
+                .toList();
+    }
+
     private List<ConfiguredOptionData.AllowedValue> allowedValues(TypeName type) {
         TypeElement typeElement = aptElements().getTypeElement(type.fqName());
         if (typeElement != null && typeElement.getKind() == ElementKind.ENUM) {
-            return typeElement.getEnclosedElements()
-                    .stream()
-                    .filter(element -> element.getKind().equals(ElementKind.ENUM_CONSTANT))
-                    .map(element -> new ConfiguredOptionData.AllowedValue(element.toString(),
-                                                                          javadoc(aptElements().getDocComment(element))))
-                    .toList();
+            return allowedValuesEnum(typeElement);
         }
         return List.of();
     }

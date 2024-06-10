@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -42,9 +42,9 @@ Type: link:{javadoc-base-url}/io.helidon.http/io/helidon/http/RequestedUriDiscov
 |===
 |key |type |default value |description
 
-|`discovery-types` |RequestedUriDiscoveryType[&#93; (FORWARDED, X_FORWARDED, HOST) |{nbsp} |Sets the discovery types for requested URI discovery for requests arriving on the socket.
-|`enabled` |boolean |`true if &#x27;discoveryTypes&#x27; or &#x27;trusted-proxies&#x27; is set; false otherwise` |Sets whether requested URI discovery is enabled for requestes arriving on the socket.
+|`enabled` |boolean |`true if &#x27;types&#x27; or &#x27;trusted-proxies&#x27; is set; false otherwise` |Sets whether requested URI discovery is enabled for requestes arriving on the socket.
 |`trusted-proxies` |xref:{rootdir}/config/io_helidon_common_configurable_AllowList.adoc[AllowList] |{nbsp} |Sets the trusted proxies for requested URI discovery for requests arriving on the socket.
+|`types` |RequestedUriDiscoveryType[&#93; (FORWARDED, X_FORWARDED, HOST) |{nbsp} |Sets the discovery types for requested URI discovery for requests arriving on the socket.
 
 |===
 

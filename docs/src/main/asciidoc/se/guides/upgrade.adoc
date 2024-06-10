@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -38,10 +38,7 @@ So if you had code like:
 [source,java]
 .Helidon 1.x Code
 ----
-Span myNewSpan = GlobalTracer.get()
-        .buildSpan(“my-operation”)
-        .asChildOf(serverRequest.spanContext())
-        .start();
+include::{sourcedir}/se/guides/UpgradeSnippets.java[tag=snippet_1, indent=0]
 ----
 
 you will need to change it to something like:
@@ -49,10 +46,7 @@ you will need to change it to something like:
 [source,java]
 .Helidon 2.x Code
 ----
-Tracer.SpanBuilder spanBuilder = serverRequest.tracer()
-        .buildSpan("my-operation");
-serverRequest.spanContext().ifPresent(spanBuilder::asChildOf);
-Span myNewSpan = spanBuilder.start();
+include::{sourcedir}/se/guides/UpgradeSnippets.java[tag=snippet_2, indent=0]
 ----
 
 Note the use of `ifPresent()` on the returned `Optional<SpanContext>`.
@@ -75,7 +69,7 @@ Note the use of `ifPresent()` on the returned `Optional<SpanContext>`.
 5. There is a small change in behavior of Helidon Config vs. MicroProfile Config:
    The MP TCK require that system properties are fully mutable (e.g. as soon as the property is changed, it
    must be used), so MP Config methods work in this manner (with a certain performance overhead).
-   Helidon Config treats System properties as a mutable config source, with a (optional) time based polling strategy. So
+   Helidon Config treats System properties as a mutable config source, with an (optional) time based polling strategy. So
    the change is reflected as well, though not immediately (this is only relevant if you use change notifications).
 6. `CompositeConfigSource` has been removed from `Config`. If you need to configure `MerginStrategy`, you can do it now on
     `Config` `Builder`
@@ -83,21 +77,7 @@ Note the use of `ifPresent()` on the returned `Optional<SpanContext>`.
 Example of advanced configuration of config:
 [source,java]
 ----
-Config.builder()
-       // system properties with a polling strategy of 10 seconds
-       .addSource(ConfigSources.systemProperties()
-            .pollingStrategy(PollingStrategies.regular(Duration.ofSeconds(10))))
-       // environment variables
-       .addSource(ConfigSources.environmentVariables())
-       // optional file config source with change watcher
-       .addSource(ConfigSources.file(Paths.get("/conf/app.yaml"))
-                          .optional()
-                          .changeWatcher(FileSystemWatcher.create()))
-       // classpath config source
-       .addSource(ConfigSources.classpath("application.yaml"))
-       // map config source (also supports polling strategy)
-       .addSource(ConfigSources.create(Map.of("key", "value")))
-       .build();
+include::{sourcedir}/se/guides/UpgradeSnippets.java[tag=snippet_3, indent=0]
 ----
 
 
@@ -119,9 +99,7 @@ You now specify media support as part of the WebServer build:
 
 [source,java]
 ----
-WebServer.builder()
-    .addMediaSupport(JsonpSupport.create()) //registers reader and writer for Json-P
-    .build()
+include::{sourcedir}/se/guides/UpgradeSnippets.java[tag=snippet_4, indent=0]
 ----
 
 This replaces `Routing.builder().register(JsonSupport.create())...`
@@ -198,7 +176,7 @@ Configuration has been updated to use the new `Resource` approach:
 
 1. `tls-cert.resource` is the new key for certificate
 2. `tls-key.resource` is the new key for private key
-3. `tl-ca-cert` is the the new key for certificate
+3. `tl-ca-cert` is the new key for certificate
 
 == WebServer Configuration
 
@@ -211,10 +189,7 @@ be removed.
 The class uses a `Builder` pattern:
 [source,java]
 ----
-WebServerTls.builder()
-   .privateKey(KeyConfig.keystoreBuilder()
-   .keystore(Resource.create("certificate.p12"))
-   .keystorePassphrase("helidon")
+include::{sourcedir}/se/guides/UpgradeSnippets.java[tag=snippet_5, indent=0]
 ----
 
 The builder or built instance can be registered with a socket configuration builder
@@ -222,9 +197,7 @@ including the `WebServer.Builder` itself:
 
 [source,java]
 ----
-WebServer.builder(routing())
-                .tls(webServerTls)
-                .build();
+include::{sourcedir}/se/guides/UpgradeSnippets.java[tag=snippet_6, indent=0]
 ----
 
 === Additional Sockets
@@ -254,10 +227,7 @@ To add socket using a builder, you can use:
 
 [source,java]
 ----
-WebServer.builder()
-   .addSocket(SocketConfigurationBuilder.builder()
-      .port(8001)
-      .name("admin")));
+include::{sourcedir}/se/guides/UpgradeSnippets.java[tag=snippet_7, indent=0]
 ----
 
 There is also a specialized method to add a socket and routing
@@ -274,11 +244,7 @@ Example of a simple WebServer setup:
 
 [source,java]
 ----
-WebServer.builder()
-   .port(8001)
-   .host("localhost")
-   .routing(createRouting())
-   .build();
+include::{sourcedir}/se/guides/UpgradeSnippets.java[tag=snippet_8, indent=0]
 ----
 
 === Other Significant WebServer Deprecations

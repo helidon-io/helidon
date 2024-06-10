@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -360,7 +360,8 @@ public class DataReader {
      *
      * @param max length to search
      * @return index of the new line, or max if not found
-     * @throws io.helidon.common.buffers.DataReader.IncorrectNewLineException
+     * @throws io.helidon.common.buffers.DataReader.IncorrectNewLineException in case there is a LF without CR,
+     *              or CR without a LF
      */
     public int findNewLine(int max) throws IncorrectNewLineException {
         ensureAvailable();
@@ -424,6 +425,11 @@ public class DataReader {
      * Not enough data available to finish the requested operation.
      */
     public static class InsufficientDataAvailableException extends RuntimeException {
+        /**
+         * Create a new instance. This exception does not have any other constructors.
+         */
+        public InsufficientDataAvailableException() {
+        }
     }
 
     private class Node {

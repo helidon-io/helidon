@@ -23,13 +23,14 @@
     <parent>
         <groupId>io.helidon.integrations.cdi</groupId>
         <artifactId>helidon-integrations-cdi-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.1.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-integrations-cdi-common-project</artifactId>
     <packaging>pom</packaging>
     <name>Helidon CDI Integrations Common</name>
 
     <modules>
+        <module>configurable</module>
         <module>delegates</module>
         <module>reference-counted-context</module>
     </modules>

@@ -100,6 +100,7 @@ abstract class SecurityFilterCommon {
         allHeaders.put(Security.HEADER_ORIG_URI, List.of(origRequest));
 
         SecurityEnvironment.Builder envBuilder = SecurityEnvironment.builder(security.serverTime())
+                .transport(requestUri.getScheme())
                 .path(filterContext.getResourcePath())
                 .targetUri(filterContext.getTargetUri())
                 .method(filterContext.getMethod())

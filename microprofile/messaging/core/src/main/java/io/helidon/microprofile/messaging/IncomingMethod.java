@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,6 @@ package io.helidon.microprofile.messaging;
 import java.lang.reflect.Method;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.Errors;
 import io.helidon.config.Config;
@@ -45,7 +43,7 @@ import org.reactivestreams.Subscriber;
  */
 class IncomingMethod extends AbstractMessagingMethod implements IncomingMember {
 
-    private static final Logger LOGGER = Logger.getLogger(IncomingMethod.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(IncomingMethod.class.getName());
 
     private Subscriber<? super Object> subscriber;
 
@@ -102,13 +100,13 @@ class IncomingMethod extends AbstractMessagingMethod implements IncomingMember {
                                     .thenRun(ackCtx::postAck)
                                     .exceptionally(t -> {
                                         ackCtx.postNack(t);
-                                        LOGGER.log(Level.SEVERE, t,
-                                                () -> "Error when invoking @Incoming method " + getMethod().getName());
+                                        LOGGER.log(System.Logger.Level.ERROR,
+                                                () -> "Error when invoking @Incoming method " + getMethod().getName(), t);
                                         return null;
                                     });
                         })
-                        .onError(t -> LOGGER.log(Level.SEVERE, t,
-                                () -> "Error intercepted on channel " + getIncomingChannelName()))
+                        .onError(t -> LOGGER.log(System.Logger.Level.ERROR,
+                                () -> "Error intercepted on channel " + getIncomingChannelName(), t))
                         .ignore()
                         .build();
                 break;
@@ -123,21 +121,21 @@ class IncomingMethod extends AbstractMessagingMethod implements IncomingMember {
                                 return ReactiveStreams.fromCompletionStageNullable(result
                                         // on error resume
                                         .exceptionally(t -> {
-                                            LOGGER.log(Level.SEVERE, t,
-                                                    () -> "Error when invoking @Incoming method " + getMethod().getName());
+                                            LOGGER.log(System.Logger.Level.ERROR,
+                                                    () -> "Error when invoking @Incoming method " + getMethod().getName(), t);
                                             ackCtx.postNack(t);
                                             return null;
                                         })
                                         .thenRun(ackCtx::postAck));
                             } catch (Throwable t) {
-                                LOGGER.log(Level.SEVERE, t,
-                                        () -> "Error when invoking @Incoming method " + getMethod().getName());
+                                LOGGER.log(System.Logger.Level.ERROR,
+                                        () -> "Error when invoking @Incoming method " + getMethod().getName(), t);
                                 ackCtx.postNack(t);
                                 return ReactiveStreams.empty();
                             }
                         })
-                        .onError(t -> LOGGER.log(Level.SEVERE, t,
-                                () -> "Error intercepted in channel " + getIncomingChannelName()))
+                        .onError(t -> LOGGER.log(System.Logger.Level.ERROR,
+                                () -> "Error intercepted in channel " + getIncomingChannelName(), t))
                         .ignore()
                         .build();
                 break;
@@ -157,14 +155,14 @@ class IncomingMethod extends AbstractMessagingMethod implements IncomingMember {
                                         })
                                         .thenRun(ackCtx::postAck));
                             } catch (Throwable t) {
-                                LOGGER.log(Level.SEVERE, t,
-                                        () -> "Error when invoking @Incoming method " + getMethod().getName());
+                                LOGGER.log(System.Logger.Level.ERROR,
+                                        () -> "Error when invoking @Incoming method " + getMethod().getName(), t);
                                 ackCtx.postNack(t);
                                 return ReactiveStreams.empty();
                             }
                         })
-                        .onError(t -> LOGGER.log(Level.SEVERE, t,
-                                () -> "Error intercepted in channel " + getIncomingChannelName()))
+                        .onError(t -> LOGGER.log(System.Logger.Level.ERROR,
+                                () -> "Error intercepted in channel " + getIncomingChannelName(), t))
                         .ignore()
                         .build();
                 break;

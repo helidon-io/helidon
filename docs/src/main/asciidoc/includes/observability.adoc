@@ -1,0 +1,346 @@
+///////////////////////////////////////////////////////////////////////////////
+    Copyright (c) 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+ifndef::flavor-lc[:flavor-lc: se]
+ifndef::flavor-uc[:flavor-lc: SE]
+ifndef::se-flavor[:se-flavor: true]
+ifndef::h1-prefix[:h1-prefix: SE]
+
+//Contains content that is shared between multiple observability pages.
+:keywords: helidon, java, observability, se
+
+
+// tag::observe-dependency[]
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webserver.observe</groupId>
+    <artifactId>helidon-webserver-observe</artifactId>
+</dependency>
+----
+// end::observe-dependency[]
+
+// tag::observe-health-dependency[]
+For Health Observability features:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webserver.observe</groupId>
+    <artifactId>helidon-webserver-observe-health</artifactId>
+</dependency>
+----
+// end::observe-health-dependency[]
+
+// tag::observe-metrics-dependency[]
+For Metrics Observability features:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webserver.observe</groupId>
+    <artifactId>helidon-webserver-observe-metrics</artifactId>
+</dependency>
+----
+// end::observe-metrics-dependency[]
+
+// tag::observe-info-dependency[]
+For Info Observability features:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webserver.observe</groupId>
+    <artifactId>helidon-webserver-observe-info</artifactId>
+</dependency>
+----
+// end::observe-info-dependency[]
+
+
+// tag::observe-log-dependency[]
+For Logging Observability features:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webserver.observe</groupId>
+    <artifactId>helidon-webserver-observe-log</artifactId>
+</dependency>
+----
+// end::observe-log-dependency[]
+
+// tag::observe-config-dependency[]
+For Configuration Observability features:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webserver.observe</groupId>
+    <artifactId>helidon-webserver-observe-config</artifactId>
+</dependency>
+----
+// end::observe-config-dependency[]
+
+// tag::weight-and-endpoint-conflicts[]
+:observe-weight-range-start: 101
+:observe-weight-range-end: 200
+
+=== Feature Weight and Endpoint Conflicts
+In some ways Helidon treats all types of observers as a single observability _feature_.
+In particular, you can use configuration to control the _weight_ of the various Helidon features, and the weight prescribes the order in which Helidon handles routing for those features.
+
+The Helidon-provided feature for processing your application endpoints has weight 100 by default, and the observability feature has default weight 80.
+This means that Helidon normally prioritizes routing for your application endpoints over the endpoints for the observers such as metrics and health.
+
+This can have unexpected results if your application declares a resource path `/{name}`. Because Helidon normally prioritizes the routing of _your_ endpoints, Helidon routes requests for `/metrics` and `/health` to _your_ `/{name}` endpoint instead of to the actual metrics and health endpoints.
+
+One way to avoid this is to assign a weight from {observe-weight-range-start} to {observe-weight-range-end} to the observe feature in your configuration. Then Helidon prioritizes the routing of the observe feature ahead of routing your application endpoints.
+
+ifdef::se-flavor[]
+.Configuration in `application.yaml` Assigning Feature Weight to Control Routing
+[source,yaml]
+----
+server:
+  features:
+    observe:
+      weight: 120
+----
+endif::se-flavor[]
+ifdef::mp-flavor[]
+.Configuration in `META-INF/microprofile-config.properties` Assigning Feature Weight to Control Routing
+[source,properties]
+----
+server.features.observe.weight = 120
+----
+endif::mp-flavor[]
+
+Helidon does not enforce the weight range {observe-weight-range-start}-{observe-weight-range-end} for observability, but you should use a value in this range for the observe weight to avoid problems with other features such as security, CORS, and others; their relative ordering is important.
+
+// end::weight-and-endpoint-conflicts[]
+
+// tag::all-observability-endpoints[]
+// tag::configuration-observability-endpoint[]
+==== Configuration Observability
+
+Configuration observability allows reading the current application configuration values.
+Configuration observability defines the following endpoints:
+
+|===
+|Endpoint |Method |Action
+
+|`/config/profile`
+|`GET`
+|Returns the current configuration profile
+
+|`/config/values`
+|`GET`
+|Returns the current configuration values
+
+|`/config/values/{name}`
+|`GET`
+|Returns specified by `name` configuration value
+|===
+
+NOTE: All secrets and passwords are obfuscated with "*" characters.
+// end::configuration-observability-endpoint[]
+
+==== Health Observability
+
+Health observability allows reading application readiness to serve requests, whether the services are alive.
+Health observability defines the following endpoints:
+
+|===
+|Endpoint |Method |Action
+
+|`/health/ready`
+|`GET`
+|Returns Service Readiness
+
+|`/health/live`
+|`GET`
+|Returns whether the service is alive
+
+|`/health/started`
+|`GET`
+|Returns whether the service is started
+
+|`/health/ready/{name}`
+|`GET`
+|Returns Service `name` Readiness
+
+|`/health/live/{name}`
+|`GET`
+|Returns whether the service `name` is alive
+
+|`/health/started/{name}`
+|`GET`
+|Returns whether the service `name` is started
+
+|`/health/check/{name}`
+|`GET`
+|Returns all checks for service `name`
+
+|`/health/ready`
+|`HEAD`
+|Returns Service Readiness without details
+
+|`/health/live`
+|`HEAD`
+|Returns whether the service is alive without details
+
+|`/health/started`
+|`HEAD`
+|Returns whether the service is started without details
+
+|`/health/ready/{name}`
+|`HEAD`
+|Returns Service `name` Readiness without details
+
+|`/health/live/{name}`
+|`HEAD`
+|Returns whether the service `name` is alive without details
+
+|`/health/started/{name}`
+|`HEAD`
+|Returns whether the service `name` is started without details
+
+|`/health/check/{name}`
+|`HEAD`
+|Returns all checks for service `name` without details
+
+|===
+
+For more information, please, check xref:{rootdir}/se/health.adoc[Health] documentation.
+
+// tag::info-observability-endpoint[]
+==== Information Observability
+
+Info observability allows configuration of custom properties to be available to users.
+Information observability defines the following endpoints:
+
+|===
+|Endpoint |Method |Action
+
+|`/info`
+|`GET`
+|Returns the Application information
+
+|`/info/{name}`
+|`GET`
+|Returns the Application information for the specified `name`
+
+|===
+// end::info-observability-endpoint[]
+
+// tag::logger-observability-endpoint[]
+==== Logger Observability
+
+Log observability allows reading and configuring of log levels of various loggers and reading log messages.
+Logger Observability defines the following endpoints:
+
+|===
+|Endpoint |Method |Action
+
+|`/log`
+|`GET`
+|Stream logs (if enabled)
+
+|`/log/loggers`
+|`GET`
+|Returns all logger handlers
+
+|`/log/log/loggers/{logger}`
+|`GET`
+|Returns the Logger by name `logger`
+
+|`/log/loggers/{logger}`
+|`POST`
+|Set Logger level by name `logger`
+
+|`/log/loggers/{logger}`
+|`DELETE`
+|Unset the specified logger `logger`
+
+|===
+
+// end::logger-observability-endpoint[]
+
+==== Metrics Observability
+
+Helidon distinguishes among three general _types_, or scopes, of metrics.
+
+.Types (scopes) of metrics
+[%autowidth]
+|====
+| Type/scope | Typical Usage
+
+| base | OS or Java runtime measurements (available heap, disk space, etc.).
+| vendor | Implemented by vendors, including the `REST.request` metrics and other key performance indicator measurements.
+| application | Declared via annotations or programmatically registered by your service code.
+|====
+
+When you add the metrics dependency to your project, Helidon automatically provides a built-in REST endpoint `/observe/metrics` which responds with a report of the registered metrics and their values.
+
+Clients can request a particular output format.
+
+.Formats for `/observe/metrics` output
+[%autowidth]
+|====
+| Format | Requested by
+
+| OpenMetrics (Prometheus) | default (`text/plain`)
+| JSON | Header `Accept: application/json`
+|====
+
+Clients can also limit the report by appending the metric type to the path:
+
+* `/observe/metrics/base`
+* `/observe/metrics/vendor`
+* `/observe/metrics/application`
+
+For more information see xref:{rootdir}/se/metrics/metrics.adoc[Metrics] documentation.
+
+// end::all-observability-endpoints[]
+
+// tag::observe-config[]
+To control the observability features as a whole, add config settings under `server.features.observe`.
+
+include::{rootdir}/config/io_helidon_webserver_observe_ObserveFeature.adoc[tag=config,leveloffset=+1]
+// end::observe-config[]
+
+// tag::additional-info[]
+== Additional Information
+
+The Observability features are now implemented with `HttpFeature` and can be registered with `HttpRouting.Builder#addFeature(java.util.function.Supplier)`. Such a feature encapsulates a set of endpoints, services and/or filters.
+
+Feature is similar to `HttpService` but gives more freedom in setup.
+Main difference is that a feature can add `Filter` filters and it cannot be  registered on a path (that is left to the discretion of the feature developer).
+
+* Features are not registered immediately - each feature can define a `Weight` or implement `Weighted` to order features according to their weight. Higher weighted features are registered first.
+* This is to allow ordering of features in a meaningful way (e.g. Context should be first, Tracing second, Security third etc).
+
+// end::additional-info[]
+
+// tag::references[]
+== Reference
+
+* https://download.eclipse.org/microprofile/microprofile-metrics-5.0.0/microprofile-metrics-spec-5.0.0.pdf[MicroProfile Metrics Specification]
+* xref:{rootdir}/se/metrics/metrics.adoc[Metrics] documentation.
+* xref:{rootdir}/se/health.adoc[Health] documentation.
+
+// end::references[]

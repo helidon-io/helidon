@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.webclient.api;
 
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 import io.helidon.webclient.spi.DnsResolver;
 
@@ -46,7 +47,15 @@ public final class DefaultDnsResolver implements DnsResolver {
 
     @Override
     public InetAddress resolveAddress(String hostname, DnsAddressLookup dnsAddressLookup) {
-        throw new IllegalStateException("This DNS resolver is not meant to be used.");
+        try {
+            InetAddress[] addresses = InetAddress.getAllByName(hostname);
+            addresses = dnsAddressLookup.filter(addresses);
+            if (addresses.length > 0) {
+                return addresses[0];
+            }
+        } catch (UnknownHostException e) {
+            // falls through
+        }
+        throw new IllegalArgumentException("Failed to get address for host " + hostname);
     }
-
 }

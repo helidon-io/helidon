@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,6 +59,21 @@ class ReadablePartNoLength extends ReadablePartAbstract {
     public <T> T as(GenericType<T> type) {
         return context.reader(type, partHeaders())
                 .read(type, inputStream(), partHeaders());
+    }
+
+    @Override
+    public void consume() {
+        if (inputStream == null) {
+            inputStream = inputStream();
+        }
+        try {
+            byte[] buffer = new byte[2048];
+            while (inputStream.read(buffer) > 0) {
+                // ignore
+            }
+        } finally {
+            inputStream.close();
+        }
     }
 
     @Override
@@ -167,6 +182,8 @@ class ReadablePartNoLength extends ReadablePartAbstract {
                     BufferData untilEol = dataReader.getBuffer(nextEol);
                     String theString = untilEol.readString(nextEol, StandardCharsets.US_ASCII);
                     if (boundary.equals(theString) || endBoundary.equals(theString)) {
+                        // we cannot skip the beginning of the boundary (as we call getBuffer, not readBuffer)
+                        trailingEol = false;
                         finished = true;
                         return null;
                     }
@@ -195,7 +212,10 @@ class ReadablePartNoLength extends ReadablePartAbstract {
         private void finish() {
             while (!finished) {
                 ensureBuffer();
-                nextBuffer.skip(nextBuffer.available());
+                if (!finished) {
+                    // we may have finished in ensureBuffer()
+                    nextBuffer.skip(nextBuffer.available());
+                }
             }
         }
     }

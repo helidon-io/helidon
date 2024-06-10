@@ -17,7 +17,7 @@ filter.
 
 ## Build and run
 
-```bash
+```shell
 mvn package
 java -jar target/helidon-examples-config-sources.jar
 ```

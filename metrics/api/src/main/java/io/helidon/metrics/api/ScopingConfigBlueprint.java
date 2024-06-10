@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,8 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 
-@Configured
+@Prototype.Configured
 @Prototype.Blueprint
 interface ScopingConfigBlueprint {
 
@@ -38,7 +36,8 @@ interface ScopingConfigBlueprint {
      *
      * @return default scope value
      */
-    @ConfiguredOption(key = "default", value = Meter.Scope.DEFAULT)
+    @Option.Configured("default")
+    @Option.Default(Meter.Scope.DEFAULT)
     Optional<String> defaultValue();
 
     /**
@@ -46,7 +45,8 @@ interface ScopingConfigBlueprint {
      *
      * @return tag name for storing scope values
      */
-    @ConfiguredOption(value = SCOPE_TAG_NAME_DEFAULT)
+    @Option.Configured
+    @Option.Default(SCOPE_TAG_NAME_DEFAULT)
     Optional<String> tagName();
 
     /**
@@ -54,7 +54,7 @@ interface ScopingConfigBlueprint {
      *
      * @return scope settings
      */
-    @ConfiguredOption
+    @Option.Configured
     @Option.Singular
     Map<String, ScopeConfig> scopes();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.common.mapper.OptionalValue;
+import io.helidon.common.mapper.Value;
 
 class ParametersMap implements Parameters {
     private final MapperManager mapperManager;
@@ -46,6 +48,17 @@ class ParametersMap implements Parameters {
             throw new NoSuchElementException("This " + component + " does not contain parameter named \"" + name + "\"");
         }
         return List.copyOf(value);
+    }
+
+    @Override
+    public List<Value<String>> allValues(String name) throws NoSuchElementException {
+        List<String> value = params.get(name);
+        if (value == null) {
+            throw new NoSuchElementException("This " + component + " does not contain parameter named \"" + name + "\"");
+        }
+        return value.stream()
+                .map(it -> Value.create(mapperManager, name, it, GenericType.STRING, qualifiers))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -84,8 +97,9 @@ class ParametersMap implements Parameters {
 
     @Override
     public OptionalValue<String> first(String name) {
-        if (contains(name)) {
-            return OptionalValue.create(mapperManager, name, get(name), GenericType.STRING, qualifiers);
+        List<String> value = params.get(name);
+        if (value != null && !value.isEmpty()) {
+            return OptionalValue.create(mapperManager, name, value.get(0), GenericType.STRING, qualifiers);
         }
         return OptionalValue.create(mapperManager, name, GenericType.STRING, qualifiers);
     }

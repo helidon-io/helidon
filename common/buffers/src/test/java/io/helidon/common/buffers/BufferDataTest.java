@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.common.buffers;
 
+import java.io.InputStream;
 import java.util.HexFormat;
 import java.util.stream.Stream;
 
@@ -283,6 +284,20 @@ class BufferDataTest {
                 +--------+-------------------------------------------------+----------------+
                 """;
         assertThat(bd.debugDataHex(true), is(expected));
+    }
+
+    @ParameterizedTest
+    @MethodSource("initParams")
+    void emptyInputStream(TestContext context) {
+        BufferData b = context.bufferData();
+        assertThat(b.available(), is(0));
+        b.readFrom(new InputStream() {
+            @Override
+            public int read() {
+                return -1;      // no data
+            }
+        });
+        assertThat(b.available(), is(0));
     }
 
     BufferData dataFromHex(String hexEncoded) {

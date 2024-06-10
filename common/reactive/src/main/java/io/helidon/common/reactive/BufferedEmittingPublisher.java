@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,10 +61,18 @@ public class BufferedEmittingPublisher<T> implements Flow.Publisher<T> {
     //         against a completion (isCancelled() and isComplete() are both true)
     private boolean cancelled;
 
+    /**
+     * A new buffered emitting publisher with a custom queue to be used as a buffer.
+     *
+     * @param queue buffer to use
+     */
     protected BufferedEmittingPublisher(Queue<T> queue) {
         buffer = queue;
     }
 
+    /**
+     * A new buffered emitting publisher using {@link java.util.concurrent.ConcurrentLinkedQueue} as the buffer.
+     */
     protected BufferedEmittingPublisher() {
         buffer = new ConcurrentLinkedQueue<>();
     }

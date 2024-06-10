@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -31,6 +31,6 @@ Here are some additional resources you can use to get started, get help, and to 
 *	Medium publication: https://medium.com/helidon
 *	GitHub repository: https://github.com/helidon-io/helidon
 *	Public Slack workspace: https://slack.helidon.io/
-*	Twitter account: https://twitter.com/helidon_project 
-*	YouTube channel: https://www.youtube.com/channel/UChg00-uTTrCMmPsuzUNaZsA[https://www.youtube.com/channel/UChg00-uTTrCMmPsuzUNaZsA]
-*	Stack Overflow tag: https://stackoverflow.com/tags/helidon 
+*	Twitter account: https://twitter.com/helidon_project
+*	YouTube channel: https://youtube.helidon.io
+*	Stack Overflow tag: https://stackoverflow.com/tags/helidon

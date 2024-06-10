@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import io.helidon.security.SecurityContext;
 import io.helidon.security.Subject;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.context.ContextFeature;
 import io.helidon.webserver.security.SecurityHttpFeature;
 
 /**
@@ -85,7 +86,12 @@ public final class OutboundOverrideJwtExample {
         Config clientConfig = Config.create(ConfigSources.classpath("client-service-jwt.yaml"));
         Config backendConfig = Config.create(ConfigSources.classpath("backend-service-jwt.yaml"));
 
-        server.routing(routing -> routing
+        // as we use the security http feature directly, we cannot use discovered security feature
+        // this is a unique case where we combine two sets of server set-ups in a single webserver
+        server.featuresDiscoverServices(false)
+                // context feature is a pre-requisite of security
+                .addFeature(ContextFeature.create())
+                .routing(routing -> routing
                         .addFeature(SecurityHttpFeature.create(clientConfig.get("security.web-server")))
                         .register(new JwtOverrideService()))
 

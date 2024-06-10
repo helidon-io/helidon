@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -122,7 +122,8 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
 
         // create a new response
         AuthenticationResponse.Builder builder = AuthenticationResponse.builder()
-                .requestHeaders(previousResponse.requestHeaders());
+                .requestHeaders(previousResponse.requestHeaders())
+                .responseHeaders(previousResponse.responseHeaders());
         previousResponse.description().ifPresent(builder::description);
 
         if (maybeUser.isPresent()) {

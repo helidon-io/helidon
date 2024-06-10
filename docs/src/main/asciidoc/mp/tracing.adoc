@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -35,12 +35,13 @@ include::{rootdir}/includes/mp.adoc[]
 - <<Additional Information, Additional Information>>
 ** <<Jaeger Tracing, Jaeger Tracing>>
 ** <<Zipkin Tracing, Zipkin Tracing>>
+** <<Tracing-callbacks, Responding to Span Life Cycle Events>>
 - <<Reference, Reference>>
 
 == Overview
 
 WARNING: The OpenTracing Specification that MP OpenTracing is based on is no longer maintained.
-The MP OpenTracing specification is no longer required by MicroProfile. This feature is marked as `@Deprecated` in Helidon. The specification is Superseded by link:https://github.com/eclipse/microprofile-telemetry[MicroProfile Telemetry specification].
+The MP OpenTracing specification is no longer required by MicroProfile. This feature is marked as `@Deprecated` in Helidon. The specification is superseded by the link:https://github.com/eclipse/microprofile-telemetry[MicroProfile Telemetry specification].
 
 Distributed tracing is a critical feature of micro-service based applications, since it traces workflow both
 within a service and across multiple services. This provides insight to sequence and timing data for specific blocks of work,
@@ -226,8 +227,8 @@ cd helidon-quickstart-mp-2
 .Add the following dependency to `pom.xml`:
 ----
 <dependency>
-  <groupId>io.helidon.tracing.providers</groupId>
-  <artifactId>helidon-tracing-providers-jaeger</artifactId>
+    <groupId>io.helidon.tracing.providers</groupId>
+    <artifactId>helidon-tracing-providers-jaeger</artifactId>
 </dependency>
 ----
 
@@ -270,54 +271,7 @@ call it.
 [source,java]
 .Replace the `GreetResource` class with the following code:
 ----
-package io.helidon.examples.quickstart.mp;
-
-import java.util.Collections;
-import jakarta.enterprise.context.RequestScoped;
-import jakarta.inject.Inject;
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.client.WebTarget;
-import jakarta.ws.rs.core.MediaType;
-import org.glassfish.jersey.server.Uri;
-
-@Path("/greet")
-@RequestScoped
-public class GreetResource {
-
-  @Uri("http://localhost:8081/greet")
-  private WebTarget target; // <1>
-
-  private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
-  private final GreetingProvider greetingProvider;
-
-  @Inject
-  public GreetResource(GreetingProvider greetingConfig) {
-    this.greetingProvider = greetingConfig;
-  }
-
-  @GET
-  @Produces(MediaType.APPLICATION_JSON)
-  public JsonObject getDefaultMessage() {
-    return createResponse("World");
-  }
-
-  @GET
-  @Path("/outbound") // <2>
-  public JsonObject outbound() {
-    return target.request().accept(MediaType.APPLICATION_JSON_TYPE).get(JsonObject.class);
-  }
-
-  private JsonObject createResponse(String who) {
-    String msg = String.format("%s %s!", greetingProvider.getMessage(), who);
-
-    return JSON.createObjectBuilder().add("message", msg).build();
-  }
-}
+include::{sourcedir}/mp/TracingSnippets.java[tag=snippet_1, indent=0]
 ----
 <1> This is the `WebTarget` needed to send a request to the second service at port `8081`.
 <2> This is the new endpoint that will call the second service.
@@ -330,7 +284,7 @@ curl -i http://localhost:8080/greet/outbound # <1>
 ----
 <1> The request went to the service on `8080`, which then invoked the service at `8081` to get the greeting.
 
-[source, json]
+[source, hocon]
 .Response body
 ----
 {
@@ -342,7 +296,7 @@ curl -i http://localhost:8080/greet/outbound # <1>
 Refresh the Jaeger UI trace listing page and notice that there is a trace across two services.
 
 .Tracing across multiple services detail view
-image::guides/12_tracing_detail_2_services.png[Traces]
+image::guides/12_tracing_detail_2_services.png[Traces,role="fit"]
 
 In the image above, you can see that the trace includes spans from two services. You will notice there is a gap before the sixth span, which is a `get` operation. This is a one-time client initialization delay.  Run the `/outbound` curl command again and look at the new trace to
 see that the delay no longer exists.
@@ -406,7 +360,7 @@ kubectl apply -f ./jaeger.yaml
 [source,bash]
 .Create a Jaeger external server and expose it on port 9142:
 ----
-kubectl expose pod jaeger --name=jaeger-external --port=16687 --target-port=16686 --type=LoadBalancer // <1>
+kubectl expose pod jaeger --name=jaeger-external --port=16687 --target-port=16686 --type=LoadBalancer # <1>
 ----
 <1> Create a service so that you can access the Jaeger UI.
 
@@ -421,7 +375,7 @@ take a few seconds before it is ready.
 kind: Service
 apiVersion: v1
 metadata:
-  name: helidon-tracing // <1>
+  name: helidon-tracing # <1>
   labels:
     app: helidon-tracing
 spec:
@@ -438,7 +392,7 @@ apiVersion: apps/v1
 metadata:
   name: helidon-tracing
 spec:
-  replicas: 1 // <2>
+  replicas: 1 # <2>
   selector:
     matchLabels:
       app: helidon-tracing
@@ -475,7 +429,7 @@ kubectl get service/helidon-tracing
 [source,bash]
 ----
 NAME             TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
-helidon-tracing   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s // <1>
+helidon-tracing   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s # <1>
 ----
 <1> A service of type `NodePort` that serves the default routes on port `31143`.
 
@@ -533,15 +487,7 @@ You can either configure the span context as the active span, or explicitly defi
 [source,java]
 .Tracing propagation with Jersey client
 ----
-import static io.helidon.tracing.jersey.client.ClientTracingFilter.CURRENT_SPAN_CONTEXT_PROPERTY_NAME;
-import static io.helidon.tracing.jersey.client.ClientTracingFilter.TRACER_PROPERTY_NAME;
-
-Response response = client.target(serviceEndpoint)
-    .request()
-    // tracer should be provided unless available as GlobalTracer
-    .property(TRACER_PROPERTY_NAME, tracer)
-    .property(CURRENT_SPAN_CONTEXT_PROPERTY_NAME, spanContext)
-    .get();
+include::{sourcedir}/mp/TracingSnippets.java[tag=snippet_2, indent=0]
 ----
 
 == Additional Information
@@ -561,6 +507,10 @@ As the <<jaeger-tracing, Jaeger Tracing>> section describes, you can use Jaeger 
 
 include::{rootdir}/includes/tracing/tracer-zipkin.adoc[tag=zipkin-dependency]
 include::{rootdir}/includes/tracing/tracer-zipkin.adoc[tag=zipkin-configuration]
+
+
+include::{rootdir}/includes/tracing/common-callbacks.adoc[tags=defs;detailed,leveloffset=+1]
+
 == Reference
 
 * link:{microprofile-tracing-spec-url}[MicroProfile Opentracing Specification]

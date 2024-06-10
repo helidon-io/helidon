@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Logger;
 
 import io.helidon.common.LazyValue;
 
@@ -43,7 +42,7 @@ import jakarta.interceptor.InvocationContext;
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
 class MicronautMethodInvocationContext implements MethodInvocationContext {
-    private static final Logger LOGGER = Logger.getLogger(MicronautMethodInvocationContext.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(MicronautMethodInvocationContext.class.getName());
 
     private final InvocationContext cdiContext;
     private final ExecutableMethod executableMethod;
@@ -107,7 +106,7 @@ class MicronautMethodInvocationContext implements MethodInvocationContext {
     public Object proceed() throws RuntimeException {
         if (remaining.hasNext()) {
             MethodInterceptor<?, ?> next = remaining.next();
-            LOGGER.finest(() -> "Micronaut interceptor: " + next.getClass().getName());
+            LOGGER.log(System.Logger.Level.TRACE, () -> "Micronaut interceptor: " + next.getClass().getName());
             return next.intercept(this);
         }
         try {
@@ -120,7 +119,7 @@ class MicronautMethodInvocationContext implements MethodInvocationContext {
                 cdiContext.setParameters(arguments);
             }
 
-            LOGGER.finest(() -> "Proceeding with CDI interceptors");
+            LOGGER.log(System.Logger.Level.TRACE, () -> "Proceeding with CDI interceptors");
             return cdiContext.proceed();
         } catch (RuntimeException e) {
             throw e;

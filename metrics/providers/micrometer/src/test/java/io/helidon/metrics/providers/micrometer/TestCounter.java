@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io.helidon.metrics.providers.micrometer;
 
 import java.util.List;
 
+import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
@@ -40,10 +41,14 @@ class TestCounter {
 
     @Test
     void testUnwrap() {
-        Counter c = meterRegistry.getOrCreate(Counter.builder("c4"));
+        Counter.Builder builder = Counter.builder("c4");
+        String descr = "Example counter";
+        builder.unwrap(io.micrometer.core.instrument.Counter.Builder.class).description(descr);
+        Counter c = meterRegistry.getOrCreate(builder);
         io.micrometer.core.instrument.Counter mCounter = c.unwrap(io.micrometer.core.instrument.Counter.class);
         assertThat("Initial value", c.count(), is(0L));
         mCounter.increment();
         assertThat("Updated value", c.count(), is(1L));
+        assertThat("Description", c.description(), OptionalMatcher.optionalValue(is(descr)));
     }
 }

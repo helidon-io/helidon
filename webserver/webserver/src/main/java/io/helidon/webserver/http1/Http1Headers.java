@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ public final class Http1Headers {
     public WritableHeaders<?> readHeaders(HttpPrologue prologue) {
         try {
             return Http1HeadersParser.readHeaders(reader, maxHeadersSize, validateHeaders);
-        } catch (IllegalStateException | IllegalArgumentException e) {
+        } catch (IllegalStateException | IllegalArgumentException | DataReader.IncorrectNewLineException e) {
             throw RequestException.builder()
                     .type(DirectHandler.EventType.BAD_REQUEST)
                     .request(DirectTransportRequest.create(prologue, WritableHeaders.create()))

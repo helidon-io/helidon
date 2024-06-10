@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,6 +66,10 @@ public class GenericType<T> implements Type {
      * Generic type for String.
      */
     public static final GenericType<String> STRING = GenericType.create(String.class);
+    /**
+     * Generic type for Object.
+     */
+    public static final GenericType<Object> OBJECT = GenericType.create(Object.class);
 
     private final Type type;
     private final Class<?> rawType;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,9 @@ import io.helidon.common.types.TypedElementInfo;
  *
  * @see io.helidon.common.types.TypedElementInfo
  * @see io.helidon.common.types.TypeInfo#elementInfo()
+ * @deprecated use {@code helidon-codegen} instead.
  */
+@Deprecated(forRemoval = true, since = "4.1.0")
 public final class ElementInfoPredicates {
     /**
      * Predicate for method element kind.

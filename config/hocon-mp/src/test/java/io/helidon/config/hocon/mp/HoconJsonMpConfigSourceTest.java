@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,12 @@
 package io.helidon.config.hocon.mp;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.Enumeration;
+
+import io.helidon.config.mp.MpConfigSources;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.Test;
@@ -70,6 +73,22 @@ class HoconJsonMpConfigSourceTest {
         validateJsonConfig(source);
     }
 
+    @Test
+    void testJsonMetaConfigProvider() {
+        typeChecks("json", """
+                {
+                another1.key: "another1.value",
+                another2.key: "another2.value"
+                }
+            """);
+    }
+
+    private void typeChecks(String type, String content) {
+        org.eclipse.microprofile.config.spi.ConfigSource source =
+                MpConfigSources.create(type, new StringReader(content));
+        assertThat(source.getValue("another1.key"), is("another1.value"));
+        assertThat(source.getValue("another2.key"), is("another2.value"));
+    }
     private void validateJsonConfig(ConfigSource source) {
         assertThat(source.getValue("json.string"), is("String"));
         assertThat(source.getValue("json.number"), is("10"));

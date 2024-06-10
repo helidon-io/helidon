@@ -4,13 +4,13 @@ This example implements demonstrates usage of MP Telemetry Tracing.
 
 ## Build and run
 
-```bash
+```shell
 mvn package
 java -jar greeting/target/helidon-examples-microprofile-telemetry-greeting.jar
 ```
 
 Run Jaeger tracer. If you prefer to use Docker, run in terminal:
-```bash
+```shell
 docker run -d --name jaeger \
   -e COLLECTOR_ZIPKIN_HOST_PORT=:9411 \
   -e COLLECTOR_OTLP_ENABLED=true \
@@ -29,33 +29,37 @@ docker run -d --name jaeger \
 
 If you have Jaeger all-in-one installed, use this command:
 
-```bash
+```shell
 jaeger-all-in-one --collector.zipkin.host-port=9411   --collector.otlp.enabled=true
 ```
 
 Run the Secondary service:
 
-```bash
+```shell
 mvn package
 java -jar secondary/target/helidon-examples-microprofile-telemetry-secondary.jar
 ```
 
 ## Exercise the application
 
-```
+```shell
 curl -X GET http://localhost:8080/greet
-"Hello World!"
+#Output: "Hello World!"
 
 curl -X GET http://localhost:8080/greet/span
-{"Span":"PropagatedSpan{ImmutableSpanContext{traceId=00000000000000000000000000000000, spanId=0000000000000000, traceFlags=00, traceState=ArrayBasedTraceState{entries=[]}, remote=false, valid=false}}"}
+#Output: {"Span":"PropagatedSpan{ImmutableSpanContext{traceId=00000000000000000000000000000000, spanId=0000000000000000, traceFlags=00, traceState=ArrayBasedTraceState{entries=[]}, remote=false, valid=false}}"}
 
 curl -X GET http://localhost:8080/greet/custom
+```
+```
+#Output: 
 {
   "Custom Span": "SdkSpan{traceId=bea7da56d1fe82400af8ec0a8adb370d, spanId=57647ead5dc32ae7, parentSpanContext=ImmutableSpanContext{traceId=bea7da56d1fe82400af8ec0a8adb370d, spanId=0ca670f1e3330ea5, traceFlags=01, traceState=ArrayBasedTraceState{entries=[]}, remote=false, valid=true}, name=custom, kind=INTERNAL, attributes=AttributesMap{data={attribute=value}, capacity=128, totalAddedValues=1}, status=ImmutableStatusData{statusCode=UNSET, description=}, totalRecordedEvents=0, totalRecordedLinks=0, startEpochNanos=1683724682576003542, endEpochNanos=1683724682576006000}"
 }
-
+```
+```shell
 curl -X GET http://localhost:8080/greet/outbound   
-Secondary    
+#Output: Secondary    
 
 ```
 

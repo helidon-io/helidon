@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 
-= Oracle Cloud Infrastructure Integration
+= Oracle Cloud Infrastructure
 :description: Helidon OCI Integration
-:keywords: oci, cdi
+:keywords: oci, cdi, Oracle Cloud Infrastructure
 :feature-name: OCI Integration
 :rootdir: {docdir}/../..
 
@@ -35,7 +35,7 @@ include::{rootdir}/includes/mp.adoc[]
 
 == Overview
 
-Helidon MP OCI Integration provides easy access to Oracle Cloud Infrastructure using the OCI Java SDK.`
+Helidon MP OCI Integration provides easy access to Oracle Cloud Infrastructure using the OCI Java SDK.
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -107,22 +107,13 @@ Now you can inject OCI SDK Clients.
 [source,java]
 .Field-injection example
 ----
-@Inject
-private ObjectStorage client;
+include::{sourcedir}/mp/integrations/OciSnippets.java[tag=snippet_1, indent=0]
 ----
 
 [source,java]
 .Constructor-injection example
 ----
-public class MyClass {
-
-    private final ObjectStorage client;
-
-    @Inject
-    public YourConstructor(@Named("orders") ObjectStorage client) {
-        this.client = client;
-    }
-}
+include::{sourcedir}/mp/integrations/OciSnippets.java[tag=snippet_2, indent=0]
 ----
 
 The extension implements this injection point by creating an Object Storage client

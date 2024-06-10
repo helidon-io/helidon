@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,6 @@ module io.helidon.common.socket {
     // even though this is part of API, it is not transitive,
     // as unless your module uses config, the API is not useful
     requires io.helidon.common.config;
-
-    requires static io.helidon.config.metadata;
 
     requires transitive io.helidon.common.buffers;
     requires transitive io.helidon.builder.api;

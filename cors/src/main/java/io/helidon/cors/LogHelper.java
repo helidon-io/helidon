@@ -25,8 +25,6 @@ import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.helidon.cors.CorsSupportHelper.RequestType;
@@ -36,8 +34,8 @@ import io.helidon.http.Method;
 
 class LogHelper {
 
-    static final Level DECISION_LEVEL = Level.FINE;
-    static final Level DETAILED_DECISION_LEVEL = Level.FINER;
+    static final System.Logger.Level DECISION_LEVEL = System.Logger.Level.TRACE;
+    static final System.Logger.Level DETAILED_DECISION_LEVEL = System.Logger.Level.TRACE;
 
     private LogHelper() {
     }
@@ -77,6 +75,16 @@ class LogHelper {
                                      String.format("Request %s is not cross-host: %s",
                                                    requestAdapter,
                                                    List.of("header " + HeaderNames.ORIGIN + " is absent")));
+    }
+
+    static <T> void logOpaqueOrigin(boolean silent, CorsRequestAdapter<T> requestAdapter) {
+        if (silent || !CorsSupportHelper.LOGGER.isLoggable(DECISION_LEVEL)) {
+            return;
+        }
+        CorsSupportHelper.LOGGER.log(DECISION_LEVEL,
+                                     String.format("Request %s specifies opaque origin: %s",
+                                                   requestAdapter,
+                                                   List.of("header " + HeaderNames.ORIGIN)));
     }
 
     static <T> void logIsRequestTypeNormal(boolean result, boolean silent, CorsRequestAdapter<T> requestAdapter,
@@ -167,11 +175,11 @@ class LogHelper {
 
     static class MatcherChecks<T> {
         private final Map<CrossOriginConfig, MatcherCheck> checks;
-        private final Logger logger;
+        private final System.Logger logger;
         private final boolean isLoggable;
         private final Function<T, CrossOriginConfig> getter;
 
-        MatcherChecks(Logger logger, Function<T, CrossOriginConfig> getter) {
+        MatcherChecks(System.Logger logger, Function<T, CrossOriginConfig> getter) {
             this.logger = logger;
             isLoggable = logger.isLoggable(DETAILED_DECISION_LEVEL);
             this.getter = getter;

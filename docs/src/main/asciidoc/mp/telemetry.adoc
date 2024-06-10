@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ In a distributed tracing system, *traces* are used to capture a series of reques
 
 Finally, *exporters* are responsible for transmitting the collected trace data to a backend service for monitoring and visualization. This enables developers to gain a comprehensive understanding of the system's behavior and detect any issues or bottlenecks that may arise.
 
-image::telemetry/telemetry-general.png[General understanding of OpenTelemetry Tracing]
+image::telemetry/telemetry-general.png[General understanding of OpenTelemetry Tracing,role="fit"]
 
 There are two ways to work with Telemetry, using:
 
@@ -81,21 +81,9 @@ Helidon provides full access to OpenTelemetry Tracing API:
 Accessing and using these objects can be done as follows. For span:
 
 .Span sample
-[source, java]
+[source,java]
 ----
-@ApplicationScoped
-class HelidonBean {
-
-    @WithSpan   <1>
-    void doSomethingWithinSpan() {
-        // do something here
-    }
-
-    @WithSpan("name") <2>
-    void complexSpan(@SpanAttribute(value = "arg") String arg) {
-        // do something here
-    }
-}
+include::{sourcedir}/mp/TelemetrySnippets.java[tag=snippet_1, indent=0]
 ----
 <1> Simple `@WithSpan` annotation usage.
 <2> Additional attributes can be set on a method.
@@ -106,27 +94,9 @@ class HelidonBean {
 You can inject OpenTelemetry `Tracer` using the regular `@Inject` annotation and use `SpanBuilder` to manually create, star and stop spans.
 
 .SpanBuilder usage
-[source, java]
+[source,java]
 ----
-@Path("/")
-public class HelidonEndpoint {
-
-    @Inject
-    Tracer tracer;  <1>
-
-    @GET
-    @Path("/span")
-    public Response span() {
-        Span span = tracer.spanBuilder("new")   <2>
-                .setSpanKind(SpanKind.CLIENT)
-                .setAttribute("someAttribute", "someValue")
-                .startSpan();
-
-        span.end();
-
-        return Response.ok().build();
-    }
-}
+include::{sourcedir}/mp/TelemetrySnippets.java[tag=snippet_2, indent=0]
 ----
 <1> Inject `Tracer`.
 <2> Use `Tracer.spanBuilder` to create and start new `Span`.
@@ -134,28 +104,9 @@ public class HelidonEndpoint {
 Helidon Microprofile Telemetry is integrated with xref:tracing.adoc[Helidon Tracing API]. This means that both APIs can be mixed, and all parent hierarchies will be kept. In the case below, `@WithSpan` annotated method is mixed with manually created `io.helidon.tracing.Span`:
 
 .Inject Helidon Tracer
-[source, java]
+[source,java]
 ----
-private io.helidon.tracing.Tracer helidonTracerInjected;
-
-@Inject
-GreetResource(io.helidon.tracing.Tracer helidonTracerInjected) {
-    this.helidonTracerInjected = helidonTracerInjected; <1>
-}
-
-@GET
-@Path("mixed_injected")
-@Produces(MediaType.APPLICATION_JSON)
-@WithSpan("mixed_parent_injected")
-public GreetingMessage mixedSpanInjected() {
-    io.helidon.tracing.Span mixedSpan = helidonTracerInjected.spanBuilder("mixed_injected") <2>
-            .kind(io.helidon.tracing.Span.Kind.SERVER)
-            .tag("attribute", "value")
-            .start();
-    mixedSpan.end();
-
-    return new GreetingMessage("Mixed Span Injected" + span);
-}
+include::{sourcedir}/mp/TelemetrySnippets.java[tag=snippet_3, indent=0]
 ----
 <1> Inject `io.helidon.tracing.Tracer`.
 <2> Use the injected tracer to create  `io.helidon.tracing.Span` using the `spanBuilder()` method.
@@ -165,23 +116,9 @@ The span is then started and ended manually. Span parent relations will be prese
 Another option is to use the Global Tracer:
 
 .Obtain the Global tracer
-[source, java]
+[source,java]
 ----
-@GET
-@Path("mixed")
-@Produces(MediaType.APPLICATION_JSON)
-@WithSpan("mixed_parent")
-public GreetingMessage mixedSpan() {
-
-    io.helidon.tracing.Tracer helidonTracer = io.helidon.tracing.Tracer.global();   <1>
-    io.helidon.tracing.Span mixedSpan = helidonTracer.spanBuilder("mixed")  <2>
-            .kind(io.helidon.tracing.Span.Kind.SERVER)
-            .tag("attribute", "value")
-            .start();
-    mixedSpan.end();
-
-    return new GreetingMessage("Mixed Span" + span);
-}
+include::{sourcedir}/mp/TelemetrySnippets.java[tag=snippet_4, indent=0]
 ----
 <1> Obtain tracer using the `io.helidon.tracing.Tracer.global()` method;
 <2> Use the created tracer to create a span.
@@ -194,26 +131,9 @@ The span is then started and ended manually. Span parent relations will be prese
 To obtain the current span, it can be injected by CDI. The current span can also be obtained using the static method `Span.current()`.
 
 .Inject the current span
-[source, java]
+[source,java]
 ----
-@Path("/")
-public class HelidonEndpoint {
-    @Inject
-    Span span;  <1>
-
-    @GET
-    @Path("/current")
-    public Response currentSpan() {
-        return Response.ok(span.getAttribute("someAttribute")).build(); <2>
-    }
-
-
-    @GET
-    @Path("/current/static")
-    public Response currentSpanStatic() {
-        return Response.ok(Span.current().getAttribute("someAttribute")).build(); <3>
-    }
-}
+include::{sourcedir}/mp/TelemetrySnippets.java[tag=snippet_5, indent=0]
 ----
 <1> Inject the current span.
 <2> Use the injected span.
@@ -224,31 +144,15 @@ public class HelidonEndpoint {
 The same functionality is available for the `Baggage` API:
 
 .Inject the current baggage
-[source, java]
+[source,java]
 ----
-@Path("/")
-public class HelidonEndpoint {
-    @Inject
-    Baggage baggage;  <1>
-
-    @GET
-    @Path("/current")
-    public Response currentBaggage() {
-        return Response.ok(baggage.get("baggageKey")).build(); <2>
-    }
-
-
-    @GET
-    @Path("/current/static")
-    public Response currentBaggageStatic() {
-        return Response.ok(Baggage.current().get("baggageKey")).build(); <3>
-    }
-}
+include::{sourcedir}/mp/TelemetrySnippets.java[tag=snippet_6, indent=0]
 ----
 <1> Inject the current baggage.
 <2> Use the injected baggage.
 <3> Use `Baggage.current()` to access the current baggage.
 
+include::{rootdir}/includes/tracing/common-callbacks.adoc[tags=defs;detailed,leveloffset=+1]
 
 == Configuration
 
@@ -307,14 +211,16 @@ Together with Helidon Telemetry dependency, an OpenTelemetry Exporter dependency
 
 [source,xml]
 ----
-<dependency>
-    <groupId>io.helidon.microprofile.telemetry</groupId>
-    <artifactId>helidon-microprofile-telemetry</artifactId> <1>
-</dependency>
-<dependency>
-    <groupId>io.opentelemetry</groupId>
-    <artifactId>opentelemetry-exporter-jaeger</artifactId>  <2>
-</dependency>
+<dependencies>
+    <dependency>
+        <groupId>io.helidon.microprofile.telemetry</groupId>
+        <artifactId>helidon-microprofile-telemetry</artifactId> <!--1-->
+    </dependency>
+    <dependency>
+        <groupId>io.opentelemetry</groupId>
+        <artifactId>opentelemetry-exporter-jaeger</artifactId>  <!--2-->
+    </dependency>
+</dependencies>
 ----
 <1> Helidon Telemetry dependency.
 <2> OpenTelemetry Jaeger exporter.
@@ -351,17 +257,9 @@ For this example, you will use Jaeger to manage data tracing. If you prefer to u
 
 To create simple services, use `@WithSpan` and `Tracer` to create span and let MicroProfile OpenTelemetry handle them.
 
-[source, java]
+[source,java]
 ----
-@Path("/greet")
-public class GreetResource {
-
-    @GET
-    @WithSpan("default")                <1>
-    public String getDefaultMessage() {
-        return "Hello World";
-    }
-}
+include::{sourcedir}/mp/TelemetrySnippets.java[tag=snippet_7, indent=0]
 ----
 <1> Use of `@WithSpan` with name "default".
 
@@ -375,31 +273,14 @@ Hello World
 
 Next, launch the Jaeger UI at link:http://localhost:16686/[]. The expected output is:
 
-image::telemetry/telemetry-greeting-jaeger.png[Greeting service tracing output]
+image::telemetry/telemetry-greeting-jaeger.png[Greeting service tracing output,role="fit"]
 
 .Custom method
 [source,java]
 ----
-@Inject
-private Tracer tracer;  <1>
-
-@GET
-@Path("custom")
-@Produces(MediaType.APPLICATION_JSON)
-@WithSpan                                           <2>
-public JsonObject useCustomSpan(){
-    Span span = tracer.spanBuilder("custom")        <3>
-            .setSpanKind(SpanKind.INTERNAL)
-            .setAttribute("attribute", "value")
-            .startSpan();
-    span.end();                                     <4>
-
-    return JSON.createObjectBuilder()
-            .add("Custom Span", span.toString())
-            .build();
-}
+include::{sourcedir}/mp/TelemetrySnippets.java[tag=snippet_8, indent=0]
 ----
-<1> Inject Opentelemetry `Tracer`.
+<1> Inject OpenTelemetry `Tracer`.
 <2> Create a span around the method `useCustomSpan()`.
 <3> Create a custom `INTERNAL` span and start it.
 <4> End the custom span.
@@ -413,22 +294,14 @@ curl localhost:8080/greeting/custom
 
 Again you can launch the Jaeger UI at link:http://localhost:16686/[]. The expected output is:
 
-image::telemetry/telemetry-custom-jaeger.png[Custom span usage]
+image::telemetry/telemetry-custom-jaeger.png[Custom span usage,role="fit"]
 
 Now let us use multiple services calls. In the example below our main service will call the `secondary` services. Each method in each service will be annotated with `@WithSpan` annotation.
 
 .Outbound method
 [source,java]
 ----
-@Uri("http://localhost:8081/secondary")
-private WebTarget target;       <1>
-
-@GET
-@Path("/outbound")
-@WithSpan("outbound")   <2>
-public String outbound() {
-    return target.request().accept(MediaType.TEXT_PLAIN).get(String.class); <3>
-}
+include::{sourcedir}/mp/TelemetrySnippets.java[tag=snippet_9, indent=0]
 ----
 <1> Inject `WebTarget` pointing to Secondary service.
 <2> Wrap method using `WithSpan`.
@@ -437,13 +310,9 @@ public String outbound() {
 The secondary service is basic; it has only one method, which is also annotated with `@WithSpan`.
 
 .Secondary service
-[source, java]
+[source,java]
 ----
-@GET
-@WithSpan   <1>
-public String getSecondaryMessage() {
-    return "Secondary"; <2>
-}
+include::{sourcedir}/mp/TelemetrySnippets.java[tag=snippet_10, indent=0]
 ----
 <1> Wrap method in a span.
 <2> Return a string.
@@ -460,9 +329,9 @@ The `greeting-service` call `secondary-service`. Each service will create spans 
 
 Launch the Jaeger UI at link:http://localhost:16686/[] to see the expected output (shown below).
 
-image::telemetry/telemetry-outbound-jaeger.png[Secondary service outbound call]
+image::telemetry/telemetry-outbound-jaeger.png[Secondary service outbound call,role="fit"]
 
-This example is available at the link:https://github.com/helidon-io/helidon/tree/main/examples/microprofile/telemetry[Helidon official GitHub repository].
+This example is available at the link:{helidon-github-tree-url}/examples/microprofile/telemetry[Helidon official GitHub repository].
 
 == Reference
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.AnnotationValue;
@@ -63,7 +62,10 @@ import static java.util.function.Predicate.not;
 
 /**
  * Factory to analyze processed types and to provide {@link io.helidon.common.types.TypeInfo} for them.
+ *
+ * @deprecated use {@code helidon-codegen} instead.
  */
+@Deprecated(forRemoval = true, since = "4.1.0")
 public final class TypeInfoFactory {
     private static final AllPredicate ALL_PREDICATE = new AllPredicate();
 
@@ -183,16 +185,9 @@ public final class TypeInfoFactory {
 
             thrownChecked = ee.getThrownTypes()
                     .stream()
-                    .flatMap(it -> {
-                        if (isCheckedException(env, it)) {
-                            TypeName typeName = TypeFactory.createTypeName(it).orElse(null);
-                            if (typeName == null) {
-                                return Stream.of();
-                            }
-                            return Stream.of(typeName);
-                        }
-                        return Stream.of();
-                    })
+                    .filter(it -> isCheckedException(env, it))
+                    .map(TypeFactory::createTypeName)
+                    .flatMap(Optional::stream)
                     .collect(Collectors.toSet());
         } else if (v instanceof VariableElement ve) {
             typeMirror = Objects.requireNonNull(ve.asType());

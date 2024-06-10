@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -123,4 +123,50 @@ class ProviderTest {
         assertThat(value.listNotDiscover(), hasSize(1));
         assertThat(services.get(0).prop(), is("config2"));
     }
+
+    @Test
+    void testDisabledDiscoveryOnTheCopy() {
+        SomeProvider.SomeService someService = new DummyService();
+        WithProvider value = WithProvider.builder()
+                .listDiscoverDiscoverServices(false)
+                .oneNotDiscover(someService) //This needs to be set, otherwise validation fails
+                .build();
+        assertThat(value.listDiscover(), is(List.of()));
+
+        WithProvider copy = WithProvider.builder()
+                .from(value)
+                .build();
+        assertThat(copy.listDiscover(), is(List.of()));
+    }
+
+    @Test
+    void testDisabledDiscoveryOnTheCopiedBuilder() {
+        SomeProvider.SomeService someService = new DummyService();
+        WithProvider.Builder value = WithProvider.builder()
+                .listDiscoverDiscoverServices(false)
+                .oneNotDiscover(someService);
+
+        WithProvider copy = WithProvider.builder()
+                .from(value)
+                .build();
+        assertThat(copy.listDiscover(), is(List.of()));
+    }
+
+    private static class DummyService implements SomeProvider.SomeService {
+        @Override
+        public String prop() {
+            return null;
+        }
+
+        @Override
+        public String name() {
+            return null;
+        }
+
+        @Override
+        public String type() {
+            return null;
+        }
+    }
+
 }

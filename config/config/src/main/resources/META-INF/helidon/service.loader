@@ -1,0 +1,4 @@
+# List of service contracts we want to support either from service registry, or from service loader
+io.helidon.config.spi.ConfigParser
+io.helidon.config.spi.ConfigFilter
+io.helidon.config.spi.ConfigMapperProvider

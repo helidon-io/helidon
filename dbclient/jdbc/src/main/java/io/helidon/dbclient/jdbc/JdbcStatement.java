@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -299,7 +299,7 @@ public abstract class JdbcStatement<S extends DbStatement<S>> extends DbStatemen
             statement.setBoolean(index, b);
         } else if (parameter == null) {
             // Normally null is passed as a DatabaseField so the type is included, but in some case may be passed directly.
-            statement.setNull(index, Types.VARCHAR);
+            statement.setNull(index, Types.NULL);
         } else if (parameter instanceof byte[] b) {
             if (jdbcContext().parametersConfig().useByteArrayBinding()) {
                 ByteArrayInputStream inputStream = new ByteArrayInputStream(b);

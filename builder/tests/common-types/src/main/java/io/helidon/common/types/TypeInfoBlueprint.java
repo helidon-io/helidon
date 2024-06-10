@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,14 @@ interface TypeInfoBlueprint extends Annotated {
     TypeName typeName();
 
     /**
+     * Description, such as javadoc, if available.
+     *
+     * @return description of this element
+     */
+    @Option.Redundant
+    Optional<String> description();
+
+    /**
      * The type element kind.
      * <p>
      * Such as
@@ -50,7 +58,7 @@ interface TypeInfoBlueprint extends Annotated {
      *
      * @return the type element kind.
      * @see io.helidon.common.types.TypeValues#KIND_CLASS and other constants on this class prefixed with {@code TYPE}
-     * @deprecated use {@link #kind()} instead
+     * @deprecated use {@link io.helidon.common.types.TypeInfo#kind()} instead
      */
     @Option.Required
     @Option.Deprecated("kind")
@@ -178,11 +186,11 @@ interface TypeInfoBlueprint extends Annotated {
      *
      * @return element modifiers
      * @see io.helidon.common.types.TypeValues#MODIFIER_PUBLIC and other constants prefixed with {@code MODIFIER}
-     * @deprecated use {@link #elementModifiers()} instead
+     * @deprecated use {@link io.helidon.common.types.TypeInfo#elementModifiers()} instead
      */
     @Option.Singular
     @Option.Redundant
-    @Option.Deprecated("typeModifiers")
+    @Option.Deprecated("elementModifiers")
     @Deprecated(forRemoval = true, since = "4.1.0")
     Set<String> modifiers();
 
@@ -221,7 +229,8 @@ interface TypeInfoBlueprint extends Annotated {
     Optional<Object> originatingElement();
 
     /**
-     * Uses {@link #referencedModuleNames()} to determine if the module name is known for the given type.
+     * Uses {@link io.helidon.common.types.TypeInfo#referencedModuleNames()} to determine if the module name is known for the
+     * given type.
      *
      * @param typeName the type name to lookup
      * @return the module name if it is known

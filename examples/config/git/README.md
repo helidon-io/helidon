@@ -21,7 +21,7 @@ checks to make sure the value is the expected `hello`.
 
 ## Build and run
 
-```bash
+```shell
 mvn package
 export ENVIRONMENT_NAME=test
 java -jar target/helidon-examples-config-git.jar

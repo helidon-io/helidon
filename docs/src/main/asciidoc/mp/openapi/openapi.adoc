@@ -49,10 +49,10 @@ include::{incdir}/openapi.adoc[tag=mp-depc]
 If you do not use the `helidon-microprofile-bundle` also add the following dependency which defines the MicroProfile OpenAPI annotations so you can use them in your code:
 [source,xml]
 ----
-    <dependency>
-        <groupId>org.eclipse.microprofile.openapi</groupId>
-        <artifactId>microprofile-openapi-api</artifactId>
-    </dependency>
+<dependency>
+    <groupId>org.eclipse.microprofile.openapi</groupId>
+    <artifactId>microprofile-openapi-api</artifactId>
+</dependency>
 ----
 
 == Usage
@@ -104,25 +104,7 @@ Helidon MP QuickStart, enhanced with OpenAPI support.
 
 [source,java]
 ----
-@Path("/greeting")
-@PUT
-@Operation(summary = "Set the greeting prefix",
-           description = "Permits the client to set the prefix part of the greeting (\"Hello\")") //<1>
-@RequestBody( //<2>
-    name = "greeting",
-    description = "Conveys the new greeting prefix to use in building greetings",
-    content = @Content(
-                mediaType = "application/json",
-                schema = @Schema(implementation = GreetingUpdateMessage.class),
-                examples = @ExampleObject(
-                    name = "greeting",
-                    summary = "Example greeting message to update",
-                    value = "{\"greeting\": \"New greeting message\"}")))
-@Consumes(MediaType.APPLICATION_JSON)
-@Produces(MediaType.APPLICATION_JSON)
-public Response updateGreeting(JsonObject jsonObject) {
-    ...
-}
+include::{sourcedir}/mp/openapi/OpenapiSnippets.java[tag=snippet_1, indent=0]
 ----
 <1> With `@Operation` annotation we document the current method.
 <2> With `@RequestBody` annotation we document the content produced. Internal annotations `@Content`, `@Schema` and
@@ -137,25 +119,9 @@ The OASFilter interface allows application developers to receive callbacks for v
 
 The following example filter prevents information about a given path from appearing in the OpenAPI document.
 
-[source, java]
+[source,java]
 ----
-import org.eclipse.microprofile.openapi.models.Operation;
-import org.eclipse.microprofile.openapi.models.PathItem;
-
-public class SimpleAPIFilter implements OASFilter {
-
-    @Override
-    public PathItem filterPathItem(PathItem pathItem) {
-        for (Map.Entry<PathItem.HttpMethod, Operation> methodOp
-                : pathItem.getOperations().entrySet()) {
-            if (SimpleAPIModelReader.DOOMED_OPERATION_ID
-                    .equals(methodOp.getValue().getOperationId())) {
-                return null;
-            }
-        }
-        return OASFilter.super.filterPathItem(pathItem);
-    }
-}
+include::{sourcedir}/mp/openapi/OpenapiSnippets.java[tag=snippet_2, indent=0]
 ----
 
 You can implement a model reader to provide all or part of the in-memory `OpenAPI` model programmatically. Helidon
@@ -166,63 +132,7 @@ earlier will suppress one of the paths, but the model reader does not know or ca
 
 [source,java]
 ----
-import org.eclipse.microprofile.openapi.OASFactory;
-import org.eclipse.microprofile.openapi.OASModelReader;
-import org.eclipse.microprofile.openapi.models.OpenAPI;
-import org.eclipse.microprofile.openapi.models.PathItem;
-import org.eclipse.microprofile.openapi.models.Paths;
-
-/**
- * Defines two paths using the OpenAPI model reader mechanism, one that should
- * be suppressed by the filter class and one that should appear in the published
- * OpenAPI document.
- */
-public class SimpleAPIModelReader implements OASModelReader {
-
-    /**
-     * Path for the example endpoint added by this model reader that should be visible.
-     */
-    public static final String MODEL_READER_PATH = "/test/newpath";
-
-    /**
-     * Path for an endpoint that the filter should hide.
-     */
-    public static final String DOOMED_PATH = "/test/doomed";
-
-    /**
-     * ID for an endpoint that the filter should hide.
-     */
-    public static final String DOOMED_OPERATION_ID = "doomedPath";
-
-    /**
-     * Summary text for the endpoint.
-     */
-    public static final String SUMMARY = "A sample test endpoint from ModelReader";
-
-    @Override
-    public OpenAPI buildModel() {
-        /*
-         * Add two path items, one of which we expect to be removed by
-         * the filter and a very simple one that will appear in the
-         * published OpenAPI document.
-         */
-        PathItem newPathItem = OASFactory.createPathItem()
-                .GET(OASFactory.createOperation()
-                    .operationId("newPath")
-                    .summary(SUMMARY));
-        PathItem doomedPathItem = OASFactory.createPathItem()
-                .GET(OASFactory.createOperation()
-                    .operationId(DOOMED_OPERATION_ID)
-                    .summary("This should become invisible"));
-        OpenAPI openAPI = OASFactory.createOpenAPI();
-        Paths paths = OASFactory.createPaths()
-                .addPathItem(MODEL_READER_PATH, newPathItem)
-                .addPathItem(DOOMED_PATH, doomedPathItem);
-        openAPI.paths(paths);
-
-        return openAPI;
-    }
-}
+include::{sourcedir}/mp/openapi/OpenapiSnippets.java[tag=snippet_3, indent=0]
 ----
 
 Having written the filter and model reader classes, identify them by adding configuration to

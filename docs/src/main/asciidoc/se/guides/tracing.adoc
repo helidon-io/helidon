@@ -90,7 +90,7 @@ First, you need to run the Jaeger tracer.  Helidon will communicate with this tr
 [source,bash]
 .Run Jaeger within a docker container, then check the Jaeger server working:
 ----
-docker run -d --name jaeger \                  <1>
+docker run -d --name jaeger \ # <1>
   -e COLLECTOR_OTLP_ENABLED=true \
   -p 6831:6831/udp \
   -p 6832:6832/udp \
@@ -116,20 +116,22 @@ default host and port, `localhost:14250`.
 [source,xml]
 .Add the following dependencies to `pom.xml`:
 ----
- <dependency>
-     <groupId>io.helidon.tracing</groupId>
-     <artifactId>helidon-tracing</artifactId>   <!--1-->
- </dependency>
- <dependency>
-     <groupId>io.helidon.webserver.observe</groupId>
-     <artifactId>helidon-webserver-observe-tracing</artifactId> <!--2-->
-     <scope>runtime</scope>
- </dependency>
- <dependency>
-     <groupId>io.helidon.tracing.providers</groupId>
-     <artifactId>helidon-tracing-providers-jaeger</artifactId>  <!--3-->
-     <scope>runtime</scope>
- </dependency>
+<dependencies>
+     <dependency>
+         <groupId>io.helidon.tracing</groupId>
+         <artifactId>helidon-tracing</artifactId>   <!--1-->
+     </dependency>
+     <dependency>
+         <groupId>io.helidon.webserver.observe</groupId>
+         <artifactId>helidon-webserver-observe-tracing</artifactId> <!--2-->
+         <scope>runtime</scope>
+     </dependency>
+     <dependency>
+         <groupId>io.helidon.tracing.providers</groupId>
+         <artifactId>helidon-tracing-providers-jaeger</artifactId>  <!--3-->
+         <scope>runtime</scope>
+     </dependency>
+</dependencies>
 ----
 <1> Helidon Tracing dependencies.
 <2> Observability features for tracing.
@@ -204,24 +206,12 @@ The following code replaces the generated `getDefaultMessageHandler` method to a
 [source,java]
 .Update the `GreetService` class, replacing the `getDefaultMessageHandler` method:
 ----
-private void getDefaultMessageHandler(ServerRequest request,
-                                      ServerResponse response) {
-    var spanBuilder = Tracer.global().spanBuilder("secondchildSpan"); // <1>
-    request.context().get(SpanContext.class).ifPresent(sc -> sc.asParent(spanBuilder)); // <2>
-    var span = spanBuilder.start(); // <3>
-
-    try (Scope scope = span.activate()) { // <4>
-        sendResponse(response, "World");
-        span.end(); // <5>
-    } catch (Throwable t) {
-        span.end(t);    // <6>
-    }
-}
+include::{sourcedir}/se/guides/TracingSnippets.java[tag=snippet_1, indent=0]
 ----
 <1> Create a new `Span` using the global tracer.
 <2> Set the parent of the new span to the span from the `Request` if available.
 <3> Start the span.
-<4> Make the new span the current span, returning a `Scope` which is autoclosed.
+<4> Make the new span the current span, returning a `Scope` which is auto-closed.
 <5> End the span normally after the response is sent.
 <6> End the span with an exception if one was thrown.
 
@@ -237,13 +227,18 @@ java -jar target/helidon-quickstart-se.jar
 .Run the `curl` command in a new terminal window and check the response:
 ----
 curl http://localhost:8080/greet
-...
+----
+
+[source,json]
+.JSON response:
+----
 {
   "message": "Hello World!"
 }
 ----
 
-Return to the main Jaeger UI screen and click Find Traces again. The new display contains an additional trace, displayed first, for the most recent `curl` you ran.
+Return to the main Jaeger UI screen and click Find Traces again.
+The new display contains an additional trace, displayed first, for the most recent `curl` you ran.
 
 .Expanded trace list
 image::guides/tracing_se_second_trace_list.png[Expanded trace list,role="fit"]
@@ -289,20 +284,22 @@ cd helidon-quickstart-se-2
 [source,xml]
 .Add the following dependencies to `pom.xml`:
 ----
- <dependency>
-     <groupId>io.helidon.tracing</groupId>
-     <artifactId>helidon-tracing</artifactId>   <!--1-->
- </dependency>
- <dependency>
-     <groupId>io.helidon.webserver.observe</groupId>
-     <artifactId>helidon-webserver-observe-tracing</artifactId> <!--2-->
-     <scope>runtime</scope>
- </dependency>
- <dependency>
-     <groupId>io.helidon.tracing.providers</groupId>
-     <artifactId>helidon-tracing-providers-jaeger</artifactId>  <!--3-->
-     <scope>runtime</scope>
- </dependency>
+<dependencies>
+     <dependency>
+         <groupId>io.helidon.tracing</groupId>
+         <artifactId>helidon-tracing</artifactId>   <!--1-->
+     </dependency>
+     <dependency>
+         <groupId>io.helidon.webserver.observe</groupId>
+         <artifactId>helidon-webserver-observe-tracing</artifactId> <!--2-->
+         <scope>runtime</scope>
+     </dependency>
+     <dependency>
+         <groupId>io.helidon.tracing.providers</groupId>
+         <artifactId>helidon-tracing-providers-jaeger</artifactId>  <!--3-->
+         <scope>runtime</scope>
+     </dependency>
+</dependencies>
 ----
 <1> Helidon Tracing API.
 <2> Observability features for tracing.
@@ -338,20 +335,7 @@ xref:{rootdir}/se/tracing.adoc[Tracing documentation].
 [source,java]
 .Update the `GreetService` class. Replace the `getDefaultMessageHandler` method:
 ----
-private void getDefaultMessageHandler(ServerRequest request,
-                                      ServerResponse response) {
-
-    var spanBuilder = Tracer.global().spanBuilder("getDefaultMessageHandler");
-    request.context().get(SpanContext.class).ifPresent(spanBuilder::parent);
-    Span span = spanBuilder.start();
-
-    try (Scope scope = span.activate()) {
-        sendResponse(response, "World");
-        span.end();
-    } catch (Throwable t) {
-        span.end(t);
-    }
-}
+include::{sourcedir}/se/guides/TracingSnippets.java[tag=snippet_2, indent=0]
 ----
 
 Build the application, skipping unit tests; the unit tests check for the default greeting response which is now different in the updated config. Then run the application.
@@ -363,10 +347,14 @@ java -jar target/helidon-quickstart-se-2.jar
 ----
 
 [source,bash]
-.Run the curl command in a new terminal window and check the response (*notice the port is 8081*) :
+.Run the curl command in a new terminal window (*notice the port is 8081*) :
 ----
 curl http://localhost:8081/greet
-...
+----
+
+[source,json]
+.JSON response:
+----
 {
   "message": "Hello From SE-2 World!"
 }
@@ -380,23 +368,25 @@ call it.
 [source,xml]
 .Add the following dependencies to `pom.xml`:
 ----
-<dependency>
-    <groupId>io.helidon.webclient</groupId>
-    <artifactId>helidon-webclient</artifactId>
-</dependency>
-<dependency>
-    <groupId>io.helidon.webclient</groupId>
-    <artifactId>helidon-webclient-api</artifactId>
-</dependency>
-<dependency>
-    <groupId>io.helidon.webclient</groupId>
-    <artifactId>helidon-webclient-tracing</artifactId>
-</dependency>
-<dependency>
-    <groupId>io.helidon.webclient</groupId>
-    <artifactId>helidon-webclient-http1</artifactId>
-    <scope>runtime</scope>
-</dependency>
+<dependencies>
+    <dependency>
+        <groupId>io.helidon.webclient</groupId>
+        <artifactId>helidon-webclient</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.webclient</groupId>
+        <artifactId>helidon-webclient-api</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.webclient</groupId>
+        <artifactId>helidon-webclient-tracing</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.webclient</groupId>
+        <artifactId>helidon-webclient-http1</artifactId>
+        <scope>runtime</scope>
+    </dependency>
+</dependencies>
 ----
 Make the following changes to the `GreetService` class.
 
@@ -405,7 +395,7 @@ Make the following changes to the `GreetService` class.
 [source,java]
 .Add a private instance field (before the constructors)
 ----
-private WebClient webClient;
+include::{sourcedir}/se/guides/TracingSnippets.java[tag=snippet_3, indent=0]
 ----
 
 2. Add code to initialize the `WebClient` field.
@@ -413,44 +403,21 @@ private WebClient webClient;
 [source,java]
 .Add the following code to the `GreetService(Config)` constructor
 ----
-webClient = WebClient.builder()
-        .baseUri("http://localhost:8081")
-        .addService(WebClientTracing.create())
-        .build();
-
+include::{sourcedir}/se/guides/TracingSnippets.java[tag=snippet_4, indent=0]
 ----
 3. Add a routing rule for the new endpoint `/outbound`.
 +
 [source,java]
 .Add the following line in the `routing` method as the first `.get` invocation in the method
 ----
-.get("/outbound", this::outboundMessageHandler)
+include::{sourcedir}/se/guides/TracingSnippets.java[tag=snippet_5, indent=0]
 ----
 4. Add a method to handle requests to `/outbound`.
 +
 [source,java]
 .Add the following method
 ----
-private void outboundMessageHandler(ServerRequest request,
-                                     ServerResponse response) {
-    var spanBuilder = Tracer.global().spanBuilder("outboundMessageHandler");
-    request.context().get(SpanContext.class).ifPresent(spanBuilder::parent);
-    var span = spanBuilder.start();
-
-    try (Scope scope = span.activate()) {
-        ClientResponseTyped<JsonObject> remoteResult = webClient.get()
-                .path("/greet")
-                .accept(MediaTypes.APPLICATION_JSON)
-                .request(JsonObject.class);
-
-        response.status(remoteResult.status()).send(remoteResult.entity());
-        span.end();
-    } catch (Exception e) {
-        response.status(Status.INTERNAL_SERVER_ERROR_500).send();
-        span.end(e);
-    }
-}
-
+include::{sourcedir}/se/guides/TracingSnippets.java[tag=snippet_6, indent=0]
 ----
 
 Stop the application if it is still running, rebuild and run it, then invoke the endpoint and check the response.
@@ -459,14 +426,18 @@ Stop the application if it is still running, rebuild and run it, then invoke the
 ----
 mvn clean package
 java -jar target/helidon-quickstart-se.jar
-curl -i http://localhost:8080/greet/outbound // <1>
-...
-{
-  "message": "Hello From SE-2 World!" // <2>
-}
+curl -i http://localhost:8080/greet/outbound # <1>
 ----
 <1> The request goes to the service on `8080`, which then invokes the service at `8081` to get the greeting.
-<2> Notice the greeting came from the second service.
+
+[source,hocon]
+.JSON response:
+----
+{
+  "message": "Hello From SE-2 World!" // <1>
+}
+----
+<1> Notice the greeting came from the second service.
 
 Refresh the Jaeger UI trace listing page and notice that there is a trace across two services. Click on that trace to see its details.
 
@@ -488,11 +459,10 @@ You can now stop your second service, it is no longer used in this guide.
 
 The following example demonstrates how to use Jaeger from a Helidon application running in Kubernetes.
 
-[source,bash]
+[source,yaml]
 .Replace the tracing configuration in `resources/application.yaml` with the following:
 ----
-// <1>
-tracing:
+tracing: # <1>
   service: helidon-se-1
   host: jaeger
 ----
@@ -559,7 +529,7 @@ take a few seconds before it is ready.
 kind: Service
 apiVersion: v1
 metadata:
-  name: helidon-tracing // <1>
+  name: helidon-tracing # <1>
   labels:
     app: helidon-tracing
 spec:
@@ -576,7 +546,7 @@ apiVersion: apps/v1
 metadata:
   name: helidon-tracing
 spec:
-  replicas: 1 // <2>
+  replicas: 1 # <2>
   selector:
     matchLabels:
       app: helidon-tracing
@@ -613,7 +583,7 @@ kubectl get service/helidon-tracing
 [source,bash]
 ----
 NAME             TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
-helidon-tracing   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s // <1>
+helidon-tracing   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s # <1>
 ----
 <1> A service of type `NodePort` that serves the default routes on port `31143`.
 
@@ -621,7 +591,11 @@ helidon-tracing   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s // 
 .Verify the tracing endpoint using port `31143`, your port will likely be different:
 ----
 curl http://localhost:31143/greet
-...
+----
+
+[source,json]
+.JSON response:
+----
 {
   "message": "Hello World!"
 }
@@ -642,6 +616,8 @@ kubectl delete -f ./tracing.yaml
 kubectl delete service jaeger-external
 docker rm -f jaeger
 ----
+
+include::{rootdir}/includes/tracing/common-callbacks.adoc[tags=defs;detailed]
 
 == Summary
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,10 @@ class RedirectionProcessor {
     }
 
     static boolean redirectionStatusCode(Status status) {
-        return status.family() == Status.Family.REDIRECTION;
+        // 304 is not an actual redirect - it is telling the client to use a cached value, which is outside of scope
+        // of Helidon WebClient, the user must understand such a response, as they had to send an ETag
+        return status.code() != Status.NOT_MODIFIED_304.code()
+            && status.family() == Status.Family.REDIRECTION;
     }
 
     static Http1ClientResponseImpl invokeWithFollowRedirects(Http1ClientRequestImpl request, byte[] entity) {

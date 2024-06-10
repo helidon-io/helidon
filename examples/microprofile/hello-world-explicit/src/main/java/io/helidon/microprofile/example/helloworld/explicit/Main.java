@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,8 +33,8 @@ public class Main {
     public static void main(String[] args) {
         Server server = Server.builder()
                 .host("localhost")
-                // use a random free port
-                .port(0)
+                // use  port 7001 as per README.md
+                .port(7001)
                 .build();
 
         server.start();

@@ -1,0 +1,12 @@
+oracle.jdbc
+oracle.jdbc.aq
+oracle.jdbc.babelfish
+oracle.jdbc.datasource
+oracle.jdbc.datasource.impl
+oracle.jdbc.dcn
+oracle.jdbc.pool
+oracle.jdbc.replay
+oracle.jdbc.xa
+oracle.jdbc.xa.client
+oracle.sql
+oracle.sql.json

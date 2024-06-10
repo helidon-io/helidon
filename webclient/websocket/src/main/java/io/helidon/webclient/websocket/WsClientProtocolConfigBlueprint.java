@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,26 +20,25 @@ import java.util.List;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.webclient.spi.ProtocolConfig;
 
 /**
  * Configuration of an HTTP/1.1 client.
  */
 @Prototype.Blueprint
-@Configured
+@Prototype.Configured
 interface WsClientProtocolConfigBlueprint extends ProtocolConfig {
     @Override
     default String type() {
         return WsProtocolProvider.CONFIG_KEY;
     }
 
-    @ConfiguredOption(WsProtocolProvider.CONFIG_KEY)
+    @Option.Configured
+    @Option.Default(WsProtocolProvider.CONFIG_KEY)
     @Override
     String name();
 
-    @ConfiguredOption
+    @Option.Configured
     @Option.Singular
     List<String> subProtocols();
 }

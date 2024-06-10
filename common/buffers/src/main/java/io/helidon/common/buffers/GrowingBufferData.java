@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,7 +74,9 @@ class GrowingBufferData implements BufferData {
     public int readFrom(InputStream in) {
         try {
             int read = in.read(bytes, writePosition, bytes.length - writePosition);
-            writePosition += read;
+            if (read > 0) {
+                writePosition += read;
+            }
             return read;
         } catch (IOException e) {
             throw new UncheckedIOException(e);

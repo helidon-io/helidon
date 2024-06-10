@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,10 @@ import io.helidon.webclient.api.FullClientRequest;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.spi.HttpClientSpi;
 
-class Http2ClientImpl implements Http2Client, HttpClientSpi {
+/**
+ * Implementation of HTTP2 client.
+ */
+public class Http2ClientImpl implements Http2Client, HttpClientSpi {
     private final WebClient webClient;
     private final Http2ClientConfig clientConfig;
     private final Http2ClientProtocolConfig protocolConfig;

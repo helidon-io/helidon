@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.util.TreeMap;
 
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.Tag;
+import io.helidon.metrics.api.Wrapper;
 
 import io.micrometer.core.instrument.Timer;
 
@@ -164,7 +165,8 @@ class MMeter<M extends io.micrometer.core.instrument.Meter> implements Meter {
     abstract static class Builder<B,
             M extends io.micrometer.core.instrument.Meter,
             HB extends Builder<B, M, HB, HM>,
-            HM extends MMeter<M>> {
+            HM extends MMeter<M>>
+            implements Wrapper {
 
         private final String name;
         private final B delegate;
@@ -246,6 +248,11 @@ class MMeter<M extends io.micrometer.core.instrument.Meter> implements Meter {
 
         public Map<String, String> tags() {
             return new TreeMap<>(tags);
+        }
+
+        @Override
+        public <R> R unwrap(Class<? extends R> c) {
+            return c.cast(delegate);
         }
 
         protected B delegate() {

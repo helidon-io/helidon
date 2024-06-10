@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,9 @@ import io.helidon.builder.api.Prototype;
 
 /**
  * Internal bootstrap is what we store when {@link InjectionServices#globalBootstrap(Bootstrap)} is used.
+ * @deprecated Helidon inject is deprecated and will be replaced in a future version
  */
+@Deprecated(forRemoval = true, since = "4.0.8")
 @Prototype.Blueprint(decorator = InternalBootstrapBlueprint.BuilderDecorator.class)
 interface InternalBootstrapBlueprint {
 

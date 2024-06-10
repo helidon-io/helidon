@@ -6,7 +6,11 @@
 * [ActiveMQ server](../README.md) running on `localhost:61616`
 
 ## Build & Run
-1. `mvn clean install`
-2. `java -jar helidon-examples-jms-websocket-se.jar`
+```shell
+#1.
+mvn clean package
+#2.
+java -jar target/helidon-examples-jms-websocket-se.jar
+```
 3. Visit http://localhost:7001
 

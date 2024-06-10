@@ -6,11 +6,11 @@ Note: This example uses self-signed server certificate!
 
 ## Build and run
 
-```bash
+```shell
 mvn package
 java -jar target/helidon-examples-microprofile-tls.jar
 ```
 ## Exercise the application
-```bash
+```shell
 curl -k -X GET https://localhost:8080
 ```

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ This type provides the following service implementations:
  If set to false, request will process and this provider will abstain.
 |`outbound` |xref:{rootdir}/config/io_helidon_security_providers_common_OutboundTarget.adoc[OutboundTarget[&#93;] |{nbsp} |Configure outbound target for identity propagation.
 |`outbound-token` |xref:{rootdir}/config/io_helidon_security_util_TokenHandler.adoc[TokenHandler] |{nbsp} |Token handler to create outbound headers to propagate identity.
- If not defined, #atnTokenHandler will be used.
+ If not defined, atnTokenHandler will be used.
 |`principal-type` |SubjectType (USER, SERVICE) |`USER` |Principal type this provider extracts (and also propagates).
 |`propagate` |boolean |`false` |Whether to propagate identity.
 

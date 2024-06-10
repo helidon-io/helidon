@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,9 +84,8 @@ public class DirectHandlers {
                 httpException.responseHeaders(),
                 httpException);
 
-        Status usedStatus;
-
-        res.status(response.status());
+        Status status = response.status();
+        res.status(status);
         response.headers()
                 .forEach(res::header);
         if (!keepAlive) {
@@ -99,7 +98,18 @@ public class DirectHandlers {
         }
 
         try {
-            response.entity().ifPresentOrElse(res::send, res::send);
+            if (status.code() == Status.NO_CONTENT_204.code()
+                    || status.code() == Status.RESET_CONTENT_205.code()
+                    || status.code() == Status.NOT_MODIFIED_304.code()) {
+                // https://www.rfc-editor.org/rfc/rfc9110#status.204
+                // A 204 response is terminated by the end of the header section; it cannot contain content or trailers
+                // ditto for 205, and 304
+                res.header(HeaderValues.CONTENT_LENGTH_ZERO)
+                        .send();
+            } else {
+                // otherwise send the entity if present
+                response.entity().ifPresentOrElse(res::send, res::send);
+            }
         } catch (IllegalStateException ex) {
             // failed to send - probably output stream was already obtained and used, so status is written
             // we can only close the connection now
@@ -109,9 +119,7 @@ public class DirectHandlers {
                     ex);
         }
 
-        usedStatus = response.status();
-
-        if (usedStatus == Status.INTERNAL_SERVER_ERROR_500) {
+        if (response.status() == Status.INTERNAL_SERVER_ERROR_500) {
             LOGGER.log(WARNING, "Internal server error", httpException);
         }
     }

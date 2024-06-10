@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,6 @@ package io.helidon.config.etcd;
 import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 import io.helidon.config.etcd.EtcdConfigSourceBuilder.EtcdEndpoint;
@@ -34,7 +32,7 @@ import io.helidon.config.spi.ChangeWatcher;
  */
 public class EtcdWatcher implements ChangeWatcher<EtcdEndpoint> {
 
-    private static final Logger LOGGER = Logger.getLogger(EtcdWatcher.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(EtcdWatcher.class.getName());
 
     private final AtomicBoolean started = new AtomicBoolean();
 
@@ -80,7 +78,7 @@ public class EtcdWatcher implements ChangeWatcher<EtcdEndpoint> {
             Flow.Publisher<Long> watchPublisher = etcdClient().watch(endpoint.key());
             watchPublisher.subscribe(new EtcdWatchSubscriber(listener, endpoint));
         } catch (EtcdClientException ex) {
-            LOGGER.log(Level.WARNING, String.format("Subscription on watching on '%s' key has failed. "
+            LOGGER.log(System.Logger.Level.WARNING, String.format("Subscription on watching on '%s' key has failed. "
                                                             + "Watching by '%s' polling strategy will not start.",
                                                     EtcdWatcher.this.endpoint.key(),
                                                     EtcdWatcher.this), ex);
@@ -96,7 +94,7 @@ public class EtcdWatcher implements ChangeWatcher<EtcdEndpoint> {
         try {
             this.etcdClient.close();
         } catch (EtcdClientException e) {
-            LOGGER.log(Level.FINE, "Faield to close etcd client", e);
+            LOGGER.log(System.Logger.Level.TRACE, "Faield to close etcd client", e);
         }
     }
 
@@ -142,7 +140,7 @@ public class EtcdWatcher implements ChangeWatcher<EtcdEndpoint> {
 
         @Override
         public void onError(Throwable throwable) {
-            LOGGER.log(Level.WARNING,
+            LOGGER.log(System.Logger.Level.WARNING,
                             String.format(
                                     "Watching on '%s' key has failed. Watching will not continue. ",
                                     endpoint.key()),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,10 @@ package io.helidon.examples.dbclient.pokemons;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.config.Config;
 import io.helidon.http.Status;
 import io.helidon.http.media.jsonp.JsonpSupport;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.WebClient;
-import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.WebServer;
 
 import jakarta.json.Json;
@@ -32,8 +30,6 @@ import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
 import jakarta.json.JsonValue;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;

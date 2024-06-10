@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2024 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -175,6 +175,14 @@ update_version(){
 }
 
 release_build(){
+
+    VERSION_FROM_BRANCH_NAME=$(git branch --show-current | cut -d- -f2)
+    if [ "${FULL_VERSION}" != "${VERSION_FROM_BRANCH_NAME}" ]; then
+      echo "ERROR: version derived from pom files (${FULL_VERSION}) does not match version used in branch name (${VERSION_FROM_BRANCH_NAME})."
+      echo "Failing release build"
+      exit 1
+    fi
+
     # Do the release work in a branch
     local GIT_BRANCH="release/${FULL_VERSION}"
     git branch -D "${GIT_BRANCH}" > /dev/null 2>&1 || true

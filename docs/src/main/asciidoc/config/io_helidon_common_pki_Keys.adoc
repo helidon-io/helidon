@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -44,14 +44,14 @@ Type: link:{javadoc-base-url}/io.helidon.common.pki/io/helidon/common/pki/Keys.h
 
 |`keystore` |xref:{rootdir}/config/io_helidon_common_pki_KeystoreKeys.adoc[KeystoreKeys] |{nbsp} |Configure keys from a keystore.
  Once the config object is built, this option will ALWAYS be empty. All keys from the keystore will be
- populated to #privateKey(), #publicKey(), #publicCert() etc.
+ populated to privateKey(), publicKey(), publicCert() etc.
 
- @return keystore configuration
+ Keystore configuration
 |`pem` |xref:{rootdir}/config/io_helidon_common_pki_PemKeys.adoc[PemKeys] |{nbsp} |Configure keys from pem file(s).
  Once the config object is built, this option will ALWAYS be empty. All keys from the keystore will be
- populated to #privateKey(), #publicKey(), #publicCert() etc.
+ populated to privateKey(), publicKey(), publicCert() etc.
 
- @return pem based definition
+ Pem based definition
 
 |===
 

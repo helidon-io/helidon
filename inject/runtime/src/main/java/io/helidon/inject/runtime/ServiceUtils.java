@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,9 @@ import io.helidon.inject.api.ServiceProvider;
 
 /**
  * Public helpers around shared services usages.
+ * @deprecated Helidon inject is deprecated and will be replaced in a future version
  */
+@Deprecated(forRemoval = true, since = "4.0.8")
 public final class ServiceUtils {
     private static final TypeName MODULE_COMPONENT = TypeName.create(ModuleComponent.class);
     private static final TypeName APPLICATION = TypeName.create(ModuleComponent.class);

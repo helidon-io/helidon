@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.function.Function;
 
 import io.helidon.common.GenericType;
 import io.helidon.config.Config;
+import io.helidon.service.registry.Service;
 
 /**
  * Provides mapping functions that convert a {@code Config}
@@ -43,6 +44,7 @@ import io.helidon.config.Config;
  * @see Config.Builder#disableMapperServices()
  */
 @FunctionalInterface
+@Service.Contract
 public interface ConfigMapperProvider {
 
     /**

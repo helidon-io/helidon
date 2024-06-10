@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -36,9 +36,10 @@ include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites]
 
 == Introduction
 
-This guide describes the steps required to protect your whole application or a specific area with Open ID Connect
-(OIDC) security. OIDC is a secure mechanism for an application to contact an identity service.
-Its built on top of OAuth 2.0 and provides full-fledged authentication and authorization protocols.
+This guide describes the steps required to protect your whole application or a specific area with Open ID Connect (OIDC) security.
+
+OIDC is a secure mechanism for an application to contact an identity service.
+It's built on top of OAuth 2.0 and provides full-fledged authentication and authorization protocols.
 
 == Install Keycloak
 
@@ -139,7 +140,7 @@ To create a new realm to manage your application:
 . Fill the form by adding the realm name, `myRealm` for example.
 . Click on `Create` to create the new realm.
 
-To verify that your realm is created, on the top-left corner where it said `Master` previously
+To verify that your realm is created, in the top-left corner where it said `Master` previously
 should be now your realm name or `myRealm` is you followed the example.
 
 To switch from a realm to another, hover the realm name, and the other realm created appear in the dropdown.
@@ -159,7 +160,7 @@ To create a new user:
 . Fill the form (Username is the only mandatory field) with this value Username: `myUser`
 . Click `Save`
 
-A new user is just created but it needs a password to be able to login. To initialize it, do this:
+A new user is just created, but it needs a password to be able to log in. To initialize it, do this:
 
 . Click on `Credentials` at the top of the page, under `Myuser`.
 . Fill `Password` and `Password confirmation` with the user password of your choice.
@@ -254,11 +255,11 @@ security:
     - oidc:
         redirect-uri: "/oidc/redirect"
         audience: "account"
-        client-id: "myClientID"   // <1>
+        client-id: "myClientID" # <1>
         header-use: true
-        client-secret: "Client secret generated into Keycloak client credential"  // <2>
-        identity-uri: "http://localhost:8080/auth/realms/myRealm"   // <3>
-        frontend-uri: "http://localhost:7987"   // <4>
+        client-secret: "Client secret generated into Keycloak client credential" # <2>
+        identity-uri: "http://localhost:8080/auth/realms/myRealm" # <3>
+        frontend-uri: "http://localhost:7987" # <4>
 ----
 <1> `client-id` must be the same as the one configure in keycloak.
 <2> The client secret generate by Keycloak during `Create a client` section.
@@ -299,27 +300,9 @@ any method or endpoint.
 Modify the `getDefaultMessage` method with the `@Authenticated` to limit its access.
 
 [source,java]
-.Import `Authenticated` annotation:
-----
-import io.helidon.security.annotations.Authenticated;
-----
-
-[source,java]
 .Add `@Authenticated` to secure `getDefaultMessage`
 ----
-@Authenticated
-@GET
-@Produces(MediaType.APPLICATION_JSON)
-public JsonObject getDefaultMessage() {
-    return createResponse("World");
-}
-----
-
-It is also needed to add the following line to the `module-info.java` file:
-[source,java]
-.Add security annotations module requirement
-----
-requires io.helidon.security.annotations;
+include::{sourcedir}/mp/guides/SecurityOidcSnippets.java[tag=snippet_1, indent=0]
 ----
 
 When a client will send an HTTP GET request at the endpoint `http://localhost:7987/greet`, he will be redirected to keycloak.
@@ -425,10 +408,7 @@ Firstly, create new test method `testHelloWorld`
 [source,java]
 .Add this method to the test class
 ----
-@Test
-void testHellowWorld() {
-
-}
+include::{sourcedir}/mp/guides/SecurityOidcSnippets.java[tag=snippet_2, indent=0]
 ----
 
 Now we can add the first test:
@@ -436,12 +416,7 @@ Now we can add the first test:
 [source,java]
 .Add this code into `testHelloWorld` method:
 ----
-try (Response r = target
-        .path("greet")
-        .request()
-        .get()) {
-    assertThat(r.getStatus(), is(401));
-}
+include::{sourcedir}/mp/guides/SecurityOidcSnippets.java[tag=snippet_3, indent=0]
 ----
 
 This piece of code uses the JAX-RS client to access the application on `/greet` path with a `GET` method. The http basic
@@ -452,19 +427,13 @@ Only `jack` user has access to this part of the application.
 [source,java]
 .Change the testHelloWorld method:
 ----
-String encoding = Base64.getEncoder().encodeToString("jack:jackIsGreat".getBytes());
-Message jsonMessage = target
-        .path("greet")
-        .request()
-        .header(HttpHeaders.AUTHORIZATION, "Basic " + encoding)
-        .get(Message.class);
-assertThat(jsonMessage.getMessage(), is("Hello World!"));
+include::{sourcedir}/mp/guides/SecurityOidcSnippets.java[tag=snippet_4, indent=0]
 ----
 
 The username and password are encoded and placed inside the header in order to authenticate as jack to access the application.
 If the authentication is successful, the application send the `Hello World` back as a `JsonObject`.
 
-Now, the project can be build without skiping test.
+Now, the project can be built without skipping test.
 
 [source,bash]
 .Build the project
@@ -510,10 +479,12 @@ In the body of the request, select `x-www-form-urlencoded` type. Add the followi
 [source,json]
 .Enter the key:value
 ----
-[{"key":"grant_type","value":"authorization_code"},
-{"key":"client_id","value":"myClientID"},
-{"key":"client_secret","value":"client secret"},
-{"key":"code","value":"authorization code"}]
+[
+    {"key":"grant_type","value":"authorization_code"},
+    {"key":"client_id","value":"myClientID"},
+    {"key":"client_secret","value":"client secret"},
+    {"key":"code","value":"authorization code"}
+]
 ----
 
 Do not forget to replace the `client secret` by its value (generated during Create a Client), and `authorization code`
@@ -530,15 +501,17 @@ sentence  `Add authorization data to` with `Request Headers`, and complete the r
 [source,json]
 .Enter the following information:
 ----
-[{"key":"Header Prefix","value":"bearer"},
-{"key":"Grant type","value":"Password  Credentials"},
-{"key":"Access Token URL","value":"http://localhost:8080/auth/realms/myRealm/protocol/openid-connect/token"},
-{"key":"Client ID","value":"myClientID"},
-{"key":"Client Secret","value":"client secret"},
-{"key":"Username","value":"myuser"},
-{"key":"Password","value":"password"},
-{"key":"Scope","value":"openid"},
-{"key":"Client Authentication","value":"Send as Basic Auth Header"}]
+[
+    {"key":"Header Prefix","value":"bearer"},
+    {"key":"Grant type","value":"Password  Credentials"},
+    {"key":"Access Token URL","value":"http://localhost:8080/auth/realms/myRealm/protocol/openid-connect/token"},
+    {"key":"Client ID","value":"myClientID"},
+    {"key":"Client Secret","value":"client secret"},
+    {"key":"Username","value":"myuser"},
+    {"key":"Password","value":"password"},
+    {"key":"Scope","value":"openid"},
+    {"key":"Client Authentication","value":"Send as Basic Auth Header"}
+]
 ----
 
 Again, make sure to replace `client secret` by the actual client secret. Click on `Get New Access Token`. A popup
@@ -554,15 +527,9 @@ only the user with the required role.
 Navigate to the GreetResource and find the `getDefaultMessage` with @Authenticate annotation.
 
 [source,java]
-.Import the RolesAllowed annotation
-----
-import jakarta.annotation.security.RolesAllowed;
-----
-
-[source,java]
 .Add the @RolesAllowed annotation under the @Authenticate annotation:
 ----
-@RolesAllowed("admin")
+include::{sourcedir}/mp/guides/SecurityOidcSnippets.java[tag=snippet_5, indent=0]
 ----
 
 The annotation parameter is the role with access to the method. In this case, only user with admin role can
@@ -592,15 +559,7 @@ The user `john` has only the `user` role so when accessing protected endpoint, a
 [source,java]
 .Check that john does not have access
 ----
-encoding = Base64.getEncoder().encodeToString("john:johnPassword".getBytes());
-
-try (Response r = target
-        .path("greet")
-        .request()
-        .header(HttpHeaders.AUTHORIZATION, "Basic " + encoding)
-        .get()) {
-    assertThat(r.getStatus(), is(403));
-}
+include::{sourcedir}/mp/guides/SecurityOidcSnippets.java[tag=snippet_6, indent=0]
 ----
 
 [source,bash]

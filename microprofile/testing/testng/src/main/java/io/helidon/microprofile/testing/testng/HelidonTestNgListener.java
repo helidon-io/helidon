@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 
 package io.helidon.microprofile.testing.testng;
 
+import java.io.IOException;
 import java.io.Serial;
+import java.io.StringReader;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Array;
@@ -24,15 +26,16 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import io.helidon.config.mp.MpConfigSources;
-import io.helidon.config.yaml.mp.YamlMpConfigSource;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
 
@@ -77,8 +80,6 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
             Set.of(AddBean.class, AddConfig.class, AddExtension.class, Configuration.class, AddJaxRs.class);
     private static final Map<Class<? extends Annotation>, Annotation> BEAN_DEFINING = new HashMap<>();
 
-    private static final List<String> YAML_SUFFIXES = List.of(".yml", ".yaml");
-
     static {
         BEAN_DEFINING.put(ApplicationScoped.class, ApplicationScoped.Literal.INSTANCE);
         BEAN_DEFINING.put(Singleton.class, ApplicationScoped.Literal.INSTANCE);
@@ -105,6 +106,7 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
         AddConfig[] configs = getAnnotations(testClass, AddConfig.class);
         classLevelConfigMeta.addConfig(configs);
         classLevelConfigMeta.configuration(testClass.getAnnotation(Configuration.class));
+        classLevelConfigMeta.addConfigBlock(testClass.getAnnotation(AddConfigBlock.class));
         configProviderResolver = ConfigProviderResolver.instance();
 
         AddExtension[] extensions = getAnnotations(testClass, AddExtension.class);
@@ -171,6 +173,7 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
             ConfigMeta methodLevelConfigMeta = classLevelConfigMeta.nextMethod();
             methodLevelConfigMeta.addConfig(configs);
             methodLevelConfigMeta.configuration(method.getAnnotation(Configuration.class));
+            methodLevelConfigMeta.addConfigBlock(method.getAnnotation(AddConfigBlock.class));
 
             configure(methodLevelConfigMeta);
 
@@ -325,14 +328,19 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
             ConfigBuilder builder = configProviderResolver.getBuilder();
 
             configMeta.additionalSources.forEach(it -> {
-                // If not using a YAML extension, assume properties file
                 String fileName = it.trim();
-                if (YAML_SUFFIXES.stream().anyMatch(fileName::endsWith)) {
-                    builder.withSources(YamlMpConfigSource.classPath(it).toArray(new ConfigSource[0]));
-                } else {
-                    builder.withSources(MpConfigSources.classPath(it).toArray(new ConfigSource[0]));
+                int idx = fileName.lastIndexOf('.');
+                String type = idx > -1 ? fileName.substring(idx + 1) : "properties";
+                try {
+                    Enumeration<URL> urls = Thread.currentThread().getContextClassLoader().getResources(fileName);
+                    urls.asIterator().forEachRemaining(url -> builder.withSources(MpConfigSources.create(type, url)));
+                } catch (IOException e) {
+                    throw new IllegalStateException("Failed to read \"" + fileName + "\" from classpath", e);
                 }
             });
+            if (configMeta.type != null && configMeta.block != null) {
+                builder.withSources(MpConfigSources.create(configMeta.type, new StringReader(configMeta.block)));
+            }
             config = builder
                     .withSources(MpConfigSources.create(configMeta.additionalKeys))
                     .addDefaultSources()
@@ -485,6 +493,8 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
     private static final class ConfigMeta {
         private final Map<String, String> additionalKeys = new HashMap<>();
         private final List<String> additionalSources = new ArrayList<>();
+        private String type;
+        private String block;
         private boolean useExisting;
         private String profile;
 
@@ -515,6 +525,14 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
             additionalSources.addAll(List.of(config.configSources()));
             //set additional key for profile
             additionalKeys.put("mp.config.profile", profile);
+        }
+
+        private void addConfigBlock(AddConfigBlock config) {
+            if (config == null) {
+                return;
+            }
+            this.type = config.type();
+            this.block = config.value();
         }
 
         ConfigMeta nextMethod() {

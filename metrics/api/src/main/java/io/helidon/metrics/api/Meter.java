@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -111,10 +111,12 @@ public interface Meter extends Wrapper {
      * We do not want developers to see a {@code build()} operation that they should not invoke.
      * </p>
      *
+     * @see MeterRegistry#getOrCreate(Builder)
+     *
      * @param <B> type of the builder
      * @param <M> type of the meter the builder creates
      */
-    interface Builder<B extends Builder<B, M>, M extends Meter> {
+    interface Builder<B extends Builder<B, M>, M extends Meter> extends Wrapper {
 
         /**
          * Returns the type-correct "this".
@@ -200,6 +202,8 @@ public interface Meter extends Wrapper {
          * @return the assigned scope if set; empty otherwise
          */
         Optional<String> scope();
+
+
     }
 
     /**

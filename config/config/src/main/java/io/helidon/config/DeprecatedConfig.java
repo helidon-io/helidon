@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,40 @@ public final class DeprecatedConfig {
                 LOGGER.log(Level.WARNING, "You are using a deprecated configuration key. "
                                        + "Deprecated key: \"" + deprecatedConfig.key() + "\", "
                                        + "current key: \"" + currentConfig.key() + "\".");
+                return deprecatedConfig;
+            }
+        } else {
+            return currentConfig;
+        }
+    }
+
+    /**
+     * Get a value from config, attempting to read both the keys.
+     * Warning is logged if either the current key is not defined, or both the keys are defined.
+     *
+     * @param config configuration instance
+     * @param currentKey key that should be used
+     * @param deprecatedKey key that should not be used
+     *
+     * @return config node of the current key if exists, of the deprecated key if it does not, missing node otherwise
+     */
+    public static io.helidon.common.config.Config get(io.helidon.common.config.Config config,
+                                                      String currentKey,
+                                                      String deprecatedKey) {
+        io.helidon.common.config.Config deprecatedConfig = config.get(deprecatedKey);
+        io.helidon.common.config.Config currentConfig = config.get(currentKey);
+
+        if (deprecatedConfig.exists()) {
+            if (currentConfig.exists()) {
+                LOGGER.log(Level.WARNING, "You are using both a deprecated configuration and a current one. "
+                        + "Deprecated key: \"" + deprecatedConfig.key() + "\", "
+                        + "current key: \"" + currentConfig.key() + "\", "
+                        + "only the current key will be used, and deprecated will be ignored.");
+                return currentConfig;
+            } else {
+                LOGGER.log(Level.WARNING, "You are using a deprecated configuration key. "
+                        + "Deprecated key: \"" + deprecatedConfig.key() + "\", "
+                        + "current key: \"" + currentConfig.key() + "\".");
                 return deprecatedConfig;
             }
         } else {

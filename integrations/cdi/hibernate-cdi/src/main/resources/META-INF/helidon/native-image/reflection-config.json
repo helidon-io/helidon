@@ -102,6 +102,15 @@
         "org.hibernate.hql.internal.ast.tree.ConstructorNode",
         "org.hibernate.hql.internal.ast.tree.LiteralNode",
         "org.hibernate.hql.internal.ast.tree.BinaryArithmeticOperatorNode",
+        "org.hibernate.query.hql.spi.DotIdentifierConsumer[]",
+        "org.hibernate.query.hql.spi.SqmCreationProcessingState[]",
+        "org.hibernate.query.sqm.spi.ParameterDeclarationContext[]",
+        "org.hibernate.query.sqm.sql.FromClauseIndex[]",
+        "org.hibernate.sql.ast.tree.Statement[]",
+        "org.hibernate.sql.ast.tree.select.QueryPart[]",
+        "org.hibernate.sql.ast.spi.SqlAstProcessingState[]",
+        "org.hibernate.sql.results.graph.FetchParent[]",
+        "org.hibernate.sql.results.jdbc.spi.JdbcValuesSourceProcessingState[]",
         "antlr.CommonToken"
     ],
     "exclude": [

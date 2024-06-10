@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -70,31 +70,14 @@ Create a JAX-RS Resource class with at least one resource method.
 [source,java]
 .Sample JAX-RS Resource Class
 ----
-@Path("/")
-@RequestScoped
-public class HelloWorldResource {
-    @GET
-    @Produces(MediaType.TEXT_PLAIN)
-    public String message() {
-        return "Hello World";
-    }
-}
+include::{sourcedir}/mp/introduction/MicroprofileSnippets.java[tag=snippet_1, indent=0]
 ----
 
 And create a JAX-RS application.
 [source,java]
 .Sample JAX-RS Application
 ----
-@ApplicationScoped
-@ApplicationPath("/")
-public class HelloWorldApplication extends Application {
-    @Override
-    public Set<Class<?>> getClasses() {
-        return Set.of(
-                HelloWorldResource.class
-        );
-    }
-}
+include::{sourcedir}/mp/introduction/MicroprofileSnippets.java[tag=snippet_2, indent=0]
 ----
 
 Add `beans.xml` in `src/main/resources/META-INF` so
@@ -112,9 +95,7 @@ As a last step, add a main method to your application (or a dedicated Main class
 [source,java]
 .Sample JAX-RS Application
 ----
-public static void main(String[] args) {
-    io.helidon.microprofile.server.Main.main(args);
-}
+include::{sourcedir}/mp/introduction/MicroprofileSnippets.java[tag=snippet_3, indent=0]
 ----
 
 Run the main class. The server will start on port 7001 and serve your

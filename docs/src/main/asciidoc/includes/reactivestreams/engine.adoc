@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -19,8 +19,9 @@
 = Helidon Reactive Engine
 
 ifndef::rootdir[:rootdir: {docdir}/../..]
-
 :feature-name: Reactive Engine
+
+include::{rootdir}/includes/attributes.adoc[]
 
 == Contents
 
@@ -30,7 +31,7 @@ ifndef::rootdir[:rootdir: {docdir}/../..]
 
 == Overview
 
-Helidon has its own set of reactive operators that have no dependencies outside of the Helidon ecosystem.
+Helidon has its own set of reactive operators that have no dependencies outside the Helidon ecosystem.
 These operators can be used with `java.util.concurrent.Flow` based reactive streams.
 
 include::{rootdir}/includes/dependencies.adoc[]
@@ -51,28 +52,13 @@ The stream processing operator chain can be easily constructed by `io.helidon.co
 [source,java]
 .Example of Multi usage:
 ----
-AtomicInteger sum = new AtomicInteger();
-
-Multi.just("1", "2", "3", "4", "5")
-        .limit(3)
-        .map(Integer::parseInt)
-        .forEach(sum::addAndGet);
-
-System.out.println("Sum: " + sum.get());
-
-> Sum: 6
+include::{sourcedir}/includes/reactivestreams/EngineSnippets.java[tag=snippet_1, indent=0]
 ----
 
 [source,java]
 .Example of Single usage:
 ----
-Single.just("1")
-        .map(Integer::parseInt)
-        .map(i -> i + 5)
-        .toStage()
-        .whenComplete((i, t) -> System.out.println("Result: " + i));
-
-> Result: 6
+include::{sourcedir}/includes/reactivestreams/EngineSnippets.java[tag=snippet_2, indent=0]
 ----
 
 [[terms]]
@@ -123,8 +109,8 @@ Single.just("1")
 |onError|Executes the given java.util.function.Consumer when an onError signal is received.
 |onCancel|Executes given `java.lang.Runnable` when a cancel signal is received.
 |takeUntil|Relay upstream items until the other source signals an item or completes.
-|range|Emits a range of ever increasing integers.
-|rangeLong|Emits a range of ever increasing longs.
+|range|Emits a range of ever-increasing integers.
+|rangeLong|Emits a range of ever-increasing longs.
 |timer|Signal 0L and complete the sequence after the given time elapsed.
 |interval|Signal 0L, 1L and so on periodically to the downstream.
 |interval|Signal 0L after an initial delay, then 1L, 2L and so on periodically to the downstream.
@@ -146,21 +132,5 @@ In the situations when part of the operator chain needs to be prepared in advanc
 [source,java]
 .Combining operator chains:
 ----
-// Assembly of stream, nothing is streamed yet
-Multi<String> publisherStage =
-        Multi.just("foo", "bar")
-                .map(String::trim);
-
-Function<Multi<T>, Multi<T>> processorStage =
-        upstream ->
-                upstream.map(String::toUpperCase);
-
-// Execution of pre-prepared stream
-publisherStage
-        .compose(processorStage)
-        .map(s -> "Item received: " + s)
-        .forEach(System.out::println);
-
-> Item received: FOO
-> Item received: BAR
+include::{sourcedir}/includes/reactivestreams/EngineSnippets.java[tag=snippet_3, indent=0]
 ----

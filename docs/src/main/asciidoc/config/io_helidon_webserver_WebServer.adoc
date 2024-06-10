@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -46,51 +46,52 @@ This is a standalone configuration type, prefix from configuration root: `server
 
 |`backlog` |int |`1024` |Accept backlog.
 
- @return backlog
+ Backlog
 |`connection-config` |xref:{rootdir}/config/io_helidon_webserver_ConnectionConfig.adoc[ConnectionConfig] |{nbsp} |Configuration of a connection (established from client against our server).
 
- @return connection configuration
+ Connection configuration
 |`connection-options` |xref:{rootdir}/config/io_helidon_common_socket_SocketOptions.adoc[SocketOptions] |{nbsp} |Options for connections accepted by this listener.
  This is not used to setup server connection.
 
- @return socket options
+ Socket options
 |`content-encoding` |xref:{rootdir}/config/io_helidon_http_encoding_ContentEncodingContext.adoc[ContentEncodingContext] |{nbsp} |Configure the listener specific io.helidon.http.encoding.ContentEncodingContext.
  This method discards all previously registered ContentEncodingContext.
  If no content encoding context is registered, content encoding context of the webserver would be used.
 
- @return content encoding context
+ Content encoding context
 |`features` |io.helidon.webserver.spi.ServerFeature[&#93; (service provider interface)
 
 Such as:
 
  - xref:{rootdir}/config/io_helidon_webserver_observe_ObserveFeature.adoc[observe (ObserveFeature)]
  - xref:{rootdir}/config/io_helidon_webserver_context_ContextFeature.adoc[context (ContextFeature)]
+ - xref:{rootdir}/config/io_helidon_openapi_OpenApiFeature.adoc[openapi (OpenApiFeature)]
  - xref:{rootdir}/config/io_helidon_webserver_cors_CorsFeature.adoc[cors (CorsFeature)]
  - xref:{rootdir}/config/io_helidon_webserver_security_SecurityFeature.adoc[security (SecurityFeature)]
  - xref:{rootdir}/config/io_helidon_webserver_accesslog_AccessLogFeature.adoc[access-log (AccessLogFeature)]
 
  |{nbsp} |Server features allow customization of the server, listeners, or routings.
 
- @return server features
+ Server features
 |`host` |string |`0.0.0.0` |Host of the default socket. Defaults to all host addresses (`0.0.0.0`).
 
- @return host address to listen on (for the default socket)
-|`idle-connection-period` |Duration |`PT2M` |How often should we check for #idleConnectionTimeout().
+ Host address to listen on (for the default socket)
+|`idle-connection-period` |Duration |`PT2M` |How often should we check for idleConnectionTimeout().
  Defaults to `PT2M` (2 minutes).
 
- @return period of checking for idle connections
+ Period of checking for idle connections
 |`idle-connection-timeout` |Duration |`PT5M` |How long should we wait before closing a connection that has no traffic on it.
  Defaults to `PT5M` (5 minutes). Note that the timestamp is refreshed max. once per second, so this setting
  would be useless if configured for shorter periods of time (also not a very good support for connection keep alive,
  if the connections are killed so soon anyway).
 
- @return timeout of idle connections
+ Timeout of idle connections
 |`max-concurrent-requests` |int |`-1` |Limits the number of requests that can be executed at the same time (the number of active virtual threads of requests).
  Defaults to `-1`, meaning "unlimited" - what the system allows.
  Also make sure that this number is higher than the expected time it takes to handle a single request in your application,
  as otherwise you may stop in-progress requests.
 
- @return number of requests that can be processed on this listener, regardless of protocol
+ Number of requests that can be processed on this listener, regardless of protocol
 |`max-in-memory-entity` |int |`131072` |If the entity is expected to be smaller that this number of bytes, it would be buffered in memory to optimize
  performance when writing it.
  If bigger, streaming will be used.
@@ -100,31 +101,31 @@ Such as:
 
  Default is 128Kb.
 
- @return maximal number of bytes to buffer in memory for supported writers
+ Maximal number of bytes to buffer in memory for supported writers
 |`max-payload-size` |long |`-1` |Maximal number of bytes an entity may have.
- If io.helidon.http.HeaderNames#CONTENT_LENGTH is used, this is checked immediately,
- if io.helidon.http.HeaderValues#TRANSFER_ENCODING_CHUNKED is used, we will fail when the
+ If io.helidon.http.HeaderNames.CONTENT_LENGTH is used, this is checked immediately,
+ if io.helidon.http.HeaderValues.TRANSFER_ENCODING_CHUNKED is used, we will fail when the
  number of bytes read would exceed the max payload size.
  Defaults to unlimited (`-1`).
 
- @return maximal number of bytes of entity
+ Maximal number of bytes of entity
 |`max-tcp-connections` |int |`-1` |Limits the number of connections that can be opened at a single point in time.
  Defaults to `-1`, meaning "unlimited" - what the system allows.
 
- @return number of TCP connections that can be opened to this listener, regardless of protocol
+ Number of TCP connections that can be opened to this listener, regardless of protocol
 |`media-context` |xref:{rootdir}/config/io_helidon_http_media_MediaContext.adoc[MediaContext] |{nbsp} |Configure the listener specific io.helidon.http.media.MediaContext.
  This method discards all previously registered MediaContext.
  If no media context is registered, media context of the webserver would be used.
 
- @return media context
+ Media context
 |`name` |string |`@default` |Name of this socket. Defaults to `@default`.
  Must be defined if more than one socket is needed.
 
- @return name of the socket
+ Name of the socket
 |`port` |int |`0` |Port of the default socket.
  If configured to `0` (the default), server starts on a random port.
 
- @return port to listen on (for the default socket)
+ Port to listen on (for the default socket)
 |`protocols` |io.helidon.webserver.spi.ProtocolConfig[&#93; (service provider interface) |{nbsp} |Configuration of protocols. This may be either protocol selectors, or protocol upgraders from HTTP/1.1.
  As the order is not important (providers are ordered by weight by default), we can use a configuration as an object,
  such as:
@@ -139,35 +140,38 @@ Such as:
        ....
  </pre>
 
- @return all defined protocol configurations, loaded from service loader by default
+ All defined protocol configurations, loaded from service loader by default
 |`receive-buffer-size` |int |{nbsp} |Listener receive buffer size.
 
- @return buffer size in bytes
+ Buffer size in bytes
+|`requested-uri-discovery` |xref:{rootdir}/config/io_helidon_http_RequestedUriDiscoveryContext.adoc[RequestedUriDiscoveryContext] |{nbsp} |Requested URI discovery context.
+
+ Discovery context
 |`shutdown-grace-period` |Duration |`PT0.5S` |Grace period in ISO 8601 duration format to allow running tasks to complete before listener's shutdown.
  Default is `500` milliseconds.
 Configuration file values example: `PT0.5S`, `PT2S`.
 
- @return grace period
+ Grace period
 |`shutdown-hook` |boolean |`true` |When true the webserver registers a shutdown hook with the JVM Runtime.
 
  Defaults to true. Set this to false such that a shutdown hook is not registered.
 
- @return whether to register a shutdown hook
+ Whether to register a shutdown hook
 |`sockets` |xref:{rootdir}/config/io_helidon_webserver_ListenerConfig.adoc[Map&lt;string, ListenerConfig&gt;] |{nbsp} |Socket configurations.
- Note that socket named `WebServer#DEFAULT_SOCKET_NAME` cannot be used,
+ Note that socket named WebServer.DEFAULT_SOCKET_NAME cannot be used,
  configure the values on the server directly.
 
- @return map of listener configurations, except for the default one
+ Map of listener configurations, except for the default one
 |`tls` |xref:{rootdir}/config/io_helidon_common_tls_Tls.adoc[Tls] |{nbsp} |Listener TLS configuration.
 
- @return tls of this configuration
+ Tls of this configuration
 |`write-buffer-size` |int |`512` |Initial buffer size in bytes of java.io.BufferedOutputStream created internally to
  write data to a socket connection. Default is `512`.
 
- @return initial buffer size used for writing
+ Initial buffer size used for writing
 |`write-queue-length` |int |`0` |Number of buffers queued for write operations.
 
- @return maximal number of queued writes, defaults to 0
+ Maximal number of queued writes, defaults to 0
 
 |===
 

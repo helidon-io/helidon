@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -39,53 +39,22 @@ Let's define simple Helidon SE Service for adding special header to every REST r
 
 [source,java]
 ----
-public class CoolingService implements HttpService, Handler {
-
-    public static final String COOL_HEADER_NAME = "Cool-Header";
-    public static final String COOLING_VALUE = "This is way cooler response than ";
-
-    @Override
-    public void routing(HttpRules rules) {
-        rules.any(this);
-    }
-
-    @Override
-    public void accept(ServerRequest req, ServerResponse res) {
-        res.headers().add(COOL_HEADER_NAME, COOLING_VALUE);
-        req.next();
-    }
-}
+include::{sourcedir}/mp/guides/SeServicesSnippets.java[tag=snippet_1, indent=0]
 ----
 
-Its easy to use it with Helidon SE:
+It's easy to use it with Helidon SE:
 
 [source,java]
 ----
-WebServer.builder(Routing.builder()
-                    // register service with routing path
-                    .register("/cool", new CoolingService())
-                    .build())
-                .config(config)
-                .addMediaSupport(JsonpSupport.create())
-                .build()
-                .start();
+include::{sourcedir}/mp/guides/SeServicesSnippets.java[tag=snippet_2, indent=0]
 ----
+<1> register service with routing path
 
 And not much harder to use it with Helidon MP:
 
 [source,java]
 ----
-@ApplicationScoped
-public class MyBean {
-
-    @Produces
-    @ApplicationScoped
-    @RoutingPath("/cool")
-    public Service coolService() {
-        return new CoolingService();
-    }
-
-}
+include::{sourcedir}/mp/guides/SeServicesSnippets.java[tag=snippet_3, indent=0]
 ----
 
 You can leverage annotations:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,6 @@ public class Http2Upgrader implements Http1Upgrader {
                     + "Upgrade: h2c\r\n\r\n")
             .getBytes(StandardCharsets.UTF_8);
     private static final HeaderName HTTP2_SETTINGS_HEADER_NAME = HeaderNames.create("HTTP2-Settings");
-    private static final Base64.Decoder BASE_64_DECODER = Base64.getDecoder();
 
     private final Http2Config config;
     private final List<Http2SubProtocolSelector> subProtocolProviders;
@@ -77,8 +76,7 @@ public class Http2Upgrader implements Http1Upgrader {
                                     WritableHeaders<?> headers) {
         Http2Connection connection = new Http2Connection(ctx, config, subProtocolProviders);
         if (headers.contains(HTTP2_SETTINGS_HEADER_NAME)) {
-            connection.clientSettings(Http2Settings.create(BufferData.create(BASE_64_DECODER.decode(headers.get(
-                    HTTP2_SETTINGS_HEADER_NAME).value().getBytes(StandardCharsets.US_ASCII)))));
+            connection.clientSettings(token68ToHttp2Settings(headers.get(HTTP2_SETTINGS_HEADER_NAME).valueBytes()));
         } else {
             throw new RuntimeException("Bad request -> not " + HTTP2_SETTINGS_HEADER_NAME + " header");
         }
@@ -86,7 +84,7 @@ public class Http2Upgrader implements Http1Upgrader {
         http2Headers.path(prologue.uriPath().rawPath());
         http2Headers.method(prologue.method());
         headers.remove(HeaderNames.HOST,
-                       it -> http2Headers.authority(it.value()));
+                       it -> http2Headers.authority(it.get()));
         http2Headers.scheme("http"); // TODO need to get if https (ctx)?
 
         HttpPrologue newPrologue = HttpPrologue.create(Http2Connection.FULL_PROTOCOL,
@@ -102,6 +100,20 @@ public class Http2Upgrader implements Http1Upgrader {
         DataWriter dataWriter = ctx.dataWriter();
         dataWriter.write(BufferData.create(SWITCHING_PROTOCOLS_BYTES));
         return connection;
+    }
+
+    /**
+     * <a href="https://datatracker.ietf.org/doc/html/rfc7540#section-3.2.1">RFC7540 3.2.1.</a>
+     * <pre>{@code
+     * HTTP2-Settings    = token68
+     * token68           = 1*( ALPHA / DIGIT / "-" / "." / "_" / "~" / "+" / "/" ) *"="
+     * }</pre>
+     *
+     * @param bytes Base64URL encoded bytes
+     * @return HTTP/2 settings
+     */
+    private static Http2Settings token68ToHttp2Settings(byte[] bytes) {
+        return Http2Settings.create(BufferData.create(Base64.getUrlDecoder().decode(bytes)));
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ public class MessageBoardEndpoint implements WsListener {
     @Override
     public void onMessage(WsSession session, String text, boolean last) {
         // Send all messages in the queue
-        if (text.equals("send")) {
+        if (text.equals("SEND")) {
             while (!messageQueue.isEmpty()) {
                 session.send(messageQueue.pop(), last);
             }

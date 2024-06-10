@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,9 @@
  */
 package io.helidon.integrations.oci.sdk.cdi;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.lang.System.Logger;
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -26,33 +29,42 @@ import java.net.URL;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.oracle.bmc.ConfigFileReader.ConfigFile;
 import com.oracle.bmc.Service;
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider.InstancePrincipalsAuthenticationDetailsProviderBuilder;
 import com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider.ResourcePrincipalAuthenticationDetailsProviderBuilder;
+import com.oracle.bmc.auth.SessionTokenAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.SessionTokenAuthenticationDetailsProvider.SessionTokenAuthenticationDetailsProviderBuilder;
 import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.SimpleAuthenticationDetailsProviderBuilder;
+import com.oracle.bmc.auth.okeworkloadidentity.OkeWorkloadIdentityAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.okeworkloadidentity.OkeWorkloadIdentityAuthenticationDetailsProvider.OkeWorkloadIdentityAuthenticationDetailsProviderBuilder;
 import com.oracle.bmc.common.ClientBuilderBase;
+import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.event.Event;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.AmbiguousResolutionException;
 import jakarta.enterprise.inject.CreationException;
 import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.UnsatisfiedResolutionException;
+import jakarta.enterprise.inject.literal.NamedLiteral;
 import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
 import jakarta.enterprise.inject.spi.AfterDeploymentValidation;
+import jakarta.enterprise.inject.spi.Bean;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
 import jakarta.enterprise.inject.spi.Extension;
@@ -64,228 +76,180 @@ import jakarta.inject.Singleton;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 
-import static io.helidon.config.mp.MpConfig.toHelidonConfig;
-import static io.helidon.integrations.oci.sdk.runtime.OciExtension.fallbackConfigSupplier;
-import static io.helidon.integrations.oci.sdk.runtime.OciExtension.ociAuthenticationProvider;
+import static io.helidon.integrations.oci.sdk.cdi.AdpStrategyDescriptors.DEFAULT_ORDERED_ADP_STRATEGY_DESCRIPTORS;
+import static io.helidon.integrations.oci.sdk.cdi.AdpStrategyDescriptors.replaceElements;
+import static io.helidon.integrations.oci.sdk.cdi.AdpStrategyDescriptors.strategyDescriptors;
+import static java.lang.System.Logger.Level.DEBUG;
+import static java.lang.System.Logger.Level.WARNING;
 import static java.lang.invoke.MethodType.methodType;
 
 /**
- * A <a
- * href="https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0.html#spi"
- * target="_top">CDI 3.0 portable extension</a> that enables the
- * {@linkplain jakarta.inject.Inject injection} of any <em>service
- * interface</em>, <em>service client</em>, <em>service client
- * builder</em>, <em>asynchronous service interface</em>,
- * <em>asynchronous service client</em>, or <em>asynchronous service
- * client builder</em> from the <a
- * href="https://docs.oracle.com/en-us/iaas/tools/java/latest/index.html"
- * target="_top">Oracle Cloud Infrastructure Java SDK</a>. It is intended for
- * <em>Helidon MP</em>, CDI usage scenarios. For usages other than for
- * <em>Helidon MP</em> please refer to
- * {@code io.helidon.integrations.oci.sdk.runtime.OciExtension} instead.
+ * A <a href="https://jakarta.ee/specifications/cdi/4.0/jakarta-cdi-spec-4.0.html#spi" target="_top">CDI portable
+ * extension</a> that enables the {@linkplain jakarta.inject.Inject injection} of any <a
+ * href="#service-interface"><em>service interface</em></a>, <a href="#service-client"><em>service client</em></a>, <a
+ * href="#service-client-builder"><em>service client builder</em></a>, <a
+ * href="#async-service-interface"><em>asynchronous service interface</em></a>, <a
+ * href="#async-service-client"><em>asynchronous service client</em></a>, or <a
+ * href="#async-service-client-builder"><em>asynchronous service client builder</em></a> from the <a
+ * href="https://docs.oracle.com/en-us/iaas/tools/java/latest/index.html" target="_top">Oracle Cloud Infrastructure Java
+ * SDK</a>.
  *
  * <h2>Terminology</h2>
  *
- * <p>The terms <em>service interface</em>, <em>service client</em>,
- * <em>service client builder</em>, <em>asynchronous service
- * interface</em>, <em>asynchronous service client</em>, and
- * <em>asynchronous service client builder</em> are defined as
- * follows:</p>
+ * <p>The terms <em>service interface</em>, <em>service client</em>, <em>service client builder</em>, <em>asynchronous
+ * service interface</em>, <em>asynchronous service client</em>, and <em>asynchronous service client builder</em> are
+ * defined as follows:</p>
  *
  * <dl>
  *
- * <dt>Service</dt>
+ * <dt><a id="service">Service</a></dt>
  *
- * <dd>An <a
- * href="https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/javasdk.htm#Services_Supported"
- * target="_top">Oracle Cloud Infrastructure service supported by the
- * Oracle Cloud Infrastructure Java SDK</a>.</dd>
+ * <dd>An <a href="https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/javasdk.htm#Services_Supported"
+ * target="_top">Oracle Cloud Infrastructure service supported by the Oracle Cloud Infrastructure Java SDK</a>.</dd>
  *
- * <dt>Service interface</dt>
+ * <dt><a id="service-interface">Service interface</a></dt>
  *
- * <dd>A Java interface describing the functionality of a service.
- * Distinguished from an <em>asynchronous service interface</em>.
+ * <dd>A Java interface describing the functionality of a <a href="#service">service</a>. Distinguished from an <a
+ * href="#async-service-interface"><em>asynchronous service interface</em></a>.
  *
- * <p>For a hypothetical service named <strong>Cloud Example</strong>,
- * the corresponding service interface will be in a package named
- * <code>com.oracle.bmc.</code><strong><code>cloudexample</code></strong>.
- * The service interface's {@linkplain Class#getSimpleName() simple
- * name} is often also named after the service,
- * e.g. <strong><code>CloudExample</code></strong>, but need not
- * be.</p></dd>
+ * <p>For a hypothetical service named <strong>Cloud Example</strong>, the corresponding service interface will be in a
+ * package named <code>com.oracle.bmc.</code><strong><code>cloudexample</code></strong>. The service interface's
+ * {@linkplain Class#getSimpleName() simple name} is often also named after the service,
+ * e.g. <strong><code>CloudExample</code></strong>, but need not be.</p></dd>
  *
- * <dt>Service client</dt>
+ * <dt><a id="service-client">Service client</a></dt>
  *
- * <dd>A concrete Java class that implements the service interface and
- * has the same {@linkplain Class#getPackageName() package name} as
- * it.  Distinguished from an <em>asynchronous service client</em>.
+ * <dd>A concrete Java class that implements the <a href="#service-interface">service interface</a> and has the same
+ * {@linkplain Class#getPackageName() package name} as it. Distinguished from an <a
+ * href="#async-service-client"><em>asynchronous service client</em></a>.
  *
- * <p>The service client's {@linkplain Class#getSimpleName() simple
- * name} is formed by appending the {@linkplain Class#getSimpleName()
- * simple name} of the service interface with <code>Client</code>.
- * The {@linkplain Class#getName() class name} for the service client
- * for the hypothetical {@code
- * com.oracle.bmc.cloudexample.CloudExample} service interface
- * described above will thus be
+ * <p>The service client's {@linkplain Class#getSimpleName() simple name} is formed by appending the {@linkplain
+ * Class#getSimpleName() simple name} of the service interface with <code>Client</code>. The {@linkplain Class#getName()
+ * class name} for the service client for the hypothetical {@code com.oracle.bmc.cloudexample.CloudExample} service
+ * interface described above will thus be
  * <code>com.oracle.bmc.</code><strong><code>cloudexample</code></strong><code>.</code><strong><code>CloudExampleClient</code></strong>.</p></dd>
  *
- * <dt>Service client builder</dt>
+ * <dt><a id="service-client-builder">Service client builder</a></dt>
  *
- * <dd>A concrete Java "builder" class that creates possibly
- * customized instances of its corresponding service client.
- * Distinguished from an <em>asynchronous service client builder</em>.
+ * <dd>A concrete Java "builder" class that creates possibly customized instances of its corresponding <a
+ * href="#service-client">service client</a>.  Distinguished from an <a
+ * href="#async-service-client-builder"><em>asynchronous service client builder</em></a>.
  *
- * <p>The service client builder is nearly always a nested class of
- * the service client whose instances it builds with a {@linkplain
- * Class#getSimpleName() simple name} of {@code Builder}.  (In the <a
+ * <p>The service client builder is nearly always a nested class of the service client whose instances it builds with a
+ * {@linkplain Class#getSimpleName() simple name} of {@code Builder}. (In the <a
  * href="https://docs.oracle.com/en-us/iaas/tools/java/latest/com/oracle/bmc/streaming/StreamClientBuilder.html"
- * target="_top">single case in the entirety of the Oracle Cloud
- * Infrastructure Java SDK where this pattern is not followed</a>, the
- * service client builder's {@linkplain Class#getSimpleName() simple
- * name} is formed by adding {@code Builder} to the service client's
- * {@linkplain Class#getSimpleName() simple name}.)  The {@linkplain
- * Class#getName() class name} for the service client builder for the
- * hypothetical {@code com.oracle.bmc.cloudexample.CloudExampleClient}
- * service client described above will thus be
+ * target="_top">single case in the entirety of the Oracle Cloud Infrastructure Java SDK where this pattern is not
+ * followed</a>, the service client builder's {@linkplain Class#getSimpleName() simple name} is formed by adding {@code
+ * Builder} to the service client's {@linkplain Class#getSimpleName() simple name}.)  The {@linkplain Class#getName()
+ * class name} for the service client builder for the hypothetical {@code
+ * com.oracle.bmc.cloudexample.CloudExampleClient} service client described above will thus be
  * <code>com.oracle.bmc.</code><strong><code>cloudexample</code></strong><code>.</code><strong><code>CloudExampleClient$Builder</code></strong>.</p></dd>
  *
- * <dt>Asynchronous service interface</dt>
+ * <dt><a id="async-service-interface">Asynchronous service interface</a></dt>
  *
- * <dd>A Java interface describing the functionality of a service.
- * Distinguished from a <em>service interface</em>.
+ * <dd>A Java interface describing the functionality of a <a href="#service">service</a>. Distinguished from a <a
+ * href="#service-interface"><em>service interface</em></a>.
  *
- * <p>For a hypothetical service named <strong>Cloud Example</strong>,
- * the corresponding service interface will be in the same package as
- * that of the service interface.  The asynchronous service
- * interface's {@linkplain Class#getSimpleName() simple name} is
- * formed by adding {@code Async} to the service interface's
- * {@linkplain Class#getSimpleName() simple name}.  The {@linkplain
- * Class#getName() class name} for the asynchronous service interface
- * for the hypothetical {@code
- * com.oracle.bmc.cloudexample.CloudExample} service interface
- * described above will thus be
+ * <p>For a hypothetical service named <strong>Cloud Example</strong>, the corresponding service interface will be in
+ * the same package as that of the service interface. The asynchronous service interface's {@linkplain
+ * Class#getSimpleName() simple name} is formed by adding {@code Async} to the service interface's {@linkplain
+ * Class#getSimpleName() simple name}. The {@linkplain Class#getName() class name} for the asynchronous service
+ * interface for the hypothetical {@code com.oracle.bmc.cloudexample.CloudExample} service interface described above
+ * will thus be
  * <code>com.oracle.bmc.</code><strong><code>cloudexample</code></strong><code>.</code><strong><code>CloudExampleAsync</code></strong>.</p></dd>
  *
- * <dt>Asynchronous service client</dt>
+ * <dt><a id="async-service-client">Asynchronous service client</a></dt>
  *
- * <dd>A concrete Java class that implements the asynchronous service
- * interface and has the same {@linkplain Class#getPackageName()
- * package name} as it.  Distinguised from a <em>service client</em>.
+ * <dd>A concrete Java class that implements the <a href="#async-service-interface">asynchronous service interface</a>
+ * and has the same {@linkplain Class#getPackageName() package name} as it. Distinguised from a <a
+ * href="#service-client"><em>service client</em></a>.
  *
- * <p>The asynchronous service client's {@linkplain
- * Class#getSimpleName() simple name} is formed by appending the
- * {@linkplain Class#getSimpleName() simple name} of the
- * <em>asynchronous service interface</em> with <code>Client</code>.
- * The {@linkplain Class#getName() class name} for the service client
- * for the hypothetical {@code
- * com.oracle.bmc.cloudexample.CloudExample} service interface
- * described above will thus be
+ * <p>The asynchronous service client's {@linkplain Class#getSimpleName() simple name} is formed by appending the
+ * {@linkplain Class#getSimpleName() simple name} of the asynchronous service interface with <code>Client</code>. The
+ * {@linkplain Class#getName() class name} for the asynchronous service client for the hypothetical {@code
+ * com.oracle.bmc.cloudexample.CloudExample} asynchronous service interface described above will thus be
  * <code>com.oracle.bmc.</code><strong><code>cloudexample</code></strong><code>.</code><strong><code>CloudExampleAsyncClient</code></strong>.</p></dd>
  *
- * <dt>Asynchronous service client builder</dt>
+ * <dt><a id="async-service-client-builder">Asynchronous service client builder</a></dt>
  *
- * <dd>A concrete Java "builder" class that creates possibly
- * customized instances of its corresponding asynchronous service
- * client.  Distinguished from a <em>service client builder</em>.
+ * <dd>A concrete Java "builder" class that creates possibly customized instances of its corresponding <a
+ * href="#async-service-client">asynchronous service client</a>. Distinguished from a <a
+ * href="#service-client-builder"><em>service client builder</em></a>.
  *
- * <p>The asynchronous service client builder is nearly always a
- * nested class of the asynchronous service client whose instances it
- * builds with a {@linkplain Class#getSimpleName() simple name} of
- * {@code Builder}.  (In the <a
+ * <p>The asynchronous service client builder is nearly always a nested class of the asynchronous service client whose
+ * instances it builds with a {@linkplain Class#getSimpleName() simple name} of {@code Builder}. (In the <a
  * href="https://docs.oracle.com/en-us/iaas/tools/java/latest/com/oracle/bmc/streaming/StreamAsyncClientBuilder.html"
- * target="_top">single case in the entirety of the Oracle Cloud
- * Infrastructure Java SDK where this pattern is not followed</a>, the
- * asynchronous service client builder's {@linkplain Class#getName()
- * class name} is formed by adding {@code Builder} to the asynchronous
- * service client's {@linkplain Class#getName() class name}.)  The
- * {@linkplain Class#getName() class name} for the service client
- * builder for the hypothetical {@code
- * com.oracle.bmc.cloudexample.CloudExampleAsyncClient} service client
- * described above will thus be
+ * target="_top">single case in the entirety of the Oracle Cloud Infrastructure Java SDK where this pattern is not
+ * followed</a>, the asynchronous service client builder's {@linkplain Class#getName() class name} is formed by adding
+ * {@code Builder} to the asynchronous service client's {@linkplain Class#getName() class name}.)  The {@linkplain
+ * Class#getName() class name} for the service client builder for the hypothetical {@code
+ * com.oracle.bmc.cloudexample.CloudExampleAsyncClient} service client described above will thus be
  * <code>com.oracle.bmc.</code><strong><code>cloudexample</code></strong><code>.</code><strong><code>CloudExampleAsyncClient$Builder</code></strong>.</p></dd>
  *
  * </dl>
  *
- * <p>Additionally, for any given service interface, service client,
- * service client builder, asynchronous service interface,
- * asynchronous service client, or asynchronous service client
- * builder, this {@linkplain Extension extension} also enables the
- * {@linkplain jakarta.inject.Inject injection} of an appropriate
- * {@link AbstractAuthenticationDetailsProvider}, which allows the
- * corresponding service client to authenticate with the service.</p>
+ * <p>Additionally, for any given service interface, service client, service client builder, asynchronous service
+ * interface, asynchronous service client, or asynchronous service client builder, this {@linkplain Extension extension}
+ * also enables the {@linkplain jakarta.inject.Inject injection} of an appropriate {@link
+ * AbstractAuthenticationDetailsProvider}, which allows the corresponding service client to authenticate with the
+ * service.</p>
  *
- * <p>In all cases, user-supplied beans will be preferred over any
- * otherwise installed by this {@linkplain Extension extension}.</p>
+ * <p>In all cases, user-supplied beans will be preferred over any otherwise installed by this {@linkplain Extension
+ * extension}.</p>
  *
  * <h2>Basic Usage</h2>
  *
- * <p>To use this extension, make sure it is on your project's runtime
- * classpath.  To {@linkplain jakarta.inject.Inject inject} a service
- * interface named
- * <code>com.oracle.bmc.</code><strong><code>cloudexample</code></strong><code>.CloudExample</code>
- * (or an analogous asynchronous service interface), you will also
- * need to ensure that its containing artifact is on your compile
- * classpath (e.g. <a
- * href="https://search.maven.org/search?q=oci-java-sdk-"
+ * <p>To use this extension, make sure it is on your project's runtime classpath. To {@linkplain jakarta.inject.Inject
+ * inject} a <a href="#service-interface">service interface</a> named
+ * <code>com.oracle.bmc.</code><strong><code>cloudexample</code></strong><code>.CloudExample</code> (or an analogous <a
+ * href="#async-service-interface">asynchronous service interface</a>), you will also need to ensure that its containing
+ * artifact is on your compile classpath (e.g. <a href="https://search.maven.org/search?q=oci-java-sdk-"
  * target="_top"><code>oci-java-sdk-</code><strong><code>cloudexample</code></strong><code>-$VERSION.jar</code></a>,
- * where {@code $VERSION} should be replaced by a suitable version
- * number).</p>
+ * where {@code $VERSION} should be replaced by a suitable version number).</p>
  *
- * <h2>Advanced Usage</h2>
+ * <h2>Advanced Usage and Customization</h2>
  *
- * <p>In the course of providing {@linkplain jakarta.inject.Inject
- * injection support} for a service interface or an asynchronous
- * service interface, this {@linkplain Extension extension} will
- * create service client builder and asynchronous service client
- * builder instances by invoking the {@code static} {@code builder()}
- * method that is present on all service client classes, and will then
- * add those instances as beans.  The resulting service client or
- * asynchronous service client will be built by that builder's {@link
- * ClientBuilderBase#build(AbstractAuthenticationDetailsProvider)
- * build(AbstractAuthenticationDetailsProvider)} method and will
- * itself be added as a bean.</p>
+ * <p>In the course of providing {@linkplain jakarta.inject.Inject injection support} for a <a
+ * href="#service-interface">service interface</a> or an <a href="#async-service-interface">asynchronous service
+ * interface</a>, this {@linkplain Extension extension} will also create <a href="#service-client-builder">service
+ * client builder</a> and <a href="#async-service-client-builder">asynchronous service client builder</a> instances by
+ * invoking the {@code static} {@code builder()} method that is present on all <a href="#service-client">service
+ * client</a> classes, and will then add those instances as beans. The resulting service client or asynchronous service
+ * client will be built by that builder's {@link ClientBuilderBase#build(AbstractAuthenticationDetailsProvider)
+ * build(AbstractAuthenticationDetailsProvider)} method and will itself be added as a bean.</p>
  *
- * <p>A user may wish to customize this builder so that the resulting
- * service client or asynchronous service client reflects the
- * customization.  She has two options:</p>
+ * <p>A user may wish to customize this builder so that the resulting service client or asynchronous service client
+ * reflects the customization. She has two options:</p>
  *
  * <ol>
  *
- * <li>She may supply her own bean with the service client builder
- * type (or asynchronous client builder type) as one of its <a
- * href="https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0.html#bean_types"
- * target="_top">bean types</a>.  In this case, this {@linkplain
- * Extension extension} does not supply the service client builder (or
- * asynchronous service client builder) and the user is in full
- * control of how her service client (or asynchronous service client)
- * is constructed.</li>
+ * <li>She may supply her own bean with the service client builder type (or asynchronous client builder type) as one of
+ * its <a href="https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0.html#bean_types" target="_top">bean
+ * types</a>. In this case, this {@linkplain Extension extension} does not supply the service client builder (or
+ * asynchronous service client builder) and the user is in full control of how her service client (or asynchronous
+ * service client) is constructed.</li>
  *
- * <li>She may customize the service client builder (or asynchronous
- * service client builder) supplied by this {@linkplain Extension
- * extension}.  To do this, she <a
- * href="https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0.html#observes"
- * target="_top">declares an observer method</a> that observes the
- * service client builder object (or asynchronous service client
- * builder object) that is returned from the {@code static} service
- * client (or asynchronous service client) {@code builder()} method.
- * In her observer method, she may call any method on the supplied
- * service client builder (or asynchronous service client builder) and
- * her customizations will be retained.</li>
+ * <li>She may customize the service client builder (or asynchronous service client builder) supplied by this
+ * {@linkplain Extension extension}. To do this, she <a
+ * href="https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0.html#observes" target="_top">declares an
+ * observer method</a> that observes the service client builder object (or asynchronous service client builder object)
+ * that is returned from the {@code static} service client (or asynchronous service client) {@code builder()} method.
+ * In her observer method, she may call any method on the supplied service client builder (or asynchronous service
+ * client builder) and her customizations will be retained.</li>
  *
  * </ol>
  *
  * <h2>Configuration</h2>
  *
  * <p>This extension uses the following <a
- * href="https://github.com/eclipse/microprofile-config#configuration-for-microprofile"
- * target="_top">MicroProfile Config</a> property names (note,
- * however, that no configuration is required):</p>
+ * href="https://github.com/eclipse/microprofile-config#configuration-for-microprofile" target="_top">MicroProfile
+ * Config</a> property names (note, however, that no configuration is required):</p>
  *
- * <table>
+ * <table class="striped">
  *
- *   <caption><a
- *   href="https://github.com/eclipse/microprofile-config#configuration-for-microprofile"
- *   target="_top">MicroProfile Config</a> property names</caption>
+ *   <caption style="display:none"><a
+ *   href="https://github.com/eclipse/microprofile-config#configuration-for-microprofile" target="_top">MicroProfile
+ *   Config</a> property names</caption>
  *
  *   <thead>
  *
@@ -313,10 +277,8 @@ import static java.lang.invoke.MethodType.methodType;
  *
  *       <td>{@link String String[]}</td>
  *
- *       <td>A comma-separated list of descriptors describing the
- *       strategy, or strategies, to use to select an appropriate
- *       {@link AbstractAuthenticationDetailsProvider} when one is
- *       called for.</td>
+ *       <td>A comma-separated list of descriptors describing the strategy, or strategies, to use to select an
+ *       appropriate {@link AbstractAuthenticationDetailsProvider} when one is called for.</td>
  *
  *       <td>{@code auto}</td>
  *
@@ -327,39 +289,50 @@ import static java.lang.invoke.MethodType.methodType;
  *           <li>{@code config}</li>
  *           <li>{@code config-file}</li>
  *           <li>{@code instance-principals}</li>
+ *           <li>{@code oke-workload-identity}</li>
  *           <li>{@code resource-principal}</li>
+ *           <li>{@code session-token-builder}</li>
+ *           <li>{@code session-token-config-file}</li>
  *         </ul>
  *
- *         <p>A strategy descriptor of {@code config} will cause a
- *         {@link
- *         com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider} to
- *         be used, populated with other MicroProfile Config
- *         properties described here.</p>
+ *         <p>A strategy descriptor of <strong>{@code config}</strong> will cause a {@link
+ *         SimpleAuthenticationDetailsProvider} to be used, populated with other MicroProfile Config properties
+ *         described here.</p>
  *
- *         <p>A strategy descriptor of {@code config-file} will cause
- *         a {@link
- *         com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider}
- *         to be used, customized with other MicroProfile Config
- *         properties described here.</p>
+ *         <p>A strategy descriptor of <strong>{@code config-file}</strong> will cause a {@link
+ *         ConfigFileAuthenticationDetailsProvider} to be used, {@linkplain
+ *         ConfigFileAuthenticationDetailsProvider#ConfigFileAuthenticationDetailsProvider(ConfigFile) loaded from} an
+ *         <a href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm">OCI configuration file</a>,
+ *         with a loading process customized with other MicroProfile Config properties described here.</p>
  *
- *         <p>A strategy descriptor of {@code instance-principals}
- *         will cause an {@link
- *         com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider}
- *         to be used.</p>
+ *         <p>A strategy descriptor of <strong>{@code instance-principals}</strong> will cause an {@link
+ *         InstancePrincipalsAuthenticationDetailsProvider} to be used.</p>
  *
- *         <p>A strategy descriptor of {@code resource-principal} will
- *         cause a {@link
- *         com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider}
- *         to be used.</p>
+ *         <p>A strategy descriptor of <strong>{@code oke-workload-identity}</strong> will cause a {@link
+ *         OkeWorkloadIdentityAuthenticationDetailsProvider} to be used.</p>
  *
- *         <p>If there are many strategy descriptors supplied, the
- *         first one that is deemed to be available or suitable will
- *         be used and all others will be ignored.</p>
+ *         <p>A strategy descriptor of <strong>{@code resource-principal}</strong> will cause a {@link
+ *         ResourcePrincipalAuthenticationDetailsProvider} to be used.</p>
  *
- *         <p>If {@code auto} is present in the list, or if no value
- *         for this property exists, the behavior will be as if {@code
- *         config,config-file,instance-principals,resource-principal}
- *         were supplied instead.</p></td>
+ *         <p>A strategy descriptor of <strong>{@code session-token-builder}</strong> will cause a {@link
+ *         SessionTokenAuthenticationDetailsProvider} to be used, {@linkplain
+ *         SessionTokenAuthenticationDetailsProviderBuilder#build() built} from a {@link
+ *         SessionTokenAuthenticationDetailsProviderBuilder SessionTokenAuthenticationDetailsProviderBuilder} instance,
+ *         customizable using other facilities described in this documentation.</p>
+ *
+ *         <p>A strategy descriptor of <strong>{@code session-token-config-file}</strong> will cause a {@link
+ *         SessionTokenAuthenticationDetailsProvider} to be used, {@linkplain
+ *         SessionTokenAuthenticationDetailsProvider#SessionTokenAuthenticationDetailsProvider(ConfigFile) loaded from}
+ *         an <a href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm">OCI configuration
+ *         file</a>, with a loading process customized with other MicroProfile Config properties described here.</p>
+ *
+ *         <p>If there are many strategy descriptors supplied, the first one that is deemed to be available or suitable
+ *         will be used and all others will be ignored.</p>
+ *
+ *         <p>If <strong>{@code auto}</strong> is present in the list, or if no value for this property can be found,
+ *         the behavior will be as if {@code auto} were replaced with <strong>{@code
+ *         config,config-file,session-token-config-file,session-token-builder,instance-principals,resource-principal,oke-workload-identity}</strong>
+ *         instead. (The replacement values are subject to change in subsequent revisions of this class.)</p></td>
  *
  *     </tr>
  *
@@ -369,15 +342,13 @@ import static java.lang.invoke.MethodType.methodType;
  *
  *       <td>{@link String}</td>
  *
- *       <td>A {@link String} that is {@linkplain
- *       com.oracle.bmc.ConfigFileReader#parse(String) a path to a
- *       valid OCI configuration file}</td> <td>A {@linkplain
- *       com.oracle.bmc.ConfigFileReader#parseDefault() default
- *       location}</td> <td>This configuration property has an effect
- *       only when {@code config-file} is, explicitly or implicitly,
- *       present in the value for the {@code oci.auth-strategies}
- *       configuration property described elsewhere in this
- *       table.</td>
+ *       <td>A {@link String} that is {@linkplain com.oracle.bmc.ConfigFileReader#parse(String) a path to a valid OCI
+ *       configuration file}</td> <td>A {@linkplain com.oracle.bmc.ConfigFileReader#parseDefault() default
+ *       location}</td>
+ *
+ *       <td>This configuration property has an effect only when either {@code config-file} or {@code
+ *       session-token-config-file} is, explicitly or implicitly, present in the value for the {@code
+ *       oci.auth-strategies} configuration property described elsewhere in this table.</td>
  *
  *     </tr>
  *
@@ -387,18 +358,14 @@ import static java.lang.invoke.MethodType.methodType;
  *
  *       <td>{@link String}</td>
  *
- *       <td>An <a
- *       href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm#File_Entries"
+ *       <td>An <a href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm#File_Entries"
  *       target="_top">OCI configuration file profile</a>.</td>
  *
- *       <td>{@link
- *       com.oracle.bmc.ConfigFileReader#DEFAULT_PROFILE_NAME
- *       DEFAULT}</td>
+ *       <td>{@link com.oracle.bmc.ConfigFileReader#DEFAULT_PROFILE_NAME DEFAULT}</td>
  *
- *       <td>This configuration property has an effect only when
- *       {@code config-file} is, explicitly or implicitly, present in
- *       the value for the {@code oci.auth-strategies} configuration
- *       property described elsewhere in this table.</td>
+ *       <td>This configuration property has an effect only when either {@code config-file} or {@code
+ *       session-token-config-file} is, explicitly or implicitly, present in the value for the {@code
+ *       oci.auth-strategies} configuration property described elsewhere in this table.</td>
  *
  *     </tr>
  *
@@ -408,16 +375,13 @@ import static java.lang.invoke.MethodType.methodType;
  *
  *       <td>{@link String}</td>
  *
- *       <td>An <a
- *       href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#four"
+ *       <td>An <a href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#four"
  *       target="_top">API signing key's fingerprint</a>.</td>
  *
  *       <td></td>
  *
- *       <td>This configuration property has an effect only when
- *       {@code config} is, explicitly or implicitly, present in the
- *       value for the {@code oci.auth-strategies} configuration
- *       property described elsewhere in this table.</td>
+ *       <td>This configuration property has an effect only when {@code config} is, explicitly or implicitly, present in
+ *       the value for the {@code oci.auth-strategies} configuration property described elsewhere in this table.</td>
  *
  *     </tr>
  *
@@ -427,16 +391,13 @@ import static java.lang.invoke.MethodType.methodType;
  *
  *       <td>{@link com.oracle.bmc.Region} ({@link String} representation)</td>
  *
- *       <td>A <a
- *       href="https://docs.oracle.com/en-us/iaas/Content/General/Concepts/regions.htm#About__The"
+ *       <td>A <a href="https://docs.oracle.com/en-us/iaas/Content/General/Concepts/regions.htm#About__The"
  *       target="_top">region identifier</a>.</td>
  *
  *       <td></td>
  *
- *       <td>This configuration property has an effect only when
- *       {@code config} is, explicitly or implicitly, present in the
- *       value for the {@code oci.auth-strategies} configuration
- *       property described elsewhere in this table.</td>
+ *       <td>This configuration property has an effect only when {@code config} is, explicitly or implicitly, present in
+ *       the value for the {@code oci.auth-strategies} configuration property described elsewhere in this table.</td>
  *
  *     </tr>
  *
@@ -446,16 +407,13 @@ import static java.lang.invoke.MethodType.methodType;
  *
  *       <td>{@link String}</td>
  *
- *       <td>An <a
- *       href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#five"
+ *       <td>An <a href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#five"
  *       target="_top">OCID of a tenancy</a>.</td>
  *
  *       <td></td>
  *
- *       <td>This configuration property has an effect only when
- *       {@code config} is, explicitly or implicitly, present in the
- *       value for the {@code oci.auth-strategies} configuration
- *       property described elsewhere in this table.</td>
+ *       <td>This configuration property has an effect only when {@code config} is, explicitly or implicitly, present in
+ *       the value for the {@code oci.auth-strategies} configuration property described elsewhere in this table.</td>
  *
  *     </tr>
  *
@@ -465,16 +423,13 @@ import static java.lang.invoke.MethodType.methodType;
  *
  *       <td>{@link String}</td>
  *
- *       <td>An <a
- *       href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#five"
+ *       <td>An <a href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#five"
  *       target="_top">OCID of a user</a>.</td>
  *
  *       <td></td>
  *
- *       <td>This configuration property has an effect only when
- *       {@code config} is, explicitly or implicitly, present in the
- *       value for the {@code oci.auth-strategies} configuration
- *       property described elsewhere in this table.</td>
+ *       <td>This configuration property has an effect only when {@code config} is, explicitly or implicitly, present in
+ *       the value for the {@code oci.auth-strategies} configuration property described elsewhere in this table.</td>
  *
  *     </tr>
  *
@@ -484,15 +439,12 @@ import static java.lang.invoke.MethodType.methodType;
  *
  *       <td>{@link String String[]}</td>
  *
- *       <td>A comma-separated list of {@linkplain Class#getName()
- *       class names} beginning with {@code com.oracle.bmc.} that
- *       should be skipped, even if they match the service pattern
- *       described above.</td>
+ *       <td>A comma-separated list of {@linkplain Class#getName() class names} beginning with {@code com.oracle.bmc.}
+ *       that should be skipped, even if they match the service pattern described above.</td>
  *
  *       <td></td>
  *
- *       <td>It is recommended not to supply a value for this property
- *       name except in extraordinary circumstances.</td>
+ *       <td>It is recommended not to supply a value for this property name except in extraordinary circumstances.</td>
  *
  *     </tr>
  *
@@ -502,13 +454,12 @@ import static java.lang.invoke.MethodType.methodType;
  *
  *       <td>{@link Boolean boolean}</td>
  *
- *       <td>If {@code true}, classes that cannot be loaded will not
- *       cause a definition error and will simply be skipped
+ *       <td>If {@code true}, classes that cannot be loaded will not cause a definition error and will simply be skipped
  *       (recommended).</td>
  *
  *       <td>{@code true}</td>
  *
- *       <td></td>
+ *       <td>It is recommended not to supply a value for this property name except in extraordinary circumstances.</td>
  *
  *     </tr>
  *
@@ -518,9 +469,8 @@ import static java.lang.invoke.MethodType.methodType;
  *
  * @see Extension
  *
- * @see <a
- * href="https://docs.oracle.com/en-us/iaas/tools/java/latest/index.html"
- * target="_top">Oracle Cloud Infrastructure Java SDK</a>
+ * @see <a href="https://docs.oracle.com/en-us/iaas/tools/java/latest/index.html" target="_top">Oracle Cloud
+ * Infrastructure Java SDK</a>
  */
 public final class OciExtension implements Extension {
 
@@ -530,17 +480,91 @@ public final class OciExtension implements Extension {
      */
 
 
-    private static final Logger LOGGER = Logger.getLogger(OciExtension.class.getName());
+    /*
+     * Type and TypeLiteral constants, sorted as alphabetically as possible.
+     */
 
-    // Evaluates to "com.oracle.bmc." (yes, bmc, not oci) as of the
-    // current version of the public OCI Java SDK.
+    private static final TypeLiteral<AdpSupplier<BasicAuthenticationDetailsProvider>>
+        ADP_SUPPLIER_BASIC_AUTHENTICATION_DETAILS_PROVIDER_TYPE_LITERAL = new TypeLiteral<>() {};
+
+    private static final ParameterizedType ADP_SUPPLIER_BASIC_AUTHENTICATION_DETAILS_PROVIDER_TYPE =
+        (ParameterizedType) ADP_SUPPLIER_BASIC_AUTHENTICATION_DETAILS_PROVIDER_TYPE_LITERAL.getType();
+
+
+    private static final TypeLiteral<AdpSupplier<ConfigFileAuthenticationDetailsProvider>>
+        ADP_SUPPLIER_CONFIG_FILE_AUTHENTICATION_DETAILS_PROVIDER_TYPE_LITERAL = new TypeLiteral<>() {};
+
+    private static final ParameterizedType ADP_SUPPLIER_CONFIG_FILE_AUTHENTICATION_DETAILS_PROVIDER_TYPE =
+        (ParameterizedType) ADP_SUPPLIER_CONFIG_FILE_AUTHENTICATION_DETAILS_PROVIDER_TYPE_LITERAL.getType();
+
+
+    private static final TypeLiteral<AdpSupplier<InstancePrincipalsAuthenticationDetailsProvider>>
+        ADP_SUPPLIER_INSTANCE_PRINCIPALS_AUTHENTICATION_DETAILS_PROVIDER_TYPE_LITERAL = new TypeLiteral<>() {};
+
+
+    private static final TypeLiteral<AdpSupplier<OkeWorkloadIdentityAuthenticationDetailsProvider>>
+        ADPSUPPLIER_OKEWORKLOADIDENTITYAUTHENTICATIONDETAILSPROVIDER_TYPE_LITERAL = new TypeLiteral<>() {};
+
+    private static final ParameterizedType ADPSUPPLIER_OKEWORKLOADIDENTITYAUTHENTICATIONDETAILSPROVIDER_TYPE =
+        (ParameterizedType) ADPSUPPLIER_OKEWORKLOADIDENTITYAUTHENTICATIONDETAILSPROVIDER_TYPE_LITERAL.getType();
+
+
+    private static final ParameterizedType ADP_SUPPLIER_INSTANCE_PRINCIPALS_AUTHENTICATION_DETAILS_PROVIDER_TYPE =
+        (ParameterizedType) ADP_SUPPLIER_INSTANCE_PRINCIPALS_AUTHENTICATION_DETAILS_PROVIDER_TYPE_LITERAL.getType();
+
+
+    private static final TypeLiteral<AdpSupplier<ResourcePrincipalAuthenticationDetailsProvider>>
+        ADP_SUPPLIER_RESOURCE_PRINCIPAL_AUTHENTICATION_DETAILS_PROVIDER_TYPE_LITERAL = new TypeLiteral<>() {};
+
+    private static final ParameterizedType ADP_SUPPLIER_RESOURCE_PRINCIPAL_AUTHENTICATION_DETAILS_PROVIDER_TYPE =
+        (ParameterizedType) ADP_SUPPLIER_RESOURCE_PRINCIPAL_AUTHENTICATION_DETAILS_PROVIDER_TYPE_LITERAL.getType();
+
+
+    private static final TypeLiteral<AdpSupplier<SessionTokenAuthenticationDetailsProvider>>
+        ADP_SUPPLIER_SESSION_TOKEN_AUTHENTICATION_DETAILS_PROVIDER_TYPE_LITERAL = new TypeLiteral<>() {};
+
+    private static final ParameterizedType ADP_SUPPLIER_SESSION_TOKEN_AUTHENTICATION_DETAILS_PROVIDER_TYPE =
+        (ParameterizedType) ADP_SUPPLIER_SESSION_TOKEN_AUTHENTICATION_DETAILS_PROVIDER_TYPE_LITERAL.getType();
+
+
+    private static final TypeLiteral<AdpSupplier<SimpleAuthenticationDetailsProvider>>
+        ADP_SUPPLIER_SIMPLE_AUTHENTICATION_DETAILS_PROVIDER_TYPE_LITERAL = new TypeLiteral<>() {};
+
+    private static final ParameterizedType ADP_SUPPLIER_SIMPLE_AUTHENTICATION_DETAILS_PROVIDER_TYPE =
+        (ParameterizedType) ADP_SUPPLIER_SIMPLE_AUTHENTICATION_DETAILS_PROVIDER_TYPE_LITERAL.getType();
+
+
+    private static final TypeLiteral<AdpSupplier<? extends BasicAuthenticationDetailsProvider>>
+        ADPSUPPLIER_WILDCARD_EXTENDS_BASIC_AUTHENTICATION_DETAILS_PROVIDER_TYPE_LITERAL = new TypeLiteral<>() {};
+
+    private static final ParameterizedType ADPSUPPLIER_WILDCARD_EXTENDS_BASIC_AUTHENTICATION_DETAILS_PROVIDER_TYPE =
+        (ParameterizedType) ADPSUPPLIER_WILDCARD_EXTENDS_BASIC_AUTHENTICATION_DETAILS_PROVIDER_TYPE_LITERAL.getType();
+
+
+    private static final TypeLiteral<Event<Object>> EVENT_OBJECT_TYPE_LITERAL = new TypeLiteral<>() {};
+
+
+    private static final TypeLiteral<Supplier<ConfigFile>> SUPPLIER_CONFIGFILE_TYPE_LITERAL = new TypeLiteral<>() {};
+
+    private static final ParameterizedType SUPPLIER_CONFIGFILE_TYPE =
+        (ParameterizedType) SUPPLIER_CONFIGFILE_TYPE_LITERAL.getType();
+
+    /*
+     * Other constants, sorted alphabetically.
+     */
+
+    private static final Annotation[] EMPTY_ANNOTATION_ARRAY = new Annotation[0];
+
+    private static final Logger LOGGER = System.getLogger(OciExtension.class.getName());
+
+    // Evaluates to "com.oracle.bmc." (yes, bmc, not oci) as of the current version of the public OCI Java SDK.
     private static final String OCI_PACKAGE_PREFIX = Service.class.getPackageName() + ".";
 
-    // For any OCI service conceptually named "Example" in an
-    // OCI_PACKAGE_PREFIX subpackage named "example":
+    private static final Lookup PUBLIC_LOOKUP = MethodHandles.publicLookup();
+
+    // For any OCI service conceptually named "Example" in an OCI_PACKAGE_PREFIX subpackage named "example":
     //
-    // Match Strings expected to be class names that start with
-    // OCI_PACKAGE_PREFIX...
+    // Match Strings expected to be class names that start with OCI_PACKAGE_PREFIX...
     //
     // (1) ...followed by the service client package fragment ("example")...
     // (2) ...followed by a period (".")...
@@ -564,28 +588,17 @@ public final class OciExtension implements Extension {
                         + ".+?)(?:Async)?(?:Client(?:\\$?Builder)?)?" // (3)
                         + "$"); // (4)
 
-    private static final TypeLiteral<Event<Object>> EVENT_OBJECT_TYPE_LITERAL = new TypeLiteral<Event<Object>>() {};
-
-    private static final Lookup PUBLIC_LOOKUP = MethodHandles.publicLookup();
-
-    private static final Set<Class<?>> ADP_BUILDER_CLASSES =
-        Set.of(InstancePrincipalsAuthenticationDetailsProviderBuilder.class,
-               ResourcePrincipalAuthenticationDetailsProviderBuilder.class,
-               SimpleAuthenticationDetailsProviderBuilder.class);
-
-    private static final Annotation[] EMPTY_ANNOTATION_ARRAY = new Annotation[0];
-
 
     /*
-     * Instance fields.
+     * Instance fields, sorted alphabetically.
      */
 
+
+    private final Set<String> additionalVetoes;
 
     private boolean lenientClassloading;
 
     private final Set<ServiceTaqs> serviceTaqs;
-
-    private final Set<String> additionalVetoes;
 
     private final Set<String> unloadableClassNames;
 
@@ -623,11 +636,14 @@ public final class OciExtension implements Extension {
                 .orElse(Boolean.TRUE)
                 .booleanValue();
         } catch (IllegalArgumentException conversionException) {
+            if (LOGGER.isLoggable(DEBUG)) {
+                LOGGER.log(DEBUG, conversionException.getMessage(), conversionException);
+            }
             this.lenientClassloading = true;
         }
         this.additionalVetoes.addAll(c.getOptionalValue("oci.extension.classname-vetoes", String[].class)
-                                     .map(Set::<String>of)
-                                     .orElse(Set.of()));
+                                         .map(Set::<String>of)
+                                         .orElse(Set.of()));
     }
 
     private void processInjectionPoint(@Observes ProcessInjectionPoint<?, ?> event) {
@@ -646,10 +662,10 @@ public final class OciExtension implements Extension {
 
     private void afterBeanDiscovery(@Observes AfterBeanDiscovery event, BeanManager bm) {
         if (!this.serviceTaqs.isEmpty()) {
-            fallbackConfigSupplier(() -> toHelidonConfig(ConfigProvider.getConfig()));
             for (ServiceTaqs serviceTaqs : this.serviceTaqs) {
+                Annotation[] qualifiers = serviceTaqs.qualifiers();
                 if (serviceTaqs.isEmpty()) {
-                    installAdps(event, bm, serviceTaqs.qualifiers());
+                    installAdpMachinery(event, bm, qualifiers);
                 } else {
                     TypeAndQualifiers serviceClientBuilder = serviceTaqs.serviceClientBuilder();
                     TypeAndQualifiers serviceClient = serviceTaqs.serviceClient();
@@ -673,43 +689,35 @@ public final class OciExtension implements Extension {
 
 
     /**
-     * Returns {@code true} if the supplied {@link Class} is known to
-     * not be directly related to an Oracle Cloud Infrastructure
-     * service.
+     * Returns {@code true} if the supplied {@link Class} is known to not be directly related to an Oracle Cloud
+     * Infrastructure service.
      *
      * <p>The check is fast and deliberately not exhaustive.</p>
      *
-     * @param c the {@link Class} in question; must not be {@code
-     * null}; will be a {@link Class} whose {@linkplain
-     * Class#getPackageName() package name} starts with the value of
-     * the {@link #OCI_PACKAGE_PREFIX} field
+     * @param c the {@link Class} in question; must not be {@code null}; will be a {@link Class} whose {@linkplain
+     * Class#getPackageName() package name} starts with the value of the {@link #OCI_PACKAGE_PREFIX} field
      *
-     * @return {@code true} if the supplied {@link Class} is known to
-     * not be directly related to an Oracle Cloud Infrastructure
-     * service
+     * @return {@code true} if the supplied {@link Class} is known to not be directly related to an Oracle Cloud
+     * Infrastructure service
      *
      * @exception NullPointerException if {@code c} is {@code null}
      */
     private boolean isVetoed(Class<?> c) {
         // See
         // https://docs.oracle.com/en-us/iaas/tools/java/latest/overview-summary.html#:~:text=Oracle%20Cloud%20Infrastructure%20Common%20Runtime.
-        // None of these packages contains OCI service clients or
-        // service client interfaces or service client builders. There
-        // are other packages (com.oracle.bmc.encryption, as an
-        // arbitrary example) that should also conceptually be vetoed.
-        // This method does not currently veto all of them, nor is it
-        // clear that it ever could.  The strategy employed here,
-        // however, vetoes quite a large number of them correctly and
-        // very efficiently before more sophisticated tests are
-        // employed.
+        // None of these packages contains OCI service clients or service client interfaces or service client
+        // builders. There are other packages (com.oracle.bmc.encryption, as an arbitrary example) that should also
+        // conceptually be vetoed. This method does not currently veto all of them, nor is it clear that it ever could.
+        // The strategy employed here, however, vetoes quite a large number of them correctly and very efficiently
+        // before more sophisticated tests are employed.
         //
-        // "Veto" in this context means only that this extension will
-        // not further process the class in question.  The class
-        // remains eligible for further processing; i.e. this is not a
-        // CDI veto.
+        // "Veto" in this context means only that this extension will not further process the class in question. The
+        // class remains eligible for further processing; i.e. this is not a CDI veto.
         if (equals(Service.class.getProtectionDomain(), c.getProtectionDomain())
                 || this.additionalVetoes.contains(c.getName())) {
-            LOGGER.fine(() -> "Vetoed " + c);
+            if (LOGGER.isLoggable(DEBUG)) {
+                LOGGER.log(DEBUG, "Vetoed " + c);
+            }
             return true;
         }
         return false;
@@ -729,7 +737,7 @@ public final class OciExtension implements Extension {
             // Optimization: the set of classes we're interested in is a subset of general OCI-related classes.
             return;
         }
-        if (AbstractAuthenticationDetailsProvider.class.isAssignableFrom(c) || ADP_BUILDER_CLASSES.contains(c)) {
+        if (AbstractAuthenticationDetailsProvider.class.isAssignableFrom(c) || isAdpBuilderClass(c)) {
             // Register an "empty" ServiceTaqs as an indicator of demand for some kind of
             // AbstractAuthenticationDetailsProvider (or a relevant builder).
             this.serviceTaqs.add(new ServiceTaqs(qualifiers.toArray(EMPTY_ANNOTATION_ARRAY)));
@@ -771,10 +779,8 @@ public final class OciExtension implements Extension {
                                                          serviceInterfaceClass,
                                                          serviceClientClass,
                                                          serviceClientBuilderClass));
-                    // Use an "empty" ServiceTaqs as an indicator of
-                    // demand for some kind of
-                    // AbstractAuthenticationDetailsProvider (or a
-                    // relevant builder).
+                    // Use an "empty" ServiceTaqs as an indicator of demand for some kind of
+                    // AbstractAuthenticationDetailsProvider (or a relevant builder).
                     serviceTaqsForAuth = new ServiceTaqs(qualifiersArray);
                     this.serviceTaqs.add(serviceTaqsForAuth);
                 }
@@ -803,10 +809,8 @@ public final class OciExtension implements Extension {
                                                          serviceAsyncClientClass,
                                                          serviceAsyncClientBuilderClass));
                     if (serviceTaqsForAuth == null) {
-                        // Use an "empty" ServiceTaqs as an indicator
-                        // of demand for some kind of
-                        // AbstractAuthenticationDetailsProvider (or a
-                        // relevant builder).
+                        // Use an "empty" ServiceTaqs as an indicator of demand for some kind of
+                        // AbstractAuthenticationDetailsProvider (or a relevant builder).
                         this.serviceTaqs.add(new ServiceTaqs(qualifiersArray));
                     }
                 }
@@ -832,7 +836,9 @@ public final class OciExtension implements Extension {
         } catch (ClassNotFoundException classNotFoundException) {
             if (lenient) {
                 if (this.unloadableClassNames.add(name)) {
-                    LOGGER.finer("class " + name + " not found");
+                    if (LOGGER.isLoggable(DEBUG)) {
+                        LOGGER.log(DEBUG, "class " + name + " not found");
+                    }
                 }
             } else {
                 errorHandler.accept(classNotFoundException);
@@ -847,90 +853,354 @@ public final class OciExtension implements Extension {
      */
 
 
-    private static void installAdps(AfterBeanDiscovery event, BeanManager bm, Annotation[] qualifiersArray) {
-        Set<Annotation> qualifiers = Set.of(qualifiersArray);
+    private static void installAdpMachinery(AfterBeanDiscovery event, BeanManager bm, Annotation[] qualifiers) {
 
-        // AbstractAuthenticationDetailsProvider
-        if (isUnsatisfied(bm, AbstractAuthenticationDetailsProvider.class, qualifiersArray)) {
-            Supplier<? extends AbstractAuthenticationDetailsProvider> s = ociAuthenticationProvider();
-            event.addBean()
-                .types(AbstractAuthenticationDetailsProvider.class)
-                .qualifiers(qualifiers)
-                .scope(Singleton.class)
-                .produceWith(i ->
-                             s.get());
-        }
+        // ConfigAccessor
+        installConfigAccessor(event, bm, qualifiers);
 
-        // BasicAuthenticationDetailsProvider
-        if (isUnsatisfied(bm, BasicAuthenticationDetailsProvider.class, qualifiersArray)) {
-            Supplier<? extends AbstractAuthenticationDetailsProvider> s = ociAuthenticationProvider();
-            event.addBean()
-                .types(BasicAuthenticationDetailsProvider.class)
-                .qualifiers(qualifiers)
-                .scope(Singleton.class)
-                .produceWith(i ->
-                             (BasicAuthenticationDetailsProvider) s.get());
-        }
+        // Supplier<ConfigFile>/ConfigFile
+        installConfigFile(event, bm, qualifiers);
+
+        // ConfigFileAuthenticationDetailsProvider
+        installConfigFileAdp(event, bm, qualifiers);
 
         // InstancePrincipalsAuthenticationDetailsProvider
-        if (isUnsatisfied(bm, InstancePrincipalsAuthenticationDetailsProviderBuilder.class, qualifiersArray)) {
+        installInstancePrincipalsAdp(event, bm, qualifiers);
+
+        // OkeWorkloadIdentityAuthenticationDetailsProvider
+        installOkeWorkloadIdentityAdp(event, bm, qualifiers);
+
+        // ResourcePrincipalAuthenticationDetailsProvider
+        installResourcePrincipalAdp(event, bm, qualifiers);
+
+        // SessionTokenAuthenticationDetailsProvider
+        installSessionTokenAdps(event, bm, qualifiers);
+
+        // SimpleAuthenticationDetailsProvider
+        installSimpleAdp(event, bm, qualifiers);
+
+        // CascadingAdpSupplier
+        installCascadingAdp(event, bm, qualifiers);
+
+        // AbstractAuthenticationDetailsProvider, BasicAuthenticationDetailsProvider
+        installBasicAdp(event, bm, qualifiers);
+    }
+
+    private static void installConfigAccessor(AfterBeanDiscovery event, BeanManager bm, Annotation[] qualifiers) {
+        // ConfigAccessor
+        if (isUnsatisfied(bm, ConfigAccessor.class, qualifiers)) {
+            event.addBean()
+                .addTransitiveTypeClosure(MicroProfileConfigConfigAccessor.class)
+                .qualifiers(qualifiers)
+                .scope(Singleton.class)
+                .produceWith(i ->
+                             produceConfigAccessor(i, qualifiers));
+        }
+    }
+
+    private static void installConfigFile(AfterBeanDiscovery event, BeanManager bm, Annotation[] qualifiers) {
+        // Supplier<ConfigFile>
+        if (isUnsatisfied(bm, SUPPLIER_CONFIGFILE_TYPE, qualifiers)) {
+            event.addBean()
+                .types(SUPPLIER_CONFIGFILE_TYPE)
+                .qualifiers(qualifiers)
+                .scope(Singleton.class)
+                .produceWith(i ->
+                             ConfigFiles.configFileSupplier(i.select(ConfigAccessor.class, qualifiers).get()));
+        }
+        // ConfigFile
+        if (isUnsatisfied(bm, ConfigFile.class, qualifiers)) {
+            event.addBean()
+                .types(ConfigFile.class)
+                .qualifiers(qualifiers)
+                .scope(Singleton.class) // if this were Dependent, we'd read the file every time
+                .produceWith(i ->
+                             i.select(SUPPLIER_CONFIGFILE_TYPE_LITERAL, qualifiers).get());
+        }
+    }
+
+    private static void installConfigFileAdp(AfterBeanDiscovery event, BeanManager bm, Annotation[] qualifiers) {
+        // AdpSupplier<ConfigFileAuthenticationDetailsProvider>, ConfigFileAdpSupplier
+        if (isUnsatisfied(bm, ADP_SUPPLIER_CONFIG_FILE_AUTHENTICATION_DETAILS_PROVIDER_TYPE, qualifiers)) {
+            event.addBean()
+                .types(ADP_SUPPLIER_CONFIG_FILE_AUTHENTICATION_DETAILS_PROVIDER_TYPE, ConfigFileAdpSupplier.class)
+                .qualifiers(withName(qualifiers, "config-file"))
+                .scope(Singleton.class)
+                .produceWith(i ->
+                             new ConfigFileAdpSupplier(i.select(SUPPLIER_CONFIGFILE_TYPE_LITERAL, qualifiers).get()));
+        }
+        // ConfigFileAuthenticationDetailsProvider
+        if (isUnsatisfied(bm, ConfigFileAuthenticationDetailsProvider.class, qualifiers)) {
+            event.addBean()
+                .types(ConfigFileAuthenticationDetailsProvider.class)
+                .qualifiers(qualifiers)
+                .scope(Singleton.class)
+                .produceWith(i ->
+                             new ConfigFileAuthenticationDetailsProvider(i.select(ConfigFile.class, qualifiers).get()));
+        }
+    }
+
+    private static void installInstancePrincipalsAdp(AfterBeanDiscovery event, BeanManager bm, Annotation[] qualifiers) {
+        // AdpSupplier<InstancePrincipalsAuthenticationDetailsProvider>, InstancePrincipalsAdpSupplier
+        if (isUnsatisfied(bm, ADP_SUPPLIER_INSTANCE_PRINCIPALS_AUTHENTICATION_DETAILS_PROVIDER_TYPE, qualifiers)) {
+            event.addBean()
+                .types(ADP_SUPPLIER_INSTANCE_PRINCIPALS_AUTHENTICATION_DETAILS_PROVIDER_TYPE, InstancePrincipalsAdpSupplier.class)
+                .qualifiers(withName(qualifiers, "instance-principals"))
+                .scope(Singleton.class)
+                .produceWith(i ->
+                             new InstancePrincipalsAdpSupplier(
+                                 i.select(ConfigAccessor.class, qualifiers).get(),
+                                 i.select(InstancePrincipalsAuthenticationDetailsProviderBuilder.class, qualifiers)::get));
+        }
+        // InstancePrincipalsAuthenticationDetailsProviderBuilder
+        if (isUnsatisfied(bm, InstancePrincipalsAuthenticationDetailsProviderBuilder.class, qualifiers)) {
             event.addBean()
                 .types(InstancePrincipalsAuthenticationDetailsProviderBuilder.class)
                 .qualifiers(qualifiers)
-                .scope(Singleton.class)
-                .produceWith(i -> fire(i, InstancePrincipalsAuthenticationDetailsProvider.builder(), qualifiersArray));
+                .scope(Dependent.class)
+                .produceWith(i ->
+                             fire(i, InstancePrincipalsAuthenticationDetailsProvider.builder(), qualifiers));
         }
-        if (isUnsatisfied(bm, InstancePrincipalsAuthenticationDetailsProvider.class, qualifiersArray)) {
+        // InstancePrincipalsAuthenticationDetailsProvider
+        if (isUnsatisfied(bm, InstancePrincipalsAuthenticationDetailsProvider.class, qualifiers)) {
             event.addBean()
                 .types(InstancePrincipalsAuthenticationDetailsProvider.class)
                 .qualifiers(qualifiers)
                 .scope(Singleton.class)
                 .produceWith(i ->
-                             i.select(InstancePrincipalsAuthenticationDetailsProviderBuilder.class,
-                                      qualifiersArray)
-                             .get()
+                             i.select(InstancePrincipalsAuthenticationDetailsProviderBuilder.class, qualifiers).get()
                              .build());
         }
+    }
 
-        // ResourcePrincipalAuthenticationDetailsProvider
-        if (isUnsatisfied(bm, ResourcePrincipalAuthenticationDetailsProviderBuilder.class, qualifiersArray)) {
+    private static void installOkeWorkloadIdentityAdp(AfterBeanDiscovery event, BeanManager bm, Annotation[] qualifiers) {
+        // AdpSupplier<OkeWorkloadIdentityAuthenticationDetailsProvider>, OkeWorkloadIdentityAdpSupplier
+        if (isUnsatisfied(bm, ADPSUPPLIER_OKEWORKLOADIDENTITYAUTHENTICATIONDETAILSPROVIDER_TYPE, qualifiers)) {
+            event.addBean()
+                .types(ADPSUPPLIER_OKEWORKLOADIDENTITYAUTHENTICATIONDETAILSPROVIDER_TYPE, OkeWorkloadIdentityAdpSupplier.class)
+                .qualifiers(withName(qualifiers, "oke-workload-identity"))
+                .scope(Singleton.class) // or Dependent?
+                .produceWith(i ->
+                             new OkeWorkloadIdentityAdpSupplier(
+                                 i.select(OkeWorkloadIdentityAuthenticationDetailsProviderBuilder.class, qualifiers)::get));
+        }
+        // OkeWorkloadIdentityAuthenticationDetailsProviderBuilder
+        if (isUnsatisfied(bm, OkeWorkloadIdentityAuthenticationDetailsProviderBuilder.class, qualifiers)) {
+            event.addBean()
+                .types(OkeWorkloadIdentityAuthenticationDetailsProviderBuilder.class)
+                .qualifiers(qualifiers)
+                .scope(Dependent.class)
+                .produceWith(i ->
+                             fire(i, OkeWorkloadIdentityAuthenticationDetailsProvider.builder(), qualifiers));
+        }
+        // OkeWorkloadIdentityAuthenticationDetailsProvider
+        if (isUnsatisfied(bm, OkeWorkloadIdentityAuthenticationDetailsProvider.class, qualifiers)) {
+            event.addBean()
+                .types(OkeWorkloadIdentityAuthenticationDetailsProvider.class)
+                .qualifiers(qualifiers)
+                .scope(Singleton.class)
+                .produceWith(i -> i.select(OkeWorkloadIdentityAuthenticationDetailsProviderBuilder.class, qualifiers).get()
+                             .build());
+        }
+    }
+
+    private static void installResourcePrincipalAdp(AfterBeanDiscovery event, BeanManager bm, Annotation[] qualifiers) {
+        // AdpSupplier<ResourcePrincipalAuthenticationDetailsProvider>, ResourcePrincipalAdpSupplier
+        if (isUnsatisfied(bm, ADP_SUPPLIER_RESOURCE_PRINCIPAL_AUTHENTICATION_DETAILS_PROVIDER_TYPE, qualifiers)) {
+            event.addBean()
+                .types(ADP_SUPPLIER_RESOURCE_PRINCIPAL_AUTHENTICATION_DETAILS_PROVIDER_TYPE, ResourcePrincipalAdpSupplier.class)
+                .qualifiers(withName(qualifiers, "resource-principal"))
+                .scope(Singleton.class) // or Dependent?
+                .produceWith(i ->
+                             new ResourcePrincipalAdpSupplier(
+                                 i.select(ResourcePrincipalAuthenticationDetailsProviderBuilder.class, qualifiers)::get));
+        }
+        // ResourcePrincipalAuthenticationDetailsProviderBuilder
+        if (isUnsatisfied(bm, ResourcePrincipalAuthenticationDetailsProviderBuilder.class, qualifiers)) {
             event.addBean()
                 .types(ResourcePrincipalAuthenticationDetailsProviderBuilder.class)
                 .qualifiers(qualifiers)
-                .scope(Singleton.class)
-                .produceWith(i -> fire(i, ResourcePrincipalAuthenticationDetailsProvider.builder(), qualifiersArray));
+                .scope(Dependent.class)
+                .produceWith(i ->
+                             fire(i, ResourcePrincipalAuthenticationDetailsProvider.builder(), qualifiers));
         }
-        if (isUnsatisfied(bm, ResourcePrincipalAuthenticationDetailsProvider.class, qualifiersArray)) {
+        // ResourcePrincipalAuthenticationDetailsProvider
+        if (isUnsatisfied(bm, ResourcePrincipalAuthenticationDetailsProvider.class, qualifiers)) {
             event.addBean()
                 .types(ResourcePrincipalAuthenticationDetailsProvider.class)
                 .qualifiers(qualifiers)
                 .scope(Singleton.class)
-                .produceWith(i ->
-                             i.select(ResourcePrincipalAuthenticationDetailsProviderBuilder.class,
-                                      qualifiersArray)
-                             .get()
+                .produceWith(i -> i.select(ResourcePrincipalAuthenticationDetailsProviderBuilder.class, qualifiers).get()
                              .build());
         }
+    }
 
-        // SimpleAuthenticationDetailsProvider
-        if (isUnsatisfied(bm, SimpleAuthenticationDetailsProviderBuilder.class, qualifiersArray)) {
+    private static void installSessionTokenAdps(AfterBeanDiscovery event, BeanManager bm, Annotation[] qualifiers) {
+        // SessionTokenAuthenticationDetailsProviderBuilder
+        if (isUnsatisfied(bm, SessionTokenAuthenticationDetailsProviderBuilder.class, qualifiers)) {
+            event.addBean()
+                .types(SessionTokenAuthenticationDetailsProviderBuilder.class)
+                .qualifiers(qualifiers)
+                .scope(Dependent.class)
+                .produceWith(i ->
+                             fire(i, SessionTokenAuthenticationDetailsProvider.builder(), qualifiers));
+        }
+        // AdpSupplier<SessionTokenAuthenticationDetailsProvider>, SessionTokenAdpSupplier (from builder)
+        if (isUnsatisfied(bm, ADP_SUPPLIER_SESSION_TOKEN_AUTHENTICATION_DETAILS_PROVIDER_TYPE, qualifiers)) {
+            event.addBean()
+                .types(ADP_SUPPLIER_SESSION_TOKEN_AUTHENTICATION_DETAILS_PROVIDER_TYPE, SessionTokenAdpSupplier.class)
+                .qualifiers(withName(qualifiers, "session-token-builder"))
+                .scope(Singleton.class)
+                .produceWith(i ->
+                             SessionTokenAdpSupplier
+                                 .ofBuilderSupplier(i.select(SessionTokenAuthenticationDetailsProviderBuilder.class,
+                                                             qualifiers)::get));
+        }
+        Annotation[] qualifiersPlusNamePlusOciConfig;
+        if (qualifiers.length == 0) {
+            qualifiersPlusNamePlusOciConfig =
+                new Annotation[] {OciConfig.Literal.INSTANCE, NamedLiteral.of("session-token-config-file")};
+        } else {
+            qualifiersPlusNamePlusOciConfig = new Annotation[qualifiers.length + 2];
+            System.arraycopy(qualifiers, 0, qualifiersPlusNamePlusOciConfig, 0, qualifiers.length);
+            qualifiersPlusNamePlusOciConfig[qualifiers.length] = OciConfig.Literal.INSTANCE;
+            qualifiersPlusNamePlusOciConfig[qualifiers.length + 1] = NamedLiteral.of("session-token-config-file");
+        }
+        // AdpSupplier<SessionTokenAuthenticationDetailsProvider>, SessionTokenAdpSupplier (from ConfigFile)
+        if (isUnsatisfied(bm, ADP_SUPPLIER_SESSION_TOKEN_AUTHENTICATION_DETAILS_PROVIDER_TYPE, qualifiersPlusNamePlusOciConfig)) {
+            event.addBean()
+                .types(ADP_SUPPLIER_SESSION_TOKEN_AUTHENTICATION_DETAILS_PROVIDER_TYPE, SessionTokenAdpSupplier.class)
+                .qualifiers(qualifiersPlusNamePlusOciConfig)
+                .scope(Singleton.class)
+                .produceWith(i ->
+                             SessionTokenAdpSupplier.ofConfigFileSupplier(i.select(SUPPLIER_CONFIGFILE_TYPE_LITERAL,
+                                                                                   qualifiers).get()));
+        }
+        // SessionTokenAuthenticationDetailsProvider (from builder)
+        if (isUnsatisfied(bm, SessionTokenAuthenticationDetailsProvider.class, qualifiers)) {
+            event.addBean()
+                .types(SessionTokenAuthenticationDetailsProvider.class)
+                .qualifiers(qualifiers)
+                .scope(Singleton.class)
+                .produceWith(i -> {
+                        try {
+                            return
+                                fire(i,
+                                     i.select(SessionTokenAuthenticationDetailsProviderBuilder.class, qualifiers).get().build(),
+                                     qualifiers);
+                        } catch (IOException e) {
+                            throw new UncheckedIOException(e.getMessage(), e);
+                        }
+                    });
+        }
+        // SessionTokenAuthenticationDetailsProvider (from ConfigFile)
+        if (isUnsatisfied(bm, SessionTokenAuthenticationDetailsProvider.class, qualifiersPlusNamePlusOciConfig)) {
+            event.addBean()
+                .types(SessionTokenAuthenticationDetailsProvider.class)
+                .qualifiers(qualifiersPlusNamePlusOciConfig)
+                .scope(Singleton.class)
+                .produceWith(i -> {
+                        try {
+                            return
+                                fire(i,
+                                     new SessionTokenAuthenticationDetailsProvider(i.select(SUPPLIER_CONFIGFILE_TYPE_LITERAL,
+                                                                                            qualifiers).get()
+                                                                                   .get()),
+                                     qualifiers);
+                        } catch (IOException e) {
+                            throw new UncheckedIOException(e.getMessage(), e);
+                        }
+                    });
+        }
+    }
+
+    private static void installSimpleAdp(AfterBeanDiscovery event, BeanManager bm, Annotation[] qualifiers) {
+        // AdpSupplier<SimpleAuthenticationDetailsProvider>, SimpleAdpSupplier
+        if (isUnsatisfied(bm, ADP_SUPPLIER_SIMPLE_AUTHENTICATION_DETAILS_PROVIDER_TYPE, qualifiers)) {
+            event.addBean()
+                .types(ADP_SUPPLIER_SIMPLE_AUTHENTICATION_DETAILS_PROVIDER_TYPE, SimpleAdpSupplier.class)
+                .qualifiers(withName(qualifiers, "config"))
+                .scope(Singleton.class)
+                .produceWith(i ->
+                             new SimpleAdpSupplier(i.select(ConfigAccessor.class, qualifiers).get(),
+                                                   i.select(SimpleAuthenticationDetailsProviderBuilder.class,
+                                                            qualifiers)::get));
+        }
+        // SimpleAuthenticationDetailsProviderBuilder
+        if (isUnsatisfied(bm, SimpleAuthenticationDetailsProviderBuilder.class, qualifiers)) {
             event.addBean()
                 .types(SimpleAuthenticationDetailsProviderBuilder.class)
                 .qualifiers(qualifiers)
-                .scope(Singleton.class)
-                .produceWith(i -> fire(i, SimpleAuthenticationDetailsProvider.builder(), qualifiersArray));
+                .scope(Dependent.class)
+                .produceWith(i ->
+                             fire(i, SimpleAuthenticationDetailsProvider.builder(), qualifiers));
         }
-        if (isUnsatisfied(bm, SimpleAuthenticationDetailsProvider.class, qualifiersArray)) {
+        // SimpleAuthenticationDetailsProvider
+        if (isUnsatisfied(bm, SimpleAuthenticationDetailsProvider.class, qualifiers)) {
             event.addBean()
                 .types(SimpleAuthenticationDetailsProvider.class)
                 .qualifiers(qualifiers)
                 .scope(Singleton.class)
                 .produceWith(i ->
-                             i.select(SimpleAuthenticationDetailsProviderBuilder.class,
-                                      qualifiersArray)
-                             .get()
-                             .build());
+                             i.select(SimpleAuthenticationDetailsProviderBuilder.class, qualifiers).get().build());
         }
+    }
+
+    private static void installCascadingAdp(AfterBeanDiscovery event, BeanManager bm, Annotation[] qualifiers) {
+        // CascadingAdpSupplier
+        if (isUnsatisfied(bm, CascadingAdpSupplier.class, qualifiers)) {
+            event.addBean()
+                .addTransitiveTypeClosure(CascadingAdpSupplier.class)
+                .qualifiers(withName(qualifiers, "auto"))
+                .scope(Singleton.class)
+                .produceWith(i ->
+                             new CascadingAdpSupplier(n -> adpSupplierFromStrategyDescriptor(i, n, qualifiers),
+                                                      replaceElements(strategyDescriptors(i.select(ConfigAccessor.class,
+                                                                                                   qualifiers).get()),
+                                                                      n -> "auto".equals(n)
+                                                                           ? DEFAULT_ORDERED_ADP_STRATEGY_DESCRIPTORS
+                                                                           : List.of(n))));
+        }
+    }
+
+    private static void installBasicAdp(AfterBeanDiscovery event, BeanManager bm, Annotation[] qualifiers) {
+        // AbstractAuthenticationDetailsProvider, BasicAuthenticationDetailsProvider
+        if (isUnsatisfied(bm, BasicAuthenticationDetailsProvider.class, qualifiers)) {
+            event.addBean()
+                .types(AbstractAuthenticationDetailsProvider.class, BasicAuthenticationDetailsProvider.class)
+                .qualifiers(qualifiers)
+                .scope(Singleton.class)
+                .produceWith(i ->
+                             i.select(ADP_SUPPLIER_BASIC_AUTHENTICATION_DETAILS_PROVIDER_TYPE_LITERAL, qualifiers).get()
+                                 .get()
+                                 .orElseThrow(UnsatisfiedResolutionException::new));
+        }
+    }
+
+    /**
+     * A method that selects an {@link AdpSupplier AdpSupplier&lt;? extends BasicAuthenticationDetailsProvider&gt;} by
+     * strategy descriptor (and possibly additional qualifiers).
+     *
+     * @param i an {@link Instance}; must not be {@code null}
+     *
+     * @param sd the strategy descriptor; must not be {@code null}
+     *
+     * @param qualifiers additional qualifier {@link Annotation}s; must not be {@code null}
+     *
+     * @return an {@link AdpSupplier AdpSupplier&lt;? extends BasicAuthenticationDetailsProvider&gt;}; never {@code
+     * null}
+     *
+     * @exception NullPointerException if any argument is {@code null}
+     *
+     * @exception UnsatisfiedResolutionException if there is no such {@link AdpSupplier}
+     */
+    private static AdpSupplier<? extends BasicAuthenticationDetailsProvider>
+        adpSupplierFromStrategyDescriptor(Instance<Object> i,
+                                          String sd,
+                                          Annotation[] qualifiers) {
+        Instance<AdpSupplier<? extends BasicAuthenticationDetailsProvider>> adpss =
+            i.select(ADPSUPPLIER_WILDCARD_EXTENDS_BASIC_AUTHENTICATION_DETAILS_PROVIDER_TYPE_LITERAL, withName(qualifiers, sd));
+        return adpss.isUnsatisfied() ? EmptyAdpSupplier.of() : adpss.get();
     }
 
     private static boolean installServiceClientBuilder(AfterBeanDiscovery event,
@@ -954,23 +1224,26 @@ public final class OciExtension implements Extension {
             MethodHandle builderMethod;
             try {
                 builderMethod = PUBLIC_LOOKUP.findStatic(serviceClientClass, "builder", methodType(serviceClientBuilderClass));
-            } catch (ReflectiveOperationException reflectiveOperationException) {
+            } catch (IllegalAccessException | NoSuchMethodException reflectiveOperationException) {
                 if (lenientClassloading) {
-                    LOGGER.warning(() -> serviceClientClass.getName() + ".builder() not found");
+                    if (LOGGER.isLoggable(WARNING)) {
+                        LOGGER.log(WARNING, serviceClientClass.getName() + ".builder() not found");
+                    }
                 } else {
                     event.addDefinitionError(reflectiveOperationException);
                 }
                 return false;
             }
             Set<Type> types = Set.of(serviceClientBuilderClass);
-            Annotation[] qualifiersArray = serviceClientBuilder.qualifiers();
-            Set<Annotation> qualifiers = Set.of(qualifiersArray);
+            Annotation[] qualifiers = serviceClientBuilder.qualifiers();
             event.addBean()
                 .addTransitiveTypeClosure(serviceClientBuilderClass)
                 .qualifiers(qualifiers)
                 .scope(Singleton.class)
-                .produceWith(i -> produceClientBuilder(i, builderMethod, qualifiersArray));
-            LOGGER.fine(() -> "Added synthetic bean: " + qualifiers + " " + types);
+                .produceWith(i -> produceClientBuilder(i, builderMethod, qualifiers));
+            if (LOGGER.isLoggable(DEBUG)) {
+                LOGGER.log(DEBUG, "Added synthetic bean: " + Arrays.toString(qualifiers) + " " + types);
+            }
             return true;
         }
         return false;
@@ -993,28 +1266,39 @@ public final class OciExtension implements Extension {
                                                 Type serviceInterfaceType,
                                                 Class<?> serviceClientBuilderClass) {
         if (serviceClient != null) {
-            Annotation[] qualifiersArray = serviceClient.qualifiers();
+            Annotation[] qualifiers = serviceClient.qualifiers();
             Type serviceClientType = serviceClient.type();
-            try {
-                if (bm.resolve(bm.getBeans(serviceClientType, qualifiersArray)) == null) {
-                    Set<Type> types = null;
-                    if (bm.resolve(bm.getBeans(serviceInterfaceType, qualifiersArray)) == null) {
-                        types = Set.of(AutoCloseable.class, Object.class, serviceClientType, serviceInterfaceType);
-                    } else {
-                        types = Set.of(AutoCloseable.class, Object.class, serviceClientType);
-                    }
-                    event.addBean()
-                        .types(types)
-                        .qualifiers(Set.of(qualifiersArray))
-                        .scope(Singleton.class)
-                        .produceWith(i -> produceClient(i, serviceClientBuilderClass, qualifiersArray))
-                        .disposeWith(OciExtension::disposeClient);
-                    return true;
-                }
-            } catch (AmbiguousResolutionException ambiguousResolutionException) {
+            if (isUnsatisfied(bm, serviceClientType, qualifiers)) {
+                Set<Type> types = isUnsatisfied(bm, serviceInterfaceType, qualifiers)
+                    ? Set.of(AutoCloseable.class, Object.class, serviceClientType, serviceInterfaceType)
+                    : Set.of(AutoCloseable.class, Object.class, serviceClientType);
+                event.addBean()
+                    .types(types)
+                    .qualifiers(qualifiers)
+                    .scope(Singleton.class)
+                    .produceWith(i -> produceClient(i, serviceClientBuilderClass, qualifiers))
+                    .disposeWith(OciExtension::disposeClient);
+                return true;
             }
         }
         return false;
+    }
+
+    private static boolean isAdpBuilderClass(Class<?> c) {
+        return isAdpBuilderClassName(c.getName());
+    }
+
+    private static boolean isAdpBuilderClassName(String n) {
+        return n.startsWith(OCI_PACKAGE_PREFIX) && n.endsWith("AuthenticationDetailsProviderBuilder");
+    }
+
+    private static MicroProfileConfigConfigAccessor produceConfigAccessor(Instance<? super Object> instance,
+                                                                          Annotation[] qualifiers) {
+        Instance<Config> configInstance = instance.select(Config.class, qualifiers);
+        if (configInstance.isUnsatisfied()) {
+            configInstance = instance.select(Config.class);
+        }
+        return new MicroProfileConfigConfigAccessor(configInstance.get());
     }
 
     private static Object produceClientBuilder(Instance<? super Object> instance,
@@ -1025,28 +1309,33 @@ public final class OciExtension implements Extension {
             builderInstance = (ClientBuilderBase<?, ?>) builderMethod.invoke();
         } catch (RuntimeException | Error runtimeExceptionOrError) {
             throw runtimeExceptionOrError;
-        } catch (Exception exception) {
+        } catch (Throwable exception) {
             if (exception instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
             throw new CreationException(exception.getMessage(), exception);
-        } catch (Throwable impossible) {
-            throw new AssertionError(impossible.getMessage(), impossible);
         }
         // Permit arbitrary customization.
         return fire(instance, builderInstance, qualifiers);
     }
 
-    private static Object produceClient(Instance<? super Object> instance, Class<?> builderClass, Annotation[] qualifiersArray) {
+    private static Object produceClient(Instance<? super Object> instance, Class<?> builderClass, Annotation[] qualifiers) {
         return
-            ((ClientBuilderBase<?, ?>) instance.select(builderClass, qualifiersArray).get())
-            .build(instance.select(AbstractAuthenticationDetailsProvider.class, qualifiersArray).get());
+            ((ClientBuilderBase<?, ?>) instance.select(builderClass, qualifiers).get())
+            .build(instance.select(AbstractAuthenticationDetailsProvider.class, qualifiers).get());
     }
 
     private static void disposeClient(Object client, Object ignored) {
         if (client instanceof AutoCloseable) {
             close((AutoCloseable) client);
         }
+    }
+
+    private static Annotation[] withName(Annotation[] qualifiers, String name) {
+        Annotation[] qualifiersWithName = new Annotation[qualifiers.length + 1];
+        System.arraycopy(qualifiers, 0, qualifiersWithName, 0, qualifiers.length);
+        qualifiersWithName[qualifiers.length] = NamedLiteral.of(name);
+        return qualifiersWithName;
     }
 
     private static void close(AutoCloseable autoCloseable) {
@@ -1075,9 +1364,16 @@ public final class OciExtension implements Extension {
     }
 
     private static boolean isUnsatisfied(BeanManager bm, Type type, Annotation[] qualifiers) {
+        Set<Bean<?>> beans = bm.getBeans(type, qualifiers);
+        if (beans == null || beans.isEmpty()) {
+            return true;
+        }
         try {
-            return bm.resolve(bm.getBeans(type, qualifiers)) == null;
+            return bm.resolve(beans) == null;
         } catch (AmbiguousResolutionException ambiguousResolutionException) {
+            if (LOGGER.isLoggable(DEBUG)) {
+                LOGGER.log(DEBUG, ambiguousResolutionException.getMessage(), ambiguousResolutionException);
+            }
             return false;
         }
     }
@@ -1109,8 +1405,10 @@ public final class OciExtension implements Extension {
         try {
             return Objects.equals(url0.toURI(), url1.toURI());
         } catch (URISyntaxException uriSyntaxException) {
-            // Use URL#equals(Object) only as a last resort, since it
-            // involves DNS lookups (!).
+            if (LOGGER.isLoggable(DEBUG)) {
+                LOGGER.log(DEBUG, uriSyntaxException.getMessage(), uriSyntaxException);
+            }
+            // Use URL#equals(Object) only as a last resort, since it involves DNS lookups (!).
             return url0.equals(url1);
         }
     }
@@ -1126,248 +1424,122 @@ public final class OciExtension implements Extension {
      */
 
 
-    private static class TypeAndQualifiers {
+    private record TypeAndQualifiers(Type type, Annotation[] qualifiers) {
 
-
-        /*
-         * Instance fields.
-         */
-
-
-        private final Type type;
-
-        private final Annotation[] qualifiers;
-
-        private final int hashCode;
-
-
-        /*
-         * Constructors.
-         */
-
-
-        private TypeAndQualifiers(final Type type, final Annotation[] qualifiers) {
-            super();
-            this.type = Objects.requireNonNull(type, "type");
-            if (qualifiers == null) {
-                this.qualifiers = EMPTY_ANNOTATION_ARRAY;
-            } else {
-                this.qualifiers = qualifiers.clone();
-            }
-            this.hashCode = computeHashCode(this.type, this.qualifiers);
-        }
-
-        private TypeAndQualifiers(final Type type, final Collection<? extends Annotation> qualifiers) {
-            super();
-            this.type = Objects.requireNonNull(type, "type");
-            if (qualifiers == null || qualifiers.isEmpty()) {
-                this.qualifiers = EMPTY_ANNOTATION_ARRAY;
-            } else {
-                this.qualifiers = qualifiers.toArray(EMPTY_ANNOTATION_ARRAY);
-            }
-            this.hashCode = computeHashCode(this.type, this.qualifiers);
-        }
-
-
-        /*
-         * Instance methods.
-         */
-
-
-        private Type type() {
-            return this.type;
-        }
-
-        private Annotation[] qualifiers() {
-            return this.qualifiers.clone();
+        private TypeAndQualifiers {
+            Objects.requireNonNull(type, "type");
+            qualifiers = qualifiers == null ? EMPTY_ANNOTATION_ARRAY : qualifiers.clone();
         }
 
         private Class<?> toClass() {
-            if (this.type instanceof Class) {
-                return (Class<?>) this.type;
-            } else if (this.type instanceof ParameterizedType) {
-                return (Class<?>) ((ParameterizedType) this.type).getRawType();
+            Type t = this.type();
+            if (t instanceof Class<?> c) {
+                return c;
+            } else if (t instanceof ParameterizedType pt) {
+                return (Class<?>) pt.getRawType();
             } else {
                 return null;
             }
         }
 
-        @Override // Object
-        public final int hashCode() {
-            return this.hashCode;
-        }
-
-        @Override // Object
-        public final boolean equals(Object other) {
+        // Record's implicit equals() Overridden to ensure Arrays.equals() is used on qualifiers.
+        @Override // Record
+        public boolean equals(Object other) {
             if (other == this) {
                 return true;
             } else if (other != null && other.getClass() == this.getClass()) {
                 TypeAndQualifiers her = (TypeAndQualifiers) other;
-                return Objects.equals(this.type, her.type) && Arrays.equals(this.qualifiers, her.qualifiers);
+                return Objects.equals(this.type(), her.type()) && Arrays.equals(this.qualifiers(), her.qualifiers());
             } else {
                 return false;
             }
         }
 
-        @Override // Object
-        public final String toString() {
-            return Arrays.asList(this.qualifiers()).toString() + " " + this.type().toString();
-        }
-
-
-        /*
-         * Static methods.
-         */
-
-
-        private static int computeHashCode(Object type, Object[] qualifiers) {
+        // Record's implicit hashCode() Overridden to ensure Arrays.hashCode() is used on qualifiers.
+        @Override // Record
+        public int hashCode() {
             int hashCode = 17;
-            int c = type == null ? 0 : type.hashCode();
+            int c = this.type().hashCode();
             hashCode = 37 * hashCode + c;
-            c = qualifiers == null ? 0 : Arrays.hashCode(qualifiers);
+            c = Arrays.hashCode(this.qualifiers());
             hashCode = 37 * hashCode + c;
             return hashCode;
+        }
+
+        @Override // Record
+        public String toString() {
+            return Arrays.asList(this.qualifiers()).toString() + " " + this.type().toString();
         }
 
     }
 
-    private static class ServiceTaqs {
+    private record ServiceTaqs(Annotation[] qualifiers,
+                               Type serviceInterfaceType,
+                               Type serviceClientType,
+                               Type serviceClientBuilderType) {
 
-
-        /*
-         * Instance fields.
-         */
-
-
-        private final Annotation[] qualifiers;
-
-        private final TypeAndQualifiers serviceInterface;
-
-        private final TypeAndQualifiers serviceClient;
-
-        private final TypeAndQualifiers serviceClientBuilder;
-
-        private final boolean empty;
-
-        private final int hashCode;
-
-
-        /*
-         * Constructors.
-         */
-
-
-        private ServiceTaqs() {
-            this(EMPTY_ANNOTATION_ARRAY,
-                 null,
-                 null,
-                 null);
+        private ServiceTaqs {
+            if (qualifiers == null) {
+                qualifiers = EMPTY_ANNOTATION_ARRAY;
+            }
         }
 
         private ServiceTaqs(Annotation[] qualifiers) {
-            this(qualifiers,
-                 null,
-                 null,
-                 null);
-        }
-
-        private ServiceTaqs(Annotation[] qualifiers,
-                            Type serviceInterface,
-                            Type serviceClient,
-                            Type serviceClientBuilder) {
-            qualifiers = qualifiers == null ? EMPTY_ANNOTATION_ARRAY : qualifiers;
-            this.qualifiers = qualifiers;
-            boolean empty = true;
-            if (serviceInterface == null) {
-                this.serviceInterface = null;
-            } else {
-                this.serviceInterface = new TypeAndQualifiers(serviceInterface, qualifiers);
-                if (empty) {
-                    empty = false;
-                }
-            }
-            if (serviceClient == null) {
-                this.serviceClient = null;
-            } else {
-                this.serviceClient = new TypeAndQualifiers(serviceClient, qualifiers);
-                if (empty) {
-                    empty = false;
-                }
-            }
-            if (serviceClientBuilder == null) {
-                this.serviceClientBuilder = null;
-            } else {
-                this.serviceClientBuilder = new TypeAndQualifiers(serviceClientBuilder, qualifiers);
-                if (empty) {
-                    empty = false;
-                }
-            }
-            this.empty = empty;
-            this.hashCode = this.computeHashCode();
-        }
-
-
-        /*
-         * Instance methods.
-         */
-
-
-        private Annotation[] qualifiers() {
-            return this.qualifiers;
+            this(qualifiers, null, null, null);
         }
 
         private TypeAndQualifiers serviceInterface() {
-            return this.serviceInterface;
+            return new TypeAndQualifiers(this.serviceInterfaceType(), this.qualifiers());
         }
 
         private TypeAndQualifiers serviceClient() {
-            return this.serviceClient;
+            return new TypeAndQualifiers(this.serviceClientType(), this.qualifiers());
         }
 
         private TypeAndQualifiers serviceClientBuilder() {
-            return this.serviceClientBuilder;
+            return new TypeAndQualifiers(this.serviceClientBuilderType(), this.qualifiers());
         }
 
         private boolean isEmpty() {
-            return this.empty;
+            return this.serviceInterfaceType() == null
+                && this.serviceClientType() == null
+                && this.serviceClientBuilderType() == null;
         }
 
-        @Override // Object
-        public final int hashCode() {
-            return this.hashCode;
-        }
-
-        private int computeHashCode() {
-            int hashCode = 17;
-            Annotation[] qualifiersArray = this.qualifiers();
-            int c = qualifiersArray == null ? 0 : Arrays.hashCode(qualifiersArray);
-            hashCode = 37 * hashCode + c;
-            TypeAndQualifiers x = this.serviceInterface();
-            c = x == null ? 0 : x.hashCode();
-            hashCode = 37 * hashCode + c;
-            x = this.serviceClient();
-            c = x == null ? 0 : x.hashCode();
-            hashCode = 37 * hashCode + c;
-            x = this.serviceClientBuilder();
-            c = x == null ? 0 : x.hashCode();
-            hashCode = 37 * hashCode + c;
-            return hashCode;
-        }
-
-        @Override // Object
-        public final boolean equals(Object other) {
+        // Record's implicit equals() overridden to ensure Arrays.equals() is used on qualifiers.
+        @Override // Record
+        public boolean equals(Object other) {
             if (other == this) {
                 return true;
             } else if (other != null && other.getClass() == this.getClass()) {
                 ServiceTaqs her = (ServiceTaqs) other;
                 return
                     Arrays.equals(this.qualifiers(), her.qualifiers())
-                    && Objects.equals(this.serviceInterface(), her.serviceInterface())
-                    && Objects.equals(this.serviceClient(), her.serviceClient())
-                    && Objects.equals(this.serviceClientBuilder(), her.serviceClientBuilder());
+                    && Objects.equals(this.serviceInterfaceType(), her.serviceInterfaceType())
+                    && Objects.equals(this.serviceClientType(), her.serviceClientType())
+                    && Objects.equals(this.serviceClientBuilderType(), her.serviceClientBuilderType());
             } else {
                 return false;
             }
+        }
+
+        // Record's implicit equals() overridden to ensure Arrays.hashCode() is used on qualifiers.
+        @Override // Record
+        public int hashCode() {
+            int hashCode = 17;
+            Annotation[] qualifiers = this.qualifiers();
+            int c = qualifiers == null ? 0 : Arrays.hashCode(qualifiers);
+            hashCode = 37 * hashCode + c;
+            Type x = this.serviceInterfaceType();
+            c = x == null ? 0 : x.hashCode();
+            hashCode = 37 * hashCode + c;
+            x = this.serviceClientType();
+            c = x == null ? 0 : x.hashCode();
+            hashCode = 37 * hashCode + c;
+            x = this.serviceClientBuilderType();
+            c = x == null ? 0 : x.hashCode();
+            hashCode = 37 * hashCode + c;
+            return hashCode;
         }
 
     }

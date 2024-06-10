@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ Type: link:{javadoc-base-url}/io.helidon.http.encoding/io/helidon/http/encoding/
 |`content-encodings` |io.helidon.http.encoding.ContentEncoding[&#93; (service provider interface) |{nbsp} |List of content encodings that should be used.
  Encodings configured here have priority over encodings discovered through service loader.
 
- @return list of content encodings to be used (such as `gzip,deflate`)
+ List of content encodings to be used (such as `gzip,deflate`)
 
 |===
 

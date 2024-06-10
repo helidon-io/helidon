@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,12 @@
 
 package io.helidon.common.parameters;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+
+import io.helidon.common.mapper.OptionalValue;
 
 import org.junit.jupiter.api.Test;
 
@@ -35,6 +38,7 @@ class ParametersTest {
     @Test
     void testEmpty() {
         Parameters empty = Parameters.empty(UNIT_TEST);
+        assertThat(empty.first(UNIT_TEST).isEmpty(), is(true));
         assertThat(empty.component(), is(UNIT_TEST));
         assertThat("Empty parameters should not contain anything", empty.contains("anything"), is(false));
         assertThat("Empty parameters should have size 0", empty.size(), is(0));
@@ -110,5 +114,14 @@ class ParametersTest {
         assertThat(params.all("other"), hasItems("first", "second"));
         assertThat(params.toString(), containsString(UNIT_TEST));
         assertThat("Parameters should not be empty", params.isEmpty(), is(false));
+    }
+
+    @Test
+    void issue8710() {
+        Map<String, List<String>> params = new HashMap<>();
+        params.put("param", List.of());
+        Parameters parameters = Parameters.create("test", params);
+        OptionalValue<String> value = parameters.first("param");
+        assertThat(value.isEmpty(), is(true));
     }
 }

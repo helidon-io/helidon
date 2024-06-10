@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -43,12 +43,12 @@ Type: link:{javadoc-base-url}/io.helidon.integrations.oci.metrics/io/helidon/int
 |key |type |default value |description
 
 |`batch-delay` |long |`1` |Sets the delay interval if metrics are posted in batches
- (defaults to `DEFAULT_BATCH_DELAY`).
+ (defaults to DEFAULT_BATCH_DELAY).
 |`batch-size` |int |`50` |Sets the maximum no. of metrics to send in a batch
- (defaults to `DEFAULT_BATCH_SIZE`).
+ (defaults to DEFAULT_BATCH_SIZE).
 |`compartment-id` |string |{nbsp} |Sets the compartment ID.
 |`delay` |long |`60` |Sets the delay interval between metric posting
- (defaults to `DEFAULT_SCHEDULER_DELAY`).
+ (defaults to DEFAULT_SCHEDULER_DELAY).
 |`description-enabled` |boolean |`true` |Sets whether the description should be enabled or not.
 
      Defaults to `true`.
@@ -58,7 +58,7 @@ Type: link:{javadoc-base-url}/io.helidon.integrations.oci.metrics/io/helidon/int
      Defaults to `true`.
  
 |`initial-delay` |long |`1` |Sets the initial delay before metrics are sent to OCI
- (defaults to `DEFAULT_SCHEDULER_INITIAL_DELAY`).
+ (defaults to DEFAULT_SCHEDULER_INITIAL_DELAY).
 |`namespace` |string |{nbsp} |Sets the namespace.
 |`resource-group` |string |{nbsp} |Sets the resource group.
 |`scheduling-time-unit` |TimeUnit (NANOSECONDS, MICROSECONDS, MILLISECONDS, SECONDS, MINUTES, HOURS, DAYS) |`TimeUnit.SECONDS` |Sets the time unit applied to the initial delay and delay values (defaults to `TimeUnit.SECONDS`).

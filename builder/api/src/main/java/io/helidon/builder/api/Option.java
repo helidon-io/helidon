@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -425,5 +425,24 @@ public final class Option {
          * @return type name with generic declaration
          */
         String value();
+    }
+
+    /**
+     * Define an option decorator.
+     * This is useful for example when setting a compound option, where we need to set additional options on this builder.
+     * <p>
+     * Decorator on collection based options will be ignored.
+     * Decorator on optional values must accept an option (as it would be called both from the setter and unset methods).
+     */
+    @Target(ElementType.METHOD)
+    // note: class retention needed for cases when derived builders are inherited across modules
+    @Retention(RetentionPolicy.CLASS)
+    public @interface Decorator {
+        /**
+         * Type declaration including generic types (must match the declared generic type on the blueprint).
+         *
+         * @return type name with generic declaration
+         */
+        Class<? extends Prototype.OptionDecorator<?, ?>> value();
     }
 }

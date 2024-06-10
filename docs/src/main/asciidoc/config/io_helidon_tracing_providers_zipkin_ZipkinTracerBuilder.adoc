@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ This is a standalone configuration type, prefix from configuration root: `tracin
 |key |type |default value |description
 
 |`api-version` |Version (V1, V2) |`V2` |Version of Zipkin API to use.
- Defaults to Version#V2.
+ Defaults to Version.V2.
 
 |===
 

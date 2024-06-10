@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -119,12 +119,7 @@ In case you need more advanced setup, connector can work with injected factory i
 [source,java]
 .Inject:
 ----
-    @Produces
-    @ApplicationScoped
-    @Named("active-mq-factory")
-    public ConnectionFactory connectionFactory() {
-        return new ActiveMQConnectionFactory(config.get("jms.url").asString().get());
-    }
+include::{sourcedir}/mp/reactivemessaging/JmsSnippets.java[tag=snippet_1, indent=0]
 ----
 
 [source,yaml]
@@ -159,21 +154,13 @@ mp:
 [source,java]
 .Consuming one by one unwrapped value:
 ----
-@Incoming("from-jms")
-public void consumeJms(String msg) {
-    System.out.println("JMS says: " + msg);
-}
+include::{sourcedir}/mp/reactivemessaging/JmsSnippets.java[tag=snippet_2, indent=0]
 ----
 
 [source,java]
 .Consuming one by one, manual ack:
 ----
-@Incoming("from-jms")
-@Acknowledgment(Acknowledgment.Strategy.MANUAL)
-public CompletionStage<?> consumeJms(JmsMessage<String> msg) {
-    System.out.println("JMS says: " + msg.getPayload());
-    return msg.ack();
-}
+include::{sourcedir}/mp/reactivemessaging/JmsSnippets.java[tag=snippet_3, indent=0]
 ----
 
 === Producing
@@ -181,40 +168,16 @@ public CompletionStage<?> consumeJms(JmsMessage<String> msg) {
 [source,java]
 .Example of producing to JMS:
 ----
-@Outgoing("to-jms")
-public PublisherBuilder<String> produceToJms() {
-    return ReactiveStreams.of("test1", "test2");
-}
+include::{sourcedir}/mp/reactivemessaging/JmsSnippets.java[tag=snippet_4, indent=0]
 ----
 
 [source,java]
 .Example of more advanced producing to JMS:
 ----
-@Outgoing("to-jms")
-public PublisherBuilder<String> produceToJms() {
-    return ReactiveStreams.of("test1", "test2")
-                .map(s -> JmsMessage.builder(s)
-                              .correlationId(UUID.randomUUID().toString())
-                              .property("stringProp", "cool property")
-                              .property("byteProp", 4)
-                              .property("intProp", 5)
-                              .onAck(() -> System.out.println("Acked!"))
-                              .build());
-}
+include::{sourcedir}/mp/reactivemessaging/JmsSnippets.java[tag=snippet_5, indent=0]
 ----
 [source,java]
 .Example of even more advanced producing to JMS with custom mapper:
 ----
-@Outgoing("to-jms")
-public PublisherBuilder<String> produceToJms() {
-    return ReactiveStreams.of("test1", "test2")
-                .map(s -> JmsMessage.builder(s)
-                            .customMapper((p, session) -> {
-                                TextMessage textMessage = session.createTextMessage(p);
-                                textMessage.setStringProperty("custom-mapped-property", "XXX" + p);
-                                return textMessage;
-                            })
-                            .build()
-                    );
-}
+include::{sourcedir}/mp/reactivemessaging/JmsSnippets.java[tag=snippet_6, indent=0]
 ----

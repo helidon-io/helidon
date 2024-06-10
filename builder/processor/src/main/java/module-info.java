@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,11 @@
 
 /**
  * The Builder annotation processor module.
+ *
+ * @deprecated replaced with helidon-builder-codegen in
+ *     combination with helidon-codegen-apt
  */
+@Deprecated(forRemoval = true, since = "4.1.0")
 module io.helidon.builder.processor {
     requires java.compiler;
     requires jdk.compiler;

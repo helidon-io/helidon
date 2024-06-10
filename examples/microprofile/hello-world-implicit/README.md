@@ -6,14 +6,14 @@ It is implicit because in this example you don't write the
 
 ## Build and run
 
-```bash
+```shell
 mvn package
 java -jar target/helidon-examples-microprofile-hello-world-implicit.jar
 ```
 
 Then try the endpoints:
 
-```
+```shell
 curl -X GET http://localhost:7001/helloworld
 curl -X GET http://localhost:7001/helloworld/earth
 curl -X GET http://localhost:7001/another

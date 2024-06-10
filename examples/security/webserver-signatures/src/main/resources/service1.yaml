@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2020 Oracle and/or its affiliates.
+# Copyright (c) 2016, 2024 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -33,14 +33,14 @@ security:
         realm: "helidon"
         users:
           - login: "jack"
-            password: "${CLEAR=password}"
+            password: "${CLEAR=changeit}"
             roles: ["user", "admin"]
           - login: "jill"
-            # master password is "jungle", password is "password"
-            password: "${CLEAR=password}"
+            # master password is "changeit", password is "changeit"
+            password: "${CLEAR=changeit}"
             roles: ["user"]
           - login: "john"
-            password: "${CLEAR=password}"
+            password: "${CLEAR=changeit}"
             roles: []
         outbound:
           - name: "propagate-all"
@@ -52,7 +52,7 @@ security:
             paths: ["/service2"]
             signature:
               key-id: "service1-hmac"
-              hmac.secret: "${CLEAR=somePasswordForHmacShouldBeEncrypted}"
+              hmac.secret: "${CLEAR=changeit}"
           - name: "service2-rsa"
             hosts: ["localhost"]
             paths: ["/service2-rsa.*"]
@@ -67,7 +67,7 @@ security:
                   # defaults to jdk default
                   type: "PKCS12"
                   # password of the keystore
-                  passphrase: "password"
+                  passphrase: "changeit"
                   # alias of the key to sign request
                   key.alias: "myPrivateKey"
   web-server:

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -47,12 +47,12 @@ This is a standalone configuration type, prefix from configuration root: `fault-
 |`limit` |int |`10` |Maximal number of parallel requests going through this bulkhead.
  When the limit is reached, additional requests are enqueued.
 
- @return maximal number of parallel calls, defaults is `DEFAULT_LIMIT`
+ Maximal number of parallel calls, defaults is DEFAULT_LIMIT
 |`queue-length` |int |`10` |Maximal number of enqueued requests waiting for processing.
  When the limit is reached, additional attempts to invoke
  a request will receive a BulkheadException.
 
- @return length of the queue
+ Length of the queue
 
 |===
 

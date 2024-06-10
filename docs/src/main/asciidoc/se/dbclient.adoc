@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -236,20 +236,14 @@ JDBC query with ordered parameters and query that does not run in the transactio
 
 [source,java]
 ----
-dbClient.execute()
-    .createQuery("SELECT name FROM Pokemons WHERE id = ?")
-    .params(1)
-    .execute();
+include::{sourcedir}/se/DbClientSnippets.java[tag=snippet_1, indent=0]
 ----
 
 JDBC query with named parameters and the query runs in transaction:
 
 [source,java]
 ----
-dbClient.transaction()
-    .createQuery("SELECT name FROM Pokemons WHERE id = :id")
-    .addParam("id", 1)
-    .execute();
+include::{sourcedir}/se/DbClientSnippets.java[tag=snippet_2, indent=0]
 ----
 
 Both examples will return `Multi<DbRow>` with rows returned by the query.
@@ -258,13 +252,7 @@ This example shows a MongoDB update statement with named parameters and the quer
 
 [source,java]
 ----
-dbClient.execute()
-    .createUpdate("{\"collection\": \"pokemons\","
-        + "\"value\":{$set:{\"name\":$name}},"
-        + "\"query\":{id:$id}}")
-    .addParam("id", 1)
-    .addParam("name", "Pikachu")
-    .execute();
+include::{sourcedir}/se/DbClientSnippets.java[tag=snippet_3, indent=0]
 ----
 
 This update statement will return a `long` with the number of modified records in the database.
@@ -277,10 +265,7 @@ In following example, the number of modified records is printed to standard outp
 
 [source,java]
 ----
-long count = dbClient.execute()
-    .insert("INSERT INTO Pokemons (id, name) VALUES(?, ?)",
-        1, "Pikachu"));
-System.out.printf("Inserted %d records\n", count)
+include::{sourcedir}/se/DbClientSnippets.java[tag=snippet_4, indent=0]
 ----
 
 ==== Query Statement Result

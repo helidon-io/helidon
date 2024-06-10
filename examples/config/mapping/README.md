@@ -17,7 +17,7 @@ system how to construct a POJO instance.
 
 ## Build and run
 
-```bash
+```shell
 mvn package
 java -jar target/helidon-examples-config-mapping.jar
 ```

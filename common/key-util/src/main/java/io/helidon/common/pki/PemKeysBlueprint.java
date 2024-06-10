@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,6 @@ import java.util.Optional;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.configurable.Resource;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * PEM files based keys - accepts private key and certificate chain.
@@ -34,7 +32,7 @@ import io.helidon.config.metadata.ConfiguredOption;
  * The only supported format is PKCS#8. If you have a different format, you must transform it to PKCS8 PEM format (to
  * use this builder), or to PKCS#12 keystore format (and use {@link io.helidon.common.pki.KeystoreKeys.Builder}).
  */
-@Configured
+@Prototype.Configured
 @Prototype.Blueprint
 interface PemKeysBlueprint {
     /**
@@ -42,7 +40,7 @@ interface PemKeysBlueprint {
      *
      * @return key resource (file, classpath, URL etc.)
      */
-    @ConfiguredOption(key = "key.resource")
+    @Option.Configured("key.resource")
     Optional<Resource> key();
 
     /**
@@ -51,7 +49,7 @@ interface PemKeysBlueprint {
      *
      * @return passphrase used to encrypt the private key
      */
-    @ConfiguredOption(key = "key.passphrase")
+    @Option.Configured("key.passphrase")
     @Option.Confidential
     Optional<char[]> keyPassphrase();
 
@@ -60,7 +58,7 @@ interface PemKeysBlueprint {
      *
      * @return public key resource (file, classpath, URL etc.)
      */
-    @ConfiguredOption(key = "public-key.resource")
+    @Option.Configured("public-key.resource")
     Optional<Resource> publicKey();
 
     /**
@@ -68,7 +66,7 @@ interface PemKeysBlueprint {
      *
      * @return resource (e.g. classpath, file path, URL etc.)
      */
-    @ConfiguredOption(key = "cert-chain.resource")
+    @Option.Configured("cert-chain.resource")
     Optional<Resource> certChain();
 
     /**
@@ -76,6 +74,6 @@ interface PemKeysBlueprint {
      *
      * @return key resource (file, classpath, URL etc.)
      */
-    @ConfiguredOption(key = "certificates.resource")
+    @Option.Configured("certificates.resource")
     Optional<Resource> certificates();
 }

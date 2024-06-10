@@ -1,0 +1,138 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Threading
+:description: Threading in Helidon
+:h1Prefix: MP
+:pagename: threading
+:feature-name: ExecuteOn
+:keywords: helidon, webserver, theading, virtual, platform
+:rootdir: {docdir}/..
+
+include::{rootdir}/includes/mp.adoc[]
+
+== Contents
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<API, API>>
+- <<Configuration, Configuration>>
+- <<Examples, Examples>>
+
+== Overview
+
+Helidon 4 has been written from the ground up to take full advantage of Java 21’s virtual threads. With this
+new architecture, threads are no longer a scarce resource that need to be pooled and managed, instead they
+are an abundant resource that can be created as needed to satisfy your application needs.
+
+In most cases, users do not need to worry about thread management and are able to run any type of
+task on virtual threads provided by the Helidon Webserver.
+However, there are certain use cases where tasks may need to be executed on
+platform threads: these include cpu-intensive tasks as well as tasks that may pin a virtual thread to
+a platform thread due to the use of synchronized blocks. Many libraries that are typically used in Helidon
+applications have been updated to take full advantage of virtual threads by avoiding unwanted synchronization blocks,
+yet this process is still underway and some legacy libraries may never be fully converted.
+
+Helidon MP supports a new `@ExecuteOn` annotation to give developers full control on how to run
+tasks. This annotation can be applied to any CDI bean method to control the type of thread in
+which invocations of that method shall execute on.
+
+include::{rootdir}/includes/dependencies.adoc[]
+
+[source, xml]
+----
+<dependency>
+    <groupId>io.helidon.microprofile</groupId>
+    <artifactId>helidon-microprofile-cdi</artifactId>
+</dependency>
+----
+
+== API
+
+The API consists of a single `@ExecuteOn` annotation (with a few parameters) that can be applied to
+any CDI bean method.
+
+NOTE: This feature is based on CDI interceptors, so using it on a non-CDI bean method will have no effect.
+
+[cols="3",role="flex, sm10"]
+|===
+|Name |Value |Description
+|value |ThreadType.PLATFORM, ThreadType.VIRTUAL, ThreadType.EXECUTOR |Type of thread used to execute a method invocation
+|timeout |A long value |Maximum wait time for the method to return a value before triggering
+a timeout exception
+|unit |A `TimeUnit` value |Unit for `timeout` parameter
+|executorName |The name of an executor from which to obtain a thread |CDI producer with a `@Named`
+qualifier to access the executor
+|===
+
+== Configuration
+
+The implementation of the `@ExecuteOn` annotation takes advantage of Helidon's `ThreadPoolSupplier`
+to (lazily) create a pool of platform threads. The default configuration for this thread
+pool can be overridden using the (root) config key `execute-on.platform` as shown in the example
+below.
+
+[source, yaml]
+----
+execute-on:
+  platform:
+    thread-name-prefix: "my-platform-thread"
+    core-pool-size: 1
+    max-pool-size: 2
+    queue-capacity: 10
+----
+
+For more information see the Javadoc for
+link:{javadoc-base-url}/io.helidon.common.configurable/io/helidon/common/configurable/ThreadPoolSupplier.html[io.helidon.common.configurable.ThreadPoolSupplier].
+For virtual threads, only the thread name prefix can be overridden as follows:
+
+[source, yaml]
+----
+execute-on:
+  virtual:
+    thread-name-prefix: "my-virtual-thread"
+----
+
+== Examples
+
+1. The following example creates a new platform thread from a (configurable) default pool
+to execute a cpu-intensive task. Platform threads are a scarce resource, creating threads of
+type `PLATFORM` should be done responsibly!
++
+[source,java]
+----
+include::{sourcedir}/mp/ExecuteOnSnippets.java[tag=snippet_1, indent=0]
+----
+
+2. The next example also uses a platform thread, but this time the developer is also
+responsible for providing an executor; this is done by creating a CDI provider with the same
+executor name (using the `@Named` annotation) as the one in the annotation parameter.
+Note that for simplicity the producer in this example is also part of the same bean,
+but that is not a requirement in CDI.
++
+[source,java]
+----
+include::{sourcedir}/mp/ExecuteOnSnippets.java[tag=snippet_2, indent=0]
+----
+
+3. Finally, it is also possible to explicitly execute a method in a
+virtual thread, blocking the caller thread until the method execution is complete.
++
+[source,java]
+----
+include::{sourcedir}/mp/ExecuteOnSnippets.java[tag=snippet_3, indent=0]
+----

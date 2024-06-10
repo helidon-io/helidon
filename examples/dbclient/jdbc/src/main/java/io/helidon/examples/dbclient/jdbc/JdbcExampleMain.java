@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.health.DbClientHealthCheck;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webserver.WebServer;
-import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.observe.ObserveFeature;
 import io.helidon.webserver.observe.health.HealthObserver;
 
@@ -45,6 +45,13 @@ public final class JdbcExampleMain {
         // load logging configuration
         LogConfig.configureRuntime();
 
+        // Prepare routing for the server
+        WebServer server = setupServer(WebServer.builder());
+
+        System.out.println("WEB server is up! http://localhost:" + server.port() + "/");
+    }
+
+    static WebServer setupServer(WebServerConfig.Builder builder) {
         // By default, this will pick up application.yaml from the classpath
         Config config = Config.global();
 
@@ -54,22 +61,15 @@ public final class JdbcExampleMain {
         ObserveFeature observe = ObserveFeature.builder()
                 .config(config.get("server.features.observe"))
                 .addObserver(HealthObserver.builder()
-                                     .addCheck(DbClientHealthCheck.create(dbClient, dbConfig.get("health-check")))
-                                     .build())
+                        .addCheck(DbClientHealthCheck.create(dbClient, dbConfig.get("health-check")))
+                        .build())
                 .build();
 
-        // Prepare routing for the server
-        WebServer server = WebServer.builder()
+        return builder
                 .config(config.get("server"))
                 .addFeature(observe)
-                .routing(routing -> routing(routing, dbClient))
+                .routing(routing -> routing.register("/db", new PokemonService(dbClient)))
                 .build()
                 .start();
-
-        System.out.println("WEB server is up! http://localhost:" + server.port() + "/");
-    }
-
-    static void routing(HttpRouting.Builder routing, DbClient dbClient) {
-        routing.register("/db", new PokemonService(dbClient));
     }
 }

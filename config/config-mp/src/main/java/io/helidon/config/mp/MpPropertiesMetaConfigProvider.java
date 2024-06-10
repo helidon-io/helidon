@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,11 @@
 
 package io.helidon.config.mp;
 
+import java.io.IOException;
+import java.io.Reader;
+import java.io.UncheckedIOException;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 
 import io.helidon.config.Config;
@@ -49,4 +53,16 @@ class MpPropertiesMetaConfigProvider implements MpMetaConfigProvider, Prioritize
     public int priority() {
         return 300;
     }
+
+    @Override
+    public ConfigSource create(Reader content) {
+        Properties p = new Properties();
+        try {
+            p.load(content);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return MpConfigSources.create("MpPropertiesMetaConfigProvider", p);
+    }
+
 }

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Fault Tolerance in Helidon 
+= Fault Tolerance in Helidon
 :toc:
 :toc-placement: preamble
-:description: Fault Tolerance in Helidon 
+:description: Fault Tolerance in Helidon
 :keywords: helidon, java, fault, tolerance, fault tolerance
 :feature-name: Fault Tolerance
 :rootdir: {docdir}/..
@@ -86,17 +86,11 @@ indicates the number of retries, delay between retries, etc.
 
 [source,java]
 ----
-Retry retry = Retry.builder()
-                   .retryPolicy(Retry.JitterRetryPolicy.builder()
-                                     .calls(3)
-                                     .delay(Duration.ofMillis(100))
-                                     .build())
-                   .build();
-T result = retry.invoke(this::retryOnFailure);
+include::{sourcedir}/se/FaultToleranceSnippets.java[tag=snippet_1, indent=0]
 ----
 
 The sample code above will retry calls to the supplier `this::retryOnFailure`
-for up to 3 times with a 100 millisecond delay between them.
+for up to 3 times with a 100-millisecond delay between them.
 
 NOTE: The return type of method `retryOnFailure` in the example above must
 be some `T` and the parameter to the retry handler's `invoke`
@@ -119,8 +113,7 @@ if a timeout expires as we shall cover in the next section.
 The following is an example of using `Timeout`:
 [source,java]
 ----
-T result = Timeout.create(Duration.ofMillis(10))
-                  .invoke(this::mayTakeVeryLong);
+include::{sourcedir}/se/FaultToleranceSnippets.java[tag=snippet_2, indent=0]
 ----
 
 NOTE: Using a handler's `create` method is an alternative to using a builder that is
@@ -141,8 +134,7 @@ and produces some `T` to be used when the intended method failed to return a val
 
 [source,java]
 ----
-T result = Fallback.create(throwable -> lastKnownValue)
-                   .invoke(this::mayFail);
+include::{sourcedir}/se/FaultToleranceSnippets.java[tag=snippet_3, indent=0]
 ----
 
 This example calls the method `mayFail` and if it produces a `Throwable`, it maps
@@ -171,13 +163,7 @@ Consider the following example in which `this::mayFail` is monitored by a
 circuit breaker:
 [source,java]
 ----
-CircuitBreaker breaker = CircuitBreaker.builder()
-                                       .volume(10)
-                                       .errorRatio(30)
-                                       .delay(Duration.ofMillis(200))
-                                       .successThreshold(2)
-                                       .build();
-T result = breaker.invoke(this::mayFail);
+include::{sourcedir}/se/FaultToleranceSnippets.java[tag=snippet_4, indent=0]
 ----
 
 The circuit breaker in this example defines a processing window of size 10, an error
@@ -221,11 +207,7 @@ that are submitted when the bulkhead is already at full capacity.
 
 [source,java]
 ----
-Bulkhead bulkhead = Bulkhead.builder()
-                            .limit(3)
-                            .queueLength(5)
-                            .build();
-T result = bulkhead.invoke(this::usesResources);
+include::{sourcedir}/se/FaultToleranceSnippets.java[tag=snippet_5, indent=0]
 ----
 
 This example creates a bulkhead that limits concurrent execution
@@ -241,8 +223,7 @@ Asynchronous tasks can be created or forked by using an `Async` instance. A supp
 
 [source,java]
 ----
-CompletableFuture<Thread> cf = Async.create().invoke(Thread::currentThread));
-cf.thenAccept(t -> System.out.println("Async task executed in thread " + t));
+include::{sourcedir}/se/FaultToleranceSnippets.java[tag=snippet_6, indent=0]
 ----
 
 The supplier `() -> Thread.currentThread()` is executed in a new thread and
@@ -266,23 +247,7 @@ The easiest way to achieve handler composition is by using a builder in the
 
 [source,java]
 ----
-FaultTolerance.TypedBuilder<T> builder = FaultTolerance.typedBuilder();
-
-Timeout timeout = Timeout.create(Duration.ofMillis(10));
-builder.addTimeout(timeout);
-
-Retry retry = Retry.builder()
-                   .retryPolicy(Retry.JitterRetryPolicy.builder()
-                                     .calls(3)
-                                     .delay(Duration.ofMillis(100))
-                                     .build())
-                   .build();
-builder.addRetry(retry);
-
-Fallback<T> fallback = Fallback.create(throwable ->lastKnownValue);
-builder.addFallback(fallback);
-
-T result = builder.build().invoke(this::mayTakeVeryLong);
+include::{sourcedir}/se/FaultToleranceSnippets.java[tag=snippet_7, indent=0]
 ----
 
 The exact order in which handlers are added to a builder depends on the use case,
@@ -302,4 +267,3 @@ See <<API>> section for examples.
 
 For additional information, see the
 link:{faulttolerance-javadoc-base-url}/module-summary.html[Fault Tolerance API Javadocs].
-

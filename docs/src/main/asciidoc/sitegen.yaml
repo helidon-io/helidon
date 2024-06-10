@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2024 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -91,6 +91,7 @@ backend:
                   - "security-oidc.adoc"
                   - "tracing.adoc"
                   - "mp-tutorial.adoc"
+                  - "upgrade_4x.adoc"
                   - "maven-build.adoc"
                   - "gradle-build.adoc"
                   - "graalnative.adoc"
@@ -189,6 +190,12 @@ backend:
                 sources:
                   - "metrics.adoc"
                   - "prometheus-exemplar-support.adoc"
+              - type: "PAGE"
+                title: "Observability"
+                source: "observability.adoc"
+                glyph:
+                  type: "icon"
+                  value: "search"
               - type: "MENU"
                 title: "OpenAPI"
                 dir: "openapi"
@@ -239,6 +246,12 @@ backend:
                 glyph:
                   type: "icon"
                   value: "access_alarm"
+              - type: "PAGE"
+                title: "Threading"
+                source: "threading.adoc"
+                glyph:
+                  type: "icon"
+                  value: "clear_all"
               - type: "MENU"
                 title: "Security"
                 dir: "security"
@@ -264,6 +277,7 @@ backend:
                   value: "analytics"
               - type: "MENU"
                 title: "Testing"
+                dir: "testing"
                 glyph:
                   type: "icon"
                   value: "thumbs_up_down"
@@ -306,8 +320,6 @@ backend:
                   - "metrics.adoc"
                   - "security-oidc.adoc"
                   - "tracing.adoc"
-                  - "upgrade.adoc"
-                  - "upgrade_3x.adoc"
                   - "upgrade_4x.adoc"
                   - "maven-build.adoc"
                   - "gradle-build.adoc"
@@ -446,8 +458,8 @@ backend:
                   - "extensibility.adoc"
                   - "jep-290.adoc"
               - type: "PAGE"
-                title: Server-Sent Events (SSE)
-                source: sse/sse.adoc
+                title: "Server-Sent Events (SSE)"
+                source: "sse.adoc"
                 glyph:
                   type: "icon"
                   value: "outbox"

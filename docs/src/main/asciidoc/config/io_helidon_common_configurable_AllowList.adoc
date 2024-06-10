@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -46,31 +46,31 @@ Type: link:{javadoc-base-url}/io.helidon.common.configurable/io/helidon/common/c
  not deny all strings but rather represents the absence of a universal match, meaning that other allow and deny settings
  determine the matching outcomes.
 
- @return whether to allow all strings to match (subject to "deny" conditions)
+ Whether to allow all strings to match (subject to "deny" conditions)
 |`allow.exact` |string[&#93; |{nbsp} |Exact strings to allow.
 
- @return exact strings to allow
+ Exact strings to allow
 |`allow.pattern` |Pattern[&#93; |{nbsp} |Patterns specifying strings to allow.
 
- @return patterns which allow matching
+ Patterns which allow matching
 |`allow.prefix` |string[&#93; |{nbsp} |Prefixes specifying strings to allow.
 
- @return prefixes which allow matching
+ Prefixes which allow matching
 |`allow.suffix` |string[&#93; |{nbsp} |Suffixes specifying strings to allow.
 
- @return suffixes which allow matching
+ Suffixes which allow matching
 |`deny.exact` |string[&#93; |{nbsp} |Exact strings to deny.
 
- @return exact strings to allow
+ Exact strings to allow
 |`deny.pattern` |Pattern[&#93; |{nbsp} |Patterns specifying strings to deny.
 
- @return patterns which deny matching
+ Patterns which deny matching
 |`deny.prefix` |string[&#93; |{nbsp} |Prefixes specifying strings to deny.
 
- @return prefixes which deny matching
+ Prefixes which deny matching
 |`deny.suffix` |string[&#93; |{nbsp} |Suffixes specifying strings to deny.
 
- @return suffixes which deny matching
+ Suffixes which deny matching
 
 |===
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package io.helidon.inject.configdriven.processor;
 
-import java.util.Optional;
-
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
@@ -27,6 +25,7 @@ record ConfigBean(TypeName typeName,
                   String configPrefix,
                   ConfigBeanAnnotation annotation) {
     private static final TypeName CONFIGURED = TypeName.create("io.helidon.config.metadata.Configured");
+    private static final TypeName CONFIGURED_PROTOTYPE = TypeName.create("io.helidon.builder.api.Prototype.Configured");
     private static final TypeName CONFIG = TypeName.create("io.helidon.common.config.Config");
 
     public static ConfigBean create(TypeInfo configBeanTypeInfo) {
@@ -63,14 +62,22 @@ record ConfigBean(TypeName typeName,
         }
 
         // the type must be annotation with @Configured(root = true, prefix = "something")
-        Optional<Annotation> maybeConfigured = configBeanTypeInfo.findAnnotation(CONFIGURED);
-        if (maybeConfigured.isEmpty()) {
+        boolean isRoot;
+        String configPrefix;
+        if (configBeanTypeInfo.hasAnnotation(CONFIGURED)) {
+            Annotation configured = configBeanTypeInfo.annotation(CONFIGURED);
+            isRoot = configured.booleanValue("root").orElse(false);
+            configPrefix = configured.getValue("prefix").orElse("");
+        } else if (configBeanTypeInfo.hasAnnotation(CONFIGURED_PROTOTYPE)) {
+            Annotation configured = configBeanTypeInfo.annotation(CONFIGURED_PROTOTYPE);
+            isRoot = configured.booleanValue("root").orElse(true);
+            configPrefix = configured.value().orElse("");
+        } else {
             throw new IllegalArgumentException("Blueprint must be annotated with @Configured(root = true)"
                                                        + " to be eligible to be a ConfigBean: " + configBeanTypeInfo.typeName());
         }
-        Annotation configured = maybeConfigured.get();
-        boolean isRoot = configured.getValue("root").map(Boolean::parseBoolean).orElse(false);
-        String configPrefix = configured.getValue("prefix").orElse("");
+
+
 
         if (!isRoot) {
             throw new IllegalArgumentException("Blueprint must be annotated with @Configured(root = true)"

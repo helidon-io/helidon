@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -102,16 +102,7 @@ The following example shows configuration of all possible extensions with `Confi
 
 [source,java]
 ----
-Config config = Config.builder()
-                .addSource(FileConfigSource.builder()
-                                   .changeWatcher(MyChangeWatcher.create())
-                                   .pollingStrategy(MyPollingStrategy.create())
-                                   .parser(MyConfigParser.create())
-                                   .retryPolicy(MyRetryPolicy.create()))
-                .addSource(MySource.create())
-                .addFilter(MyFilter.create())
-                .overrides(MyOverrides.create())
-                .build()
+include::{sourcedir}/se/config/ExtensionsSnippets.java[tag=snippet_1, indent=0]
 ----
 
 === Automatic Configuration Using a Service Loader
@@ -127,8 +118,7 @@ For example for config sources, the interface defines the following methods (onl
 
 [source,java]
 ----
-boolean supports(String type);
-ConfigSource create(String type, Config metaConfig);
+include::{sourcedir}/se/config/ExtensionsSnippets.java[tag=snippet_2, indent=0]
 ----
 
 Considering the following meta configuration (or config profile):
@@ -207,7 +197,7 @@ The `ConfigParser.Content` interface defines operations on the content that is t
 The application can register parsers for a builder by invoking `Config.Builder#addParser(ConfigParser)`.
 The config system also uses the Java service loader mechanism to load automatically, for all builders, any parsers listed in the
 `META-INF/services/io.helidon.config.spi.ConfigParser` resource on the runtime classpath.
-Prevent autoloading of parsers for a given builder by invoking `Config.Builder#disableParserServices()`.
+Prevent automatic loading of parsers for a given builder by invoking `Config.Builder#disableParserServices()`.
 
 `ConfigParser` accepts link:{common-javadoc-base-url}/io/helidon/common/Weight.html[`@Weight`].
 See <<priority-info, About Priority>>.
@@ -216,15 +206,6 @@ See <<priority-info, About Priority>>.
 .Example custom parser implementation listed in `META-INF/services/io.helidon.config.spi.ConfigParser`
 ----
 my.module.MyConfigParser
-----
-
-[source,java]
-.Example custom parser definition in `module-info.java`
-----
-module my.module {
-    requires transitive io.helidon.config;
-    provides io.helidon.config.spi.ConfigParser with myModule.MyConfigParser;
-}
 ----
 
 == OverrideSource SPI [[Config-SPI-OverrideSource]]
@@ -267,7 +248,7 @@ link:{config-javadoc-base-url}/io/helidon/config/Config.Builder.html[`addFilter`
 system also uses the Java service loader mechanism to load
 additional filters automatically, for all builders, using
 the service interface described in the following table. Prevent a given
-builder from using the autoloaded filters by invoking the
+builder from using the automatically loaded filters by invoking the
 link:{config-javadoc-base-url}/io/helidon/config/Config.Builder.html#disableFilterServices--[`disableFilterServices`]
 method.
 
@@ -343,7 +324,7 @@ For `Config.as(GenericType)` - the first two steps are skipped.
 The config system also uses the Java `ServiceLoader` mechanism to load automatically,
 for all builders, any mappers returned by the providers listed in the
 `META-INF/services/io.helidon.config.spi.ConfigMapperProvider` resource on the
-runtime classpath. The application can prevent autoloading of mappers for a
+runtime classpath. The application can prevent automatic loading of mappers for a
 given builder by invoking `Config.Builder#disableMapperServices()`. Note
 that the built-in mappers described in `ConfigMappers` still operate.
 
@@ -354,19 +335,10 @@ image::config/spi-ConfigMapperProvider.png[title="ConfigMapperProvider SPI",alig
 A mapper provider can specify link:{common-javadoc-base-url}/io/helidon/common/Weight.html[`@Weight`].
 If no weight is explicitly assigned, the value of `100` is assumed.
 
-[source,java]
+[source,text]
 .Reference custom mapper provider implementation in `META-INF/services/io.helidon.config.spi.ConfigMapperProvider`
 ----
 my.module.MyConfigMapperProvider
-----
-
-[source,java]
-.Reference custom mapper provider implementation in `module-info.java`
-----
-module my.module {
-    requires transitive io.helidon.config;
-    provides io.helidon.config.spi.ConfigMapperProvider with my.module.MyConfigMapperProvider;
-}
 ----
 
 == Change Support SPI [[Config-SPI-PollingStrategy]]

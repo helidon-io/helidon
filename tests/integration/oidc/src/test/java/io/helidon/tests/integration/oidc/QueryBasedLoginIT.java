@@ -152,9 +152,4 @@ class QueryBasedLoginIT extends CommonLoginBase {
         }
     }
 
-    private String getRequestUri(String html) {
-        Document document = Jsoup.parse(html);
-        return document.getElementById("kc-form-login").attr("action");
-    }
-
 }

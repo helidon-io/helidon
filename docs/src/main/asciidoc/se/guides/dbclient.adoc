@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -231,12 +231,12 @@ file and is located here: `src/main/resources`.
 .Copy these properties into application.yaml
 ----
 db:
-  source: jdbc  # <1>
-  connection:   # <2>
+  source: jdbc # <1>
+  connection: # <2>
     url: "jdbc:h2:tcp://localhost:9092/~/test"
     username: "sa"
     password:
-  statements:   # <3>
+  statements: # <3>
     health-check: "SELECT 0"
     create-table: "CREATE TABLE IF NOT EXISTS LIBRARY (NAME VARCHAR NOT NULL, INFO VARCHAR NOT NULL)"
     insert-book: "INSERT INTO LIBRARY (NAME, INFO) VALUES (:name, :info)"
@@ -267,43 +267,15 @@ db:
 === Set Up Helidon DB Client
 
 [source,java]
-.Update the `main` method in `Main.java`
+.Update `Main#main`:
 ----
-public static void main(String[] args) {
-
-    // load logging configuration
-    LogConfig.configureRuntime();
-
-    // initialize global config from default configuration
-    Config config = Config.create();
-    Config.global(config);
-
-    DbClient dbClient = DbClient.create(config.get("db")); // <1>
-    Contexts.globalContext().register(dbClient); // <2>
-
-    ObserveFeature observe = ObserveFeature.builder() // <3>
-            .config(config.get("server.features.observe"))
-            .addObserver(HealthObserver.builder()
-                                 .useSystemServices(false)
-                                 .details(true)
-                                 .addCheck(DbClientHealthCheck.create(dbClient, config.get("db.health-check")))
-                                 .build())
-            .build();
-
-    WebServer server = WebServer.builder()
-            .config(config.get("server"))
-            .addFeature(observe) // <4>
-            .routing(Main::routing)
-            .build()
-            .start();
-
-    System.out.println("WEB server is up! http://localhost:" + server.port() + "/simple-greet");
-}
+include::{sourcedir}/se/guides/DbclientSnippets.java[tag=snippet_1, indent=0]
 ----
 <1> Create the DbClient instance
 <2> Register it in the global context
-<3> Create an instance of ObserveFeature to register a DbClientHealthCheck
-<4> Register the ObserveFeature on the server
+<3> Create an instance of HealthObserver to register a DbClientHealthCheck
+<4> Add the `HealthObserver` to the `ObserveFeature`
+<5> Register the ObserveFeature on the server
 
 === Create the Library service
 
@@ -312,36 +284,11 @@ Create LibraryService class into `io.helidon.examples.quickstart.se` package.
 [source,java]
 .LibraryService class looks like this:
 ----
-package io.helidon.examples.quickstart.se;
-
-import io.helidon.common.context.Contexts; // <1>
-import io.helidon.config.Config;
-import io.helidon.dbclient.DbClient;
-import io.helidon.http.NotFoundException;
-import io.helidon.http.Status;
-import io.helidon.webserver.http.HttpRules;
-import io.helidon.webserver.http.HttpService;
-import io.helidon.webserver.http.ServerRequest;
-import io.helidon.webserver.http.ServerResponse;
-
-import jakarta.json.JsonObject;
-
-public class LibraryService implements HttpService {
-
-    private final DbClient dbClient;    // <2>
-
-    LibraryService() {
-        this.dbClient = Contexts.globalContext()
-                .get(DbClient.class)
-                .orElseGet(() -> DbClient.create(Config.global().get("db"))); // <3>
-        dbClient.execute().namedDml("create-table"); // <4>
-    }
-}
+include::{sourcedir}/se/guides/DbclientSnippets.java[tag=snippet_2, indent=0]
 ----
-<1> Add new import statement
-<2> Declare the DB Client instance
-<3> Initialize the DB Client instance using global config
-<4> Initialize the database schema
+<1> Declare the DB Client instance
+<2> Initialize the DB Client instance using global config
+<3> Initialize the database schema
 
 As the LibraryService implements `io.helidon.webserver.HttpService`, the `routing(HttpRules)` method has to be implemented.
 It defines application endpoints and Http request which can be reached by clients.
@@ -349,14 +296,7 @@ It defines application endpoints and Http request which can be reached by client
 [source,java]
 .Add update method to LibraryService
 ----
-@Override
-public void routing(HttpRules rules) {
-    rules
-        .get("/{name}", this::getBook)      // <1>
-        .put("/{name}", this::addBook)      // <2>
-        .delete("/{name}", this::deleteBook)   // <3>
-        .get("/json/{name}", this::getJsonBook); // <4>
-}
+include::{sourcedir}/se/guides/DbclientSnippets.java[tag=snippet_3, indent=0]
 ----
 <1> Return information about the required book from the database.
 <2> Add a book to the library.
@@ -371,13 +311,7 @@ name. The architecture of the application is defined, so the next step is to cre
 [source,java]
 .Add getBook to the LibraryService:
 ----
-private void getBook(ServerRequest serverRequest, ServerResponse serverResponse) {
-    String bookName = serverRequest.path().pathParameters().get("name");   // <1>
-    String bookInfo = dbClient.execute().namedGet("select-book", bookName)   // <2>
-            .map(row -> row.column("INFO").asString().get())
-            .orElseThrow(() -> new NotFoundException("Book not found: " + bookName)); // <3>
-    serverResponse.send(bookInfo); // <4>
-}
+include::{sourcedir}/se/guides/DbclientSnippets.java[tag=snippet_4, indent=0]
 ----
 <1> Get the book name from the path in the URL.
 <2> Helidon DB Client executes the `select-book` SQL script from application.yaml.
@@ -400,14 +334,7 @@ Client xref:../dbclient.adoc[here].
 [source,java]
 .Add getJsonBook to the LibraryService:
 ----
-private void getJsonBook(ServerRequest serverRequest, ServerResponse serverResponse) {
-    String bookName = serverRequest.path().pathParameters().get("name");
-
-    JsonObject bookJson = dbClient.execute().namedGet("select-book", bookName)
-            .map(row -> row.as(JsonObject.class))
-            .orElseThrow(() -> new NotFoundException("Book not found: " + bookName));
-    serverResponse.send(bookJson);
-}
+include::{sourcedir}/se/guides/DbclientSnippets.java[tag=snippet_5, indent=0]
 ----
 
 Instead of sending the `INFO` content of the targeted book, the `getJsonBook` method send the whole row of the
@@ -416,52 +343,33 @@ database as a `JsonObject`.
 [source,java]
 .Add addBook to the LibraryService:
 ----
-private void addBook(ServerRequest serverRequest, ServerResponse serverResponse) {
-    String bookName = serverRequest.path().pathParameters().get("name");
-
-    String newValue = serverRequest.content().as(String.class);
-    dbClient.execute().createNamedInsert("insert-book")
-            .addParam("name", bookName)     // <1>
-            .addParam("info", newValue)
-            .execute();
-    serverResponse.status(Status.CREATED_201).send(); // <2>
-}
+include::{sourcedir}/se/guides/DbclientSnippets.java[tag=snippet_6, indent=0]
 ----
 <1> The SQL statement requires the book name and its information. They are provided with `addParam` method.
-<2> A new book was added to library, so a HTTP 201 code is returned.
+<2> A new book was added to library, so an HTTP 201 code is returned.
 
 When a user adds a new book, it uses HTTP PUT method where the book name is in the URL and the information in the
 request content. To catch this content, the information is retrieved as a string and then the DB Client execute the
 `insert-book` script to add the book to the library. It requires two parameters, the book name and information which are
-passed to the dbClient thanks to `addParam` method. A HTTP 201 is sent back as a confirmation.
+passed to the dbClient thanks to `addParam` method. An HTTP 201 is sent back as a confirmation.
 
 [source,java]
 .Add deleteBook to LibraryService:
 ----
-private void deleteBook(ServerRequest serverRequest, ServerResponse serverResponse) {
-    String bookName = serverRequest.path().pathParameters().get("name");
-
-    dbClient.execute().namedDelete("delete-book", bookName);     // <1>
-    serverResponse.status(Status.NO_CONTENT_204).send();    // <2>
-}
+include::{sourcedir}/se/guides/DbclientSnippets.java[tag=snippet_7, indent=0]
 ----
 <1> Execute SQL script from application.yaml to remove a book from the library by its name.
-<2> The required book was removed, so a HTTP 204 is sent.
+<2> The required book was removed, so an HTTP 204 is sent.
 
 To remove a book from the library, use the "delete-book" script in the way than previously. If the book is removed
-successfully, a HTTP 204 is sent back.
+successfully, an HTTP 204 is sent back.
 
 === Set Up Routing
 
 [source,java]
 .Modify the `routing` method in `Main.java`:
 ----
-static void routing(HttpRouting.Builder routing) {
-        routing
-                .register("/greet", new GreetService())
-                .register("/library", new LibraryService()) // <1>
-                .get("/simple-greet", (req, res) -> res.send("Hello World!"));
-}
+include::{sourcedir}/se/guides/DbclientSnippets.java[tag=snippet_8, indent=0]
 ----
 <1> Register the LibraryService to the Routing.
 

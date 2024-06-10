@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-parent</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.1.0-SNAPSHOT</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
     <artifactId>helidon-bom</artifactId>
@@ -31,7 +31,7 @@
     <name>Helidon BOM POM</name>
 
     <properties>
-        <helidon.version>4.0.0-SNAPSHOT</helidon.version>
+        <helidon.version>4.1.0-SNAPSHOT</helidon.version>
     </properties>
 
     <dependencyManagement>
@@ -92,6 +92,12 @@
             <dependency>
                 <groupId>io.helidon.microprofile.graphql</groupId>
                 <artifactId>helidon-microprofile-graphql-server</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <!-- GRPC -->
+            <dependency>
+                <groupId>io.helidon.grpc</groupId>
+                <artifactId>helidon-grpc-core</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <!-- Micronaut integrations -->
@@ -238,11 +244,6 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.security.integration</groupId>
-                <artifactId>helidon-security-integration-webserver</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.helidon.security</groupId>
                 <artifactId>helidon-security-annotations</artifactId>
                 <version>${helidon.version}</version>
@@ -386,11 +387,6 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.metrics</groupId>
-                <artifactId>helidon-metrics-provider-tests</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.helidon.metrics.providers</groupId>
                 <artifactId>helidon-metrics-providers-micrometer</artifactId>
                 <version>${helidon.version}</version>
@@ -507,16 +503,49 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.codegen</groupId>
+                <artifactId>helidon-codegen</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.codegen</groupId>
+                <artifactId>helidon-codegen-apt</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.codegen</groupId>
+                <artifactId>helidon-codegen-scan</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.codegen</groupId>
+                <artifactId>helidon-codegen-compiler</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.codegen</groupId>
+                <artifactId>helidon-codegen-class-model</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.codegen</groupId>
+                <artifactId>helidon-codegen-helidon-copyright</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <!-- deprecated module -->
                 <groupId>io.helidon.common.processor</groupId>
                 <artifactId>helidon-common-processor</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <!-- deprecated module -->
                 <groupId>io.helidon.common.processor</groupId>
                 <artifactId>helidon-common-processor-helidon-copyright</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <!-- deprecated module -->
                 <groupId>io.helidon.common.processor</groupId>
                 <artifactId>helidon-common-processor-class-model</artifactId>
                 <version>${helidon.version}</version>
@@ -736,6 +765,11 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.integrations.cdi</groupId>
+                <artifactId>helidon-integrations-cdi-configurable</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.cdi</groupId>
                 <artifactId>helidon-integrations-cdi-delegates</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
@@ -817,6 +851,11 @@
             <dependency>
                 <groupId>io.helidon.integrations.micrometer</groupId>
                 <artifactId>helidon-integrations-micrometer-cdi</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.oci</groupId>
+                <artifactId>helidon-integrations-oci</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -989,6 +1028,11 @@
                 <artifactId>helidon-messaging-mock</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.testing</groupId>
+                <artifactId>helidon-microprofile-testing-mocking</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- Logging -->
             <dependency>
                 <groupId>io.helidon.logging</groupId>
@@ -1034,29 +1078,29 @@
             </dependency>
             <!-- MicroStream -->
             <dependency>
-            	<groupId>io.helidon.integrations.microstream</groupId>
-            	<artifactId>helidon-integrations-microstream</artifactId>
-            	<version>${helidon.version}</version>
+                <groupId>io.helidon.integrations.microstream</groupId>
+                <artifactId>helidon-integrations-microstream</artifactId>
+                <version>${helidon.version}</version>
             </dependency>
             <dependency>
-            	<groupId>io.helidon.integrations.microstream</groupId>
-            	<artifactId>helidon-integrations-microstream-cdi</artifactId>
-            	<version>${helidon.version}</version>
+                <groupId>io.helidon.integrations.microstream</groupId>
+                <artifactId>helidon-integrations-microstream-cdi</artifactId>
+                <version>${helidon.version}</version>
             </dependency>
             <dependency>
-            	<groupId>io.helidon.integrations.microstream</groupId>
-            	<artifactId>helidon-integrations-microstream-health</artifactId>
-            	<version>${helidon.version}</version>
+                <groupId>io.helidon.integrations.microstream</groupId>
+                <artifactId>helidon-integrations-microstream-health</artifactId>
+                <version>${helidon.version}</version>
             </dependency>
             <dependency>
-            	<groupId>io.helidon.integrations.microstream</groupId>
-            	<artifactId>helidon-integrations-microstream-metrics</artifactId>
-            	<version>${helidon.version}</version>
+                <groupId>io.helidon.integrations.microstream</groupId>
+                <artifactId>helidon-integrations-microstream-metrics</artifactId>
+                <version>${helidon.version}</version>
             </dependency>
             <dependency>
-            	<groupId>io.helidon.integrations.microstream</groupId>
-            	<artifactId>helidon-integrations-microstream-cache</artifactId>
-            	<version>${helidon.version}</version>
+                <groupId>io.helidon.integrations.microstream</groupId>
+                <artifactId>helidon-integrations-microstream-cache</artifactId>
+                <version>${helidon.version}</version>
             </dependency>
 
             <dependency>
@@ -1220,6 +1264,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.webserver.testing.junit5</groupId>
+                <artifactId>helidon-webserver-testing-junit5-grpc</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.webclient</groupId>
                 <artifactId>helidon-webclient-api</artifactId>
                 <version>${helidon.version}</version>
@@ -1242,6 +1291,11 @@
             <dependency>
                 <groupId>io.helidon.webclient</groupId>
                 <artifactId>helidon-webclient-websocket</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webclient</groupId>
+                <artifactId>helidon-webclient-grpc</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -1296,6 +1350,11 @@
                 <artifactId>helidon-builder-processor</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.builder</groupId>
+                <artifactId>helidon-builder-codegen</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
             <!-- Injection Core -->
             <dependency>
@@ -1311,11 +1370,6 @@
             <dependency>
                 <groupId>io.helidon.inject</groupId>
                 <artifactId>helidon-inject-processor</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.inject</groupId>
-                <artifactId>helidon-inject-maven-plugin</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -1343,6 +1397,18 @@
             <dependency>
                 <groupId>io.helidon.inject.configdriven</groupId>
                 <artifactId>helidon-inject-configdriven-processor</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+
+            <!-- Service registry -->
+            <dependency>
+                <groupId>io.helidon.service</groupId>
+                <artifactId>helidon-service-registry</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.service</groupId>
+                <artifactId>helidon-service-codegen</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 

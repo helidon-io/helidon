@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.examples.microprofile</groupId>
         <artifactId>helidon-examples-microprofile-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.1.0-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.examples.telemetry</groupId>
     <artifactId>helidon-examples-microprofile-telemetry</artifactId>

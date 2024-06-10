@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -229,11 +229,13 @@ class SecurityDefinition {
             default -> {}
         }
 
-        this.requiresAuthorization = switch (analyzerResponse.authorizationResponse()) {
-            case REQUIRED, OPTIONAL -> true;
-            case FORBIDDEN -> false;
-            default -> null;
-        };
+        if (this.requiresAuthorization == null) {
+            this.requiresAuthorization = switch (analyzerResponse.authorizationResponse()) {
+                case REQUIRED, OPTIONAL -> true;
+                case FORBIDDEN -> false;
+                default -> null;
+            };
+        }
 
         this.authenticator = analyzerResponse.authenticator().orElse(this.authenticator);
         this.authorizer = analyzerResponse.authorizer().orElse(this.authorizer);

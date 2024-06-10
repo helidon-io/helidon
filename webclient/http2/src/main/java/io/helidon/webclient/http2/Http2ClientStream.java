@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ import io.helidon.http.http2.Http2FrameTypes;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2HuffmanDecoder;
 import io.helidon.http.http2.Http2LoggingFrameListener;
+import io.helidon.http.http2.Http2Ping;
 import io.helidon.http.http2.Http2Priority;
 import io.helidon.http.http2.Http2RstStream;
 import io.helidon.http.http2.Http2Setting;
@@ -53,10 +54,16 @@ import io.helidon.webclient.api.ReleasableResource;
 
 import static java.lang.System.Logger.Level.DEBUG;
 
-class Http2ClientStream implements Http2Stream, ReleasableResource {
+/**
+ * Represents an HTTP2 client stream. This class is not intended to be used by
+ * applications, it is only public internally within Helidon.
+ */
+public class Http2ClientStream implements Http2Stream, ReleasableResource {
 
     private static final System.Logger LOGGER = System.getLogger(Http2ClientStream.class.getName());
     private static final Set<Http2StreamState> NON_CANCELABLE = Set.of(Http2StreamState.CLOSED, Http2StreamState.IDLE);
+    private static final Http2FrameData HTTP2_PING = Http2Ping.create().toFrameData();
+
     private final Http2ClientConnection connection;
     private final Http2Settings serverSettings;
     private final SocketContext ctx;
@@ -80,7 +87,7 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
     private int streamId;
     private StreamBuffer buffer;
 
-    Http2ClientStream(Http2ClientConnection connection,
+    protected Http2ClientStream(Http2ClientConnection connection,
                       Http2Settings serverSettings,
                       SocketContext ctx,
                       Http2StreamConfig http2StreamConfig,
@@ -111,6 +118,7 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
         this.currentHeaders = headers;
         this.hasEntity = !endOfStream;
     }
+
     @Override
     public boolean rstStream(Http2RstStream rstStream) {
         if (state == Http2StreamState.IDLE) {
@@ -181,15 +189,29 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
         trailers.complete(headers.httpHeaders());
     }
 
-    CompletableFuture<Headers> trailers() {
+    /**
+     * Future that shall be completed once trailers are received.
+     *
+     * @return the completable future
+     */
+    public CompletableFuture<Headers> trailers() {
         return trailers;
     }
 
-    boolean hasEntity() {
+    /**
+     * Determines if an entity is expected. Set to {@code false} when an EOS flag
+     * is received.
+     *
+     * @return {@code true} if entity expected, {@code false} otherwise.
+     */
+    public boolean hasEntity() {
         return hasEntity;
     }
 
-    void cancel() {
+    /**
+     * Cancels this client stream.
+     */
+    public void cancel() {
         if (NON_CANCELABLE.contains(state)) {
             return;
         }
@@ -205,7 +227,10 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
         }
     }
 
-    void close() {
+    /**
+     * Removes the stream from underlying connection.
+     */
+    public void close() {
         connection.removeStream(streamId);
     }
 
@@ -226,7 +251,12 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
         return read();
     }
 
-    BufferData read() {
+    /**
+     * Reads a buffer data from the stream.
+     *
+     * @return the buffer data
+     */
+    public BufferData read() {
         while (state == Http2StreamState.HALF_CLOSED_LOCAL && readState != ReadState.END && hasEntity) {
             Http2FrameData frameData = readOne(timeout);
             if (frameData != null) {
@@ -257,7 +287,13 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
         return null;
     }
 
-    void writeHeaders(Http2Headers http2Headers, boolean endOfStream) {
+    /**
+     * Writes HTTP2 headers to the stream.
+     *
+     * @param http2Headers the headers
+     * @param endOfStream end of stream marker
+     */
+    public void writeHeaders(Http2Headers http2Headers, boolean endOfStream) {
         this.state = Http2StreamState.checkAndGetState(this.state, Http2FrameType.HEADERS, true, endOfStream, true);
         this.readState = readState.check(http2Headers.httpHeaders().contains(HeaderValues.EXPECT_100)
                                                  ? ReadState.CONTINUE_100_HEADERS
@@ -293,7 +329,13 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
         }
     }
 
-    void writeData(BufferData entityBytes, boolean endOfStream) {
+    /**
+     * Writes a buffer data into the stream.
+     *
+     * @param entityBytes buffer data
+     * @param endOfStream end of stream marker
+     */
+    public void writeData(BufferData entityBytes, boolean endOfStream) {
         Http2FrameHeader frameHeader = Http2FrameHeader.create(entityBytes.available(),
                                                                Http2FrameTypes.DATA,
                                                                Http2Flag.DataFlags.create(endOfStream
@@ -304,7 +346,19 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
         splitAndWrite(frameData);
     }
 
-    Http2Headers readHeaders() {
+    /**
+     * Sends PING frame to server. Can be used to check if connection is healthy.
+     */
+    public void sendPing() {
+        connection.writer().write(HTTP2_PING);
+    }
+
+    /**
+     * Reads headers from this stream.
+     *
+     * @return the headers
+     */
+    public Http2Headers readHeaders() {
         while (readState == ReadState.HEADERS) {
             Http2FrameData frameData = readOne(timeout);
             if (frameData != null) {
@@ -314,11 +368,22 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
         return currentHeaders;
     }
 
-    SocketContext ctx() {
+    /**
+     * Returns the socket context associated with the stream.
+     *
+     * @return the socket context
+     */
+    public SocketContext ctx() {
         return ctx;
     }
 
-    private Http2FrameData readOne(Duration pollTimeout) {
+    /**
+     * Reads an HTTP2 frame from the stream.
+     *
+     * @param pollTimeout timeout
+     * @return the data frame
+     */
+    public Http2FrameData readOne(Duration pollTimeout) {
         Http2FrameData frameData = buffer.poll(pollTimeout);
 
         if (frameData != null) {
@@ -446,11 +511,11 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
                                       flowControl().outbound());
     }
 
-    private enum ReadState {
+    enum ReadState {
         END,
         TRAILERS(END),
         DATA(TRAILERS, END),
-        HEADERS(DATA, TRAILERS),
+        HEADERS(DATA, TRAILERS, END),
         CONTINUE_100_HEADERS(HEADERS, DATA, END),
         INIT(CONTINUE_100_HEADERS, HEADERS);
 

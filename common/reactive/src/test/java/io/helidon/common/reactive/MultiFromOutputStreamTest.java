@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,10 @@ package io.helidon.common.reactive;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
-import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
 
+import static java.time.Duration.ofMillis;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -56,7 +56,7 @@ public class MultiFromOutputStreamTest {
     @Test
     void testMultiTimeout() {
         MultiFromOutputStream osMulti = IoMulti.builderOutputStream()
-                .timeout(200, TimeUnit.MILLISECONDS)
+                .timeout(ofMillis(200))
                 .build();
 
         TestSubscriber<ByteBuffer> testSubscriber = new TestSubscriber<>();

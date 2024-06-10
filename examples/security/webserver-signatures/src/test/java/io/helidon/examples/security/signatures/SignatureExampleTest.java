@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,7 +67,7 @@ public abstract class SignatureExampleTest {
     private void test(String uri, Set<String> expectedRoles, Set<String> invalidRoles, String service) {
         try (Http1ClientResponse response = client.get(uri)
                 .property(PROPERTY_OUTBOUND_ID, "jack")
-                .property(PROPERTY_OUTBOUND_SECRET, "password")
+                .property(PROPERTY_OUTBOUND_SECRET, "changeit")
                 .request()) {
 
             assertThat(response.status().code(), is(200));

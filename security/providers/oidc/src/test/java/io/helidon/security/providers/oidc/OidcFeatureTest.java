@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,8 @@ import io.helidon.security.providers.common.OutboundConfig;
 import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.providers.common.TokenCredential;
 import io.helidon.security.providers.oidc.common.OidcConfig;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.http.HttpRouting;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -41,6 +43,7 @@ import org.mockito.Mockito;
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNot.not;
 import static org.mockito.Mockito.when;
@@ -215,5 +218,23 @@ class OidcFeatureTest {
         OutboundSecurityResponse response = provider.outboundSecurity(providerRequest, outboundEnv, endpointConfig);
 
         assertThat("Disabled target should have empty headers", response.requestHeaders().size(), is(0));
+    }
+
+    @Test
+    void testDisabledFeature() {
+        OidcFeature feature = OidcFeature.builder()
+                .enabled(false)
+                .build();
+
+        // make sure we can pass through its lifecycle without getting an exception
+        feature.beforeStart();
+        HttpRouting.Builder builder = HttpRouting.builder();
+        feature.setup(builder);
+        feature.afterStop();
+
+        assertThat(feature.socket(), is(WebServer.DEFAULT_SOCKET_NAME));
+        assertThat(feature.socketRequired(), is(false));
+        assertThat(feature.hashCode(), not(0));
+        assertThat(feature.toString(), notNullValue());
     }
 }

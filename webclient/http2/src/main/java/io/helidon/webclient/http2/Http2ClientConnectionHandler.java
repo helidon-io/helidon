@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -208,7 +208,7 @@ class Http2ClientConnectionHandler {
                 .data();
         byte[] b = new byte[settingsFrameData.available()];
         settingsFrameData.read(b);
-        return Base64.getEncoder().encodeToString(b);
+        return Base64.getUrlEncoder().encodeToString(b);
     }
 
     private Http2ConnectionAttemptResult http1(Http2ClientImpl http2Client,

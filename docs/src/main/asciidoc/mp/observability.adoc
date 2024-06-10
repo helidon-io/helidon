@@ -1,0 +1,81 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Observability
+:description: Helidon MP Observability
+:feature-name: Helidon Observability
+:keywords: helidon, observability
+:rootdir: {docdir}/..
+
+include::{rootdir}/includes/mp.adoc[]
+
+== Contents
+
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
+- <<Configuration, Configuration>>
+- <<Additional Information, Additional Information>>
+- <<Reference, Reference>>
+
+== Overview
+
+In Helidon 4 all observability features were moved to one logical module: `observe`. Observability features specified by MicroProfile--such as metrics and health--keep their familiar endpoints. The endpoints for other observability features are grouped together under a single context root which defaults to `/observe`.
+
+== Maven Coordinates [[maven-coordinates]]
+You do not need to explicitly add any observability dependency in your Helidon MP project `pom.xml` file for MicroProfile technologies.
+Adding a dependency on Helidon's MP metrics or health component, for example, brings along the necessary observability components automatically.
+
+To include other observability features in your Helidon MP application, add one or more of the following dependencies.
+
+include::{rootdir}/includes/observability.adoc[tags=observe-info-dependency;observe-log-dependency;observe-config-dependency]
+
+
+== Usage
+
+The MicroProfile observability features use top-level endpoints (such as `/health` and `/metrics`) which you can customize if you wish. See the <<_configuration, configuration>> section below for more information.
+
+Other observability features add endpoints under the `/observe` path
+
+include::{rootdir}/includes/observability.adoc[tag=weight-and-endpoint-conflicts]
+
+
+=== Endpoints
+
+Some observer endpoints--metrics and health--were present in earlier releases of Helidon MP. By default those continue to use their customary paths (`/metrics`, `/health`). You can customize the endpoint for each of those observers are described in the documentation for each observer.
+
+Other observers have no counterpart in the MicroProfile spec and they respond by default at subpaths of `/observe` as described below.
+
+// include::{rootdir}/includes/observability.adoc[tags=configuration-observability-endpoint;info-observability-endpoint;logger-observability-endpoint]
+
+include::{rootdir}/includes/observability.adoc[tag=all-observability-endpoints]
+
+== Configuration
+
+To customize the endpoint of an observer:
+
+1. For MicroProfile technologies (metrics, health) refer to the Helidon MP documentation for them:
+
+* xref:{rootdir}/mp/metrics/metrics.adoc#config-intro[metrics config] documentation
+* xref:{rootdir}/mp/health.adoc#_configuration[health config] documentation
+
+2. For other observers, assign a custom endpoint using a config setting such as `server.features.observe.info.endpoint`.
+
+include::{rootdir}/includes/observability.adoc[tag=observe-config]
+
+include::{rootdir}/includes/observability.adoc[tags=additional-info;references]

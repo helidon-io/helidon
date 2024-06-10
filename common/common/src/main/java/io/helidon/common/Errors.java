@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,8 +58,17 @@ public final class Errors extends LinkedList<Errors.ErrorMessage> {
     private static final Set<StackWalker.Option> WALKER_OPTIONS =
             Set.of(StackWalker.Option.RETAIN_CLASS_REFERENCE);
 
+    /**
+     * If there is a fatal error.
+     */
     private final boolean hasFatal;
+    /**
+     * If there is a warning.
+     */
     private final boolean hasWarning;
+    /**
+     * If there is a hint.
+     */
     private final boolean hasHint;
 
     private Errors(Collector collector) {
@@ -191,6 +200,16 @@ public final class Errors extends LinkedList<Errors.ErrorMessage> {
         private boolean hasFatal;
         private boolean hasWarning;
         private boolean hasHint;
+
+        /**
+         * This constructor was accidentally left public, it should be private.
+         *
+         * @deprecated please use {@link io.helidon.common.Errors#collector()} instead
+         */
+        @Deprecated(forRemoval = true, since = "4.0.9")
+        public Collector() {
+            super();
+        }
 
         /**
          * Add a message to the list of messages.
@@ -338,7 +357,9 @@ public final class Errors extends LinkedList<Errors.ErrorMessage> {
      * This exception provides access to all the messages of {@link Errors} that created it.
      */
     public static final class ErrorMessagesException extends RuntimeException {
-
+        /**
+         * List of error messages that triggered this exception.
+         */
         private final List<ErrorMessage> messages;
 
         private ErrorMessagesException(final List<ErrorMessage> messages) {

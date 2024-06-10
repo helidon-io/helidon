@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -44,42 +44,42 @@ Type: link:{javadoc-base-url}/io.helidon.webserver.security/io/helidon/webserver
 
 |`audit` |boolean |{nbsp} |Whether to audit this request - defaults to false, if enabled, request is audited with event type "request".
 
- @return whether to audit
-|`audit-event-type` |string |{nbsp} |Override for event-type, defaults to `SecurityHandler#DEFAULT_AUDIT_EVENT_TYPE`.
+ Whether to audit
+|`audit-event-type` |string |{nbsp} |Override for event-type, defaults to SecurityHandler.DEFAULT_AUDIT_EVENT_TYPE.
 
- @return audit event type to use
-|`audit-message-format` |string |{nbsp} |Override for audit message format, defaults to `SecurityHandler#DEFAULT_AUDIT_MESSAGE_FORMAT`.
+ Audit event type to use
+|`audit-message-format` |string |{nbsp} |Override for audit message format, defaults to SecurityHandler.DEFAULT_AUDIT_MESSAGE_FORMAT.
 
- @return audit message format to use
+ Audit message format to use
 |`authenticate` |boolean |{nbsp} |If called, request will go through authentication process - defaults to false (even if authorize is true).
 
- @return whether to authenticate or not
+ Whether to authenticate or not
 |`authentication-optional` |boolean |{nbsp} |If called, authentication failure will not abort request and will continue as anonymous (defaults to false).
 
- @return whether authn is optional
+ Whether authn is optional
 |`authenticator` |string |{nbsp} |Use a named authenticator (as supported by security - if not defined, default authenticator is used).
  Will enable authentication.
 
- @return name of authenticator as configured in io.helidon.security.Security
+ Name of authenticator as configured in io.helidon.security.Security
 |`authorize` |boolean |{nbsp} |Enable authorization for this route.
 
- @return whether to authorize
+ Whether to authorize
 |`authorizer` |string |{nbsp} |Use a named authorizer (as supported by security - if not defined, default authorizer is used, if none defined, all is
  permitted).
  Will enable authorization.
 
- @return name of authorizer as configured in io.helidon.security.Security
+ Name of authorizer as configured in io.helidon.security.Security
 |`roles-allowed` |string[&#93; |{nbsp} |An array of allowed roles for this path - must have a security provider supporting roles (either authentication
  or authorization provider).
  This method enables authentication and authorization (you can disable them again by calling
- SecurityHandler#skipAuthorization()
- and #authenticationOptional() if needed).
+ SecurityHandler.skipAuthorization()
+ and authenticationOptional() if needed).
 
- @return if subject is any of these roles, allow access
+ If subject is any of these roles, allow access
 |`sockets` |string[&#93; |{nbsp} |List of sockets this configuration should be applied to.
  If empty, the configuration is applied to all configured sockets.
 
- @return list of sockets
+ List of sockets
 
 |===
 

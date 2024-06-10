@@ -24,7 +24,6 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.logging.Logger;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.Version;
@@ -46,6 +45,7 @@ import jakarta.ws.rs.core.Configuration;
 import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.client.ClientRequest;
 import org.glassfish.jersey.client.ClientResponse;
+import org.glassfish.jersey.client.JerseyClient;
 import org.glassfish.jersey.client.spi.AsyncConnectorCallback;
 import org.glassfish.jersey.client.spi.Connector;
 import org.glassfish.jersey.internal.util.PropertiesHelper;
@@ -61,7 +61,7 @@ import static org.glassfish.jersey.client.ClientProperties.READ_TIMEOUT;
 import static org.glassfish.jersey.client.ClientProperties.getValue;
 
 class HelidonConnector implements Connector {
-    static final Logger LOGGER = Logger.getLogger(HelidonConnector.class.getName());
+    static final System.Logger LOGGER = System.getLogger(HelidonConnector.class.getName());
 
     private static final int DEFAULT_TIMEOUT = 10000;
     private static final Map<String, String> EMPTY_MAP_LIST = Map.of("", "");
@@ -82,7 +82,8 @@ class HelidonConnector implements Connector {
         var builder = WebClientConfig.builder();
 
         // use config for client
-        builder.config(helidonConfig(config).orElse(Config.empty()));
+        Config helidonConfig = helidonConfig(config).orElse(Config.empty());
+        builder.config(helidonConfig);
 
         // proxy support
         proxy = ProxyBuilder.createProxy(config).orElse(Proxy.create());
@@ -98,11 +99,18 @@ class HelidonConnector implements Connector {
             builder.followRedirects(getValue(properties, FOLLOW_REDIRECTS, true));
         }
 
-        // prefer Tls over SSLContext
-        if (properties.containsKey(TLS)) {
-            builder.tls(getValue(properties, TLS, Tls.class));
-        } else if (client.getSslContext() != null) {
-            builder.tls(Tls.builder().sslContext(client.getSslContext()).build());
+        //Whether WebClient TLS has been already set via config
+        boolean helidonConfigTlsSet = helidonConfig.map(hc -> hc.get("tls").exists()).orElse(false);
+        boolean isJerseyClient = client instanceof JerseyClient;
+        //Whether Jersey client has non-default SslContext set. If so, we should honor these settings
+        boolean jerseyHasDefaultSsl = isJerseyClient && ((JerseyClient) client).isDefaultSslContext();
+
+        if (!helidonConfigTlsSet || !isJerseyClient || !jerseyHasDefaultSsl) {// prefer Tls over SSLContext
+            if (properties.containsKey(TLS)) {
+                builder.tls(getValue(properties, TLS, Tls.class));
+            } else if (client.getSslContext() != null) {
+                builder.tls(Tls.builder().sslContext(client.getSslContext()).build());
+            }
         }
 
         // protocol configs
@@ -142,7 +150,6 @@ class HelidonConnector implements Connector {
         HttpClientRequest httpRequest = webClient
                 .method(Method.create(request.getMethod()))
                 .proxy(requestProxy)
-                .skipUriEncoding(true)      // already encoded by Jersey
                 .uri(uri);
 
         // map request headers
@@ -300,8 +307,8 @@ class HelidonConnector implements Connector {
         Object helidonConfig = configuration.getProperty(HelidonProperties.CONFIG);
         if (helidonConfig != null) {
             if (!(helidonConfig instanceof Config)) {
-                LOGGER.warning(String.format("Ignoring Helidon Connector config at '%s'",
-                        HelidonProperties.CONFIG));
+                LOGGER.log(System.Logger.Level.WARNING,
+                        String.format("Ignoring Helidon Connector config at '%s'", HelidonProperties.CONFIG));
             } else {
                 return Optional.of((Config) helidonConfig);
             }

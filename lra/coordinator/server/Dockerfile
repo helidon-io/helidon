@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+# Copyright (c) 2021, 2024 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-FROM container-registry.oracle.com/java/openjdk:21 as build
+FROM container-registry.oracle.com/java/jdk-no-fee-term:21 as build
 
 WORKDIR /usr/share
 
@@ -41,7 +41,7 @@ RUN wget -q -O helidon_repo.zip https://github.com/${HELIDON_REPOSITORY}/archive
 RUN mvn install -pl :helidon-lra-coordinator-server -am -DskipTests && \
     echo "Helidon LRA Coordinator build successfully finished"
 
-FROM container-registry.oracle.com/java/openjdk:21
+FROM container-registry.oracle.com/java/jdk-no-fee-term:21
 WORKDIR /helidon
 
 COPY --from=build /helidon/lra/coordinator/server/target/helidon-lra-coordinator-server.jar ./

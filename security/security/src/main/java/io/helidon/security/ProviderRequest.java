@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.helidon.security.util.AbacSupport;
@@ -44,7 +42,7 @@ import io.helidon.security.util.AbacSupport;
  * </ul>
  */
 public class ProviderRequest implements AbacSupport {
-    private static final Logger LOGGER = Logger.getLogger(ProviderRequest.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ProviderRequest.class.getName());
 
     private final Map<String, AbacSupport> contextRoot = new HashMap<>();
     private final Optional<Subject> subject;
@@ -109,10 +107,12 @@ public class ProviderRequest implements AbacSupport {
             }
         } catch (NoSuchFieldException e) {
             // ignore, field is not present, we try accessor methods
-            LOGGER.log(Level.FINEST, e, () -> "Field \"" + key + "\" + is not present in class: " + aClass.getName());
+            LOGGER.log(System.Logger.Level.TRACE, () ->
+                "Field \"" + key + "\" + is not present in class: " + aClass.getName(), e);
         } catch (IllegalAccessException e) {
             // ignore, we check access first
-            LOGGER.log(Level.FINEST, e, () -> "Failed to access field: \"" + key + "\" in class: " + aClass.getName());
+            LOGGER.log(System.Logger.Level.TRACE, () ->
+                "Failed to access field: \"" + key + "\" in class: " + aClass.getName(), e);
         }
 
         //now check accessor methods
@@ -150,7 +150,8 @@ public class ProviderRequest implements AbacSupport {
             return Optional.empty();
         } catch (NoSuchMethodException e) {
             // method is not present
-            LOGGER.log(Level.FINEST, e, () -> "Method: \"" + methodName + "\" is not in class: " + aClass.getName());
+            LOGGER.log(System.Logger.Level.TRACE,
+                    () -> "Method: \"" + methodName + "\" is not in class: " + aClass.getName(), e);
             return Optional.empty();
         }
     }

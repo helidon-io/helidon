@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -42,9 +42,9 @@ Type: link:{javadoc-base-url}/io.helidon.common.configurable/io/helidon/common/c
 |===
 |key |type |default value |description
 
-|`capacity` |int |`10000` |Configure capacity of the cache. Defaults to `LruCache#DEFAULT_CAPACITY`.
+|`capacity` |int |`10000` |Configure capacity of the cache. Defaults to LruCache.DEFAULT_CAPACITY.
 
- @return maximal number of records in the cache before the oldest one is removed
+ Maximal number of records in the cache before the oldest one is removed
 
 |===
 

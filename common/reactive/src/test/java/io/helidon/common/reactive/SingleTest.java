@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
 
+import static java.time.Duration.ofMillis;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -517,7 +518,7 @@ public class SingleTest {
         List<Integer> result = Single.just(1)
                 .onCompleteResume(4)
                 .collectList()
-                .await(100, TimeUnit.MILLISECONDS);
+                .await(ofMillis(100));
 
         assertThat(result, is(equalTo(List.of(1, 4))));
     }
@@ -527,7 +528,7 @@ public class SingleTest {
         List<Integer> result = Single.just(1)
                 .onCompleteResumeWith(Multi.just(4, 5, 6))
                 .collectList()
-                .await(100, TimeUnit.MILLISECONDS);
+                .await(ofMillis(100));
 
         assertThat(result, is(equalTo(List.of(1, 4, 5, 6))));
     }
@@ -537,7 +538,7 @@ public class SingleTest {
         Integer result = Single.<Integer>empty()
                 .onCompleteResume(1)
                 .first()
-                .await(100, TimeUnit.MILLISECONDS);
+                .await(ofMillis(100));
 
         assertThat(result, is(equalTo(1)));
     }
@@ -548,7 +549,7 @@ public class SingleTest {
 
         assertThat(Single.just(TEST_PAYLOAD)
                 .onComplete(() -> onCompleteFuture.complete(null))
-                .await(100, TimeUnit.MILLISECONDS), is(equalTo(TEST_PAYLOAD)));
+                .await(ofMillis(100)), is(equalTo(TEST_PAYLOAD)));
         onCompleteFuture.get(100, TimeUnit.MILLISECONDS);
     }
 
@@ -597,7 +598,7 @@ public class SingleTest {
                 .onError(t -> onErrorCnt.incrementAndGet())
                 .forSingle(result::complete);
 
-        assertThat(Single.create(result).await(300, TimeUnit.MILLISECONDS), is(TEST_PAYLOAD));
+        assertThat(Single.create(result).await(ofMillis(300)), is(TEST_PAYLOAD));
         assertThat(onCancelCnt.get(), is(0));
         assertThat(onErrorCnt.get(), is(0));
         assertThat(onCompleteCnt.get(), is(1));
@@ -618,7 +619,7 @@ public class SingleTest {
                         .onComplete(onCompleteCnt::incrementAndGet)
                         .onError(t -> onErrorCnt.countDown())
                         .forSingle(result::complete)
-                        .await(300, TimeUnit.MILLISECONDS));
+                        .await(ofMillis(300)));
 
         assertThat(onErrorCnt.await(300, TimeUnit.MILLISECONDS), is(true));
         assertThat(actualException.getCause(), is(testException));
@@ -666,7 +667,7 @@ public class SingleTest {
                 })
                 .exceptionallyAccept(result::complete);
 
-        assertThat(Single.create(result).await(300, TimeUnit.MILLISECONDS).getCause(), is(testException));
+        assertThat(Single.create(result).await(ofMillis(300)).getCause(), is(testException));
         assertThat(onCancelCnt.get(), is(0));
         assertThat(onErrorCnt.get(), is(0));
         assertThat(onCompleteCnt.get(), is(1));
@@ -682,9 +683,9 @@ public class SingleTest {
                     exceptionallyFuture.complete(value);
                     return null;
                 })
-                .await(300, TimeUnit.MILLISECONDS);
+                .await(ofMillis(300));
 
-        assertThat(Single.create(exceptionallyFuture).await(300, TimeUnit.MILLISECONDS), is(testException));
+        assertThat(Single.create(exceptionallyFuture).await(ofMillis(300)), is(testException));
     }
 
     @Test
@@ -694,9 +695,9 @@ public class SingleTest {
         RuntimeException testException = new RuntimeException("BOOM!!!");
         Single.error(testException)
                 .exceptionallyAccept(exceptionallyFuture::complete)
-                .await(300, TimeUnit.MILLISECONDS);
+                .await(ofMillis(300));
 
-        assertThat(Single.create(exceptionallyFuture).await(300, TimeUnit.MILLISECONDS), is(testException));
+        assertThat(Single.create(exceptionallyFuture).await(ofMillis(300)), is(testException));
     }
 
     @Test
@@ -705,7 +706,7 @@ public class SingleTest {
 
         String result = Single.just(TEST_PAYLOAD)
                 .exceptionallyAccept(exceptionallyFuture::complete)
-                .await(300, TimeUnit.MILLISECONDS);
+                .await(ofMillis(300));
 
         assertThat(result, is(TEST_PAYLOAD));
     }

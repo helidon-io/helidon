@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,4 +101,13 @@ public interface Tracer {
             throw new IllegalArgumentException("This tracer is not compatible with " + tracerClass.getName());
         }
     }
+
+    /**
+     * Registers with the tracer a {@linkplain io.helidon.tracing.SpanListener lifecycle event listener} to receive events from
+     * span builders, spans, and scopes derived from this tracer.
+     *
+     * @param listener the {@link SpanListener} to register
+     * @return the updated {@code Tracer}
+     */
+    Tracer register(SpanListener listener);
 }

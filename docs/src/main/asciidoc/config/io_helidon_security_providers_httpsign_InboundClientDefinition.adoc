@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -49,8 +49,8 @@ Type: link:{javadoc-base-url}/io.helidon.security.providers.httpsign/io/helidon/
 - hmac-sha256 - symmetric based on a shared secret
 
 
-|`hmac.secret` |string |{nbsp} |Helper method to configure a password-like secret (instead of byte based #hmacSecret(byte[]).
- The password is transformed to bytes with StandardCharsets#UTF_8 charset.
+|`hmac.secret` |string |{nbsp} |Helper method to configure a password-like secret (instead of byte based hmacSecret(byte[]).
+ The password is transformed to bytes with StandardCharsets.UTF_8 charset.
 |`key-id` |string |{nbsp} |The key id of this client to map to this signature validation configuration.
 |`principal-name` |string |{nbsp} |The principal name of the client, defaults to keyId if not configured.
 |`principal-type` |SubjectType (USER, SERVICE) |`SERVICE` |The type of principal we have authenticated (either user or service, defaults to service).

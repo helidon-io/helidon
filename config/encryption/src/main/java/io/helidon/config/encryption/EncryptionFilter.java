@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.util.function.Function;
 
 import io.helidon.common.pki.Keys;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigItem;
 import io.helidon.config.MissingValueException;
 import io.helidon.config.spi.ConfigFilter;
 
@@ -130,6 +131,19 @@ public final class EncryptionFilter implements ConfigFilter {
     @Override
     public String apply(Config.Key key, String stringValue) {
         return maybeDecode(key, stringValue);
+    }
+
+    @Override
+    public ConfigItem apply(Config.Key key, ConfigItem itemPolicy) {
+        String item = apply(key, itemPolicy.item());
+        if (item.equals(itemPolicy.item())) {
+            //This was not config item handled by this filter.
+            return itemPolicy;
+        }
+        return ConfigItem.builder()
+                .cacheItem(false)
+                .item(item)
+                .build();
     }
 
     private String maybeDecode(Config.Key key, String value) {

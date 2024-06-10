@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -60,25 +60,22 @@ First describe Neo4j connection properties:
 # Neo4j settings
 neo4j.uri=bolt://localhost:7687
 neo4j.authentication.username=neo4j
-neo4j.authentication.password: secret
-neo4j.pool.metricsEnabled: true
+neo4j.authentication.password=secret
+neo4j.pool.metricsEnabled=true
 ----
 
 Then just inject the driver:
 
 [source,java]
 ----
-@Inject
-public MovieRepository(Driver driver) {
-   this.driver = driver;
-}
+include::{sourcedir}/mp/integrations/Neo4jSnippets.java[tag=snippet_1, indent=0]
 ----
 
 The driver can be used according to the link:https://neo4j.com/developer/java/[Neo4j documentation].
 
 == Configuration
 
-/include::{rootdir}/config/io_helidon_integrations_neo4j_Neo4j.adoc[leveloffset=+1,tag=config]
+include::{rootdir}/config/io_helidon_integrations_neo4j_Neo4j.adoc[leveloffset=+1,tag=config]
 
 == Examples
 
@@ -86,9 +83,10 @@ This example implements a simple Neo4j REST service using MicroProfile. For this
 
 Bring up a Neo4j instance via Docker
 
-```bash
+[source,bash]
+----
 docker run --publish=7474:7474 --publish=7687:7687 -e 'NEO4J_AUTH=neo4j/secret'  neo4j:latest
-```
+----
 
 Go to the Neo4j browser and play the first step of the movies graph: link:http://localhost:7474/browser/?cmd=play&arg=movies[`:play movies`]
 
@@ -96,18 +94,20 @@ Now go to the `pom.xml` and add the following dependencies:
 
 [source,xml]
 ----
- <dependency>
-    <groupId>io.helidon.integrations.neo4j</groupId>
-    <artifactId>helidon-integrations-neo4j</artifactId>
-</dependency>
-<dependency>
-    <groupId>io.helidon.integrations.neo4j</groupId>
-    <artifactId>helidon-integrations-neo4j-metrics</artifactId>
-</dependency>
-<dependency>
-    <groupId>io.helidon.integrations.neo4j</groupId>
-    <artifactId>helidon-integrations-neo4j-health</artifactId>
-</dependency>
+<dependencies>
+    <dependency>
+        <groupId>io.helidon.integrations.neo4j</groupId>
+        <artifactId>helidon-integrations-neo4j</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.integrations.neo4j</groupId>
+        <artifactId>helidon-integrations-neo4j-metrics</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.integrations.neo4j</groupId>
+        <artifactId>helidon-integrations-neo4j-health</artifactId>
+    </dependency>
+</dependencies>
 ----
 
 Next add the connection configuration properties for Neo4j:
@@ -117,8 +117,8 @@ Next add the connection configuration properties for Neo4j:
 # Neo4j settings
 neo4j.uri=bolt://localhost:7687
 neo4j.authentication.username=neo4j
-neo4j.authentication.password: secret
-neo4j.pool.metricsEnabled: true
+neo4j.authentication.password=secret
+neo4j.pool.metricsEnabled=true
 
 # Enable the optional MicroProfile Metrics REST.request metrics
 metrics.rest-request.enabled=true
@@ -130,48 +130,7 @@ Finally, we are able to inject and use the `Neo4j` driver.
 
 [source,java]
 ----
-@ApplicationScoped
-public class MovieRepository {
-
-    private final Driver driver;
-
-    @Inject
-    public MovieRepository(Driver driver) { // <1>
-        this.driver = driver;
-    }
-
-    public List<Movie> findAll() { // <2>
-
-        try (var session = driver.session()) {
-
-            var query = ""
-                    + "match (m:Movie) "
-                    + "match (m) <- [:DIRECTED] - (d:Person) "
-                    + "match (m) <- [r:ACTED_IN] - (a:Person) "
-                    + "return m, collect(d) as directors, collect({name:a.name, roles: r.roles}) as actors";
-
-            return session.readTransaction(tx -> tx.run(query).list(r -> {
-                var movieNode = r.get("m").asNode();
-
-                var directors = r.get("directors").asList(v -> {
-                    var personNode = v.asNode();
-                    return new Person(personNode.get("born").asInt(), personNode.get("name").asString());
-                });
-
-                var actors = r.get("actors").asList(v -> {
-                    return new Actor(v.get("name").asString(), v.get("roles").asList(Value::asString));
-                });
-
-                var m = new Movie(movieNode.get("title").asString(), movieNode.get("tagline").asString());
-                m.setReleased(movieNode.get("released").asInt());
-                m.setDirectorss(directors);
-                m.setActors(actors);
-                return m;
-            }));
-        }
-    }
-}
-
+include::{sourcedir}/mp/integrations/Neo4jSnippets.java[tag=snippet_2, indent=0]
 ----
 <1> `Neo4j` driver constructor injection
 <2> Use of `Neo4j` driver to extract all Movies
@@ -180,11 +139,7 @@ Movies can now be returned as JSON objects:
 
 [source,java]
 ----
-@GET
-@Produces(MediaType.APPLICATION_JSON)
-public List<Movie> getAllMovies() {
-    return movieRepository.findAll();
-}
+include::{sourcedir}/mp/integrations/Neo4jSnippets.java[tag=snippet_3, indent=0]
 ----
 
 Now build and run with JDK17+
@@ -199,24 +154,15 @@ Exercise the application:
 [source,bash]
 ----
 curl -X GET http://localhost:8080/movies
-{. . .}
 
-# Try health and metrics
-
+# Try health
 curl -s -X GET http://localhost:8080/health
-{"outcome":"UP",...
-. . .
 
-# Prometheus Format
+# Try metrics in Prometheus Format
 curl -s -X GET http://localhost:8080/metrics
-# TYPE base:gc_g1_young_generation_count gauge
-. . .
 
-# JSON Format
+# Try metrics in JSON Format
 curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
-{"base":...
-. . .
-
 ----
 
 Full example code is available in link:https://github.com/oracle/helidon/tree/master/examples/integrations/neo4j/neo4j-mp[Helidon GitHub Repository].
@@ -226,7 +172,7 @@ Full example code is available in link:https://github.com/oracle/helidon/tree/ma
 
 === Neo4j Metrics propagation
 
-Neo4j metrics can be propagated to the user as `MicroProfile` metrics. This is implemented in a separate Maven module. Just add
+Neo4j's metrics can be propagated to the user as `MicroProfile` metrics. This is implemented in a separate Maven module. Just add
 
 [source,xml]
 ----

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@
 @SuppressWarnings({ "requires-automatic"})
 module io.helidon.integrations.datasource.ucp.cdi {
 
+    requires com.oracle.database.jdbc; // com.oracle.database.ucp needs this (!)
     requires com.oracle.database.ucp;
     requires java.desktop; // For java.beans
     requires java.naming; // PoolDataSourceImpl implements javax.naming.Referenceable
@@ -39,6 +40,7 @@ module io.helidon.integrations.datasource.ucp.cdi {
     exports io.helidon.integrations.datasource.ucp.cdi;
 
     provides jakarta.enterprise.inject.spi.Extension
-            with io.helidon.integrations.datasource.ucp.cdi.UCPBackedDataSourceExtension;
+        with io.helidon.integrations.datasource.ucp.cdi.UCPBackedDataSourceExtension,
+             io.helidon.integrations.datasource.ucp.cdi.UniversalConnectionPoolExtension;
 
 }

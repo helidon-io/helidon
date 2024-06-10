@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -136,27 +136,30 @@ public interface ServerRequestHeaders extends Headers {
         if (mediaTypes.length == 0) {
             return Optional.empty();
         }
-        List<HttpMediaType> accepted = acceptedTypes();
-        if (accepted.isEmpty()) {
-            return Optional.of(mediaTypes[0]);
-        }
-        double best = 0;
-        MediaType result = null;
-        for (MediaType mt : mediaTypes) {
-            for (HttpMediaType acc : accepted) {
-                double q = acc.qualityFactor();
-                if (q > best && acc.test(mt)) {
-                    if (q == 1) {
-                        return Optional.of(mt);
-                    } else {
-                        best = q;
-                        result = mt;
+        try {
+            List<HttpMediaType> accepted = acceptedTypes();
+            if (accepted.isEmpty()) {
+                return Optional.of(mediaTypes[0]);
+            }
+            double best = 0;
+            MediaType result = null;
+            for (MediaType mt : mediaTypes) {
+                for (HttpMediaType acc : accepted) {
+                    double q = acc.qualityFactor();
+                    if (q > best && acc.test(mt)) {
+                        if (q == 1) {
+                            return Optional.of(mt);
+                        } else {
+                            best = q;
+                            result = mt;
+                        }
                     }
                 }
             }
+            return Optional.ofNullable(result);
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("Unable to parse Accept header", e);
         }
-
-        return Optional.ofNullable(result);
     }
 
     /**

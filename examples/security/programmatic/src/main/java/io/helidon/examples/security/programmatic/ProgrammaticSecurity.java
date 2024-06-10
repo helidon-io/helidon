@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -135,7 +135,7 @@ public class ProgrammaticSecurity {
         SecurityContext securityContext = CONTEXT.get();
         securityContext.env(securityContext.env().derive()
                                        .path("/some/path")
-                                       .header("Authorization", buildBasic("aUser", "aPassword")));
+                                       .header("Authorization", buildBasic("aUser", "changeit")));
 
         AuthenticationResponse response = securityContext.atnClientBuilder().buildAndGet();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@
  * TLS configuration for client and server.
  */
 module io.helidon.common.tls {
-    requires static io.helidon.config.metadata;
-    requires static io.helidon.inject.api;
+    // only annotation, no generated code
+    requires static io.helidon.service.registry;
 
     requires io.helidon.builder.api;
     requires io.helidon.common;

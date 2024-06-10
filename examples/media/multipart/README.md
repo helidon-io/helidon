@@ -8,7 +8,7 @@ and downloading files. The unit test uses the `WebClient` API to test the endpoi
 
 ## Build
 
-```
+```shell
 mvn package
 ```
 
@@ -16,7 +16,7 @@ mvn package
 
 First, start the server:
 
-```
+```shell
 java -jar target/helidon-examples-media-multipart.jar
 ```
 

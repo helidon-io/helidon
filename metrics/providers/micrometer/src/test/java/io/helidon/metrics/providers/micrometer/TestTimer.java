@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.providers.micrometer;
 
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.metrics.api.MeterRegistry;
@@ -43,7 +44,11 @@ class TestTimer {
         long initialValue = 0L;
         long incrA = 2L;
         long incrB = 7L;
-        Timer t = meterRegistry.getOrCreate(Timer.builder("a"));
+
+        Timer.Builder builder = Timer.builder("a");
+        io.micrometer.core.instrument.Timer.Builder mBuilder = builder.unwrap(io.micrometer.core.instrument.Timer.Builder.class);
+        mBuilder.distributionStatisticExpiry(Duration.ofMinutes(10));
+        Timer t = meterRegistry.getOrCreate(builder);
 
         io.micrometer.core.instrument.Timer mTimer = t.unwrap(io.micrometer.core.instrument.Timer.class);
         assertThat("Initial value", mTimer.count(), is(initialValue));

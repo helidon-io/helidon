@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -125,18 +125,18 @@ xref:{rootdir}/se/config/introduction.adoc[Helidon Config]
 .Training and Certification
 [icon=model_training]
 --
- 
 
-Training:  
+
+Training:
  https://learn.oracle.com/ols/learning-path/become-a-helidon-microservices-developer-professional/88258/114512[Become a Helidon Microservices Developer Professional]
- 
-Certification: 
+
+Certification:
   https://learn.oracle.com/ols/learning-path/become-a-helidon-microservices-developer-professional/88258/114512[Helidon Microservices Developer Professional (1Z0-1113)]
-  
-New to Helidon? Check out https://a.co/d/0niQnwC[Beginning Helidon] to learn more about building cloud-native microservices with Helidon.  
+
+New to Helidon? Check out https://a.co/d/0niQnwC[Beginning Helidon] to learn more about building cloud-native microservices with Helidon.
 
 
-  
+
 --
 
 //Get Involved
@@ -156,7 +156,7 @@ Public Slack workspace: https://slack.helidon.io/
 
 Twitter account: https://twitter.com/helidon_project
 
-YouTube channel: https://www.youtube.com/channel/UChg00-uTTrCMmPsuzUNaZsA
+YouTube channel: https://youtube.helidon.io
 
 Stack Overflow tag: https://stackoverflow.com/tags/helidon
 --

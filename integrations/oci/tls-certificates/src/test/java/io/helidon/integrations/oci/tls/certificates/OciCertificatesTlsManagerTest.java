@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,10 @@
 package io.helidon.integrations.oci.tls.certificates;
 
 import java.util.Optional;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.tls.Tls;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.inject.api.InjectionServices;
-import io.helidon.inject.api.Services;
-import io.helidon.microprofile.server.Server;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -43,42 +38,6 @@ class OciCertificatesTlsManagerTest {
         TestOciCertificatesDownloader.callCount_loadCertificates = 0;
         TestOciCertificatesDownloader.callCount_loadCACertificate = 0;
         TestOciPrivateKeyDownloader.callCount = 0;
-        TestingCdiExtension.shutdownCalled = false;
-    }
-
-    @Test
-    void serverRuntime() throws Exception {
-        Services services = InjectionServices.realizedServices();
-        LifecycleHook lifecycleHook = services.lookupFirst(LifecycleHook.class).get();
-        CountDownLatch startup = new CountDownLatch(1);
-
-        lifecycleHook.registerStartupConsumer(c -> startup.countDown());
-        Server server = startServer();
-        boolean res = startup.await(10, TimeUnit.SECONDS);
-        assertThat(res,
-                   is(true));
-
-        CountDownLatch shutdown = new CountDownLatch(1);
-        lifecycleHook.registerShutdownConsumer(c -> shutdown.countDown());
-
-        int certDownloadCountBaseline = TestOciCertificatesDownloader.callCount_loadCertificates;
-        int caCertDownloadCountBaseline = TestOciCertificatesDownloader.callCount_loadCACertificate;
-        int pkDownloadCountBaseLine = TestOciPrivateKeyDownloader.callCount;
-        try {
-            assertThat(certDownloadCountBaseline,
-                       equalTo(1));
-            assertThat(caCertDownloadCountBaseline,
-                       equalTo(1));
-            assertThat(pkDownloadCountBaseLine,
-                       equalTo(1));
-        } finally {
-            server.stop();
-            res = shutdown.await(10, TimeUnit.SECONDS);
-            assertThat(res,
-                       is(true));
-        }
-
-        assertThat(TestingCdiExtension.shutdownCalled, is(true));
     }
 
     @Test
@@ -143,9 +102,4 @@ class OciCertificatesTlsManagerTest {
                            .get("server.sockets.0.tls.manager.oci-certificates-tls-manager.key-password").asString().asOptional(),
                    is(Optional.of("changed")));
     }
-
-    static Server startServer() {
-        return Server.create().start();
-    }
-
 }

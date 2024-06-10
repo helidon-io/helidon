@@ -23,8 +23,10 @@ ifndef::attributes-included[]
 // functional attributes
 :imagesdir: {rootdir}/images
 
-:helidon-version: 4.0.0-SNAPSHOT
-:helidon-version-is-release: false
+:helidon-version: 4.1.0-SNAPSHOT
+:helidon-version-is-release: true
+
+:sourcedir: {rootdir}/../java/io/helidon/docs
 
 ifeval::["{helidon-version-is-release}" != "true"]
 :helidon-github-tree-url: https://github.com/oracle/helidon/tree/main
@@ -41,7 +43,7 @@ endif::[]
 
 // microprofile specifications
 :version-lib-microprofile-lra-api: 2.0
-:version-lib-microprofile-config: 3.0.3
+:version-lib-microprofile-config: 3.1
 :version-lib-microprofile-fault-tolerance-api: 4.0.2
 :version-lib-microprofile-graphql: 2.0
 :version-lib-microprofile-health: 4.0
@@ -51,7 +53,7 @@ endif::[]
 :version-lib-microprofile-reactive-messaging-api: 3.0
 :version-lib-microprofile-rs-operators-api: 3.0
 :version-lib-microprofile-rest-client: 3.0
-:version.lib.microprofile-telemetry-tck: 1.0
+:version-lib-microprofile-telemetry-tck: 1.0
 :version-lib-microprofile-telemetry: 1.0
 :version-lib-microprofile-tracing: 3.0
 
@@ -201,6 +203,7 @@ endif::[]
 :faulttolerance-javadoc-base-url: {javadoc-base-url}/io.helidon.faulttolerance
 :grpc-server-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver.grpc
 :health-javadoc-base-url: {javadoc-base-url}/io.helidon.health.checks
+:http-javadoc-base-url: {javadoc-base-url}/io.helidon.http
 :integration-oci-sdk-cdi-javadoc-base-url: {javadoc-base-url}/io.helidon.integrations.oci.sdk.cdi
 :media-jsonp-javadoc-base-url: {javadoc-base-url}/io.helidon.http.media.jsonp
 :media-jsonb-javadoc-base-url: {javadoc-base-url}/io.helidon.http.media.jsonb
@@ -211,6 +214,7 @@ endif::[]
 :micrometer-javadoc-base-url: {javadoc-base-url}/io.helidon.integrations.micrometer
 :prometheus-javadoc-base-url: {javadoc-base-url}/io.helidon.metrics.prometheus
 :mp-cors-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.cors
+:mp-server-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.server
 :mp-tyrus-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.tyrus
 :mp-restclient-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.restclient
 :openapi-javadoc-base-url: {javadoc-base-url}/io.helidon.openapi
@@ -218,7 +222,9 @@ endif::[]
 :reactive-base-url: {javadoc-base-url}/io.helidon.common.reactive
 :scheduling-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.scheduling
 :security-integration-jersey-base-url: {javadoc-base-url}/io.helidon.security.integration.jersey
-:security-integration-webserver-base-url: {javadoc-base-url}/io.helidon.security.integration.webserver
+:security-integration-webserver-base-url: {javadoc-base-url}/io.helidon.webserver.security
+:tracing-javadoc-base-url: {javadoc-base-url}/io.helidon.tracing
+
 :webclient-javadoc-base-url: {javadoc-base-url}/io.helidon.webclient
 :webserver-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver
 :webserver-staticcontent-javadoc-base-url: {webserver-javadoc-base-url}.staticcontent

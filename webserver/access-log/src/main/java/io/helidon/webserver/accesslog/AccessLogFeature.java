@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Weighted;
 import io.helidon.config.Config;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
@@ -31,7 +32,7 @@ import io.helidon.webserver.spi.ServerFeature;
  * Service that adds support for Access logging to Server.
  */
 @RuntimeType.PrototypedBy(AccessLogConfig.class)
-public final class AccessLogFeature implements ServerFeature, RuntimeType.Api<AccessLogConfig> {
+public final class AccessLogFeature implements Weighted, ServerFeature, RuntimeType.Api<AccessLogConfig> {
     /**
      * Name of the {@link System#getLogger(String)} used to log access log records.
      * The message logged contains all information, so the format should be modified
@@ -142,6 +143,11 @@ public final class AccessLogFeature implements ServerFeature, RuntimeType.Api<Ac
     @Override
     public String type() {
         return ACCESS_LOG_ID;
+    }
+
+    @Override
+    public double weight() {
+        return config.weight();
     }
 
     AccessLogHttpFeature httpFeature(String socketName) {

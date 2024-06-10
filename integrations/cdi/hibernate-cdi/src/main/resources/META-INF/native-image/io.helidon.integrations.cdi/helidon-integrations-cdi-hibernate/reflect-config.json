@@ -18,6 +18,23 @@
         ]
     },
     {
+        "name": "org.hibernate.boot.beanvalidation.TypeSafeActivator",
+        "methods": [
+            {
+                "name" : "activate",
+                "parameterTypes" : [
+                    "org.hibernate.boot.beanvalidation.ActivationContext"
+                ]
+            },
+            {
+                "name" : "validateSuppliedFactory",
+                "parameterTypes" : [
+                    "java.lang.Object"
+                ]
+            }
+        ]
+    },
+    {
         "name": "org.hibernate.boot.cfgxml.internal.CfgXmlAccessServiceImpl",
         "allPublicMethods": true
     },
@@ -27,6 +44,26 @@
             {
                 "name": "<init>",
                 "parameterTypes": []
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.boot.model.relational.ColumnOrderingStrategy",
+        "allDeclaredMethods": true
+    },
+    {
+        "name": "org.hibernate.boot.model.relational.ColumnOrderingStrategyLegacy",
+        "methods": [
+            {
+                "name" : "<init>"
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.boot.model.relational.ColumnOrderingStrategyStandard",
+        "methods": [
+            {
+                "name" : "<init>"
             }
         ]
     },
@@ -320,6 +357,418 @@
                     "org.hibernate.tuple.entity.EntityMetamodel",
                     "org.hibernate.mapping.PersistentClass"
                 ]
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.CockroachDialect",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": [
+                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.DB2400Dialect",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": [
+                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.DB2Dialect",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": [
+                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.DB2iDialect",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": [
+                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.DB2zDialect",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": [
+                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.DerbyDialect",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": [
+                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.H2Dialect",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": [
+                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.HANAColumnStoreDialect",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": [
+                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.HANARowStoreDialect",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": [
+                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.HSQLDialect",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": [
+                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.MariaDBDialect",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": [
+                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.MySQLDialect",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": [
+                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.OracleDialect",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": [
+                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.PostgresPlusDialect",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": [
+                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.PostgreSQLDialect",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": [
+                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.SpannerDialect",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": [
+                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.SQLServerDialect",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": [
+                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.SybaseASEDialect",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": [
+                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.SybaseDialect",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": [
+                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.TiDBDialect",
+        "methods": [
+            {
+                "name": "<init>",
+                "parameterTypes": [
+                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
+                ]
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.CockroachDialect",
+        "methods": [
+            {
+                "name": "<init>"
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.DB2400Dialect",
+        "methods": [
+            {
+                "name": "<init>"
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.DB2Dialect",
+        "methods": [
+            {
+                "name": "<init>"
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.DB2iDialect",
+        "methods": [
+            {
+                "name": "<init>"
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.DB2zDialect",
+        "methods": [
+            {
+                "name": "<init>"
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.DerbyDialect",
+        "methods": [
+            {
+                "name": "<init>"
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.H2Dialect",
+        "methods": [
+            {
+                "name": "<init>"
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.HANAColumnStoreDialect",
+        "methods": [
+            {
+                "name": "<init>"
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.HANARowStoreDialect",
+        "methods": [
+            {
+                "name": "<init>"
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.HSQLDialect",
+        "methods": [
+            {
+                "name": "<init>"
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.MariaDBDialect",
+        "methods": [
+            {
+                "name": "<init>"
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.MySQLDialect",
+        "methods": [
+            {
+                "name": "<init>"
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.OracleDialect",
+        "methods": [
+            {
+                "name": "<init>"
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.PostgresPlusDialect",
+        "methods": [
+            {
+                "name": "<init>"
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.PostgreSQLDialect",
+        "methods": [
+            {
+                "name": "<init>"
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.SpannerDialect",
+        "methods": [
+            {
+                "name": "<init>"
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.SQLServerDialect",
+        "methods": [
+            {
+                "name": "<init>"
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.SybaseASEDialect",
+        "methods": [
+            {
+                "name": "<init>"
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.SybaseDialect",
+        "methods": [
+            {
+                "name": "<init>"
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.TiDBDialect",
+        "methods": [
+            {
+                "name": "<init>"
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.OracleArrayJdbcTypeConstructor",
+        "methods": [
+            {
+                "name": "<init>"
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.OracleNestedTableJdbcTypeConstructor",
+        "methods": [
+            {
+                "name": "<init>"
+            }
+        ]
+    },
+    {
+        "name": "org.hibernate.dialect.OracleStructJdbcType",
+        "methods": [
+            {
+                "name": "<init>"
+            }
+        ]
+    },
+    {
+        "name": "com.arjuna.ats.internal.arjuna.utils.SocketProcessId",
+        "methods": [
+            {
+                "name": "<init>"
             }
         ]
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Test;
 
+import static java.time.Duration.ofMillis;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -59,7 +60,7 @@ public class AwaitTest {
 
         future.thenAccept(whenCompleteFuture::complete);
 
-        future.await(100, TimeUnit.MILLISECONDS);
+        future.await(ofMillis(100));
 
         assertThat("Peek needs to be invoked at await!", peekFuture.isDone(), is(true));
         assertThat(peekFuture.get(), is(equalTo("1")));
@@ -79,7 +80,7 @@ public class AwaitTest {
 
         single.whenComplete((s, throwable) -> whenCompleteFuture.complete(s));
 
-        single.await(100, TimeUnit.MILLISECONDS);
+        single.await(ofMillis(100));
 
         assertThat("Peek needs to be invoked at await!", peekFuture.isDone(), is(true));
         assertThat(peekFuture.get(), is(equalTo("1")));
@@ -115,7 +116,7 @@ public class AwaitTest {
                 })
                 .whenComplete((s, throwable) -> result.add(7));
 
-        awaitable.await(SAFE_WAIT_MILLIS, TimeUnit.MILLISECONDS);
+        awaitable.await(ofMillis(SAFE_WAIT_MILLIS));
         assertThat(result, equalTo(IntStream.rangeClosed(1, 7).boxed().collect(Collectors.toList())));
     }
 
@@ -148,7 +149,7 @@ public class AwaitTest {
                 })
                 .whenComplete((s, throwable) -> result.add(8));
 
-        awaitable.await(SAFE_WAIT_MILLIS, TimeUnit.MILLISECONDS);
+        awaitable.await(ofMillis(SAFE_WAIT_MILLIS));
         assertThat(result, equalTo(IntStream.rangeClosed(1, 8).boxed().collect(Collectors.toList())));
     }
 
@@ -195,7 +196,7 @@ public class AwaitTest {
         AtomicLong sum = new AtomicLong();
         testMulti()
                 .forEach(sum::addAndGet)
-                .await(SAFE_WAIT_MILLIS, TimeUnit.MILLISECONDS);
+                .await(ofMillis(SAFE_WAIT_MILLIS));
         assertThat(sum.get(), equalTo(EXPECTED_SUM));
     }
 
@@ -218,7 +219,7 @@ public class AwaitTest {
     void forEachAwaitTimeoutNegative() {
         assertThrows(CompletionException.class, () -> testMulti()
                 .forEach(TestConsumer.noop())
-                .await(10, TimeUnit.MILLISECONDS));
+                .await(ofMillis(10)));
     }
 
     @Test
@@ -228,12 +229,12 @@ public class AwaitTest {
 
     @Test
     void singleAwaitTimeout() {
-        assertThat(testSingle().await(SAFE_WAIT_MILLIS, TimeUnit.MILLISECONDS), equalTo(EXPECTED_SUM));
+        assertThat(testSingle().await(ofMillis(SAFE_WAIT_MILLIS)), equalTo(EXPECTED_SUM));
     }
 
     @Test
     void singleAwaitTimeoutNegative() {
-        assertThrows(CompletionException.class, () -> testSingle().await(10, TimeUnit.MILLISECONDS));
+        assertThrows(CompletionException.class, () -> testSingle().await(ofMillis(10)));
     }
 
     @Test

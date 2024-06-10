@@ -26,7 +26,7 @@ import org.neo4j.driver.Value;
 /*
  * Helidon changes are under the copyright of:
  *
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,7 +74,7 @@ public final class MovieRepository {
                     + "match (m) <- [r:ACTED_IN] - (a:Person) "
                     + "return m, collect(d) as directors, collect({name:a.name, roles: r.roles}) as actors";
 
-            return session.readTransaction(tx -> tx.run(query).list(r -> {
+            return session.executeRead(tx -> tx.run(query).list(r -> {
                 var movieNode = r.get("m").asNode();
 
                 var directors = r.get("directors").asList(v -> {

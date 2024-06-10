@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ This type provides the following service implementations:
 |`principal-type` |SubjectType (USER, SERVICE) |`USER` |Principal type this provider extracts (and also propagates).
 |`realm` |string |`helidon` |Set the realm to use when challenging users.
 |`users` |xref:{rootdir}/config/io_helidon_security_providers_httpauth_ConfigUserStore_ConfigUser.adoc[ConfigUser[&#93;] |{nbsp} |Set user store to validate users.
- Removes any other stores added through #addUserStore(SecureUserStore).
+ Removes any other stores added through addUserStore(SecureUserStore).
 
 |===
 

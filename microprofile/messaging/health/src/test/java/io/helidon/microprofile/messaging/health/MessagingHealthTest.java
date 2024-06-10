@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package io.helidon.microprofile.messaging.health;
 
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.health.HealthCdiExtension;
@@ -45,6 +44,7 @@ import org.opentest4j.AssertionFailedError;
 
 import static io.helidon.microprofile.messaging.health.TestMessagingBean.CHANNEL_1;
 import static io.helidon.microprofile.messaging.health.TestMessagingBean.CHANNEL_2;
+import static java.time.Duration.ofMillis;
 import static org.eclipse.microprofile.health.HealthCheckResponse.Status.DOWN;
 import static org.eclipse.microprofile.health.HealthCheckResponse.Status.UP;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -104,7 +104,7 @@ public class MessagingHealthTest {
                 CHANNEL_1, DOWN,
                 CHANNEL_2, UP
         ));
-        assertThat(bean.getSubscriber1().error().await(200, TimeUnit.MILLISECONDS).getMessage(),
+        assertThat(bean.getSubscriber1().error().await(ofMillis(200)).getMessage(),
                 equalTo(ERROR_MESSAGE));
 
         bean.getEmitter2().fail(new RuntimeException(ERROR_MESSAGE));
@@ -112,7 +112,7 @@ public class MessagingHealthTest {
                 CHANNEL_1, DOWN,
                 CHANNEL_2, DOWN
         ));
-        assertThat(bean.getSubscriber1().error().await(200, TimeUnit.MILLISECONDS).getMessage(),
+        assertThat(bean.getSubscriber1().error().await(ofMillis(200)).getMessage(),
                 equalTo(ERROR_MESSAGE));
     }
 

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+# Copyright (c) 2017, 2024 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ security:
 #            some-key: "some value"
 #            another-key: "another value"
     - atn:
-      class: "io.helidon.security.examples.abac.AtnProvider"
+      class: "io.helidon.examples.security.abac.AtnProvider"
   web-server:
     paths:
       - path: "/query"

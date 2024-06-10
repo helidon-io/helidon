@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,9 +42,9 @@ public final class BasicExampleBuilderMain {
     private static final Map<String, MyUser> USERS = new HashMap<>();
 
     static {
-        USERS.put("jack", new MyUser("jack", "password".toCharArray(), Set.of("user", "admin")));
-        USERS.put("jill", new MyUser("jill", "password".toCharArray(), Set.of("user")));
-        USERS.put("john", new MyUser("john", "password".toCharArray(), Set.of()));
+        USERS.put("jack", new MyUser("jack", "changeit".toCharArray(), Set.of("user", "admin")));
+        USERS.put("jill", new MyUser("jill", "changeit".toCharArray(), Set.of("user")));
+        USERS.put("john", new MyUser("john", "changeit".toCharArray(), Set.of()));
     }
 
     private BasicExampleBuilderMain() {

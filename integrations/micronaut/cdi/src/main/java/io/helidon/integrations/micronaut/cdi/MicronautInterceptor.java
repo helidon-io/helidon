@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.logging.Logger;
 
 import io.micronaut.aop.MethodInterceptor;
 import io.micronaut.context.ApplicationContext;
@@ -43,7 +42,7 @@ import jakarta.interceptor.InvocationContext;
 @Priority(Interceptor.Priority.LIBRARY_BEFORE)
 @Internal
 public class MicronautInterceptor {
-    private static final Logger LOGGER = Logger.getLogger(MicronautInterceptor.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(MicronautInterceptor.class.getName());
 
     private final ApplicationContext context;
     private final MicronautCdiExtension extension;
@@ -84,7 +83,7 @@ public class MicronautInterceptor {
 
         // There is always at least one interceptor, as otherwise this class would never be registered with CDI
         MethodInterceptor<?, ?> next = remaining.next();
-        LOGGER.finest(() -> "Micronaut interceptor: " + next.getClass().getName());
+        LOGGER.log(System.Logger.Level.TRACE, () -> "Micronaut interceptor: " + next.getClass().getName());
         return next.intercept(context);
     }
 }

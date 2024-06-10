@@ -5,14 +5,14 @@ implemented with Helidon MP and Helidon SE.
 
 ## Build
 
-```bash
+```shell
 mvn clean package
 docker build -t helidon-examples-todo-cassandra cassandra
 ```
 
 ## Run
 
-```bash
+```shell
 docker run -d -p 9042:9042 --name helidon-examples-todo-cassandra helidon-examples-todo-cassandra
 docker run --name zipkin -d -p 9411:9411 openzipkin/zipkin
 java -jar backend/target/helidon-examples-todo-backend.jar &
@@ -28,14 +28,14 @@ java -jar frontend/target/helidon-examples-todo-frontend.jar &
 
 If you want to run behind an HTTP proxy:
 
-```bash
+```shell
 export security_providers_0_google_dash_login_proxy_dash_host=proxy.acme.com
 export security_providers_0_google_dash_login_proxy_dash_port=80
 ```
 
 ## Stop
 
-```bash
+```shell
 kill %1 %2
 docker rm -f zipkin helidon-examples-todo-cassandra
 ```

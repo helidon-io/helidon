@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,9 +52,7 @@ abstract class BaseStringServiceTest {
 
     @BeforeEach
     void beforeEach() {
-        channel = ManagedChannelBuilder.forAddress("localhost", port)
-                .usePlaintext()
-                .build();
+        channel = channel(port);
         blockingStub = StringServiceGrpc.newBlockingStub(channel);
         stub = StringServiceGrpc.newStub(channel);
     }
@@ -70,6 +68,12 @@ abstract class BaseStringServiceTest {
         if (!channel.isTerminated()) {
             System.err.println("Channel is not terminated!!!");
         }
+    }
+
+    ManagedChannel channel(int port) {
+        return ManagedChannelBuilder.forAddress("localhost", port)
+                .usePlaintext()
+                .build();
     }
 
     @RepeatedTest(20)

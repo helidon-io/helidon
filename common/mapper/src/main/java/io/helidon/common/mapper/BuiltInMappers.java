@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,13 +58,21 @@ class BuiltInMappers implements MapperProvider {
         Map<ClassPair, Mapper<?, ?>> mappers = new HashMap<>();
         // basic types
         addStringMapper(mappers, Boolean.class, BuiltInMappers::asBoolean);
+        addStringMapper(mappers, boolean.class, BuiltInMappers::asBoolean);
         addStringMapper(mappers, Byte.class, BuiltInMappers::asByte);
+        addStringMapper(mappers, byte.class, BuiltInMappers::asByte);
         addStringMapper(mappers, Short.class, BuiltInMappers::asShort);
+        addStringMapper(mappers, short.class, BuiltInMappers::asShort);
         addStringMapper(mappers, Integer.class, BuiltInMappers::asInt);
+        addStringMapper(mappers, int.class, BuiltInMappers::asInt);
         addStringMapper(mappers, Long.class, BuiltInMappers::asLong);
+        addStringMapper(mappers, long.class, BuiltInMappers::asLong);
         addStringMapper(mappers, Float.class, BuiltInMappers::asFloat);
+        addStringMapper(mappers, float.class, BuiltInMappers::asFloat);
         addStringMapper(mappers, Double.class, BuiltInMappers::asDouble);
+        addStringMapper(mappers, double.class, BuiltInMappers::asDouble);
         addStringMapper(mappers, Character.class, BuiltInMappers::asChar);
+        addStringMapper(mappers, char.class, BuiltInMappers::asChar);
         addStringMapper(mappers, Class.class, BuiltInMappers::asClass);
         //javax.math
         addStringMapper(mappers, BigDecimal.class, BigDecimal::new);

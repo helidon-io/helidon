@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 #
-# Copyright (c) 2023 Oracle and/or its affiliates.
+# Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ prepareKeyToUpload() {
   # Extract server/client private key
   openssl pkcs12 -in "$KEYSTORE_FILE" \
     -nocerts \
-    -passin pass:password -passout pass:password \
+    -passin pass:changeit -passout pass:changeit \
     -out $PRIVATE_KEY_AS_PEM
 
   ## Upload server/client private key to vault
@@ -59,7 +59,7 @@ prepareKeyToUpload() {
   # If the RSA private key you want to import is in PEM format, convert it to DER:
   openssl pkcs8 -topk8 -nocrypt \
     -inform PEM -outform DER \
-    -passin pass:password -passout pass:password \
+    -passin pass:changeit -passout pass:changeit \
     -in $PRIVATE_KEY_AS_PEM -out $PRIVATE_KEY_AS_DER
 
   # Wrap RSA private key with the temporary AES key:

@@ -18,6 +18,7 @@ package io.helidon.common.tls;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -25,13 +26,20 @@ import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.UnrecoverableKeyException;
+import java.security.cert.CertPathBuilder;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.PKIXBuilderParameters;
+import java.security.cert.PKIXRevocationChecker;
+import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
+import javax.net.ssl.CertPathTrustManagerParameters;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -292,6 +300,48 @@ public class ConfiguredTlsManager implements TlsManager {
     }
 
     /**
+     * Perform initialization of the {@link TrustManagerFactory} based on the provided TLS configuration.
+     *
+     * @param tmf trust manager factory to be initialized
+     * @param keyStore keystore
+     * @param tlsConfig tls configuration
+     */
+    protected void initializeTmf(TrustManagerFactory tmf, KeyStore keyStore, TlsConfig tlsConfig) {
+        try {
+            if (tlsConfig.revocation().isPresent()) {
+                RevocationConfig revocationConfig = tlsConfig.revocation().get();
+                if (revocationConfig.enabled()) {
+                    CertPathBuilder cpb = null;
+                    cpb = CertPathBuilder.getInstance("PKIX");
+                    PKIXRevocationChecker rc = (PKIXRevocationChecker) cpb.getRevocationChecker();
+                    Set<PKIXRevocationChecker.Option> options = new HashSet<>();
+                    if (revocationConfig.preferCrlOverOcsp()) {
+                        options.add(PKIXRevocationChecker.Option.PREFER_CRLS);
+                    }
+                    if (revocationConfig.checkOnlyEndEntity()) {
+                        options.add(PKIXRevocationChecker.Option.ONLY_END_ENTITY);
+                    }
+                    if (!revocationConfig.fallbackEnabled()) {
+                        options.add(PKIXRevocationChecker.Option.NO_FALLBACK);
+                    }
+                    if (revocationConfig.softFailEnabled()) {
+                        options.add(PKIXRevocationChecker.Option.SOFT_FAIL);
+                    }
+                    rc.setOptions(options);
+                    revocationConfig.ocspResponderUri().ifPresent(rc::setOcspResponder);
+                    PKIXBuilderParameters pkixParams = new PKIXBuilderParameters(keyStore, new X509CertSelector());
+                    pkixParams.addCertPathChecker(rc);
+                    tmf.init(new CertPathTrustManagerParameters(pkixParams));
+                    return;
+                }
+            }
+            tmf.init(keyStore);
+        } catch (NoSuchAlgorithmException | InvalidAlgorithmParameterException | KeyStoreException e) {
+            throw new IllegalArgumentException("Failed to initialize TrustManagerFactory", e);
+        }
+    }
+
+    /**
      * Creates a trust all trust manager factory.
      *
      * @return a new trust manager factory trusting all
@@ -310,7 +360,7 @@ public class ConfiguredTlsManager implements TlsManager {
             i++;
         }
         TrustManagerFactory tmf = createTmf(tlsConfig);
-        tmf.init(ks);
+        initializeTmf(tmf, ks, tlsConfig);
         return tmf;
     }
 

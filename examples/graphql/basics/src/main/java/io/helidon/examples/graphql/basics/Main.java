@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ public class Main {
                 .routing(routing -> routing
                         .register(GraphQlService.create(buildSchema())))
                 .build();
-
+        server.start();
         String endpoint = "http://localhost:" + server.port();
         System.out.printf("""
                 GraphQL started on %1$s/graphql

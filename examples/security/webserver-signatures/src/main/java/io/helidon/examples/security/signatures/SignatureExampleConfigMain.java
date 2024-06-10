@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.context.ContextFeature;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.security.SecurityHttpFeature;
 
@@ -72,7 +73,12 @@ public class SignatureExampleConfigMain {
     }
 
     static void setup(WebServerConfig.Builder server) {
-        server.routing(SignatureExampleConfigMain::routing1)
+        // as we explicitly configure SecurityHttpFeature, we must disable automated loading of security,
+        // as it would add another feature with different configuration
+        server.featuresDiscoverServices(false)
+                // context is a required pre-requisite of security
+                .addFeature(ContextFeature.create())
+                .routing(SignatureExampleConfigMain::routing1)
                 .putSocket("service2", socket -> socket
                         .routing(SignatureExampleConfigMain::routing2));
     }

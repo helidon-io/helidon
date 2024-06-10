@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.logging.Logger;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.config.Config;
@@ -59,7 +58,7 @@ final class SecurityImpl implements Security {
             "environment"
     );
 
-    private static final Logger LOGGER = Logger.getLogger(SecurityImpl.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(SecurityImpl.class.getName());
 
     private final Collection<Class<? extends Annotation>> annotations = new LinkedList<>();
     private final List<Consumer<AuditProvider.TracedAuditEvent>> auditors = new LinkedList<>();
@@ -265,7 +264,8 @@ final class SecurityImpl implements Security {
     public String secret(String configurationName, String defaultValue) {
         Supplier<Optional<String>> supplier = secrets.get(configurationName);
         if (supplier == null) {
-            LOGGER.finest(() -> "There is no configured secret named " + configurationName + ", using default value");
+            LOGGER.log(System.Logger.Level.TRACE,
+                    () -> "There is no configured secret named " + configurationName + ", using default value");
             return defaultValue;
         }
 

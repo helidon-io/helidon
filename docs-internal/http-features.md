@@ -8,7 +8,7 @@ Features
 | Context                | 1100   |
 | Access Log             | 1000   |
 | Tracing                | 900    |
-| CORS                   | 950    |
+| CORS                   | 850    |
 | Security               | 800    |
 | Routing (all handlers) | 100    |
 | OpenAPI                | 90     |

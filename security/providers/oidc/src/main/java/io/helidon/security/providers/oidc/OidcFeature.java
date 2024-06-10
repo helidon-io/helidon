@@ -16,10 +16,12 @@
 
 package io.helidon.security.providers.oidc;
 
+import java.io.StringReader;
 import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -46,6 +48,8 @@ import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityException;
+import io.helidon.security.jwt.Jwt;
+import io.helidon.security.jwt.SignedJwt;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.providers.oidc.common.OidcCookieHandler;
 import io.helidon.security.providers.oidc.common.Tenant;
@@ -62,7 +66,10 @@ import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.security.SecurityHttpFeature;
 
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
+import jakarta.json.JsonReaderFactory;
 
 import static io.helidon.http.HeaderNames.HOST;
 import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.DEFAULT_TENANT_ID;
@@ -141,6 +148,8 @@ import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.D
  */
 @Weight(800)
 public final class OidcFeature implements HttpFeature {
+    static final JsonReaderFactory JSON_READER_FACTORY = Json.createReaderFactory(Map.of());
+    static final JsonBuilderFactory JSON_BUILDER_FACTORY = Json.createBuilderFactory(Map.of());
     private static final System.Logger LOGGER = System.getLogger(OidcFeature.class.getName());
     private static final String CODE_PARAM_NAME = "code";
     private static final String STATE_PARAM_NAME = "state";
@@ -153,20 +162,31 @@ public final class OidcFeature implements HttpFeature {
     private final OidcCookieHandler idTokenCookieHandler;
     private final OidcCookieHandler refreshTokenCookieHandler;
     private final OidcCookieHandler tenantCookieHandler;
+    private final OidcCookieHandler stateCookieHandler;
     private final boolean enabled;
     private final CorsSupport corsSupport;
 
     private OidcFeature(Builder builder) {
         this.oidcConfig = builder.oidcConfig;
         this.enabled = builder.enabled;
-        this.tokenCookieHandler = oidcConfig.tokenCookieHandler();
-        this.idTokenCookieHandler = oidcConfig.idTokenCookieHandler();
-        this.refreshTokenCookieHandler = oidcConfig.refreshTokenCookieHandler();
-        this.tenantCookieHandler = oidcConfig.tenantCookieHandler();
-        this.corsSupport = prepareCrossOriginSupport(oidcConfig.redirectUri(), oidcConfig.crossOriginConfig());
-        this.oidcConfigFinders = List.copyOf(builder.tenantConfigFinders);
-
-        this.oidcConfigFinders.forEach(tenantConfigFinder -> tenantConfigFinder.onChange(tenants::remove));
+        if (enabled) {
+            this.tokenCookieHandler = oidcConfig.tokenCookieHandler();
+            this.idTokenCookieHandler = oidcConfig.idTokenCookieHandler();
+            this.refreshTokenCookieHandler = oidcConfig.refreshTokenCookieHandler();
+            this.tenantCookieHandler = oidcConfig.tenantCookieHandler();
+            this.stateCookieHandler = oidcConfig.stateCookieHandler();
+            this.corsSupport = prepareCrossOriginSupport(oidcConfig.redirectUri(), oidcConfig.crossOriginConfig());
+            this.oidcConfigFinders = List.copyOf(builder.tenantConfigFinders);
+            this.oidcConfigFinders.forEach(tenantConfigFinder -> tenantConfigFinder.onChange(tenants::remove));
+        } else {
+            this.tokenCookieHandler = null;
+            this.idTokenCookieHandler = null;
+            this.refreshTokenCookieHandler = null;
+            this.tenantCookieHandler = null;
+            this.stateCookieHandler = null;
+            this.corsSupport = null;
+            this.oidcConfigFinders = List.of();
+        }
     }
 
     /**
@@ -374,6 +394,26 @@ public final class OidcFeature implements HttpFeature {
     }
 
     private void processCodeWithTenant(String code, ServerRequest req, ServerResponse res, String tenantName, Tenant tenant) {
+        Optional<String> maybeStateCookie = stateCookieHandler.findCookie(req.headers().toMap());
+        if (maybeStateCookie.isEmpty()) {
+            processError(res,
+                         Status.UNAUTHORIZED_401,
+                         "State cookie needs to be provided upon redirect");
+            return;
+        }
+        String stateBase64 = new String(Base64.getDecoder().decode(maybeStateCookie.get()), StandardCharsets.UTF_8);
+        JsonObject stateCookie = JSON_READER_FACTORY.createReader(new StringReader(stateBase64)).readObject();
+        //Remove state cookie
+        res.headers().addCookie(stateCookieHandler.removeCookie().build());
+        String state = stateCookie.getString("state");
+        String queryState = req.query().get("state");
+        if (!state.equals(queryState)) {
+            processError(res,
+                         Status.UNAUTHORIZED_401,
+                         "State of the original request and obtained from identity server does not match");
+            return;
+        }
+
         TenantConfig tenantConfig = tenant.tenantConfig();
 
         WebClient webClient = tenant.appWebClient();
@@ -393,7 +433,7 @@ public final class OidcFeature implements HttpFeature {
             if (response.status().family() == Status.Family.SUCCESSFUL) {
                 try {
                     JsonObject jsonObject = response.as(JsonObject.class);
-                    processJsonResponse(req, res, jsonObject, tenantName);
+                    processJsonResponse(req, res, jsonObject, tenantName, stateCookie);
                 } catch (Exception e) {
                     processError(res, e, "Failed to read JSON from response");
                 }
@@ -452,36 +492,54 @@ public final class OidcFeature implements HttpFeature {
     private String processJsonResponse(ServerRequest req,
                                        ServerResponse res,
                                        JsonObject json,
-                                       String tenantName) {
+                                       String tenantName,
+                                       JsonObject stateCookie) {
         String accessToken = json.getString("access_token");
         String idToken = json.getString("id_token", null);
         String refreshToken = json.getString("refresh_token", null);
 
-        //redirect to "state"
-        String state = req.query().first(STATE_PARAM_NAME).orElse(DEFAULT_REDIRECT);
+        Jwt idTokenJwt = SignedJwt.parseToken(idToken).getJwt();
+        String nonceOriginal = stateCookie.getString("nonce");
+        String nonceAccess = idTokenJwt.nonce()
+                .orElseThrow(() -> new IllegalStateException("Nonce is required to be present in the id token"));
+        if (!nonceAccess.equals(nonceOriginal)) {
+            throw new IllegalStateException("Original nonce and the one obtained from id token does not match");
+        }
+
+        //redirect to "originalUri"
+        String originalUri = stateCookie.getString("originalUri", DEFAULT_REDIRECT);
         res.status(Status.TEMPORARY_REDIRECT_307);
         if (oidcConfig.useParam()) {
-            state += (state.contains("?") ? "&" : "?") + encode(oidcConfig.paramName()) + "=" + accessToken;
+            originalUri += (originalUri.contains("?") ? "&" : "?") + encode(oidcConfig.paramName()) + "=" + accessToken;
             if (idToken != null) {
-                state += "&" + encode(oidcConfig.idTokenParamName()) + "=" + idToken;
+                originalUri += "&" + encode(oidcConfig.idTokenParamName()) + "=" + idToken;
             }
             if (!DEFAULT_TENANT_ID.equals(tenantName)) {
-                state += "&" + encode(oidcConfig.tenantParamName()) + "=" + encode(tenantName);
+                originalUri += "&" + encode(oidcConfig.tenantParamName()) + "=" + encode(tenantName);
             }
         }
 
-        state = increaseRedirectCounter(state);
-        res.headers().add(HeaderNames.LOCATION, state);
+        originalUri = increaseRedirectCounter(originalUri);
+        res.headers().add(HeaderNames.LOCATION, originalUri);
 
         if (oidcConfig.useCookie()) {
             try {
+                JsonObject accessTokenJson = JSON_BUILDER_FACTORY.createObjectBuilder()
+                        .add("accessToken", accessToken)
+                        .add("remotePeer", req.remotePeer().host())
+                        .build();
+                String encodedAccessToken = Base64.getEncoder()
+                        .encodeToString(accessTokenJson.toString().getBytes(StandardCharsets.UTF_8));
+
                 ServerResponseHeaders headers = res.headers();
 
                 OidcCookieHandler tenantCookieHandler = oidcConfig.tenantCookieHandler();
 
                 headers.addCookie(tenantCookieHandler.createCookie(tenantName).build()); //Add tenant name cookie
-                headers.addCookie(tokenCookieHandler.createCookie(accessToken).build());  //Add token cookie
-                headers.addCookie(refreshTokenCookieHandler.createCookie(refreshToken).build());  //Add refresh token cookie
+                headers.addCookie(tokenCookieHandler.createCookie(encodedAccessToken).build());  //Add token cookie
+                if (refreshToken != null) {
+                    headers.addCookie(refreshTokenCookieHandler.createCookie(refreshToken).build());  //Add refresh token cookie
+                }
 
                 if (idToken != null) {
                     headers.addCookie(idTokenCookieHandler.createCookie(idToken).build());  //Add token id cookie
@@ -532,7 +590,7 @@ public final class OidcFeature implements HttpFeature {
     // if they try to provide wrong data
     private void sendErrorResponse(ServerResponse serverResponse) {
         serverResponse.status(Status.UNAUTHORIZED_401);
-        serverResponse.send("Not a valid authorization code2");
+        serverResponse.send("Not a valid authorization code");
     }
 
     String increaseRedirectCounter(String state) {
@@ -598,19 +656,18 @@ public final class OidcFeature implements HttpFeature {
         private Builder() {
         }
 
-        private static Config findMyKey(Config rootConfig, String providerName) {
+        private static Optional<Config> findMyKey(Config rootConfig, String providerName) {
             if (rootConfig.key().name().equals(providerName)) {
-                return rootConfig;
+                return Optional.of(rootConfig);
             }
 
             return rootConfig.get("security.providers")
                     .asNodeList()
-                    .get()
+                    .orElseGet(List::of)
                     .stream()
                     .filter(it -> it.get(providerName).exists())
                     .findFirst()
-                    .map(it -> it.get(providerName))
-                    .orElseThrow(() -> new SecurityException("No configuration found for provider named: " + providerName));
+                    .map(it -> it.get(providerName));
         }
 
         @Override
@@ -663,7 +720,10 @@ public final class OidcFeature implements HttpFeature {
             // if this is root config, we need to honor `security.enabled`
             config.get("security.enabled").asBoolean().ifPresent(this::enabled);
 
-            config(findMyKey(config, providerName));
+            findMyKey(config, providerName)
+                    .ifPresentOrElse(this::config,
+                                     () -> enabled(false));
+
             return this;
         }
 

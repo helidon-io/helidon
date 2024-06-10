@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,18 @@
  */
 package io.helidon.tracing.providers.opentracing;
 
+import io.helidon.tracing.Baggage;
 import io.helidon.tracing.Span;
 
 import io.opentracing.SpanContext;
 
 class OpenTracingContext implements io.helidon.tracing.SpanContext {
     private final SpanContext delegate;
+    private final Baggage baggage;
 
     OpenTracingContext(SpanContext context) {
         this.delegate = context;
+        baggage = OpenTracingBaggage.create(this);
     }
 
     @Override
@@ -40,6 +43,11 @@ class OpenTracingContext implements io.helidon.tracing.SpanContext {
     public void asParent(Span.Builder<?> spanBuilder) {
         spanBuilder.unwrap(OpenTracingSpanBuilder.class)
                 .parent(this);
+    }
+
+    @Override
+    public Baggage baggage() {
+        return baggage;
     }
 
     SpanContext openTracing() {

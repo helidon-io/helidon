@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@
 
 include::{rootdir}/includes/se.adoc[]
 
-This guide describes how to setup Keycloak and Helidon
+This guide describes how to set up Keycloak and Helidon
 to secure your application with OIDC security provider.
 
 == What You Need
@@ -45,7 +45,7 @@ In addition, you will need to install and configure the following:
 
 This guide describes the steps required to protect your whole application or a specific area with Open ID Connect
 (OIDC) security. OIDC is a secure mechanism for an application to contact an identity service.
-Its built on top of OAuth 2.0 and provides full-fledged authentication and authorization protocols.
+It's built on top of OAuth 2.0 and provides full-fledged authentication and authorization protocols.
 
 == Keycloak Installation [[Keycloak-Installation]]
 
@@ -121,7 +121,7 @@ After successfully logged in, the admin console is prompted.
 
 == Setup Keycloak [[Setup-Keycloak]]
 
-To setup Keycloak properly, go to the admin console: http://localhost:8080/auth/admin
+To set up Keycloak properly, go to the admin console: http://localhost:8080/auth/admin
 
 If you are using Docker, use Username `admin` and password `admin` as it is the default admin user.
 Otherwise, use the username and password you used to create the admin user.
@@ -146,8 +146,8 @@ To create a new realm to manage your application:
 . Fill the form by adding the realm name, `myRealm` for example.
 . Click on `Create` to create the new realm.
 
-To verify that your realm is created, on the top-left corner where it said `Master` previously
-should be now your realm name or `myRealm` is you followed the example.
+To verify that your realm is created, you should see your realm name (or `myRealm` if you followed the example) in the top-left
+ corner where it said `Master` previously
 
 To switch from a realm to another, hover the realm name, and the other realm created appear in the dropdown.
 Click on any realm name to change the current realm. Make sure all configuration or modification are saved before changing
@@ -166,7 +166,7 @@ To create a new user:
 . Fill the form (Username is the only mandatory field) with this value Username: `myUser`
 . Click `Save`
 
-A new user is just created but it needs a password to be able to login. To initialize it, do this:
+A new user is just created, but it needs a password to be able to log in. To initialize it, do this:
 
 . Click on `Credentials` at the top of the page, under `Myuser`.
 . Fill `Password` and `Password confirmation` with the user password of your choice.
@@ -206,12 +206,12 @@ A new tab named `Credentials` is created. Click on it to access this new tab.
 - Click on `generate secret` to generate client secret.
 
 Keycloak is now configured and ready. Keep keycloak running on your terminal and open a new tab to
-setup Helidon.
+set up Helidon.
 
 == Setup Helidon [[Setup-Helidon]]
 
 Use the Helidon SE Maven archetype to create a simple project. It will be used as an example
-to show how to setup Helidon. Replace `{helidon-version}` by the latest helidon version.
+to show how to set up Helidon. Replace `{helidon-version}` by the latest helidon version.
 It will download the quickstart project into the current directory.
 
 [source,bash,subs="attributes+"]
@@ -254,43 +254,39 @@ without modifying application code.
 [source,yaml]
 .Add the following line to application.yaml
 ----
+server:
+  port: 7987
+  host: localhost
+  features:
+    security:
+        # protected paths on the web server
+        paths: # <1>
+          - path: "/greet"
+            methods: ["get"]
+            authenticate: true
 security:
   providers:
   - abac:
       # Adds ABAC Provider - it does not require any configuration
   - oidc:
-      client-id: "myClientID" // <1>
-      client-secret: "Client secret generated into Keycloak client credential" // <2>
-      identity-uri: "http://localhost:8080/auth/realms/myRealm" // <3>
+      client-id: "myClientID" # <2>
+      client-secret: "Client secret generated into Keycloak client credential" # <3>
+      identity-uri: "http://localhost:8080/auth/realms/myRealm" # <4>
       audience: "account"
       header-use: "true"
       # proxy-host should be defined if you operate behind a proxy, can be removed otherwise
       proxy-host: ""
-      frontend-uri: "http://localhost:7987" // <4>
+      frontend-uri: "http://localhost:7987" # <5>
       server-type: "oidc"
-  web-server:
-    # protected paths on the web server
-    paths:  // <5>
-      - path: "/greet"
-        methods: ["get"]
-        authenticate: true
 ----
-<1> `client-id` must be the same as the one configure in keycloak.
-<2> The client secret generate by Keycloak during `Create a client` section.
-<3> `identity-uri` is used to redirect the user to keycloak.
-<4> `frontend-uri` will direct you back to the application.
-<5> `paths` section defines the protected application's path.
+<1> `paths` section defines the protected application's path.
+<2> `client-id` must be the same as the one configure in keycloak.
+<3> The client secret generate by Keycloak during `Create a client` section.
+<4> `identity-uri` is used to redirect the user to keycloak.
+<5> `frontend-uri` will direct you back to the application.
 
 Make sure keycloak and the application are not running on the same port.
 The application port value can be changed into application.yaml.
-
-[source,yaml]
-.Change these properties to configure the server host and port
-----
-server:
-  port: 7987
-  host: localhost
-----
 
 If the port 7987 is already used, check what port is free on your machine.
 
@@ -306,35 +302,14 @@ frontend-uri: "http://localhost:{Your-new-port}"
 === Configure Web Server
 
 Once the properties are added, the web server must be setup.
-The `Main.routing` method gather all configuration properties.
+The `Main#routing` method gather all configuration properties.
 
 [source,java]
-.Add the following to `Main.routing` method
+.Add the following to the `Main#routing` method
 ----
-import io.helidon.security.Security;
-import io.helidon.security.providers.oidc.OidcFeature;
-import io.helidon.webserver.context.ContextFeature;
-import io.helidon.webserver.security.SecurityFeature;
-
-Security security = Security.create(config.get("security"));    // <1>
-
-routing.addFeature(ContextFeature.create())
-        .addFeature(SecurityFeature.create(security, config.get("security"))) // <2>
-        .addFeature(OidcFeature.create(config))   // <3>
+include::{sourcedir}/se/guides/SecurityOidcSnippets.java[tag=snippet_1, indent=0]
 ----
-<1> Create the Helidon `Security` instance using configuration.
-<2> Register Helidon `SecurityFeature` instance using security instance and configuration.
-<3> Register Helidon `OidcFeature` instance.
-
-It is also needed to add the following lines to the `module-info.java` file:
-[source,java]
-.Add security related module requirements
-----
-requires io.helidon.security;
-requires io.helidon.security.providers.oidc;
-requires io.helidon.webserver.security;
-requires io.helidon.webserver.context;
-----
+<1> Create and register `OidcFeature`.
 
 That code is extracting security properties from application.yaml into two steps.
 First the Security instance is used to bootstrap security, so the SecurityFeature instance
@@ -406,10 +381,12 @@ In the body of the request, select `x-www-form-urlencoded` type. Add the followi
 [source,json]
 .Enter the key:value
 ----
-[{"key":"grant_type","value":"authorization_code"},
-{"key":"client_id","value":"myClientID"},
-{"key":"client_secret","value":"client secret"},
-{"key":"code","value":"authorization code"}]
+[
+  {"key":"grant_type","value":"authorization_code"},
+  {"key":"client_id","value":"myClientID"},
+  {"key":"client_secret","value":"client secret"},
+  {"key":"code","value":"authorization code"}
+]
 ----
 
 Do not forget to replace the `client secret` by its value (generated during Create a Client), and `authorization code`
@@ -429,15 +406,17 @@ Make sure your Helidon application is running. If it is not, please start it.
 [source,json]
 .Enter the following information:
 ----
-[{"key":"Header Prefix","value":"bearer"},
-{"key":"Grant type","value":"Password  Credentials"},
-{"key":"Access Token URL","value":"http://localhost:8080/auth/realms/myRealm/protocol/openid-connect/token"},
-{"key":"Client ID","value":"myClientID"},
-{"key":"Client Secret","value":"client secret"},
-{"key":"Username","value":"myuser"},
-{"key":"Password","value":"password"},
-{"key":"Scope","value":"openid"},
-{"key":"Client Authentication","value":"Send as Basic Auth Header"}]
+[
+  {"key":"Header Prefix","value":"bearer"},
+  {"key":"Grant type","value":"Password  Credentials"},
+  {"key":"Access Token URL","value":"http://localhost:8080/auth/realms/myRealm/protocol/openid-connect/token"},
+  {"key":"Client ID","value":"myClientID"},
+  {"key":"Client Secret","value":"client secret"},
+  {"key":"Username","value":"myuser"},
+  {"key":"Password","value":"password"},
+  {"key":"Scope","value":"openid"},
+  {"key":"Client Authentication","value":"Send as Basic Auth Header"}
+]
 ----
 
 Again, make sure to replace `client secret` by the actual client secret. Click on `Get New Access Token`. A popup
@@ -487,8 +466,8 @@ security:
           - login: "jack"
             password: "jackIsGreat"
     - oidc:
-        client-id: "myClientID"  // <1>
-        client-secret: "Your client secret" // <2>
+        client-id: "myClientID" # <1>
+        client-secret: "Your client secret" # <2>
         identity-uri: "http://localhost:8080/auth/realms/myRealm"
         audience: "account"
         frontend-uri: "http://localhost:7987"
@@ -510,20 +489,9 @@ In the `AbstractMainTest.java` file, tests need to be modified to check the appl
 `GET` method.
 
 [source,java]
-.Import the following class:
-----
-
-import io.helidon.http.Status;
-----
-
-[source,java]
 .Replace the first webclient call by this one into testRootRoute method:
 ----
-try (HttpClientResponse response = webClient.get()
-        .path("/greet")
-        .request()) {
-    assertThat(response.status(), is(Status.UNAUTHORIZED_401));
-}
+include::{sourcedir}/se/guides/SecurityOidcSnippets.java[tag=snippet_2, indent=0]
 ----
 
 This piece of code uses the webclient to access the application on `/greet` path with a `GET` method. The http basic
@@ -534,20 +502,13 @@ Only `jack` user has access to this part of the application.
 [source,java]
 .Add new check to the testRootRoute method:
 ----
-JsonObject jsonObject = webClient.get()
-        .path("/greet")
-        .headers(headers -> {
-            String encoding = Base64.getEncoder().encodeToString("jack:jackIsGreat".getBytes());
-            headers.add(HeaderNames.AUTHORIZATION, "Basic " + encoding);
-        })
-        .requestEntity(JsonObject.class);
-assertThat(jsonObject.getString("message"), is("Hello World!"));
+include::{sourcedir}/se/guides/SecurityOidcSnippets.java[tag=snippet_3, indent=0]
 ----
 
 The username and password are encoded and placed inside the header in order to authenticate as jack to access the application.
 If the authentication is successful, the application send the `Hello World` back as a `JsonObject`.
 
-Now, the project can be build without skipping test.
+Now, the project can be built without skipping test.
 
 [source,bash]
 .Build the project
@@ -582,7 +543,9 @@ to the protected path and method.
 .Add `admin` role
 ----
 web-server:
-    # protected paths on the web server - do not include paths served by Jersey, as those are protected directly
+    # protected paths on the web server
+    # do not include paths served by Jersey
+    # as those are protected directly
     paths:
       - path: "/greet"
         methods: ["get"]
@@ -599,15 +562,7 @@ The user `john` has only the `user` role so when accessing protected endpoint, a
 [source,java]
 .Check that john does not have access
 ----
-HttpClientRequest request = webClient.get()
-        .path("/greet")
-        .headers(headers -> {
-            String encoding = Base64.getEncoder().encodeToString("john:johnPassword".getBytes());
-            headers.add(HeaderNames.AUTHORIZATION, "Basic " + encoding);
-        });
-try (HttpClientResponse response = request.request()) {
-    assertThat(response.status(), is(Status.FORBIDDEN_403));
-}
+include::{sourcedir}/se/guides/SecurityOidcSnippets.java[tag=snippet_4, indent=0]
 ----
 
 [source,bash]

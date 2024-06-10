@@ -1,0 +1,59 @@
+#
+# Copyright (c) 2024 Oracle and/or its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+server:
+  port: 8080
+  host: 0.0.0.0
+
+tracing:
+  service: jdbc-db
+
+# see README.md for details how to run databases in docker
+db:
+  source: jdbc
+  connection:
+    username: user
+    password: changeit
+    poolName: "mysql"
+    initializationFailTimeout: -1
+    connectionTimeout: 2000
+    helidon:
+      pool-metrics:
+        enabled: true
+        # name prefix defaults to "db.pool." - if you have more than one client within a JVM, you may want to distinguish between them
+        name-prefix: "hikari."
+  services:
+    tracing:
+      - enabled: true
+    metrics:
+      - type: TIMER
+  health-check:
+    type: "query"
+    statementName: "health-check"
+  statements:
+    health-check: "SELECT 0"
+    create-types: "CREATE TABLE PokeTypes (id INTEGER NOT NULL PRIMARY KEY, name VARCHAR(64) NOT NULL)"
+    create-pokemons: "CREATE TABLE Pokemons (id INTEGER NOT NULL PRIMARY KEY, name VARCHAR(64) NOT NULL, id_type INTEGER NOT NULL REFERENCES PokeTypes(id))"
+    select-all-types: "SELECT id, name FROM PokeTypes"
+    select-all-pokemons: "SELECT id, name, id_type FROM Pokemons"
+    select-pokemon-by-id: "SELECT id, name, id_type FROM Pokemons WHERE id = :id"
+    select-pokemon-by-name: "SELECT id, name, id_type FROM Pokemons WHERE name = ?"
+    insert-type: "INSERT INTO PokeTypes(id, name) VALUES(?, ?)"
+    insert-pokemon: "INSERT INTO Pokemons(id, name, id_type) VALUES(?, ?, ?)"
+    update-pokemon-by-id: "UPDATE Pokemons SET name = :name, id_type = :idType WHERE id = :id"
+    delete-pokemon-by-id: "DELETE FROM Pokemons WHERE id = :id"
+    delete-all-types: "DELETE FROM PokeTypes"
+    delete-all-pokemons: "DELETE FROM Pokemons"

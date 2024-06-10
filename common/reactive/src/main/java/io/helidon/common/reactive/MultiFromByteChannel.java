@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ class MultiFromByteChannel implements Multi<ByteBuffer> {
     private final int chunkCapacity;
     private final LazyValue<ScheduledExecutorService> executor;
 
-    private final SingleSubscriberHolder<ByteBuffer> subscriber = new SingleSubscriberHolder<>();
+    private final SingleSubscriberHolder<ByteBuffer> subscriber = SingleSubscriberHolder.create();
     private final RequestedCounter requested = new RequestedCounter();
     private final AtomicBoolean publishing = new AtomicBoolean(false);
     private final AtomicInteger retryCounter = new AtomicInteger();

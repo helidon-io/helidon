@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import java.util.function.Supplier;
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.common.mapper.OptionalValue;
+import io.helidon.common.mapper.Value;
 
 /**
  * Parameters abstraction (used by any component that has named parameters with possible multiple values).
@@ -102,6 +103,29 @@ public interface Parameters {
     default List<String> all(String name, Supplier<List<String>> defaultValues) {
         if (contains(name)) {
             return all(name);
+        }
+        return defaultValues.get();
+    }
+
+    /**
+     * A list of values for the named parameter.
+     *
+     * @param name name of the parameter
+     * @return list of parameter values, mappable to other types
+     * @throws NoSuchElementException in case the name is not present in these parameters
+     */
+    List<Value<String>> allValues(String name) throws NoSuchElementException;
+
+    /**
+     * Get all values using a default value supplier if the parameter does not exist.
+     *
+     * @param name          name of the parameter
+     * @param defaultValues default values supplier to use if parameter is not present
+     * @return all values as a list
+     */
+    default List<Value<String>> allValues(String name, Supplier<List<Value<String>>> defaultValues) {
+        if (contains(name)) {
+            return allValues(name);
         }
         return defaultValues.get();
     }

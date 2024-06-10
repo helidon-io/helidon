@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package io.helidon.microprofile.lra.tck;
 
 import java.lang.System.Logger.Level;
 import java.net.URI;
-import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
@@ -36,6 +35,7 @@ import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
 
 import static jakarta.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
+import static java.time.Duration.ofSeconds;
 
 @ApplicationScoped
 public class CoordinatorAppService {
@@ -49,7 +49,7 @@ public class CoordinatorAppService {
     ServerCdiExtension serverCdiExtension;
 
     LazyValue<URI> coordinatorUri = LazyValue.create(() -> {
-        CoordinatorDeployer.started().await(30, TimeUnit.SECONDS);
+        CoordinatorDeployer.started().await(ofSeconds(30));
         // Check if external coordinator is set or use internal with random port
         int randomPort = serverCdiExtension.port(CoordinatorDeployer.COORDINATOR_ROUTING_NAME);
         String port = System.getProperty("lra.coordinator.port", String.valueOf(randomPort));

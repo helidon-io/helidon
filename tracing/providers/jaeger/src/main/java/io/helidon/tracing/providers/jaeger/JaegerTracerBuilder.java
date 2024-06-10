@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.tracing.providers.jaeger;
 
 import java.lang.System.Logger.Level;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
@@ -37,6 +38,7 @@ import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator;
 import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.context.propagation.ContextPropagators;
 import io.opentelemetry.context.propagation.TextMapPropagator;
 import io.opentelemetry.exporter.jaeger.JaegerGrpcSpanExporter;
@@ -46,6 +48,7 @@ import io.opentelemetry.extension.trace.propagation.JaegerPropagator;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
+import io.opentelemetry.sdk.trace.SdkTracerProviderBuilder;
 import io.opentelemetry.sdk.trace.SpanProcessor;
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor;
@@ -161,6 +164,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     private final Map<String, String> tags = new HashMap<>();
     // this is a backward incompatible change, but the correct choice is Jaeger, not B3
     private final Set<PropagationFormat> propagationFormats = EnumSet.of(PropagationFormat.JAEGER);
+    private boolean isPropagationFormatsDefaulted = true;
     private String serviceName;
     private String protocol = "http";
     private String host = DEFAULT_HTTP_HOST;
@@ -178,6 +182,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     private int maxQueueSize = DEFAULT_MAX_QUEUE_SIZE;
     private int maxExportBatchSize = DEFAULT_MAX_EXPORT_BATCH_SIZE;
     private SpanProcessorType spanProcessorType = SpanProcessorType.BATCH;
+    private final List<SpanExporter> adHocExporters = new ArrayList<>(); // primarily for testing
 
 
     /**
@@ -467,6 +472,10 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     @ConfiguredOption(key = "propagation", kind = ConfiguredOption.Kind.LIST, type = PropagationFormat.class, value = "JAEGER")
     public JaegerTracerBuilder addPropagation(PropagationFormat propagationFormat) {
         Objects.requireNonNull(propagationFormat);
+        if (isPropagationFormatsDefaulted) {
+            isPropagationFormatsDefaulted = false;
+            this.propagationFormats.clear();
+        }
         this.propagationFormats.add(propagationFormat);
         return this;
     }
@@ -507,17 +516,25 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
                         : Sampler.alwaysOff();
             };
 
-            Resource serviceName = Resource.create(Attributes.of(ResourceAttributes.SERVICE_NAME, this.serviceName));
+            AttributesBuilder attributesBuilder = Attributes.builder()
+                    .put(ResourceAttributes.SERVICE_NAME, serviceName);
+            tags.forEach(attributesBuilder::put);
+            Resource otelResource = Resource.create(attributesBuilder.build());
+
+            SdkTracerProviderBuilder sdkTracerProviderBuilder = SdkTracerProvider.builder()
+                    .setSampler(sampler)
+                    .setResource(otelResource)
+                    .addSpanProcessor(spanProcessor(exporter));
+            adHocExporters.stream()
+                    .map(this::spanProcessor)
+                    .forEach(sdkTracerProviderBuilder::addSpanProcessor);
+
             OpenTelemetry ot = OpenTelemetrySdk.builder()
-                    .setTracerProvider(SdkTracerProvider.builder()
-                                               .addSpanProcessor(spanProcessor(exporter))
-                                               .setSampler(sampler)
-                                               .setResource(serviceName)
-                                               .build())
+                    .setTracerProvider(sdkTracerProviderBuilder.build())
                     .setPropagators(ContextPropagators.create(TextMapPropagator.composite(createPropagators())))
                     .build();
 
-            result = HelidonOpenTelemetry.create(ot, ot.getTracer(this.serviceName), tags);
+            result = HelidonOpenTelemetry.create(ot, ot.getTracer(this.serviceName), Map.of());
 
             if (global) {
                 GlobalOpenTelemetry.set(ot);
@@ -597,6 +614,12 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
         return propagationFormats.stream()
                 .map(JaegerTracerBuilder::mapFormatToPropagator)
                 .toList();
+    }
+
+    // Primarily for testing
+    JaegerTracerBuilder exporter(SpanExporter spanExporter) {
+        adHocExporters.add(spanExporter);
+        return this;
     }
 
     private SpanProcessor spanProcessor(SpanExporter exporter) {

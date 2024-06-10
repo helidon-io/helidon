@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,9 +42,9 @@ class TestGauge {
         long initialValue = 4L;
         long incr = 2L;
         AtomicLong value = new AtomicLong(initialValue);
-        Gauge g = meterRegistry.getOrCreate(Gauge.builder("a",
-                                                          value,
-                                                          v -> (double) v.get()));
+        Gauge.Builder<Double> builder = Gauge.builder("a", value, v -> (double) v.get());
+        builder.unwrap(io.micrometer.core.instrument.Gauge.Builder.class).strongReference(true);
+        Gauge<Double> g = meterRegistry.getOrCreate(builder);
 
         io.micrometer.core.instrument.Gauge mGauge = g.unwrap(io.micrometer.core.instrument.Gauge.class);
         assertThat("Initial value", mGauge.value(), is((double) initialValue));

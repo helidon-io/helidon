@@ -78,10 +78,7 @@ This is not required when `redirect` is set to false.
 [source,java]
 .Adding support for OIDC redirects
 ----
-HttpRouting routing = HttpRouting.builder()
-        .addFeature(SecurityFeature.create(config.get("security")))
-        .addFeature(OidcFeature.create(config))
-        .build();
+include::{sourcedir}/se/security/ProvidersSnippets.java[tag=snippet_1, indent=0]
 ----
 
 include::{rootdir}/includes/security/providers/oidc.adoc[]
