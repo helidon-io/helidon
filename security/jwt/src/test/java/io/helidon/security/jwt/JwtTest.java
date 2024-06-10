@@ -90,7 +90,7 @@ public class JwtTest {
         JwtValidator jwtValidator = JwtValidator.builder()
                 .addDefaultTimeValidators()
                 .addIssuerValidator(issuer, true)
-                .addAudienceValidator(builder -> builder.addExpectedAudience(audience).mandatory(true))
+                .addAudienceValidator(audience)
                 .build();
 
         Errors errors = jwtValidator.validate(jwt);
@@ -99,7 +99,14 @@ public class JwtTest {
         errors.checkValid();
 
         //another try with defaults
-        jwtValidator = JwtValidator.createWithDefaults(issuer, Set.of(audience), true);
+        jwtValidator = JwtValidator.builder()
+                .addDefaultTimeValidators()
+                .addCriticalValidator()
+                .addUserPrincipalValidator()
+                .addIssuerValidator(issuer)
+                .addAudienceValidator(audience)
+                .build();
+
         errors = jwtValidator.validate(jwt);
         errors.log(LOGGER);
         errors.checkValid();

@@ -526,7 +526,18 @@ class TenantAuthenticationHandler {
                 errors = Errors.collector().collect();
             }
             Jwt jwt = signedJwt.getJwt();
-            JwtValidator jwtValidation = JwtValidator.createWithDefaults(tenant.issuer(), Set.of(tenantConfig.clientId()), true);
+
+            JwtValidator.Builder jwtValidatorBuilder = JwtValidator.builder()
+                    .addDefaultTimeValidators()
+                    .addCriticalValidator()
+                    .addUserPrincipalValidator()
+                    .addAudienceValidator(tenantConfig.clientId());
+
+            if (tenant.issuer() != null) {
+                jwtValidatorBuilder.addIssuerValidator(tenant.issuer());
+            }
+
+            JwtValidator jwtValidation = jwtValidatorBuilder.build();
             Errors validationErrors = jwtValidation.validate(jwt);
 
             if (errors.isValid() && validationErrors.isValid()) {
@@ -706,9 +717,17 @@ class TenantAuthenticationHandler {
                                                            List<String> cookies) {
         Jwt jwt = signedJwt.getJwt();
         Errors errors = collector.collect();
-        JwtValidator jwtValidation = JwtValidator.createWithDefaults(tenant.issuer(),
-                                                                     Set.of(tenantConfig.audience()),
-                                                                     tenantConfig.checkAudience());
+        JwtValidator.Builder jwtValidatorBuilder = JwtValidator.builder()
+                .addDefaultTimeValidators()
+                .addCriticalValidator()
+                .addUserPrincipalValidator();
+        if (tenant.issuer() != null) {
+            jwtValidatorBuilder.addIssuerValidator(tenant.issuer());
+        }
+        if (tenantConfig.checkAudience()) {
+            jwtValidatorBuilder.addAudienceValidator(tenantConfig.audience());
+        }
+        JwtValidator jwtValidation = jwtValidatorBuilder.build();
         Errors validationErrors = jwtValidation.validate(jwt);
 
         if (errors.isValid() && validationErrors.isValid()) {

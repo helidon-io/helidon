@@ -44,38 +44,6 @@ public final class JwtValidator {
     }
 
     /**
-     * Create new {@link JwtValidator} instance.
-     * This instance will have the following validators preconfigured:
-     * <ul>
-     *     <li>{@link IssueTimeValidator} with expected issuer</li>
-     *     <li>{@link CriticalValidator}</li>
-     *     <li>{@link UserPrincipalValidator}</li>
-     *     <li>{@link ExpirationValidator}</li>
-     *     <li>Issuer name validator - if provided</li>
-     *     <li>{@link NotBeforeValidator}</li>
-     *     <li>{@link AudienceValidator} if marked for validation</li>
-     * </ul>
-     *
-     * @param expectedIssuer expected issuer of the JWT
-     * @param audience       expected audience
-     * @param checkAudience  whether to check audience
-     * @return new JwtValidator instance
-     */
-    public static JwtValidator createWithDefaults(String expectedIssuer, Set<String> audience, boolean checkAudience) {
-        Builder validatorBuilder = builder()
-                .addDefaultTimeValidators()
-                .addCriticalValidator()
-                .addUserPrincipalValidator();
-        if (expectedIssuer != null) {
-            validatorBuilder.addIssuerValidator(expectedIssuer);
-        }
-        if (checkAudience && audience != null) {
-            validatorBuilder.addAudienceValidator(audience);
-        }
-        return validatorBuilder.build();
-    }
-
-    /**
      * Return a new Builder of the {@link JwtValidator}.
      *
      * @return new builder instance
@@ -348,6 +316,7 @@ public final class JwtValidator {
 
         /**
          * Add new {@link UserPrincipalValidator}.
+         * This validator is mandatory by default.
          *
          * @return updated builder instance
          */
@@ -358,6 +327,7 @@ public final class JwtValidator {
 
         /**
          * Add new {@link UserPrincipalValidator} instance based on the builder configuration.
+         * This validator is mandatory by default.
          *
          * @param builderConsumer consumer of the builder
          * @return updated builder instance
@@ -397,6 +367,7 @@ public final class JwtValidator {
 
         /**
          * Add new {@link AudienceValidator} with the expected audience.
+         * This validator is mandatory by default.
          *
          * @param expectedAudience expected audience
          * @return updated builder instance
@@ -410,6 +381,7 @@ public final class JwtValidator {
 
         /**
          * Add new {@link AudienceValidator} with the expected audience.
+         * This validator is mandatory by default.
          *
          * @param expectedAudience expected audience
          * @return updated builder instance
@@ -423,6 +395,7 @@ public final class JwtValidator {
 
         /**
          * Add new {@link AudienceValidator} instance based on the builder configuration.
+         * This validator is mandatory by default.
          *
          * @param builderConsumer consumer of the builder
          * @return updated builder instance
@@ -654,11 +627,7 @@ public final class JwtValidator {
         }
     }
 
-    /**
-     * Validator of the header claim "crit".
-     * Validation based on RFC7515 - 4.1.11 "crit" (Critical) Header Parameter.
-     */
-    public static final class CriticalValidator implements ClaimValidator {
+    private static final class CriticalValidator implements ClaimValidator {
 
         private static final Set<String> INVALID_CRIT_HEADERS;
 
