@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.security.jwt;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -47,6 +48,24 @@ import jakarta.json.JsonValue;
  * @see #parseToken(String)
  */
 public class JwtHeaders extends JwtClaims {
+    
+    static final String ALGORITHM = "alg";
+    static final String ENCRYPTION = "enc";
+    static final String TYPE = "typ";
+    static final String CONTENT_TYPE = "cty";
+    static final String KEY_ID = "kid";
+    static final String JWK_SET_URL = "jku";
+    static final String JSON_WEB_KEY = "jwk";
+    static final String X509_URL = "x5u";
+    static final String X509_CERT_CHAIN = "x5c";
+    static final String X509_CERT_SHA1_THUMB = "x5t";
+    static final String X509_CERT_SHA256_THUMB = "x5t#S256";
+    static final String CRITICAL = "crit";
+    static final String COMPRESSION_ALGORITHM = "zip";
+    static final String AGREEMENT_PARTYUINFO = "apu";
+    static final String AGREEMENT_PARTYVINFO = "apv";
+    static final String EPHEMERAL_PUBLIC_KEY = "epk";
+    
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     private final Optional<String> algorithm;
@@ -54,6 +73,7 @@ public class JwtHeaders extends JwtClaims {
     private final Optional<String> contentType;
     private final Optional<String> keyId;
     private final Optional<String> type;
+    private final Optional<List<String>> critical;
     // intended for replication into header in encrypted JWT
     private final Optional<String> subject;
     private final Optional<String> issuer;
@@ -67,6 +87,7 @@ public class JwtHeaders extends JwtClaims {
         this.contentType = Optional.ofNullable(builder.contentType);
         this.keyId = Optional.ofNullable(builder.keyId);
         this.type = Optional.ofNullable(builder.type);
+        this.critical = Optional.ofNullable(builder.critical);
         this.subject = Optional.ofNullable(builder.subject);
         this.issuer = Optional.ofNullable(builder.issuer);
         this.audience = Optional.ofNullable(builder.audience);
@@ -226,26 +247,45 @@ public class JwtHeaders extends JwtClaims {
     }
 
     /**
+     * Critical claim.
+     *
+     * @return critical claims or empty optional if not defined; list would be empty if the critical claim is defined as
+     *                      an empty array
+     */
+    public Optional<List<String>> critical() {
+        return critical;
+    }
+
+
+    public Map<String, JsonValue> headerClaims() {
+        return Collections.unmodifiableMap(headerClaims);
+    }
+
+    /**
      * Fluent API builder to create JWT Header.
      */
     public static class Builder implements io.helidon.common.Builder<Builder, JwtHeaders> {
-        private static final GenericType<List<String>> STRING_LIST_TYPE = new GenericType<List<String>>() { };
-
-        private static final Map<String, KnownField<? extends Object>> KNOWN_HEADER_CLAIMS;
-        private static final KnownField<String> TYPE_FIELD = KnownField.create("typ", Builder::type);
-        private static final KnownField<String> ALG_FIELD = KnownField.create("alg", Builder::algorithm);
-        private static final KnownField<String> ENC_FIELD = KnownField.create("enc", Builder::encryption);
-        private static final KnownField<String> CTY_FIELD = KnownField.create("cty", Builder::contentType);
-        private static final KnownField<String> KID_FIELD = KnownField.create("kid", Builder::keyId);
-        private static final KnownField<String> SUB_FIELD = KnownField.create("sub", Builder::headerSubject);
+        private static final GenericType<List<String>> STRING_LIST_TYPE = new GenericType<>() { };
+        
+        private static final Map<String, KnownField<?>> KNOWN_HEADER_CLAIMS;
+        private static final KnownField<String> TYPE_FIELD = KnownField.create(TYPE, Builder::type);
+        private static final KnownField<String> ALG_FIELD = KnownField.create(ALGORITHM, Builder::algorithm);
+        private static final KnownField<String> ENC_FIELD = KnownField.create(ENCRYPTION, Builder::encryption);
+        private static final KnownField<String> CTY_FIELD = KnownField.create(CONTENT_TYPE, Builder::contentType);
+        private static final KnownField<String> KID_FIELD = KnownField.create(KEY_ID, Builder::keyId);
+        private static final KnownField<String> SUB_FIELD = KnownField.create(Jwt.SUBJECT, Builder::headerSubject);
         private static final KnownField<String> ISS_FIELD = KnownField.create("iss", Builder::headerIssuer);
-        private static final KnownField<List<String>> AUD_FIELD = new KnownField<List<String>>("aud",
-                                                                                               STRING_LIST_TYPE,
-                                                                                               Builder::headerAudience,
-                                                                                               Builder::jsonToStringList);
+        private static final KnownField<List<String>> CRIT_FIELD = new KnownField<>(CRITICAL,
+                                                                                    STRING_LIST_TYPE,
+                                                                                    Builder::headerCritical,
+                                                                                    Builder::jsonToStringList);
+        private static final KnownField<List<String>> AUD_FIELD = new KnownField<>("aud",
+                                                                                   STRING_LIST_TYPE,
+                                                                                   Builder::headerAudience,
+                                                                                   Builder::jsonToStringList);
 
         static {
-            Map<String, KnownField<? extends Object>> map = new HashMap<>();
+            Map<String, KnownField<?>> map = new HashMap<>();
 
             addKnownField(map, TYPE_FIELD);
             addKnownField(map, ALG_FIELD);
@@ -255,6 +295,7 @@ public class JwtHeaders extends JwtClaims {
             addKnownField(map, SUB_FIELD);
             addKnownField(map, ISS_FIELD);
             addKnownField(map, AUD_FIELD);
+            addKnownField(map, CRIT_FIELD);
 
             KNOWN_HEADER_CLAIMS = Map.copyOf(map);
         }
@@ -269,6 +310,7 @@ public class JwtHeaders extends JwtClaims {
         private String subject;
         private String issuer;
         private List<String> audience;
+        private List<String> critical;
 
         private Builder() {
         }
@@ -278,6 +320,9 @@ public class JwtHeaders extends JwtClaims {
             if (audience != null) {
                 // this may be changing throughout the build
                 AUD_FIELD.set(claims, audience);
+            }
+            if (critical != null) {
+                CRIT_FIELD.set(claims, critical);
             }
             return new JwtHeaders(this);
         }
@@ -391,11 +436,30 @@ public class JwtHeaders extends JwtClaims {
         }
 
         /**
+         * The critical claim is used to indicate that certain claims are critical and must be understood (optional).
+         * If a recipient does not understand or support any of the critical claims, it must reject the token.
+         * Multiple critical claims may be added.
+         * This configures critical claims in header claims.
+         *
+         * See <a href="https://tools.ietf.org/html/rfc7519#section-4.1.1">RFC 7519, section 4.1.1</a>.
+         *
+         * @param critical required critical claim to understand
+         * @return updated builder instance
+         */
+        public Builder addHeaderCritical(String critical) {
+            if (this.critical == null) {
+                this.critical = new LinkedList<>();
+            }
+            this.critical.add(critical);
+            return this;
+        }
+
+        /**
          * Audience identifies the expected recipients of this JWT (optional).
          * Multiple audience may be added.
          * This configures audience in header claims, usually this is defined in payload.
          *
-         * See <a href="https://tools.ietf.org/html/rfc7519#section-4.1.3">RFC 7519, section 4.1.3</a>.
+         * See <a href="https://datatracker.ietf.org/doc/html/rfc7515#section-4.1.11">RFC 7515, section 4.1.11</a>.
          *
          * @param audience audience of this JWT
          * @return updated builder instance
@@ -421,6 +485,22 @@ public class JwtHeaders extends JwtClaims {
          */
         public Builder headerAudience(List<String> audience) {
             this.audience = new LinkedList<>(audience);
+            return this;
+        }
+
+        /**
+         * The critical claim is used to indicate that certain claims are critical and must be understood (optional).
+         * If a recipient does not understand or support any of the critical claims, it must reject the token.
+         * Replaces existing configured critical claims.
+         * This configures critical claims in header claims.
+         *
+         * See <a href="https://datatracker.ietf.org/doc/html/rfc7515#section-4.1.11">RFC 7515, section 4.1.11</a>.
+         *
+         * @param critical required critical claims to understand
+         * @return updated builder instance
+         */
+        public Builder headerCritical(List<String> critical) {
+            this.critical = new ArrayList<>(critical);
             return this;
         }
 
@@ -452,8 +532,7 @@ public class JwtHeaders extends JwtClaims {
             throw new JwtException("Json value should have been a String or an array of Strings, but is " + jsonValue);
         }
 
-        private static <T extends Object> void addKnownField(Map<String, KnownField<? extends Object>> map,
-                                                             KnownField<T> field) {
+        private static <T> void addKnownField(Map<String, KnownField<?>> map, KnownField<T> field) {
             map.put(field.name, field);
         }
 

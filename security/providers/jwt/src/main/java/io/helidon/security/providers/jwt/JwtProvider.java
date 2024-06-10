@@ -24,6 +24,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import io.helidon.common.Errors;
 import io.helidon.common.config.Config;
@@ -44,6 +45,7 @@ import io.helidon.security.SubjectType;
 import io.helidon.security.jwt.Jwt;
 import io.helidon.security.jwt.JwtException;
 import io.helidon.security.jwt.JwtUtil;
+import io.helidon.security.jwt.JwtValidator;
 import io.helidon.security.jwt.SignedJwt;
 import io.helidon.security.jwt.jwk.Jwk;
 import io.helidon.security.jwt.jwk.JwkKeys;
@@ -167,7 +169,8 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
             if (errors.isValid()) {
                 Jwt jwt = signedJwt.getJwt();
                 // perform all validations, including expected audience verification
-                Errors validate = jwt.validate(null, expectedAudience);
+                JwtValidator jwtValidator = JwtValidator.createWithDefaults(null, Set.of(expectedAudience), true);
+                Errors validate = jwtValidator.validate(jwt);
                 if (validate.isValid()) {
                     return AuthenticationResponse.success(buildSubject(jwt, signedJwt));
                 } else {
