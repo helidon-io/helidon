@@ -41,7 +41,7 @@ public interface ClaimValidator {
     Set<String> claims();
 
     /**
-     * Validate the object against this class's configuration.
+     * Validate JWT against this class's configuration.
      *
      * @param jwt        jwt to validate
      * @param collector  collector of error messages to add problems to. Use {@link Errors.Collector#fatal(Object, String)}
