@@ -95,9 +95,8 @@ import org.eclipse.microprofile.auth.LoginConfig;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import static io.helidon.security.EndpointConfig.PROPERTY_OUTBOUND_ID;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Provider that provides JWT authentication.
