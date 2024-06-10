@@ -30,11 +30,13 @@ import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
@@ -88,7 +90,8 @@ class HelidonJunitExtension implements BeforeAllCallback,
                                        InvocationInterceptor,
                                        ParameterResolver {
     private static final Set<Class<? extends Annotation>> HELIDON_TEST_ANNOTATIONS =
-            Set.of(AddBean.class, AddConfig.class, AddExtension.class, Configuration.class, AddJaxRs.class);
+            Set.of(AddBean.class, AddConfig.class, AddExtension.class, Configuration.class,
+                    AddJaxRs.class, AddConfigBlock.class);
     private static final Map<Class<? extends Annotation>, Annotation> BEAN_DEFINING = new HashMap<>();
 
     static {
@@ -115,16 +118,18 @@ class HelidonJunitExtension implements BeforeAllCallback,
     public void beforeAll(ExtensionContext context) {
         testClass = context.getRequiredTestClass();
 
-        AddConfig[] configs = getAnnotations(testClass, AddConfig.class);
+        List<Annotation> metaAnnotations = extractMetaAnnotations(testClass);
+
+        AddConfig[] configs = getAnnotations(testClass, AddConfig.class, metaAnnotations);
         classLevelConfigMeta.addConfig(configs);
-        classLevelConfigMeta.configuration(testClass.getAnnotation(Configuration.class));
-        classLevelConfigMeta.addConfigBlock(testClass.getAnnotation(AddConfigBlock.class));
+        classLevelConfigMeta.configuration(getAnnotation(testClass, Configuration.class, metaAnnotations));
+        classLevelConfigMeta.addConfigBlock(getAnnotation(testClass, AddConfigBlock.class, metaAnnotations));
         configProviderResolver = ConfigProviderResolver.instance();
 
-        AddExtension[] extensions = getAnnotations(testClass, AddExtension.class);
+        AddExtension[] extensions = getAnnotations(testClass, AddExtension.class, metaAnnotations);
         classLevelExtensions.addAll(Arrays.asList(extensions));
 
-        AddBean[] beans = getAnnotations(testClass, AddBean.class);
+        AddBean[] beans = getAnnotations(testClass, AddBean.class, metaAnnotations);
         classLevelBeans.addAll(Arrays.asList(beans));
 
         HelidonTest testAnnot = testClass.getAnnotation(HelidonTest.class);
@@ -132,7 +137,7 @@ class HelidonJunitExtension implements BeforeAllCallback,
             resetPerTest = testAnnot.resetPerTest();
         }
 
-        DisableDiscovery discovery = testClass.getAnnotation(DisableDiscovery.class);
+        DisableDiscovery discovery = getAnnotation(testClass, DisableDiscovery.class, metaAnnotations);
         if (discovery != null) {
             classLevelDisableDiscovery = discovery.value();
         }
@@ -145,7 +150,7 @@ class HelidonJunitExtension implements BeforeAllCallback,
         validatePerClass();
 
         // add beans when using JaxRS
-        AddJaxRs addJaxRsAnnotation = testClass.getAnnotation(AddJaxRs.class);
+        AddJaxRs addJaxRsAnnotation = getAnnotation(testClass, AddJaxRs.class, metaAnnotations);
         if (addJaxRsAnnotation != null){
             classLevelExtensions.add(ProcessAllAnnotatedTypesLiteral.INSTANCE);
             classLevelExtensions.add(ServerCdiExtensionLiteral.INSTANCE);
@@ -164,13 +169,42 @@ class HelidonJunitExtension implements BeforeAllCallback,
         }
     }
 
+    private List<Annotation> extractMetaAnnotations(Class<?> testClass) {
+        Annotation[] testAnnotations = testClass.getAnnotations();
+        for (Annotation testAnnotation : testAnnotations) {
+            List<Annotation> annotations = List.of(testAnnotation.annotationType().getAnnotations());
+            List<Class<?>> annotationsClass = annotations.stream()
+                    .map(a -> a.annotationType()).collect(Collectors.toList());
+            if (!Collections.disjoint(HELIDON_TEST_ANNOTATIONS, annotationsClass)) {
+                // Contains at least one of HELIDON_TEST_ANNOTATIONS
+                return annotations;
+            }
+        }
+        return List.of();
+    }
+
+    private <T extends Annotation> T getAnnotation(Class<?> testClass, Class<T> annotClass,
+            List<Annotation> metaAnnotations) {
+        T annotation = testClass.getAnnotation(annotClass);
+        if (annotation == null) {
+            List<T> byType = annotationsByType(annotClass, metaAnnotations);
+            if (!byType.isEmpty()) {
+                annotation = byType.get(0);
+            }
+        }
+        return annotation;
+    }
+
     @SuppressWarnings("unchecked")
-    private <T extends Annotation> T[] getAnnotations(Class<?> testClass, Class<T> annotClass) {
+    private <T extends Annotation> T[] getAnnotations(Class<?> testClass, Class<T> annotClass,
+            List<Annotation> metaAnnotations) {
         // inherited does not help, as it only returns annot from superclass if
         // child has none
         T[] directAnnotations = testClass.getAnnotationsByType(annotClass);
 
         List<T> allAnnotations = new ArrayList<>(List.of(directAnnotations));
+        // Include meta annotations
+        allAnnotations.addAll(annotationsByType(annotClass, metaAnnotations));
 
         Class<?> superClass = testClass.getSuperclass();
         while (superClass != null) {
@@ -185,6 +219,16 @@ class HelidonJunitExtension implements BeforeAllCallback,
         }
 
         return (T[]) result;
+    }
+
+    private <T extends Annotation> List<T> annotationsByType(Class<T> annotClass, List<Annotation> metaAnnotations) {
+        List<T> byType = new ArrayList<>();
+        for (Annotation annotation : metaAnnotations) {
+            if (annotation.annotationType() == annotClass) {
+                byType.add((T) annotation);
+            }
+        }
+        return byType;
     }
 
     @Override
