@@ -36,8 +36,8 @@ public final class NotBeforeValidator extends InstantValidator {
      *
      * @return new builder instance
      */
-    public static NotBeforeValidator.Builder builder() {
-        return new NotBeforeValidator.Builder().addClaim(Jwt.NOT_BEFORE);
+    public static Builder builder() {
+        return new Builder().addClaim(Jwt.NOT_BEFORE);
     }
 
     @Override
