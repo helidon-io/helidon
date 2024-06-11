@@ -42,14 +42,20 @@ public class MethodDescriptor<ReqT, ResT> {
     private final ServerCallHandler<ReqT, ResT> callHandler;
     private final Map<Context.Key<?>, Object> context;
     private final WeightedBag<ServerInterceptor> interceptors;
+    private final Class<ReqT> requestType;
+    private final Class<ResT> responseType;
 
     private MethodDescriptor(String name,
                              io.grpc.MethodDescriptor<ReqT, ResT> descriptor,
+                             Class<ReqT> requestType,
+                             Class<ResT> responseType,
                              ServerCallHandler<ReqT, ResT> callHandler,
                              Map<Context.Key<?>, Object> context,
                              WeightedBag<ServerInterceptor> interceptors) {
         this.name = name;
         this.descriptor = descriptor;
+        this.requestType = requestType;
+        this.responseType = responseType;
         this.callHandler = callHandler;
         this.context = context;
         this.interceptors = interceptors.copyMe();
@@ -80,6 +86,24 @@ public class MethodDescriptor<ReqT, ResT> {
      */
     public ServerCallHandler<ReqT, ResT> callHandler() {
         return callHandler;
+    }
+
+    /**
+     * Return the method's request type.
+     *
+     * @return request type
+     */
+    public Class<ReqT> requestType() {
+        return requestType;
+    }
+
+    /**
+     * Return the method's response type.
+     *
+     * @return response type
+     */
+    public Class<ResT> responseType() {
+        return responseType;
     }
 
     /**
@@ -328,6 +352,8 @@ public class MethodDescriptor<ReqT, ResT> {
 
             return new MethodDescriptor<>(name,
                     descriptor.build(),
+                    (Class) requestType,
+                    (Class) requestType,
                     callHandler,
                     context,
                     interceptors);

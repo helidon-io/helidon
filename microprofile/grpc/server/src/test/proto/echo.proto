@@ -15,7 +15,7 @@
  */
 
 syntax = "proto3";
-option java_package = "io.helidon.grpc.server.test";
+option java_package = "io.helidon.microprofile.grpc.server.test";
 
 service EchoService {
   rpc Echo (EchoRequest) returns (EchoResponse) {}

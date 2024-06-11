@@ -50,7 +50,6 @@ class Grpc<ReqT, ResT> extends GrpcRoute {
                                                String serviceName,
                                                String methodName,
                                                ServerCalls.UnaryMethod<ReqT, ResT> method) {
-
         return grpc(proto, serviceName, methodName, ServerCalls.asyncUnaryCall(method));
     }
 
@@ -58,7 +57,6 @@ class Grpc<ReqT, ResT> extends GrpcRoute {
                                               String serviceName,
                                               String methodName,
                                               ServerCalls.BidiStreamingMethod<ReqT, ResT> method) {
-
         return grpc(proto, serviceName, methodName, ServerCalls.asyncBidiStreamingCall(method));
     }
 
@@ -66,7 +64,6 @@ class Grpc<ReqT, ResT> extends GrpcRoute {
                                                       String serviceName,
                                                       String methodName,
                                                       ServerCalls.ServerStreamingMethod<ReqT, ResT> method) {
-
         return grpc(proto, serviceName, methodName, ServerCalls.asyncServerStreamingCall(method));
     }
 
@@ -74,7 +71,6 @@ class Grpc<ReqT, ResT> extends GrpcRoute {
                                                       String serviceName,
                                                       String methodName,
                                                       ServerCalls.ClientStreamingMethod<ReqT, ResT> method) {
-
         return grpc(proto, serviceName, methodName, ServerCalls.asyncClientStreamingCall(method));
     }
 
@@ -82,17 +78,25 @@ class Grpc<ReqT, ResT> extends GrpcRoute {
      * Create a {@link io.helidon.webserver.grpc.Grpc gRPC route} from a {@link io.grpc.ServerMethodDefinition}.
      *
      * @param definition the {@link io.grpc.ServerMethodDefinition} representing the method to execute
-     * @param proto      an optional protocol buffer {@link com.google.protobuf.Descriptors.FileDescriptor}
-     *                   containing the service definition
-     * @param <ReqT>     the request type
-     * @param <ResT>     the response type
-     *
+     * @param proto an optional protocol buffer {@link com.google.protobuf.Descriptors.FileDescriptor}
+     * containing the service definition
+     * @param <ReqT> the request type
+     * @param <ResT> the response type
      * @return a {@link io.helidon.webserver.grpc.Grpc gRPC route} created
-     *         from the {@link io.grpc.ServerMethodDefinition}
+     * from the {@link io.grpc.ServerMethodDefinition}
      */
     static <ReqT, ResT> Grpc<ReqT, ResT> methodDefinition(ServerMethodDefinition<ReqT, ResT> definition,
                                                           Descriptors.FileDescriptor proto) {
         return grpc(definition.getMethodDescriptor(), definition.getServerCallHandler(), proto);
+    }
+
+    public static Grpc<?, ?> unary(ServiceDescriptor service, io.helidon.webserver.grpc.MethodDescriptor<?, ?> method) {
+        String path = service.fullName() + "/" + method.name();
+        return new Grpc<>((MethodDescriptor) method.descriptor(),
+                PathMatchers.exact(path),
+                (Class) method.requestType(),
+                (Class) method.responseType(),
+                method.callHandler());
     }
 
     @Override
@@ -153,15 +157,14 @@ class Grpc<ReqT, ResT> extends GrpcRoute {
     /**
      * Create a {@link io.helidon.webserver.grpc.Grpc gRPC route} from a {@link io.grpc.MethodDescriptor}.
      *
-     * @param grpcDesc    the {@link io.grpc.MethodDescriptor} describing the method to execute
+     * @param grpcDesc the {@link io.grpc.MethodDescriptor} describing the method to execute
      * @param callHandler the {@link io.grpc.ServerCallHandler} that will execute the method
-     * @param proto       an optional protocol buffer {@link com.google.protobuf.Descriptors.FileDescriptor} containing
-     *                    the service definition
-     * @param <ReqT>      the request type
-     * @param <ResT>      the response type
-     *
+     * @param proto an optional protocol buffer {@link com.google.protobuf.Descriptors.FileDescriptor} containing
+     * the service definition
+     * @param <ReqT> the request type
+     * @param <ResT> the response type
      * @return a {@link io.helidon.webserver.grpc.Grpc gRPC route} created
-     *         from the {@link io.grpc.ServerMethodDefinition}
+     * from the {@link io.grpc.ServerMethodDefinition}
      */
     private static <ResT, ReqT> Grpc<ReqT, ResT> grpc(MethodDescriptor<ReqT, ResT> grpcDesc,
                                                       ServerCallHandler<ReqT, ResT> callHandler,

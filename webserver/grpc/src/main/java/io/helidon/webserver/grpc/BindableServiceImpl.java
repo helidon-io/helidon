@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.grpc.server;
+package io.helidon.webserver.grpc;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -22,12 +22,9 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import io.helidon.grpc.core.InterceptorWeights;
 import io.helidon.grpc.core.WeightedBag;
-import io.helidon.webserver.grpc.MethodDescriptor;
-import io.helidon.webserver.grpc.ServiceDescriptor;
 
 import io.grpc.BindableService;
 import io.grpc.Metadata;
@@ -99,7 +96,7 @@ class BindableServiceImpl implements BindableService {
         priorityServerInterceptors.addAll(globalInterceptors);
         priorityServerInterceptors.addAll(descriptor.interceptors());
         priorityServerInterceptors.addAll(method.interceptors());
-        List<ServerInterceptor> interceptors = priorityServerInterceptors.stream().collect(Collectors.toList());
+        List<ServerInterceptor> interceptors = priorityServerInterceptors.stream().toList();
 
         if (!interceptors.isEmpty()) {
             LinkedHashSet<ServerInterceptor> uniqueInterceptors = new LinkedHashSet<>(interceptors.size());
@@ -125,7 +122,7 @@ class BindableServiceImpl implements BindableService {
     }
 
     static class CallableSupplier<T> implements Supplier<T> {
-        private Callable<T> callable;
+        private final Callable<T> callable;
 
         CallableSupplier(Callable<T> callable) {
             this.callable = callable;

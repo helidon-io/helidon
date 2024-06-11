@@ -23,17 +23,18 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.grpc.core.InterceptorWeights;
+import io.helidon.grpc.core.WeightedBag;
+import io.helidon.http.HttpPrologue;
+import io.helidon.http.PathMatchers;
+import io.helidon.webserver.Routing;
+
 import com.google.protobuf.Descriptors;
 import io.grpc.BindableService;
 import io.grpc.ServerInterceptor;
 import io.grpc.ServerMethodDefinition;
 import io.grpc.ServerServiceDefinition;
 import io.grpc.stub.ServerCalls;
-import io.helidon.grpc.core.InterceptorWeights;
-import io.helidon.grpc.core.WeightedBag;
-import io.helidon.http.HttpPrologue;
-import io.helidon.http.PathMatchers;
-import io.helidon.webserver.Routing;
 
 /**
  * GRPC specific routing.
@@ -102,7 +103,7 @@ public class GrpcRouting implements Routing {
      * contained in this {@link GrpcRouting}.
      *
      * @return a {@link List} of the {@link ServiceDescriptor} instances
-     *         contained in this {@link GrpcRouting}
+     * contained in this {@link GrpcRouting}
      */
     public List<ServiceDescriptor> services() {
         return services;
@@ -152,7 +153,7 @@ public class GrpcRouting implements Routing {
          * @return updated builder
          */
         public Builder service(BindableService service) {
-            throw new UnsupportedOperationException("Not implemented");     // TODO
+            return route(GrpcServiceRoute.create(service));
         }
 
         /**
@@ -167,7 +168,7 @@ public class GrpcRouting implements Routing {
                 throw new IllegalArgumentException("Attempted to register service name " + name + " multiple times");
             }
             services.put(name, service);
-            return this;
+            return route(GrpcServiceRoute.create(service));
         }
 
         /**
@@ -205,12 +206,12 @@ public class GrpcRouting implements Routing {
         /**
          * Unary route.
          *
-         * @param proto       proto descriptor
+         * @param proto proto descriptor
          * @param serviceName service name
-         * @param methodName  method name
-         * @param method      method to handle this route
-         * @param <ReqT>      request type
-         * @param <ResT>      response type
+         * @param methodName method name
+         * @param method method to handle this route
+         * @param <ReqT> request type
+         * @param <ResT> response type
          * @return updated builder
          */
         public <ReqT, ResT> Builder unary(Descriptors.FileDescriptor proto,
@@ -223,12 +224,12 @@ public class GrpcRouting implements Routing {
         /**
          * Bidirectional route.
          *
-         * @param proto       proto descriptor
+         * @param proto proto descriptor
          * @param serviceName service name
-         * @param methodName  method name
-         * @param method      method to handle this route
-         * @param <ReqT>      request type
-         * @param <ResT>      response type
+         * @param methodName method name
+         * @param method method to handle this route
+         * @param <ReqT> request type
+         * @param <ResT> response type
          * @return updated builder
          */
         public <ReqT, ResT> Builder bidi(Descriptors.FileDescriptor proto,
@@ -241,12 +242,12 @@ public class GrpcRouting implements Routing {
         /**
          * Server streaming route.
          *
-         * @param proto       proto descriptor
+         * @param proto proto descriptor
          * @param serviceName service name
-         * @param methodName  method name
-         * @param method      method to handle this route
-         * @param <ReqT>      request type
-         * @param <ResT>      response type
+         * @param methodName method name
+         * @param method method to handle this route
+         * @param <ReqT> request type
+         * @param <ResT> response type
          * @return updated builder
          */
         public <ReqT, ResT> Builder serverStream(Descriptors.FileDescriptor proto,
@@ -259,12 +260,12 @@ public class GrpcRouting implements Routing {
         /**
          * Client streaming route.
          *
-         * @param proto       proto descriptor
+         * @param proto proto descriptor
          * @param serviceName service name
-         * @param methodName  method name
-         * @param method      method to handle this route
-         * @param <ReqT>      request type
-         * @param <ResT>      response type
+         * @param methodName method name
+         * @param method method to handle this route
+         * @param <ReqT> request type
+         * @param <ResT> response type
          * @return updated builder
          */
         public <ReqT, ResT> Builder clientStream(Descriptors.FileDescriptor proto,
@@ -277,9 +278,8 @@ public class GrpcRouting implements Routing {
         /**
          * Add all the routes for a {@link BindableService} service.
          *
-         * @param proto    the proto descriptor
-         * @param service  the {@link BindableService} to add routes for
-         *
+         * @param proto the proto descriptor
+         * @param service the {@link BindableService} to add routes for
          * @return updated builder
          */
         public Builder service(Descriptors.FileDescriptor proto, BindableService service) {
@@ -292,8 +292,7 @@ public class GrpcRouting implements Routing {
         /**
          * Add all the routes for the {@link ServerServiceDefinition} service.
          *
-         * @param service  the {@link ServerServiceDefinition} to add routes for
-         *
+         * @param service the {@link ServerServiceDefinition} to add routes for
          * @return updated builder
          */
         public Builder service(ServerServiceDefinition service) {

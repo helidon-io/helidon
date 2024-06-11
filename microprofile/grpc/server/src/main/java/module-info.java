@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
+import io.helidon.microprofile.grpc.server.GrpcMpCdiExtension;
+
 /**
  * gRPC microprofile server module
  */
 module io.helidon.microprofile.grpc.server {
     exports io.helidon.microprofile.grpc.server;
-    exports io.helidon.microprofile.grpc.server.spi;
 
     requires transitive io.helidon.webserver.grpc;
     requires transitive io.helidon.microprofile.grpc.core;
@@ -43,12 +44,11 @@ module io.helidon.microprofile.grpc.server {
     requires io.helidon.config.metadata;
     requires io.helidon.common.context;
 
-    uses io.helidon.microprofile.grpc.server.spi.GrpcMpExtension;
-    uses io.helidon.microprofile.grpc.server.GrpcServerCdiExtension;
+    uses GrpcMpCdiExtension;
     uses io.helidon.microprofile.grpc.server.AnnotatedServiceConfigurer;
 
     provides jakarta.enterprise.inject.spi.Extension
-            with io.helidon.microprofile.grpc.server.GrpcServerCdiExtension;
+            with GrpcMpCdiExtension;
 
     // needed when running with modules - to make private methods accessible
     opens io.helidon.microprofile.grpc.server to weld.core.impl, io.helidon.microprofile.cdi;
