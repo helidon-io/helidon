@@ -60,6 +60,7 @@ import io.helidon.security.abac.scope.ScopeValidator;
 import io.helidon.security.jwt.Jwt;
 import io.helidon.security.jwt.JwtException;
 import io.helidon.security.jwt.JwtUtil;
+import io.helidon.security.jwt.JwtValidator;
 import io.helidon.security.jwt.SignedJwt;
 import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.providers.common.TokenCredential;
@@ -85,6 +86,9 @@ class TenantAuthenticationHandler {
     private static final TokenHandler PARAM_HEADER_HANDLER = TokenHandler.forHeader(OidcConfig.PARAM_HEADER_NAME);
     private static final TokenHandler PARAM_ID_HEADER_HANDLER = TokenHandler.forHeader(OidcConfig.PARAM_ID_HEADER_NAME);
     private static final LazyValue<SecureRandom> RANDOM = LazyValue.create(SecureRandom::new);
+    private static final JwtValidator TIME_VALIDATORS = JwtValidator.builder()
+            .addDefaultTimeValidators()
+            .build();
 
     private final boolean optional;
     private final OidcConfig oidcConfig;
@@ -522,9 +526,19 @@ class TenantAuthenticationHandler {
                 errors = Errors.collector().collect();
             }
             Jwt jwt = signedJwt.getJwt();
-            Errors validationErrors = jwt.validate(tenant.issuer(),
-                                                   tenantConfig.clientId(),
-                                                   true);
+
+            JwtValidator.Builder jwtValidatorBuilder = JwtValidator.builder()
+                    .addDefaultTimeValidators()
+                    .addCriticalValidator()
+                    .addUserPrincipalValidator()
+                    .addAudienceValidator(tenantConfig.clientId());
+
+            if (tenant.issuer() != null) {
+                jwtValidatorBuilder.addIssuerValidator(tenant.issuer());
+            }
+
+            JwtValidator jwtValidation = jwtValidatorBuilder.build();
+            Errors validationErrors = jwtValidation.validate(jwt);
 
             if (errors.isValid() && validationErrors.isValid()) {
                 return processAccessToken(tenantId, providerRequest, jwt);
@@ -569,7 +583,7 @@ class TenantAuthenticationHandler {
             } else {
                 collector = Errors.collector();
             }
-            Errors timeErrors = signedJwt.getJwt().validate(Jwt.defaultTimeValidators());
+            Errors timeErrors = TIME_VALIDATORS.validate(signedJwt.getJwt());
             if (timeErrors.isValid()) {
                 return processValidationResult(providerRequest, signedJwt, idToken, tenantId, collector);
             } else {
@@ -703,9 +717,18 @@ class TenantAuthenticationHandler {
                                                            List<String> cookies) {
         Jwt jwt = signedJwt.getJwt();
         Errors errors = collector.collect();
-        Errors validationErrors = jwt.validate(tenant.issuer(),
-                                               tenantConfig.audience(),
-                                               tenantConfig.checkAudience());
+        JwtValidator.Builder jwtValidatorBuilder = JwtValidator.builder()
+                .addDefaultTimeValidators()
+                .addCriticalValidator()
+                .addUserPrincipalValidator();
+        if (tenant.issuer() != null) {
+            jwtValidatorBuilder.addIssuerValidator(tenant.issuer());
+        }
+        if (tenantConfig.checkAudience()) {
+            jwtValidatorBuilder.addAudienceValidator(tenantConfig.audience());
+        }
+        JwtValidator jwtValidation = jwtValidatorBuilder.build();
+        Errors validationErrors = jwtValidation.validate(jwt);
 
         if (errors.isValid() && validationErrors.isValid()) {
 
