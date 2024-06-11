@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,14 @@
 syntax = "proto3";
 option java_package = "io.helidon.microprofile.grpc.server.test";
 
-service StringService {
-  rpc Upper (StringMessage) returns (StringMessage) {}
-  rpc Lower (StringMessage) returns (StringMessage) {}
-  rpc Split (StringMessage) returns (stream StringMessage) {}
-  rpc Join (stream StringMessage) returns (StringMessage) {}
-  rpc Echo (stream StringMessage) returns (stream StringMessage) {}
+service HashService {
+  rpc Hash (Message) returns (Value) {}
 }
 
-message StringMessage {
+message Message {
+  string text = 1;
+}
+
+message Value {
   string text = 1;
 }

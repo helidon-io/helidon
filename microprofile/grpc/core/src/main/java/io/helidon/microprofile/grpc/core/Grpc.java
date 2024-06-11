@@ -30,7 +30,7 @@ import jakarta.inject.Qualifier;
  * An annotation used to mark a class as representing a gRPC service.
  */
 @Qualifier
-@Target(ElementType.TYPE)
+@Target({ElementType.TYPE, ElementType.FIELD, ElementType.CONSTRUCTOR})
 @Retention(RetentionPolicy.RUNTIME)
 @Inherited
 @Documented

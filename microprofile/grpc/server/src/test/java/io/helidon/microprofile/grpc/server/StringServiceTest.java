@@ -25,13 +25,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.grpc.stub.StreamObserver;
-import io.helidon.grpc.examples.common.StringServiceGrpc;
-import io.helidon.grpc.examples.common.Strings;
 import io.helidon.microprofile.grpc.core.Bidirectional;
 import io.helidon.microprofile.grpc.core.ClientStreaming;
 import io.helidon.microprofile.grpc.core.Grpc;
 import io.helidon.microprofile.grpc.core.ServerStreaming;
 import io.helidon.microprofile.grpc.core.Unary;
+import io.helidon.microprofile.grpc.server.test.StringServiceGrpc;
+import io.helidon.microprofile.grpc.server.test.Strings;
 import io.helidon.webserver.grpc.CollectingObserver;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
