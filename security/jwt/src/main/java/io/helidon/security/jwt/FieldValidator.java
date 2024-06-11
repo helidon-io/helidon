@@ -17,6 +17,7 @@
 package io.helidon.security.jwt;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -94,7 +95,7 @@ public final class FieldValidator extends OptionalValidator {
          * @return updated builder instance
          */
         public Builder name(String name) {
-            this.name = name;
+            this.name = Objects.requireNonNull(name);
             return this;
         }
 
@@ -105,7 +106,7 @@ public final class FieldValidator extends OptionalValidator {
          * @return updated builder instance
          */
         public Builder expectedValue(String expectedValue) {
-            this.expectedValue = expectedValue;
+            this.expectedValue = Objects.requireNonNull(expectedValue);
             return this;
         }
 
@@ -127,15 +128,10 @@ public final class FieldValidator extends OptionalValidator {
 
         @Override
         public FieldValidator build() {
-            if (name == null) {
-                throw new RuntimeException("Missing supported field name");
-            } else if (expectedValue == null) {
-                throw new RuntimeException("Missing expected claim value");
-            }
+            Objects.requireNonNull(name, "Missing supported field name");
+            Objects.requireNonNull(expectedValue, "Missing expected claim value");
             if (fieldAccessor == null) {
-                if (claimKey == null) {
-                    throw new RuntimeException("Field accessor or claim key name has to be set.");
-                }
+                Objects.requireNonNull(claimKey, "Field accessor or claim key name has to be set.");
                 if (scope() == JwtScope.PAYLOAD) {
                     fieldAccessor = jwt -> jwt.payloadClaim(claimKey).map(it -> ((JsonString) it).getString());
                 } else {

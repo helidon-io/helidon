@@ -18,6 +18,7 @@ package io.helidon.security.jwt;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Objects;
 
 abstract class InstantValidator extends OptionalValidator {
     private final Instant now;
@@ -65,7 +66,7 @@ abstract class InstantValidator extends OptionalValidator {
          * @return updated builder instance
          */
         public B now(Instant now) {
-            this.now = now;
+            this.now = Objects.requireNonNull(now);
             return me();
         }
 
@@ -77,7 +78,7 @@ abstract class InstantValidator extends OptionalValidator {
          * @return updated builder instance
          */
         public B allowedTimeSkew(Duration allowedTimeSkew) {
-            this.allowedTimeSkew = allowedTimeSkew;
+            this.allowedTimeSkew = Objects.requireNonNull(allowedTimeSkew);
             return me();
         }
     }

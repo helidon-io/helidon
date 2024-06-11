@@ -18,6 +18,7 @@ package io.helidon.security.jwt;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -79,6 +80,7 @@ public final class AudienceValidator extends OptionalValidator {
          * @return updated builder instance
          */
         public Builder addExpectedAudience(String audience) {
+            Objects.requireNonNull(audience);
             expectedAudience.add(audience);
             return this;
         }
@@ -90,6 +92,7 @@ public final class AudienceValidator extends OptionalValidator {
          * @return updated builder instance
          */
         public Builder expectedAudience(Set<String> expectedAudience) {
+            Objects.requireNonNull(expectedAudience);
             this.expectedAudience = new HashSet<>(expectedAudience);
             return this;
         }

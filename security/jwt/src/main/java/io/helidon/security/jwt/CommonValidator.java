@@ -68,6 +68,7 @@ abstract class CommonValidator implements ClaimValidator {
          * @return updated builder instance
          */
         B addClaim(String claim) {
+            Objects.requireNonNull(claim);
             this.claims.add(claim);
             return me();
         }
@@ -79,6 +80,7 @@ abstract class CommonValidator implements ClaimValidator {
          * @return updated builder instance
          */
         B claims(Set<String> claims) {
+            Objects.requireNonNull(claims);
             this.claims = new HashSet<>(claims);
             return me();
         }

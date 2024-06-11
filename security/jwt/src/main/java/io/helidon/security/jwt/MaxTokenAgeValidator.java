@@ -19,6 +19,7 @@ package io.helidon.security.jwt;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.Errors;
@@ -86,7 +87,7 @@ public final class MaxTokenAgeValidator extends InstantValidator {
          * @return updated builder instance
          */
         public Builder expectedMaxTokenAge(Duration expectedMaxTokenAge) {
-            this.expectedMaxTokenAge = expectedMaxTokenAge;
+            this.expectedMaxTokenAge = Objects.requireNonNull(expectedMaxTokenAge);
             return this;
         }
     }

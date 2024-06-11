@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -75,29 +76,32 @@ public interface JwtValidator {
 
         /**
          * Add {@link Validator} instance among the claim validators.
-         * This {@link Validator} is not bound to any specific claim in the JWT scopes.
          * Default scope is set to {@link JwtScope#PAYLOAD}.
-         * <p>
-         * If it needs to be bound to any specific claim/JWT scope, please use {@link #addValidator(Consumer)}.
          *
          * @param validator to be added
+         * @param claims    claims handled by the validator
          * @return updated builder instance
          */
-        public Builder addValidator(Validator<Jwt> validator) {
-            claimValidators.add(ValidatorWrapper.builder().validator(validator).build());
-            return this;
+        public Builder addValidator(Validator<Jwt> validator, String... claims) {
+            return addValidator(JwtScope.PAYLOAD, validator, claims);
         }
 
         /**
          * Add {@link Validator} instance among the claim validators.
          *
-         * @param builderConsumer consumer of the builder
+         * @param scope     scope of the validator
+         * @param validator to be added
+         * @param claims    claims handled by the validator
          * @return updated builder instance
          */
-        public Builder addValidator(Consumer<ValidatorWrapper.Builder> builderConsumer) {
-            ValidatorWrapper.Builder builder = ValidatorWrapper.builder();
-            builderConsumer.accept(builder);
-            claimValidators.add(builder.build());
+        public Builder addValidator(JwtScope scope, Validator<Jwt> validator, String... claims) {
+            Objects.requireNonNull(scope);
+            Objects.requireNonNull(validator);
+            claimValidators.add(ValidatorWrapper.builder()
+                                        .scope(scope)
+                                        .validator(validator)
+                                        .claims(Set.of(claims))
+                                        .build());
             return this;
         }
 
@@ -110,6 +114,9 @@ public interface JwtValidator {
          * @return updated builder instance
          */
         public Builder addHeaderFieldValidator(String claimKey, String fieldName, String expectedValue) {
+            Objects.requireNonNull(claimKey);
+            Objects.requireNonNull(fieldName);
+            Objects.requireNonNull(expectedValue);
             claimValidators.add(FieldValidator.builder()
                                         .scope(JwtScope.HEADER)
                                         .claimKey(claimKey)
@@ -128,6 +135,9 @@ public interface JwtValidator {
          * @return updated builder instance
          */
         public Builder addPayloadFieldValidator(String claimKey, String fieldName, String expectedValue) {
+            Objects.requireNonNull(claimKey);
+            Objects.requireNonNull(fieldName);
+            Objects.requireNonNull(expectedValue);
             claimValidators.add(FieldValidator.builder()
                                         .claimKey(claimKey)
                                         .name(fieldName)
@@ -143,6 +153,7 @@ public interface JwtValidator {
          * @return updated builder instance
          */
         public Builder addFieldValidator(Consumer<FieldValidator.Builder> builderConsumer) {
+            Objects.requireNonNull(builderConsumer);
             FieldValidator.Builder builder = FieldValidator.builder();
             builderConsumer.accept(builder);
             claimValidators.add(builder.build());
@@ -168,6 +179,7 @@ public interface JwtValidator {
          * @return updated builder instance
          */
         public Builder addIssuerValidator(String expectedIssuer, boolean mandatory) {
+            Objects.requireNonNull(expectedIssuer);
             claimValidators.add(FieldValidator.builder()
                                         .fieldAccessor(Jwt::issuer)
                                         .name("Issuer")
@@ -210,6 +222,8 @@ public interface JwtValidator {
          * @return updated builder instance
          */
         public Builder addDefaultTimeValidators(Instant now, Duration allowedTimeSkew, boolean mandatory) {
+            Objects.requireNonNull(now);
+            Objects.requireNonNull(allowedTimeSkew);
             addExpirationValidator(builder -> builder.now(now).allowedTimeSkew(allowedTimeSkew).mandatory(mandatory));
             addIssueTimeValidator(builder -> builder.now(now).allowedTimeSkew(allowedTimeSkew).mandatory(mandatory));
             addNotBeforeValidator(builder -> builder.now(now).allowedTimeSkew(allowedTimeSkew).mandatory(mandatory));
@@ -233,6 +247,7 @@ public interface JwtValidator {
          * @return updated builder instance
          */
         public Builder addExpirationValidator(Consumer<ExpirationValidator.Builder> builderConsumer) {
+            Objects.requireNonNull(builderConsumer);
             ExpirationValidator.Builder builder = ExpirationValidator.builder();
             builderConsumer.accept(builder);
             claimValidators.add(builder.build());
@@ -256,6 +271,7 @@ public interface JwtValidator {
          * @return updated builder instance
          */
         public Builder addNotBeforeValidator(Consumer<NotBeforeValidator.Builder> builderConsumer) {
+            Objects.requireNonNull(builderConsumer);
             NotBeforeValidator.Builder builder = NotBeforeValidator.builder();
             builderConsumer.accept(builder);
             claimValidators.add(builder.build());
@@ -279,6 +295,7 @@ public interface JwtValidator {
          * @return updated builder instance
          */
         public Builder addIssueTimeValidator(Consumer<IssueTimeValidator.Builder> builderConsumer) {
+            Objects.requireNonNull(builderConsumer);
             IssueTimeValidator.Builder builder = IssueTimeValidator.builder();
             builderConsumer.accept(builder);
             claimValidators.add(builder.build());
@@ -316,6 +333,7 @@ public interface JwtValidator {
          * @return updated builder instance
          */
         public Builder addUserPrincipalValidator(Consumer<UserPrincipalValidator.Builder> builderConsumer) {
+            Objects.requireNonNull(builderConsumer);
             UserPrincipalValidator.Builder builder = UserPrincipalValidator.builder();
             builderConsumer.accept(builder);
             claimValidators.add(builder.build());
@@ -329,6 +347,7 @@ public interface JwtValidator {
          * @return updated builder instance
          */
         public Builder addMaxTokenAgeValidator(Duration expectedMaxTokenAge) {
+            Objects.requireNonNull(expectedMaxTokenAge);
             claimValidators.add(MaxTokenAgeValidator.builder()
                                         .expectedMaxTokenAge(expectedMaxTokenAge)
                                         .build());
@@ -342,6 +361,7 @@ public interface JwtValidator {
          * @return updated builder instance
          */
         public Builder addMaxTokenAgeValidator(Consumer<MaxTokenAgeValidator.Builder> builderConsumer) {
+            Objects.requireNonNull(builderConsumer);
             MaxTokenAgeValidator.Builder builder = MaxTokenAgeValidator.builder();
             builderConsumer.accept(builder);
             claimValidators.add(builder.build());
@@ -356,6 +376,7 @@ public interface JwtValidator {
          * @return updated builder instance
          */
         public Builder addAudienceValidator(String expectedAudience) {
+            Objects.requireNonNull(expectedAudience);
             claimValidators.add(AudienceValidator.builder()
                                         .addExpectedAudience(expectedAudience)
                                         .build());
@@ -370,6 +391,7 @@ public interface JwtValidator {
          * @return updated builder instance
          */
         public Builder addAudienceValidator(Set<String> expectedAudience) {
+            Objects.requireNonNull(expectedAudience);
             claimValidators.add(AudienceValidator.builder()
                                         .expectedAudience(expectedAudience)
                                         .build());
@@ -384,6 +406,7 @@ public interface JwtValidator {
          * @return updated builder instance
          */
         public Builder addAudienceValidator(Consumer<AudienceValidator.Builder> builderConsumer) {
+            Objects.requireNonNull(builderConsumer);
             AudienceValidator.Builder builder = AudienceValidator.builder();
             builderConsumer.accept(builder);
             claimValidators.add(builder.build());
@@ -404,5 +427,4 @@ public interface JwtValidator {
             return claimValidators;
         }
     }
-
 }
