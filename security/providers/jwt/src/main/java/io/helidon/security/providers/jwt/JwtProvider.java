@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ import io.helidon.security.SubjectType;
 import io.helidon.security.jwt.Jwt;
 import io.helidon.security.jwt.JwtException;
 import io.helidon.security.jwt.JwtUtil;
+import io.helidon.security.jwt.JwtValidator;
 import io.helidon.security.jwt.SignedJwt;
 import io.helidon.security.jwt.jwk.Jwk;
 import io.helidon.security.jwt.jwk.JwkKeys;
@@ -167,7 +168,13 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
             if (errors.isValid()) {
                 Jwt jwt = signedJwt.getJwt();
                 // perform all validations, including expected audience verification
-                Errors validate = jwt.validate(null, expectedAudience);
+                JwtValidator jwtValidator = JwtValidator.builder()
+                        .addDefaultTimeValidators()
+                        .addCriticalValidator()
+                        .addUserPrincipalValidator()
+                        .addAudienceValidator(expectedAudience)
+                        .build();
+                Errors validate = jwtValidator.validate(jwt);
                 if (validate.isValid()) {
                     return AuthenticationResponse.success(buildSubject(jwt, signedJwt));
                 } else {
