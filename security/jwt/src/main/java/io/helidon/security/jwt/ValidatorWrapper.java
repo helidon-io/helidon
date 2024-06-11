@@ -18,7 +18,6 @@ package io.helidon.security.jwt;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 import io.helidon.common.Errors;
 
