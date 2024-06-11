@@ -128,16 +128,24 @@ public final class FieldValidator extends OptionalValidator {
 
         @Override
         public FieldValidator build() {
-            Objects.requireNonNull(name, "Missing supported field name");
-            Objects.requireNonNull(expectedValue, "Missing expected claim value");
+            Errors.Collector collector = Errors.collector();
+            if (name == null) {
+                collector.fatal(getClass(), "Missing supported field name");
+            }
+            if (expectedValue == null) {
+                collector.fatal(getClass(), "Field accessor or claim key name has to be set.");
+            }
             if (fieldAccessor == null) {
-                Objects.requireNonNull(claimKey, "Field accessor or claim key name has to be set.");
+                if (claimKey == null) {
+                    collector.fatal(getClass(), "Field accessor or claim key name has to be set.");
+                }
                 if (scope() == JwtScope.PAYLOAD) {
                     fieldAccessor = jwt -> jwt.payloadClaim(claimKey).map(it -> ((JsonString) it).getString());
                 } else {
                     fieldAccessor = jwt -> jwt.headerClaim(claimKey).map(it -> ((JsonString) it).getString());
                 }
             }
+            collector.collect().checkValid();
             return new FieldValidator(this);
         }
     }

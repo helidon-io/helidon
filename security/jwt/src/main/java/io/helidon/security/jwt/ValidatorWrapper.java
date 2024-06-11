@@ -70,7 +70,11 @@ final class ValidatorWrapper extends CommonValidator {
 
         @Override
         public ValidatorWrapper build() {
-            Objects.requireNonNull(validator, "No validator instance was set");
+            Errors.Collector collector = Errors.collector();
+            if (validator == null) {
+                collector.fatal(getClass(), "No validator instance was set");
+            }
+            collector.collect().checkValid();
             return new ValidatorWrapper(this);
         }
     }

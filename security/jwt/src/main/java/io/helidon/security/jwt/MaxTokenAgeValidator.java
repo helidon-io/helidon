@@ -74,7 +74,11 @@ public final class MaxTokenAgeValidator extends InstantValidator {
 
         @Override
         public MaxTokenAgeValidator build() {
-            Objects.requireNonNull(expectedMaxTokenAge, "Expected JWT max token age is required to be set");
+            Errors.Collector collector = Errors.collector();
+            if (expectedMaxTokenAge == null) {
+                collector.fatal(getClass(), "Expected JWT max token age is required to be set");
+            }
+            collector.collect().checkValid();
             return new MaxTokenAgeValidator(this);
         }
 
