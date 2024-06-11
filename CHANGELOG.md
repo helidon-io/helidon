@@ -26,6 +26,8 @@ Java 21 is required to use Helidon 4.0.10.
 - WebServer: Fix handling of invalid end of line in HTTP header parsing. Added tests [8843](https://github.com/helidon-io/helidon/pull/8843)
 - WebServer: Retrieve the correct requested URI info path value, indpt of the routing path used to locate the handler [8844](https://github.com/helidon-io/helidon/pull/8844)
 - WebServer: register routing in weighted order of Server and HTTP Features [8840](https://github.com/helidon-io/helidon/pull/8840)
+- Native Image: Updates to support latest dev release of GraalVM native image [8838](https://github.com/helidon-io/helidon/pull/8838)
+- Security: JWT improvements [8865](https://github.com/helidon-io/helidon/pull/8865)
 
 ## [4.0.9]
 
