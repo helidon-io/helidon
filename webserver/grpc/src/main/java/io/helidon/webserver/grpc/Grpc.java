@@ -75,22 +75,22 @@ class Grpc<ReqT, ResT> extends GrpcRoute {
     }
 
     /**
-     * Create a {@link io.helidon.webserver.grpc.Grpc gRPC route} from a {@link io.grpc.ServerMethodDefinition}.
+     * Create a {@link io.helidon.webserver.grpc.Grpc gRPC route} from a {@link ServerMethodDefinition}.
      *
-     * @param definition the {@link io.grpc.ServerMethodDefinition} representing the method to execute
+     * @param definition the {@link ServerMethodDefinition} representing the method to execute
      * @param proto an optional protocol buffer {@link com.google.protobuf.Descriptors.FileDescriptor}
      * containing the service definition
      * @param <ReqT> the request type
      * @param <ResT> the response type
      * @return a {@link io.helidon.webserver.grpc.Grpc gRPC route} created
-     * from the {@link io.grpc.ServerMethodDefinition}
+     * from the {@link ServerMethodDefinition}
      */
     static <ReqT, ResT> Grpc<ReqT, ResT> methodDefinition(ServerMethodDefinition<ReqT, ResT> definition,
                                                           Descriptors.FileDescriptor proto) {
         return grpc(definition.getMethodDescriptor(), definition.getServerCallHandler(), proto);
     }
 
-    public static Grpc<?, ?> unary(ServiceDescriptor service, io.helidon.webserver.grpc.MethodDescriptor<?, ?> method) {
+    public static Grpc<?, ?> method(GrpcServiceDescriptor service, GrpcMethodDescriptor<?, ?> method) {
         String path = service.fullName() + "/" + method.name();
         return new Grpc<>((MethodDescriptor) method.descriptor(),
                 PathMatchers.exact(path),
@@ -145,8 +145,8 @@ class Grpc<ReqT, ResT> extends GrpcRoute {
         MethodDescriptor.Marshaller<ReqT> reqMarshaller = ProtoMarshaller.get(requestType);
         MethodDescriptor.Marshaller<ResT> resMarshaller = ProtoMarshaller.get(responseType);
 
-        io.grpc.MethodDescriptor.Builder<ReqT, ResT> grpcDesc = io.grpc.MethodDescriptor.<ReqT, ResT>newBuilder()
-                .setFullMethodName(io.grpc.MethodDescriptor.generateFullMethodName(serviceName, methodName))
+        MethodDescriptor.Builder<ReqT, ResT> grpcDesc = MethodDescriptor.<ReqT, ResT>newBuilder()
+                .setFullMethodName(MethodDescriptor.generateFullMethodName(serviceName, methodName))
                 .setType(getMethodType(mtd)).setFullMethodName(path).setRequestMarshaller(reqMarshaller)
                 .setResponseMarshaller(resMarshaller).setSampledToLocalTracing(true);
 
@@ -155,9 +155,9 @@ class Grpc<ReqT, ResT> extends GrpcRoute {
 
 
     /**
-     * Create a {@link io.helidon.webserver.grpc.Grpc gRPC route} from a {@link io.grpc.MethodDescriptor}.
+     * Create a {@link io.helidon.webserver.grpc.Grpc gRPC route} from a {@link MethodDescriptor}.
      *
-     * @param grpcDesc the {@link io.grpc.MethodDescriptor} describing the method to execute
+     * @param grpcDesc the {@link MethodDescriptor} describing the method to execute
      * @param callHandler the {@link io.grpc.ServerCallHandler} that will execute the method
      * @param proto an optional protocol buffer {@link com.google.protobuf.Descriptors.FileDescriptor} containing
      * the service definition
@@ -236,7 +236,7 @@ class Grpc<ReqT, ResT> extends GrpcRoute {
         return sb.toString();
     }
 
-    private static io.grpc.MethodDescriptor.MethodType getMethodType(Descriptors.MethodDescriptor mtd) {
+    private static MethodDescriptor.MethodType getMethodType(Descriptors.MethodDescriptor mtd) {
         if (mtd.isClientStreaming()) {
             if (mtd.isServerStreaming()) {
                 return MethodDescriptor.MethodType.BIDI_STREAMING;

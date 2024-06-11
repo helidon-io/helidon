@@ -21,8 +21,8 @@ import java.util.Map;
 
 import io.helidon.common.Weight;
 import io.helidon.grpc.core.InterceptorWeights;
-import io.helidon.webserver.grpc.MethodDescriptor;
-import io.helidon.webserver.grpc.ServiceDescriptor;
+import io.helidon.webserver.grpc.GrpcMethodDescriptor;
+import io.helidon.webserver.grpc.GrpcServiceDescriptor;
 
 import io.grpc.Context;
 import io.grpc.Contexts;
@@ -37,12 +37,12 @@ import static io.helidon.grpc.core.GrpcHelper.extractMethodName;
  * A {@link ServerInterceptor} that sets values into the gRPC call context.
  */
 @Weight(InterceptorWeights.CONTEXT)
-class ContextSettingServerInterceptor implements ServerInterceptor, ServiceDescriptor.Aware {
+class ContextSettingServerInterceptor implements ServerInterceptor, GrpcServiceDescriptor.Aware {
 
     /**
-     * The {@link ServiceDescriptor} for the service being intercepted.
+     * The {@link GrpcServiceDescriptor} for the service being intercepted.
      */
-    private ServiceDescriptor serviceDescriptor;
+    private GrpcServiceDescriptor serviceDescriptor;
 
     private ContextSettingServerInterceptor() {
     }
@@ -65,14 +65,14 @@ class ContextSettingServerInterceptor implements ServerInterceptor, ServiceDescr
         Context context = Context.current();
         String fullMethodName = call.getMethodDescriptor().getFullMethodName();
         String methodName = extractMethodName(fullMethodName);
-        MethodDescriptor methodDescriptor = serviceDescriptor.method(methodName);
+        GrpcMethodDescriptor methodDescriptor = serviceDescriptor.method(methodName);
         Map<Context.Key<?>, Object> contextMap = new HashMap<>();
 
         // apply context keys from the service followed by the method
         // so that the method can override any service keys
         contextMap.putAll(serviceDescriptor.context());
         contextMap.putAll(methodDescriptor.context());
-        contextMap.put(ServiceDescriptor.SERVICE_DESCRIPTOR_KEY, serviceDescriptor);
+        contextMap.put(GrpcServiceDescriptor.SERVICE_DESCRIPTOR_KEY, serviceDescriptor);
 
         if (!contextMap.isEmpty()) {
             for (Map.Entry<Context.Key<?>, Object> entry : contextMap.entrySet()) {
@@ -85,7 +85,7 @@ class ContextSettingServerInterceptor implements ServerInterceptor, ServiceDescr
     }
 
     @Override
-    public void setServiceDescriptor(ServiceDescriptor descriptor) {
+    public void setServiceDescriptor(GrpcServiceDescriptor descriptor) {
         this.serviceDescriptor = descriptor;
     }
 

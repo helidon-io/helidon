@@ -27,8 +27,8 @@ import io.grpc.stub.StreamObserver;
 import io.helidon.microprofile.grpc.core.Grpc;
 import io.helidon.microprofile.grpc.core.GrpcMarshaller;
 import io.helidon.microprofile.grpc.core.GrpcMethod;
-import io.helidon.webserver.grpc.MethodDescriptor;
-import io.helidon.webserver.grpc.ServiceDescriptor;
+import io.helidon.webserver.grpc.GrpcMethodDescriptor;
+import io.helidon.webserver.grpc.GrpcServiceDescriptor;
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.inject.Singleton;
@@ -61,7 +61,7 @@ public class GrpcServiceBuilderTest {
     public void shouldUseServiceNameFromAnnotation() {
         ServiceOne service = new ServiceOne();
         GrpcServiceBuilder modeller = GrpcServiceBuilder.create(service, beanManager);
-        ServiceDescriptor descriptor = modeller.build();
+        GrpcServiceDescriptor descriptor = modeller.build();
 
         assertThat(descriptor.name(), is("ServiceOne/foo"));
     }
@@ -69,7 +69,7 @@ public class GrpcServiceBuilderTest {
     @Test
     public void shouldCreateDescriptorFoServiceWithNestedGenericParameters() {
         GrpcServiceBuilder modeller = GrpcServiceBuilder.create(ServiceSix.class, beanManager);
-        ServiceDescriptor descriptor = modeller.build();
+        GrpcServiceDescriptor descriptor = modeller.build();
         assertThat(descriptor.name(), is(ServiceSix.class.getSimpleName()));
     }
 
@@ -77,7 +77,7 @@ public class GrpcServiceBuilderTest {
     public void shouldUseDefaultServiceName() {
         ServiceTwo service = new ServiceTwo();
         GrpcServiceBuilder modeller = GrpcServiceBuilder.create(service, beanManager);
-        ServiceDescriptor descriptor = modeller.build();
+        GrpcServiceDescriptor descriptor = modeller.build();
 
         assertThat(descriptor.name(), is("ServiceTwo"));
     }
@@ -99,11 +99,11 @@ public class GrpcServiceBuilderTest {
     }
 
     public void assertServiceOne(GrpcServiceBuilder builder) {
-        ServiceDescriptor descriptor = builder.build();
+        GrpcServiceDescriptor descriptor = builder.build();
         assertThat(descriptor.name(), is("ServiceOne/foo"));
         assertThat(descriptor.methods().size(), is(4));
 
-        MethodDescriptor methodDescriptor;
+        GrpcMethodDescriptor methodDescriptor;
         io.grpc.MethodDescriptor grpcDescriptor;
 
         methodDescriptor = descriptor.method("unary");
@@ -160,11 +160,11 @@ public class GrpcServiceBuilderTest {
         ServiceTwo service = new ServiceTwo();
         GrpcServiceBuilder builder = GrpcServiceBuilder.create(service, beanManager);
 
-        ServiceDescriptor descriptor = builder.build();
+        GrpcServiceDescriptor descriptor = builder.build();
         assertThat(descriptor.name(), is("ServiceTwo"));
         assertThat(descriptor.methods().size(), is(4));
 
-        MethodDescriptor methodDescriptor;
+        GrpcMethodDescriptor methodDescriptor;
         io.grpc.MethodDescriptor grpcDescriptor;
 
         methodDescriptor = descriptor.method("One");
@@ -218,9 +218,9 @@ public class GrpcServiceBuilderTest {
 
     @SuppressWarnings("unchecked")
     public void assertSingleton(GrpcServiceBuilder builder) {
-        ServiceDescriptor descriptor = builder.build();
+        GrpcServiceDescriptor descriptor = builder.build();
 
-        MethodDescriptor methodDescriptor = descriptor.method("unary");
+        GrpcMethodDescriptor methodDescriptor = descriptor.method("unary");
         ServerCallHandler handler = methodDescriptor.callHandler();
 
         ServerCall<String, ServiceFive> callOne = mock(ServerCall.class);

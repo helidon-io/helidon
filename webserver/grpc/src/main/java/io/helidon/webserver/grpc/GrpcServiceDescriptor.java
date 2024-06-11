@@ -32,6 +32,7 @@ import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
 import io.grpc.BindableService;
 import io.grpc.Context;
+import io.grpc.MethodDescriptor;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import io.grpc.ServerMethodDefinition;
@@ -44,26 +45,26 @@ import static io.helidon.grpc.core.GrpcHelper.extractMethodName;
 /**
  * Encapsulates all metadata necessary to create and deploy a gRPC service.
  */
-public class ServiceDescriptor {
+public class GrpcServiceDescriptor {
     /**
      * The {@link io.grpc.Context.Key} to use to obtain the {@link io.grpc.ServiceDescriptor}.
      */
-    public static final Context.Key<ServiceDescriptor> SERVICE_DESCRIPTOR_KEY =
+    public static final Context.Key<GrpcServiceDescriptor> SERVICE_DESCRIPTOR_KEY =
             Context.key("Helidon.ServiceDescriptor");
 
     private final String name;
     private final String fullName;
     private final String packageName;
-    private final Map<String, MethodDescriptor<?, ?>> methods;
+    private final Map<String, GrpcMethodDescriptor<?, ?>> methods;
     private final WeightedBag<ServerInterceptor> interceptors;
     private final Map<Context.Key<?>, Object> context;
     private final Descriptors.FileDescriptor proto;
 
-    private ServiceDescriptor(String name,
-                              Map<String, MethodDescriptor<?, ?>> methods,
-                              WeightedBag<ServerInterceptor> interceptors,
-                              Map<Context.Key<?>, Object> context,
-                              Descriptors.FileDescriptor proto) {
+    private GrpcServiceDescriptor(String name,
+                                  Map<String, GrpcMethodDescriptor<?, ?>> methods,
+                                  WeightedBag<ServerInterceptor> interceptors,
+                                  Map<Context.Key<?>, Object> context,
+                                  Descriptors.FileDescriptor proto) {
         String assignedName = Objects.requireNonNull(name);
         this.methods = methods;
         this.context = Collections.unmodifiableMap(context);
@@ -112,12 +113,12 @@ public class ServiceDescriptor {
     }
 
     /**
-     * Return {@link MethodDescriptor} for a specified method name.
+     * Return {@link GrpcMethodDescriptor} for a specified method name.
      *
      * @param name method name
      * @return method descriptor for the specified name
      */
-    public MethodDescriptor<?, ?> method(String name) {
+    public GrpcMethodDescriptor<?, ?> method(String name) {
         return methods.get(name);
     }
 
@@ -126,7 +127,7 @@ public class ServiceDescriptor {
      *
      * @return service methods
      */
-    public Collection<MethodDescriptor<?, ?>> methods() {
+    public Collection<GrpcMethodDescriptor<?, ?>> methods() {
         return Collections.unmodifiableCollection(methods.values());
     }
 
@@ -170,7 +171,7 @@ public class ServiceDescriptor {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        ServiceDescriptor that = (ServiceDescriptor) o;
+        GrpcServiceDescriptor that = (GrpcServiceDescriptor) o;
         return fullName.equals(that.fullName);
     }
 
@@ -213,7 +214,7 @@ public class ServiceDescriptor {
     // ---- inner interface: Config -----------------------------------------
 
     /**
-     * Fluent configuration interface for the {@link ServiceDescriptor}.
+     * Fluent configuration interface for the {@link GrpcServiceDescriptor}.
      */
     public interface Rules {
         /**
@@ -336,7 +337,7 @@ public class ServiceDescriptor {
          */
         <ReqT, ResT> Rules unary(String name,
                                  ServerCalls.UnaryMethod<ReqT, ResT> method,
-                                 MethodDescriptor.Configurer<ReqT, ResT> configurer);
+                                 GrpcMethodDescriptor.Configurer<ReqT, ResT> configurer);
 
         /**
          * Register server streaming method for the service.
@@ -361,7 +362,7 @@ public class ServiceDescriptor {
          */
         <ReqT, ResT> Rules serverStreaming(String name,
                                            ServerCalls.ServerStreamingMethod<ReqT, ResT> method,
-                                           MethodDescriptor.Configurer<ReqT, ResT> configurer);
+                                           GrpcMethodDescriptor.Configurer<ReqT, ResT> configurer);
 
         /**
          * Register client streaming method for the service.
@@ -386,7 +387,7 @@ public class ServiceDescriptor {
          */
         <ReqT, ResT> Rules clientStreaming(String name,
                                            ServerCalls.ClientStreamingMethod<ReqT, ResT> method,
-                                           MethodDescriptor.Configurer<ReqT, ResT> configurer);
+                                           GrpcMethodDescriptor.Configurer<ReqT, ResT> configurer);
 
         /**
          * Register bi-directional streaming method for the service.
@@ -411,7 +412,7 @@ public class ServiceDescriptor {
          */
         <ReqT, ResT> Rules bidirectional(String name,
                                          ServerCalls.BidiStreamingMethod<ReqT, ResT> method,
-                                         MethodDescriptor.Configurer<ReqT, ResT> configurer);
+                                         GrpcMethodDescriptor.Configurer<ReqT, ResT> configurer);
     }
 
     // ---- inner class: Configurer -----------------------------------------
@@ -434,7 +435,7 @@ public class ServiceDescriptor {
 
     /**
      * Allows users to specify that they would like to have access to a
-     * {@link ServiceDescriptor} within their {@link io.grpc.ServerInterceptor}
+     * {@link GrpcServiceDescriptor} within their {@link io.grpc.ServerInterceptor}
      * implementation.
      */
     public interface Aware {
@@ -443,21 +444,21 @@ public class ServiceDescriptor {
          *
          * @param descriptor service descriptor instance
          */
-        void setServiceDescriptor(ServiceDescriptor descriptor);
+        void setServiceDescriptor(GrpcServiceDescriptor descriptor);
     }
 
     // ---- inner class: Builder --------------------------------------------
 
     /**
-     * A {@link ServiceDescriptor} builder.
+     * A {@link GrpcServiceDescriptor} builder.
      */
-    public static final class Builder implements Rules, io.helidon.common.Builder<Builder, ServiceDescriptor> {
+    public static final class Builder implements Rules, io.helidon.common.Builder<Builder, GrpcServiceDescriptor> {
         private final Class<?> serviceClass;
 
         private String name;
         private Descriptors.FileDescriptor proto;
         private MarshallerSupplier marshallerSupplier = MarshallerSupplier.create();
-        private final Map<String, MethodDescriptor.Builder<?, ?>> methodBuilders = new LinkedHashMap<>();
+        private final Map<String, GrpcMethodDescriptor.Builder<?, ?>> methodBuilders = new LinkedHashMap<>();
         private final WeightedBag<ServerInterceptor> interceptors = WeightedBag.create(InterceptorWeights.USER);
         private final Map<Context.Key<?>, Object> context = new HashMap<>();
 
@@ -486,11 +487,11 @@ public class ServiceDescriptor {
             }
 
             for (ServerMethodDefinition<?, ?> smd : def.getMethods()) {
-                io.grpc.MethodDescriptor<?, ?> md = smd.getMethodDescriptor();
+                MethodDescriptor<?, ?> md = smd.getMethodDescriptor();
                 ServerCallHandler<?, ?> handler = smd.getServerCallHandler();
                 String methodName = extractMethodName(md.getFullMethodName());
-                MethodDescriptor.Builder<?, ?> descriptor = MethodDescriptor.builder(this.name, methodName,
-                        (io.grpc.MethodDescriptor.Builder) md.toBuilder(), handler)
+                GrpcMethodDescriptor.Builder<?, ?> descriptor = GrpcMethodDescriptor.builder(this.name, methodName,
+                        (MethodDescriptor.Builder) md.toBuilder(), handler)
                         .marshallerSupplier(marshallerSupplier);
 
                 methodBuilders.put(methodName, descriptor);
@@ -513,7 +514,7 @@ public class ServiceDescriptor {
             }
 
             this.name = name.trim();
-            for (Map.Entry<String, MethodDescriptor.Builder<?, ?>> entry : methodBuilders.entrySet()) {
+            for (Map.Entry<String, GrpcMethodDescriptor.Builder<?, ?>> entry : methodBuilders.entrySet()) {
                 entry.getValue().fullname(name + "/" + entry.getKey());
             }
             return this;
@@ -539,9 +540,9 @@ public class ServiceDescriptor {
         @Override
         public <ReqT, ResT> Builder unary(String name,
                                           ServerCalls.UnaryMethod<ReqT, ResT> method,
-                                          MethodDescriptor.Configurer<ReqT, ResT> configurer) {
+                                          GrpcMethodDescriptor.Configurer<ReqT, ResT> configurer) {
             methodBuilders.put(name, createMethodDescriptor(name,
-                    io.grpc.MethodDescriptor.MethodType.UNARY,
+                    MethodDescriptor.MethodType.UNARY,
                     ServerCalls.asyncUnaryCall(method),
                     configurer));
             return this;
@@ -555,10 +556,10 @@ public class ServiceDescriptor {
         @Override
         public <ReqT, ResT> Builder serverStreaming(String name,
                                                     ServerCalls.ServerStreamingMethod<ReqT, ResT> method,
-                                                    MethodDescriptor.Configurer<ReqT, ResT> configurer) {
+                                                    GrpcMethodDescriptor.Configurer<ReqT, ResT> configurer) {
 
             methodBuilders.put(name, createMethodDescriptor(name,
-                    io.grpc.MethodDescriptor.MethodType.SERVER_STREAMING,
+                    MethodDescriptor.MethodType.SERVER_STREAMING,
                     ServerCalls.asyncServerStreamingCall(method),
                     configurer));
             return this;
@@ -572,10 +573,10 @@ public class ServiceDescriptor {
         @Override
         public <ReqT, ResT> Builder clientStreaming(String name,
                                                     ServerCalls.ClientStreamingMethod<ReqT, ResT> method,
-                                                    MethodDescriptor.Configurer<ReqT, ResT> configurer) {
+                                                    GrpcMethodDescriptor.Configurer<ReqT, ResT> configurer) {
 
             methodBuilders.put(name, createMethodDescriptor(name,
-                    io.grpc.MethodDescriptor.MethodType.CLIENT_STREAMING,
+                    MethodDescriptor.MethodType.CLIENT_STREAMING,
                     ServerCalls.asyncClientStreamingCall(method),
                     configurer));
             return this;
@@ -589,10 +590,10 @@ public class ServiceDescriptor {
         @Override
         public <ReqT, ResT> Builder bidirectional(String name,
                                                   ServerCalls.BidiStreamingMethod<ReqT, ResT> method,
-                                                  MethodDescriptor.Configurer<ReqT, ResT> configurer) {
+                                                  GrpcMethodDescriptor.Configurer<ReqT, ResT> configurer) {
 
             methodBuilders.put(name, createMethodDescriptor(name,
-                    io.grpc.MethodDescriptor.MethodType.BIDI_STREAMING,
+                    MethodDescriptor.MethodType.BIDI_STREAMING,
                     ServerCalls.asyncBidiStreamingCall(method),
                     configurer));
             return this;
@@ -612,7 +613,7 @@ public class ServiceDescriptor {
 
         @Override
         public Builder intercept(String methodName, ServerInterceptor... interceptors) {
-            MethodDescriptor.Builder<?, ?> method = methodBuilders.get(methodName);
+            GrpcMethodDescriptor.Builder<?, ?> method = methodBuilders.get(methodName);
 
             if (method == null) {
                 throw new IllegalArgumentException("No method exists with name '" + methodName + "'");
@@ -624,7 +625,7 @@ public class ServiceDescriptor {
 
         @Override
         public Builder intercept(String methodName, int priority, ServerInterceptor... interceptors) {
-            MethodDescriptor.Builder<?, ?> method = methodBuilders.get(methodName);
+            GrpcMethodDescriptor.Builder<?, ?> method = methodBuilders.get(methodName);
 
             if (method == null) {
                 throw new IllegalArgumentException("No method exists with name '" + methodName + "'");
@@ -641,15 +642,15 @@ public class ServiceDescriptor {
         }
 
         @Override
-        public ServiceDescriptor build() {
-            Map<String, MethodDescriptor<?, ?>> methods = new LinkedHashMap<>();
+        public GrpcServiceDescriptor build() {
+            Map<String, GrpcMethodDescriptor<?, ?>> methods = new LinkedHashMap<>();
             String fullName = getFullName();
-            for (Map.Entry<String, MethodDescriptor.Builder<?, ?>> entry : methodBuilders.entrySet()) {
+            for (Map.Entry<String, GrpcMethodDescriptor.Builder<?, ?>> entry : methodBuilders.entrySet()) {
                 String methodName = entry.getKey();
-                String fullMethodName = io.grpc.MethodDescriptor.generateFullMethodName(fullName, methodName);
+                String fullMethodName = MethodDescriptor.generateFullMethodName(fullName, methodName);
                 methods.put(methodName, entry.getValue().fullname(fullMethodName).build());
             }
-            return new ServiceDescriptor(name, methods, interceptors, context, proto);
+            return new GrpcServiceDescriptor(name, methods, interceptors, context, proto);
         }
 
         @Override
@@ -659,21 +660,22 @@ public class ServiceDescriptor {
 
         // ---- helpers -----------------------------------------------------
 
-        private <ReqT, ResT> MethodDescriptor.Builder<ReqT, ResT> createMethodDescriptor(
+        private <ReqT, ResT> GrpcMethodDescriptor.Builder<ReqT, ResT> createMethodDescriptor(
                 String methodName,
-                io.grpc.MethodDescriptor.MethodType methodType,
+                MethodDescriptor.MethodType methodType,
                 ServerCallHandler<ReqT, ResT> callHandler,
-                MethodDescriptor.Configurer<ReqT, ResT> configurer) {
+                GrpcMethodDescriptor.Configurer<ReqT, ResT> configurer) {
 
-            io.grpc.MethodDescriptor.Builder<ReqT, ResT> grpcDesc = io.grpc.MethodDescriptor.<ReqT, ResT>newBuilder()
-                    .setFullMethodName(io.grpc.MethodDescriptor.generateFullMethodName(getFullName(), methodName))
+            MethodDescriptor.Builder<ReqT, ResT> grpcDesc = MethodDescriptor.<ReqT, ResT>newBuilder()
+                    .setFullMethodName(MethodDescriptor.generateFullMethodName(getFullName(), methodName))
                     .setType(methodType)
                     .setSampledToLocalTracing(true);
 
             Class<ReqT> requestType = getTypeFromMethodDescriptor(methodName, true);
             Class<ResT> responseType = getTypeFromMethodDescriptor(methodName, false);
 
-            MethodDescriptor.Builder<ReqT, ResT> builder = MethodDescriptor.builder(this.name, methodName, grpcDesc, callHandler)
+            GrpcMethodDescriptor.Builder<ReqT, ResT> builder =
+                    GrpcMethodDescriptor.builder(this.name, methodName, grpcDesc, callHandler)
                     .defaultMarshallerSupplier(marshallerSupplier)
                     .requestType(requestType)
                     .responseType(responseType)

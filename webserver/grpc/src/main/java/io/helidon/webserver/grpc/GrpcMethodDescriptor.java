@@ -27,6 +27,7 @@ import io.helidon.grpc.core.MarshallerSupplier;
 import io.helidon.grpc.core.WeightedBag;
 
 import io.grpc.Context;
+import io.grpc.MethodDescriptor;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 
@@ -36,22 +37,22 @@ import io.grpc.ServerInterceptor;
  * @param <ReqT> request type
  * @param <ResT> response type
  */
-public class MethodDescriptor<ReqT, ResT> {
+public class GrpcMethodDescriptor<ReqT, ResT> {
     private final String name;
-    private final io.grpc.MethodDescriptor<ReqT, ResT> descriptor;
+    private final MethodDescriptor<ReqT, ResT> descriptor;
     private final ServerCallHandler<ReqT, ResT> callHandler;
     private final Map<Context.Key<?>, Object> context;
     private final WeightedBag<ServerInterceptor> interceptors;
     private final Class<ReqT> requestType;
     private final Class<ResT> responseType;
 
-    private MethodDescriptor(String name,
-                             io.grpc.MethodDescriptor<ReqT, ResT> descriptor,
-                             Class<ReqT> requestType,
-                             Class<ResT> responseType,
-                             ServerCallHandler<ReqT, ResT> callHandler,
-                             Map<Context.Key<?>, Object> context,
-                             WeightedBag<ServerInterceptor> interceptors) {
+    private GrpcMethodDescriptor(String name,
+                                 MethodDescriptor<ReqT, ResT> descriptor,
+                                 Class<ReqT> requestType,
+                                 Class<ResT> responseType,
+                                 ServerCallHandler<ReqT, ResT> callHandler,
+                                 Map<Context.Key<?>, Object> context,
+                                 WeightedBag<ServerInterceptor> interceptors) {
         this.name = name;
         this.descriptor = descriptor;
         this.requestType = requestType;
@@ -75,7 +76,7 @@ public class MethodDescriptor<ReqT, ResT> {
      *
      * @return gRPC method descriptor
      */
-    public io.grpc.MethodDescriptor<ReqT, ResT> descriptor() {
+    public MethodDescriptor<ReqT, ResT> descriptor() {
         return descriptor;
     }
 
@@ -128,15 +129,15 @@ public class MethodDescriptor<ReqT, ResT> {
 
     static <ReqT, ResT> Builder<ReqT, ResT> builder(String serviceName,
                                                     String name,
-                                                    io.grpc.MethodDescriptor.Builder<ReqT, ResT> descriptor,
+                                                    MethodDescriptor.Builder<ReqT, ResT> descriptor,
                                                     ServerCallHandler<ReqT, ResT> callHandler) {
         return new Builder<>(serviceName, name, descriptor, callHandler);
     }
 
-    static <ReqT, ResT> MethodDescriptor<ReqT, ResT> create(String serviceName,
-                                                            String name,
-                                                            io.grpc.MethodDescriptor.Builder<ReqT, ResT> descriptor,
-                                                            ServerCallHandler<ReqT, ResT> callHandler) {
+    static <ReqT, ResT> GrpcMethodDescriptor<ReqT, ResT> create(String serviceName,
+                                                                String name,
+                                                                MethodDescriptor.Builder<ReqT, ResT> descriptor,
+                                                                ServerCallHandler<ReqT, ResT> callHandler) {
         return builder(serviceName, name, descriptor, callHandler).build();
     }
 
@@ -193,7 +194,7 @@ public class MethodDescriptor<ReqT, ResT> {
          * If not set the default {@link MarshallerSupplier} from the service will be used.
          *
          * @param marshallerSupplier the {@link MarshallerSupplier} for the service
-         * @return this {@link ServiceDescriptor.Rules} instance for fluent call chaining
+         * @return this {@link GrpcServiceDescriptor.Rules} instance for fluent call chaining
          */
         Rules<ReqT, ResT> marshallerSupplier(MarshallerSupplier marshallerSupplier);
 
@@ -207,7 +208,7 @@ public class MethodDescriptor<ReqT, ResT> {
          *
          * @param requestType the type of the request message
          * @param <Rnew> the type of the request message
-         * @return this {@link ServiceDescriptor.Rules} instance
+         * @return this {@link GrpcServiceDescriptor.Rules} instance
          * for fluent call chaining
          */
         <Rnew> Rules<Rnew, ResT> requestType(Class<Rnew> requestType);
@@ -222,7 +223,7 @@ public class MethodDescriptor<ReqT, ResT> {
          *
          * @param responseType the type of the request message
          * @param <Rnew> the type of the request message
-         * @return this {@link ServiceDescriptor.Rules} instance
+         * @return this {@link GrpcServiceDescriptor.Rules} instance
          * for fluent call chaining
          */
         <Rnew> Rules<ReqT, Rnew> responseType(Class<Rnew> responseType);
@@ -246,16 +247,16 @@ public class MethodDescriptor<ReqT, ResT> {
     }
 
     /**
-     * {@link MethodDescriptor} builder implementation.
+     * {@link GrpcMethodDescriptor} builder implementation.
      *
      * @param <ReqT> request type
      * @param <ResT> response type
      */
     static final class Builder<ReqT, ResT>
             implements Rules<ReqT, ResT>,
-            io.helidon.common.Builder<Builder<ReqT, ResT>, MethodDescriptor<ReqT, ResT>> {
+            io.helidon.common.Builder<Builder<ReqT, ResT>, GrpcMethodDescriptor<ReqT, ResT>> {
         private final String name;
-        private final io.grpc.MethodDescriptor.Builder<ReqT, ResT> descriptor;
+        private final MethodDescriptor.Builder<ReqT, ResT> descriptor;
         private final ServerCallHandler<ReqT, ResT> callHandler;
 
         private final WeightedBag<ServerInterceptor> interceptors = WeightedBag.create(InterceptorWeights.USER);
@@ -271,7 +272,7 @@ public class MethodDescriptor<ReqT, ResT> {
 
         Builder(String serviceName,
                 String name,
-                io.grpc.MethodDescriptor.Builder<ReqT, ResT> descriptor,
+                MethodDescriptor.Builder<ReqT, ResT> descriptor,
                 ServerCallHandler<ReqT, ResT> callHandler) {
 
             this.name = name;
@@ -335,7 +336,7 @@ public class MethodDescriptor<ReqT, ResT> {
 
         @Override
         @SuppressWarnings("unchecked")
-        public MethodDescriptor<ReqT, ResT> build() {
+        public GrpcMethodDescriptor<ReqT, ResT> build() {
             MarshallerSupplier supplier = this.marshallerSupplier;
 
             if (supplier == null) {
@@ -343,14 +344,14 @@ public class MethodDescriptor<ReqT, ResT> {
             }
 
             if (requestType != null) {
-                descriptor.setRequestMarshaller((io.grpc.MethodDescriptor.Marshaller<ReqT>) supplier.get(requestType));
+                descriptor.setRequestMarshaller((MethodDescriptor.Marshaller<ReqT>) supplier.get(requestType));
             }
 
             if (responseType != null) {
-                descriptor.setResponseMarshaller((io.grpc.MethodDescriptor.Marshaller<ResT>) supplier.get(responseType));
+                descriptor.setResponseMarshaller((MethodDescriptor.Marshaller<ResT>) supplier.get(responseType));
             }
 
-            return new MethodDescriptor<>(name,
+            return new GrpcMethodDescriptor<>(name,
                     descriptor.build(),
                     (Class) requestType,
                     (Class) requestType,

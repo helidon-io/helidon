@@ -28,29 +28,31 @@ import io.helidon.grpc.core.WeightedBag;
 
 import io.grpc.BindableService;
 import io.grpc.Metadata;
+import io.grpc.MethodDescriptor;
 import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import io.grpc.ServerServiceDefinition;
+import io.grpc.ServiceDescriptor;
 import io.grpc.protobuf.ProtoFileDescriptorSupplier;
 import io.grpc.stub.StreamObserver;
 
 /**
  * A {@link BindableService} implementation that creates {@link ServerServiceDefinition}
- * from a {@link ServiceDescriptor}.
+ * from a {@link GrpcServiceDescriptor}.
  */
 class BindableServiceImpl implements BindableService {
     /**
      * The descriptor of this service.
      */
-    private final ServiceDescriptor descriptor;
+    private final GrpcServiceDescriptor descriptor;
 
     /**
      * The global interceptors to apply.
      */
     private final WeightedBag<ServerInterceptor> globalInterceptors;
 
-    private BindableServiceImpl(ServiceDescriptor descriptor, WeightedBag<ServerInterceptor> interceptors) {
+    private BindableServiceImpl(GrpcServiceDescriptor descriptor, WeightedBag<ServerInterceptor> interceptors) {
         this.descriptor = descriptor;
         this.globalInterceptors = interceptors.copyMe();
     }
@@ -62,7 +64,7 @@ class BindableServiceImpl implements BindableService {
      * @param interceptors the bag of interceptors to apply to the service
      * @return a {@link BindableServiceImpl} for the gRPC service
      */
-    static BindableServiceImpl create(ServiceDescriptor descriptor, WeightedBag<ServerInterceptor> interceptors) {
+    static BindableServiceImpl create(GrpcServiceDescriptor descriptor, WeightedBag<ServerInterceptor> interceptors) {
         return new BindableServiceImpl(descriptor, interceptors);
     }
 
@@ -71,8 +73,8 @@ class BindableServiceImpl implements BindableService {
     @SuppressWarnings("unchecked")
     @Override
     public ServerServiceDefinition bindService() {
-        io.grpc.ServiceDescriptor.Builder serviceDescriptorBuilder =
-                io.grpc.ServiceDescriptor.newBuilder(descriptor.fullName());
+        ServiceDescriptor.Builder serviceDescriptorBuilder =
+                ServiceDescriptor.newBuilder(descriptor.fullName());
         if (descriptor.proto() != null) {
             serviceDescriptorBuilder.setSchemaDescriptor((ProtoFileDescriptorSupplier) descriptor::proto);
         }
@@ -81,15 +83,15 @@ class BindableServiceImpl implements BindableService {
 
         ServerServiceDefinition.Builder builder = ServerServiceDefinition.builder(serviceDescriptorBuilder.build());
         descriptor.methods()
-                .forEach(method -> builder.addMethod((io.grpc.MethodDescriptor) method.descriptor(),
-                                                     wrapCallHandler(method)));
+                  .forEach(method -> builder.addMethod((MethodDescriptor) method.descriptor(),
+                                                       wrapCallHandler(method)));
 
         return builder.build();
     }
 
     // ---- helpers ---------------------------------------------------------
 
-    private <ReqT, RespT> ServerCallHandler<ReqT, RespT> wrapCallHandler(MethodDescriptor<ReqT, RespT> method) {
+    private <ReqT, RespT> ServerCallHandler<ReqT, RespT> wrapCallHandler(GrpcMethodDescriptor<ReqT, RespT> method) {
         ServerCallHandler<ReqT, RespT> handler = method.callHandler();
 
         WeightedBag<ServerInterceptor> priorityServerInterceptors = WeightedBag.create(InterceptorWeights.USER);
@@ -173,8 +175,8 @@ class BindableServiceImpl implements BindableService {
      * A {@link ServerCallHandler} that wraps a {@link ServerCallHandler} with
      * a {@link ServerInterceptor}.
      * <p>
-     * If the wrapped {@link ServerInterceptor} implements {@link ServiceDescriptor.Aware}
-     * then the {@link ServiceDescriptor.Aware#setServiceDescriptor(ServiceDescriptor)} method
+     * If the wrapped {@link ServerInterceptor} implements {@link GrpcServiceDescriptor.Aware}
+     * then the {@link GrpcServiceDescriptor.Aware#setServiceDescriptor(GrpcServiceDescriptor)} method
      * will be called before calling {@link ServerInterceptor#interceptCall(ServerCall,
      * Metadata, ServerCallHandler)}.
      *
@@ -182,11 +184,11 @@ class BindableServiceImpl implements BindableService {
      * @param <RespT> the response type
      */
     static final class InterceptingCallHandler<ReqT, RespT> implements ServerCallHandler<ReqT, RespT> {
-        private final ServiceDescriptor serviceDefinition;
+        private final GrpcServiceDescriptor serviceDefinition;
         private final ServerInterceptor interceptor;
         private final ServerCallHandler<ReqT, RespT> callHandler;
 
-        private InterceptingCallHandler(ServiceDescriptor serviceDefinition,
+        private InterceptingCallHandler(GrpcServiceDescriptor serviceDefinition,
                                         ServerInterceptor interceptor,
                                         ServerCallHandler<ReqT, RespT> callHandler) {
             this.serviceDefinition = serviceDefinition;
@@ -198,8 +200,8 @@ class BindableServiceImpl implements BindableService {
         public ServerCall.Listener<ReqT> startCall(
                 ServerCall<ReqT, RespT> call,
                 Metadata headers) {
-            if (interceptor instanceof ServiceDescriptor.Aware) {
-                ((ServiceDescriptor.Aware) interceptor).setServiceDescriptor(serviceDefinition);
+            if (interceptor instanceof GrpcServiceDescriptor.Aware) {
+                ((GrpcServiceDescriptor.Aware) interceptor).setServiceDescriptor(serviceDefinition);
             }
             return interceptor.interceptCall(call, headers, callHandler);
         }

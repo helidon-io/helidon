@@ -43,20 +43,20 @@ import io.helidon.microprofile.grpc.core.GrpcMarshaller;
 import io.helidon.microprofile.grpc.core.GrpcMethod;
 import io.helidon.microprofile.grpc.core.Instance;
 import io.helidon.microprofile.grpc.core.ModelHelper;
-import io.helidon.webserver.grpc.MethodDescriptor;
-import io.helidon.webserver.grpc.ServiceDescriptor;
+import io.helidon.webserver.grpc.GrpcMethodDescriptor;
+import io.helidon.webserver.grpc.GrpcServiceDescriptor;
 
 import io.grpc.ServerInterceptor;
 import jakarta.enterprise.inject.Any;
 import jakarta.enterprise.inject.spi.BeanManager;
 
 /**
- * A builder for constructing a {@link ServiceDescriptor}
+ * A builder for constructing a {@link GrpcServiceDescriptor}
  * instances from an annotated POJOs.
  */
 public class GrpcServiceBuilder
         extends AbstractServiceBuilder
-        implements Builder<GrpcServiceBuilder, ServiceDescriptor> {
+        implements Builder<GrpcServiceBuilder, GrpcServiceDescriptor> {
 
     private static final Logger LOGGER = Logger.getLogger(GrpcServiceBuilder.class.getName());
 
@@ -117,19 +117,19 @@ public class GrpcServiceBuilder
     }
 
     /**
-     * Create a {@link ServiceDescriptor.Builder} introspected class.
+     * Create a {@link GrpcServiceDescriptor.Builder} introspected class.
      *
-     * @return a {@link ServiceDescriptor.Builder} for the introspected class.
+     * @return a {@link GrpcServiceDescriptor.Builder} for the introspected class.
      */
     @Override
-    public ServiceDescriptor build() {
+    public GrpcServiceDescriptor build() {
         checkForNonPublicMethodIssues();
 
         Class<?> annotatedServiceClass = annotatedServiceClass();
         AnnotatedMethodList methodList = AnnotatedMethodList.create(annotatedServiceClass);
         String name = determineServiceName(annotatedServiceClass);
 
-        ServiceDescriptor.Builder builder = ServiceDescriptor.builder(serviceClass(), name)
+        GrpcServiceDescriptor.Builder builder = GrpcServiceDescriptor.builder(serviceClass(), name)
                 .marshallerSupplier(getMarshallerSupplier());
 
         addServiceMethods(builder, methodList, beanManager);
@@ -144,14 +144,15 @@ public class GrpcServiceBuilder
     }
 
     /**
-     * Add methods to the {@link ServiceDescriptor.Builder}.
+     * Add methods to the {@link GrpcServiceDescriptor.Builder}.
      *
-     * @param builder the {@link ServiceDescriptor.Builder} to add the method to
+     * @param builder the {@link GrpcServiceDescriptor.Builder} to add the method to
      * @param methodList the list of methods to add
      * @param beanManager the {@link jakarta.enterprise.inject.spi.BeanManager} to use
      * to look-up CDI beans.
      */
-    private void addServiceMethods(ServiceDescriptor.Builder builder, AnnotatedMethodList methodList, BeanManager beanManager) {
+    private void addServiceMethods(GrpcServiceDescriptor.Builder builder, AnnotatedMethodList methodList,
+                                   BeanManager beanManager) {
         for (AnnotatedMethod am : methodList.withAnnotation(GrpcMethod.class)) {
             addServiceMethod(builder, am, beanManager);
         }
@@ -161,18 +162,18 @@ public class GrpcServiceBuilder
     }
 
     /**
-     * Add a method to the {@link ServiceDescriptor.Builder}.
+     * Add a method to the {@link GrpcServiceDescriptor.Builder}.
      * <p>
      * The method configuration will be determined by the annotations present on the
      * method and the method signature.
      *
-     * @param builder the {@link ServiceDescriptor.Builder} to add the method to
+     * @param builder the {@link GrpcServiceDescriptor.Builder} to add the method to
      * @param method the {@link AnnotatedMethod} representing the method to add
      * @param beanManager the {@link jakarta.enterprise.inject.spi.BeanManager} to use
      * to look-up CDI beans.
      */
     @SuppressWarnings("unchecked")
-    private void addServiceMethod(ServiceDescriptor.Builder builder, AnnotatedMethod method, BeanManager beanManager) {
+    private void addServiceMethod(GrpcServiceDescriptor.Builder builder, AnnotatedMethod method, BeanManager beanManager) {
         GrpcMethod annotation = method.firstAnnotationOrMetaAnnotation(GrpcMethod.class);
         String name = determineMethodName(method, annotation);
         Supplier<?> instanceSupplier = instanceSupplier();
@@ -222,7 +223,7 @@ public class GrpcServiceBuilder
         }
     }
 
-    private void configureServiceInterceptors(ServiceDescriptor.Builder builder, BeanManager beanManager) {
+    private void configureServiceInterceptors(GrpcServiceDescriptor.Builder builder, BeanManager beanManager) {
         if (beanManager != null) {
             Class<?> serviceClass = serviceClass();
             Class<?> annotatedClass = annotatedServiceClass();
@@ -235,7 +236,7 @@ public class GrpcServiceBuilder
         }
     }
 
-    private void configureServiceInterceptors(ServiceDescriptor.Builder builder, BeanManager beanManager, Class<?> cls) {
+    private void configureServiceInterceptors(GrpcServiceDescriptor.Builder builder, BeanManager beanManager, Class<?> cls) {
         if (beanManager != null) {
             for (Annotation annotation : cls.getAnnotations()) {
                 if (annotation.annotationType().isAnnotationPresent(GrpcInterceptorBinding.class)) {
@@ -327,12 +328,12 @@ public class GrpcServiceBuilder
     }
 
     /**
-     * A {@link Consumer} of {@link MethodDescriptor.Rules} that
+     * A {@link Consumer} of {@link GrpcMethodDescriptor.Rules} that
      * applies configuration changes based on annotations present
      * on the gRPC method.
      */
     private static class AnnotatedMethodConfigurer
-            implements MethodDescriptor.Configurer {
+            implements GrpcMethodDescriptor.Configurer {
 
         private final AnnotatedMethod method;
         private final Class<?> requestType;
@@ -350,7 +351,7 @@ public class GrpcServiceBuilder
         }
 
         @Override
-        public void configure(MethodDescriptor.Rules rules) {
+        public void configure(GrpcMethodDescriptor.Rules rules) {
             rules.addContextValue(ContextKeys.SERVICE_METHOD, method.declaredMethod())
                     .requestType(requestType)
                     .responseType(responseType);

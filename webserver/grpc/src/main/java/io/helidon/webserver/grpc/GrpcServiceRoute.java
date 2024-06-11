@@ -45,28 +45,10 @@ class GrpcServiceRoute extends GrpcRoute {
         throw new UnsupportedOperationException("Not implemented");
     }
 
-    static GrpcRoute create(ServiceDescriptor service) {
+    static GrpcRoute create(GrpcServiceDescriptor service) {
         String serviceName = service.name();
         List<Grpc<?, ?>> routes = new LinkedList<>();
-
-        service.methods().forEach(method -> {
-            io.grpc.MethodDescriptor<?, ?> descriptor = method.descriptor();
-            switch (descriptor.getType()) {
-                case UNARY -> routes.add(Grpc.unary(service, method));
-                /*
-                case CLIENT_STREAMING ->
-                        routes.add(Grpc.clientStream(service, method));
-                case SERVER_STREAMING ->
-                        routes.add(Grpc.serverStream(service, method));
-                case BIDI_STREAMING ->
-                        routes.add(Grpc.bidi(service, method));
-                 */
-                case UNKNOWN -> throw new IllegalArgumentException("gRPC method of type "
-                        + descriptor.getType() + " not supported");
-                default -> throw new IllegalStateException("Invalid gRPC method type");
-            }
-        });
-
+        service.methods().forEach(method -> routes.add(Grpc.method(service, method)));
         return new GrpcServiceRoute(serviceName, routes);
     }
 

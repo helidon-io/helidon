@@ -44,7 +44,7 @@ public class GrpcRouting implements Routing {
 
     private final ArrayList<GrpcRoute> routes;
     private final WeightedBag<ServerInterceptor> interceptors;
-    private final ArrayList<ServiceDescriptor> services;
+    private final ArrayList<GrpcServiceDescriptor> services;
 
     private GrpcRouting(Builder builder) {
         this.routes = new ArrayList<>(builder.routes);
@@ -99,13 +99,13 @@ public class GrpcRouting implements Routing {
     }
 
     /**
-     * Obtain a {@link List} of the {@link ServiceDescriptor} instances
+     * Obtain a {@link List} of the {@link GrpcServiceDescriptor} instances
      * contained in this {@link GrpcRouting}.
      *
-     * @return a {@link List} of the {@link ServiceDescriptor} instances
+     * @return a {@link List} of the {@link GrpcServiceDescriptor} instances
      * contained in this {@link GrpcRouting}
      */
-    public List<ServiceDescriptor> services() {
+    public List<GrpcServiceDescriptor> services() {
         return services;
     }
 
@@ -126,7 +126,7 @@ public class GrpcRouting implements Routing {
     public static class Builder implements io.helidon.common.Builder<Builder, GrpcRouting> {
         private final List<GrpcRoute> routes = new LinkedList<>();
         private final WeightedBag<ServerInterceptor> interceptors = WeightedBag.create(InterceptorWeights.USER);
-        private final Map<String, ServiceDescriptor> services = new LinkedHashMap<>();
+        private final Map<String, GrpcServiceDescriptor> services = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -162,7 +162,7 @@ public class GrpcRouting implements Routing {
          * @param service service to add
          * @return updated builder
          */
-        public Builder service(ServiceDescriptor service) {
+        public Builder service(GrpcServiceDescriptor service) {
             String name = service.name();
             if (services.containsKey(name)) {
                 throw new IllegalArgumentException("Attempted to register service name " + name + " multiple times");
