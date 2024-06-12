@@ -42,7 +42,7 @@ class GrpcServiceRoute extends GrpcRoute {
     }
 
     static GrpcRoute create(BindableService service) {
-        throw new UnsupportedOperationException("Not implemented");
+        return create(GrpcServiceDescriptor.builder(service).build());
     }
 
     static GrpcRoute create(GrpcServiceDescriptor service) {

@@ -45,6 +45,10 @@ class HashServiceTest extends BaseServiceTest {
         assertThat(res.getText(), is(String.valueOf("hello world".hashCode())));
     }
 
+    /**
+     * A service that implements the {@link GrpcService} interface. Should be
+     * discovered by {@link GrpcMpCdiExtension}.
+     */
     @ApplicationScoped
     public static class HashService implements GrpcService {
         @Override

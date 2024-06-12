@@ -59,6 +59,10 @@ class EchoServiceTest extends BaseServiceTest {
         return Echo.EchoRequest.newBuilder().setMessage(value).build();
     }
 
+    /**
+     * A service that is annotated by {@link Grpc}. Should be discovered by
+     * {@link GrpcMpCdiExtension}.
+     */
     @Grpc
     @ApplicationScoped
     public static class EchoService {
