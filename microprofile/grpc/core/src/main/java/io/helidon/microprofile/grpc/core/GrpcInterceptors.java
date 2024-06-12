@@ -47,5 +47,5 @@ public @interface GrpcInterceptors {
      *
      * @return the ordered list of interceptors
      */
-    Class[] value();
+    Class<?>[] value();
 }

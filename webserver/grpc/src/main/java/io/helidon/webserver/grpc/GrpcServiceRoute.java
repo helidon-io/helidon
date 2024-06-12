@@ -19,11 +19,14 @@ package io.helidon.webserver.grpc;
 import java.util.LinkedList;
 import java.util.List;
 
+import io.helidon.grpc.core.WeightedBag;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.PathMatchers;
 
 import com.google.protobuf.Descriptors;
 import io.grpc.BindableService;
+import io.grpc.ServerInterceptor;
+import io.grpc.ServerServiceDefinition;
 import io.grpc.stub.ServerCalls;
 
 class GrpcServiceRoute extends GrpcRoute {
@@ -42,14 +45,17 @@ class GrpcServiceRoute extends GrpcRoute {
     }
 
     static GrpcRoute create(BindableService service) {
-        return create(GrpcServiceDescriptor.builder(service).build());
+        ServerServiceDefinition definition = service.bindService();
+        String serviceName = definition.getServiceDescriptor().getName();
+        List<Grpc<?, ?>> routes = new LinkedList<>();
+        service.bindService().getMethods().forEach(
+                method -> routes.add(Grpc.bindableMethod(service, method)));
+        return new GrpcServiceRoute(serviceName, routes);
     }
 
     static GrpcRoute create(GrpcServiceDescriptor service) {
-        String serviceName = service.name();
-        List<Grpc<?, ?>> routes = new LinkedList<>();
-        service.methods().forEach(method -> routes.add(Grpc.method(service, method)));
-        return new GrpcServiceRoute(serviceName, routes);
+        WeightedBag<ServerInterceptor> interceptors = WeightedBag.create();     // TODO
+        return create(BindableServiceImpl.create(service, interceptors));
     }
 
     @Override

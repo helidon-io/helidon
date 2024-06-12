@@ -22,27 +22,23 @@ import io.helidon.http.PathMatchers;
 
 import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
+import io.grpc.BindableService;
 import io.grpc.MethodDescriptor;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerMethodDefinition;
+import io.grpc.ServerServiceDefinition;
 import io.grpc.stub.ServerCalls;
 
 class Grpc<ReqT, ResT> extends GrpcRoute {
     private final MethodDescriptor<ReqT, ResT> method;
     private final PathMatcher pathMatcher;
-    private final Class<ReqT> requestType;
-    private final Class<ResT> responseType;
     private final ServerCallHandler<ReqT, ResT> callHandler;
 
     private Grpc(MethodDescriptor<ReqT, ResT> method,
                  PathMatcher pathMatcher,
-                 Class<ReqT> requestType,
-                 Class<ResT> responseType,
                  ServerCallHandler<ReqT, ResT> callHandler) {
         this.method = method;
         this.pathMatcher = pathMatcher;
-        this.requestType = requestType;
-        this.responseType = responseType;
         this.callHandler = callHandler;
     }
 
@@ -90,13 +86,15 @@ class Grpc<ReqT, ResT> extends GrpcRoute {
         return grpc(definition.getMethodDescriptor(), definition.getServerCallHandler(), proto);
     }
 
-    public static Grpc<?, ?> method(GrpcServiceDescriptor service, GrpcMethodDescriptor<?, ?> method) {
-        String path = service.fullName() + "/" + method.name();
-        return new Grpc<>((MethodDescriptor) method.descriptor(),
+    @SuppressWarnings("unchecked")
+    public static <ReqT, ResT> Grpc<ReqT, ResT> bindableMethod(BindableService service,
+                                                               ServerMethodDefinition<?, ?> method) {
+        ServerServiceDefinition definition = service.bindService();
+        String path = definition.getServiceDescriptor().getName() + "/"
+                + method.getMethodDescriptor().getBareMethodName();
+        return new Grpc<>((MethodDescriptor<ReqT, ResT>) method.getMethodDescriptor(),
                 PathMatchers.exact(path),
-                (Class) method.requestType(),
-                (Class) method.responseType(),
-                method.callHandler());
+                (ServerCallHandler<ReqT, ResT>) method.getServerCallHandler());
     }
 
     @Override
@@ -112,14 +110,6 @@ class Grpc<ReqT, ResT> extends GrpcRoute {
         return method;
     }
 
-    Class<ReqT> requestType() {
-        return requestType;
-    }
-
-    Class<ResT> responseType() {
-        return responseType;
-    }
-
     ServerCallHandler<ReqT, ResT> callHandler() {
         return callHandler;
     }
@@ -128,7 +118,6 @@ class Grpc<ReqT, ResT> extends GrpcRoute {
                                                       String serviceName,
                                                       String methodName,
                                                       ServerCallHandler<ReqT, ResT> callHandler) {
-
         Descriptors.ServiceDescriptor svc = proto.findServiceByName(serviceName);
         Descriptors.MethodDescriptor mtd = svc.findMethodByName(methodName);
 
@@ -150,7 +139,7 @@ class Grpc<ReqT, ResT> extends GrpcRoute {
                 .setType(getMethodType(mtd)).setFullMethodName(path).setRequestMarshaller(reqMarshaller)
                 .setResponseMarshaller(resMarshaller).setSampledToLocalTracing(true);
 
-        return new Grpc<>(grpcDesc.build(), PathMatchers.exact(path), requestType, responseType, callHandler);
+        return new Grpc<>(grpcDesc.build(), PathMatchers.exact(path), callHandler);
     }
 
 
@@ -169,23 +158,7 @@ class Grpc<ReqT, ResT> extends GrpcRoute {
     private static <ResT, ReqT> Grpc<ReqT, ResT> grpc(MethodDescriptor<ReqT, ResT> grpcDesc,
                                                       ServerCallHandler<ReqT, ResT> callHandler,
                                                       Descriptors.FileDescriptor proto) {
-
-        Class<ReqT> requestType = null;
-        Class<ResT> responsetype = null;
-        String serviceName = grpcDesc.getServiceName();
-
-        if (proto != null && serviceName != null) {
-            Descriptors.ServiceDescriptor svc = proto.findServiceByName(serviceName);
-            Descriptors.MethodDescriptor mtd = svc.findMethodByName(grpcDesc.getBareMethodName());
-            /*
-            We have to use reflection here
-             - to load the class
-             - to invoke a static method on it
-             */
-            requestType = load(getClassName(mtd.getInputType()));
-            responsetype = load(getClassName(mtd.getOutputType()));
-        }
-        return new Grpc<>(grpcDesc, PathMatchers.exact(grpcDesc.getFullMethodName()), requestType, responsetype, callHandler);
+        return new Grpc<>(grpcDesc, PathMatchers.exact(grpcDesc.getFullMethodName()), callHandler);
     }
 
     private static String getClassName(Descriptors.Descriptor descriptor) {
