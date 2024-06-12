@@ -59,6 +59,9 @@ import jakarta.inject.Singleton;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
+import jdk.jfr.consumer.RecordedEvent;
+import jdk.jfr.consumer.RecordedFrame;
+import jdk.jfr.consumer.RecordingStream;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
@@ -77,6 +80,7 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
 
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Junit5 extension to support Helidon CDI container in tests.
@@ -100,7 +104,9 @@ class HelidonJunitExtension implements BeforeAllCallback,
 
     private final List<AddExtension> classLevelExtensions = new ArrayList<>();
     private final List<AddBean> classLevelBeans = new ArrayList<>();
+    private final List<EventWrapper> jfrVTPinned = new ArrayList<>();
     private final ConfigMeta classLevelConfigMeta = new ConfigMeta();
+    private final RecordingStream recordingStream = new RecordingStream();
     private boolean classLevelDisableDiscovery = false;
     private boolean resetPerTest;
 
@@ -113,6 +119,8 @@ class HelidonJunitExtension implements BeforeAllCallback,
     @SuppressWarnings("unchecked")
     @Override
     public void beforeAll(ExtensionContext context) {
+        startRecordingStream();
+
         testClass = context.getRequiredTestClass();
 
         AddConfig[] configs = getAnnotations(testClass, AddConfig.class);
@@ -383,6 +391,27 @@ class HelidonJunitExtension implements BeforeAllCallback,
         stopContainer();
         releaseConfig();
         callAfterStop();
+        closeRecordingStream();
+    }
+
+    private void startRecordingStream() {
+        recordingStream.enable("jdk.VirtualThreadPinned").withStackTrace();
+        recordingStream.onEvent("jdk.VirtualThreadPinned", event -> {
+            jfrVTPinned.add(new EventWrapper(event));
+        });
+        recordingStream.startAsync();
+    }
+
+    private void closeRecordingStream() {
+        try {
+            // Flush ending events
+            recordingStream.stop();
+            if (!jfrVTPinned.isEmpty()) {
+                fail("Some pinned virtual threads were detected:\n" + jfrVTPinned);
+            }
+        } finally {
+            recordingStream.close();
+        }
     }
 
     @Override
@@ -748,4 +777,28 @@ class HelidonJunitExtension implements BeforeAllCallback,
         }
     }
 
+    private static class EventWrapper {
+
+        private final RecordedEvent recordedEvent;
+
+        private EventWrapper(RecordedEvent recordedEvent) {
+            this.recordedEvent = recordedEvent;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder builder = new StringBuilder(recordedEvent.toString());
+            if (recordedEvent.getStackTrace() != null) {
+                builder.append("full-stackTrace = [");
+                List<RecordedFrame> frames = recordedEvent.getStackTrace().getFrames();
+                for (RecordedFrame frame : frames) {
+                    builder.append("\n\t").append(frame.getMethod().getType().getName())
+                    .append("#").append(frame.getMethod().getName())
+                    .append("(").append(frame.getLineNumber()).append(")");
+                }
+                builder.append("\n]");
+            }
+            return builder.toString();
+        }
+    }
 }
