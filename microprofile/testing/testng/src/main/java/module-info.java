@@ -27,6 +27,7 @@ module io.helidon.microprofile.testing.testng {
     requires jakarta.cdi;
     requires jakarta.inject;
     requires jakarta.ws.rs;
+    requires jdk.jfr;
     requires microprofile.config.api;
     requires org.testng;
 
