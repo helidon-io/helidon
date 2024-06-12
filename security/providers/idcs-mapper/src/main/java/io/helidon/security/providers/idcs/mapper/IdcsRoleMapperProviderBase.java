@@ -44,8 +44,8 @@ import io.helidon.security.Subject;
 import io.helidon.security.SubjectType;
 import io.helidon.security.integration.common.RoleMapTracing;
 import io.helidon.security.jwt.Jwt;
+import io.helidon.security.jwt.JwtValidator;
 import io.helidon.security.jwt.SignedJwt;
-import io.helidon.security.jwt.Validator;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.spi.SubjectMappingProvider;
 import io.helidon.webclient.api.HttpClientRequest;
@@ -382,7 +382,9 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
      * Reactive token for app access to IDCS.
      */
     protected static class AppToken {
-        private static final List<Validator<Jwt>> TIME_VALIDATORS = Jwt.defaultTimeValidators();
+        private static final JwtValidator TIME_VALIDATORS = JwtValidator.builder()
+                .addDefaultTimeValidators()
+                .build();
 
         private final AtomicReference<LazyValue<AppTokenData>> token = new AtomicReference<>();
         private final WebClient webClient;
@@ -411,7 +413,7 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
             AppTokenData tokenData = currentTokenData.get();
             Jwt jwt = tokenData.appJwt();
             if (jwt == null
-                    || !jwt.validate(TIME_VALIDATORS).isValid()
+                    || !TIME_VALIDATORS.validate(jwt).isValid()
                     || isNearExpiration(jwt)) {
                 // it is not valid or is very close to expiration - we must get a new value
                 LazyValue<AppTokenData> newLazyValue = LazyValue.create(() -> fromServer(tracing));

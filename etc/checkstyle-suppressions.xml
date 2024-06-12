@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
 
-    Copyright (c) 2016, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2016, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -41,6 +41,10 @@ record here.
             checks="FileLength"/>
 
     <suppress files="integrations/cdi/jpa-cdi/src/main/java/io/helidon/integrations/cdi/jpa/JpaExtension\.java"
+            checks="FileLength"/>
+
+    <!-- This can be removed once Jwt class has all Validators removed. They are deprecated now -->
+    <suppress files="security/jwt/src/main/java/io/helidon/security/jwt/Jwt\.java"
             checks="FileLength"/>
 
     <!--
