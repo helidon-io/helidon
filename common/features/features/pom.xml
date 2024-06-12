@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.common.features</groupId>
         <artifactId>helidon-common-features-project</artifactId>
-        <version>4.0.10-SNAPSHOT</version>
+        <version>4.0.10</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 

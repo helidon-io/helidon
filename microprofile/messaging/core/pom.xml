@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.microprofile.messaging</groupId>
         <artifactId>helidon-microprofile-messaging-project</artifactId>
-        <version>4.0.10-SNAPSHOT</version>
+        <version>4.0.10</version>
     </parent>
 
     <artifactId>helidon-microprofile-messaging</artifactId>
