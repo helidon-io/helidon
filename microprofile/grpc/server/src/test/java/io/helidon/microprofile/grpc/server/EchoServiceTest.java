@@ -21,26 +21,26 @@ import java.lang.annotation.Target;
 import java.util.HashSet;
 import java.util.Set;
 
+import io.grpc.Context;
+import io.grpc.Metadata;
+import io.grpc.ServerCall;
+import io.grpc.ServerCallHandler;
+import io.grpc.ServerInterceptor;
+import io.grpc.stub.StreamObserver;
 import io.helidon.microprofile.grpc.core.Grpc;
 import io.helidon.microprofile.grpc.core.GrpcInterceptor;
 import io.helidon.microprofile.grpc.core.GrpcInterceptorBinding;
 import io.helidon.microprofile.grpc.core.GrpcInterceptors;
 import io.helidon.microprofile.grpc.core.Unary;
 import io.helidon.microprofile.grpc.server.test.Echo;
-import io.helidon.webclient.grpc.GrpcClientMethodDescriptor;
-import io.helidon.webclient.grpc.GrpcServiceDescriptor;
-
-import io.grpc.Metadata;
-import io.grpc.ServerCall;
-import io.grpc.ServerCallHandler;
-import io.grpc.ServerInterceptor;
-import io.grpc.stub.StreamObserver;
+import io.helidon.microprofile.grpc.server.test.EchoServiceGrpc;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.WebTarget;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.grpc.core.ResponseHelper.complete;
+import static io.helidon.webserver.grpc.GrpcServiceDescriptor.SERVICE_DESCRIPTOR_KEY;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -52,25 +52,15 @@ class EchoServiceTest extends BaseServiceTest {
 
     private static final Set<Class<?>> INTERCEPTORS_CALLED = new HashSet<>();
 
-    private final GrpcServiceDescriptor serviceDescriptor;
-
     @Inject
     public EchoServiceTest(WebTarget webTarget) {
         super(webTarget);
-        this.serviceDescriptor = GrpcServiceDescriptor.builder()
-                .serviceName("EchoService")
-                .putMethod("Echo",
-                        GrpcClientMethodDescriptor.unary("EchoService", "Echo")
-                                .requestType(Echo.EchoRequest.class)
-                                .responseType(Echo.EchoResponse.class)
-                                .build())
-                .build();
     }
 
     @Test
     void testEcho() {
-        Echo.EchoResponse res = grpcClient().serviceClient(serviceDescriptor)
-                .unary("Echo", fromString("Howdy"));
+        EchoServiceGrpc.EchoServiceBlockingStub service = EchoServiceGrpc.newBlockingStub(grpcClient().channel());
+        Echo.EchoResponse res = service.echo(fromString("Howdy"));
         assertThat(res.getMessage(), is("Howdy"));
         assertThat(INTERCEPTORS_CALLED, hasItems(EchoInterceptor1.class, EchoInterceptor2.class));
     }
@@ -99,15 +89,21 @@ class EchoServiceTest extends BaseServiceTest {
         /**
          * Echo the message back to the caller.
          *
-         * @param request   the echo request containing the message to echo
-         * @param observer  the call response
+         * @param request the echo request containing the message to echo
+         * @param observer the call response
          */
         @Unary(name = "Echo")
         public void echo(Echo.EchoRequest request, StreamObserver<Echo.EchoResponse> observer) {
-            String message = request.getMessage();
-            Echo.EchoResponse response = Echo.EchoResponse.newBuilder().setMessage(message).build();
-            complete(observer, response);
+            try {
+                validateContext();
+                String message = request.getMessage();
+                Echo.EchoResponse response = Echo.EchoResponse.newBuilder().setMessage(message).build();
+                complete(observer, response);
+            } catch (IllegalStateException e) {
+                observer.onError(e);
+            }
         }
+
     }
 
     @GrpcInterceptor
@@ -118,6 +114,7 @@ class EchoServiceTest extends BaseServiceTest {
         public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> call,
                                                                      Metadata headers,
                                                                      ServerCallHandler<ReqT, RespT> next) {
+            validateContext();
             INTERCEPTORS_CALLED.add(getClass());
             return next.startCall(call, headers);
         }
@@ -132,8 +129,16 @@ class EchoServiceTest extends BaseServiceTest {
         public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> call,
                                                                      Metadata headers,
                                                                      ServerCallHandler<ReqT, RespT> next) {
+            validateContext();
             INTERCEPTORS_CALLED.add(getClass());
             return next.startCall(call, headers);
+        }
+    }
+
+    private static void validateContext() {
+        Context context = Context.current();
+        if (context == null || SERVICE_DESCRIPTOR_KEY.get() == null) {
+            throw new IllegalStateException("Invalid context");
         }
     }
 }

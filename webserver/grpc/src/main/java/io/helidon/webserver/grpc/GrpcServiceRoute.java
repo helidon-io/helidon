@@ -38,12 +38,26 @@ class GrpcServiceRoute extends GrpcRoute {
         this.routes = routes;
     }
 
+    /**
+     * Creates a gRPC route for an instance of {@link GrpcService}.
+     * A server interceptor chain will not be automatically associated
+     * with calls to this service.
+     *
+     * @param service the service
+     * @return the route
+     */
     static GrpcRoute create(GrpcService service) {
         Routing svcRouter = new Routing(service);
         service.update(svcRouter);
         return svcRouter.build();
     }
 
+    /**
+     * Creates a gRPC route for an instance of {@link BindableServiceImpl}.
+     *
+     * @param service the service
+     * @return the route
+     */
     static GrpcRoute create(BindableService service) {
         ServerServiceDefinition definition = service.bindService();
         String serviceName = definition.getServiceDescriptor().getName();
@@ -53,8 +67,15 @@ class GrpcServiceRoute extends GrpcRoute {
         return new GrpcServiceRoute(serviceName, routes);
     }
 
+    /**
+     * Creates a gRPC route for an instance CDI bean annotated with {@link @Grpc}.
+     *
+     * @param service the service
+     * @return the route
+     */
     static GrpcRoute create(GrpcServiceDescriptor service) {
-        WeightedBag<ServerInterceptor> interceptors = WeightedBag.create();     // TODO
+        WeightedBag<ServerInterceptor> interceptors = WeightedBag.create();
+        interceptors.add(ContextSettingServerInterceptor.create());
         return create(BindableServiceImpl.create(service, interceptors));
     }
 
