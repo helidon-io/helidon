@@ -56,7 +56,7 @@ class RedirectionProcessor {
                                                             + " header present in the response! "
                                                             + "It is not clear where to redirect.");
                 }
-                String redirectedUri = clientResponse.headers().get(HeaderNames.LOCATION).value();
+                String redirectedUri = clientResponse.headers().get(HeaderNames.LOCATION).get();
                 URI newUri = URI.create(redirectedUri);
                 ClientUri redirectUri = ClientUri.create(newUri);
 

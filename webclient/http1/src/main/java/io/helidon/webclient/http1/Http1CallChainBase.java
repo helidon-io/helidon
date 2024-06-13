@@ -250,7 +250,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         ContentDecoder decoder;
 
         if (encodingSupport.contentDecodingEnabled() && responseHeaders.contains(HeaderNames.CONTENT_ENCODING)) {
-            String contentEncoding = responseHeaders.get(HeaderNames.CONTENT_ENCODING).value();
+            String contentEncoding = responseHeaders.get(HeaderNames.CONTENT_ENCODING).get();
             if (encodingSupport.contentDecodingSupported(contentEncoding)) {
                 decoder = encodingSupport.decoder(contentEncoding);
             } else {
