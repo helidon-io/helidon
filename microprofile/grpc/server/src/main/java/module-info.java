@@ -14,22 +14,37 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Aot;
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.microprofile.grpc.server.GrpcMpCdiExtension;
 
 /**
  * gRPC microprofile server module
  */
+@Feature(value = "gRPC",
+        description = "Helidon MP gRPC implementation",
+        in = HelidonFlavor.MP,
+        path = "gRPC"
+)
+@Aot(false)
 module io.helidon.microprofile.grpc.server {
     exports io.helidon.microprofile.grpc.server;
+    exports io.helidon.microprofile.grpc.server.spi;
 
+    requires transitive io.helidon.grpc.core;
     requires transitive io.helidon.webserver.grpc;
     requires transitive io.helidon.microprofile.grpc.core;
 
     requires io.helidon.common;
-    requires io.helidon.grpc.core;
-    requires io.helidon.microprofile.server;
+    requires io.helidon.common.configurable;
+    requires io.helidon.common.context;
+    requires io.helidon.common.features.api;
     requires io.helidon.config.mp;
     requires io.helidon.config.objectmapping;
+    requires io.helidon.config;
+    requires io.helidon.config.metadata;
+    requires io.helidon.microprofile.server;
 
     requires io.grpc;
     requires io.grpc.inprocess;
@@ -39,16 +54,10 @@ module io.helidon.microprofile.grpc.server {
     requires java.logging;
 
     requires microprofile.health.api;
-    requires io.helidon.common.configurable;
-    requires io.helidon.config;
-    requires io.helidon.config.metadata;
-    requires io.helidon.common.context;
 
-    uses GrpcMpCdiExtension;
-    uses io.helidon.microprofile.grpc.server.AnnotatedServiceConfigurer;
+    uses io.helidon.microprofile.grpc.server.spi.GrpcMpExtension;
 
-    provides jakarta.enterprise.inject.spi.Extension
-            with GrpcMpCdiExtension;
+    provides jakarta.enterprise.inject.spi.Extension with GrpcMpCdiExtension;
 
     // needed when running with modules - to make private methods accessible
     opens io.helidon.microprofile.grpc.server to weld.core.impl, io.helidon.microprofile.cdi;

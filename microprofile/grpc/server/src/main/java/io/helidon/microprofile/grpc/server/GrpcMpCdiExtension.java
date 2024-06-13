@@ -17,10 +17,16 @@
 package io.helidon.microprofile.grpc.server;
 
 import java.lang.annotation.Annotation;
+import java.util.ServiceLoader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.helidon.common.HelidonServiceLoader;
+import io.helidon.config.Config;
+import io.helidon.config.mp.MpConfig;
 import io.helidon.microprofile.grpc.core.Grpc;
+import io.helidon.microprofile.grpc.server.spi.GrpcMpContext;
+import io.helidon.microprofile.grpc.server.spi.GrpcMpExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.webserver.grpc.GrpcRouting;
 import io.helidon.webserver.grpc.GrpcService;
@@ -34,6 +40,7 @@ import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.Bean;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.Extension;
+import org.eclipse.microprofile.config.ConfigProvider;
 
 /**
  * A CDI extension that will discover and register gRPC routes.
@@ -44,6 +51,8 @@ public class GrpcMpCdiExtension implements Extension {
 
     private void discoverRoutes(@Observes @Initialized(ApplicationScoped.class) Object event, BeanManager beanManager) {
         GrpcRouting.Builder routingBuilder = discoverGrpcRouting(beanManager);
+        Config config = MpConfig.toHelidonConfig(ConfigProvider.getConfig());
+        loadExtensions(beanManager, config, routingBuilder);
         ServerCdiExtension extension = beanManager.getExtension(ServerCdiExtension.class);
         extension.addRouting(routingBuilder);
     }
@@ -115,5 +124,41 @@ public class GrpcMpCdiExtension implements Extension {
             LOGGER.log(Level.WARNING,
                     () -> "Discovered type is not a properly annotated gRPC service " + service.getClass());
         }
+    }
+
+    /**
+     * Load any instances of {@link GrpcMpExtension} discovered by the {@link ServiceLoader}
+     * and allow them to further configure the gRPC server.
+     *
+     * @param beanManager the {@link BeanManager}
+     * @param config the Helidon configuration
+     * @param routingBuilder the {@link GrpcRouting.Builder}
+     */
+    private void loadExtensions(BeanManager beanManager,
+                                Config config,
+                                GrpcRouting.Builder routingBuilder) {
+        GrpcMpContext context = new GrpcMpContext() {
+            @Override
+            public Config config() {
+                return config;
+            }
+
+            @Override
+            public GrpcRouting.Builder routing() {
+                return routingBuilder;
+            }
+
+            @Override
+            public BeanManager beanManager() {
+                return beanManager;
+            }
+        };
+
+        HelidonServiceLoader.create(ServiceLoader.load(GrpcMpExtension.class))
+                            .forEach(ext -> ext.configure(context));
+        beanManager.createInstance()
+                .select(GrpcMpExtension.class)
+                .stream()
+                .forEach(ext -> ext.configure(context));
     }
 }
