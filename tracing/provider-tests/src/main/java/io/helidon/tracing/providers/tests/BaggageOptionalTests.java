@@ -26,12 +26,12 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class BaggageOptionalTests {
+class BaggageOptionalTests {
     // Demonstrate NPE in io.opentelemetry.api.baggage.BaggageEntry.getValue()
     private static final String KEY = "baggageGetShouldCauseEmptyReturn_NotNPE";
 
     @Test
-    void baggageRetrievalWhenNeverTouchedShouldBeEmpty_fromSpan() {
+    void baggageRetrievalWhenNeverTouchedShouldBeEmptyFromSpan() {
         runWithSpanHarness(span -> {
             // NPE in 4.0.5 -> 4.0.10
             final var actual = span.baggage().get(KEY);
@@ -39,7 +39,7 @@ public class BaggageOptionalTests {
         });
     }
 
-    @Test void baggageRetrievalWhenNeverTouchedShouldBeEmpty_fromContext() {
+    @Test void baggageRetrievalWhenNeverTouchedShouldBeEmptyFromContext() {
         runWithSpanHarness(span -> {
             // NPE in 4.0.5 -> 4.0.10
             final var actual = span.context().baggage().get(KEY);
@@ -47,7 +47,7 @@ public class BaggageOptionalTests {
         });
     }
 
-    @Test void baggageRetrievalWhenNeverTouchedShouldBeEmpty_fromSpanWithWorkaround() {
+    @Test void baggageRetrievalWhenNeverTouchedShouldBeEmptyFromSpanWithWorkaround() {
         runWithSpanHarness(span -> {
             // Apply only known workaround (use containsKey precondition)
             final var actual = !span.baggage().containsKey(KEY) ? Optional.empty()
