@@ -59,7 +59,6 @@ class ContextSettingServerInterceptor implements ServerInterceptor, GrpcServiceD
     public <ReqT, ResT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, ResT> call,
                                                                 Metadata headers,
                                                                 ServerCallHandler<ReqT, ResT> next) {
-
         Context context = Context.current();
         String fullMethodName = call.getMethodDescriptor().getFullMethodName();
         String methodName = extractMethodName(fullMethodName);

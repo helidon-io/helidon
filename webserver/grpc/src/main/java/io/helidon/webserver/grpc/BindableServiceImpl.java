@@ -18,10 +18,6 @@ package io.helidon.webserver.grpc;
 
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletionException;
-import java.util.function.BiConsumer;
-import java.util.function.Supplier;
 
 import io.helidon.grpc.core.InterceptorWeights;
 import io.helidon.grpc.core.WeightedBag;
@@ -35,7 +31,6 @@ import io.grpc.ServerInterceptor;
 import io.grpc.ServerServiceDefinition;
 import io.grpc.ServiceDescriptor;
 import io.grpc.protobuf.ProtoFileDescriptorSupplier;
-import io.grpc.stub.StreamObserver;
 
 /**
  * A {@link BindableService} implementation that creates {@link ServerServiceDefinition}
@@ -50,11 +45,11 @@ class BindableServiceImpl implements BindableService {
     /**
      * The global interceptors to apply.
      */
-    private final WeightedBag<ServerInterceptor> globalInterceptors;
+    private final WeightedBag<ServerInterceptor> interceptors;
 
     private BindableServiceImpl(GrpcServiceDescriptor descriptor, WeightedBag<ServerInterceptor> interceptors) {
         this.descriptor = descriptor;
-        this.globalInterceptors = interceptors.copyMe();
+        this.interceptors = interceptors.copyMe();
     }
 
     /**
@@ -73,18 +68,16 @@ class BindableServiceImpl implements BindableService {
     @SuppressWarnings("unchecked")
     @Override
     public ServerServiceDefinition bindService() {
-        ServiceDescriptor.Builder serviceDescriptorBuilder =
-                ServiceDescriptor.newBuilder(descriptor.fullName());
+        ServiceDescriptor.Builder serviceDescriptorBuilder = ServiceDescriptor.newBuilder(descriptor.fullName());
         if (descriptor.proto() != null) {
             serviceDescriptorBuilder.setSchemaDescriptor((ProtoFileDescriptorSupplier) descriptor::proto);
         }
-        descriptor.methods()
-                .forEach(method -> serviceDescriptorBuilder.addMethod(method.descriptor()));
+        descriptor.methods().forEach(method -> serviceDescriptorBuilder.addMethod(method.descriptor()));
 
         ServerServiceDefinition.Builder builder = ServerServiceDefinition.builder(serviceDescriptorBuilder.build());
         descriptor.methods()
-                  .forEach(method -> builder.addMethod((MethodDescriptor) method.descriptor(),
-                                                       wrapCallHandler(method)));
+                .forEach(method -> builder.addMethod((MethodDescriptor) method.descriptor(),
+                        wrapCallHandler(method)));
 
         return builder.build();
     }
@@ -95,7 +88,7 @@ class BindableServiceImpl implements BindableService {
         ServerCallHandler<ReqT, RespT> handler = method.callHandler();
 
         WeightedBag<ServerInterceptor> priorityServerInterceptors = WeightedBag.create(InterceptorWeights.USER);
-        priorityServerInterceptors.addAll(globalInterceptors);
+        priorityServerInterceptors.addAll(interceptors);
         priorityServerInterceptors.addAll(descriptor.interceptors());
         priorityServerInterceptors.addAll(method.interceptors());
         List<ServerInterceptor> interceptors = priorityServerInterceptors.stream().toList();
@@ -117,58 +110,6 @@ class BindableServiceImpl implements BindableService {
         }
 
         return handler;
-    }
-
-    static <T> Supplier<T> createSupplier(Callable<T> callable) {
-        return new CallableSupplier<>(callable);
-    }
-
-    static class CallableSupplier<T> implements Supplier<T> {
-        private final Callable<T> callable;
-
-        CallableSupplier(Callable<T> callable) {
-            this.callable = callable;
-        }
-
-        @Override
-        public T get() {
-            try {
-                return callable.call();
-            } catch (Exception e) {
-                throw new CompletionException(e.getMessage(), e);
-            }
-        }
-    }
-
-    static <T, U> BiConsumer<T, Throwable> completeWithResult(StreamObserver<U> observer) {
-        return new CompletionAction<>(observer, true);
-    }
-
-    static <U> BiConsumer<Void, Throwable> completeWithoutResult(StreamObserver<U> observer) {
-        return new CompletionAction<>(observer, false);
-    }
-
-    static class CompletionAction<T, U> implements BiConsumer<T, Throwable> {
-        private StreamObserver<U> observer;
-        private boolean sendResult;
-
-        CompletionAction(StreamObserver<U> observer, boolean sendResult) {
-            this.observer = observer;
-            this.sendResult = sendResult;
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public void accept(T result, Throwable error) {
-            if (error != null) {
-                observer.onError(error);
-            } else {
-                if (sendResult) {
-                    observer.onNext((U) result);
-                }
-                observer.onCompleted();
-            }
-        }
     }
 
     /**

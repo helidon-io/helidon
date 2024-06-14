@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,23 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.webserver.grpc;
 
-import io.helidon.builder.api.Prototype;
-import io.helidon.webserver.spi.ProtocolConfig;
-
-@Prototype.Blueprint
-@Prototype.Configured
-@Prototype.Provides(ProtocolConfig.class)
-interface GrpcConfigBlueprint extends ProtocolConfig {
+/**
+ * An enum representing different types of gRPC request
+ * attribute that can be added to tracing logs.
+ */
+public enum ServerRequestAttribute {
+    /**
+     * Log the request headers.
+     */
+    HEADERS,
 
     /**
-     * Protocol configuration type.
-     *
-     * @return type of this configuration
+     * Log the method type.
      */
-    default String type() {
-        return GrpcProtocolProvider.CONFIG_NAME;
-    }
+    METHOD_TYPE,
+
+    /**
+     * log the method name.
+     */
+    METHOD_NAME,
+
+    /**
+     * log the call attributes.
+     */
+    CALL_ATTRIBUTES,
+
+    /**
+     * log all attributes.
+     */
+    ALL
 }

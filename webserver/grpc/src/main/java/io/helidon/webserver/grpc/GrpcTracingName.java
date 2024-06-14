@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,23 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.webserver.grpc;
 
-import io.helidon.builder.api.Prototype;
-import io.helidon.webserver.spi.ProtocolConfig;
+import io.grpc.MethodDescriptor;
 
-@Prototype.Blueprint
-@Prototype.Configured
-@Prototype.Provides(ProtocolConfig.class)
-interface GrpcConfigBlueprint extends ProtocolConfig {
+/**
+ * Name generator for span operation name.
+ */
+@FunctionalInterface
+public interface GrpcTracingName {
 
     /**
-     * Protocol configuration type.
+     * Constructs a span's operation name from the gRPC method.
      *
-     * @return type of this configuration
+     * @param method method to extract a name from
+     * @return operation name
      */
-    default String type() {
-        return GrpcProtocolProvider.CONFIG_NAME;
-    }
+    String name(MethodDescriptor<?, ?> method);
 }
