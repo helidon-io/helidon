@@ -22,6 +22,12 @@ import java.nio.charset.Charset;
  * String that materializes only when requested.
  */
 public class LazyString {
+    private static final boolean[] IS_OWS = new boolean[256];
+    static {
+        IS_OWS[Bytes.SPACE_BYTE] = true;
+        IS_OWS[Bytes.TAB_BYTE] = true;
+    }
+
     private final byte[] buffer;
     private final int offset;
     private final int length;
@@ -69,9 +75,9 @@ public class LazyString {
             int newOffset = offset;
             int newLength = length;
             for (int i = offset; i < offset + length; i++) {
-                if (isOws(buffer[i])) {
+                if (IS_OWS[buffer[i]]) {
                     newOffset = i + 1;
-                    newLength = length - (newOffset - offset);
+                    newLength--;
                 } else {
                     // no more white space, go from the end now
                     break;
@@ -79,7 +85,7 @@ public class LazyString {
             }
             // now we need to go from the end of the string
             for (int i = offset + length - 1; i > newOffset; i--) {
-                if (isOws(buffer[i])) {
+                if (IS_OWS[buffer[i]]) {
                     newLength--;
                 } else {
                     break;
@@ -98,12 +104,5 @@ public class LazyString {
             stringValue = new String(buffer, offset, length, charset);
         }
         return stringValue;
-    }
-
-    private boolean isOws(byte aByte) {
-        return switch (aByte) {
-            case Bytes.SPACE_BYTE, Bytes.TAB_BYTE -> true;
-            default -> false;
-        };
     }
 }

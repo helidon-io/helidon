@@ -290,6 +290,36 @@ public class DataReader {
     }
 
     /**
+     * Read byte array.
+     *
+     * @param len number of bytes of the string
+     * @return string value
+     */
+    public byte[] readBytes(int len) {
+        ensureAvailable(); // we have at least 1 byte
+        byte[] b = new byte[len];
+
+        if (len <= head.available()) { // fast case
+            System.arraycopy(head.bytes, head.position, b, 0, len);
+            head.position += len;
+            return b;
+        } else {
+            int remaining = len;
+            for (Node n = head; remaining > 0; n = n.next) {
+                ensureAvailable();
+                int toAdd = Math.min(remaining, n.available());
+                System.arraycopy(n.bytes, n.position, b, len - remaining, toAdd);
+                remaining -= toAdd;
+                n.position += toAdd;
+                if (remaining > 0 && n.next == null) {
+                    pullData();
+                }
+            }
+            return b;
+        }
+    }
+
+    /**
      * Read an ascii string until new line.
      *
      * @return string with the next line
@@ -367,31 +397,64 @@ public class DataReader {
         ensureAvailable();
         int idx = 0;
         Node n = head;
+        int indexWithinNode = n.position;
+
         while (true) {
             byte[] barr = n.bytes;
-            for (int i = n.position; i < barr.length && idx < max; i++, idx++) {
-                if (barr[i] == Bytes.LF_BYTE && !ignoreLoneEol) {
-                    throw new IncorrectNewLineException("Found LF (" + idx + ") without preceding CR. :\n" + this.debugDataHex());
-                } else if (barr[i] == Bytes.CR_BYTE) {
-                    byte nextByte;
-                    if (i + 1 < barr.length) {
-                        nextByte = barr[i + 1];
-                    } else {
-                        nextByte = n.next().peek();
+            int maxLength = Math.min(max - idx, barr.length - indexWithinNode);
+            int crIndex = Bytes.firstIndexOf(barr, indexWithinNode, barr.length, Bytes.CR_BYTE);
+
+            if (crIndex == -1) {
+                int lfIndex = Bytes.firstIndexOf(barr, indexWithinNode, maxLength, Bytes.LF_BYTE);
+                if (lfIndex != -1) {
+                    if (!ignoreLoneEol) {
+                        throw new IncorrectNewLineException("Found LF (" + idx
+                                                                    + ") without preceding CR. :\n" + this.debugDataHex());
                     }
+                }
+                // not found, continue with next buffer
+                idx += maxLength;
+                if (idx >= max) {
+                    // not found and reached the limit
+                    return max;
+                }
+                n = n.next();
+                indexWithinNode = n.position;
+                continue;
+            } else {
+                // found, next byte should be LF
+                if (crIndex == barr.length - 1) {
+                    // found CR as the last byte of the current node, peek next node
+                    byte nextByte = n.next().peek();
                     if (nextByte == Bytes.LF_BYTE) {
-                        return idx;
+                        return idx + crIndex - n.position;
                     }
                     if (!ignoreLoneEol) {
                         throw new IncorrectNewLineException("Found CR (" + idx
                                                                     + ") without following LF. :\n" + this.debugDataHex());
                     }
+                } else {
+                    // found CR within the current array
+                    byte nextByte = barr[crIndex + 1];
+                    if (nextByte == Bytes.LF_BYTE) {
+                        return idx + crIndex - n.position;
+                    }
+                    if (!ignoreLoneEol) {
+                        throw new IncorrectNewLineException("Found CR (" + idx
+                                                                    + ") without following LF. :\n" + this.debugDataHex());
+                    }
+                    indexWithinNode = crIndex + 1;
+                    idx += indexWithinNode;
+                    continue;
                 }
             }
-            if (idx == max) {
+
+            idx += maxLength;
+            if (idx >= max) {
                 return max;
             }
             n = n.next();
+            indexWithinNode = n.position;
         }
     }
 
