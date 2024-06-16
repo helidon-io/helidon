@@ -402,13 +402,13 @@ public class DataReader {
         while (true) {
             byte[] barr = n.bytes;
             int maxLength = Math.min(max - idx, barr.length - indexWithinNode);
-            int crIndex = Bytes.firstIndexOf(barr, indexWithinNode, barr.length, Bytes.CR_BYTE);
+            int crIndex = Bytes.firstIndexOf(barr, indexWithinNode, indexWithinNode + maxLength, Bytes.CR_BYTE);
 
             if (crIndex == -1) {
-                int lfIndex = Bytes.firstIndexOf(barr, indexWithinNode, maxLength, Bytes.LF_BYTE);
+                int lfIndex = Bytes.firstIndexOf(barr, indexWithinNode, indexWithinNode + maxLength, Bytes.LF_BYTE);
                 if (lfIndex != -1) {
                     if (!ignoreLoneEol) {
-                        throw new IncorrectNewLineException("Found LF (" + idx
+                        throw new IncorrectNewLineException("Found LF (" + (idx + lfIndex - n.position)
                                                                     + ") without preceding CR. :\n" + this.debugDataHex());
                     }
                 }
@@ -430,7 +430,7 @@ public class DataReader {
                         return idx + crIndex - n.position;
                     }
                     if (!ignoreLoneEol) {
-                        throw new IncorrectNewLineException("Found CR (" + idx
+                        throw new IncorrectNewLineException("Found CR (" + (idx + crIndex - n.position)
                                                                     + ") without following LF. :\n" + this.debugDataHex());
                     }
                 } else {

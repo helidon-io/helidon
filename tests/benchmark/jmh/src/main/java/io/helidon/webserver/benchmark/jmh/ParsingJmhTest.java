@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,13 +31,14 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.infra.Blackhole;
 
 /*
+These numbers are irrelevant on a different machine. This is just a not on improvements done by SWAR used in parsing.
 Prologue
 original 5633378.812 ± 261834.000 ops/s
 new      6842537.897 ± 109193.680 ops/s
 
 Headers
 original 2930640.115 ± 39855.689  ops/s
-new
+new      5342407.893 ops/s
  */
 @State(Scope.Benchmark)
 public class ParsingJmhTest {
@@ -52,7 +53,7 @@ public class ParsingJmhTest {
             \r
             """.getBytes(StandardCharsets.US_ASCII);
 
-    //    @Benchmark
+    @Benchmark
     public void prologue(Blackhole bh) {
         DataReader reader = new DataReader(() -> PROLOGUE_WITH_EOL);
         Http1Prologue p = new Http1Prologue(reader, 1024, false);

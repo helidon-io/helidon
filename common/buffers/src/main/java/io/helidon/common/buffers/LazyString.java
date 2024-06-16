@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,7 +75,7 @@ public class LazyString {
             int newOffset = offset;
             int newLength = length;
             for (int i = offset; i < offset + length; i++) {
-                if (IS_OWS[buffer[i]]) {
+                if (IS_OWS[buffer[i] & 0xff]) {
                     newOffset = i + 1;
                     newLength--;
                 } else {
@@ -85,7 +85,7 @@ public class LazyString {
             }
             // now we need to go from the end of the string
             for (int i = offset + length - 1; i > newOffset; i--) {
-                if (IS_OWS[buffer[i]]) {
+                if (IS_OWS[buffer[i] & 0xff]) {
                     newLength--;
                 } else {
                     break;

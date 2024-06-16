@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -124,24 +124,24 @@ public final class Http1Prologue {
     }
 
     private static boolean isGetMethod(byte[] bytes, int index) {
-        int maybeGet = bytes[index] |
-                bytes[index + 1] << 8 |
-                bytes[index + 2] << 16;
+        int maybeGet = bytes[index]
+                | bytes[index + 1] << 8
+                | bytes[index + 2] << 16;
         return maybeGet == GET_INT;
     }
 
     private static boolean isPutMethod(byte[] bytes, int index) {
-        int maybeGet = bytes[index] |
-                bytes[index + 1] << 8 |
-                bytes[index + 2] << 16;
+        int maybeGet = bytes[index]
+                | bytes[index + 1] << 8
+                | bytes[index + 2] << 16;
         return maybeGet == PUT_INT;
     }
 
     private static boolean isPostMethod(byte[] bytes, int index) {
-        int maybePost = bytes[index] |
-                bytes[index + 1] << 8 |
-                bytes[index + 2] << 16 |
-                bytes[index + 3] << 24;
+        int maybePost = bytes[index]
+                | bytes[index + 1] << 8
+                | bytes[index + 2] << 16
+                | bytes[index + 3] << 24;
         return maybePost == POST_INT;
     }
 
@@ -220,28 +220,15 @@ public final class Http1Prologue {
     }
 
     private int nextSpace(byte[] prologueBytes, int currentIndex) {
-        for (int i = currentIndex; i < prologueBytes.length; i++) {
-            if (prologueBytes[i] == Bytes.SPACE_BYTE) {
-                return i;
-            }
-        }
-        // not found
-        return -1;
+        return Bytes.firstIndexOf(prologueBytes, currentIndex, prologueBytes.length - 1, Bytes.SPACE_BYTE);
     }
 
     private String readProtocol(byte[] bytes, int index) {
         int length = bytes.length - index;
 
         if (length == 8) {
-            long maybeHttp1_x = bytes[index] |
-                    bytes[index + 1] << 8 |
-                    bytes[index + 2] << 16 |
-                    bytes[index + 3] << 24 |
-                    (long) bytes[index + 4] << 32 |
-                    (long) bytes[index + 5] << 40 |
-                    (long) bytes[index + 6] << 48 |
-                    (long) bytes[index + 7] << 56;
-            if (maybeHttp1_x == HTTP_1_1_LONG) {
+            long word = Bytes.toWord(bytes, index);
+            if (word == HTTP_1_1_LONG) {
                 return HTTP_1_1;
             }
         }
