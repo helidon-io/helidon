@@ -292,11 +292,21 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
     private void addRaw(String next) {
         int eq = next.indexOf('=');
         if (eq == -1) {
-            add(next, "");
+            addRaw(next, "");
         } else {
             String name = next.substring(0, eq);
             String value = next.substring(eq + 1);
-            add(name, value);
+            addRaw(name, value);
         }
+    }
+
+    private void addRaw(String encodedName, String encodedValue) {
+        String decodedName = UriEncoding.decodeUri(encodedName);
+        String decodedValue = UriEncoding.decodeUri(encodedValue);
+
+        rawQueryParams.computeIfAbsent(encodedName, it -> new ArrayList<>(1))
+                .add(encodedValue);
+        decodedQueryParams.computeIfAbsent(decodedName, it -> new ArrayList<>(1))
+                .add(decodedValue);
     }
 }
