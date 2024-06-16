@@ -42,7 +42,7 @@ abstract class ValidationTask {
         if (validatedType.interfaceTypeInfo()
                 .stream()
                 .noneMatch(it -> it.typeName().equals(implementedInterface))) {
-            errors.fatal(message);
+            errors.fatal(validatedType.typeName(), message);
         }
     }
 
@@ -71,7 +71,7 @@ abstract class ValidationTask {
                 })
                 .findFirst()
                 .isEmpty()) {
-            errors.fatal(validatedType.typeName().fqName(), message);
+            errors.fatal(validatedType.typeName(), message);
         }
     }
 
@@ -167,7 +167,8 @@ abstract class ValidationTask {
         public void validate(Errors.Collector errors) {
             // must be package local
             if (blueprint.accessModifier() == AccessModifier.PUBLIC) {
-                errors.fatal(blueprint.typeName(), blueprint.typeName().fqName() + " is defined as public, it must be package local");
+                errors.fatal(blueprint.typeName(), blueprint.typeName().fqName()
+                        + " is defined as public, it must be package local");
             }
 
             // if configured & provides, must have config key
@@ -177,7 +178,8 @@ abstract class ValidationTask {
                 String value = configured.stringValue().orElse("");
                 if (value.isEmpty()) {
                     // we have a @Configured and @Provides - this should have a configuration key!
-                    errors.fatal(blueprint.typeName(), blueprint.typeName().fqName() + " is marked as @Configured and @Provides, yet it does not"
+                    errors.fatal(blueprint.typeName(), blueprint.typeName().fqName()
+                            + " is marked as @Configured and @Provides, yet it does not"
                                          + " define a configuration key");
                 }
             }
@@ -289,8 +291,9 @@ abstract class ValidationTask {
             if (typeInfo.findAnnotation(annotation)
                     .stream()
                     .noneMatch(it -> it.value().map(expectedValue::equals).orElse(false))) {
-                errors.fatal("Type " + typeInfo.typeName()
-                        .fqName() + " must be annotated with " + annotation.fqName() + "(" + expectedValue + ")");
+                errors.fatal(typeInfo.typeName(),
+                             "Type " + typeInfo.typeName().fqName()
+                                     + " must be annotated with " + annotation.fqName() + "(" + expectedValue + ")");
             }
         }
     }
