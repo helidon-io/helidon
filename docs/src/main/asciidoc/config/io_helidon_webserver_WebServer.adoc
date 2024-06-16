@@ -126,7 +126,16 @@ Such as:
  If configured to `0` (the default), server starts on a random port.
 
  Port to listen on (for the default socket)
-|`protocols` |io.helidon.webserver.spi.ProtocolConfig[&#93; (service provider interface) |{nbsp} |Configuration of protocols. This may be either protocol selectors, or protocol upgraders from HTTP/1.1.
+|`protocols` |io.helidon.webserver.spi.ProtocolConfig[&#93; (service provider interface)
+
+Such as:
+
+ - xref:{rootdir}/config/io_helidon_webserver_http2_Http2Config.adoc[http_2 (Http2Config)]
+ - xref:{rootdir}/config/io_helidon_webserver_grpc_GrpcConfig.adoc[grpc (GrpcConfig)]
+ - xref:{rootdir}/config/io_helidon_webserver_websocket_WsConfig.adoc[websocket (WsConfig)]
+ - xref:{rootdir}/config/io_helidon_webserver_http1_Http1Config.adoc[http_1_1 (Http1Config)]
+
+ |{nbsp} |Configuration of protocols. This may be either protocol selectors, or protocol upgraders from HTTP/1.1.
  As the order is not important (providers are ordered by weight by default), we can use a configuration as an object,
  such as:
  <pre>

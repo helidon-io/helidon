@@ -30,10 +30,16 @@ include::{rootdir}/includes/attributes.adoc[]
 Type: link:{javadoc-base-url}/io.helidon.webserver.http2/io/helidon/webserver/http2/Http2Config.html[io.helidon.webserver.http2.Http2Config]
 
 
+[source,text]
+.Config key
+----
+http_2
+----
+
 
 This type provides the following service implementations:
 
-- `io.helidon.webserver.spi.ProtocolConfig`
+- `io.helidon.webserver.spi.ProtocolConfigProvider`
 
 
 == Configuration options

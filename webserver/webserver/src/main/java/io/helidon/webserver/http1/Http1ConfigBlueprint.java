@@ -22,13 +22,14 @@ import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.http.RequestedUriDiscoveryContext;
 import io.helidon.webserver.spi.ProtocolConfig;
+import io.helidon.webserver.spi.ProtocolConfigProvider;
 
 /**
  * HTTP/1.1 server configuration.
  */
 @Prototype.Blueprint(decorator = Http1BuilderDecorator.class)
-@Prototype.Configured
-@Prototype.Provides(ProtocolConfig.class)
+@Prototype.Configured(root = false, value = Http1ConnectionProvider.CONFIG_NAME)
+@Prototype.Provides(ProtocolConfigProvider.class)
 interface Http1ConfigBlueprint extends ProtocolConfig {
     /**
      * Name of this configuration, in most cases the same as {@link #type()}.

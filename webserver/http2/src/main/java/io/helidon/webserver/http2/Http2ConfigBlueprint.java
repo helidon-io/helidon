@@ -22,13 +22,14 @@ import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.http.RequestedUriDiscoveryContext;
 import io.helidon.webserver.spi.ProtocolConfig;
+import io.helidon.webserver.spi.ProtocolConfigProvider;
 
 /**
  * HTTP/2 server configuration.
  */
 @Prototype.Blueprint(decorator = Http2ConfigBlueprint.Http2ConfigDecorator.class)
-@Prototype.Configured
-@Prototype.Provides(ProtocolConfig.class)
+@Prototype.Configured(root = false, value = Http2ConnectionProvider.CONFIG_NAME)
+@Prototype.Provides(ProtocolConfigProvider.class)
 interface Http2ConfigBlueprint extends ProtocolConfig {
     /**
      * The size of the largest frame payload that the sender is willing to receive in bytes.
