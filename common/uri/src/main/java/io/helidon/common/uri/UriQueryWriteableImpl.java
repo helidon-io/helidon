@@ -292,11 +292,11 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
     private void addRaw(String next) {
         int eq = next.indexOf('=');
         if (eq == -1) {
-            set(next);
+            add(next, "");
         } else {
             String name = next.substring(0, eq);
             String value = next.substring(eq + 1);
-            set(name, value);
+            add(name, value);
         }
     }
 }
