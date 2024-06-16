@@ -70,10 +70,10 @@ This type provides the following service implementations:
 
 Such as:
 
- - xref:{rootdir}/config/io_helidon_webserver_observe_log_LogObserver.adoc[LogObserver]
- - xref:{rootdir}/config/io_helidon_webserver_observe_tracing_TracingObserver.adoc[TracingObserver]
- - xref:{rootdir}/config/io_helidon_webserver_observe_config_ConfigObserver.adoc[ConfigObserver]
- - xref:{rootdir}/config/io_helidon_webserver_observe_info_InfoObserver.adoc[InfoObserver]
+ - xref:{rootdir}/config/io_helidon_webserver_observe_log_LogObserver.adoc[log (LogObserver)]
+ - xref:{rootdir}/config/io_helidon_webserver_observe_tracing_TracingObserver.adoc[tracing (TracingObserver)]
+ - xref:{rootdir}/config/io_helidon_webserver_observe_config_ConfigObserver.adoc[config (ConfigObserver)]
+ - xref:{rootdir}/config/io_helidon_webserver_observe_info_InfoObserver.adoc[info (InfoObserver)]
  - xref:{rootdir}/config/io_helidon_webserver_observe_metrics_MetricsObserver.adoc[metrics (MetricsObserver)]
  - xref:{rootdir}/config/io_helidon_webserver_observe_health_HealthObserver.adoc[health (HealthObserver)]
 

@@ -30,6 +30,12 @@ include::{rootdir}/includes/attributes.adoc[]
 Type: link:{javadoc-base-url}/io.helidon.webserver.observe.tracing/io/helidon/webserver/observe/tracing/TracingObserver.html[io.helidon.webserver.observe.tracing.TracingObserver]
 
 
+[source,text]
+.Config key
+----
+tracing
+----
+
 
 This type provides the following service implementations:
 
