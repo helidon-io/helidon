@@ -131,7 +131,6 @@ public final class Bytes {
 
     /**
      * Converts the first 8 bytes from {@code offset} to a long, using appropriate byte order for this machine.
-     * <p>
      * <ul>
      *     <li>This method DOES NOT do a bound check</li>
      *     <li>This method DOES NOT validate there are 8 bytes available</li>

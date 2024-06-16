@@ -120,18 +120,19 @@ public final class Http1HeadersParser {
         if (Bytes.toWord(buffer, 0) != KEEP_ALIVE_WORD_1) {
             return false;
         }
-        long endWord = buffer[8]
-                | buffer[9] << 8
-                | buffer[10] << 16;
+        long endWord = buffer[8] & 0xff
+                | (buffer[9] & 0xff) << 8
+                | (buffer[10] & 0xff) << 16;
         return endWord == KEEP_ALIVE_WORD_2;
     }
 
     private static boolean isClose(byte[] buffer) {
-        long word = buffer[0]
-                | buffer[1] << 8
-                | buffer[2] << 16
-                | buffer[3] << 24
-                | (long) buffer[4] << 32;
+        long word = buffer[0] & 0xff
+                | (buffer[1] & 0xff) << 8
+                | (buffer[2] & 0xff) << 16
+                | ((long) buffer[3] & 0xff) << 24
+                | ((long) buffer[4]  & 0xff) << 32
+                | ((long) buffer[5]  & 0xff) << 40;
         return word == CLOSE_WORD;
     }
 

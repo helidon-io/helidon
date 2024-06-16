@@ -124,24 +124,24 @@ public final class Http1Prologue {
     }
 
     private static boolean isGetMethod(byte[] bytes, int index) {
-        int maybeGet = bytes[index]
-                | bytes[index + 1] << 8
-                | bytes[index + 2] << 16;
+        int maybeGet = bytes[index] & 0xff
+                | (bytes[index + 1] & 0xff) << 8
+                | (bytes[index + 2] & 0xff) << 16;
         return maybeGet == GET_INT;
     }
 
     private static boolean isPutMethod(byte[] bytes, int index) {
-        int maybeGet = bytes[index]
-                | bytes[index + 1] << 8
-                | bytes[index + 2] << 16;
+        int maybeGet = bytes[index] & 0xff
+                | (bytes[index + 1] & 0xff) << 8
+                | (bytes[index + 2] & 0xff) << 16;
         return maybeGet == PUT_INT;
     }
 
     private static boolean isPostMethod(byte[] bytes, int index) {
-        int maybePost = bytes[index]
-                | bytes[index + 1] << 8
-                | bytes[index + 2] << 16
-                | bytes[index + 3] << 24;
+        int maybePost = bytes[index] & 0xff
+                | (bytes[index + 1] & 0xff) << 8
+                | (bytes[index + 2] & 0xff) << 16
+                | (bytes[index + 3] & 0xff) << 24;
         return maybePost == POST_INT;
     }
 
