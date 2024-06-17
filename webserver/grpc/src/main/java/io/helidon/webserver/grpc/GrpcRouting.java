@@ -160,15 +160,16 @@ public class GrpcRouting implements Routing {
          * Configure a service using a {@link io.grpc.ServiceDescriptor}.
          *
          * @param service service to add
+         * @param tracingConfig tracing configuration
          * @return updated builder
          */
-        public Builder service(GrpcServiceDescriptor service) {
+        public Builder service(GrpcServiceDescriptor service, GrpcTracingConfig tracingConfig) {
             String name = service.name();
             if (services.containsKey(name)) {
                 throw new IllegalArgumentException("Attempted to register service name " + name + " multiple times");
             }
             services.put(name, service);
-            return route(GrpcServiceRoute.create(service));
+            return route(GrpcServiceRoute.create(service, tracingConfig));
         }
 
         /**

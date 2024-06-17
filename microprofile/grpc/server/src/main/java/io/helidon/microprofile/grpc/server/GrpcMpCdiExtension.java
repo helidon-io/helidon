@@ -30,6 +30,7 @@ import io.helidon.microprofile.grpc.server.spi.GrpcMpExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.webserver.grpc.GrpcRouting;
 import io.helidon.webserver.grpc.GrpcService;
+import io.helidon.webserver.grpc.GrpcTracingConfig;
 
 import io.grpc.BindableService;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -49,9 +50,11 @@ public class GrpcMpCdiExtension implements Extension {
 
     private static final Logger LOGGER = Logger.getLogger(GrpcMpCdiExtension.class.getName());
 
+    private Config config;
+
     private void discoverRoutes(@Observes @Initialized(ApplicationScoped.class) Object event, BeanManager beanManager) {
+        config = MpConfig.toHelidonConfig(ConfigProvider.getConfig());
         GrpcRouting.Builder routingBuilder = discoverGrpcRouting(beanManager);
-        Config config = MpConfig.toHelidonConfig(ConfigProvider.getConfig());
         loadExtensions(beanManager, config, routingBuilder);
         ServerCdiExtension extension = beanManager.getExtension(ServerCdiExtension.class);
         extension.addRouting(routingBuilder);
@@ -119,7 +122,8 @@ public class GrpcMpCdiExtension implements Extension {
     private void register(Object service, GrpcRouting.Builder builder, Class<?> cls, BeanManager beanManager) {
         GrpcServiceBuilder serviceBuilder = GrpcServiceBuilder.create(cls, () -> service, beanManager);
         if (serviceBuilder.isAnnotatedService()) {
-            builder.service(serviceBuilder.build());
+            GrpcTracingConfig tracingConfig = GrpcTracingConfig.create(config.get("tracing.grpc"));
+            builder.service(serviceBuilder.build(), tracingConfig);
         } else {
             LOGGER.log(Level.WARNING,
                     () -> "Discovered type is not a properly annotated gRPC service " + service.getClass());

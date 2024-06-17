@@ -36,7 +36,7 @@ public class InterceptorWeights {
      * interceptors so that they can trace and gather metrics on the whole call
      * stack of remaining interceptors.
      */
-    public static final int TRACING = CONTEXT + 1;
+    public static final int TRACING = CONTEXT - 1;
 
     /**
      * Security authentication weight.

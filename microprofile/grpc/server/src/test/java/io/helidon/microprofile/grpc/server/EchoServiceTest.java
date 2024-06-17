@@ -27,6 +27,7 @@ import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import io.grpc.stub.StreamObserver;
+import io.helidon.grpc.core.ContextKeys;
 import io.helidon.microprofile.grpc.core.Grpc;
 import io.helidon.microprofile.grpc.core.GrpcInterceptor;
 import io.helidon.microprofile.grpc.core.GrpcInterceptorBinding;
@@ -34,6 +35,7 @@ import io.helidon.microprofile.grpc.core.GrpcInterceptors;
 import io.helidon.microprofile.grpc.core.Unary;
 import io.helidon.microprofile.grpc.server.test.Echo;
 import io.helidon.microprofile.grpc.server.test.EchoServiceGrpc;
+import io.helidon.tracing.Tracer;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.WebTarget;
@@ -115,6 +117,7 @@ class EchoServiceTest extends BaseServiceTest {
                                                                      Metadata headers,
                                                                      ServerCallHandler<ReqT, RespT> next) {
             validateContext();
+            validateTracing();
             INTERCEPTORS_CALLED.add(getClass());
             return next.startCall(call, headers);
         }
@@ -130,15 +133,30 @@ class EchoServiceTest extends BaseServiceTest {
                                                                      Metadata headers,
                                                                      ServerCallHandler<ReqT, RespT> next) {
             validateContext();
+            validateTracing();
             INTERCEPTORS_CALLED.add(getClass());
             return next.startCall(call, headers);
         }
     }
 
+    /**
+     * Validates that a gRPC context is present.
+     */
     private static void validateContext() {
         Context context = Context.current();
         if (context == null || SERVICE_DESCRIPTOR_KEY.get() == null) {
             throw new IllegalStateException("Invalid context");
+        }
+    }
+
+    /**
+     * Validates that tracing is enabled. See {@code resources/application.yaml}.
+     */
+    private static void validateTracing() {
+        Context context = Context.current();
+        io.helidon.common.context.Context helidonContext = ContextKeys.HELIDON_CONTEXT.get(context);
+        if (helidonContext == null || helidonContext.get(Tracer.class).isEmpty()) {
+            throw new IllegalStateException("Invalid tracing context");
         }
     }
 }

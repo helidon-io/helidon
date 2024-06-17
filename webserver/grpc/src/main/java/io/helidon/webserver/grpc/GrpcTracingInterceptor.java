@@ -44,19 +44,20 @@ import io.grpc.ServerInterceptor;
  * A {@link ServerInterceptor} that adds tracing to gRPC service calls.
  */
 @Weight(InterceptorWeights.TRACING)
-public class GrpcTracing implements ServerInterceptor {
+public class GrpcTracingInterceptor implements ServerInterceptor {
+
     /**
      * The Open Tracing {@link Tracer}.
      */
     private final Tracer tracer;
 
-    /*
-     * GRPC method name
+    /**
+     * GRPC method name.
      */
     private final GrpcTracingName operationNameConstructor;
 
     /**
-     *
+     * A flag indicating streaming logging.
      */
     private final boolean streaming;
 
@@ -70,24 +71,23 @@ public class GrpcTracing implements ServerInterceptor {
      */
     private final Set<ServerRequestAttribute> tracedAttributes;
 
-    private GrpcTracing(Tracer tracer, GrpcTracingConfig tracingConfig) {
+    private GrpcTracingInterceptor(Tracer tracer, GrpcTracingConfig tracingConfig) {
         this.tracer = tracer;
-        this.operationNameConstructor = tracingConfig.operationNameConstructor();
-        this.streaming = tracingConfig.isStreaming();
-        this.verbose = tracingConfig.isVerbose();
+        this.operationNameConstructor = tracingConfig.operationNameConstructor().orElse(null);
+        this.streaming = tracingConfig.streaming();
+        this.verbose = tracingConfig.verbose();
         this.tracedAttributes = tracingConfig.tracedAttributes();
     }
 
     /**
-     * Create a {@link GrpcTracing} interceptor.
+     * Create a {@link GrpcTracingInterceptor} interceptor.
      *
      * @param tracer the Open Tracing {@link Tracer}
      * @param config the tracing configuration
-     *
-     * @return a {@link GrpcTracing} interceptor instance
+     * @return a {@link GrpcTracingInterceptor} interceptor instance
      */
-    static GrpcTracing create(Tracer tracer, GrpcTracingConfig config) {
-        return new GrpcTracing(tracer, config);
+    static GrpcTracingInterceptor create(Tracer tracer, GrpcTracingConfig config) {
+        return new GrpcTracingInterceptor(tracer, config);
     }
 
     @Override
@@ -103,7 +103,9 @@ public class GrpcTracing implements ServerInterceptor {
             }
         }
 
-        String operationName = operationNameConstructor.name(call.getMethodDescriptor());
+        String operationName = operationNameConstructor != null
+                ? operationNameConstructor.name(call.getMethodDescriptor())
+                : call.getMethodDescriptor().getFullMethodName();
         Span span = getSpanFromHeaders(headerMap, operationName);
 
         if (tracedAttributes.contains(ServerRequestAttribute.ALL)) {
@@ -133,10 +135,8 @@ public class GrpcTracing implements ServerInterceptor {
         }
 
         Context grpcContext = Context.current();
-
         updateContext(ContextKeys.HELIDON_CONTEXT.get(grpcContext), span);
         io.helidon.common.context.Contexts.context().ifPresent(ctx -> updateContext(ctx, span));
-
         Context ctxWithSpan = grpcContext.withValue(GrpcTracingContext.SPAN_KEY, span);
         ServerCall.Listener<ReqT> listenerWithContext = Contexts.interceptCall(ctxWithSpan, call, headers, next);
 
@@ -145,7 +145,7 @@ public class GrpcTracing implements ServerInterceptor {
 
     private void updateContext(io.helidon.common.context.Context context, Span span) {
         if (context != null) {
-            if (!context.get(Tracer.class).isPresent()) {
+            if (context.get(Tracer.class).isEmpty()) {
                 context.register(tracer);
             }
 
@@ -190,16 +190,16 @@ public class GrpcTracing implements ServerInterceptor {
 
     private static boolean isCaseInsensitive(Map<String, String> headers) {
         return (headers instanceof TreeMap
-                        && ((TreeMap<?, ?>) headers).comparator() == String.CASE_INSENSITIVE_ORDER)
+                && ((TreeMap<?, ?>) headers).comparator() == String.CASE_INSENSITIVE_ORDER)
                 || (headers instanceof ConcurrentSkipListMap<?, ?>
-                            && ((ConcurrentSkipListMap<?, ?>) headers).comparator() == String.CASE_INSENSITIVE_ORDER);
+                && ((ConcurrentSkipListMap<?, ?>) headers).comparator() == String.CASE_INSENSITIVE_ORDER);
     }
 
     /**
      * A {@link  ServerCall.Listener} to apply details to a tracing {@link Span} at various points
      * in a call lifecycle.
      *
-     * @param <ReqT>  the type of the request
+     * @param <ReqT> the type of the request
      */
     private class TracingListener<ReqT>
             extends ForwardingServerCallListener.SimpleForwardingServerCallListener<ReqT> {
@@ -254,10 +254,8 @@ public class GrpcTracing implements ServerInterceptor {
         }
     }
 
-    private static class MapHeaderProvider implements HeaderProvider {
-        private final Map<String, String> headers;
-
-        MapHeaderProvider(Map<String, String> headers) {
+    private record MapHeaderProvider(Map<String, String> headers) implements HeaderProvider {
+        private MapHeaderProvider(Map<String, String> headers) {
             if (isCaseInsensitive(headers)) {
                 this.headers = headers;
             } else {

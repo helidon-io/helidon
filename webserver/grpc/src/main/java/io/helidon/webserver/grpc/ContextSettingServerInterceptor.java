@@ -18,8 +18,10 @@ package io.helidon.webserver.grpc;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import io.helidon.common.Weight;
+import io.helidon.grpc.core.ContextKeys;
 import io.helidon.grpc.core.InterceptorWeights;
 
 import io.grpc.Context;
@@ -60,14 +62,21 @@ class ContextSettingServerInterceptor implements ServerInterceptor, GrpcServiceD
                                                                 Metadata headers,
                                                                 ServerCallHandler<ReqT, ResT> next) {
         Context context = Context.current();
+
+        // set Helidon context into gRPC context
+        Optional<io.helidon.common.context.Context> helidonContext =
+                io.helidon.common.context.Contexts.context();
+        context = Context.current().withValue(ContextKeys.HELIDON_CONTEXT,
+                helidonContext.orElseGet(io.helidon.common.context.Context::create));
+
+        // method info
         String fullMethodName = call.getMethodDescriptor().getFullMethodName();
         String methodName = extractMethodName(fullMethodName);
         GrpcMethodDescriptor<ReqT, ResT> methodDescriptor =
                 (GrpcMethodDescriptor<ReqT, ResT>) serviceDescriptor.method(methodName);
-        Map<Context.Key<?>, Object> contextMap = new HashMap<>();
 
-        // apply context keys from the service followed by the method
-        // so that the method can override any service keys
+        // apply context keys from the service followed by the method for overrides
+        Map<Context.Key<?>, Object> contextMap = new HashMap<>();
         contextMap.putAll(serviceDescriptor.context());
         contextMap.putAll(methodDescriptor.context());
         contextMap.put(GrpcServiceDescriptor.SERVICE_DESCRIPTOR_KEY, serviceDescriptor);

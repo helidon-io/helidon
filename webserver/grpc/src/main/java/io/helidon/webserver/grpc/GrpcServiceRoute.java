@@ -31,6 +31,7 @@ import io.grpc.ServerServiceDefinition;
 import io.grpc.stub.ServerCalls;
 
 class GrpcServiceRoute extends GrpcRoute {
+
     private final String serviceName;
     private final List<Grpc<?, ?>> routes;
 
@@ -54,7 +55,7 @@ class GrpcServiceRoute extends GrpcRoute {
     }
 
     /**
-     * Creates a gRPC route for an instance of {@link BindableServiceImpl}.
+     * Creates a gRPC route for an instance of {@link BindableService}.
      *
      * @param service the service
      * @return the route
@@ -70,19 +71,19 @@ class GrpcServiceRoute extends GrpcRoute {
 
     /**
      * Creates a gRPC route for an instance CDI bean annotated with {@link @Grpc}.
-     * Registers global interceptors for the route.
+     * Registers global interceptors for context and tracing on all the routes.
      *
      * @param service the service
+     * @param tracingConfig tracing configuration
      * @return the route
      */
-    static GrpcRoute create(GrpcServiceDescriptor service) {
+    static GrpcRoute create(GrpcServiceDescriptor service, GrpcTracingConfig tracingConfig) {
         WeightedBag<ServerInterceptor> interceptors = WeightedBag.create();
-
-        // set up context and tracing interceptors
         interceptors.add(ContextSettingServerInterceptor.create());
-        Tracer tracer = Tracer.global();
-        interceptors.add(GrpcTracing.create(tracer, GrpcTracingConfig.create()));
-
+        if (tracingConfig.enabled()) {
+            Tracer tracer = Tracer.global();
+            interceptors.add(GrpcTracingInterceptor.create(tracer, tracingConfig));
+        }
         return create(BindableServiceImpl.create(service, interceptors));
     }
 
@@ -94,11 +95,11 @@ class GrpcServiceRoute extends GrpcRoute {
                 return route;
             }
         }
-        throw new IllegalStateException("GrpcServiceRoute(" + serviceName + ") accepted prologue, but cannot provide route: "
-                                                + prologue);
+        throw new IllegalStateException("GrpcServiceRoute(" + serviceName
+                + ") accepted prologue, but cannot provide route: " + prologue);
     }
 
-    public PathMatchers.MatchResult accepts(HttpPrologue prologue) {
+    PathMatchers.MatchResult accepts(HttpPrologue prologue) {
         for (Grpc<?, ?> route : routes) {
             PathMatchers.MatchResult accepts = route.accepts(prologue);
             if (accepts.accepted()) {

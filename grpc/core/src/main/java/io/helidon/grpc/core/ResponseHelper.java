@@ -33,6 +33,7 @@ import io.grpc.stub.StreamObserver;
  * A number of helper methods to handle sending responses to a {@link StreamObserver}.
  */
 public final class ResponseHelper {
+
     private ResponseHelper() {
     }
 

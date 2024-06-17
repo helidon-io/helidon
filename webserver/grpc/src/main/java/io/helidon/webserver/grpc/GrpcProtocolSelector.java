@@ -34,6 +34,7 @@ import io.helidon.webserver.http2.spi.SubProtocolResult;
  * Sub-protocol selector for HTTP/2.
  */
 public class GrpcProtocolSelector implements Http2SubProtocolSelector {
+
     private GrpcProtocolSelector() {
     }
 

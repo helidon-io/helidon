@@ -28,3 +28,7 @@ server:
         passphrase: "password"
         resource:
           resource-path: "server.p12"
+
+tracing:
+  grpc:
+    enabled: true

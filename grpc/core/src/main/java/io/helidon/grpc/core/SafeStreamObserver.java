@@ -27,8 +27,7 @@ import io.grpc.stub.StreamObserver;
  *
  * @param <T> the type of response expected
  */
-public class SafeStreamObserver<T>
-        implements StreamObserver<T> {
+public class SafeStreamObserver<T> implements StreamObserver<T> {
 
     /**
      * Create a {@link SafeStreamObserver} that wraps
