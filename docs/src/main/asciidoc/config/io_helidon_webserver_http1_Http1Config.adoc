@@ -30,10 +30,16 @@ include::{rootdir}/includes/attributes.adoc[]
 Type: link:{javadoc-base-url}/io.helidon.webserver.http1/io/helidon/webserver/http1/Http1Config.html[io.helidon.webserver.http1.Http1Config]
 
 
+[source,text]
+.Config key
+----
+http_1_1
+----
+
 
 This type provides the following service implementations:
 
-- `io.helidon.webserver.spi.ProtocolConfig`
+- `io.helidon.webserver.spi.ProtocolConfigProvider`
 
 
 == Configuration options

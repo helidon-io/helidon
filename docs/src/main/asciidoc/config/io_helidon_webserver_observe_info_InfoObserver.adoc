@@ -30,6 +30,12 @@ include::{rootdir}/includes/attributes.adoc[]
 Type: link:{javadoc-base-url}/io.helidon.webserver.observe.info/io/helidon/webserver/observe/info/InfoObserver.html[io.helidon.webserver.observe.info.InfoObserver]
 
 
+[source,text]
+.Config key
+----
+info
+----
+
 
 This type provides the following service implementations:
 

@@ -21,13 +21,14 @@ import java.util.Set;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.webserver.spi.ProtocolConfig;
+import io.helidon.webserver.spi.ProtocolConfigProvider;
 
 /**
  * WebSocket protocol configuration.
  */
 @Prototype.Blueprint
-@Prototype.Configured
-@Prototype.Provides(ProtocolConfig.class)
+@Prototype.Configured(root = false, value = WsUpgradeProvider.CONFIG_NAME)
+@Prototype.Provides(ProtocolConfigProvider.class)
 interface WsConfigBlueprint extends ProtocolConfig {
     /**
      * WebSocket origins.
