@@ -411,8 +411,8 @@ public final class ResponseHelper {
      * @param <U>  the type of result expected by the {@link StreamObserver}
      */
     private static class CompletionAction<T, U> implements BiConsumer<T, Throwable> {
-        private StreamObserver<U> observer;
-        private boolean sendResult;
+        private final StreamObserver<U> observer;
+        private final boolean sendResult;
 
         CompletionAction(StreamObserver<U> observer, boolean sendResult) {
             this.observer = observer;
@@ -438,7 +438,7 @@ public final class ResponseHelper {
      * @param <T>  the type of result returned from the callable
      */
     private static class CallableSupplier<T> implements Supplier<T> {
-        private Callable<T> callable;
+        private final Callable<T> callable;
 
         CallableSupplier(Callable<T> callable) {
             this.callable = callable;

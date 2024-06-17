@@ -159,7 +159,7 @@ public class SafeStreamObserver<T> implements StreamObserver<T> {
     /**
      * The actual StreamObserver.
      */
-    private StreamObserver<? super T> delegate;
+    private final StreamObserver<? super T> delegate;
 
     /**
      * Indicates a terminal state.

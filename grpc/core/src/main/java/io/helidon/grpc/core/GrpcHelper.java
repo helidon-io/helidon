@@ -100,21 +100,19 @@ public final class GrpcHelper {
      * @return  the gRPC {@link Status} converted to a {@link io.helidon.http.Status}
      */
     public static io.helidon.http.Status toHttpResponseStatus(Status status) {
-        io.helidon.http.Status httpStatus = switch (status.getCode()) {
+        return switch (status.getCode()) {
             case OK -> io.helidon.http.Status.create(200, status.getDescription());
-            case INVALID_ARGUMENT -> io.helidon.http.Status.create(400, status.getDescription());
+            case INVALID_ARGUMENT, OUT_OF_RANGE -> io.helidon.http.Status.create(400, status.getDescription());
             case DEADLINE_EXCEEDED -> io.helidon.http.Status.create(408, status.getDescription());
             case NOT_FOUND -> io.helidon.http.Status.create(404, status.getDescription());
             case ALREADY_EXISTS -> io.helidon.http.Status.create(412, status.getDescription());
             case PERMISSION_DENIED -> io.helidon.http.Status.create(403, status.getDescription());
             case FAILED_PRECONDITION -> io.helidon.http.Status.create(412, status.getDescription());
-            case OUT_OF_RANGE -> io.helidon.http.Status.create(400, status.getDescription());
             case UNIMPLEMENTED -> io.helidon.http.Status.create(501, status.getDescription());
             case UNAVAILABLE -> io.helidon.http.Status.create(503, status.getDescription());
             case UNAUTHENTICATED -> io.helidon.http.Status.create(401, status.getDescription());
             default -> io.helidon.http.Status.create(500, status.getDescription());
         };
-        return httpStatus;
     }
 
     /**
@@ -147,8 +145,7 @@ public final class GrpcHelper {
     public static StatusRuntimeException ensureStatusRuntimeException(Throwable thrown, Status status) {
         if (thrown instanceof StatusRuntimeException) {
             return (StatusRuntimeException) thrown;
-        } else if (thrown instanceof StatusException) {
-            StatusException ex = (StatusException) thrown;
+        } else if (thrown instanceof StatusException ex) {
             return new StatusRuntimeException(ex.getStatus(), ex.getTrailers());
         } else {
             return status.withCause(thrown).asRuntimeException();
