@@ -34,8 +34,7 @@ import io.grpc.stub.StreamObserver;
 /**
  * A base class for {@link MethodHandlerSupplier} implementations.
  */
-abstract class AbstractMethodHandlerSupplier
-        implements MethodHandlerSupplier {
+abstract class AbstractMethodHandlerSupplier implements MethodHandlerSupplier {
 
     private final MethodDescriptor.MethodType methodType;
 
@@ -77,8 +76,7 @@ abstract class AbstractMethodHandlerSupplier
      * @param <ReqT>  the request type
      * @param <RespT> the response type
      */
-    public abstract static class AbstractHandler<ReqT, RespT>
-            implements MethodHandler<ReqT, RespT> {
+    public abstract static class AbstractHandler<ReqT, RespT> implements MethodHandler<ReqT, RespT> {
 
         private final String methodName;
         private final AnnotatedMethod method;
@@ -263,10 +261,9 @@ abstract class AbstractMethodHandlerSupplier
      *
      * @param <V> the type of the response
      */
-    private static class NullHandlingResponseObserver<V>
-            implements StreamObserver<V> {
+    private static class NullHandlingResponseObserver<V> implements StreamObserver<V> {
 
-        private final StreamObserver delegate;
+        private final StreamObserver<V> delegate;
 
         private NullHandlingResponseObserver(StreamObserver<V> delegate) {
             this.delegate = delegate;
@@ -276,7 +273,7 @@ abstract class AbstractMethodHandlerSupplier
         @SuppressWarnings("unchecked")
         public void onNext(V value) {
             if (value == null) {
-                delegate.onNext(Empty.getDefaultInstance());
+                delegate.onNext((V) Empty.getDefaultInstance());
             }
             delegate.onNext(value);
         }

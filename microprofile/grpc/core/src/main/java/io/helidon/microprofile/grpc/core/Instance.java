@@ -96,7 +96,7 @@ public interface Instance {
         @Override
         public T get() {
             try {
-                return instanceClass.newInstance();
+                return instanceClass.getDeclaredConstructor().newInstance();
             } catch (Throwable e) {
                 throw Status.INTERNAL.withCause(e).asRuntimeException();
             }
@@ -110,8 +110,7 @@ public interface Instance {
      *
      * @param <T> the type of instance supplied
      */
-    class SingletonInstance<T>
-            implements Supplier<T> {
+    class SingletonInstance<T> implements Supplier<T> {
 
         private final Class<? extends T> instanceClass;
 
@@ -137,7 +136,8 @@ public interface Instance {
             return accessInstance(() -> {
                 if (instance == null) {
                     try {
-                        instance = instanceClass.newInstance();
+                        assert instanceClass != null;
+                        instance = instanceClass.getDeclaredConstructor().newInstance();
                     } catch (Throwable e) {
                         throw Status.INTERNAL.withCause(e).asRuntimeException();
                     }
@@ -146,7 +146,7 @@ public interface Instance {
             });
         }
 
-        private <T> T accessInstance(Supplier<T> operation) {
+        private T accessInstance(Supplier<T> operation) {
             instanceAccess.lock();
             try {
                 return operation.get();

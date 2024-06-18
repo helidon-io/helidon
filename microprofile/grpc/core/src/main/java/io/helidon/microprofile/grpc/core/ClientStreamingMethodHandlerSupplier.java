@@ -34,8 +34,7 @@ import static io.helidon.grpc.core.ResponseHelper.completeAsync;
 /**
  * A supplier of {@link MethodHandler}s for client streaming gRPC methods.
  */
-public class ClientStreamingMethodHandlerSupplier
-        extends AbstractMethodHandlerSupplier {
+public class ClientStreamingMethodHandlerSupplier extends AbstractMethodHandlerSupplier {
 
     /**
      * Create a supplier of handlers for client streaming methods.
@@ -58,26 +57,13 @@ public class ClientStreamingMethodHandlerSupplier
         }
 
         CallType type = determineCallType(method);
-        MethodHandler handler;
-
-        switch (type) {
-        case clientStreaming:
-            handler = new ClientStreaming<>(methodName, method, instance);
-            break;
-        case futureResponse:
-            handler = new FutureResponse<>(methodName, method, instance);
-            break;
-        case clientStreamingIterable:
-            handler = new ClientStreamingIterable(methodName, method, instance);
-            break;
-        case clientStreamingStream:
-            handler = new ClientStreamingStream(methodName, method, instance);
-            break;
-        case unknown:
-        default:
-            throw new IllegalArgumentException("Not a supported client streaming method signature: " + method);
-        }
-        return handler;
+        return switch (type) {
+            case clientStreaming -> (MethodHandler<ReqT, RespT>) new ClientStreaming<>(methodName, method, instance);
+            case futureResponse -> new FutureResponse<>(methodName, method, instance);
+            case clientStreamingIterable -> new ClientStreamingIterable<>(methodName, method, instance);
+            case clientStreamingStream -> new ClientStreamingStream<>(methodName, method, instance);
+            default -> throw new IllegalArgumentException("Not a supported client streaming method signature: " + method);
+        };
     }
 
     private CallType determineCallType(AnnotatedMethod method) {
@@ -218,7 +204,7 @@ public class ClientStreamingMethodHandlerSupplier
         @Override
         @SuppressWarnings("unchecked")
         public Object clientStreaming(Object[] args, ClientStreaming client) {
-            return client.clientStreaming(methodName(), (StreamObserver) args[0]);
+            return client.clientStreaming(methodName(), (StreamObserver<?>) args[0]);
         }
     }
 
@@ -272,8 +258,7 @@ public class ClientStreamingMethodHandlerSupplier
      * @param <ReqT>  the request type
      * @param <RespT> the response type
      */
-    public static class ClientStreamingIterable<ReqT, RespT>
-            extends AbstractClientStreamingHandler<ReqT, RespT> {
+    public static class ClientStreamingIterable<ReqT, RespT> extends AbstractClientStreamingHandler<ReqT, RespT> {
 
         ClientStreamingIterable(String methodName, AnnotatedMethod method, Supplier<?> instance) {
             super(methodName, method, instance);
@@ -313,7 +298,6 @@ public class ClientStreamingMethodHandlerSupplier
         }
     }
 
-
     // ----- ClientStreamingIterable call handler ---------------------------
 
     /**
@@ -326,8 +310,7 @@ public class ClientStreamingMethodHandlerSupplier
      * @param <ReqT>  the request type
      * @param <RespT> the response type
      */
-    public static class ClientStreamingStream<ReqT, RespT>
-            extends AbstractClientStreamingHandler<ReqT, RespT> {
+    public static class ClientStreamingStream<ReqT, RespT> extends AbstractClientStreamingHandler<ReqT, RespT> {
 
         ClientStreamingStream(String methodName, AnnotatedMethod method, Supplier<?> instance) {
             super(methodName, method, instance);
@@ -364,17 +347,15 @@ public class ClientStreamingMethodHandlerSupplier
         }
     }
 
-
     /**
      * A {@link StreamObserver} that completes a {@link CompletableFuture}
      * with its received result.
      *
      * @param <T>  the result type
      */
-    private static class FutureObserver<T>
-            implements StreamObserver<T> {
+    private static class FutureObserver<T> implements StreamObserver<T> {
 
-        private CompletableFuture<T> future;
+        private final CompletableFuture<T> future;
         private T value;
 
         private FutureObserver(CompletableFuture<T> future) {

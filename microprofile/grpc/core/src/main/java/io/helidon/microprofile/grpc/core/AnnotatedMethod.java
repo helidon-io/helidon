@@ -143,7 +143,7 @@ public class AnnotatedMethod implements AnnotatedElement {
 
     /**
      * Get method parameter types.
-     *
+     * <p>
      * See also {@link Method#getParameterTypes()}.
      *
      * @return method parameter types.
@@ -154,7 +154,7 @@ public class AnnotatedMethod implements AnnotatedElement {
 
     /**
      * Get method type parameters.
-     *
+     * <p>
      * See also {@link Method#getTypeParameters()}.
      *
      * @return method type parameters.
@@ -165,7 +165,7 @@ public class AnnotatedMethod implements AnnotatedElement {
 
     /**
      * Get generic method parameter types.
-     *
+     * <p>
      * See also {@link Method#getGenericParameterTypes()}.
      *
      * @return generic method parameter types.
@@ -176,8 +176,8 @@ public class AnnotatedMethod implements AnnotatedElement {
 
     /**
      * Get generic method return type.
-     *
-     * See also {@link Method#getGenericReturnType()} ()}.
+     * <p>
+     * See also {@link Method#getGenericReturnType()}.
      *
      * @return generic method return types.
      */
@@ -187,8 +187,8 @@ public class AnnotatedMethod implements AnnotatedElement {
 
     /**
      * Get method return type.
-     *
-     * See also {@link Method#getReturnType()} ()} ()}.
+     * <p>
+     * See also {@link Method#getReturnType()}.
      *
      * @return method return types.
      */

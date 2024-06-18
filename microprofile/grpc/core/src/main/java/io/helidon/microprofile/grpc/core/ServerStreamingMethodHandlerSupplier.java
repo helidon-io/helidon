@@ -38,8 +38,7 @@ import static io.helidon.grpc.core.ResponseHelper.stream;
 /**
  * A supplier of {@link MethodHandler}s for server streaming gRPC methods.
  */
-public class ServerStreamingMethodHandlerSupplier
-        extends AbstractMethodHandlerSupplier {
+public class ServerStreamingMethodHandlerSupplier extends AbstractMethodHandlerSupplier {
 
     /**
      * Create a supplier of handlers for server streaming methods.
@@ -360,8 +359,8 @@ public class ServerStreamingMethodHandlerSupplier
     private static class Observer<T>
             implements StreamObserver<T> {
 
-        private CompletableFuture<List<T>> future = new CompletableFuture<>();
-        private List<T> list = new ArrayList<>();
+        private final CompletableFuture<List<T>> future = new CompletableFuture<>();
+        private final List<T> list = new ArrayList<>();
 
         private CompletableFuture<List<T>> future() {
             return future;

@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.grpc.core;
 
+import java.io.Serial;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -25,7 +26,7 @@ import jakarta.enterprise.util.AnnotationLiteral;
 import jakarta.inject.Qualifier;
 
 /**
- * An qualifier annotation to specify that an in-process {@link io.grpc.Channel}
+ * A qualifier annotation to specify that an in-process {@link io.grpc.Channel}
  * should be injected.
  * <p>
  * For example:
@@ -43,15 +44,14 @@ public @interface InProcessGrpcChannel {
     /**
      * An {@link AnnotationLiteral} for the {@link InProcessGrpcChannel} annotation.
      */
-    class Literal
-            extends AnnotationLiteral<InProcessGrpcChannel>
-            implements InProcessGrpcChannel {
+    class Literal extends AnnotationLiteral<InProcessGrpcChannel> implements InProcessGrpcChannel {
+
+        @Serial
+        private static final long serialVersionUID = 1L;
 
         /**
          * The singleton instance of {@link Literal}.
          */
         public static final Literal INSTANCE = new Literal();
-
-        private static final long serialVersionUID = 1L;
     }
 }

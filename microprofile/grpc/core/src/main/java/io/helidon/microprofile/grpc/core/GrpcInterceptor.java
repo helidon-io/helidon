@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.grpc.core;
 
+import java.io.Serial;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -66,11 +67,13 @@ public @interface GrpcInterceptor {
      * An {@link AnnotationLiteral} for the {@link GrpcInterceptor} annotation.
      */
     class Literal extends AnnotationLiteral<GrpcInterceptor> implements GrpcInterceptor {
+
+        @Serial
+        private static final long serialVersionUID = 1L;
+
         /**
          * The singleton instance of {@link GrpcInterceptor.Literal}.
          */
         public static final Literal INSTANCE = new Literal();
-
-        private static final long serialVersionUID = 1L;
     }
 }

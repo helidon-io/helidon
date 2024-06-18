@@ -16,6 +16,7 @@
 
 package io.helidon.microprofile.grpc.core;
 
+import java.io.Serial;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
@@ -54,12 +55,13 @@ public @interface Grpc {
      */
     class Literal extends AnnotationLiteral<Grpc> implements Grpc {
 
+        @Serial
+        private static final long serialVersionUID = 1L;
+
         /**
          * The singleton instance of {@link Literal}.
          */
         public static final Literal INSTANCE = new Literal();
-
-        private static final long serialVersionUID = 1L;
 
         @Override
         public String name() {

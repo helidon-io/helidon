@@ -70,7 +70,7 @@ public final class ModelHelper {
             // if no annotation found on the class currently traversed, check for annotation in the interfaces on this
             // level - if not already previously found
             if (foundInterface == null) {
-                for (final Class<?> i : cls.getInterfaces()) {
+                for (Class<?> i : cls.getInterfaces()) {
                     if (i.getDeclaredAnnotation(annotation) != null) {
                         // store the interface reference in case no annotation will be found in the super-classes
                         foundInterface = i;
@@ -94,7 +94,7 @@ public final class ModelHelper {
      * @param clazz class for which to get the declared methods.
      * @return methods declared on the {@code clazz} class.
      */
-    public static Collection<? extends Method> getDeclaredMethods(final Class<?> clazz) {
+    public static Collection<? extends Method> getDeclaredMethods(Class<?> clazz) {
         return Arrays.asList(clazz.getDeclaredMethods());
     }
 
@@ -113,11 +113,11 @@ public final class ModelHelper {
      * @param m the method to find
      * @return public method found.
      */
-    public static Method findMethodOnClass(final Class<?> cls, final Method m) {
+    public static Method findMethodOnClass(Class<?> cls, Method m) {
         try {
             return cls.getMethod(m.getName(), m.getParameterTypes());
-        } catch (final NoSuchMethodException e) {
-            for (final Method method : cls.getMethods()) {
+        } catch (NoSuchMethodException e) {
+            for (Method method : cls.getMethods()) {
                 if (method.getName().equals(m.getName())
                         && method.getParameterTypes().length == m.getParameterTypes().length) {
                     if (compareParameterTypes(m.getGenericParameterTypes(),
@@ -138,7 +138,7 @@ public final class ModelHelper {
      * @return {@code true} if the given types are understood to be equal, {@code false} otherwise.
      * @see #compareParameterTypes(java.lang.reflect.Type, java.lang.reflect.Type)
      */
-    private static boolean compareParameterTypes(final Type[] first, final Type[] second) {
+    private static boolean compareParameterTypes(Type[] first, Type[] second) {
         for (int i = 0; i < first.length; i++) {
             if (!first[i].equals(second[i])) {
                 if (!compareParameterTypes(first[i], second[i])) {
@@ -157,24 +157,22 @@ public final class ModelHelper {
      * @return {@code true} if the given types are understood to be equal, {@code false} otherwise.
      */
     @SuppressWarnings("unchecked")
-    private static boolean compareParameterTypes(final Type first, final Type second) {
-        if (first instanceof Class) {
-            final Class<?> clazz = (Class<?>) first;
-
+    private static boolean compareParameterTypes(Type first, Type second) {
+        if (first instanceof Class<?> clazz) {
             if (second instanceof Class) {
-                return ((Class) second).isAssignableFrom(clazz);
+                return ((Class<?>) second).isAssignableFrom(clazz);
             } else if (second instanceof TypeVariable) {
-                return checkTypeBounds(clazz, ((TypeVariable) second).getBounds());
+                return checkTypeBounds(clazz, ((TypeVariable<?>) second).getBounds());
             }
         }
         return second instanceof TypeVariable;
     }
 
     @SuppressWarnings("unchecked")
-    private static boolean checkTypeBounds(final Class type, final Type[] bounds) {
-        for (final Type bound : bounds) {
+    private static boolean checkTypeBounds(Class<?> type, Type[] bounds) {
+        for (Type bound : bounds) {
             if (bound instanceof Class) {
-                if (!((Class) bound).isAssignableFrom(type)) {
+                if (!((Class<?>) bound).isAssignableFrom(type)) {
                     return false;
                 }
             }
@@ -189,15 +187,13 @@ public final class ModelHelper {
      * @return array component type.
      * @throws IllegalArgumentException in case the type is not an array type.
      */
-    public static Type getArrayComponentType(final Type type) {
-        if (type instanceof Class) {
-            final Class c = (Class) type;
+    public static Type getArrayComponentType(Type type) {
+        if (type instanceof Class<?> c) {
             return c.getComponentType();
         }
         if (type instanceof GenericArrayType) {
             return ((GenericArrayType) type).getGenericComponentType();
         }
-
         throw new IllegalArgumentException();
     }
 
@@ -207,11 +203,11 @@ public final class ModelHelper {
      * @param c the component class of the array
      * @return the array class.
      */
-    public static Class<?> getArrayForComponentType(final Class<?> c) {
+    public static Class<?> getArrayForComponentType(Class<?> c) {
         try {
-            final Object o = Array.newInstance(c, 0);
+            Object o = Array.newInstance(c, 0);
             return o.getClass();
-        } catch (final Exception e) {
+        } catch (Exception e) {
             throw new IllegalArgumentException(e);
         }
     }
@@ -263,8 +259,7 @@ public final class ModelHelper {
     public static Class<?> getGenericType(Type type) {
         if (type instanceof Class) {
             return (Class<?>) type;
-        } else if (type instanceof ParameterizedType) {
-            ParameterizedType parameterizedType = (ParameterizedType) type;
+        } else if (type instanceof ParameterizedType parameterizedType) {
             if (parameterizedType.getRawType() instanceof Class) {
                 Type t = parameterizedType.getActualTypeArguments()[0];
                 if (t instanceof Class) {
@@ -278,16 +273,15 @@ public final class ModelHelper {
                             + "parameterized type whose raw type is a class");
                 }
             }
-        } else if (type instanceof GenericArrayType) {
-            GenericArrayType array = (GenericArrayType) type;
-            final Class<?> componentRawType = getGenericType(array.getGenericComponentType());
+        } else if (type instanceof GenericArrayType array) {
+            Class<?> componentRawType = getGenericType(array.getGenericComponentType());
             return getArrayClass(componentRawType);
         }
         throw new IllegalArgumentException("Type parameter " + type.toString() + " not a class or "
                 + "parameterized type whose raw type is a class");
     }
 
-    private static Class getArrayClass(Class c) {
+    private static Class<?> getArrayClass(Class<?> c) {
         try {
             Object o = Array.newInstance(c, 0);
             return o.getClass();

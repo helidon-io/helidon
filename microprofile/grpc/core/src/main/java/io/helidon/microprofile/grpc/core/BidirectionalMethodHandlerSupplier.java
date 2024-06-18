@@ -31,8 +31,7 @@ import io.grpc.stub.StreamObserver;
 /**
  * A supplier of {@link MethodHandler}s for bi-directional streaming gRPC methods.
  */
-public class BidirectionalMethodHandlerSupplier
-        extends AbstractMethodHandlerSupplier {
+public class BidirectionalMethodHandlerSupplier extends AbstractMethodHandlerSupplier {
 
     /**
      * Create a supplier of handlers for bi-directional streaming methods.

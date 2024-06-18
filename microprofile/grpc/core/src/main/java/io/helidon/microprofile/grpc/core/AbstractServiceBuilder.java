@@ -151,7 +151,7 @@ public abstract class AbstractServiceBuilder {
      */
     protected List<Method> getAllDeclaredMethods(Class<?> clazz) {
         List<Method> result = new LinkedList<>();
-        Class current = clazz;
+        Class<?> current = clazz;
         while (current != Object.class && current != null) {
             result.addAll(Arrays.asList(current.getDeclaredMethods()));
             current = current.getSuperclass();

@@ -26,8 +26,7 @@ import java.lang.annotation.Target;
 import io.grpc.MethodDescriptor.MethodType;
 
 /**
- * An annotation to mark a class as representing a
- * server streaming gRPC method.
+ * An annotation to mark a class as representing a server streaming gRPC method.
  */
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)

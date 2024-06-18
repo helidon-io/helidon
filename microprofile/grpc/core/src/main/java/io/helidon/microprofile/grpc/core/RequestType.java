@@ -36,5 +36,5 @@ public @interface RequestType {
      *
      * @return the gRPC request type
      */
-    Class value();
+    Class<?> value();
 }

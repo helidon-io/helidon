@@ -34,8 +34,7 @@ import io.grpc.stub.StreamObserver;
 /**
  * A supplier of {@link MethodHandler}s for unary gRPC methods.
  */
-public class UnaryMethodHandlerSupplier
-        extends AbstractMethodHandlerSupplier {
+public class UnaryMethodHandlerSupplier extends AbstractMethodHandlerSupplier {
 
     /**
      * Create a supplier of handlers for server streaming methods.
