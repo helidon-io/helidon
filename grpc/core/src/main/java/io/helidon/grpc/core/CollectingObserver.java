@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.grpc;
+package io.helidon.grpc.core;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -25,69 +25,69 @@ import java.util.stream.Collector;
 import io.grpc.stub.StreamObserver;
 
 /**
- * A {@link StreamObserver}.
+ * Utility {@link StreamObserver} mostly used for testing.
  *
- * @param <T> ToDo: Add JavaDoc
- * @param <V> ToDo: Add JavaDoc
- * @param <U> ToDo: Add JavaDoc
- * @param <A> ToDo: Add JavaDoc
- * @param <R> ToDo: Add JavaDoc
+ * @param <T> the type of input elements to the reduction operation
+ * @param <A> the mutable accumulation type of the reduction operation
+ * @param <R> the result type of the reduction operation
+ * @param <U> the type of values observed
+ * @param <V> the request type before conversion
  */
 public class CollectingObserver<T, V, U, A, R> implements StreamObserver<V> {
+
     private final Collector<T, A, R> collector;
     private final StreamObserver<U> responseObserver;
     private final Function<V, T> requestConverter;
     private final Function<R, U> responseConverter;
     private final Consumer<Throwable> errorHandler;
-
     private final A accumulator;
 
     /**
-     * ToDo: Add JavaDoc.
+     * Constructor
      *
-     * @param collector        ToDo: Add JavaDoc
-     * @param responseObserver ToDo: Add JavaDoc
+     * @param collector the collector
+     * @param observer the observer
      */
-    public CollectingObserver(Collector<T, A, R> collector, StreamObserver<U> responseObserver) {
-        this(collector, responseObserver, null, null, null);
+    public CollectingObserver(Collector<T, A, R> collector, StreamObserver<U> observer) {
+        this(collector, observer, null, null, null);
     }
 
     /**
-     * ToDo: Add JavaDoc.
+     * Constructor
      *
-     * @param collector        ToDo: Add JavaDoc
-     * @param responseObserver ToDo: Add JavaDoc
-     * @param errorHandler     ToDo: Add JavaDoc
+     * @param collector the collector
+     * @param observer the observer
+     * @param errorHandler the error handler
      */
     public CollectingObserver(Collector<T, A, R> collector,
-                              StreamObserver<U> responseObserver,
+                              StreamObserver<U> observer,
                               Consumer<Throwable> errorHandler) {
-        this(collector, responseObserver, null, null, errorHandler);
+        this(collector, observer, null, null, errorHandler);
     }
 
     /**
-     * ToDo: Add JavaDoc.
+     * Constructor
      *
-     * @param collector         ToDo: Add JavaDoc
-     * @param responseObserver  ToDo: Add JavaDoc
-     * @param requestConverter  ToDo: Add JavaDoc
-     * @param responseConverter ToDo: Add JavaDoc
+     * @param collector the collector
+     * @param observer the observer
+     * @param requestConverter the request converter
+     * @param responseConverter the response converterr
      */
     public CollectingObserver(Collector<T, A, R> collector,
-                              StreamObserver<U> responseObserver,
+                              StreamObserver<U> observer,
                               Function<V, T> requestConverter,
                               Function<R, U> responseConverter) {
-        this(collector, responseObserver, requestConverter, responseConverter, null);
+        this(collector, observer, requestConverter, responseConverter, null);
     }
 
     /**
-     * ToDo: Add JavaDoc.
+     * Constructor
      *
-     * @param collector         ToDo: Add JavaDoc
-     * @param observer          ToDo: Add JavaDoc
-     * @param requestConverter  ToDo: Add JavaDoc
-     * @param responseConverter ToDo: Add JavaDoc
-     * @param errorHandler      ToDo: Add JavaDoc
+     * @param collector the collector
+     * @param observer the observer
+     * @param requestConverter the request converter
+     * @param responseConverter the response converter
+     * @param errorHandler the error handler
      */
     @SuppressWarnings("unchecked")
     public CollectingObserver(Collector<T, A, R> collector,
@@ -99,8 +99,7 @@ public class CollectingObserver<T, V, U, A, R> implements StreamObserver<V> {
         this.responseObserver = Objects.requireNonNull(observer, "The observer parameter cannot be null");
         this.requestConverter = Optional.ofNullable(requestConverter).orElse(v -> (T) v);
         this.responseConverter = Optional.ofNullable(responseConverter).orElse(r -> (U) r);
-        this.errorHandler = Optional.ofNullable(errorHandler).orElse(t -> {
-        });
+        this.errorHandler = Optional.ofNullable(errorHandler).orElse(t -> {});
         this.accumulator = collector.supplier().get();
     }
 

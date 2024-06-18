@@ -32,7 +32,7 @@ import io.helidon.microprofile.grpc.core.ServerStreaming;
 import io.helidon.microprofile.grpc.core.Unary;
 import io.helidon.microprofile.grpc.server.test.StringServiceGrpc;
 import io.helidon.microprofile.grpc.server.test.Strings;
-import io.helidon.webserver.grpc.CollectingObserver;
+import io.helidon.grpc.core.CollectingObserver;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.WebTarget;

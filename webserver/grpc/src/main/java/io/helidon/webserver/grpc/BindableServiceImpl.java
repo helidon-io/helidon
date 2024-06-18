@@ -96,7 +96,7 @@ class BindableServiceImpl implements BindableService {
         if (!interceptors.isEmpty()) {
             LinkedHashSet<ServerInterceptor> uniqueInterceptors = new LinkedHashSet<>(interceptors.size());
 
-            // iterate the interceptors in reverse order so that the handler chain is in the correct order
+            // iterate the interceptors in reverse order to set up handler chain
             for (int i = interceptors.size() - 1; i >= 0; i--) {
                 ServerInterceptor interceptor = interceptors.get(i);
                 if (!uniqueInterceptors.contains(interceptor)) {
