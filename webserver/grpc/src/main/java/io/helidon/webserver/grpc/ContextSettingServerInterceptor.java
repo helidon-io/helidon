@@ -66,7 +66,7 @@ class ContextSettingServerInterceptor implements ServerInterceptor, GrpcServiceD
         // set Helidon context into gRPC context
         Optional<io.helidon.common.context.Context> helidonContext =
                 io.helidon.common.context.Contexts.context();
-        context = Context.current().withValue(ContextKeys.HELIDON_CONTEXT,
+        context = context.withValue(ContextKeys.HELIDON_CONTEXT,
                 helidonContext.orElseGet(io.helidon.common.context.Context::create));
 
         // method info

@@ -30,6 +30,7 @@ import io.grpc.ServerServiceDefinition;
 import io.grpc.stub.ServerCalls;
 
 class Grpc<ReqT, ResT> extends GrpcRoute {
+
     private final MethodDescriptor<ReqT, ResT> method;
     private final PathMatcher pathMatcher;
     private final ServerCallHandler<ReqT, ResT> callHandler;

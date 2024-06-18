@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.webserver.grpc;
 
 /**
- * An enum representing different types of gRPC request
- * attribute that can be added to tracing logs.
+ * An enum representing different types of gRPC request attribute that
+ * can be added to tracing logs.
  */
 public enum ServerRequestAttribute {
     /**

@@ -43,7 +43,7 @@ public class CollectingObserver<T, V, U, A, R> implements StreamObserver<V> {
     private final A accumulator;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param collector the collector
      * @param observer the observer
@@ -53,7 +53,7 @@ public class CollectingObserver<T, V, U, A, R> implements StreamObserver<V> {
     }
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param collector the collector
      * @param observer the observer
@@ -66,7 +66,7 @@ public class CollectingObserver<T, V, U, A, R> implements StreamObserver<V> {
     }
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param collector the collector
      * @param observer the observer
@@ -81,7 +81,7 @@ public class CollectingObserver<T, V, U, A, R> implements StreamObserver<V> {
     }
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param collector the collector
      * @param observer the observer
