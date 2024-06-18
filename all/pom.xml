@@ -1079,6 +1079,31 @@
             <artifactId>helidon-service-codegen</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-codegen-javax</artifactId>
+            <version>${helidon.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-codegen-jakarta</artifactId>
+            <version>${helidon.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.service.inject</groupId>
+            <artifactId>helidon-service-inject-api</artifactId>
+            <version>${helidon.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.service.inject</groupId>
+            <artifactId>helidon-service-inject</artifactId>
+            <version>${helidon.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-maven-plugin</artifactId>
+            <version>${helidon.version}</version>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.integrations.oci.sdk</groupId>
             <artifactId>helidon-integrations-oci-sdk-processor</artifactId>
         </dependency>

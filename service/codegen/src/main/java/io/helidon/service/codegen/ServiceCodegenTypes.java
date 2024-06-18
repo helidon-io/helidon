@@ -23,6 +23,45 @@ import io.helidon.common.types.TypeName;
  */
 public final class ServiceCodegenTypes {
     /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.Point}.
+     */
+    public static final TypeName INJECTION_INJECT = TypeName.create("io.helidon.service.inject.api.Injection.Inject");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.Singleton}.
+     */
+    public static final TypeName INJECTION_SINGLETON = TypeName.create("io.helidon.service.inject.api.Injection.Singleton");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.RequestScope}.
+     */
+    public static final TypeName INJECTION_REQUEST_SCOPE = TypeName.create("io.helidon.service.inject.api.Injection"
+                                                                                   + ".RequestScope");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.Named}.
+     */
+    public static final TypeName INJECTION_NAMED = TypeName.create("io.helidon.service.inject.api.Injection.Named");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.NamedByClass}.
+     */
+    public static final TypeName INJECTION_NAMED_BY_CLASS =
+            TypeName.create("io.helidon.service.inject.api.Injection.NamedByClass");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.Qualifier}.
+     */
+    public static final TypeName INJECTION_QUALIFIER = TypeName.create("io.helidon.service.inject.api.Injection.Qualifier");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.PostConstruct}.
+     */
+    public static final TypeName INJECTION_POST_CONSTRUCT =
+            TypeName.create("io.helidon.service.inject.api.Injection.PostConstruct");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.PreDestroy}.
+     */
+    public static final TypeName INJECTION_PRE_DESTROY = TypeName.create("io.helidon.service.inject.api.Injection.PreDestroy");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.Main}.
+     */
+    public static final TypeName INJECTION_MAIN = TypeName.create("io.helidon.service.inject.api.Injection.Main");
+    /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Service.Provider}.
      */
     public static final TypeName SERVICE_ANNOTATION_PROVIDER = TypeName.create("io.helidon.service.registry.Service.Provider");
@@ -36,22 +75,172 @@ public final class ServiceCodegenTypes {
     public static final TypeName SERVICE_ANNOTATION_EXTERNAL_CONTRACTS = TypeName.create("io.helidon.service.registry.Service"
                                                                                                  + ".ExternalContracts");
     /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.Scope}.
+     */
+    public static final TypeName INJECTION_SCOPE = TypeName.create("io.helidon.service.inject.api.Injection.Scope");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.Dependent}.
+     */
+    public static final TypeName INJECTION_DEPENDENT = TypeName.create("io.helidon.service.inject.api.Injection.Dependent");
+    /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Service.Descriptor}.
      */
     public static final TypeName SERVICE_ANNOTATION_DESCRIPTOR =
             TypeName.create("io.helidon.service.registry.Service.Descriptor");
     /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.CreateFor}.
+     */
+    public static final TypeName INJECTION_CREATE_FOR = TypeName.create("io.helidon.service.inject.api.Injection.CreateFor");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.RunLevel}.
+     */
+    public static final TypeName INJECTION_RUN_LEVEL = TypeName.create("io.helidon.service.inject.api.Injection.RunLevel");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.ServiceInfo}.
+     */
+    public static final TypeName SERVICE_INFO = TypeName.create("io.helidon.service.registry.ServiceInfo");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Lookup}.
+     */
+    public static final TypeName INJECT_LOOKUP = TypeName.create("io.helidon.service.inject.api.Lookup");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.ServiceDescriptor}.
+     */
+    public static final TypeName INJECT_SERVICE_DESCRIPTOR = TypeName.create(
+            "io.helidon.service.inject.api.GeneratedInjectService.Descriptor");
+    /**
+     * {@link io.helidon.common.types.TypeName} for
+     * {@code io.helidon.service.inject.api.GeneratedInjectService.CreateForDescriptor}.
+     */
+    public static final TypeName INJECT_CREATE_FOR_DESCRIPTOR = TypeName.create(
+            "io.helidon.service.inject.api.GeneratedInjectService.CreateForDescriptor");
+    /**
+     * {@link io.helidon.common.types.TypeName} for
+     * {@code io.helidon.service.inject.api.GeneratedInjectService.QualifiedProviderDescriptor}.
+     */
+    public static final TypeName INJECT_QUALIFIED_PROVIDER_DESCRIPTOR = TypeName.create(
+            "io.helidon.service.inject.api.GeneratedInjectService.QualifiedProviderDescriptor");
+    /**
+     * {@link io.helidon.common.types.TypeName} for
+     * {@code io.helidon.service.inject.api.GeneratedInjectService.ScopeHandlerDescriptor}.
+     */
+    public static final TypeName INJECT_SCOPE_HANDLER_DESCRIPTOR = TypeName.create(
+            "io.helidon.service.inject.api.GeneratedInjectService.ScopeHandlerDescriptor");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.ScopeHandler}.
+     */
+    public static final TypeName INJECT_SCOPE_HANDLER = TypeName.create("io.helidon.service.inject.api.Injection.ScopeHandler");
+
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code "io.helidon.service.inject.api.GeneratedInjectService.IpSupport"}.
+     */
+    public static final TypeName INJECT_IP_SUPPORT = TypeName.create(
+            "io.helidon.service.inject.api.GeneratedInjectService.IpSupport");
+    /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.GeneratedService.Descriptor}.
      */
     public static final TypeName SERVICE_DESCRIPTOR = TypeName.create("io.helidon.service.registry.GeneratedService.Descriptor");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Invoker}.
+     */
+    public static final TypeName INVOKER = TypeName.create("io.helidon.service.inject.api.Invoker");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Interception.Trigger}.
+     */
+    public static final TypeName INTERCEPTION_TRIGGER = TypeName.create("io.helidon.service.inject.api.Interception.Trigger");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Qualifier}.
+     */
+    public static final TypeName INJECT_QUALIFIER = TypeName.create("io.helidon.service.inject.api.Qualifier");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Ip}.
+     */
+    public static final TypeName INJECTION_POINT = TypeName.create("io.helidon.service.inject.api.Ip");
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Dependency}.
      */
     public static final TypeName SERVICE_DEPENDENCY = TypeName.create("io.helidon.service.registry.Dependency");
     /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.ServicesProvider}.
+     */
+    public static final TypeName SERVICES_PROVIDER = TypeName.create("io.helidon.service.inject.api.Injection.ServicesProvider");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.QualifiedInstance}.
+     */
+    public static final TypeName QUALIFIED_INSTANCE = TypeName.create("io.helidon.service.inject.api.Injection"
+                                                                              + ".QualifiedInstance");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.InjectionPointProvider}.
+     */
+    public static final TypeName INJECTION_POINT_PROVIDER = TypeName.create(
+            "io.helidon.service.inject.api.Injection.InjectionPointProvider");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.QualifiedProvider}.
+     */
+    public static final TypeName QUALIFIED_PROVIDER = TypeName.create("io.helidon.service.inject.api.Injection"
+                                                                              + ".QualifiedProvider");
+    /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.DependencyContext}.
      */
     public static final TypeName SERVICE_DEPENDENCY_CONTEXT = TypeName.create("io.helidon.service.registry.DependencyContext");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.InterceptionMetadata}.
+     */
+    public static final TypeName INTERCEPTION_METADATA = TypeName.create(
+            "io.helidon.service.inject.api.GeneratedInjectService.InterceptionMetadata");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Application}.
+     */
+    public static final TypeName INJECT_APPLICATION = TypeName.create("io.helidon.service.inject.Application");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.InvocationException}.
+     */
+    public static final TypeName INVOCATION_EXCEPTION = TypeName.create("io.helidon.service.inject.api.InvocationException");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registryInjectionPlanBinder}.
+     */
+    public static final TypeName INJECTION_PLAN_BINDER = TypeName.create("io.helidon.service.inject.InjectionPlanBinder");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.InjectConfig}.
+     */
+    public static final TypeName INJECT_CONFIG = TypeName.create("io.helidon.service.inject.InjectConfig");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.InjectConfig.Builder}.
+     */
+    public static final TypeName INJECT_CONFIG_BUILDER = TypeName.create("io.helidon.service.inject.InjectConfig.Builder");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.InjectRegistryManager}.
+     */
+    public static final TypeName INJECT_REGISTRY_MANAGER =
+            TypeName.create("io.helidon.service.inject.InjectRegistryManager");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.InjectRegistry"}.
+     */
+    public static final TypeName INJECT_REGISTRY = TypeName.create("io.helidon.service.inject.api.InjectRegistry");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.ApplicationMain"}.
+     */
+    public static final TypeName INJECT_APPLICATION_MAIN = TypeName.create("io.helidon.service.inject.ApplicationMain");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.builder.api.Prototype.Blueprint}.
+     */
+    public static final TypeName BUILDER_BLUEPRINT = TypeName.create("io.helidon.builder.api.Prototype.Blueprint");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.builder.api.Prototype.Configured}.
+     */
+    public static final TypeName BUILDER_CONFIGURED = TypeName.create("io.helidon.builder.api.Prototype.Configured");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.config.metadata.Configured}.
+     */
+    public static final TypeName CONFIG_META_CONFIGURED = TypeName.create("io.helidon.config.metadata.Configured");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.common.config.Config}.
+     */
+    public static final TypeName CONFIG_COMMON_CONFIG = TypeName.create("io.helidon.common.config.Config");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.common.config.ConfigException}.
+     */
+    public static final TypeName CONFIG_EXCEPTION = TypeName.create("io.helidon.common.config.ConfigException");
 
     private ServiceCodegenTypes() {
     }

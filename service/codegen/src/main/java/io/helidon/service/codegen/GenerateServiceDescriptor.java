@@ -52,7 +52,7 @@ import static java.util.function.Predicate.not;
 /**
  * Generates a service descriptor.
  */
-class GenerateServiceDescriptor {
+public class GenerateServiceDescriptor {
     static final TypeName SET_OF_TYPES = TypeName.builder(TypeNames.SET)
             .addTypeArgument(TypeNames.TYPE_NAME)
             .build();
@@ -97,7 +97,7 @@ class GenerateServiceDescriptor {
      * @param service     service to create a descriptor for
      * @return class model builder of the service descriptor
      */
-    static ClassModel.Builder generate(TypeName generator,
+    public static ClassModel.Builder generate(TypeName generator,
                                        RegistryCodegenContext ctx,
                                        Collection<TypeInfo> allServices,
                                        TypeInfo service) {

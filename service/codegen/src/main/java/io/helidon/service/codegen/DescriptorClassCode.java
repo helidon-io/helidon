@@ -24,7 +24,7 @@ import io.helidon.common.types.TypeName;
 /**
  * New service descriptor metadata with its class code.
  */
-interface DescriptorClassCode {
+public interface DescriptorClassCode {
     /**
      * New source code information.
      *

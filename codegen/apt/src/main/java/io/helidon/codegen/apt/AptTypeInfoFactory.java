@@ -402,8 +402,13 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
 
         Elements elementUtils = ctx.aptEnv().getElementUtils();
         try {
+            TypeElement foundType = elementUtils.getTypeElement(genericTypeName.resolvedName());
+            if (foundType == null) {
+                // this is probably forward referencing a generated type, ignore
+                return Optional.empty();
+            }
             List<Annotation> annotations = createAnnotations(ctx,
-                                                             elementUtils.getTypeElement(genericTypeName.resolvedName()),
+                                                             foundType,
                                                              elementUtils);
             List<Annotation> inheritedAnnotations = createInheritedAnnotations(ctx, genericTypeName, annotations);
 
@@ -417,22 +422,11 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
             typeElement.getEnclosedElements()
                     .stream()
                     .flatMap(it -> createTypedElementInfoFromElement(ctx, genericTypeName, it, elementUtils).stream())
-                    .forEach(it -> {
-                        if (elementPredicate.test(it)) {
-                            elementsWeCareAbout.add(it);
-                        } else {
-                            otherElements.add(it);
-                        }
-                        annotationsOnTypeOrElements.addAll(it.annotations()
-                                                                   .stream()
-                                                                   .map(Annotation::typeName)
-                                                                   .collect(Collectors.toSet()));
-                        it.parameterArguments()
-                                .forEach(arg -> annotationsOnTypeOrElements.addAll(arg.annotations()
-                                                                                           .stream()
-                                                                                           .map(Annotation::typeName)
-                                                                                           .collect(Collectors.toSet())));
-                    });
+                    .forEach(it -> collectEnclosedElements(elementPredicate,
+                                                           elementsWeCareAbout,
+                                                           otherElements,
+                                                           annotationsOnTypeOrElements,
+                                                           it));
 
             Set<String> modifiers = toModifierNames(typeElement.getModifiers());
             TypeInfo.Builder builder = TypeInfo.builder()
@@ -528,6 +522,27 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
         } catch (Exception e) {
             throw new IllegalStateException("Failed to process: " + typeElement, e);
         }
+    }
+
+    private static void collectEnclosedElements(Predicate<TypedElementInfo> elementPredicate,
+                                                List<TypedElementInfo> elementsWeCareAbout,
+                                                List<TypedElementInfo> otherElements,
+                                                Set<TypeName> annotationsOnTypeOrElements,
+                                                TypedElementInfo enclosedElement) {
+        if (elementPredicate.test(enclosedElement)) {
+            elementsWeCareAbout.add(enclosedElement);
+        } else {
+            otherElements.add(enclosedElement);
+        }
+        annotationsOnTypeOrElements.addAll(enclosedElement.annotations()
+                                                   .stream()
+                                                   .map(Annotation::typeName)
+                                                   .collect(Collectors.toSet()));
+        enclosedElement.parameterArguments()
+                .forEach(arg -> annotationsOnTypeOrElements.addAll(arg.annotations()
+                                                                           .stream()
+                                                                           .map(Annotation::typeName)
+                                                                           .collect(Collectors.toSet())));
     }
 
     private static AccessModifier accessModifier(Set<String> stringModifiers) {
