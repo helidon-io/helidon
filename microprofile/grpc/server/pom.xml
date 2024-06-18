@@ -27,7 +27,6 @@
 
     <artifactId>helidon-microprofile-grpc-server</artifactId>
     <name>Helidon Microprofile gRPC Server</name>
-    <description>The microprofile gRPC Server implementation</description>
 
     <dependencies>
         <dependency>
@@ -45,6 +44,10 @@
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-metadata</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
@@ -143,7 +146,6 @@
                 <version>${version.plugin.os}</version>
             </extension>
         </extensions>
-
         <plugins>
             <plugin>
                 <groupId>org.xolstice.maven.plugins</groupId>

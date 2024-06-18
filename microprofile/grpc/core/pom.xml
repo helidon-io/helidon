@@ -27,21 +27,11 @@
 
     <artifactId>helidon-microprofile-grpc-core</artifactId>
     <name>Helidon Microprofile gRPC Core</name>
-    <description>Core microprofile gRPC</description>
 
     <dependencies>
         <dependency>
             <groupId>io.helidon.grpc</groupId>
             <artifactId>helidon-grpc-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.webclient</groupId>
-            <artifactId>helidon-webclient-grpc</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.enterprise</groupId>
-            <artifactId>jakarta.enterprise.cdi-api</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
@@ -50,6 +40,11 @@
         <dependency>
             <groupId>io.helidon.microprofile.config</groupId>
             <artifactId>helidon-microprofile-config</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.enterprise</groupId>
+            <artifactId>jakarta.enterprise.cdi-api</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
