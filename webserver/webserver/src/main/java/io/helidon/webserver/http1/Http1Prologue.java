@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import io.helidon.http.DirectHandler;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.RequestException;
-import io.helidon.http.Status;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.http.DirectTransportRequest;
 
@@ -32,7 +31,37 @@ import io.helidon.webserver.http.DirectTransportRequest;
  * HTTP 1 prologue parsing support.
  */
 public final class Http1Prologue {
-    private static final byte[] GET_BYTES = "GET ".getBytes(StandardCharsets.UTF_8); // space included
+    /*
+    The string HTTP/1.1 (as used in protocol version in prologue's third section)
+     */
+    private static final long HTTP_1_1_LONG = 'H'
+            | 'T' << 8
+            | 'T' << 16
+            | 'P' << 24
+            | (long) '/' << 32
+            | (long) '1' << 40
+            | (long) '.' << 48
+            | (long) '1' << 56;
+    /*
+    GET string as int
+     */
+    private static final int GET_INT = 'G'
+            | 'E' << 8
+            | 'T' << 16;
+    /*
+    PUT string as int
+    */
+    private static final int PUT_INT = 'P'
+            | 'U' << 8
+            | 'T' << 16;
+    /*
+    POST string as int
+     */
+    private static final int POST_INT = 'P'
+            | 'O' << 8
+            | 'S' << 16
+            | 'T' << 24;
+    private static final String HTTP_1_1 = "HTTP/1.1";
 
     private final DataReader reader;
     private final int maxLength;
@@ -79,63 +108,48 @@ public final class Http1Prologue {
                 .build();
     }
 
-    private static Method readMethod(DataReader reader, int maxLen) {
-        if (reader.startsWith(GET_BYTES)) {
-            reader.skip(GET_BYTES.length);
-            return Method.GET;
+    private static Method readMethod(byte[] bytes, int index, int spaceIndex) {
+        int len = spaceIndex - index;
+        if (len == 3) {
+            if (isGetMethod(bytes, index)) {
+                return Method.GET;
+            }
+            if (isPutMethod(bytes, index)) {
+                return Method.PUT;
+            }
+        } else if (len == 4 && isPostMethod(bytes, index)) {
+            return Method.POST;
         }
-        int firstSpace = reader.findOrNewLine(Bytes.SPACE_BYTE, maxLen);
-        if (firstSpace < 0) {
-            throw badRequest("Invalid prologue, missing space " + reader.debugDataHex(), "", "", "", "");
-        } else if (firstSpace == maxLen) {
-            throw badRequest("Prologue size exceeded", "", "", "", "");
-        }
-        Method method = Method.create(reader.readAsciiString(firstSpace));
-        reader.skip(1);
-        return method;
+        return Method.create(new String(bytes, index, len, StandardCharsets.US_ASCII));
+    }
+
+    private static boolean isGetMethod(byte[] bytes, int index) {
+        int maybeGet = bytes[index] & 0xff
+                | (bytes[index + 1] & 0xff) << 8
+                | (bytes[index + 2] & 0xff) << 16;
+        return maybeGet == GET_INT;
+    }
+
+    private static boolean isPutMethod(byte[] bytes, int index) {
+        int maybeGet = bytes[index] & 0xff
+                | (bytes[index + 1] & 0xff) << 8
+                | (bytes[index + 2] & 0xff) << 16;
+        return maybeGet == PUT_INT;
+    }
+
+    private static boolean isPostMethod(byte[] bytes, int index) {
+        int maybePost = bytes[index] & 0xff
+                | (bytes[index + 1] & 0xff) << 8
+                | (bytes[index + 2] & 0xff) << 16
+                | (bytes[index + 3] & 0xff) << 24;
+        return maybePost == POST_INT;
     }
 
     private HttpPrologue doRead() {
-        //   > GET /loom/slow HTTP/1.1
-        String protocol;
-        String path;
-        Method method;
+        int eol;
+
         try {
-            int maxLen = maxLength;
-            try {
-                method = readMethod(reader, maxLen);
-            } catch (IllegalArgumentException e) {
-                // we need to validate method contains only allowed characters
-                throw badRequest("Invalid prologue, method not valid (" + e.getMessage() + ")", "", "", "", "");
-            }
-            maxLen -= method.length(); // length of method
-            maxLen--; // space
-
-            int secondSpace = reader.findOrNewLine(Bytes.SPACE_BYTE, maxLen);
-            if (secondSpace < 0) {
-                throw badRequest("Invalid prologue" + reader.debugDataHex(), method.text(), "", "", "");
-            } else if (secondSpace == maxLen) {
-                throw RequestException.builder()
-                        .message("Request URI too long.")
-                        .type(DirectHandler.EventType.BAD_REQUEST)
-                        .status(Status.REQUEST_URI_TOO_LONG_414)
-                        .request(DirectTransportRequest.create("", method.text(), reader.readAsciiString(secondSpace)))
-                        .build();
-            }
-            path = reader.readAsciiString(secondSpace);
-            reader.skip(1);
-            maxLen -= secondSpace;
-            maxLen--; // space
-
-            int eol = reader.findNewLine(maxLen);
-            if (eol == maxLen) {
-                throw badRequest("Prologue size exceeded", method.text(), path, "", "");
-            }
-            if (path.isBlank()) {
-                throw badRequest("Path can't be empty", method.text(), path, "", "");
-            }
-            protocol = reader.readAsciiString(eol);
-            reader.skip(2); // \r\n
+            eol = reader.findNewLine(maxLength);
         } catch (DataReader.IncorrectNewLineException e) {
             throw RequestException.builder()
                     .message("Invalid prologue: " + e.getMessage())
@@ -143,8 +157,53 @@ public final class Http1Prologue {
                     .cause(e)
                     .build();
         }
+        if (eol == maxLength) {
+            // exceeded maximal length, we do not want to parse it anyway
+            throw RequestException.builder()
+                    .message("Prologue size exceeded")
+                    .type(DirectHandler.EventType.BAD_REQUEST)
+                    .build();
+        }
 
-        if (!"HTTP/1.1".equals(protocol)) {
+        byte[] prologueBytes = reader.readBytes(eol);
+        reader.skip(2); // \r\n
+
+        //   > GET /loom/slow HTTP/1.1
+        Method method;
+        String path;
+        String protocol;
+
+        /*
+        Read HTTP Method
+         */
+        int currentIndex = 0;
+        int nextSpace = nextSpace(prologueBytes, currentIndex);
+        if (nextSpace == -1) {
+            throw badRequest("Invalid prologue, missing space " + reader.debugDataHex(), "", "", "", "");
+        }
+        method = readMethod(prologueBytes, currentIndex, nextSpace);
+        currentIndex = nextSpace + 1; // continue after the space
+
+        /*
+        Read HTTP Path
+        */
+        nextSpace = nextSpace(prologueBytes, currentIndex);
+        if (nextSpace == -1) {
+            throw badRequest("Invalid prologue, missing space " + reader.debugDataHex(), method.text(), "", "", "");
+        }
+        path = new String(prologueBytes, currentIndex, (nextSpace - currentIndex), StandardCharsets.US_ASCII);
+        currentIndex = nextSpace + 1; // continue after the space
+        if (path.isBlank()) {
+            throw badRequest("Path can't be empty", method.text(), path, "", "");
+        }
+
+        /*
+        Read HTTP Version (we only support HTTP/1.1
+         */
+        protocol = readProtocol(prologueBytes, currentIndex);
+        // we always use the same constant
+        //noinspection StringEquality
+        if (protocol != HTTP_1_1) {
             throw badRequest("Invalid protocol and/or version", method.text(), path, protocol, "");
         }
 
@@ -158,5 +217,22 @@ public final class Http1Prologue {
         } catch (IllegalArgumentException e) {
             throw badRequest("Invalid path: " + e.getMessage(), method.text(), path, "HTTP", "1.1");
         }
+    }
+
+    private int nextSpace(byte[] prologueBytes, int currentIndex) {
+        return Bytes.firstIndexOf(prologueBytes, currentIndex, prologueBytes.length - 1, Bytes.SPACE_BYTE);
+    }
+
+    private String readProtocol(byte[] bytes, int index) {
+        int length = bytes.length - index;
+
+        if (length == 8) {
+            long word = Bytes.toWord(bytes, index);
+            if (word == HTTP_1_1_LONG) {
+                return HTTP_1_1;
+            }
+        }
+
+        return new String(bytes, StandardCharsets.US_ASCII);
     }
 }
