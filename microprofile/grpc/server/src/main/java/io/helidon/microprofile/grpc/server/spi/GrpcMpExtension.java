@@ -17,9 +17,10 @@
 package io.helidon.microprofile.grpc.server.spi;
 
 /**
- * Microprofile service to extend features of the gRPC server.
+ * Microprofile service to extend features of the server.
  */
 public interface GrpcMpExtension {
+
     /**
      * Allow the service to add configuration through the context.
      *

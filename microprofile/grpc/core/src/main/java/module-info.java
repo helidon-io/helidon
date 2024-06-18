@@ -18,16 +18,17 @@
  * gRPC microprofile core module
  */
 module io.helidon.microprofile.grpc.core {
-    exports io.helidon.microprofile.grpc.core;
 
     requires io.helidon.common;
-    requires transitive io.helidon.grpc.core;
-    requires transitive io.helidon.microprofile.config;
+    requires io.helidon.microprofile.config;
 
+    requires transitive io.helidon.grpc.core;
     requires transitive jakarta.cdi;
 
     requires java.logging;
     requires jakarta.inject;
+
+    exports io.helidon.microprofile.grpc.core;
 
     uses io.helidon.microprofile.grpc.core.MethodHandlerSupplier;
     uses io.helidon.grpc.core.MarshallerSupplier;

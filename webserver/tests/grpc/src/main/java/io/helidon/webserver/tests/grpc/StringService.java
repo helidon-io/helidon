@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,12 @@ import java.util.Locale;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.helidon.webserver.grpc.strings.Strings;
-import io.helidon.webserver.grpc.strings.Strings.StringMessage;
-import io.helidon.webserver.grpc.CollectingObserver;
-import io.helidon.webserver.grpc.GrpcService;
-
 import com.google.protobuf.Descriptors;
 import io.grpc.stub.StreamObserver;
+import io.helidon.grpc.core.CollectingObserver;
+import io.helidon.webserver.grpc.GrpcService;
+import io.helidon.webserver.grpc.strings.Strings;
+import io.helidon.webserver.grpc.strings.Strings.StringMessage;
 
 import static io.helidon.webserver.grpc.ResponseHelper.complete;
 import static io.helidon.webserver.grpc.ResponseHelper.stream;

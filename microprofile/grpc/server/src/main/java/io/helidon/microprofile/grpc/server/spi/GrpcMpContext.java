@@ -22,8 +22,8 @@ import io.helidon.webserver.grpc.GrpcRouting;
 import jakarta.enterprise.inject.spi.BeanManager;
 
 /**
- * A context to allow a microprofile gRPC server extensions to configure additional
- * services or components for the gRPC server or use the CDI bean manager.
+ * A context to allow Microprofile server extensions to configure additional
+ * services or components or use the CDI bean manager.
  */
 public interface GrpcMpContext {
 

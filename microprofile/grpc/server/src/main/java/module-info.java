@@ -29,12 +29,6 @@ import io.helidon.microprofile.grpc.server.GrpcMpCdiExtension;
 )
 @Aot(false)
 module io.helidon.microprofile.grpc.server {
-    exports io.helidon.microprofile.grpc.server;
-    exports io.helidon.microprofile.grpc.server.spi;
-
-    requires transitive io.helidon.grpc.core;
-    requires transitive io.helidon.webserver.grpc;
-    requires transitive io.helidon.microprofile.grpc.core;
 
     requires io.helidon.common;
     requires io.helidon.common.configurable;
@@ -44,7 +38,9 @@ module io.helidon.microprofile.grpc.server {
     requires io.helidon.config.objectmapping;
     requires io.helidon.config;
     requires io.helidon.config.metadata;
+    requires io.helidon.microprofile.grpc.core;
     requires io.helidon.microprofile.server;
+    requires io.helidon.webserver.grpc;
 
     requires io.grpc;
     requires io.grpc.inprocess;
@@ -54,6 +50,9 @@ module io.helidon.microprofile.grpc.server {
     requires java.logging;
 
     requires microprofile.health.api;
+
+    exports io.helidon.microprofile.grpc.server;
+    exports io.helidon.microprofile.grpc.server.spi;
 
     uses io.helidon.microprofile.grpc.server.spi.GrpcMpExtension;
 
