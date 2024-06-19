@@ -99,6 +99,7 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
     private RecordingStream recordingStream;
     private boolean classLevelDisableDiscovery = false;
     private boolean resetPerTest;
+    private boolean pinnedThreadValidation;
 
     private Class<?> testClass;
     private ConfigProviderResolver configProviderResolver;
@@ -107,9 +108,10 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
 
     @Override
     public void onBeforeClass(ITestClass iTestClass) {
-        startRecordingStream();
-
         testClass = iTestClass.getRealClass();
+
+        pinnedThreadValidation = testClass.getAnnotation(PinnedThreadValidation.class) != null;
+        startRecordingStream();
 
         AddConfig[] configs = getAnnotations(testClass, AddConfig.class);
         classLevelConfigMeta.addConfig(configs);
@@ -408,24 +410,28 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
     }
 
     private void startRecordingStream() {
-        jfrVTPinned = new ArrayList<>();
-        recordingStream = new RecordingStream();
-        recordingStream.enable("jdk.VirtualThreadPinned").withStackTrace();
-        recordingStream.onEvent("jdk.VirtualThreadPinned", event -> {
-            jfrVTPinned.add(new EventWrapper(event));
-        });
-        recordingStream.startAsync();
+        if (pinnedThreadValidation) {
+            jfrVTPinned = new ArrayList<>();
+            recordingStream = new RecordingStream();
+            recordingStream.enable("jdk.VirtualThreadPinned").withStackTrace();
+            recordingStream.onEvent("jdk.VirtualThreadPinned", event -> {
+                jfrVTPinned.add(new EventWrapper(event));
+            });
+            recordingStream.startAsync();
+        }
     }
 
     private void closeRecordingStream() {
-        try {
-            // Flush ending events
-            recordingStream.stop();
-            if (!jfrVTPinned.isEmpty()) {
-                fail("Some pinned virtual threads were detected:\n" + jfrVTPinned);
+        if (pinnedThreadValidation) {
+            try {
+                // Flush ending events
+                recordingStream.stop();
+                if (!jfrVTPinned.isEmpty()) {
+                    fail("Some pinned virtual threads were detected:\n" + jfrVTPinned);
+                }
+            } finally {
+                recordingStream.close();
             }
-        } finally {
-            recordingStream.close();
         }
     }
 

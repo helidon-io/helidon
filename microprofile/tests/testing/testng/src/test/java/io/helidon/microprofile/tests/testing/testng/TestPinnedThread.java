@@ -16,12 +16,12 @@
 
 package io.helidon.microprofile.tests.testing.testng;
 
-import io.helidon.microprofile.testing.testng.HelidonTest;
+import io.helidon.microprofile.testing.testng.PinnedThreadValidation;
 
 import org.testng.annotations.Ignore;
 import org.testng.annotations.Test;
 
-@HelidonTest
+@PinnedThreadValidation
 class TestPinnedThread {
 
     @Test

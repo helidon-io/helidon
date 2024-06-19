@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.tests.testing.junit5;
-
-import io.helidon.microprofile.testing.junit5.PinnedThreadValidation;
+package io.helidon.webserver.testing.junit5;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
