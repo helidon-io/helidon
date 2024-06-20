@@ -22,6 +22,9 @@ module io.helidon.grpc.core {
     requires io.helidon.common;
     requires io.helidon.http;
     requires io.helidon.common.context;
+    requires io.helidon.config;
+    requires io.helidon.config.metadata;
+    requires io.helidon.tracing;
 
     requires java.logging;
 

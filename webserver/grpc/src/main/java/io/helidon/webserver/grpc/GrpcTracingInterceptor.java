@@ -26,6 +26,8 @@ import java.util.concurrent.ConcurrentSkipListMap;
 
 import io.helidon.common.Weight;
 import io.helidon.grpc.core.ContextKeys;
+import io.helidon.grpc.core.GrpcTracingContext;
+import io.helidon.grpc.core.GrpcTracingName;
 import io.helidon.grpc.core.InterceptorWeights;
 import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.Span;
