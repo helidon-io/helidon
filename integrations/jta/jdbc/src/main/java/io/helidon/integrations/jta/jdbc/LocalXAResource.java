@@ -18,9 +18,11 @@ package io.helidon.integrations.jta.jdbc;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
@@ -64,8 +66,10 @@ final class LocalXAResource implements XAResource {
 
     private static final Xid[] EMPTY_XID_ARRAY = new Xid[0];
 
-    // package-protected for testing only.
-    static final ConcurrentMap<Xid, Association> ASSOCIATIONS = new ConcurrentHashMap<>();
+    // package-protected for testing only. Guarded by ASSOCIATIONS_LOCK below.
+    static final Map<Xid, Association> ASSOCIATIONS = new HashMap<>();
+
+    private static final Lock ASSOCIATIONS_LOCK = new ReentrantLock();
 
 
     /*
@@ -362,10 +366,13 @@ final class LocalXAResource implements XAResource {
                                            Xid xid,
                                            BiFunction<? super Xid, ? super Association, ? extends Association> f)
         throws XAException {
+        ASSOCIATIONS_LOCK.lock();
         try {
             return ASSOCIATIONS.compute(xid, f);
         } catch (RuntimeException e) {
             throw this.convert(xaRoutine, e);
+        } finally {
+            ASSOCIATIONS_LOCK.unlock();
         }
     }
 
@@ -375,6 +382,7 @@ final class LocalXAResource implements XAResource {
                                            UnaryOperator<Association> f,
                                            boolean removeAssociationOnError)
         throws XAException {
+        ASSOCIATIONS_LOCK.lock();
         try {
             return ASSOCIATIONS.compute(xid, (x, a) -> remap(x, a, legalBranchStates, f));
         } catch (RuntimeException e) {
@@ -382,6 +390,8 @@ final class LocalXAResource implements XAResource {
                 ASSOCIATIONS.remove(xid);
             }
             throw this.convert(xaRoutine, e);
+        } finally {
+            ASSOCIATIONS_LOCK.unlock();
         }
     }
 
