@@ -60,7 +60,7 @@ This is a standalone configuration type, prefix from configuration root: `metric
 
  Whether to permit access to metrics endpoint to anybody, defaults to `true`
  @see #roles()
-|`rest-request-enabled` |boolean |{nbsp} |Whether automatic REST request metrics should be measured.
+|`rest-request.enabled` |boolean |{nbsp} |Whether automatic REST request metrics should be measured.
 
  True/false
 |`roles` |string[&#93; |`observe` |Hints for role names the user is expected to be in.

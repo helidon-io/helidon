@@ -544,7 +544,7 @@
                 "options": [
                     {
                         "description": "Whether automatic REST request metrics should be measured.\n\n @return true/false",
-                        "key": "rest-request-enabled",
+                        "key": "rest-request.enabled",
                         "method": "io.helidon.metrics.api.MetricsConfig.Builder#restRequestEnabled(boolean)",
                         "type": "java.lang.Boolean"
                     },
@@ -724,7 +724,7 @@
                 "options": [
                     {
                         "description": "Whether automatic REST request metrics should be measured.\n\n @return true/false",
-                        "key": "rest-request-enabled",
+                        "key": "rest-request.enabled",
                         "method": "io.helidon.metrics.api.MetricsConfig.Builder#restRequestEnabled(boolean)",
                         "type": "java.lang.Boolean"
                     },
