@@ -27,8 +27,8 @@ import io.helidon.webserver.grpc.GrpcService;
 import io.helidon.webserver.grpc.strings.Strings;
 import io.helidon.webserver.grpc.strings.Strings.StringMessage;
 
-import static io.helidon.webserver.grpc.ResponseHelper.complete;
-import static io.helidon.webserver.grpc.ResponseHelper.stream;
+import static io.helidon.grpc.core.ResponseHelper.complete;
+import static io.helidon.grpc.core.ResponseHelper.stream;
 
 class StringService implements GrpcService {
     @Override

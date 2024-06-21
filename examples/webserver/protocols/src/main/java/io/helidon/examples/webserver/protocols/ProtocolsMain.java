@@ -34,8 +34,8 @@ import io.helidon.websocket.WsSession;
 
 import io.grpc.stub.StreamObserver;
 
+import static io.helidon.grpc.core.ResponseHelper.complete;
 import static io.helidon.http.Method.GET;
-import static io.helidon.webserver.grpc.ResponseHelper.complete;
 
 /**
  * Example showing supported protocols.

@@ -25,8 +25,8 @@ import io.helidon.grpc.core.CollectingObserver;
 import io.helidon.webserver.grpc.strings.StringServiceGrpc;
 import io.helidon.webserver.grpc.strings.Strings;
 
-import static io.helidon.webserver.grpc.ResponseHelper.complete;
-import static io.helidon.webserver.grpc.ResponseHelper.stream;
+import static io.helidon.grpc.core.ResponseHelper.complete;
+import static io.helidon.grpc.core.ResponseHelper.stream;
 
 public class BindableStringService extends StringServiceGrpc.StringServiceImplBase {
 

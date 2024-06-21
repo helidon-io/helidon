@@ -23,7 +23,7 @@ import io.helidon.webserver.grpc.GrpcService;
 import com.google.protobuf.Descriptors;
 import io.grpc.stub.StreamObserver;
 
-import static io.helidon.webserver.grpc.ResponseHelper.complete;
+import static io.helidon.grpc.core.ResponseHelper.complete;
 
 @SuppressWarnings("ALL")
 class ServerSnippets {
