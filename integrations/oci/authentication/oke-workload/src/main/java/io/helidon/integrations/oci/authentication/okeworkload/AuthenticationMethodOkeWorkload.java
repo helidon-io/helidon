@@ -26,7 +26,7 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.integrations.oci.OciConfig;
-import io.helidon.integrations.oci.spi.OciAtnMethod;
+import io.helidon.integrations.oci.spi.OciAuthenticationMethod;
 import io.helidon.service.registry.Service;
 
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
@@ -38,7 +38,7 @@ import com.oracle.bmc.auth.okeworkloadidentity.OkeWorkloadIdentityAuthentication
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 40)
 @Service.Provider
-class AuthenticationMethodOkeWorkload implements OciAtnMethod {
+class AuthenticationMethodOkeWorkload implements OciAuthenticationMethod {
     private static final System.Logger LOGGER = System.getLogger(AuthenticationMethodOkeWorkload.class.getName());
 
     private static final String METHOD = "oke-workload-identity";

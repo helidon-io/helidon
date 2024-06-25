@@ -9,8 +9,8 @@ The default service implementation uses environment variables, system properties
 The configuration options (main):
 ```yaml
 helidon.oci:
-  atn-method: "auto" # can select a specific authentication method to use, use auto to choose from available
-  allowed-atn-methods: ["config", "config-file"] # limit the list of authentication methods to try with auto
+  authentication-method: "auto" # can select a specific authentication method to use, use auto to choose from available
+  allowed-authentication-methods: ["config", "config-file"] # limit the list of authentication methods to try with auto
   authentication: # specific configuration of authentication methods
     config-file: # all details in a config file
       profile: "DEFAULT" # optional
@@ -34,7 +34,7 @@ This module provides a few services that can be used by other modules.
 Any service can have a dependency on `com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider`, and it can be
 looked up using Service Registry lookup methods.
 
-The provider is looked up by using instances of `io.helidon.integrations.oci.spi.OciAtnStrategy`. The first service instance to provide an authentication provider is used, and no other service instance is called.
+The provider is looked up by using instances of `io.helidon.integrations.oci.spi.OciAuthenticationMethod`. The first service instance to provide an authentication provider is used, and no other service instance is called.
 
 The following out-of-the-box implementations exist:
 

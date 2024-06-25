@@ -40,7 +40,7 @@ interface OciConfigBlueprint {
      * Default authentication method. The default is to use automatic discovery - i.e. cycle through possible
      * providers until one yields an authentication details provider instance.
      */
-    String ATN_METHOD_AUTO = "auto";
+    String AUTHENTICATION_METHOD_AUTO = "auto";
 
     /**
      * Explicit region. The configured region will be used by region provider.
@@ -57,7 +57,7 @@ interface OciConfigBlueprint {
      * <p>
      * Known and supported authentication strategies for public OCI:
      * <ul>
-     *     <li>{@value #ATN_METHOD_AUTO} - use the list of {@link io.helidon.integrations.oci.OciConfig#allowedAtnMethods()}
+     *     <li>{@value #AUTHENTICATION_METHOD_AUTO} - use the list of {@link io.helidon.integrations.oci.OciConfig#allowedAuthenticationMethods()}
      *          (in the provided order), and choose the first one capable of providing data</li>
      *     <li>{@value AuthenticationMethodConfig#METHOD} -
      *     use configuration of the application to obtain values needed to set up connectivity, uses
@@ -78,25 +78,25 @@ interface OciConfigBlueprint {
      * @return the authentication method to apply
      */
     @Option.Configured
-    @Option.Default(ATN_METHOD_AUTO)
-    String atnMethod();
+    @Option.Default(AUTHENTICATION_METHOD_AUTO)
+    String authenticationMethod();
 
     /**
-     * List of attempted authentication strategies in case {@link io.helidon.integrations.oci.OciConfig#atnMethod()} is set
-     * to {@value #ATN_METHOD_AUTO}.
+     * List of attempted authentication strategies in case {@link io.helidon.integrations.oci.OciConfig#authenticationMethod()} is set
+     * to {@value #AUTHENTICATION_METHOD_AUTO}.
      * <p>
      * In case the list is empty, all available strategies will be tried, ordered by their {@link io.helidon.common.Weight}
      *
      * @return list of authentication strategies to be tried
-     * @see io.helidon.integrations.oci.OciConfig#atnMethod()
+     * @see io.helidon.integrations.oci.OciConfig#authenticationMethod()
      */
     @Option.Configured
-    List<String> allowedAtnMethods();
+    List<String> allowedAuthenticationMethods();
 
     /**
      * Config method configuration (if provided and used).
      *
-     * @return information needed for config {@link io.helidon.integrations.oci.OciConfig#atnMethod()}
+     * @return information needed for config {@link io.helidon.integrations.oci.OciConfig#authenticationMethod()}
      */
     @Option.Configured("authentication.config")
     Optional<ConfigMethodConfig> configMethodConfig();
@@ -104,7 +104,7 @@ interface OciConfigBlueprint {
     /**
      * Config file method configuration (if provided and used).
      *
-     * @return information to customize config for {@link io.helidon.integrations.oci.OciConfig#atnMethod()}
+     * @return information to customize config for {@link io.helidon.integrations.oci.OciConfig#authenticationMethod()}
      */
     @Option.Configured("authentication.config-file")
     Optional<ConfigFileMethodConfig> configFileMethodConfig();
@@ -112,7 +112,7 @@ interface OciConfigBlueprint {
     /**
      * Session token method configuration (if provided and used).
      *
-     * @return information to customize config for {@link io.helidon.integrations.oci.OciConfig#atnMethod()}
+     * @return information to customize config for {@link io.helidon.integrations.oci.OciConfig#authenticationMethod()}
      */
     @Option.Configured("authentication.session-token")
     Optional<SessionTokenMethodConfig> sessionTokenMethodConfig();
@@ -145,7 +145,7 @@ interface OciConfigBlueprint {
      */
     @Option.Configured
     @Option.Default("PT10S")
-    Duration atnTimeout();
+    Duration authenticationTimeout();
 
     /**
      * Get the config used to update the builder.

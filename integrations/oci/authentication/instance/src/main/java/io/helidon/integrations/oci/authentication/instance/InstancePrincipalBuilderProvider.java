@@ -40,7 +40,7 @@ class InstancePrincipalBuilderProvider implements Supplier<InstancePrincipalsAut
     @Override
     public InstancePrincipalsAuthenticationDetailsProviderBuilder get() {
         var builder = InstancePrincipalsAuthenticationDetailsProvider.builder()
-                .timeoutForEachRetry((int) config.atnTimeout().toMillis());
+                .timeoutForEachRetry((int) config.authenticationTimeout().toMillis());
 
         config.imdsBaseUri()
                 .map(URI::toString)

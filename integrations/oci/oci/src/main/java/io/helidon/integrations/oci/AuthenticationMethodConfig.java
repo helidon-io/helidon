@@ -23,7 +23,7 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.configurable.Resource;
-import io.helidon.integrations.oci.spi.OciAtnMethod;
+import io.helidon.integrations.oci.spi.OciAuthenticationMethod;
 import io.helidon.service.registry.Service;
 
 import com.oracle.bmc.Region;
@@ -36,7 +36,7 @@ import com.oracle.bmc.auth.SimplePrivateKeySupplier;
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 10)
 @Service.Provider
-class AuthenticationMethodConfig implements OciAtnMethod {
+class AuthenticationMethodConfig implements OciAuthenticationMethod {
     static final String METHOD = "config";
 
     private static final System.Logger LOGGER = System.getLogger(AuthenticationMethodConfig.class.getName());

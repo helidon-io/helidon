@@ -17,3 +17,4 @@
 /**
  * Support for OCI authentication method based on OKE workload identity.
  */
+package io.helidon.integrations.oci.authentication.okeworkload;

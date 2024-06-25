@@ -21,7 +21,7 @@ import java.util.Optional;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.integrations.oci.spi.OciAtnMethod;
+import io.helidon.integrations.oci.spi.OciAuthenticationMethod;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryManager;
 
@@ -70,13 +70,13 @@ class OciIntegrationTest {
         Config config = Config.just(ConfigSources.create(yamlConfig, MediaTypes.APPLICATION_YAML));
         setUp(config);
 
-        OciAtnMethod atnStrategy = registry.get(AuthenticationMethodConfig.class);
-        assertThat(atnStrategy.method(), is(AuthenticationMethodConfig.METHOD));
-        assertThat(atnStrategy.provider(), optionalEmpty());
+        OciAuthenticationMethod method = registry.get(AuthenticationMethodConfig.class);
+        assertThat(method.method(), is(AuthenticationMethodConfig.METHOD));
+        assertThat(method.provider(), optionalEmpty());
 
-        atnStrategy = registry.get(AuthenticationMethodConfigFile.class);
-        assertThat(atnStrategy.method(), is(AuthenticationMethodConfigFile.METHOD));
-        assertThat(atnStrategy.provider(), optionalEmpty());
+        method = registry.get(AuthenticationMethodConfigFile.class);
+        assertThat(method.method(), is(AuthenticationMethodConfigFile.METHOD));
+        assertThat(method.provider(), optionalEmpty());
 
         assertThat(registry.first(Region.class), is(Optional.empty()));
         assertThat(registry.first(AbstractAuthenticationDetailsProvider.class), is(Optional.empty()));
@@ -116,13 +116,13 @@ class OciIntegrationTest {
         Config config = Config.just(ConfigSources.create(yamlConfig, MediaTypes.APPLICATION_YAML));
         setUp(config);
 
-        OciAtnMethod atnStrategy = registry.get(AuthenticationMethodConfig.class);
-        assertThat(atnStrategy.method(), is(AuthenticationMethodConfig.METHOD));
-        assertThat(atnStrategy.provider(), not(Optional.empty()));
+        OciAuthenticationMethod method = registry.get(AuthenticationMethodConfig.class);
+        assertThat(method.method(), is(AuthenticationMethodConfig.METHOD));
+        assertThat(method.provider(), not(Optional.empty()));
 
-        atnStrategy = registry.get(AuthenticationMethodConfigFile.class);
-        assertThat(atnStrategy.method(), is(AuthenticationMethodConfigFile.METHOD));
-        assertThat(atnStrategy.provider(), optionalEmpty());
+        method = registry.get(AuthenticationMethodConfigFile.class);
+        assertThat(method.method(), is(AuthenticationMethodConfigFile.METHOD));
+        assertThat(method.provider(), optionalEmpty());
 
         AbstractAuthenticationDetailsProvider provider = registry.get(AbstractAuthenticationDetailsProvider.class);
 
@@ -151,13 +151,13 @@ class OciIntegrationTest {
         Config config = Config.just(ConfigSources.create(yamlConfig, MediaTypes.APPLICATION_YAML));
         setUp(config);
 
-        OciAtnMethod atnStrategy = registry.get(AuthenticationMethodConfig.class);
-        assertThat(atnStrategy.method(), is(AuthenticationMethodConfig.METHOD));
-        assertThat(atnStrategy.provider(), optionalEmpty());
+        OciAuthenticationMethod method = registry.get(AuthenticationMethodConfig.class);
+        assertThat(method.method(), is(AuthenticationMethodConfig.METHOD));
+        assertThat(method.provider(), optionalEmpty());
 
-        atnStrategy = registry.get(AuthenticationMethodConfigFile.class);
-        assertThat(atnStrategy.method(), is(AuthenticationMethodConfigFile.METHOD));
-        assertThat(atnStrategy.provider(), not(Optional.empty()));
+        method = registry.get(AuthenticationMethodConfigFile.class);
+        assertThat(method.method(), is(AuthenticationMethodConfigFile.METHOD));
+        assertThat(method.provider(), not(Optional.empty()));
 
         AbstractAuthenticationDetailsProvider provider = registry.get(AbstractAuthenticationDetailsProvider.class);
 

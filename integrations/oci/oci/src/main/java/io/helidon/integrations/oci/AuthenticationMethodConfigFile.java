@@ -22,7 +22,7 @@ import java.util.function.Supplier;
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.integrations.oci.spi.OciAtnMethod;
+import io.helidon.integrations.oci.spi.OciAuthenticationMethod;
 import io.helidon.service.registry.Service;
 
 import com.oracle.bmc.ConfigFileReader;
@@ -34,7 +34,7 @@ import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 20)
 @Service.Provider
-class AuthenticationMethodConfigFile implements OciAtnMethod {
+class AuthenticationMethodConfigFile implements OciAuthenticationMethod {
     static final String METHOD = "config-file";
 
     private final LazyValue<Optional<AbstractAuthenticationDetailsProvider>> provider;

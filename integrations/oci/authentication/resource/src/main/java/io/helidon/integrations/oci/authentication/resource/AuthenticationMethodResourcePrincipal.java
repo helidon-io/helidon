@@ -22,7 +22,7 @@ import java.util.Optional;
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.integrations.oci.spi.OciAtnMethod;
+import io.helidon.integrations.oci.spi.OciAuthenticationMethod;
 import io.helidon.service.registry.Service;
 
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
@@ -33,7 +33,7 @@ import com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider.Resour
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 30)
 @Service.Provider
-class AuthenticationMethodResourcePrincipal implements OciAtnMethod {
+class AuthenticationMethodResourcePrincipal implements OciAuthenticationMethod {
     private static final System.Logger LOGGER = System.getLogger(AuthenticationMethodResourcePrincipal.class.getName());
     private static final String RESOURCE_PRINCIPAL_VERSION_ENV_VAR = "OCI_RESOURCE_PRINCIPAL_VERSION";
     private static final String METHOD = "resource-principal";

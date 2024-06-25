@@ -22,7 +22,7 @@ import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.types.TypeName;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.integrations.oci.spi.OciAtnMethod;
+import io.helidon.integrations.oci.spi.OciAuthenticationMethod;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryManager;
 
@@ -44,7 +44,7 @@ import static org.hamcrest.Matchers.not;
 /*
 This class MUST be in the same package, to be able to reset OciConfig before each test
  */
-class AtnDetailsProvidersTest {
+class AuthenticationDetailsProvidersTest {
     private static final TypeName INSTANCE_PRINCIPAL_METHOD_IMPL = TypeName.create(
             "io.helidon.integrations.oci.authentication.instance.AuthenticationMethodInstancePrincipal");
     private static final TypeName RESOURCE_PRINCIPAL_METHOD_IMPL = TypeName.create(
@@ -78,7 +78,7 @@ class AtnDetailsProvidersTest {
         Config config = Config.just(ConfigSources.create(yamlConfig, MediaTypes.APPLICATION_YAML));
         setUp(config);
 
-        OciAtnMethod atnMethod = registry.get(AuthenticationMethodConfig.class);
+        OciAuthenticationMethod atnMethod = registry.get(AuthenticationMethodConfig.class);
         assertThat(atnMethod.method(), is(AuthenticationMethodConfig.METHOD));
         assertThat(atnMethod.provider(), optionalEmpty());
 
@@ -132,7 +132,7 @@ class AtnDetailsProvidersTest {
         Config config = Config.just(ConfigSources.create(yamlConfig, MediaTypes.APPLICATION_YAML));
         setUp(config);
 
-        OciAtnMethod atnMethod = registry.get(AuthenticationMethodConfig.class);
+        OciAuthenticationMethod atnMethod = registry.get(AuthenticationMethodConfig.class);
         assertThat(atnMethod.method(), is(AuthenticationMethodConfig.METHOD));
         assertThat(atnMethod.provider(), not(Optional.empty()));
 
@@ -175,7 +175,7 @@ class AtnDetailsProvidersTest {
         Config config = Config.just(ConfigSources.create(yamlConfig, MediaTypes.APPLICATION_YAML));
         setUp(config);
 
-        OciAtnMethod atnMethod = registry.get(AuthenticationMethodConfig.class);
+        OciAuthenticationMethod atnMethod = registry.get(AuthenticationMethodConfig.class);
         assertThat(atnMethod.method(), is(AuthenticationMethodConfig.METHOD));
         assertThat(atnMethod.provider(), optionalEmpty());
 

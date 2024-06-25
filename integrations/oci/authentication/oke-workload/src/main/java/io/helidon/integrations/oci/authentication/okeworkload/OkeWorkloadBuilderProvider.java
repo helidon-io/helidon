@@ -40,7 +40,7 @@ class OkeWorkloadBuilderProvider implements Supplier<OkeWorkloadIdentityAuthenti
     @Override
     public OkeWorkloadIdentityAuthenticationDetailsProviderBuilder get() {
         var builder = OkeWorkloadIdentityAuthenticationDetailsProvider.builder()
-                .timeoutForEachRetry((int) config.atnTimeout().toMillis());
+                .timeoutForEachRetry((int) config.authenticationTimeout().toMillis());
 
         config.imdsBaseUri()
                 .map(URI::toString)

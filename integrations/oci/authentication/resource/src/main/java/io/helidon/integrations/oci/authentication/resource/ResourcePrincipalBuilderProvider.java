@@ -40,7 +40,7 @@ class ResourcePrincipalBuilderProvider implements Supplier<ResourcePrincipalAuth
     @Override
     public ResourcePrincipalAuthenticationDetailsProviderBuilder get() {
         var builder = ResourcePrincipalAuthenticationDetailsProvider.builder()
-                .timeoutForEachRetry((int) config.atnTimeout().toMillis());
+                .timeoutForEachRetry((int) config.authenticationTimeout().toMillis());
 
         config.imdsBaseUri()
                 .map(URI::toString)

@@ -24,7 +24,7 @@ import java.util.function.Supplier;
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.integrations.oci.spi.OciAtnMethod;
+import io.helidon.integrations.oci.spi.OciAuthenticationMethod;
 import io.helidon.service.registry.Service;
 
 import com.oracle.bmc.ConfigFileReader;
@@ -36,7 +36,7 @@ import com.oracle.bmc.auth.SessionTokenAuthenticationDetailsProvider.SessionToke
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 15)
 @Service.Provider
-class AuthenticationMethodSessionToken implements OciAtnMethod {
+class AuthenticationMethodSessionToken implements OciAuthenticationMethod {
     static final String DEFAULT_PROFILE_NAME = "DEFAULT";
     static final String METHOD = "session-token";
 

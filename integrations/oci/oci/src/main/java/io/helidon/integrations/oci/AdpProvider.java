@@ -23,7 +23,7 @@ import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.config.ConfigException;
-import io.helidon.integrations.oci.spi.OciAtnMethod;
+import io.helidon.integrations.oci.spi.OciAuthenticationMethod;
 import io.helidon.service.registry.Service;
 
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
@@ -34,14 +34,14 @@ class AdpProvider implements Supplier<Optional<AbstractAuthenticationDetailsProv
 
     private final LazyValue<Optional<AbstractAuthenticationDetailsProvider>> provider;
 
-    AdpProvider(OciConfig ociConfig, List<OciAtnMethod> atnDetailsProviders) {
-        String chosenAtnMethod = ociConfig.atnMethod();
+    AdpProvider(OciConfig ociConfig, List<OciAuthenticationMethod> atnDetailsProviders) {
+        String chosenAtnMethod = ociConfig.authenticationMethod();
         LazyValue<Optional<AbstractAuthenticationDetailsProvider>> providerLazyValue = null;
 
-        if (OciConfigBlueprint.ATN_METHOD_AUTO.equals(chosenAtnMethod)) {
+        if (OciConfigBlueprint.AUTHENTICATION_METHOD_AUTO.equals(chosenAtnMethod)) {
             // auto, chose from existing
             providerLazyValue = LazyValue.create(() -> {
-                for (OciAtnMethod atnDetailsProvider : atnDetailsProviders) {
+                for (OciAuthenticationMethod atnDetailsProvider : atnDetailsProviders) {
                     Optional<AbstractAuthenticationDetailsProvider> provider = atnDetailsProvider.provider();
                     if (provider.isPresent()) {
                         return provider;
@@ -52,7 +52,7 @@ class AdpProvider implements Supplier<Optional<AbstractAuthenticationDetailsProv
         } else {
             List<String> strategies = new ArrayList<>();
 
-            for (OciAtnMethod atnDetailsProvider : atnDetailsProviders) {
+            for (OciAuthenticationMethod atnDetailsProvider : atnDetailsProviders) {
                 if (chosenAtnMethod.equals(atnDetailsProvider.method())) {
                     providerLazyValue = LazyValue.create(() -> toProvider(atnDetailsProvider, chosenAtnMethod));
                     break;
@@ -75,7 +75,8 @@ class AdpProvider implements Supplier<Optional<AbstractAuthenticationDetailsProv
         return provider.get();
     }
 
-    private Optional<AbstractAuthenticationDetailsProvider> toProvider(OciAtnMethod atnDetailsProvider, String chosenMethod) {
+    private Optional<AbstractAuthenticationDetailsProvider> toProvider(OciAuthenticationMethod atnDetailsProvider,
+                                                                       String chosenMethod) {
         return Optional.of(atnDetailsProvider.provider()
                                    .orElseThrow(() -> new ConfigException(
                                            "Authentication method \"" + chosenMethod + "\" did not provide an "

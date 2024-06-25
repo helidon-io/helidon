@@ -1,7 +1,7 @@
 # OCI Authentication Methods
 
 OCI provides a few authentication methods that can be used when connecting to services.
-Available methods depend on where you client runs.
+Available methods depend on where your client runs.
 Each method is represented through an `AbstractAuthenticationDetailsProvider` implementation
 
 Helidon supports the following Authentication Methods:

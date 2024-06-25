@@ -36,7 +36,7 @@ import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
  * To customize, create your own service with a default or higher weight.
  */
 @Service.Contract
-public interface OciAtnMethod {
+public interface OciAuthenticationMethod {
     /**
      * The OCI authentication method name, can be used to explicitly select a method using configuration.
      *

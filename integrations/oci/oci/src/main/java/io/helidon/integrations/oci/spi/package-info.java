@@ -17,7 +17,7 @@
 /**
  * Extension points for OCI integration.
  *
- * @see io.helidon.integrations.oci.spi.OciAtnMethod
+ * @see io.helidon.integrations.oci.spi.OciAuthenticationMethod
  * @see io.helidon.integrations.oci.spi.OciRegion
  */
 package io.helidon.integrations.oci.spi;

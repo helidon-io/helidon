@@ -35,10 +35,10 @@ import com.oracle.bmc.auth.RegionProvider;
  */
 @Service.Provider
 @Weight(Weighted.DEFAULT_WEIGHT - 20)
-class RegionProviderAtnMethod implements OciRegion {
+class RegionProviderAuthenticationMethod implements OciRegion {
     private final LazyValue<Optional<Region>> region;
 
-    RegionProviderAtnMethod(Supplier<Optional<AbstractAuthenticationDetailsProvider>> atnProvider) {
+    RegionProviderAuthenticationMethod(Supplier<Optional<AbstractAuthenticationDetailsProvider>> atnProvider) {
 
         this.region = LazyValue.create(() -> {
             var provider = atnProvider.get();
