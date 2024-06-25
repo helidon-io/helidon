@@ -96,7 +96,10 @@ class MutableOpenTelemetryBaggage implements Baggage, WritableBaggage {
 
     @Override
     public Optional<String> get(String key) {
-        return Optional.ofNullable(values.get(key).getValue());
+        BaggageEntry baggageEntry = values.get(key);
+        return baggageEntry == null
+                ? Optional.empty()
+                : Optional.ofNullable(baggageEntry.getValue());
     }
 
     @Override
