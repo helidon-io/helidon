@@ -128,6 +128,7 @@
                                 <exclude>**/HelloWorldAsyncResponseTest.java</exclude>
                                 <exclude>**/TestMetricsOnOwnSocket.java</exclude>
                                 <exclude>**/TestDisabledMetrics.java</exclude>
+                                <exclude>**/TestSelectivelyDisabledMetrics.java</exclude>
                                 <exclude>**/TestConfigProcessing.java</exclude>
                             </excludes>
                             <systemPropertyVariables>
@@ -165,6 +166,17 @@
                                 <exclude>**/HelloWorldTest.java</exclude>
                                 <exclude>**/HelloWorldAsyncResponseWithRestRequestTest.java</exclude>
                             </excludes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>test-selectively-disabled-metrics</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/TestSelectivelyDisabledMetric.java</include>
+                            </includes>
                         </configuration>
                     </execution>
                     <execution>

@@ -80,6 +80,15 @@ class Registry implements MetricRegistry {
         return new Registry(scope, meterRegistry);
     }
 
+    static Metadata metadata(Meter meter) {
+
+        MetadataBuilder builder = Metadata.builder().withName(meter.id().name());
+        meter.baseUnit().ifPresent(builder::withUnit);
+        meter.description().ifPresent(builder::withDescription);
+
+        return builder.build();
+    }
+
     protected static String sanitizeUnit(String unit) {
         return unit != null && !unit.equals(MetricUnits.NONE)
                 ? unit
@@ -575,15 +584,6 @@ class Registry implements MetricRegistry {
         }
     }
 
-    private static Metadata metadata(Meter meter) {
-
-        MetadataBuilder builder = Metadata.builder().withName(meter.id().name());
-        meter.baseUnit().ifPresent(builder::withUnit);
-        meter.description().ifPresent(builder::withDescription);
-
-        return builder.build();
-    }
-
     private static Map<String, String> tagsWithoutSystemOrScopeTags(Iterable<io.helidon.metrics.api.Tag> tags) {
         Map<String, String> result = new TreeMap<>();
 
@@ -611,13 +611,7 @@ class Registry implements MetricRegistry {
     }
 
     private HelidonCounter createCounter(io.helidon.metrics.api.Counter.Builder counterBuilder) {
-        io.helidon.metrics.api.Counter delegate = meterRegistry.getOrCreate(counterBuilder);
-        return isMeterEnabled(delegate)
-                ? (HelidonCounter) metricsByDelegate.get(delegate)
-                : HelidonCounter.create(meterRegistry,
-                                        delegate.scope().orElse(Meter.Scope.DEFAULT),
-                                        metadata(delegate),
-                                        tags(delegate.id().tagsMap()));
+        return createMeter(counterBuilder, HelidonCounter::create);
     }
 
     @SuppressWarnings("unchecked")
@@ -644,30 +638,15 @@ class Registry implements MetricRegistry {
 
     @SuppressWarnings("unchecked")
     private <N extends Number> HelidonGauge<N> createGauge(io.helidon.metrics.api.Gauge.Builder<N> gBuilder) {
-        io.helidon.metrics.api.Gauge<?> delegate = meterRegistry.getOrCreate(gBuilder);
-        return (HelidonGauge<N>) (isMeterEnabled(delegate)
-                ? metricsByDelegate.get(delegate)
-                : HelidonGauge.create(meterRegistry,
-                                      delegate.scope().orElse(Meter.Scope.DEFAULT),
-                                      metadata(delegate),
-                                      delegate::value,
-                                      tags(delegate.id().tagsMap())));
+        return createMeter(gBuilder, HelidonGauge::create);
     }
 
     @SuppressWarnings("unchecked")
     private <T> HelidonGauge<Long> createFunctionalCounter(io.helidon.metrics.api.FunctionalCounter.Builder<T> fcBuilder) {
-        io.helidon.metrics.api.Gauge<?> delegate = meterRegistry
-                .getOrCreate(io.helidon.metrics.api.Gauge.builder(fcBuilder.name(),
-                                                                  () -> fcBuilder.fn()
-                                                                          .apply(fcBuilder.stateObject())));
-        return isMeterEnabled(delegate)
-                ?  (HelidonGauge<Long>) metricsByDelegate.get(delegate)
-                : HelidonGauge.create(meterRegistry,
-                                      delegate.scope().orElse(Meter.Scope.DEFAULT),
-                                      metadata(delegate),
-                                      () -> fcBuilder.fn()
-                                              .apply(fcBuilder.stateObject()),
-                                      tags(delegate.id().tagsMap()));
+        return createMeter(io.helidon.metrics.api.Gauge.builder(fcBuilder.name(),
+                                                                () -> fcBuilder.fn()
+                                                                        .apply(fcBuilder.stateObject())),
+                           HelidonGauge::create);
     }
 
     private HelidonHistogram createHistogram(Metadata metadata, Tag... tags) {
@@ -680,10 +659,7 @@ class Registry implements MetricRegistry {
     }
 
     private HelidonHistogram createHistogram(io.helidon.metrics.api.DistributionSummary.Builder sBuilder) {
-        io.helidon.metrics.api.DistributionSummary delegate = meterRegistry.getOrCreate(sBuilder);
-        return isMeterEnabled(delegate)
-                ? (HelidonHistogram) metricsByDelegate.get(delegate)
-                : HelidonHistogram.create(meterRegistry, delegate.scope().orElse(Meter.Scope.DEFAULT), metadata(delegate));
+        return createMeter(sBuilder, HelidonHistogram::create);
     }
 
     private HelidonTimer createTimer(Metadata metadata, Tag... tags) {
@@ -695,10 +671,19 @@ class Registry implements MetricRegistry {
     }
 
     private HelidonTimer createTimer(io.helidon.metrics.api.Timer.Builder tBuilder) {
-        io.helidon.metrics.api.Timer delegate = meterRegistry.getOrCreate(tBuilder);
+        return createMeter(tBuilder, d -> HelidonTimer.create(meterRegistry, d));
+    }
+
+    private <HM extends HelidonMetric<M>,
+            M extends Meter,
+            B extends Meter.Builder<B, M>> HM createMeter(B builder,
+                                                          Function<M, HM> factory) {
+        M delegate = meterRegistry.getOrCreate(builder);
+        // Disabled metrics are not in the data structures supporting our registry, so we cannot find those via metricsByDelegate.
+        // Instead just create a new wrapper around the delegate.
         return isMeterEnabled(delegate)
-                ? (HelidonTimer) metricsByDelegate.get(delegate)
-                : HelidonTimer.create(meterRegistry, delegate.scope().orElse(Meter.Scope.DEFAULT), metadata(delegate));
+                ? (HM) metricsByDelegate.get(delegate)
+                : factory.apply(delegate);
     }
 
     private boolean removeMatchingWithResult(MetricFilter filter) {
