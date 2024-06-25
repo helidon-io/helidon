@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -431,14 +431,16 @@ class Registry implements MetricRegistry {
 
             HelidonMetric<?> newMetric = metric(collector, existingInfo == null ? newMetadata : existingInfo.metadata, meter);
 
-            // Now update the data structures.
-            InfoPerName info = infoByName.computeIfAbsent(newMetricID.getName(),
-                                                          n -> InfoPerName.create(newMetadata, newMetricID));
+            // Now update the data structures if the meter is enabled.
+            if (meterRegistry.isMeterEnabled(meter.id().name(), meter.id().tagsMap(), meter.scope())) {
+                InfoPerName info = infoByName.computeIfAbsent(newMetricID.getName(),
+                                                              n -> InfoPerName.create(newMetadata, newMetricID));
 
-            // Inside info, metric IDs are stored in a set, so adding the first ID again does no harm.
-            info.add(newMetricID);
-            metricsById.put(newMetricID, newMetric);
-            metricsByDelegate.put(meter, newMetric);
+                // Inside info, metric IDs are stored in a set, so adding the first ID again does no harm.
+                info.add(newMetricID);
+                metricsById.put(newMetricID, newMetric);
+                metricsByDelegate.put(meter, newMetric);
+            }
 
             collector.collect().log(LOGGER);
 
@@ -590,6 +592,10 @@ class Registry implements MetricRegistry {
         return result;
     }
 
+    private boolean isMeterEnabled(Meter meter) {
+        return meterRegistry.isMeterEnabled(meter.id().name(), meter.id().tagsMap(), meter.scope());
+    }
+
     private static Tag[] tags(Map<String, String> tags) {
         var result = new ArrayList<Tag>();
         tags.forEach((key, value) -> result.add(new Tag(key, value)));
@@ -606,8 +612,12 @@ class Registry implements MetricRegistry {
 
     private HelidonCounter createCounter(io.helidon.metrics.api.Counter.Builder counterBuilder) {
         io.helidon.metrics.api.Counter delegate = meterRegistry.getOrCreate(counterBuilder);
-        HelidonCounter result = (HelidonCounter) metricsByDelegate.get(delegate);
-        return result;
+        return isMeterEnabled(delegate)
+                ? (HelidonCounter) metricsByDelegate.get(delegate)
+                : HelidonCounter.create(meterRegistry,
+                                        delegate.scope().orElse(Meter.Scope.DEFAULT),
+                                        metadata(delegate),
+                                        tags(delegate.id().tagsMap()));
     }
 
     @SuppressWarnings("unchecked")
@@ -635,7 +645,13 @@ class Registry implements MetricRegistry {
     @SuppressWarnings("unchecked")
     private <N extends Number> HelidonGauge<N> createGauge(io.helidon.metrics.api.Gauge.Builder<N> gBuilder) {
         io.helidon.metrics.api.Gauge<?> delegate = meterRegistry.getOrCreate(gBuilder);
-        return (HelidonGauge<N>) metricsByDelegate.get(delegate);
+        return (HelidonGauge<N>) (isMeterEnabled(delegate)
+                ? metricsByDelegate.get(delegate)
+                : HelidonGauge.create(meterRegistry,
+                                      delegate.scope().orElse(Meter.Scope.DEFAULT),
+                                      metadata(delegate),
+                                      delegate::value,
+                                      tags(delegate.id().tagsMap())));
     }
 
     @SuppressWarnings("unchecked")
@@ -644,7 +660,14 @@ class Registry implements MetricRegistry {
                 .getOrCreate(io.helidon.metrics.api.Gauge.builder(fcBuilder.name(),
                                                                   () -> fcBuilder.fn()
                                                                           .apply(fcBuilder.stateObject())));
-        return (HelidonGauge<Long>) metricsByDelegate.get(delegate);
+        return isMeterEnabled(delegate)
+                ?  (HelidonGauge<Long>) metricsByDelegate.get(delegate)
+                : HelidonGauge.create(meterRegistry,
+                                      delegate.scope().orElse(Meter.Scope.DEFAULT),
+                                      metadata(delegate),
+                                      () -> fcBuilder.fn()
+                                              .apply(fcBuilder.stateObject()),
+                                      tags(delegate.id().tagsMap()));
     }
 
     private HelidonHistogram createHistogram(Metadata metadata, Tag... tags) {
@@ -658,7 +681,9 @@ class Registry implements MetricRegistry {
 
     private HelidonHistogram createHistogram(io.helidon.metrics.api.DistributionSummary.Builder sBuilder) {
         io.helidon.metrics.api.DistributionSummary delegate = meterRegistry.getOrCreate(sBuilder);
-        return (HelidonHistogram) metricsByDelegate.get(delegate);
+        return isMeterEnabled(delegate)
+                ? (HelidonHistogram) metricsByDelegate.get(delegate)
+                : HelidonHistogram.create(meterRegistry, delegate.scope().orElse(Meter.Scope.DEFAULT), metadata(delegate));
     }
 
     private HelidonTimer createTimer(Metadata metadata, Tag... tags) {
@@ -671,7 +696,9 @@ class Registry implements MetricRegistry {
 
     private HelidonTimer createTimer(io.helidon.metrics.api.Timer.Builder tBuilder) {
         io.helidon.metrics.api.Timer delegate = meterRegistry.getOrCreate(tBuilder);
-        return (HelidonTimer) metricsByDelegate.get(delegate);
+        return isMeterEnabled(delegate)
+                ? (HelidonTimer) metricsByDelegate.get(delegate)
+                : HelidonTimer.create(meterRegistry, delegate.scope().orElse(Meter.Scope.DEFAULT), metadata(delegate));
     }
 
     private boolean removeMatchingWithResult(MetricFilter filter) {
