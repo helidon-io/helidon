@@ -17,6 +17,7 @@
 package io.helidon.service.test.registry;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryManager;
@@ -27,6 +28,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 
@@ -78,5 +81,32 @@ public class RegistryTest {
 
         assertThat(MyService2.instances, is(1));
         assertThat(MyService.instances, is(1));
+    }
+
+    @Test
+    public void testSupplier() {
+        Supplier<SuppliedContract> supplier = registry.supply(SuppliedContract.class);
+
+        SuppliedContract first = supplier.get();
+        // sanity check we use the counter per instance, not per call
+        assertThat(first.message(), is("Supplied:1"));
+        assertThat(first.message(), is("Supplied:1"));
+
+        // second instance should be a new one
+        SuppliedContract second = supplier.get();
+        assertThat(second, not(sameInstance(first)));
+        assertThat(second.message(), is("Supplied:2"));
+    }
+
+    @Test
+    public void testSupplierWithNonSupplierService() {
+        Supplier<MyContract> myContractSupplier = registry.supply(MyContract.class);
+
+        // higher weight
+        MyContract firstInstance = myContractSupplier.get();
+        assertThat(firstInstance, instanceOf(MyService2.class));
+
+        MyContract secondInstance = myContractSupplier.get();
+        assertThat(secondInstance, sameInstance(firstInstance));
     }
 }

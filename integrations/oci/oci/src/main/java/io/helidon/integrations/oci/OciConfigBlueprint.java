@@ -23,6 +23,7 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.config.Config;
 
 import com.oracle.bmc.Region;
 
@@ -36,10 +37,10 @@ import com.oracle.bmc.Region;
 @Prototype.CustomMethods(OciConfigSupport.class)
 interface OciConfigBlueprint {
     /**
-     * Default authentication strategy. The default is to use automatic discovery - i.e. cycle through possible
+     * Default authentication method. The default is to use automatic discovery - i.e. cycle through possible
      * providers until one yields an authentication details provider instance.
      */
-    String STRATEGY_AUTO = "auto";
+    String AUTHENTICATION_METHOD_AUTO = "auto";
 
     /**
      * Explicit region. The configured region will be used by region provider.
@@ -51,58 +52,70 @@ interface OciConfigBlueprint {
     Optional<Region> region();
 
     /**
-     * Authentication strategy to use. If the configured strategy is not available, an exception
+     * Authentication method to use. If the configured method is not available, an exception
      * would be thrown for OCI related services.
      * <p>
      * Known and supported authentication strategies for public OCI:
      * <ul>
-     *     <li>{@value #STRATEGY_AUTO} - use the list of {@link #allowedAtnStrategies()} (in the provided order), and choose
-     *     the first one
-     *     capable of providing data</li>
-     *     <li>{@value AtnStrategyConfig#STRATEGY} -
+     *     <li>{@value #AUTHENTICATION_METHOD_AUTO} - use the list of {@link io.helidon.integrations.oci.OciConfig#allowedAuthenticationMethods()}
+     *          (in the provided order), and choose the first one capable of providing data</li>
+     *     <li>{@value AuthenticationMethodConfig#METHOD} -
      *     use configuration of the application to obtain values needed to set up connectivity, uses
      *     {@link com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider}</li>
-     *     <li>{@value AtnStrategyConfigFile#STRATEGY} - use configuration file of OCI ({@code home/.oci/config}), uses
+     *     <li>{@value AuthenticationMethodConfigFile#METHOD} - use configuration file of OCI ({@code home/.oci/config}), uses
      *     {@link com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider}</li>
-     *     <li>{@value AtnStrategyResourcePrincipal#STRATEGY}  - use identity of the OCI resource the service is executed on
+     *     <li>{@code resource-principal}  - use identity of the OCI resource the service is executed on
      *     (fn), uses
-     *     {@link com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider}</li>
-     *     <li>{@value AtnStrategyInstancePrincipal#STRATEGY} - use identity of the OCI instance the service is running on, uses
-     *     {@link com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider}</li>
+     *     {@link com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider}, and is available in a
+     *     separate module {@code helidon-integrations-oci-authentication-resource}</li>
+     *     <li>{@code instance-principal} - use identity of the OCI instance the service is running on, uses
+     *     {@link com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider}, and is available in a
+     *     separate module {@code helidon-integrations-oci-authentication-resource}</li>
+     *     <li>{@code workload} - use workload identity of the OCI Kubernetes workload, available in a
+     *     separate module {@code helidon-integrations-oci-authentication-workload}</li>
      * </ul>
      *
-     * @return the authentication strategy to apply
+     * @return the authentication method to apply
      */
     @Option.Configured
-    @Option.Default(STRATEGY_AUTO)
-    String atnStrategy();
+    @Option.Default(AUTHENTICATION_METHOD_AUTO)
+    String authenticationMethod();
 
     /**
-     * List of attempted authentication strategies in case {@link #atnStrategy()} is set to {@value #STRATEGY_AUTO}.
+     * List of attempted authentication strategies in case {@link io.helidon.integrations.oci.OciConfig#authenticationMethod()} is set
+     * to {@value #AUTHENTICATION_METHOD_AUTO}.
      * <p>
      * In case the list is empty, all available strategies will be tried, ordered by their {@link io.helidon.common.Weight}
      *
      * @return list of authentication strategies to be tried
-     * @see #atnStrategy()
+     * @see io.helidon.integrations.oci.OciConfig#authenticationMethod()
      */
     @Option.Configured
-    List<String> allowedAtnStrategies();
+    List<String> allowedAuthenticationMethods();
 
     /**
-     * Config strategy configuration (if provided and used).
+     * Config method configuration (if provided and used).
      *
-     * @return information needed for config {@link #atnStrategy()}
+     * @return information needed for config {@link io.helidon.integrations.oci.OciConfig#authenticationMethod()}
      */
-    @Option.Configured("config-strategy")
-    Optional<ConfigStrategyConfig> configStrategyConfig();
+    @Option.Configured("authentication.config")
+    Optional<ConfigMethodConfig> configMethodConfig();
 
     /**
-     * Config file strategy configuration (if provided and used).
+     * Config file method configuration (if provided and used).
      *
-     * @return information to customize config for {@link #atnStrategy()}
+     * @return information to customize config for {@link io.helidon.integrations.oci.OciConfig#authenticationMethod()}
      */
-    @Option.Configured("config-file-strategy")
-    Optional<ConfigFileStrategyConfig> configFileStrategyConfig();
+    @Option.Configured("authentication.config-file")
+    Optional<ConfigFileMethodConfig> configFileMethodConfig();
+
+    /**
+     * Session token method configuration (if provided and used).
+     *
+     * @return information to customize config for {@link io.helidon.integrations.oci.OciConfig#authenticationMethod()}
+     */
+    @Option.Configured("authentication.session-token")
+    Optional<SessionTokenMethodConfig> sessionTokenMethodConfig();
 
     /**
      * The OCI IMDS connection timeout. This is used to auto-detect availability.
@@ -116,7 +129,7 @@ interface OciConfigBlueprint {
     Duration imdsTimeout();
 
     /**
-     * The OCI IMDS URI (http URL pointing to the metadata service, if customization needed.
+     * The OCI IMDS URI (http URL pointing to the metadata service, if customization needed).
      *
      * @return the OCI IMDS URI
      */
@@ -132,5 +145,12 @@ interface OciConfigBlueprint {
      */
     @Option.Configured
     @Option.Default("PT10S")
-    Duration atnTimeout();
+    Duration authenticationTimeout();
+
+    /**
+     * Get the config used to update the builder.
+     *
+     * @return configuration
+     */
+    Optional<Config> config();
 }

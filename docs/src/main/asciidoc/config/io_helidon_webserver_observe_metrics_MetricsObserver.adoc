@@ -64,7 +64,7 @@ This type provides the following service implementations:
 |`permit-all` |boolean |`true` |Whether to allow anybody to access the endpoint.
 
  Whether to permit access to metrics endpoint to anybody, defaults to `true`
- @see #roles()
+ See roles()
 |`rest-request-enabled` |boolean |{nbsp} |Whether automatic REST request metrics should be measured.
 
  True/false

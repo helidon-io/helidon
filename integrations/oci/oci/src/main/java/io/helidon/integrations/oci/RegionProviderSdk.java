@@ -42,7 +42,7 @@ class RegionProviderSdk implements OciRegion {
      * We want a different way to get the region if available.
      */
     static Region regionFromImds(OciConfig ociConfig) {
-        if (AtnStrategyInstancePrincipal.imdsAvailable(ociConfig)) {
+        if (HelidonOci.imdsAvailable(ociConfig)) {
             Optional<URI> uri = ociConfig.imdsBaseUri();
             return uri.map(URI::toString)
                     .map(Region::getRegionFromImds)

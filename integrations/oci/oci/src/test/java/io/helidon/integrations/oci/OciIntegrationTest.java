@@ -21,7 +21,7 @@ import java.util.Optional;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.integrations.oci.spi.OciAtnStrategy;
+import io.helidon.integrations.oci.spi.OciAuthenticationMethod;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryManager;
 
@@ -60,31 +60,23 @@ class OciIntegrationTest {
     }
 
     @Test
-    void testNoStrategyAvailable() {
+    void testNoMethodAvailable() {
         String yamlConfig = """
-                helidon.oci:
-                  config-file-strategy:
+                helidon.oci.authentication:
+                  config-file:
                     # we must use a file that does not exist, if this machine has actual oci config file
                     path: src/test/resources/test-oci-config-not-there
                 """;
         Config config = Config.just(ConfigSources.create(yamlConfig, MediaTypes.APPLICATION_YAML));
         setUp(config);
 
-        OciAtnStrategy atnStrategy = registry.get(AtnStrategyConfig.class);
-        assertThat(atnStrategy.strategy(), is(AtnStrategyConfig.STRATEGY));
-        assertThat(atnStrategy.provider(), optionalEmpty());
+        OciAuthenticationMethod method = registry.get(AuthenticationMethodConfig.class);
+        assertThat(method.method(), is(AuthenticationMethodConfig.METHOD));
+        assertThat(method.provider(), optionalEmpty());
 
-        atnStrategy = registry.get(AtnStrategyConfigFile.class);
-        assertThat(atnStrategy.strategy(), is(AtnStrategyConfigFile.STRATEGY));
-        assertThat(atnStrategy.provider(), optionalEmpty());
-
-        atnStrategy = registry.get(AtnStrategyInstancePrincipal.class);
-        assertThat(atnStrategy.strategy(), is(AtnStrategyInstancePrincipal.STRATEGY));
-        assertThat(atnStrategy.provider(), optionalEmpty());
-
-        atnStrategy = registry.get(AtnStrategyResourcePrincipal.class);
-        assertThat(atnStrategy.strategy(), is(AtnStrategyResourcePrincipal.STRATEGY));
-        assertThat(atnStrategy.provider(), optionalEmpty());
+        method = registry.get(AuthenticationMethodConfigFile.class);
+        assertThat(method.method(), is(AuthenticationMethodConfigFile.METHOD));
+        assertThat(method.provider(), optionalEmpty());
 
         assertThat(registry.first(Region.class), is(Optional.empty()));
         assertThat(registry.first(AbstractAuthenticationDetailsProvider.class), is(Optional.empty()));
@@ -93,10 +85,12 @@ class OciIntegrationTest {
     @Test
     void testRegionFromConfig() {
         String yamlConfig = """
-                helidon.oci.region: us-phoenix-1
-                config-file-strategy:
-                    # we must use a file that does not exist, if this machine has actual oci config file
-                    path: src/test/resources/test-oci-config-not-there
+                helidon.oci:
+                  region: us-phoenix-1
+                  authentication:
+                    config-file:
+                      # we must use a file that does not exist, if this machine has actual oci config file
+                      path: src/test/resources/test-oci-config-not-there
                 """;
         Config config = Config.just(ConfigSources.create(yamlConfig, MediaTypes.APPLICATION_YAML));
         setUp(config);
@@ -105,38 +99,30 @@ class OciIntegrationTest {
     }
 
     @Test
-    void testConfigStrategyAvailable() {
+    void testConfigMethodAvailable() {
         String yamlConfig = """
-                helidon.oci:
-                  config-strategy:
+                helidon.oci.authentication:
+                  config:
                     # region must be real, so it can be parsed
                     region: us-phoenix-1
                     fingerprint: fp
                     passphrase: passphrase
                     tenant-id: tenant
                     user-id: user
-                  config-file-strategy:
+                  config-file:
                     # we must use a file that does not exist, if this machine has actual oci config file
                     path: src/test/resources/test-oci-config-not-there
                 """;
         Config config = Config.just(ConfigSources.create(yamlConfig, MediaTypes.APPLICATION_YAML));
         setUp(config);
 
-        OciAtnStrategy atnStrategy = registry.get(AtnStrategyConfig.class);
-        assertThat(atnStrategy.strategy(), is(AtnStrategyConfig.STRATEGY));
-        assertThat(atnStrategy.provider(), not(Optional.empty()));
+        OciAuthenticationMethod method = registry.get(AuthenticationMethodConfig.class);
+        assertThat(method.method(), is(AuthenticationMethodConfig.METHOD));
+        assertThat(method.provider(), not(Optional.empty()));
 
-        atnStrategy = registry.get(AtnStrategyConfigFile.class);
-        assertThat(atnStrategy.strategy(), is(AtnStrategyConfigFile.STRATEGY));
-        assertThat(atnStrategy.provider(), optionalEmpty());
-
-        atnStrategy = registry.get(AtnStrategyInstancePrincipal.class);
-        assertThat(atnStrategy.strategy(), is(AtnStrategyInstancePrincipal.STRATEGY));
-        assertThat(atnStrategy.provider(), optionalEmpty());
-
-        atnStrategy = registry.get(AtnStrategyResourcePrincipal.class);
-        assertThat(atnStrategy.strategy(), is(AtnStrategyResourcePrincipal.STRATEGY));
-        assertThat(atnStrategy.provider(), optionalEmpty());
+        method = registry.get(AuthenticationMethodConfigFile.class);
+        assertThat(method.method(), is(AuthenticationMethodConfigFile.METHOD));
+        assertThat(method.provider(), optionalEmpty());
 
         AbstractAuthenticationDetailsProvider provider = registry.get(AbstractAuthenticationDetailsProvider.class);
 
@@ -155,31 +141,23 @@ class OciIntegrationTest {
     }
 
     @Test
-    void testConfigFileStrategyAvailable() {
+    void testConfigFileMethodAvailable() {
         String yamlConfig = """
-                helidon.oci:
-                  config-file-strategy:
+                helidon.oci.authentication:
+                  config-file:
                     path: src/test/resources/test-oci-config
                     profile: MY_PROFILE
                 """;
         Config config = Config.just(ConfigSources.create(yamlConfig, MediaTypes.APPLICATION_YAML));
         setUp(config);
 
-        OciAtnStrategy atnStrategy = registry.get(AtnStrategyConfig.class);
-        assertThat(atnStrategy.strategy(), is(AtnStrategyConfig.STRATEGY));
-        assertThat(atnStrategy.provider(), optionalEmpty());
+        OciAuthenticationMethod method = registry.get(AuthenticationMethodConfig.class);
+        assertThat(method.method(), is(AuthenticationMethodConfig.METHOD));
+        assertThat(method.provider(), optionalEmpty());
 
-        atnStrategy = registry.get(AtnStrategyConfigFile.class);
-        assertThat(atnStrategy.strategy(), is(AtnStrategyConfigFile.STRATEGY));
-        assertThat(atnStrategy.provider(), not(Optional.empty()));
-
-        atnStrategy = registry.get(AtnStrategyInstancePrincipal.class);
-        assertThat(atnStrategy.strategy(), is(AtnStrategyInstancePrincipal.STRATEGY));
-        assertThat(atnStrategy.provider(), optionalEmpty());
-
-        atnStrategy = registry.get(AtnStrategyResourcePrincipal.class);
-        assertThat(atnStrategy.strategy(), is(AtnStrategyResourcePrincipal.STRATEGY));
-        assertThat(atnStrategy.provider(), optionalEmpty());
+        method = registry.get(AuthenticationMethodConfigFile.class);
+        assertThat(method.method(), is(AuthenticationMethodConfigFile.METHOD));
+        assertThat(method.provider(), not(Optional.empty()));
 
         AbstractAuthenticationDetailsProvider provider = registry.get(AbstractAuthenticationDetailsProvider.class);
 

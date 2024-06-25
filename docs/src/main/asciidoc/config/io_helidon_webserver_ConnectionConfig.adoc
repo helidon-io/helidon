@@ -50,7 +50,7 @@ Type: link:{javadoc-base-url}/io.helidon.webserver/io/helidon/webserver/Connecti
  Default is `true`.
 
  Keep alive
- @see java.net.StandardSocketOptions#SO_KEEPALIVE
+ See java.net.StandardSocketOptions.SO_KEEPALIVE
 |`read-timeout` |Duration |`PT30S` |Read timeout.
  Default is DEFAULT_READ_TIMEOUT_DURATION
 
@@ -59,24 +59,24 @@ Type: link:{javadoc-base-url}/io.helidon.webserver/io/helidon/webserver/Connecti
  Default is DEFAULT_SO_BUFFER_SIZE.
 
  Buffer size, in bytes
- @see java.net.StandardSocketOptions#SO_RCVBUF
+ See java.net.StandardSocketOptions.SO_RCVBUF
 |`reuse-address` |boolean |`true` |Socket reuse address.
  Default is `true`.
 
  Whether to reuse address
- @see java.net.StandardSocketOptions#SO_REUSEADDR
+ See java.net.StandardSocketOptions.SO_REUSEADDR
 |`send-buffer-size` |int |`32768` |Socket send buffer size.
  Default is DEFAULT_SO_BUFFER_SIZE.
 
  Buffer size, in bytes
- @see java.net.StandardSocketOptions#SO_SNDBUF
+ See java.net.StandardSocketOptions.SO_SNDBUF
 |`tcp-no-delay` |boolean |`false` |Disable <a href="https://en.wikipedia.org/wiki/Nagle%27s_algorithm">Nagle's algorithm</a> by setting
  TCP_NODELAY to true. This can result in better performance on Mac or newer linux kernels for some
  payload types.
  Default is `false`.
 
  Whether to use TCP_NODELAY, defaults to `false`
- @see java.net.StandardSocketOptions#TCP_NODELAY
+ See java.net.StandardSocketOptions.TCP_NODELAY
 
 |===
 

@@ -49,7 +49,7 @@ Type: link:{javadoc-base-url}/io.helidon.webserver.observe.log/io/helidon/webser
 |`idle-message-timeout` |Duration |`PT5S` |How long to wait before we send the idle message, to make sure we keep the stream alive.
 
  If no messages appear within this duration, and idle message will be sent
- @see #idleString()
+ See idleString()
 |`idle-string` |string |`%
 ` |String sent when there are no log messages within the idleMessageTimeout().
 

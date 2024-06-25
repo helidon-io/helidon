@@ -64,7 +64,7 @@ Type: link:{javadoc-base-url}/io.helidon.webclient.grpc/io/helidon/webclient/grp
  Whether this is a fatal error or not is controlled by abortPollTimeExpired().
 
  Poll time as a duration
- @see io.helidon.common.socket.SocketOptions#readTimeout()
+ See io.helidon.common.socket.SocketOptions.readTimeout()
 
 |===
 

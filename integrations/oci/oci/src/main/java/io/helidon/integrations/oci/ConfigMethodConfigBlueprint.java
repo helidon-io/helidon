@@ -23,11 +23,11 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.common.configurable.Resource;
 
 /**
- * Configuration of the {@code config} authentication strategy.
+ * Configuration of the {@code config} authentication method.
  */
 @Prototype.Blueprint
 @Prototype.Configured
-interface ConfigStrategyConfigBlueprint {
+interface ConfigMethodConfigBlueprint {
     /**
      * The OCI region.
      *
@@ -70,7 +70,7 @@ interface ConfigStrategyConfigBlueprint {
      */
     @Option.Configured
     @Option.Confidential
-    char[] passphrase();
+    Optional<char[]> passphrase();
 
     /**
      * The OCI tenant id.

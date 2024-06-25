@@ -17,17 +17,17 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 ifndef::rootdir[:rootdir: {docdir}/..]
-:description: Configuration of io.helidon.integrations.oci.ConfigStrategyConfig
-:keywords: helidon, config, io.helidon.integrations.oci.ConfigStrategyConfig
-:basic-table-intro: The table below lists the configuration keys that configure io.helidon.integrations.oci.ConfigStrategyConfig
+:description: Configuration of io.helidon.integrations.oci.ConfigMethodConfig
+:keywords: helidon, config, io.helidon.integrations.oci.ConfigMethodConfig
+:basic-table-intro: The table below lists the configuration keys that configure io.helidon.integrations.oci.ConfigMethodConfig
 include::{rootdir}/includes/attributes.adoc[]
 
-= ConfigStrategyConfig (integrations.oci) Configuration
+= ConfigMethodConfig (integrations.oci) Configuration
 
 // tag::config[]
 
 
-Type: link:{javadoc-base-url}/io.helidon.integrations.oci/io/helidon/integrations/oci/ConfigStrategyConfig.html[io.helidon.integrations.oci.ConfigStrategyConfig]
+Type: link:{javadoc-base-url}/io.helidon.integrations.oci/io/helidon/integrations/oci/ConfigMethodConfig.html[io.helidon.integrations.oci.ConfigMethodConfig]
 
 
 
@@ -46,13 +46,13 @@ Type: link:{javadoc-base-url}/io.helidon.integrations.oci/io/helidon/integration
 
  This configuration property must be provided in order to set the <a
  href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm">API signing key's fingerprint</a>.
- See {@linkplain com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider#getFingerprint()} for more details.
+ See com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.getFingerprint() for more details.
 
  The OCI authentication fingerprint
 |`passphrase` |char[] |{nbsp} |The OCI authentication passphrase.
 
  This property must be provided in order to set the
- {@linkplain com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider#getPassphraseCharacters()}.
+ com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.getPassphraseCharacters().
 
  The OCI authentication passphrase
 |`private-key` |xref:{rootdir}/config/io_helidon_common_configurable_Resource.adoc[Resource] |{nbsp} |The OCI authentication private key resource.
@@ -68,13 +68,13 @@ Type: link:{javadoc-base-url}/io.helidon.integrations.oci/io/helidon/integration
 |`tenant-id` |string |{nbsp} |The OCI tenant id.
 
  This property must be provided in order to set the
- {@linkplain com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider#getTenantId()}.
+ com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.getTenantId().
 
  The OCI tenant id
 |`user-id` |string |{nbsp} |The OCI user id.
 
  This property must be provided in order to set the
- {@linkplain com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider#getUserId()}.
+ com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.getUserId().
 
  The OCI user id
 

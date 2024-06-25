@@ -23,7 +23,7 @@ import io.helidon.builder.api.Prototype;
 
 @Prototype.Blueprint
 @Prototype.Configured
-interface ConfigFileStrategyConfigBlueprint {
+interface ConfigFileMethodConfigBlueprint {
     /**
      * The OCI configuration profile path.
      *
@@ -38,6 +38,6 @@ interface ConfigFileStrategyConfigBlueprint {
      * @return the optional OCI configuration/auth profile name
      */
     @Option.Configured
-    @Option.Default(AtnStrategyConfigFile.DEFAULT_PROFILE_NAME)
+    @Option.Default(ConfigFileProvider.DEFAULT_PROFILE_NAME)
     String profile();
 }

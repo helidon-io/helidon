@@ -29,14 +29,14 @@
  *     <li>Create a file {@code oci-config.yaml} either on classpath, or in the current directory with configuration
  *     required by {@link io.helidon.integrations.oci.OciConfig}, this also requires YAML config parser on classpath.</li>
  *     <li>Add environment variables to override configuration options of {@link io.helidon.integrations.oci.OciConfig},
- *     such as {@code OCI_ATNSTRATEGY=config_file}</li>
+ *     such as {@code OCI_AUTHENTICATION_METHOD=config_file}</li>
  *     <li>Add system properties to override configuration options of {@link io.helidon.integrations.oci.OciConfig},
- *     such as {@code oci.atnStrategy=config_file}</li>
+ *     such as {@code oci.authenticationMethod=config_file}</li>
  * </ul>
  *
- * To customize authentication details provider, you can implement {@link io.helidon.integrations.oci.spi.OciAtnStrategy}
+ * To customize authentication details provider, you can implement {@link io.helidon.integrations.oci.spi.OciAuthenticationMethod}
  * service. The out-of-the-box providers have all less than default weight, and are in the
- * following order (strategy: description (weight)):
+ * following order (authentication method: description (weight)):
  * <ul>
  *     <li>{@code config}: Config based authentication details provider - using only configured options (default weight - 10)</li>
  *     <li>{@code config-file}: Config file based authentication details provider (default weight - 20)</li>
@@ -47,10 +47,11 @@
 module io.helidon.integrations.oci {
     requires io.helidon.common.configurable;
     requires io.helidon.service.registry;
-    requires oci.java.sdk.common;
     requires io.helidon.common.config;
-    requires org.bouncycastle.util;
     requires io.helidon.config;
+
+    requires oci.java.sdk.common;
+    requires vavr;
 
     exports io.helidon.integrations.oci;
     exports io.helidon.integrations.oci.spi;

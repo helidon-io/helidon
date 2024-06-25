@@ -45,7 +45,7 @@ Type: link:{javadoc-base-url}/io.helidon.webclient.api/io/helidon/webclient/api/
 |`connect-timeout` |Duration |{nbsp} |Connect timeout.
 
  Connect timeout
- @see io.helidon.common.socket.SocketOptions#connectTimeout()
+ See io.helidon.common.socket.SocketOptions.connectTimeout()
 |`follow-redirects` |boolean |`true` |Whether to follow redirects.
 
  Whether to follow redirects
@@ -53,7 +53,7 @@ Type: link:{javadoc-base-url}/io.helidon.webclient.api/io/helidon/webclient/api/
  the same connection for multiple requests).
 
  Keep alive for this connection
- @see io.helidon.common.socket.SocketOptions#socketKeepAlive()
+ See io.helidon.common.socket.SocketOptions.socketKeepAlive()
 |`max-redirects` |int |`10` |Max number of followed redirects.
  This is ignored if followRedirects() option is `false`.
 
@@ -68,7 +68,7 @@ Type: link:{javadoc-base-url}/io.helidon.webclient.api/io/helidon/webclient/api/
 |`read-timeout` |Duration |{nbsp} |Read timeout.
 
  Read timeout
- @see io.helidon.common.socket.SocketOptions#readTimeout()
+ See io.helidon.common.socket.SocketOptions.readTimeout()
 |`tls` |xref:{rootdir}/config/io_helidon_common_tls_Tls.adoc[Tls] |{nbsp} |TLS configuration for any TLS request from this client.
  TLS can also be configured per request.
  TLS is used when the protocol is set to `https`.

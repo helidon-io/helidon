@@ -34,10 +34,12 @@
 
     <modules>
         <module>oci</module>
+        <module>authentication</module>
         <module>metrics</module>
         <module>secrets-config-source</module>
         <module>secrets-mp-config-source</module>
         <module>sdk</module>
         <module>tls-certificates</module>
+        <module>tests</module>
     </modules>
 </project>

@@ -69,7 +69,7 @@ If there are more than one strategy descriptors defined, the
  first one that is deemed to be available/suitable will be used and all others will be ignored.
 
  The list of authentication strategies that will be applied, defaulting to `auto`
- @see io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.AuthStrategy
+ See io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.AuthStrategy
 |`auth-strategy` |string (auto, config, config-file, instance-principals, resource-principal) |{nbsp} |The singular authentication strategy to apply. This will be preferred over authStrategies() if both are
  present.
 
@@ -80,7 +80,7 @@ If there are more than one strategy descriptors defined, the
  present in the value for the authStrategies(). This is also known as simpleConfigIsPresent().
  When it is present, this property must be provided in order to set the <a
  href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm">API signing key's fingerprint</a>.
- See {@linkplain com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider#getFingerprint()} for more details.
+ See com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.getFingerprint() for more details.
 
  The OCI authentication fingerprint
 |`auth.keyFile` |string |`oci_api_key.pem` |The OCI authentication key file.
@@ -88,7 +88,7 @@ If there are more than one strategy descriptors defined, the
  This configuration property has an effect only when `config` is, explicitly or implicitly,
  present in the value for the authStrategies(). This is also known as simpleConfigIsPresent().
  When it is present, this property must be provided in order to set the
- {@linkplain com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider#getPrivateKey()}. This file must exist in the
+ com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.getPrivateKey(). This file must exist in the
  `user.home` directory. Alternatively, this property can be set using either authPrivateKey() or
  using authPrivateKeyPath().
 
@@ -98,7 +98,7 @@ If there are more than one strategy descriptors defined, the
  This configuration property has an effect only when `config` is, explicitly or implicitly,
  present in the value for the authStrategies(). This is also known as simpleConfigIsPresent().
  When it is present, this property must be provided in order to set the
- {@linkplain com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider#getPassphraseCharacters()}.
+ com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.getPassphraseCharacters().
 
  The OCI authentication passphrase
 |`auth.private-key` |char[] |{nbsp} |The OCI authentication private key.
@@ -106,7 +106,7 @@ If there are more than one strategy descriptors defined, the
  This configuration property has an effect only when `config` is, explicitly or implicitly,
  present in the value for the authStrategies(). This is also known as simpleConfigIsPresent().
  When it is present, this property must be provided in order to set the
- {@linkplain com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider#getPrivateKey()}. Alternatively, this property
+ com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.getPrivateKey(). Alternatively, this property
  can be set using either authKeyFile() residing in the `user.home` directory, or using
  authPrivateKeyPath().
 
@@ -116,7 +116,7 @@ If there are more than one strategy descriptors defined, the
  This configuration property has an effect only when `config` is, explicitly or implicitly,
  present in the value for the authStrategies(). This is also known as simpleConfigIsPresent().
  When it is present, this property must be provided in order to set the
- {@linkplain com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider#getPrivateKey()}. This file path is
+ com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.getPrivateKey(). This file path is
  an alternative for using authKeyFile() where the file must exist in the `user.home` directory.
  Alternatively, this property can be set using authPrivateKey().
 
@@ -126,7 +126,7 @@ If there are more than one strategy descriptors defined, the
  This configuration property has an effect only when `config` is, explicitly or implicitly,
  present in the value for the authStrategies(). This is also known as simpleConfigIsPresent().
  When it is present, either this property or com.oracle.bmc.auth.RegionProvider must be provide a value in order
- to set the {@linkplain com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider#getRegion()}.
+ to set the com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider.getRegion().
 
  The OCI region
 |`auth.tenant-id` |string |{nbsp} |The OCI tenant id.
@@ -134,7 +134,7 @@ If there are more than one strategy descriptors defined, the
  This configuration property has an effect only when `config` is, explicitly or implicitly,
  present in the value for the authStrategies(). This is also known as simpleConfigIsPresent().
  When it is present, this property must be provided in order to set the
- {@linkplain com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider#getTenantId()}.
+ com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider.getTenantId().
 
  The OCI tenant id
 |`auth.user-id` |string |{nbsp} |The OCI user id.
@@ -142,7 +142,7 @@ If there are more than one strategy descriptors defined, the
  This configuration property has an effect only when `config` is, explicitly or implicitly,
  present in the value for the authStrategies().
  When it is present, this property must be provided in order to set the
- {@linkplain com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider#getUserId()}.
+ com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider.getUserId().
 
  The OCI user id
 |`config.path` |string |{nbsp} |The OCI configuration profile path.
@@ -150,7 +150,7 @@ If there are more than one strategy descriptors defined, the
  This configuration property has an effect only when `config-file` is, explicitly or implicitly,
  present in the value for the authStrategies(). This is also known as fileConfigIsPresent().
  When it is present, this property must also be present and then the
- {@linkplain com.oracle.bmc.ConfigFileReader#parse(String)}
+ com.oracle.bmc.ConfigFileReader.parse(String)
  method will be passed this value. It is expected to be passed with a
  valid OCI configuration file path.
 
@@ -173,7 +173,7 @@ If there are more than one strategy descriptors defined, the
  This configuration property is used when attempting to connect to the metadata service.
 
  The OCI IMDS connection timeout
- @see OciAvailability
+ See OciAvailability
 
 |===
 

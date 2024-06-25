@@ -29,12 +29,16 @@ import com.oracle.bmc.Region;
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.RegionProvider;
 
+/**
+ * Region provider that uses an available OCI authentication method, if it yields an
+ * authentication details provider that implements a region provider.
+ */
 @Service.Provider
 @Weight(Weighted.DEFAULT_WEIGHT - 20)
-class RegionProviderAtnStrategy implements OciRegion {
+class RegionProviderAuthenticationMethod implements OciRegion {
     private final LazyValue<Optional<Region>> region;
 
-    RegionProviderAtnStrategy(Supplier<Optional<AbstractAuthenticationDetailsProvider>> atnProvider) {
+    RegionProviderAuthenticationMethod(Supplier<Optional<AbstractAuthenticationDetailsProvider>> atnProvider) {
 
         this.region = LazyValue.create(() -> {
             var provider = atnProvider.get();

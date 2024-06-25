@@ -16,6 +16,8 @@
 
 package io.helidon.builder.codegen;
 
+import java.net.URI;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -167,6 +169,18 @@ class TypeHandler {
             return content -> content.addContent("\"")
                     .addContent(defaultValue)
                     .addContent("\".toCharArray()");
+        }
+        if (Types.PATH.equals(typeName)) {
+            return content -> content.addContent(Paths.class)
+                    .addContent(".get(\"")
+                    .addContent(defaultValue)
+                    .addContent("\")");
+        }
+        if (Types.URI.equals(typeName)) {
+            return content -> content.addContent(URI.class)
+                    .addContent(".create(\"")
+                    .addContent(defaultValue)
+                    .addContent("\")");
         }
         if (typeName.primitive()) {
             if (typeName.fqName().equals("char")) {

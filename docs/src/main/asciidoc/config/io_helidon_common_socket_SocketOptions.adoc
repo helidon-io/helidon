@@ -52,25 +52,25 @@ Type: link:{javadoc-base-url}/io.helidon.common.socket/io/helidon/common/socket/
  Default is `true`.
 
  Keep alive
- @see java.net.StandardSocketOptions#SO_KEEPALIVE
+ See java.net.StandardSocketOptions.SO_KEEPALIVE
 |`socket-receive-buffer-size` |int |{nbsp} |Socket receive buffer size.
 
  Buffer size, in bytes
- @see java.net.StandardSocketOptions#SO_RCVBUF
+ See java.net.StandardSocketOptions.SO_RCVBUF
 |`socket-reuse-address` |boolean |`true` |Socket reuse address.
  Default is `true`.
 
  Whether to reuse address
- @see java.net.StandardSocketOptions#SO_REUSEADDR
+ See java.net.StandardSocketOptions.SO_REUSEADDR
 |`socket-send-buffer-size` |int |{nbsp} |Socket send buffer size.
 
  Buffer size, in bytes
- @see java.net.StandardSocketOptions#SO_SNDBUF
+ See java.net.StandardSocketOptions.SO_SNDBUF
 |`tcp-no-delay` |boolean |`false` |This option may improve performance on some systems.
  Default is `false`.
 
  Whether to use TCP_NODELAY, defaults to `false`
- @see java.net.StandardSocketOptions#TCP_NODELAY
+ See java.net.StandardSocketOptions.TCP_NODELAY
 
 |===
 
