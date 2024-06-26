@@ -22,7 +22,7 @@ import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.service.inject.api.Injection;
 
-@Injection.Dependent
+@Injection.Instance
 @Weight(Weighted.DEFAULT_WEIGHT + 1) // higher than other no-scope, lower than singleton supplier
 class NoScopeSupplierExample implements Supplier<ContractNoScopeNoIpProvider> {
 

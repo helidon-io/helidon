@@ -85,7 +85,7 @@ final class Activators {
         Descriptor<T> descriptor = provider.descriptor();
         Set<TypeName> contracts = descriptor.contracts();
 
-        if (descriptor.scope().equals(Injection.Dependent.TYPE)) {
+        if (descriptor.scope().equals(Injection.Instance.TYPE)) {
             if (contracts.contains(ServicesProvider.TYPE)) {
                 return () -> new ActivatorsPerLookup.ServicesProviderActivator<>(provider);
             }

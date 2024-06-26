@@ -79,9 +79,9 @@ public final class ServiceCodegenTypes {
      */
     public static final TypeName INJECTION_SCOPE = TypeName.create("io.helidon.service.inject.api.Injection.Scope");
     /**
-     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.Dependent}.
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.Instance}.
      */
-    public static final TypeName INJECTION_DEPENDENT = TypeName.create("io.helidon.service.inject.api.Injection.Dependent");
+    public static final TypeName INJECTION_INSTANCE = TypeName.create("io.helidon.service.inject.api.Injection.Instance");
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Service.Descriptor}.
      */

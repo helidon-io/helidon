@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,9 @@
 
 package io.helidon.service.tests.inject;
 
-import io.helidon.service.inject.api.Injection;
+import io.helidon.service.registry.Service;
 
-@Injection.Instance
-class NonSingletonService {
-    private final SingletonService singleton;
-
-    @Injection.Inject
-    NonSingletonService(SingletonService singleton) {
-        this.singleton = singleton;
-    }
-
-    SingletonService singletonService() {
-        return singleton;
-    }
+@Service.Contract
+interface SuppliedContract {
+    String message();
 }

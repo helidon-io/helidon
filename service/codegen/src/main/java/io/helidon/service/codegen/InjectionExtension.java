@@ -60,7 +60,7 @@ import io.helidon.service.codegen.spi.RegistryCodegenExtension;
 import static io.helidon.codegen.CodegenUtil.toConstantName;
 import static io.helidon.service.codegen.ServiceCodegenTypes.BUILDER_BLUEPRINT;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_CREATE_FOR;
-import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_DEPENDENT;
+import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_INSTANCE;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_NAMED;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_POINT_PROVIDER;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_SINGLETON;
@@ -277,7 +277,7 @@ class InjectionExtension implements RegistryCodegenExtension {
         postConstructMethod(typeInfo, classModel, serviceType);
         preDestroyMethod(typeInfo, classModel, serviceType);
         qualifiersMethod(classModel, qualifiers, superType);
-        scopeMethod(classModel, scope.orElse(INJECTION_DEPENDENT));
+        scopeMethod(classModel, scope.orElse(INJECTION_INSTANCE));
         weightMethod(typeInfo, classModel, superType);
         runLevelMethod(typeInfo, classModel, superType);
         createForMethod(typeInfo, classModel, superType, contracts);

@@ -155,4 +155,20 @@ class InjectionTest {
         assertThat(innerContract, instanceOf(InnerTypes.InnerService.class));
         assertThat(InnerTypes.InnerService.postConstructCount.get(), is(1));
     }
+
+    @Test
+    @Order(7)
+    public void testSupplier() {
+        Supplier<SuppliedContract> supplier = registry.supply(SuppliedContract.class);
+
+        SuppliedContract first = supplier.get();
+        // sanity check we use the counter per instance, not per call
+        assertThat(first.message(), is("Supplied:1"));
+        assertThat(first.message(), is("Supplied:1"));
+
+        // second instance should be a new one
+        SuppliedContract second = supplier.get();
+        assertThat(second, not(sameInstance(first)));
+        assertThat(second.message(), is("Supplied:2"));
+    }
 }

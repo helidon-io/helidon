@@ -118,19 +118,19 @@ public final class Injection {
 
     /**
      * A service that does not have a scope, yet supports injection.
-     * The "does not have a scope" means, that the service instances are not managed. If this
+     * The "does not have a scope" means that the service instances are not managed. If this
      * service gets injected, a new instance is created for each injection. The service is instantiated,
      * post construct method (if any) is called, and then it is ignored (i.e. it never gets a pre destroy
-     * method invocation), so its lifecycle depends on the instance it is injected into.
+     * method invocation).
      */
     @Documented
     @Retention(RetentionPolicy.CLASS)
     @Target({ElementType.ANNOTATION_TYPE, ElementType.TYPE})
-    public @interface Dependent {
+    public @interface Instance {
         /**
          * Type name of this interface.
          */
-        TypeName TYPE = TypeName.create(Dependent.class);
+        TypeName TYPE = TypeName.create(Instance.class);
     }
 
     /**
@@ -141,14 +141,13 @@ public final class Injection {
      * A singleton instance is guaranteed to have its constructor, post-construct, and pre-destroy methods invoked once within
      * the lifecycle of the service registry.
      * <p>
-     * Alternative to this annotation is {@link io.helidon.service.inject.api.Injection.Dependent} (or no annotation on a type
+     * Alternative to this annotation is {@link io.helidon.service.inject.api.Injection.Instance} (or no annotation on a type
      * that has {@link Injection.Inject} on its elements). Such a service would be injected
      * every time its provider is invoked (each injection point, or on call to {@link java.util.function.Supplier#get()} if
      * supplier is injected), and {@link Injection.RequestScope} for request bound instances.
      */
     @Documented
     @Retention(RetentionPolicy.CLASS)
-    @Dependent
     @Scope
     @Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE})
     public @interface Singleton {
@@ -171,7 +170,6 @@ public final class Injection {
      */
     @Documented
     @Retention(RetentionPolicy.CLASS)
-    @Dependent
     @Scope
     @Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE, ElementType.METHOD})
     public @interface RequestScope {

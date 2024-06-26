@@ -52,7 +52,7 @@ public class JavaxExtensionProvider implements RegistryCodegenExtensionProvider 
     public Set<TypeName> supportedAnnotations() {
         return Set.of(ServiceCodegenTypes.INJECTION_SINGLETON,
                       ServiceCodegenTypes.INJECTION_INJECT,
-                      ServiceCodegenTypes.INJECTION_DEPENDENT);
+                      ServiceCodegenTypes.INJECTION_INSTANCE);
     }
 
     @Override

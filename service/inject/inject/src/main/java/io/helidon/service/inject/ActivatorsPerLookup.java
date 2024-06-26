@@ -57,7 +57,7 @@ import static java.util.function.Predicate.not;
 
 /**
  * Activator types for various types the users can implement, for services without scope
- * (with {@link io.helidon.service.inject.api.Injection.Dependent} as its scope in descriptor).
+ * (with {@link io.helidon.service.inject.api.Injection.Instance} as its scope in descriptor).
  * <p>
  * Activators in this type create an instance per injection, or per call to {@link java.util.function.Supplier#get()}.
  *

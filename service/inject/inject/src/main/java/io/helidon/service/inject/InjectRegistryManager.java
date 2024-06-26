@@ -169,8 +169,6 @@ public class InjectRegistryManager implements ServiceRegistryManager {
 
             boolean logUnsupported = LOGGER.isLoggable(System.Logger.Level.TRACE);
 
-
-
             for (var descriptorMeta : discovery.allMetadata()) {
                 String registryType = descriptorMeta.registryType();
                 if (!(DescriptorMetadata.REGISTRY_TYPE_CORE.equals(registryType) || "inject".equals(registryType))) {
@@ -359,23 +357,24 @@ public class InjectRegistryManager implements ServiceRegistryManager {
     private static class CoreDescriptorWrapper implements Descriptor<Object> {
         private final GeneratedService.Descriptor<?> delegate;
         private final List<Ip> injectionPoints;
+        private final TypeName scope;
 
         CoreDescriptorWrapper(GeneratedService.Descriptor<?> delegate) {
             this.delegate = delegate;
 
-            injectionPoints = delegate.dependencies()
+            this.injectionPoints = delegate.dependencies()
                     .stream()
                     .map(it -> Ip.builder()
                             .from(it)
                             .elementKind(ElementKind.CONSTRUCTOR)
                             .build())
                     .collect(Collectors.toList());
+            this.scope = scope(delegate);
         }
 
         @Override
         public TypeName scope() {
-            // core services are equal in functionality to singletons
-            return Injection.Singleton.TYPE;
+            return scope;
         }
 
         @Override
@@ -421,6 +420,14 @@ public class InjectRegistryManager implements ServiceRegistryManager {
         @Override
         public io.helidon.service.registry.ServiceInfo coreInfo() {
             return delegate;
+        }
+
+        private static TypeName scope(GeneratedService.Descriptor<?> delegate) {
+            // if the core service is a supplier, we expect to get a new instance each time
+            // otherwise it is a de-facto singleton
+            return delegate.contracts().contains(TypeNames.SUPPLIER)
+                    ? Injection.Instance.TYPE
+                    : Injection.Singleton.TYPE;
         }
     }
 

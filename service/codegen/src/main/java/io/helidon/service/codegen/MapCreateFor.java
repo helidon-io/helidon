@@ -38,7 +38,7 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_CREATE_FO
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 10)
 public class MapCreateFor implements AnnotationMapperProvider {
-    private static final Annotation SERVICE = Annotation.create(ServiceCodegenTypes.INJECTION_DEPENDENT);
+    private static final Annotation SERVICE = Annotation.create(ServiceCodegenTypes.INJECTION_INSTANCE);
 
     /**
      * Required default constructor.

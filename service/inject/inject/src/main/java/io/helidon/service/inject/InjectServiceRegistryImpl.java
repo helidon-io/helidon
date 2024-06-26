@@ -140,7 +140,7 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
 
         Map<TypeName, Injection.ScopeHandler<?>> scopeHandlerInstances = new ConcurrentHashMap<>();
         scopeHandlerInstances.put(Injection.Singleton.TYPE, singletonScopeHandler);
-        scopeHandlerInstances.put(Injection.Dependent.TYPE, dependentScopeHandler);
+        scopeHandlerInstances.put(Injection.Instance.TYPE, dependentScopeHandler);
 
         this.scopeHandlerServices = scopeHandlers;
         this.scopeHandlerInstances = scopeHandlerInstances;
@@ -506,7 +506,7 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
         TypeName scope = descriptor.scope();
         if (Injection.Singleton.TYPE.equals(scope)) {
             return LazyValue.create(singletonScopeHandler.scope());
-        } else if (Injection.Dependent.TYPE.equals(scope)) {
+        } else if (Injection.Instance.TYPE.equals(scope)) {
             return LazyValue.create(dependentScopeHandler.scope());
         } else {
             // must be a lazy value, as the scope handler may not be available at the time this method is called

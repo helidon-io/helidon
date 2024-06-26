@@ -32,18 +32,18 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.service.codegen.InjectOptions;
-import io.helidon.service.codegen.ServiceCodegenTypes;
 import io.helidon.service.inject.api.Qualifier;
 
 import io.github.classgraph.ClassInfo;
 
+import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_INSTANCE;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_QUALIFIER;
 
 /**
  * An equivalent of inject annotation processor that takes care of all extensions, and provides only valid annotations.
  */
 class HelidonScanProcessor {
-    private static final Annotation DESCRIBE = Annotation.create(ServiceCodegenTypes.INJECTION_DEPENDENT);
+    private static final Annotation INJECTION_INSTANCE_ANNOTATION = Annotation.create(INJECTION_INSTANCE);
     private static final TypeName GENERATOR = TypeName.create(HelidonScanProcessor.class);
     private static final Annotation QUALIFIER_ANNOTATION = Annotation.create(INJECTION_QUALIFIER);
 
@@ -170,7 +170,7 @@ class HelidonScanProcessor {
 
     private List<Annotation> addServiceAnnotation(List<Annotation> annotations) {
         List<Annotation> result = new ArrayList<>(annotations);
-        result.add(DESCRIBE);
+        result.add(INJECTION_INSTANCE_ANNOTATION);
         return result;
     }
 
