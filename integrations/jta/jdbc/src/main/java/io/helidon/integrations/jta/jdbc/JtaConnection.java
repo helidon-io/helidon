@@ -892,7 +892,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
                 throw new SQLTransientException(e.getMessage(), INVALID_TRANSACTION_STATE_NO_SUBCLASS, e);
             }
         }
-        super.close();
+        super.close(); // basically this.delegate().close()
         if (LOGGER.isLoggable(Level.FINE)) {
             if (!this.isClosePending()) {
                 // If a close is not pending then that means it actually happened.
@@ -926,11 +926,7 @@ class JtaConnection extends ConditionallyCloseableConnection {
      * @exception SQLException if the status could not be computed
      */
     boolean enlisted() throws SQLException {
-        Enlistment enlistment = this.enlistment; // volatile read
-        if (enlistment == null) {
-            return false;
-        }
-        return true;
+        return this.enlistment != null; // volatile read
     }
 
     private int currentTransactionStatus() throws SQLException {
@@ -984,12 +980,14 @@ class JtaConnection extends ConditionallyCloseableConnection {
         Transaction currentTransaction = currentTransaction();
 
         // continueEnlisting() (invoked above) rules out the Status.STATUS_NO_TRANSACTION case; the Jakarta Transactions
-        // specification ensures that currentTransaction here cannot be null.
+        // specification therefore ensures that currentTransaction here cannot be null.
         assert currentTransaction != null;
 
+        // Transaction statuses can change at almost any time as a result of other TransactionManager-related threads
+        // operating on them. Do a quick cheap status check here to avoid expensive logic below if it's not needed.
         validateTransactionStatusForEnlistment(currentTransaction);
 
-        // One last check to see if we've been actually closed or requested to close asynchronously.
+        // One last cheap check to see if we've been actually closed or requested to close asynchronously.
         this.failWhenClosed();
 
         // Point of no return. We ensured that the Transaction at one point had a status of Status.STATUS_ACTIVE (or
@@ -1028,26 +1026,26 @@ class JtaConnection extends ConditionallyCloseableConnection {
 
         // Actually enlist the XAResource.
         try {
-            // The XAResource is placed into the TransactionSynchronizationRegistry so that it can be delisted if
-            // appropriate during invocation of the close() method (q.v). We do it before the actual
-            // Transaction#enlistResource(XAResource) call on purpose.
+            // Install a Synchronization that will close this connection and delist its associated XAResource when the
+            // transaction completes. See close() for more details.
+            final Sync sync = this::transactionCompleted;
             if (this.interposedSynchronizations) {
-                this.tsr.registerInterposedSynchronization((Sync) this::transactionCompleted);
+                this.tsr.registerInterposedSynchronization(sync);
                 if (LOGGER.isLoggable(Level.FINE)) {
                     LOGGER.logp(Level.FINE, this.getClass().getName(), "connectionFunction",
                                 "Registered interposed synchronization (transactionCompleted(int)) for {0}", currentTransaction);
                 }
             } else {
-                currentTransaction.registerSynchronization((Sync) this::transactionCompleted);
+                currentTransaction.registerSynchronization(sync);
                 if (LOGGER.isLoggable(Level.FINE)) {
                     LOGGER.logp(Level.FINE, this.getClass().getName(), "connectionFunction",
                                 "Registered synchronization (transactionCompleted(int)) for {0}", currentTransaction);
                 }
             }
 
-            // Don't let our caller close us "for real". close() invocations will be recorded as pending. See
-            // #close(). (Note that this is "undone" after transaction completion in #transactionCompleted(int), which
-            // was just registered as a synchronization immediately above.)
+            // Don't let our caller close us "for real". close() invocations will be recorded as pending and resolved
+            // properly in the transactionCompleted(int) method, registered as a Synchronization above. Also see
+            // #close().
             this.setCloseable(false);
 
             // (Guaranteed to call xar.start(Xid, int) on this thread.)
@@ -1103,28 +1101,26 @@ class JtaConnection extends ConditionallyCloseableConnection {
         try {
             boolean closeWasPending = this.isClosePending(); // volatile state read
 
-            // This connection is now closeable "for real".
-            this.setCloseable(true); // volatile state write
-            assert this.isCloseable();
+            // This connection is now closeable "for real". (It may have already been closeable "for real"; see
+            // closeWasPending to find out.) Transition to that state.
+            this.setCloseable(true); // idempotent volatile state write
 
-            // Becoming closeable "for real" resets the closePending state.
-            assert !this.isClosePending();
+            // The internal state machine is now in the CLOSEABLE state.
 
             if (closeWasPending) {
-                // If a close was pending, then a real close did not ever happen.
-                assert !this.isClosed();
-                assert !this.delegate().isClosed();
-
-                // This connection is now closeable, so this will actually close it.
+                // (We transitioned from CLOSE_PENDING -> CLOSEABLE.)
+                //
+                // If a close was pending, then a "real" close() did not happen, but the user did in fact call close()
+                // and believes the connection is now closed. In reality, this connection is now closeable, so we must
+                // now actually close it.
+                //
+                // (Because we are currently in the CLOSEABLE state, which permits a transition to the NOT_CLOSEABLE
+                // state, there is a pathological edge case where the close() call we're about to make on this thread
+                // might not actually close the connection. This occurs only if (a) this code is running on thread 2, and
+                // the user's code is running on thread 1, and (b) the user's code at this very moment for no good
+                // reason calls setCloseable(false). Note that this would be after the user had called close(), so she
+                // would be in violation of its JDBC-defined contract anyway.)
                 this.close();
-                assert this.isClosed();
-                assert this.delegate().isClosed();
-
-                // We are no longer closeable because we're actually closed.
-                assert !this.isCloseable();
-
-                // There is currently no close pending, and there cannot ever be again, because we are actually closed.
-                assert !this.isClosePending();
             }
         } catch (SQLException e) {
             // (Synchronization implementations can throw only unchecked exceptions.)

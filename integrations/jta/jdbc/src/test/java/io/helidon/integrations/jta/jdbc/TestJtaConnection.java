@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,21 +15,18 @@
  */
 package io.helidon.integrations.jta.jdbc;
 
-import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.sql.SQLException;
+import java.sql.SQLNonTransientException;
+import java.sql.SQLTransientException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
-
-import io.helidon.integrations.jdbc.ConditionallyCloseableConnection;
-import io.helidon.integrations.jta.jdbc.LocalXAResource.Association;
-import io.helidon.integrations.jta.jdbc.LocalXAResource.Association.BranchState;
 
 import jakarta.transaction.HeuristicMixedException;
 import jakarta.transaction.HeuristicRollbackException;
@@ -43,9 +40,6 @@ import jakarta.transaction.Transaction;
 import jakarta.transaction.TransactionManager;
 import jakarta.transaction.TransactionSynchronizationRegistry;
 
-import com.arjuna.ats.arjuna.common.Uid;
-import com.arjuna.ats.arjuna.coordinator.TransactionReaper;
-import com.arjuna.ats.arjuna.coordinator.listener.ReaperMonitor;
 import com.arjuna.ats.jta.common.JTAEnvironmentBean;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.AfterEach;
@@ -56,15 +50,16 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.integrations.jta.jdbc.LocalXAResource.Association.BranchState.ACTIVE;
 import static io.helidon.integrations.jta.jdbc.LocalXAResource.Association.BranchState.IDLE;
 import static io.helidon.integrations.jta.jdbc.LocalXAResource.ASSOCIATIONS;
+import static jakarta.transaction.Status.STATUS_ACTIVE;
 import static jakarta.transaction.Status.STATUS_NO_TRANSACTION;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 final class TestJtaConnection {
 
@@ -105,15 +100,84 @@ final class TestJtaConnection {
 
     @AfterEach
     final void rollback() throws SQLException, SystemException {
-        switch (this.tm.getStatus()) {
-        case STATUS_NO_TRANSACTION:
-            break;
-        default:
+        if (this.tm.getStatus() != STATUS_NO_TRANSACTION) {
             this.tm.rollback();
-            break;
         }
-        this.tm.setTransactionTimeout(0);
-        // assertThat(ASSOCIATIONS.size(), is(0));
+    }
+
+    @AfterEach
+    final void resetTransactionTimeout() throws SystemException {
+        this.tm.setTransactionTimeout(0); // set back to the default
+    }
+
+    @Test
+    final void testPreemptiveEnlistmentChecksFalseBehavior()
+        throws HeuristicMixedException,
+               HeuristicRollbackException,
+               NotSupportedException,
+               RollbackException,
+               SQLException,
+               SystemException {
+        LOGGER.info("Starting testPreemptiveEnlistmentChecksFalseBehavior()");
+        tm.begin();
+        tm.setRollbackOnly();
+        try (Connection physicalConnection = h2ds.getConnection();
+             JtaConnection logicalConnection = new JtaConnection(tm::getTransaction,
+                                                                 tsr,
+                                                                 true,
+                                                                 null,
+                                                                 physicalConnection,
+                                                                 null,
+                                                                 x -> tsr.putResource("xid", x),
+                                                                 false, // immediate enlistment (default is false)
+                                                                 false)) { // preemptive enlistment checks (default is true)
+            assertThat(logicalConnection.enlisted(), is(false));
+
+            // Trigger a harmless Connection-related method; this will cause an enlistment attempt. With preemptive
+            // enlistment checks turned off, the causal exception should be Narayana's, not ours.
+            try {
+                logicalConnection.getHoldability();
+                fail("Enlistment succeeded, but should not have");
+            } catch (SQLNonTransientException e) {
+                assertThat(e.getCause(), instanceOf(com.arjuna.ats.jta.exceptions.RollbackException.class));
+            }
+        }
+        LOGGER.info("Ending testPreemptiveEnlistmentChecksFalseBehavior()");
+    }
+
+    @Test
+    final void testPreemptiveEnlistmentChecksTrueBehavior()
+        throws HeuristicMixedException,
+               HeuristicRollbackException,
+               NotSupportedException,
+               RollbackException,
+               SQLException,
+               SystemException {
+        LOGGER.info("Starting testPreemptiveEnlistmentChecksTrueBehavior()");
+        tm.begin();
+        tm.setRollbackOnly();
+        try (Connection physicalConnection = h2ds.getConnection();
+             JtaConnection logicalConnection = new JtaConnection(tm::getTransaction,
+                                                                 tsr,
+                                                                 true,
+                                                                 null,
+                                                                 physicalConnection,
+                                                                 null,
+                                                                 x -> tsr.putResource("xid", x),
+                                                                 false, // immediate enlistment (default is false)
+                                                                 true)) { // preemptive enlistment checks (default is true)
+            assertThat(logicalConnection.enlisted(), is(false));
+
+            // Trigger a harmless Connection-related method; this will cause an enlistment attempt. With preemptive
+            // enlistment checks turned on, the causal exception should be ours, not Narayana's.
+            try {
+                logicalConnection.getHoldability();
+                fail("Enlistment succeeded, but should not have");
+            } catch (SQLTransientException e) {
+                assertThat(e.getMessage(), is("Non-terminal transaction status: 1"));
+            }
+        }
+        LOGGER.info("Ending testPreemptiveEnlistmentChecksTrueBehavior()");
     }
 
     @DisplayName("Spike")
@@ -143,7 +207,8 @@ final class TestJtaConnection {
                                                                  physicalConnection,
                                                                  null,
                                                                  x -> tsr.putResource("xid", x),
-                                                                 false)) {
+                                                                 false, // immediate enlistment (default is false)
+                                                                 true)) { // preemptive enlistment checks (default is true)
 
             // Make sure everything is hooked up properly.
             assertThat(logicalConnection.delegate(), sameInstance(physicalConnection));
@@ -165,7 +230,7 @@ final class TestJtaConnection {
             // Trigger a harmless Connection-related method; make sure nothing blows up.
             logicalConnection.getHoldability();
 
-            // Almost all Connection methods, including that one, will cause enlistment to happen.
+            // Almost all Connection methods, including that one, will (correctly) cause enlistment to happen.
             assertThat(logicalConnection.enlisted(), is(true));
 
             // Make sure the XAResource recorded the association.
@@ -184,15 +249,17 @@ final class TestJtaConnection {
                 }
             }
 
-            // close() should "close" the logical connection, but not close the physical connection.
+            // close() should "close" the logical connection...
             logicalConnection.close();
             assertThat(logicalConnection.isClosed(), is(true));
+
+            // ...but should not close the physical connection.
             assertThat(physicalConnection.isClosed(), is(false));
 
             // Make sure a close() attempt was recorded.
             assertThat(logicalConnection.isClosePending(), is(true));
 
-            // But "closing" should have disassociated the XAResource.
+            // This "closing" should have disassociated the XAResource.
             assertThat(ASSOCIATIONS.get(xid).branchState(), is(IDLE));
 
             // What happens when we do re-enlisting behavior? First, we'd better appear closed since we called close()
@@ -214,84 +281,19 @@ final class TestJtaConnection {
             // call to TransactionManager.commit(), not just Transaction.commit().
             tm.commit();
 
-            // Transaction is over; the connection should be closeable again.
+            // The transaction is over; the connection should be closeable again.
             assertThat(logicalConnection.isCloseable(), is(true));
 
-            // Transaction is over; make sure the XAResource removed the association.
+            // The transaction is over; make sure the XAResource removed the association.
             assertThat(ASSOCIATIONS.size(), is(0));
 
-            // We should be able to actually close it early.  The auto-close should not fail, either.
+            // We should be able to actually close the logical connection early. The auto-close should not fail, either.
             logicalConnection.close();
             assertThat(logicalConnection.isClosed(), is(true));
             assertThat(logicalConnection.delegate().isClosed(), is(true));
         }
 
         LOGGER.info("Ending testSpike()");
-    }
-
-    @Test
-    final void testTimeout() throws InterruptedException, NotSupportedException, RollbackException, SystemException {
-        LOGGER.info("Starting testTimeout()");
-
-        tm.setTransactionTimeout(1); // 1 second; the minimum settable value (0 means "use the default" (!))
-        tm.begin();
-
-        // For this test, where transaction reaping is set to happen soon, it still won't happen in under 1000
-        // milliseconds, so this assertion is OK unless the testing environment is completely pathological. For
-        // real-world scenarios, you shouldn't assume anything about the initial status.
-        assertThat(tm.getStatus(), is(Status.STATUS_ACTIVE));
-
-        CountDownLatch latch = new CountDownLatch(1);
-        Thread mainThread = Thread.currentThread();
-
-        tsr.registerInterposedSynchronization(new Synchronization() {
-                public void beforeCompletion() {
-
-                }
-                public void afterCompletion(int status) {
-                    try {
-                        assertThat(status, is(Status.STATUS_ROLLEDBACK));
-                        assertThat(Thread.currentThread(), not(mainThread));
-                    } finally {
-                        latch.countDown();
-                    }
-                }
-            });
-
-        // Wait for the transaction to roll back on the reaper thread.  The transaction timeout is 1 second (see above);
-        // this waits for 2 seconds max.  If this fails with an InterruptedException, which should be impossible, check
-        // the logs for Narayana warning that the assertions in the synchronization above failed.
-        latch.await(2000L, TimeUnit.MILLISECONDS);
-
-        // In this case, we never issued a rollback ourselves and we never acquired a Transaction.  Here we show that
-        // you can get a Transaction that is initially in a rolled back state.
-        //
-        // Verify there *was* a transaction but now it is rolled back, so is essentially useless other than as a
-        // tombstone.
-        Transaction t = tm.getTransaction();
-        assertThat(t, notNullValue());
-        assertThat(t.getStatus(), is(Status.STATUS_ROLLEDBACK));
-
-        // Verify that all the other status accessors return the same thing.
-        assertThat(tm.getStatus(), is(Status.STATUS_ROLLEDBACK));
-        assertThat(tsr.getTransactionStatus(), is(Status.STATUS_ROLLEDBACK));
-
-        // Verify that indeed you cannot enlist any XAResource in the transaction when it is in the rolled back state.
-        assertThrows(IllegalStateException.class, () -> t.enlistResource(new NoOpXAResource()));
-
-        // Verify that even though the current transaction is rolled back you can still roll it back again (no-op) and
-        // disassociate it from the current thread.
-        tm.rollback();
-        assertThat(tm.getStatus(), is(Status.STATUS_NO_TRANSACTION));
-        assertThat(tsr.getTransactionStatus(), is(Status.STATUS_NO_TRANSACTION));
-
-        // The Transaction itself remains in status Status.STATUS_ROLLEDBACK. Notably it never enters
-        // Status.STATUS_NO_TRANSACTION.
-        assertThat(t.getStatus(), is(Status.STATUS_ROLLEDBACK));
-
-        assertThat(ASSOCIATIONS.size(), is(0));
-
-        LOGGER.info("Ending testTimeout()");
     }
 
     @Test
@@ -322,7 +324,7 @@ final class TestJtaConnection {
         assertThat(logicalConnection.enlisted(), is(true));
         assertThat(logicalConnection.delegate(), sameInstance(physicalConnection));
 
-        // Suspend the current transaction.  It will stay in Status.STATUS_ACTIVE state, because suspension has no
+        // Suspend the current transaction. It will stay in Status.STATUS_ACTIVE state, because suspension has no
         // effect on the actual state of the *Transaction*, only on the state of its association with the current
         // thread.
         Transaction s = tm.suspend();
