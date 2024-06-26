@@ -351,6 +351,16 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.ai</groupId>
+                <artifactId>helidon-ai-api</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.ai</groupId>
+                <artifactId>helidon-ai-openai</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.microprofile.server</groupId>
                 <artifactId>helidon-microprofile-server</artifactId>
                 <version>${helidon.version}</version>

@@ -191,6 +191,7 @@
     </properties>
 
     <modules>
+        <module>ai</module>
         <module>all</module>
         <module>applications</module>
         <module>bom</module>
