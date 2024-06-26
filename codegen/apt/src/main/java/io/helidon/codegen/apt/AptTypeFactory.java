@@ -161,6 +161,10 @@ public final class AptTypeFactory {
      * @return the associated type name instance
      */
     public static Optional<TypeName> createTypeName(Element type) {
+        if (type == null) {
+            return Optional.empty();
+        }
+
         if (type instanceof VariableElement) {
             return createTypeName(type.asType());
         }
