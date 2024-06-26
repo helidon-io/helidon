@@ -304,7 +304,6 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
 
     static class ContentLengthInputStream extends InputStream {
         private final DataReader reader;
-        private final long length;
         private final Runnable entityProcessedRunnable;
         private final HelidonSocket socket;
 
@@ -319,7 +318,6 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                                  long length) {
             this.socket = socket;
             this.reader = reader;
-            this.length = length;
             this.remainingLength = length;
             // we can only get the response at the time of completion, as the instance is created after this constructor
             // returns
