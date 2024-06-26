@@ -195,6 +195,7 @@ interface MetricsConfigBlueprint {
      * @return true/false
      */
     @Option.Configured
+    @Option.DefaultBoolean(false)
     boolean restRequestEnabled();
 
     /**

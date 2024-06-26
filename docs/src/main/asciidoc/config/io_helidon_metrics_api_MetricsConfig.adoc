@@ -59,8 +59,8 @@ This is a standalone configuration type, prefix from configuration root: `metric
 |`permit-all` |boolean |`true` |Whether to allow anybody to access the endpoint.
 
  Whether to permit access to metrics endpoint to anybody, defaults to `true`
- See roles()
-|`rest-request-enabled` |boolean |{nbsp} |Whether automatic REST request metrics should be measured.
+ @see #roles()
+|`rest-request-enabled` |boolean |`false` |Whether automatic REST request metrics should be measured.
 
  True/false
 |`roles` |string[&#93; |`observe` |Hints for role names the user is expected to be in.
