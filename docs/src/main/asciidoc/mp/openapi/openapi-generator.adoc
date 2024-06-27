@@ -24,8 +24,33 @@
 
 include::{rootdir}/includes/mp.adoc[]
 
-== Coming Soon
+:incdir: {rootdir}/includes/openapi
+:gen-inc: {incdir}/openapi-generator.adoc
+:helidon-client-xref: {restclient-page}
 
-The support for link:{openapi-generator-tool-site-url}[OpenAPI generator] is not available yet.
+include::{gen-inc}[tag=preamble]
 
-You can track the progress for this feature here: https://github.com/helidon-io/helidon/issues/7943.
+include::{gen-inc}[tags=intro;coords;config;usage;using-generated-code-intro;using-generated-code-server;using-generated-code-client-intro]
+
+The Helidon MP client generator creates a MicroProfile REST client interface for each API.
+Each generated API interface is annotated so your code can `@Inject` the API into one of your own beans and then use the interface directly to invoke the remote service. Alternatively, you can also explicitly use the link:{microprofile-rest-client-javadoc-url}/org/eclipse/microprofile/rest/client/RestClientBuilder.html[`RestClientBuilder`] to create an instance programmatically and then invoke its methods to contact the remote service.
+The xref:{restclient-page}[Helidon MP REST Client] documentation describes both approaches in more detail.
+
+In the following example, `ExampleResource` (itself running in a server) invokes a remote Pet service and shows one way to use the generated `PetApi` REST client interface.
+
+
+[source,java]
+.Using the generated `PetApi` returned from a separate service
+----
+include::{sourcedir}/mp/openapi/ExampleOpenApiGenClientResource.java[tag=class-declaration, indent=0]
+
+----
+<1> Uses a bean-defining annotation so CDI can inject into this class.
+<2> Requests that CDI inject the following field.
+<3> Identifies to Helidon MP that the following field is a REST client.
+<4> Declares the field using the generated `PetApi` type.
+<5> Invokes the remote service using the injected field and the parameter from the incoming request.
+
+
+include::{gen-inc}[tag=common-references]
+* link:https://github.com/eclipse/microprofile-rest-client[MicroProfile REST Client specification]
