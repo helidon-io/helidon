@@ -6,6 +6,7 @@ name: "Snapshot Release"
 
 on:
   workflow_dispatch:
+  workflow_call:
 
 env:
   JAVA_VERSION: '21'
