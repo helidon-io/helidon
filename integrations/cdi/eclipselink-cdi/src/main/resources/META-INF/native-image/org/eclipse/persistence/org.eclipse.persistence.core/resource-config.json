@@ -1,0 +1,21 @@
+{
+  "bundles": [
+    {
+      "name": "org.eclipse.persistence.exceptions.i18n.EntityManagerSetupExceptionResource"
+    },
+    {
+      "name": "org.eclipse.persistence.exceptions.i18n.ValidationExceptionResource"
+    },
+    {
+      "name": "org.eclipse.persistence.internal.localization.i18n.EclipseLinkLocalizationResource"
+    },
+    {
+      "name": "org.eclipse.persistence.internal.localization.i18n.LoggingLocalizationResource"
+    }
+  ],
+  "resources": [
+    {
+      "pattern": ".*version.properties"
+    }
+  ]
+}
