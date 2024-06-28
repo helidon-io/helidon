@@ -17,6 +17,5 @@ jobs:
   validate:
     uses: ./.github/workflows/validate.yml
   snapshot:
-    # Run validation then deploy snapshot release
     needs: validate
     uses: ./.github/workflows/snapshotrelease.yaml

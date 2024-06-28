@@ -15,7 +15,7 @@ env:
   MAVEN_HTTP_ARGS: '-Dmaven.wagon.httpconnectionManager.ttlSeconds=60 -Dmaven.wagon.http.retryHandler.count=3'
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: Validate-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
