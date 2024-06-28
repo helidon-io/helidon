@@ -19,3 +19,4 @@ jobs:
   snapshot:
     needs: validate
     uses: ./.github/workflows/snapshotrelease.yaml
+    secrets: inherit
