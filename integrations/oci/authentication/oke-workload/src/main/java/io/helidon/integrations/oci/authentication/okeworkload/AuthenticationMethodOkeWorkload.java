@@ -29,7 +29,7 @@ import io.helidon.integrations.oci.OciConfig;
 import io.helidon.integrations.oci.spi.OciAuthenticationMethod;
 import io.helidon.service.registry.Service;
 
-import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.okeworkloadidentity.OkeWorkloadIdentityAuthenticationDetailsProvider;
 
 /**
@@ -51,7 +51,7 @@ class AuthenticationMethodOkeWorkload implements OciAuthenticationMethod {
     private static final String SERVICE_ACCOUNT_CERT_PATH_DEFAULT = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt";
     private static final String SERVICE_ACCOUNT_CERT_PATH_ENV = "OCI_KUBERNETES_SERVICE_ACCOUNT_CERT_PATH";
 
-    private final LazyValue<Optional<AbstractAuthenticationDetailsProvider>> provider;
+    private final LazyValue<Optional<BasicAuthenticationDetailsProvider>> provider;
 
     AuthenticationMethodOkeWorkload(OciConfig config) {
         provider = createProvider(config);
@@ -63,11 +63,11 @@ class AuthenticationMethodOkeWorkload implements OciAuthenticationMethod {
     }
 
     @Override
-    public Optional<AbstractAuthenticationDetailsProvider> provider() {
+    public Optional<BasicAuthenticationDetailsProvider> provider() {
         return provider.get();
     }
 
-    private static LazyValue<Optional<AbstractAuthenticationDetailsProvider>> createProvider(OciConfig config) {
+    private static LazyValue<Optional<BasicAuthenticationDetailsProvider>> createProvider(OciConfig config) {
         return LazyValue.create(() -> {
             if (available()) {
                 return Optional.of(OkeWorkloadIdentityAuthenticationDetailsProvider.builder()

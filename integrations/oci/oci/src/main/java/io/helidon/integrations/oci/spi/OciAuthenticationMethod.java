@@ -20,7 +20,7 @@ import java.util.Optional;
 
 import io.helidon.service.registry.Service;
 
-import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
 
 /**
  * An OCI Authentication Details Provider service contract.
@@ -45,10 +45,10 @@ public interface OciAuthenticationMethod {
     String method();
 
     /**
-     * Provide an instance of the {@link com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider} to be used
+     * Provide an instance of the {@link com.oracle.bmc.auth.BasicAuthenticationDetailsProvider} to be used
      * by other services.
      *
      * @return authentication details provider, or empty if nothing can be provided
      */
-    Optional<AbstractAuthenticationDetailsProvider> provider();
+    Optional<BasicAuthenticationDetailsProvider> provider();
 }
