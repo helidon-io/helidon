@@ -4,7 +4,9 @@
 
 name: "Validate"
 
-on: [pull_request, push]
+on:
+  pull_request:
+  workflow_call:
 
 env:
   JAVA_VERSION: '21'
