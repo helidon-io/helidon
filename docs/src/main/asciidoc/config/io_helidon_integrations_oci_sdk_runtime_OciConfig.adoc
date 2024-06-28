@@ -45,7 +45,7 @@ This is a standalone configuration type, prefix from configuration root: `oci`
 |key |type |default value |description
 
 |`auth-strategies` |string[&#93; (auto, config, config-file, instance-principals, resource-principal) |{nbsp} |The list of authentication strategies that will be attempted by
- com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider when one is
+ com.oracle.bmc.auth.BasicAuthenticationDetailsProvider when one is
  called for. This is only used if authStrategy() is not present.
 
 - `auto` - if present in the list, or if no value
