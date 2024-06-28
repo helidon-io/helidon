@@ -20,6 +20,7 @@ import java.util.Collection;
 
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
+import io.helidon.service.codegen.spi.RegistryCodegenExtension;
 
 class ServiceExtension implements RegistryCodegenExtension {
     private static final TypeName GENERATOR = TypeName.create(ServiceExtension.class);

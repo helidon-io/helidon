@@ -26,7 +26,7 @@ import io.helidon.common.types.TypedElementInfo;
  * Context of a single round of code generation.
  * For example the first round may generate types, that require additional code generation.
  */
-interface RegistryRoundContext {
+public interface RegistryRoundContext {
     /**
      * Available annotations for this provider.
      *

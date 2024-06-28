@@ -44,7 +44,7 @@ import static io.helidon.codegen.CodegenUtil.generatedAnnotation;
  * <p>
  * The service descriptor is then discoverable at runtime through our own resource in {@value #SERVICES_RESOURCE}.
  */
-class HelidonMetaInfServices {
+public class HelidonMetaInfServices {
     /**
      * Location of the Helidon meta services file.
      */
@@ -69,7 +69,7 @@ class HelidonMetaInfServices {
      * @param moduleName module that is being built
      * @return a new instance of the service metadata manager
      */
-    static HelidonMetaInfServices create(CodegenFiler filer, TypeName generator, TypeName trigger, String moduleName) {
+    public static HelidonMetaInfServices create(CodegenFiler filer, TypeName generator, TypeName trigger, String moduleName) {
         FilerTextResource services = filer.textResource(SERVICES_RESOURCE);
 
         List<String> comments = new ArrayList<>();
@@ -105,7 +105,7 @@ class HelidonMetaInfServices {
      *
      * @param services service descriptor metadata to add
      */
-    void addAll(Collection<DescriptorMeta> services) {
+    public void addAll(Collection<DescriptorMeta> services) {
         services.forEach(this::add);
     }
 
@@ -115,7 +115,7 @@ class HelidonMetaInfServices {
      *
      * @param service service descriptor metadata to add
      */
-    void add(DescriptorMeta service) {
+    public void add(DescriptorMeta service) {
         // if it is the same descriptor class, remove it
         descriptors.removeIf(it -> it.descriptor().equals(service.descriptor()));
 
@@ -126,7 +126,7 @@ class HelidonMetaInfServices {
     /**
      * Write the file to output.
      */
-    void write() {
+    public void write() {
         List<String> lines = new ArrayList<>(comments);
         descriptors.stream()
                 .map(DescriptorMeta::toLine)
@@ -151,7 +151,7 @@ class HelidonMetaInfServices {
      * @param weight       weight of the service
      * @param contracts    contracts the service implements/provides
      */
-    record DescriptorMeta(String registryType, TypeName descriptor, double weight, Set<TypeName> contracts) {
+    public record DescriptorMeta(String registryType, TypeName descriptor, double weight, Set<TypeName> contracts) {
         private static DescriptorMeta parse(String line) {
             String[] elements = line.split(":");
             if (elements.length < 4) {

@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://maven.apache.org/POM/4.0.0"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <groupId>io.helidon.service.tests.inject</groupId>
+        <artifactId>helidon-service-tests-inject-project</artifactId>
+        <version>4.1.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>helidon-service-tests-inject-tck-jsr330</artifactId>
+    <name>Helidon Service Tests Inject JSR-330 TCK</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>jakarta.inject</groupId>
+            <artifactId>jakarta.inject-tck</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>junit</groupId>
+                    <artifactId>junit</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.inject</groupId>
+            <artifactId>jakarta.inject-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-registry</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.service.inject</groupId>
+            <artifactId>helidon-service-inject-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.service.inject</groupId>
+            <artifactId>helidon-service-inject</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${version.lib.junit4}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>io.helidon.service</groupId>
+                <artifactId>helidon-service-maven-plugin</artifactId>
+                <version>${helidon.version}</version>
+                <executions>
+                    <execution>
+                        <id>create-module</id>
+                        <goals>
+                            <goal>external-module-create</goal>
+                        </goals>
+                        <configuration>
+                            <compilerArgs>
+                                <arg>-Ahelidon.registry.autoAddNonContractInterfaces=true</arg>
+                            </compilerArgs>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>create-application</id>
+                        <goals>
+                            <goal>application-create</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <packageNames>
+                        <packageName>org.atinject.tck.auto</packageName>
+                        <packageName>org.atinject.tck.auto.accessories</packageName>
+                    </packageNames>
+                    <supportsJsr330Strict>true</supportsJsr330Strict>
+                    <serviceTypeQualifiers>
+                        <!--
+                        This is working around TCK of JSR-330, as we want to be deterministic, and
+                        guessing qualifiers based of class names does not resonate with our approach
+                         -->
+                        <serviceTypeQualifier>
+                            <serviceTypeName>org.atinject.tck.auto.accessories.SpareTire</serviceTypeName>
+                            <qualifiers>
+                                <qualifier>
+                                    <qualifierTypeName>io.helidon.service.inject.api.Injection.Named</qualifierTypeName>
+                                    <value>spare</value>
+                                </qualifier>
+                            </qualifiers>
+                        </serviceTypeQualifier>
+                        <serviceTypeQualifier>
+                            <serviceTypeName>org.atinject.tck.auto.DriversSeat</serviceTypeName>
+                            <qualifiers>
+                                <qualifier>
+                                    <qualifierTypeName>org.atinject.tck.auto.Drivers</qualifierTypeName>
+                                </qualifier>
+                            </qualifiers>
+                        </serviceTypeQualifier>
+                    </serviceTypeQualifiers>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-apt</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.service</groupId>
+                        <artifactId>helidon-service-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.service</groupId>
+                        <artifactId>helidon-service-codegen-jakarta</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-helidon-copyright</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <dependencies>
+                    <dependency>
+                        <groupId>io.helidon.build-tools</groupId>
+                        <artifactId>helidon-build-maven-enforcer-rules</artifactId>
+                        <version>${version.plugin.helidon-build-tools}</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <id>enforce-helidon-dependencies</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <helidonDependenciesRule>
+                                    <namespace>JAKARTA</namespace>
+                                    <excludedGavRegExs/>
+                                </helidonDependenciesRule>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

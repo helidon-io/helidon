@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.types.TypeName;
@@ -66,10 +67,35 @@ public abstract class ServiceLoader__ServiceDescriptor implements GeneratedServi
         }
     }
 
+    /**
+     * Create a new instance for a specific provider interface and implementation.
+     * This method is used from generated code.
+     *
+     * @param providerInterface provider interface type
+     * @param implType          implementation class
+     * @param instanceSupplier  supplier of a new instance (so we do not use reflection)
+     * @param weight            weight of the provider implementation
+     * @param <T>               type of the implementation
+     * @return a new service descriptor
+     */
+    public static <T> GeneratedService.Descriptor<Object> create(TypeName providerInterface,
+                                                                 Class<T> implType,
+                                                                 Supplier<T> instanceSupplier,
+                                                                 double weight) {
+        return ServiceLoader__ServiceDescriptor.create(providerInterface, new ProviderImpl(implType, instanceSupplier), weight);
+    }
+
     @Override
     public TypeName descriptorType() {
         return DESCRIPTOR_TYPE;
     }
+
+    /**
+     * Type name of the provider interface this service implementation implements.
+     *
+     * @return provider interface type
+     */
+    public abstract TypeName providerInterface();
 
     private static class ServiceProviderDescriptor extends ServiceLoader__ServiceDescriptor {
         private final TypeName providerInterface;
@@ -116,8 +142,32 @@ public abstract class ServiceLoader__ServiceDescriptor implements GeneratedServi
             return weight;
         }
 
+        @Override
+        public TypeName providerInterface() {
+            return providerInterface;
+        }
     }
 
     private record ProviderKey(TypeName providerInterface, TypeName providerImpl) {
+    }
+
+    private static class ProviderImpl implements ServiceLoader.Provider<Object> {
+        private final Class<?> implType;
+        private final Supplier<?> instanceSupplier;
+
+        private ProviderImpl(Class<?> implType, Supplier<?> instanceSupplier) {
+            this.implType = implType;
+            this.instanceSupplier = instanceSupplier;
+        }
+
+        @Override
+        public Class<?> type() {
+            return implType;
+        }
+
+        @Override
+        public Object get() {
+            return instanceSupplier.get();
+        }
     }
 }
