@@ -63,7 +63,7 @@ If one or more `Application` subclasses are found, call the `getClasses` and `ge
 in each subclass using the collections in steps (2) and (3) only as defaults, i.e. if these methods
 both return empty sets.
 
-NOTE: Helidon treats `@Path` and `@Provided` as bean-defining annotations but, as stated above,
+NOTE: Helidon treats `@Path` and `@Provider` as bean-defining annotations but, as stated above,
 `Application` subclasses may require additional annotations depending on the discovery mode
 
 == Setting Application Path
