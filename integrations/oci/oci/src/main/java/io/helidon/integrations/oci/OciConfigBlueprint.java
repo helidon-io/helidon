@@ -137,6 +137,13 @@ interface OciConfigBlueprint {
     Optional<URI> imdsBaseUri();
 
     /**
+     * Customize the number of retries to contact IMDS service.
+     *
+     * @return number of retries, each provider has its own defaults
+     */
+    Optional<Integer> imdsDetectRetries();
+
+    /**
      * Timeout of authentication operations, where applicable.
      * This is a timeout for each operation (if there are retries, each timeout will be this duration).
      * Defaults to 10 seconds.
@@ -146,6 +153,13 @@ interface OciConfigBlueprint {
     @Option.Configured
     @Option.Default("PT10S")
     Duration authenticationTimeout();
+
+    /**
+     * Customization of federation endpoint for authentication providers.
+     *
+     * @return custom federation endpoint URI
+     */
+    Optional<URI> federationEndpoint();
 
     /**
      * Get the config used to update the builder.

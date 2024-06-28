@@ -42,6 +42,11 @@ class ResourcePrincipalBuilderProvider implements Supplier<ResourcePrincipalAuth
         var builder = ResourcePrincipalAuthenticationDetailsProvider.builder()
                 .timeoutForEachRetry((int) config.authenticationTimeout().toMillis());
 
+        config.imdsDetectRetries()
+                .ifPresent(builder::detectEndpointRetries);
+        config.federationEndpoint()
+                .map(URI::toString)
+                .ifPresent(builder::federationEndpoint);
         config.imdsBaseUri()
                 .map(URI::toString)
                 .ifPresent(builder::metadataBaseUrl);
