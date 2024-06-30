@@ -43,16 +43,22 @@ class RegionProviderSdk implements OciRegion {
      */
     static Region regionFromImds(OciConfig ociConfig) {
         if (HelidonOci.imdsAvailable(ociConfig)) {
-            Optional<URI> uri = ociConfig.imdsBaseUri();
-            return uri.map(URI::toString)
-                    .map(Region::getRegionFromImds)
-                    .orElseGet(() -> {
-                        Region.registerFromInstanceMetadataService();
-                        return Region.getRegionFromImds();
-                    });
-
+            return regionFromImdsDirect(ociConfig);
         }
         return null;
+    }
+
+    /**
+     * Only called when we know imds is available.
+     */
+    static Region regionFromImdsDirect(OciConfig ociConfig) {
+        Optional<URI> uri = ociConfig.imdsBaseUri();
+        return uri.map(URI::toString)
+                .map(Region::getRegionFromImds)
+                .orElseGet(() -> {
+                    Region.registerFromInstanceMetadataService();
+                    return Region.getRegionFromImds();
+                });
     }
 
     @Override

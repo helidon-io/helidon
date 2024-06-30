@@ -44,7 +44,7 @@ public final class HelidonOci {
         try {
             if (InetAddress.getByName(config.imdsBaseUri().map(URI::getHost).orElse(IMDS_HOSTNAME))
                     .isReachable((int) timeout.toMillis())) {
-                return RegionProviderSdk.regionFromImds(config) != null;
+                return RegionProviderSdk.regionFromImdsDirect(config) != null;
             }
             return false;
         } catch (IOException e) {
