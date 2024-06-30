@@ -17,11 +17,18 @@
 package io.helidon.integrations.oci;
 
 import java.io.IOException;
+import java.lang.System.Logger.Level;
 import java.net.InetAddress;
 import java.net.URI;
 import java.time.Duration;
 
+import io.helidon.common.media.type.MediaTypes;
+import io.helidon.http.Status;
+import io.helidon.webclient.api.ClientResponseTyped;
+import io.helidon.webclient.api.WebClient;
+
 import static io.helidon.integrations.oci.OciConfigSupport.IMDS_HOSTNAME;
+import static io.helidon.integrations.oci.OciConfigSupport.IMDS_URI;
 
 /**
  * Helper methods for OCI integration.
@@ -42,17 +49,56 @@ public final class HelidonOci {
         Duration timeout = config.imdsTimeout();
 
         try {
-            if (InetAddress.getByName(config.imdsBaseUri().map(URI::getHost).orElse(IMDS_HOSTNAME))
+            URI imdsUri = config.imdsBaseUri()
+                    .orElse(IMDS_URI);
+
+            if (InetAddress.getByName(imdsUri.getHost())
                     .isReachable((int) timeout.toMillis())) {
-                return RegionProviderSdk.regionFromImdsDirect(config) != null;
+                return imdsAvailable(config, imdsUri);
             }
             return false;
         } catch (IOException e) {
-            LOGGER.log(System.Logger.Level.TRACE,
+            LOGGER.log(Level.TRACE,
                        "IMDS service is not reachable, or timed out for address: "
                                + IMDS_HOSTNAME + ".",
                        e);
             return false;
         }
+    }
+
+    private static boolean imdsAvailable(OciConfig config, URI imdsUri) {
+        // check if the endpoint is available (we have only checked the host/IP address)
+        int retries = config.imdsDetectRetries().orElse(0);
+
+        Exception firstException = null;
+        Status firstStatus = null;
+
+        for (int retry = 0; retry <= retries; retry++) {
+            try {
+                ClientResponseTyped<String> response = WebClient.builder()
+                        .connectTimeout(config.imdsTimeout())
+                        .readTimeout(config.imdsTimeout())
+                        .baseUri(imdsUri)
+                        .build()
+                        .get("instance/regionInfo")
+                        .accept(MediaTypes.APPLICATION_JSON)
+                        .request(String.class);
+                if (response.status() == Status.OK_200) {
+                    return true;
+                }
+                firstStatus = firstStatus == null ? response.status() : firstStatus;
+            } catch (Exception e) {
+                firstException = firstException == null ? e : firstException;
+            }
+        }
+        String message = "OCI IMDS not available on " + imdsUri;
+        if (firstException == null) {
+            LOGGER.log(Level.INFO, message + " Status received: " + firstStatus);
+        } else {
+            LOGGER.log(Level.INFO, message + " Exception logged only in TRACE");
+            LOGGER.log(Level.TRACE, message, firstException);
+        }
+
+        return false;
     }
 }
