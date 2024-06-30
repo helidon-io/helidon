@@ -31,7 +31,7 @@ This module provides a few services that can be used by other modules.
 
 ## Authentication Details Provider
 
-Any service can have a dependency on `com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider`, and it can be
+Any service can have a dependency on `com.oracle.bmc.auth.BasicAuthenticationDetailsProvider`, and it can be
 looked up using Service Registry lookup methods.
 
 The provider is looked up by using instances of `io.helidon.integrations.oci.spi.OciAuthenticationMethod`. The first service instance to provide an authentication provider is used, and no other service instance is called.
@@ -47,7 +47,7 @@ The following out-of-the-box implementations exist:
 | Instance Principal | 60     | Principal of the compute instance                             | 
 
 To create a custom instance of authentication details provider, just create a new service for service registry
-with default or higher weight that provides an instance of the `AbstractAuthenticationDetailsProvider` 
+with default or higher weight that provides an instance of the `BasicAuthenticationDetailsProvider` 
 (ServiceRegistry requires setup of annotation processors, see this module's pom file).
 
 ## Authentication Details Provider Builders

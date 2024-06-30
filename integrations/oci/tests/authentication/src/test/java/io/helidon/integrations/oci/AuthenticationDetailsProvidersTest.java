@@ -27,7 +27,7 @@ import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryManager;
 
 import com.oracle.bmc.Region;
-import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider;
 import org.junit.jupiter.api.AfterEach;
@@ -95,7 +95,7 @@ class AuthenticationDetailsProvidersTest {
         assertThat(atnMethod.provider(), optionalEmpty());
 
         assertThat(registry.first(Region.class), is(Optional.empty()));
-        assertThat(registry.first(AbstractAuthenticationDetailsProvider.class), is(Optional.empty()));
+        assertThat(registry.first(BasicAuthenticationDetailsProvider.class), is(Optional.empty()));
     }
 
     @Test
@@ -148,7 +148,7 @@ class AuthenticationDetailsProvidersTest {
         assertThat(atnMethod.method(), is("resource-principal"));
         assertThat(atnMethod.provider(), optionalEmpty());
 
-        AbstractAuthenticationDetailsProvider provider = registry.get(AbstractAuthenticationDetailsProvider.class);
+        BasicAuthenticationDetailsProvider provider = registry.get(BasicAuthenticationDetailsProvider.class);
 
         assertThat(provider, instanceOf(SimpleAuthenticationDetailsProvider.class));
         SimpleAuthenticationDetailsProvider auth = (SimpleAuthenticationDetailsProvider) provider;
@@ -191,7 +191,7 @@ class AuthenticationDetailsProvidersTest {
         assertThat(atnMethod.method(), is("resource-principal"));
         assertThat(atnMethod.provider(), optionalEmpty());
 
-        AbstractAuthenticationDetailsProvider provider = registry.get(AbstractAuthenticationDetailsProvider.class);
+        BasicAuthenticationDetailsProvider provider = registry.get(BasicAuthenticationDetailsProvider.class);
 
         assertThat(provider, instanceOf(ConfigFileAuthenticationDetailsProvider.class));
         ConfigFileAuthenticationDetailsProvider auth = (ConfigFileAuthenticationDetailsProvider) provider;

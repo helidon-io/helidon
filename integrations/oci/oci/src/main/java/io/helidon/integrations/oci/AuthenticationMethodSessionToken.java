@@ -28,7 +28,7 @@ import io.helidon.integrations.oci.spi.OciAuthenticationMethod;
 import io.helidon.service.registry.Service;
 
 import com.oracle.bmc.ConfigFileReader;
-import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.SessionTokenAuthenticationDetailsProvider.SessionTokenAuthenticationDetailsProviderBuilder;
 
 /**
@@ -42,7 +42,7 @@ class AuthenticationMethodSessionToken implements OciAuthenticationMethod {
 
     private static final System.Logger LOGGER = System.getLogger(AuthenticationMethodSessionToken.class.getName());
 
-    private final LazyValue<Optional<AbstractAuthenticationDetailsProvider>> provider;
+    private final LazyValue<Optional<BasicAuthenticationDetailsProvider>> provider;
 
     AuthenticationMethodSessionToken(OciConfig config,
                                      Supplier<Optional<ConfigFileReader.ConfigFile>> configFileSupplier,
@@ -56,11 +56,11 @@ class AuthenticationMethodSessionToken implements OciAuthenticationMethod {
     }
 
     @Override
-    public Optional<AbstractAuthenticationDetailsProvider> provider() {
+    public Optional<BasicAuthenticationDetailsProvider> provider() {
         return provider.get();
     }
 
-    private static Optional<AbstractAuthenticationDetailsProvider>
+    private static Optional<BasicAuthenticationDetailsProvider>
     createProvider(OciConfig config,
                    Supplier<Optional<ConfigFileReader.ConfigFile>> configFileSupplier,
                    Supplier<SessionTokenAuthenticationDetailsProviderBuilder> builder) {

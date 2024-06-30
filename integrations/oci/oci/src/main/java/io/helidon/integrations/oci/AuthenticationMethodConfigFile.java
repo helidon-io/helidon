@@ -26,7 +26,7 @@ import io.helidon.integrations.oci.spi.OciAuthenticationMethod;
 import io.helidon.service.registry.Service;
 
 import com.oracle.bmc.ConfigFileReader;
-import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
 
 /**
@@ -37,7 +37,7 @@ import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
 class AuthenticationMethodConfigFile implements OciAuthenticationMethod {
     static final String METHOD = "config-file";
 
-    private final LazyValue<Optional<AbstractAuthenticationDetailsProvider>> provider;
+    private final LazyValue<Optional<BasicAuthenticationDetailsProvider>> provider;
 
     AuthenticationMethodConfigFile(Supplier<Optional<ConfigFileReader.ConfigFile>> configFile) {
         provider = createProvider(configFile);
@@ -49,11 +49,11 @@ class AuthenticationMethodConfigFile implements OciAuthenticationMethod {
     }
 
     @Override
-    public Optional<AbstractAuthenticationDetailsProvider> provider() {
+    public Optional<BasicAuthenticationDetailsProvider> provider() {
         return provider.get();
     }
 
-    private static LazyValue<Optional<AbstractAuthenticationDetailsProvider>>
+    private static LazyValue<Optional<BasicAuthenticationDetailsProvider>>
     createProvider(Supplier<Optional<ConfigFileReader.ConfigFile>> configFileSupplier) {
 
         return LazyValue.create(() -> configFileSupplier.get()

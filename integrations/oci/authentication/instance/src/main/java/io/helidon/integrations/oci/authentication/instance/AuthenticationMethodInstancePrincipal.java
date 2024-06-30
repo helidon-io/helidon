@@ -26,7 +26,7 @@ import io.helidon.integrations.oci.OciConfig;
 import io.helidon.integrations.oci.spi.OciAuthenticationMethod;
 import io.helidon.service.registry.Service;
 
-import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider.InstancePrincipalsAuthenticationDetailsProviderBuilder;
 
 /**
@@ -39,7 +39,7 @@ class AuthenticationMethodInstancePrincipal implements OciAuthenticationMethod {
     private static final System.Logger LOGGER = System.getLogger(AuthenticationMethodInstancePrincipal.class.getName());
     private static final String METHOD = "instance-principal";
 
-    private final LazyValue<Optional<AbstractAuthenticationDetailsProvider>> provider;
+    private final LazyValue<Optional<BasicAuthenticationDetailsProvider>> provider;
 
     AuthenticationMethodInstancePrincipal(OciConfig config,
                                           InstancePrincipalsAuthenticationDetailsProviderBuilder builder) {
@@ -52,11 +52,11 @@ class AuthenticationMethodInstancePrincipal implements OciAuthenticationMethod {
     }
 
     @Override
-    public Optional<AbstractAuthenticationDetailsProvider> provider() {
+    public Optional<BasicAuthenticationDetailsProvider> provider() {
         return provider.get();
     }
 
-    private static LazyValue<Optional<AbstractAuthenticationDetailsProvider>>
+    private static LazyValue<Optional<BasicAuthenticationDetailsProvider>>
     createProvider(OciConfig config,
                    InstancePrincipalsAuthenticationDetailsProviderBuilder builder) {
         return LazyValue.create(() -> {

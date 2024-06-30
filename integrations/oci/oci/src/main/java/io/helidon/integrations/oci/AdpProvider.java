@@ -26,23 +26,23 @@ import io.helidon.common.config.ConfigException;
 import io.helidon.integrations.oci.spi.OciAuthenticationMethod;
 import io.helidon.service.registry.Service;
 
-import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
 
 @Service.Provider
-@Service.ExternalContracts(AbstractAuthenticationDetailsProvider.class)
-class AdpProvider implements Supplier<Optional<AbstractAuthenticationDetailsProvider>> {
+@Service.ExternalContracts(BasicAuthenticationDetailsProvider.class)
+class AdpProvider implements Supplier<Optional<BasicAuthenticationDetailsProvider>> {
 
-    private final LazyValue<Optional<AbstractAuthenticationDetailsProvider>> provider;
+    private final LazyValue<Optional<BasicAuthenticationDetailsProvider>> provider;
 
     AdpProvider(OciConfig ociConfig, List<OciAuthenticationMethod> atnDetailsProviders) {
         String chosenAtnMethod = ociConfig.authenticationMethod();
-        LazyValue<Optional<AbstractAuthenticationDetailsProvider>> providerLazyValue = null;
+        LazyValue<Optional<BasicAuthenticationDetailsProvider>> providerLazyValue = null;
 
         if (OciConfigBlueprint.AUTHENTICATION_METHOD_AUTO.equals(chosenAtnMethod)) {
             // auto, chose from existing
             providerLazyValue = LazyValue.create(() -> {
                 for (OciAuthenticationMethod atnDetailsProvider : atnDetailsProviders) {
-                    Optional<AbstractAuthenticationDetailsProvider> provider = atnDetailsProvider.provider();
+                    Optional<BasicAuthenticationDetailsProvider> provider = atnDetailsProvider.provider();
                     if (provider.isPresent()) {
                         return provider;
                     }
@@ -71,11 +71,11 @@ class AdpProvider implements Supplier<Optional<AbstractAuthenticationDetailsProv
     }
 
     @Override
-    public Optional<AbstractAuthenticationDetailsProvider> get() {
+    public Optional<BasicAuthenticationDetailsProvider> get() {
         return provider.get();
     }
 
-    private Optional<AbstractAuthenticationDetailsProvider> toProvider(OciAuthenticationMethod atnDetailsProvider,
+    private Optional<BasicAuthenticationDetailsProvider> toProvider(OciAuthenticationMethod atnDetailsProvider,
                                                                        String chosenMethod) {
         return Optional.of(atnDetailsProvider.provider()
                                    .orElseThrow(() -> new ConfigException(

@@ -26,7 +26,7 @@ import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryManager;
 
 import com.oracle.bmc.Region;
-import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider;
 import org.junit.jupiter.api.AfterEach;
@@ -79,7 +79,7 @@ class OciIntegrationTest {
         assertThat(method.provider(), optionalEmpty());
 
         assertThat(registry.first(Region.class), is(Optional.empty()));
-        assertThat(registry.first(AbstractAuthenticationDetailsProvider.class), is(Optional.empty()));
+        assertThat(registry.first(BasicAuthenticationDetailsProvider.class), is(Optional.empty()));
     }
 
     @Test
@@ -124,7 +124,7 @@ class OciIntegrationTest {
         assertThat(method.method(), is(AuthenticationMethodConfigFile.METHOD));
         assertThat(method.provider(), optionalEmpty());
 
-        AbstractAuthenticationDetailsProvider provider = registry.get(AbstractAuthenticationDetailsProvider.class);
+        BasicAuthenticationDetailsProvider provider = registry.get(BasicAuthenticationDetailsProvider.class);
 
         assertThat(provider, instanceOf(SimpleAuthenticationDetailsProvider.class));
         SimpleAuthenticationDetailsProvider auth = (SimpleAuthenticationDetailsProvider) provider;
@@ -159,7 +159,7 @@ class OciIntegrationTest {
         assertThat(method.method(), is(AuthenticationMethodConfigFile.METHOD));
         assertThat(method.provider(), not(Optional.empty()));
 
-        AbstractAuthenticationDetailsProvider provider = registry.get(AbstractAuthenticationDetailsProvider.class);
+        BasicAuthenticationDetailsProvider provider = registry.get(BasicAuthenticationDetailsProvider.class);
 
         assertThat(provider, instanceOf(ConfigFileAuthenticationDetailsProvider.class));
         ConfigFileAuthenticationDetailsProvider auth = (ConfigFileAuthenticationDetailsProvider) provider;

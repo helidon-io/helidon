@@ -27,7 +27,7 @@ import io.helidon.integrations.oci.spi.OciAuthenticationMethod;
 import io.helidon.service.registry.Service;
 
 import com.oracle.bmc.Region;
-import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.SimplePrivateKeySupplier;
 
@@ -41,7 +41,7 @@ class AuthenticationMethodConfig implements OciAuthenticationMethod {
 
     private static final System.Logger LOGGER = System.getLogger(AuthenticationMethodConfig.class.getName());
 
-    private final LazyValue<Optional<AbstractAuthenticationDetailsProvider>> provider;
+    private final LazyValue<Optional<BasicAuthenticationDetailsProvider>> provider;
 
     AuthenticationMethodConfig(OciConfig config) {
         provider = config.configMethodConfig()
@@ -63,11 +63,11 @@ class AuthenticationMethodConfig implements OciAuthenticationMethod {
     }
 
     @Override
-    public Optional<AbstractAuthenticationDetailsProvider> provider() {
+    public Optional<BasicAuthenticationDetailsProvider> provider() {
         return provider.get();
     }
 
-    private static AbstractAuthenticationDetailsProvider createProvider(ConfigMethodConfigBlueprint config) {
+    private static BasicAuthenticationDetailsProvider createProvider(ConfigMethodConfigBlueprint config) {
         Region region = Region.fromRegionCodeOrId(config.region());
 
         var builder = SimpleAuthenticationDetailsProvider.builder();

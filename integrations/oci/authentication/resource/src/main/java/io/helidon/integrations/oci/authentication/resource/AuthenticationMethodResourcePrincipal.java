@@ -25,7 +25,7 @@ import io.helidon.common.Weighted;
 import io.helidon.integrations.oci.spi.OciAuthenticationMethod;
 import io.helidon.service.registry.Service;
 
-import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider.ResourcePrincipalAuthenticationDetailsProviderBuilder;
 
 /**
@@ -40,7 +40,7 @@ class AuthenticationMethodResourcePrincipal implements OciAuthenticationMethod {
 
 
 
-    private final LazyValue<Optional<AbstractAuthenticationDetailsProvider>> provider;
+    private final LazyValue<Optional<BasicAuthenticationDetailsProvider>> provider;
 
     AuthenticationMethodResourcePrincipal(ResourcePrincipalAuthenticationDetailsProviderBuilder builder) {
         provider = createProvider(builder);
@@ -52,11 +52,11 @@ class AuthenticationMethodResourcePrincipal implements OciAuthenticationMethod {
     }
 
     @Override
-    public Optional<AbstractAuthenticationDetailsProvider> provider() {
+    public Optional<BasicAuthenticationDetailsProvider> provider() {
         return provider.get();
     }
 
-    private static LazyValue<Optional<AbstractAuthenticationDetailsProvider>>
+    private static LazyValue<Optional<BasicAuthenticationDetailsProvider>>
     createProvider(ResourcePrincipalAuthenticationDetailsProviderBuilder builder) {
 
         return LazyValue.create(() -> {

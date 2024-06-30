@@ -17,7 +17,7 @@
 /**
  * OCI integration module using Helidon Service Registry.
  * This core module provides services for {@link com.oracle.bmc.Region} and
- * {@link com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider}.
+ * {@link com.oracle.bmc.auth.BasicAuthenticationDetailsProvider}.
  * <p>
  * The module does not require {@link io.helidon.common.config.Config} service to be available, as it is considered
  * a prerequisite for possible config sources.

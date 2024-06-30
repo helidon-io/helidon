@@ -26,7 +26,7 @@ import io.helidon.integrations.oci.spi.OciRegion;
 import io.helidon.service.registry.Service;
 
 import com.oracle.bmc.Region;
-import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.RegionProvider;
 
 /**
@@ -38,7 +38,7 @@ import com.oracle.bmc.auth.RegionProvider;
 class RegionProviderAuthenticationMethod implements OciRegion {
     private final LazyValue<Optional<Region>> region;
 
-    RegionProviderAuthenticationMethod(Supplier<Optional<AbstractAuthenticationDetailsProvider>> atnProvider) {
+    RegionProviderAuthenticationMethod(Supplier<Optional<BasicAuthenticationDetailsProvider>> atnProvider) {
 
         this.region = LazyValue.create(() -> {
             var provider = atnProvider.get();

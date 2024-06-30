@@ -42,6 +42,11 @@ class InstancePrincipalBuilderProvider implements Supplier<InstancePrincipalsAut
         var builder = InstancePrincipalsAuthenticationDetailsProvider.builder()
                 .timeoutForEachRetry((int) config.authenticationTimeout().toMillis());
 
+        config.imdsDetectRetries()
+                .ifPresent(builder::detectEndpointRetries);
+        config.federationEndpoint()
+                .map(URI::toString)
+                .ifPresent(builder::federationEndpoint);
         config.imdsBaseUri()
                 .map(URI::toString)
                 .ifPresent(builder::metadataBaseUrl);
