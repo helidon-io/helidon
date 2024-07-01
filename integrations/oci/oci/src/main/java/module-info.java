@@ -53,6 +53,9 @@ module io.helidon.integrations.oci {
     requires oci.java.sdk.common;
     requires vavr;
 
+    requires jakarta.json;
+    requires jakarta.ws.rs;
+
     exports io.helidon.integrations.oci;
     exports io.helidon.integrations.oci.spi;
 }
