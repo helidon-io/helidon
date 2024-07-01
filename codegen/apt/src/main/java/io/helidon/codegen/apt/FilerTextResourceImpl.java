@@ -76,7 +76,11 @@ class FilerTextResourceImpl implements FilerTextResource {
     public void write() {
         if (modified) {
             if (originalResource != null) {
-                originalResource.delete();
+                try {
+                    originalResource.delete();
+                } catch (Exception ignored) {
+                    // The resource cannot be deleted, e.g. because ECJ has not implemented this method.
+                }
             }
             try {
                 FileObject newResource = filer.createResource(StandardLocation.CLASS_OUTPUT,

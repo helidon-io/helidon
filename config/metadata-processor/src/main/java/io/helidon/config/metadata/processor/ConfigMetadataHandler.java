@@ -18,6 +18,7 @@ package io.helidon.config.metadata.processor;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -92,9 +93,11 @@ class ConfigMetadataHandler {
         try {
             return doProcess(roundEnv);
         } catch (Exception e) {
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            e.printStackTrace(pw);
             messager.printMessage(Diagnostic.Kind.ERROR, "Failed to process config metadata annotation processor. "
-                    + toMessage(e));
-            e.printStackTrace();
+                    + sw);
             return false;
         }
     }
