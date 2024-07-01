@@ -49,6 +49,7 @@ module io.helidon.integrations.oci {
     requires io.helidon.service.registry;
     requires io.helidon.common.config;
     requires io.helidon.config;
+    requires io.helidon.webclient;
 
     requires oci.java.sdk.common;
     requires vavr;
