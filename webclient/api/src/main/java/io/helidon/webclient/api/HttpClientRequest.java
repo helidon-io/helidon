@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,8 +34,8 @@ import io.helidon.webclient.spi.HttpClientSpi;
  */
 public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, HttpClientResponse> {
     private static final System.Logger LOGGER = System.getLogger(HttpClientRequest.class.getName());
+    private static final LruCache<EndpointKey, HttpClientSpi> CLIENT_SPI_LRU_CACHE = LruCache.create();
 
-    private final LruCache<EndpointKey, HttpClientSpi> clientSpiCache = LruCache.create();
     private final WebClient webClient;
     private final Map<String, LoomClient.ProtocolSpi> clients;
     private final List<LoomClient.ProtocolSpi> tcpProtocols;
@@ -103,7 +103,7 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
                                                   resolvedUri.authority(),
                                                   tls(),
                                                   proxy());
-        Optional<HttpClientSpi> spi = clientSpiCache.get(endpointKey);
+        Optional<HttpClientSpi> spi = CLIENT_SPI_LRU_CACHE.get(endpointKey);
         if (spi.isPresent()) {
             /*
             We already know this is handled by a specific protocol version, handle it again
@@ -120,7 +120,7 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
             HttpClientSpi client = protocol.spi();
             HttpClientSpi.SupportLevel supports = client.supports(this, resolvedUri);
             if (supports == HttpClientSpi.SupportLevel.SUPPORTED) {
-                clientSpiCache.put(endpointKey, client);
+                CLIENT_SPI_LRU_CACHE.put(endpointKey, client);
                 return client.clientRequest(this, resolvedUri);
             }
             if (supports == HttpClientSpi.SupportLevel.COMPATIBLE && compatible == null) {
@@ -162,7 +162,7 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
                     // we have negotiated protocol we do not support? this is strange
                     connection.closeResource();
                 } else {
-                    clientSpiCache.put(endpointKey, protocolSpi.spi());
+                    CLIENT_SPI_LRU_CACHE.put(endpointKey, protocolSpi.spi());
                     connection(connection);
                     return protocolSpi.spi().clientRequest(this, resolvedUri);
                 }
@@ -176,7 +176,7 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
         }
 
         if (compatible != null) {
-            clientSpiCache.put(endpointKey, compatible);
+            CLIENT_SPI_LRU_CACHE.put(endpointKey, compatible);
             return compatible.clientRequest(this, resolvedUri);
         }
 
@@ -187,6 +187,15 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
 
         throw new IllegalArgumentException("Cannot handle request to " + resolvedUri + ", did not discover any HTTP version "
                                                    + "willing to handle it. HTTP versions supported: " + clients.keySet());
+    }
+
+    /**
+     * Accessor used for testing.
+     *
+     * @return LRU cache of keys
+     */
+    LruCache<EndpointKey, HttpClientSpi> clientSpiLruCache() {
+        return CLIENT_SPI_LRU_CACHE;
     }
 
     private record EndpointKey(String scheme, // http/https
