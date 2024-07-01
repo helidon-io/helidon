@@ -843,6 +843,28 @@
         </dependency>
 
         <dependency>
+            <groupId>io.helidon.integrations.eclipsestore</groupId>
+            <artifactId>helidon-integrations-eclipsestore</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.eclipsestore</groupId>
+            <artifactId>helidon-integrations-eclipsestore-cdi</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.eclipsestore</groupId>
+            <artifactId>helidon-integrations-eclipsestore-health</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.eclipsestore</groupId>
+            <artifactId>helidon-integrations-eclipsestore-metrics</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.eclipsestore</groupId>
+            <artifactId>helidon-integrations-eclipsestore-cache</artifactId>
+        </dependency>
+        
+        
+        <dependency>
             <groupId>io.helidon.http</groupId>
             <artifactId>helidon-http</artifactId>
         </dependency>

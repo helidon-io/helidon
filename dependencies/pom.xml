@@ -119,7 +119,9 @@
         <version.lib.microprofile-telemetry-tck>1.0</version.lib.microprofile-telemetry-tck>
         <version.lib.microprofile-tracing>3.0</version.lib.microprofile-tracing>
         <version.lib.microprofile-lra-api>2.0</version.lib.microprofile-lra-api>
-        <version.lib.microstream>08.01.01-MS-GA</version.lib.microstream>
+        <version.lib.microstream>08.01.02-MS-GA</version.lib.microstream>
+        <version.lib.eclipse-store>1.2.0</version.lib.eclipse-store>
+        <version.lib.eclipse-serializer>1.2.0</version.lib.eclipse-serializer>
         <version.lib.mongodb>4.10.2</version.lib.mongodb>
         <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
         <version.lib.mysql-connector-j>8.2.0</version.lib.mysql-connector-j>
@@ -801,6 +803,29 @@
                 <version>${version.lib.microstream}</version>
             </dependency>
 
+            <!-- Eclipse Store related -->
+            <dependency>
+                <groupId>org.eclipse.store</groupId>
+                <artifactId>storage-embedded</artifactId>
+                <version>${version.lib.eclipse-store}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.store</groupId>
+                <artifactId>storage-embedded-configuration</artifactId>
+                <version>${version.lib.eclipse-store}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.store</groupId>
+                <artifactId>cache</artifactId>
+                <version>${version.lib.eclipse-store}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.serializer</groupId>
+                <artifactId>persistence-binary-jdk17</artifactId>
+                <version>${version.lib.eclipse-serializer}</version>
+            </dependency>
+
+            
             <!-- Integrations related -->
             <dependency>
                 <groupId>jakarta.persistence</groupId>
