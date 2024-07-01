@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,12 +25,12 @@ import io.helidon.config.Config;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpServer;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.spi.WebClientService;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.MethodOrderer;
@@ -81,6 +81,16 @@ public class ClientMainTest {
 
     @Test
     @Order(1)
+    public void testMetricsExample() {
+        String counterName = "example.metric.GET.localhost";
+        Counter counter = METRIC_REGISTRY.getOrCreate(Counter.builder(counterName));
+        assertThat("Counter " + counterName + " has not been 0", counter.count(), is(0L));
+        ClientMain.clientMetricsExample("http://localhost:" + server.port() + "/greet", Config.create());
+        assertThat("Counter " + counterName + " " + "has not been 1", counter.count(), is(1L));
+    }
+
+    @Test
+    @Order(2)
     public void testPerformRedirect() {
         WebClient client = client();
         String greeting = ClientMain.followRedirects(client);
@@ -88,22 +98,12 @@ public class ClientMainTest {
     }
 
     @Test
-    @Order(2)
+    @Order(3)
     public void testFileDownload() throws IOException {
         WebClient client = client();
         ClientMain.saveResponseToFile(client);
         assertThat(Files.exists(testFile), is(true));
         assertThat(Files.readString(testFile), is("{\"message\":\"Hello World!\"}"));
-    }
-
-    @Test
-    @Order(3)
-    public void testMetricsExample() {
-        String counterName = "example.metric.GET.localhost";
-        Counter counter = METRIC_REGISTRY.getOrCreate(Counter.builder(counterName));
-        assertThat("Counter " + counterName + " has not been 0", counter.count(), is(0L));
-        ClientMain.clientMetricsExample("http://localhost:" + server.port() + "/greet", Config.create());
-        assertThat("Counter " + counterName + " " + "has not been 1", counter.count(), is(1L));
     }
 
     @Test

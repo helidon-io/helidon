@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import io.helidon.logging.common.LogConfig;
 import io.helidon.webclient.api.HttpClientRequest;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
+import io.helidon.webclient.http1.Http1Client;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.http.Http2Settings;
@@ -150,6 +151,7 @@ class HeadersClientTest {
     @Test
     public void testInvalidTextContentTypeStrict() {
         try (HttpClientResponse res = CLIENT.method(Method.GET)
+                .protocolId(Http1Client.PROTOCOL_ID)
                 .path("/test/invalidTextContentType")
                 .request()) {
             assertThat(res.status(), is(Status.OK_200));
@@ -172,6 +174,7 @@ class HeadersClientTest {
                 .mediaTypeParserMode(ParserMode.RELAXED)
                 .build();
         try (HttpClientResponse res = client.method(Method.GET)
+                .protocolId(Http1Client.PROTOCOL_ID)
                 .path("/test/invalidTextContentType")
                 .request()) {
             assertThat(res.status(), is(Status.OK_200));
