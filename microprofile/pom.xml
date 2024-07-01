@@ -53,6 +53,7 @@
         <module>messaging</module>
         <module>cors</module>
         <module>graphql</module>
+        <module>grpc</module>
         <module>scheduling</module>
         <module>lra</module>
         <module>bean-validation</module>

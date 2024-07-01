@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,14 +27,13 @@ import static java.lang.System.Logger.Level.WARNING;
  *
  * @param <T> the type of response expected
  */
-class SafeStreamObserver<T>
-        implements StreamObserver<T> {
+class SafeStreamObserver<T> implements StreamObserver<T> {
 
     private static final System.Logger LOGGER = System.getLogger(SafeStreamObserver.class.getName());
     /**
      * The actual StreamObserver.
      */
-    private StreamObserver<? super T> delegate;
+    private final StreamObserver<? super T> delegate;
     /**
      * Indicates a terminal state.
      */
@@ -132,8 +131,8 @@ class SafeStreamObserver<T>
     // ----- data members ---------------------------------------------------
 
     /**
-     * Throws a particular {@code Throwable} only if it belongs to a set of "fatal" error varieties. These varieties are
-     * as follows:
+     * Throws a particular {@code Throwable} only if it belongs to a set of "fatal" error varieties.
+     * These varieties are as follows:
      * <ul>
      * <li>{@code VirtualMachineError}</li>
      * <li>{@code ThreadDeath}</li>

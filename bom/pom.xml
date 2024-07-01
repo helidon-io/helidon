@@ -100,6 +100,16 @@
                 <artifactId>helidon-grpc-core</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.grpc</groupId>
+                <artifactId>helidon-microprofile-grpc-core</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.grpc</groupId>
+                <artifactId>helidon-microprofile-grpc-server</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- Micronaut integrations -->
             <dependency>
                 <groupId>io.helidon.integrations.micronaut</groupId>
