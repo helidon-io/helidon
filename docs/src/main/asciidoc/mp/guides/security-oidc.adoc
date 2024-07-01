@@ -41,7 +41,7 @@ This guide describes the steps required to protect your whole application or a s
 OIDC is a secure mechanism for an application to contact an identity service.
 It's built on top of OAuth 2.0 and provides full-fledged authentication and authorization protocols.
 
-== Install Keycloak
+== Keycloak Installation
 
 === On Docker
 
@@ -50,15 +50,15 @@ To install Keycloak with Docker, open a terminal and make sure the port 8080 is 
 [source,bash]
 .Enter the following command
 ----
-docker run -p 8080:8080 -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=admin quay.io/keycloak/keycloak:11.0.2
+docker run -p 8080:8080 -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=admin quay.io/keycloak/keycloak:24.0.5 start-dev
 ----
 
 This will start Keycloak on local port 8080. It will create the admin user with username `admin` and password `admin`
-Feel free to modify 11.0.2 by any keycloak version of your wish.
+Feel free to modify 24.0.5 by another keycloak version.
 If you are running docker behind a proxy server, make sure it is either configured into docker or
 disabled. Otherwise, you might face a connection timeout because docker cannot download the required data.
 
-To verify that Keycloak is running correctly, go to the admin console : http://localhost:8080/auth/admin
+To verify that Keycloak is running correctly, go to the admin console : http://localhost:8080/admin
 Log in using the username and password mentioned above: `admin`.
 
 You should be logged in successfully, and it prompts the admin console.
@@ -70,29 +70,29 @@ In the table Server choose Standalone server distribution. ZIP or Tar format are
 to download Keycloak.
 
 After extracting the archive file, you should have a directory named keycloak followed by the version. For example,
-if you chose version 11.0.2, the folder must be named keycloak-11.0.2.
+if you chose version 24.0.5, the folder must be named keycloak-24.0.5.
 
 Open keycloak folder to make it your current directory.
 [source,bash]
 .Run this command from command prompt to open the directory:
 ----
-cd keycloak-11.0.2
+cd keycloak-24.0.5
 ----
 
-== Start Keycloak
+==== Start Keycloak
 
 To start keycloak and have it ready for further steps, run the following command.
 
 [source,bash]
 .On Linux run:
 ----
-bin/standalone.sh
+bin/kc.sh start-dev
 ----
 
 [source,bash]
 .On Windows run:
 ----
-bin/standalone.bat
+bin\kc.bat start-dev
 ----
 
 Keycloak runs on localhost:8080 by default.
@@ -100,22 +100,19 @@ Keycloak runs on localhost:8080 by default.
 === Create an Admin User
 
 You need to create an admin user because it does not come by default when installing Keycloak.
-To do this, open  http://localhost:8080/auth in your favorite browser.
+To do this, open  http://localhost:8080 in your favorite browser.
 
-A window `Welcome to Keycloak` should be prompted. If not, check if any error appear in the terminal.
+A window `Create an administrative user` should be prompted. If not, check if any error appear in the terminal.
 
-Fill the form by adding Username and Password. Click on `Create` to create the admin user.
-
-Above Administration Console should be printed "User created" in a green rectangle.
-
-To check that the admin user was created correctly, click on Administration user which should redirect you
-to a Login form. Enter the Username and Password created earlier to log in.
+Fill the form by adding Username and Password. Click on `Create user` to create the admin user. A confirmation message
+is displayed and an administrative user is created. Press `Open Administration Console` and use the same credentials
+to log in.
 
 After successfully logged in, the admin console is prompted.
 
-== Set up Keycloak
+== Setup Keycloak
 
-To set up Keycloak properly, go to the admin console: http://localhost:8080/auth/admin
+To set up Keycloak properly, go to the admin console: http://localhost:8080/admin
 
 If you are using Docker, use Username `admin` and password `admin` as it is the default admin user.
 Otherwise, use the username and password you used to create the admin user.
@@ -135,13 +132,13 @@ application with this realm as it could disturb Keycloak functioning.
 
 To create a new realm to manage your application:
 
-. Open Keycloak admin console http://localhost:8080/auth/admin.
-. Hover the mouse over the dropdown in the top-left corner where it says `Master`, and press `Add realm`.
+. Open Keycloak admin console http://localhost:8080/admin.
+. Hover the mouse over the dropdown in the top-left corner where it says `Keycloack`, and press `Create realm`.
 . Fill the form by adding the realm name, `myRealm` for example.
 . Click on `Create` to create the new realm.
 
-To verify that your realm is created, in the top-left corner where it said `Master` previously
-should be now your realm name or `myRealm` is you followed the example.
+To verify that your realm is created, you should see your realm name (or `myRealm` if you followed the example) in the top-left
+corner where it said `Keycloack` previously.
 
 To switch from a realm to another, hover the realm name, and the other realm created appear in the dropdown.
 Click on any realm name to change the current realm. Make sure all configuration or modification are saved before changing
@@ -154,25 +151,28 @@ A realm contains resources such as client which can be accessed by users.
 
 To create a new user:
 
-. Open the Keycloak admin console: http://localhost:8080/auth/admin
+. Open the Keycloak admin console: http://localhost:8080/admin
 . Click on `Users` in the left menu
-. Press `Add user`
+. Press `Create new user`
 . Fill the form (Username is the only mandatory field) with this value Username: `myUser`
-. Click `Save`
+. Click `Create`
 
 A new user is just created, but it needs a password to be able to log in. To initialize it, do this:
 
-. Click on `Credentials` at the top of the page, under `Myuser`.
+. Click on `Credentials` at the top of the page, next to `Details`.
+. Press on `Set Password`.
 . Fill `Password` and `Password confirmation` with the user password of your choice.
 . If the `Temporary` field is set to `ON`, the user has to  update password on next login. Click `ON`
 to make it `OFF` and prevent it.
-. Press `Set Password`.
+. Press `Save`.
 . A pop-up window is popping off. Click on `Set Password` to confirm the new password.
 
 To verify that the new user is created correctly:
 
-. Open the Keycloak account console: http://localhost:8080/auth/realms/myRealm/account.
+. Open the Keycloak account console: `http://localhost:8080/realms/myRealm/account`.
 . Login with `myUser` and password chosen earlier.
+. Fill the form with required data.
+. Save the user details.
 
 You should now be logged-in to the account console where users can manage their accounts.
 
@@ -180,29 +180,31 @@ You should now be logged-in to the account console where users can manage their 
 
 To create your first client:
 
-. Open the Keycloak admin console: http://localhost:8080/auth/admin.
+. Open the Keycloak admin console: http://localhost:8080/admin.
 . Make sure the current realm is `myRealm` and not `Master`.
 . Navigate to the left menu, into configure section, click on `Clients`. This window displays a table with every client
 from the realm.
-. Click on `Create`.
+. Click on `Create client`.
 . Fill the following:
 .. `Client ID` : `myClientID`
-.. `Client Protocol` : `openid-connect`
-. Press `Save`
-.. Modify `Access type` : `confidential`
+.. `Client Protocol` : `OpenID Connect`
+. Press `Next`
+. `Capability config` step
+.. Enable `Client authentication`
+.. Enable `Authorization`
+. Press `Next`
 .. Update `Valid Redirect URIs` : http://localhost:7987/*
-.. Click on `+` to add the new URI.
 . Click on `Save`.
 
 A new tab named `Credentials` is created. Click on it to access this new tab.
 
 - Select `Client Authenticator` : `Client ID and Secret`
-- Click on `generate secret` to generate client secret.
+- The client secret is displayed.
 
 Keycloak is now configured and ready. Keep keycloak running on your terminal and open a new tab to
 set up Helidon.
 
-== Set up Helidon
+== Setup Helidon
 
 Use the Helidon MP Maven archetype to create a simple project. It will be used as an example
 to show how to set up Helidon. Replace `{helidon-version}` by the latest helidon version.
@@ -257,9 +259,10 @@ security:
         audience: "account"
         client-id: "myClientID" # <1>
         header-use: true
-        client-secret: "Client secret generated into Keycloak client credential" # <2>
-        identity-uri: "http://localhost:8080/auth/realms/myRealm" # <3>
+        client-secret: "changeit" # <2>
+        identity-uri: "http://localhost:8080/realms/myRealm" # <3>
         frontend-uri: "http://localhost:7987" # <4>
+        cookie-use: "false"
 ----
 <1> `client-id` must be the same as the one configure in keycloak.
 <2> The client secret generate by Keycloak during `Create a client` section.
@@ -317,7 +320,7 @@ Helidon and Keycloak are now correctly configured and your application is safe.
 [source,bash]
 .Build the application, skipping unit tests, then run it:
 ----
-mvn package -DskipTests=true
+mvn package -DskipTests
 java -jar target/helidon-quickstart-mp.jar
 ----
 
@@ -350,7 +353,7 @@ at the end of this guide, the application will be secured by oidc and the tests 
 In the test folder `helidon-quickstart-mp/src/test`:
 
 [source,bash]
-.Create a new directory and another one inside
+.Create a new directory with configuration file
 ----
 mkdir resources
 cd resources
@@ -362,45 +365,24 @@ Open the application.yaml file you just created.
 [source,yaml]
 .Copy these properties into the new application.yaml
 ----
-app:
-  greeting: "Hello"
-
-server:
-  port: 7987
-  host: localhost
-
 security:
   providers:
-    - abac:
+    - type: oidc
+      enabled: false
+    - oidc:
+      enabled: false
     - http-basic-auth:
         users:
           - login: "jack"
-            password: "jackIsGreat"
+            password: "changeit"
 ----
 
-By adding this new application.yaml, it will append the properties to the application.yaml located into `java/resources`.
-The oidc properties are not overridden, and the server cannot decide which security provider to choose.
-
-Excluding oidc dependency during the test leaves only basic authentication security available for the tests.
-
-[source,xml]
-.Add this plugin to the build
-----
-<plugin>
-    <groupId>org.apache.maven.plugins</groupId>
-    <artifactId>maven-surefire-plugin</artifactId>
-    <configuration>
-        <classpathDependencyExcludes>
-            <classpathDependencyExclude>io.helidon.microprofile:helidon-microprofile-oidc</classpathDependencyExclude>
-        </classpathDependencyExcludes>
-    </configuration>
-</plugin>
-----
+By adding this new application.yaml, it will append the properties to the application.yaml located into `main/resources`.
+The `oidc` provider is now disabled, and the server will pick `http-basic-auth`.
 
 In the `MainTest.java` file, tests need to be modified to pass the application security when accessing `/greet` path with a
 `GET` method.
 
-The server has now one security provider, basic authentication configured.
 Next step is to create the test to check that the application is correctly protected.
 
 Firstly, create new test method `testHelloWorld`
@@ -431,7 +413,7 @@ include::{sourcedir}/mp/guides/SecurityOidcSnippets.java[tag=snippet_4, indent=0
 ----
 
 The username and password are encoded and placed inside the header in order to authenticate as jack to access the application.
-If the authentication is successful, the application send the `Hello World` back as a `JsonObject`.
+If the authentication is successful, the application send the `Hello World` back as a `GreetingMessage`.
 
 Now, the project can be built without skipping test.
 
@@ -465,15 +447,14 @@ username and password for authentication.
 3. The authorization code is used to get access and refresh token from Keycloak token endpoint.
 
 For the first step, paste the following URL into your browser:
-`http://localhost:8080/auth/realms/myRealm/protocol/openid-connect/auth?client_id=myClientID&response_type=code`.
-The first part of the url `http:/../auth` is the Keycloak endpoint to request an authorization code. Two query
+`http://localhost:8080/realms/myRealm/protocol/openid-connect/auth?client_id=myClientID&response_type=code`. Two query
 parameters are provided, the client id and the response type.
 Press enter and Keycloak responds with different URL containing a query parameter `code`. You successfully received
 the authorization code.
 
 In order to achieve the third step, we can use Postman to exchange the authorization code for tokens. In Postman,
 select the Http POST method. Keycloak endpoint to get token is the following:
-`http://localhost:8080/auth/realms/myRealm/protocol/openid-connect/token`.
+`http://localhost:8080/realms/myRealm/protocol/openid-connect/token`.
 In the body of the request, select `x-www-form-urlencoded` type. Add the following data:
 
 [source,json]
@@ -495,7 +476,7 @@ a refresh token.
 
 The Direct Access Grants flow is used by REST clients that want to request tokens on behalf of a user.
 To use Postman to make this request on behalf of `myuser`, select the GET method and enter this URL:
-`http://localhost:7987/greet/`. Under `Authorization` tab, select authorization type`OAuth 2.0`. Under it, complete the
+`http://localhost:7987/greet/`. Under `Authorization` tab, select authorization type `OAuth 2.0`. Under it, complete the
 sentence  `Add authorization data to` with `Request Headers`, and complete the required fields.
 
 [source,json]
@@ -504,7 +485,7 @@ sentence  `Add authorization data to` with `Request Headers`, and complete the r
 [
     {"key":"Header Prefix","value":"bearer"},
     {"key":"Grant type","value":"Password  Credentials"},
-    {"key":"Access Token URL","value":"http://localhost:8080/auth/realms/myRealm/protocol/openid-connect/token"},
+    {"key":"Access Token URL","value":"http://localhost:8080/realms/myRealm/protocol/openid-connect/token"},
     {"key":"Client ID","value":"myClientID"},
     {"key":"Client Secret","value":"client secret"},
     {"key":"Username","value":"myuser"},
@@ -527,7 +508,7 @@ only the user with the required role.
 Navigate to the GreetResource and find the `getDefaultMessage` with @Authenticate annotation.
 
 [source,java]
-.Add the @RolesAllowed annotation under the @Authenticate annotation:
+.Add the @RolesAllowed annotation:
 ----
 include::{sourcedir}/mp/guides/SecurityOidcSnippets.java[tag=snippet_5, indent=0]
 ----
@@ -543,10 +524,10 @@ Then, add a user and roles to the `helidon-quickstart-mp/src/test/resources/appl
 - http-basic-auth:
     users:
       - login: "jack"
-        password: "jackIsGreat"
+        password: "changeit"
         roles: [ "admin", "user" ]
       - login: "john"
-        password: "johnPassword"
+        password: "changeit"
         roles: [ "user" ]
 ----
 
