@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ import io.helidon.webclient.spi.HttpClientSpi;
 public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, HttpClientResponse> {
     private static final System.Logger LOGGER = System.getLogger(HttpClientRequest.class.getName());
 
-    private final LruCache<EndpointKey, HttpClientSpi> clientSpiCache = LruCache.create();
+    private final LruCache<EndpointKey, HttpClientSpi> clientSpiCache;
     private final WebClient webClient;
     private final Map<String, LoomClient.ProtocolSpi> clients;
     private final List<LoomClient.ProtocolSpi> tcpProtocols;
@@ -50,13 +50,15 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
                       Map<String, LoomClient.ProtocolSpi> protocolsToClients,
                       List<LoomClient.ProtocolSpi> protocols,
                       List<LoomClient.ProtocolSpi> tcpProtocols,
-                      List<String> tcpProtocolIds) {
+                      List<String> tcpProtocolIds,
+                      LruCache<EndpointKey, HttpClientSpi> clientSpiCache) {
         super(clientConfig, webClient.cookieManager(), "any", method, clientUri, clientConfig.properties());
         this.webClient = webClient;
         this.clients = protocolsToClients;
         this.protocols = protocols;
         this.tcpProtocols = tcpProtocols;
         this.tcpProtocolIds = tcpProtocolIds;
+        this.clientSpiCache = clientSpiCache;
     }
 
     /**
@@ -189,10 +191,9 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
                                                    + "willing to handle it. HTTP versions supported: " + clients.keySet());
     }
 
-    private record EndpointKey(String scheme, // http/https
-                               String authority, // myserver:80
-                               Tls tlsConfig, // TLS configuration (may be disabled, never null)
-                               Proxy proxy) { // proxy, never null
-
+    record EndpointKey(String scheme, // http/https
+                       String authority, // myserver:80
+                       Tls tlsConfig, // TLS configuration (may be disabled, never null)
+                       Proxy proxy) { // proxy, never null
     }
 }
