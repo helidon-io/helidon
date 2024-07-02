@@ -18,6 +18,7 @@ package io.helidon.http.media.multipart;
 
 import java.util.Optional;
 
+import io.helidon.common.GenericType;
 import io.helidon.http.ContentDisposition;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
@@ -74,6 +75,13 @@ abstract class ReadablePartAbstract implements ReadablePart {
     @Override
     public boolean hasEntity() {
         return true;
+    }
+
+
+    @Override
+    public <T> Optional<T> asOptional(GenericType<T> type) {
+        // there is always an entity (see #hasEntity())
+        return Optional.of(as(type));
     }
 
     protected abstract void finish();
