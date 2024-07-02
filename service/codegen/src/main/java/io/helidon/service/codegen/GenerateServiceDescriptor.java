@@ -419,20 +419,31 @@ class GenerateServiceDescriptor {
             if (!typeName.typeArguments().isEmpty()) {
                 // provider must have a type argument (and the type argument is an automatic contract
                 TypeName providedType = typeName.typeArguments().getFirst();
+                // and we support Supplier<Optional<X>> as well
                 if (!providedType.generic()) {
-                    Optional<TypeInfo> providedTypeInfo = ctx.typeInfo(providedType);
-                    if (providedTypeInfo.isPresent()) {
-                        contracts(providedTypeInfo.get(),
-                                  true,
-                                  collectedContracts,
-                                  collectedFullyQualified
-                        );
-                    } else {
-                        collectedContracts.add(providedType);
-                        if (!collectedFullyQualified.add(providedType.resolvedName())) {
-                            // let us go no further, this type was already processed
-                            return;
+                    // supplier is a contract
+                    collectedContracts.add(TypeNames.SUPPLIER);
+
+                    if (providedType.isOptional() && !providedType.typeArguments().isEmpty()) {
+                        providedType = providedType.typeArguments().getFirst();
+                        // we still have supplier as a contract
+                        collectedFullyQualified.add(TypeNames.SUPPLIER.fqName());
+                        collectedContracts.add(TypeNames.SUPPLIER);
+                        if (providedType.generic()) {
+                            providedType = null;
+                        } else {
+                            // and also optional
+                            collectedFullyQualified.add(TypeNames.OPTIONAL.fqName());
+                            collectedContracts.add(TypeNames.OPTIONAL);
+                            contractsFromProvidedType(collectedContracts, collectedFullyQualified, providedType);
                         }
+                    } else {
+                        contractsFromProvidedType(collectedContracts, collectedFullyQualified, providedType);
+                    }
+
+                    if (providedType != null && !collectedFullyQualified.add(providedType.resolvedName())) {
+                        // let us go no further, this type was already processed
+                        return;
                     }
                 }
             }
@@ -467,6 +478,21 @@ class GenerateServiceDescriptor {
                                                              collectedContracts,
                                                              collectedFullyQualified
         ));
+    }
+
+    private void contractsFromProvidedType(Set<TypeName> collectedContracts,
+                                           Set<String> collectedFullyQualified,
+                                           TypeName providedType) {
+        Optional<TypeInfo> providedTypeInfo = ctx.typeInfo(providedType);
+        if (providedTypeInfo.isPresent()) {
+            contracts(providedTypeInfo.get(),
+                      true,
+                      collectedContracts,
+                      collectedFullyQualified
+            );
+        } else {
+            collectedContracts.add(providedType);
+        }
     }
 
     private void singletonInstanceField(ClassModel.Builder classModel, TypeName serviceType, TypeName descriptorType) {

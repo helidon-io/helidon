@@ -52,7 +52,9 @@ module io.helidon.integrations.oci {
     requires io.helidon.webclient;
 
     requires oci.java.sdk.common;
-    requires vavr;
+
+    // needed for IMDS (instance metadata service) processing
+    requires jakarta.json;
 
     exports io.helidon.integrations.oci;
     exports io.helidon.integrations.oci.spi;
