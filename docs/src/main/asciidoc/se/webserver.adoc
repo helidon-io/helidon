@@ -129,14 +129,19 @@ server:
         passphrase: "password"
         trust-store: true
         resource:
-          resource-path: "keystore.p12"
+          # load from classpath
+          resource-path: "keystore.p12" # <1>
     # Keystore with private key and server certificate
     private-key:
       keystore:
         passphrase: "password"
         resource:
-          resource-path: "keystore.p12"
+          # load from file system
+          path: "/path/to/keystore.p12" # <2>
 ----
+<1> File loaded from classpath
+<2> File loaded from file system
+
 Then, in your application code, load the configuration from that file.
 
 [source,java]
