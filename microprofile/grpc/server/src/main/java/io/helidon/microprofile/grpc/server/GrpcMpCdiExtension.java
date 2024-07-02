@@ -18,8 +18,6 @@ package io.helidon.microprofile.grpc.server;
 
 import java.lang.annotation.Annotation;
 import java.util.ServiceLoader;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.config.Config;
@@ -43,12 +41,14 @@ import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.Extension;
 import org.eclipse.microprofile.config.ConfigProvider;
 
+import static java.lang.System.Logger.Level;
+
 /**
  * A CDI extension that will discover and register gRPC routes.
  */
 public class GrpcMpCdiExtension implements Extension {
 
-    private static final Logger LOGGER = Logger.getLogger(GrpcMpCdiExtension.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(GrpcMpCdiExtension.class.getName());
 
     private Config config;
 

@@ -24,8 +24,6 @@ module io.helidon.grpc.core {
     requires io.helidon.common.context;
     requires io.helidon.tracing;
 
-    requires java.logging;
-
     requires transitive io.grpc;
     requires transitive io.grpc.stub;
     requires transitive com.google.protobuf;

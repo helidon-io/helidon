@@ -25,7 +25,6 @@ module io.helidon.microprofile.grpc.core {
     requires transitive io.helidon.grpc.core;
     requires transitive jakarta.cdi;
 
-    requires java.logging;
     requires jakarta.inject;
 
     exports io.helidon.microprofile.grpc.core;

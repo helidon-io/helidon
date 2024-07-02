@@ -26,8 +26,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.grpc.core.MarshallerSupplier;
@@ -35,12 +33,14 @@ import io.helidon.grpc.core.MarshallerSupplier;
 import jakarta.annotation.Priority;
 import jakarta.inject.Singleton;
 
+import static java.lang.System.Logger.Level;
+
 /**
  * A base class for gRPC service and client descriptor builders.
  */
 public abstract class AbstractServiceBuilder {
 
-    private static final Logger LOGGER = Logger.getLogger(AbstractServiceBuilder.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(AbstractServiceBuilder.class.getName());
 
     private final Class<?> serviceClass;
     private final Class<?> annotatedServiceClass;
@@ -210,7 +210,7 @@ public abstract class AbstractServiceBuilder {
         } catch (NoSuchMethodException e) {
             LOGGER.log(Level.WARNING, () -> String.format("Annotation %s has no name() method", actualAnnotation));
         } catch (IllegalAccessException | InvocationTargetException e) {
-            LOGGER.log(Level.WARNING, e, () -> String.format("Error calling name() method on annotation %s", actualAnnotation));
+            LOGGER.log(Level.WARNING, () -> String.format("Error calling name() method on annotation %s", actualAnnotation), e);
         }
 
         if (name == null || name.trim().isEmpty()) {

@@ -16,8 +16,7 @@
 
 package io.helidon.grpc.core;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.lang.System.Logger.Level;
 
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -63,14 +62,14 @@ public class SafeStreamObserver<T> implements StreamObserver<T> {
     public void onError(Throwable thrown) {
         try {
             if (done) {
-                LOGGER.log(Level.SEVERE, checkNotNull(thrown), () -> "OnError called after StreamObserver was closed");
+                LOGGER.log(Level.ERROR, () -> "OnError called after StreamObserver was closed");
             } else {
                 done = true;
                 delegate.onError(checkNotNull(thrown));
             }
         } catch (Throwable t) {
             throwIfFatal(t);
-            LOGGER.log(Level.SEVERE, t, () -> "Caught exception handling onError");
+            LOGGER.log(Level.ERROR, () -> "Caught exception handling onError", t);
         }
     }
 
@@ -84,7 +83,7 @@ public class SafeStreamObserver<T> implements StreamObserver<T> {
                 delegate.onCompleted();
             } catch (Throwable thrown) {
                 throwIfFatal(thrown);
-                LOGGER.log(Level.SEVERE, thrown, () -> "Caught exception handling onComplete");
+                LOGGER.log(Level.ERROR, () -> "Caught exception handling onComplete", thrown);
             }
         }
     }
@@ -152,7 +151,7 @@ public class SafeStreamObserver<T> implements StreamObserver<T> {
     /**
      * The {2link Logger} to use.
      */
-    private static final Logger LOGGER = Logger.getLogger(SafeStreamObserver.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(SafeStreamObserver.class.getName());
 
     // ----- data members ---------------------------------------------------
 
