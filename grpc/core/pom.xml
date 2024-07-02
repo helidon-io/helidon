@@ -35,22 +35,6 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-config</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-configurable</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-metadata</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-context</artifactId>
         </dependency>
         <dependency>

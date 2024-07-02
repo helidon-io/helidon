@@ -17,7 +17,6 @@
 import io.helidon.common.features.api.Aot;
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.microprofile.grpc.server.GrpcMpCdiExtension;
 
 /**
  * gRPC microprofile server module
@@ -31,13 +30,9 @@ import io.helidon.microprofile.grpc.server.GrpcMpCdiExtension;
 module io.helidon.microprofile.grpc.server {
 
     requires io.helidon.common;
-    requires io.helidon.common.configurable;
-    requires io.helidon.common.context;
     requires io.helidon.common.features.api;
     requires io.helidon.config.mp;
-    requires io.helidon.config.objectmapping;
     requires io.helidon.config;
-    requires io.helidon.config.metadata;
     requires io.helidon.microprofile.grpc.core;
     requires io.helidon.microprofile.server;
     requires io.helidon.webserver.grpc;
@@ -56,7 +51,8 @@ module io.helidon.microprofile.grpc.server {
 
     uses io.helidon.microprofile.grpc.server.spi.GrpcMpExtension;
 
-    provides jakarta.enterprise.inject.spi.Extension with GrpcMpCdiExtension;
+    provides jakarta.enterprise.inject.spi.Extension
+            with io.helidon.microprofile.grpc.server.GrpcMpCdiExtension;
 
     // needed when running with modules - to make private methods accessible
     opens io.helidon.microprofile.grpc.server to weld.core.impl, io.helidon.microprofile.cdi;
