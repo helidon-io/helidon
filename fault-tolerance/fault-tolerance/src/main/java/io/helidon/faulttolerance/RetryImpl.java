@@ -95,9 +95,10 @@ class RetryImpl implements Retry {
 
     public void checkTimeout(RetryContext<?> context, long nanoTime) {
         if ((nanoTime - context.startedNanos) > maxTimeNanos) {
-            RetryTimeoutException te = new RetryTimeoutException("Execution took too long. Already executing: "
-                                                                         + TimeUnit.NANOSECONDS.toMillis(nanoTime)
-                                                                         + " ms, must timeout after: "
+            RetryTimeoutException te = new RetryTimeoutException("Execution took too long. Already executing for: "
+                                                                         + TimeUnit.NANOSECONDS.toMillis(
+                                                                             nanoTime - context.startedNanos)
+                                                                         + " ms, must be lower than overallTimeout duration of: "
                                                                          + TimeUnit.NANOSECONDS.toMillis(maxTimeNanos)
                                                                          + " ms.",
                                                                  context.throwable());
