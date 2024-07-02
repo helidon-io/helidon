@@ -27,6 +27,8 @@ import java.util.concurrent.Executors;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
+import io.helidon.common.configurable.LruCache;
+import io.helidon.common.tls.Tls;
 import io.helidon.http.Method;
 import io.helidon.webclient.spi.ClientProtocolProvider;
 import io.helidon.webclient.spi.HttpClientSpi;
@@ -39,11 +41,10 @@ import io.helidon.webclient.spi.ProtocolConfig;
  */
 @SuppressWarnings("rawtypes")
 class LoomClient implements WebClient {
-    static final LazyValue<ExecutorService> EXECUTOR = LazyValue.create(() -> {
-        return Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
-                                                          .name("helidon-client-", 0)
-                                                          .factory());
-    });
+    static final LazyValue<ExecutorService> EXECUTOR =
+            LazyValue.create(() -> Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
+                                                                            .name("helidon-client-", 0)
+                                                                            .factory()));
     private static final List<HttpClientSpiProvider> PROVIDERS =
             HelidonServiceLoader.create(ServiceLoader.load(HttpClientSpiProvider.class))
                     .asList();
@@ -64,6 +65,7 @@ class LoomClient implements WebClient {
     private final ProtocolConfigs protocolConfigs;
     private final List<String> tcpProtocolIds;
     private final WebClientCookieManager cookieManager;
+    private final LruCache<EndpointKey, HttpClientSpi> clientSpiLruCache = LruCache.create();
 
     /**
      * Construct this instance from a subclass of builder.
@@ -143,7 +145,8 @@ class LoomClient implements WebClient {
                                      clientSpiByProtocol,
                                      protocols,
                                      tcpProtocols,
-                                     tcpProtocolIds);
+                                     tcpProtocolIds,
+                                     clientSpiLruCache);
     }
 
     @Override
@@ -182,5 +185,11 @@ class LoomClient implements WebClient {
     }
 
     record ProtocolSpi(String id, HttpClientSpi spi) {
+    }
+
+    record EndpointKey(String scheme, // http/https
+                       String authority, // myserver:80
+                       Tls tlsConfig, // TLS configuration (may be disabled, never null)
+                       Proxy proxy) { // proxy, never null
     }
 }
