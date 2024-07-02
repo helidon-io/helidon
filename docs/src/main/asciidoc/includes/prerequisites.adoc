@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -144,7 +144,9 @@ export JAVA_HOME=/usr/lib/jvm/jdk-21
 [role="flex, sm7"]
 |=======
 include::prerequisites.adoc[tag=prerequisites-table-contents]
-| https://www.graalvm.org/release-notes/JDK_21/[GraalVM for JDK 21]|
+| https://www.graalvm.org/release-notes/JDK_21/[GraalVM 21.0.2+13 for JDK 21]| Helidon support
+GraalVM for JDK 21 and higher except for `native-image`, Helidon requires GraalVM 21.0.2+13
+specific version.
 |=======
 
 
