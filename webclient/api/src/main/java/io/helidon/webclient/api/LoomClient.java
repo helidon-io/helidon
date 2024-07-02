@@ -28,6 +28,7 @@ import java.util.concurrent.Executors;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.configurable.LruCache;
+import io.helidon.common.tls.Tls;
 import io.helidon.http.Method;
 import io.helidon.webclient.spi.ClientProtocolProvider;
 import io.helidon.webclient.spi.HttpClientSpi;
@@ -64,7 +65,7 @@ class LoomClient implements WebClient {
     private final ProtocolConfigs protocolConfigs;
     private final List<String> tcpProtocolIds;
     private final WebClientCookieManager cookieManager;
-    private final LruCache<HttpClientRequest.EndpointKey, HttpClientSpi> clientSpiLruCache = LruCache.create();
+    private final LruCache<EndpointKey, HttpClientSpi> clientSpiLruCache = LruCache.create();
 
     /**
      * Construct this instance from a subclass of builder.
@@ -184,5 +185,11 @@ class LoomClient implements WebClient {
     }
 
     record ProtocolSpi(String id, HttpClientSpi spi) {
+    }
+
+    record EndpointKey(String scheme, // http/https
+                       String authority, // myserver:80
+                       Tls tlsConfig, // TLS configuration (may be disabled, never null)
+                       Proxy proxy) { // proxy, never null
     }
 }
