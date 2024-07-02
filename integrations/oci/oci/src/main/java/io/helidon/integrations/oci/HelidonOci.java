@@ -102,10 +102,8 @@ public final class HelidonOci {
         }
         String message = "OCI IMDS not available on " + imdsUri;
         if (firstException == null) {
-            System.out.println(message + " Status received: " + firstStatus);
             LOGGER.log(Level.INFO, message + " Status received: " + firstStatus);
         } else {
-            System.out.println(message + " Status received: " + firstException);
             LOGGER.log(Level.INFO, message + " Exception logged only in TRACE");
             LOGGER.log(Level.TRACE, message, firstException);
         }
