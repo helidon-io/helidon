@@ -21,6 +21,10 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
+/* todo there are duplicated methods in CompositeArrayBufferData and CompositeListBufferData:
+ read(byte[] buffer, int position, int length), writeTo(ByteBuffer writeBuffer, int limit)
+ skip(int length), int indexOf(byte aByte), get(int index)
+ */
 class CompositeArrayBufferData extends ReadOnlyBufferData implements CompositeBufferData {
     private final BufferData[] data;
 
