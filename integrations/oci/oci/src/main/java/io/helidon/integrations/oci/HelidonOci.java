@@ -23,9 +23,13 @@ import java.net.URI;
 import java.time.Duration;
 
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
-import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.WebClient;
+
+import jakarta.json.JsonObject;
 
 import static io.helidon.integrations.oci.OciConfigSupport.IMDS_HOSTNAME;
 import static io.helidon.integrations.oci.OciConfigSupport.IMDS_URI;
@@ -35,6 +39,7 @@ import static io.helidon.integrations.oci.OciConfigSupport.IMDS_URI;
  */
 public final class HelidonOci {
     private static final System.Logger LOGGER = System.getLogger(HelidonOci.class.getName());
+    private static final Header BEARER_HEADER = HeaderValues.create(HeaderNames.AUTHORIZATION, "Bearer Oracle");
 
     private HelidonOci() {
     }
@@ -49,8 +54,7 @@ public final class HelidonOci {
         Duration timeout = config.imdsTimeout();
 
         try {
-            URI imdsUri = config.imdsBaseUri()
-                    .orElse(IMDS_URI);
+            URI imdsUri = imdsUri(config);
 
             if (InetAddress.getByName(imdsUri.getHost())
                     .isReachable((int) timeout.toMillis())) {
@@ -68,6 +72,10 @@ public final class HelidonOci {
 
     private static boolean imdsAvailable(OciConfig config, URI imdsUri) {
         // check if the endpoint is available (we have only checked the host/IP address)
+        return imdsContent(config, imdsUri) != null;
+    }
+
+    static JsonObject imdsContent(OciConfig config, URI imdsUri) {
         int retries = config.imdsDetectRetries().orElse(0);
 
         Exception firstException = null;
@@ -75,16 +83,17 @@ public final class HelidonOci {
 
         for (int retry = 0; retry <= retries; retry++) {
             try {
-                ClientResponseTyped<String> response = WebClient.builder()
+                var response = WebClient.builder()
                         .connectTimeout(config.imdsTimeout())
                         .readTimeout(config.imdsTimeout())
                         .baseUri(imdsUri)
                         .build()
-                        .get("instance/regionInfo")
+                        .get("instance")
                         .accept(MediaTypes.APPLICATION_JSON)
-                        .request(String.class);
+                        .header(BEARER_HEADER)
+                        .request();
                 if (response.status() == Status.OK_200) {
-                    return true;
+                    return response.as(JsonObject.class);
                 }
                 firstStatus = firstStatus == null ? response.status() : firstStatus;
             } catch (Exception e) {
@@ -93,12 +102,19 @@ public final class HelidonOci {
         }
         String message = "OCI IMDS not available on " + imdsUri;
         if (firstException == null) {
+            System.out.println(message + " Status received: " + firstStatus);
             LOGGER.log(Level.INFO, message + " Status received: " + firstStatus);
         } else {
+            System.out.println(message + " Status received: " + firstException);
             LOGGER.log(Level.INFO, message + " Exception logged only in TRACE");
             LOGGER.log(Level.TRACE, message, firstException);
         }
 
-        return false;
+        return null;
+    }
+
+    static URI imdsUri(OciConfig config) {
+        return config.imdsBaseUri()
+                .orElse(IMDS_URI);
     }
 }

@@ -78,3 +78,21 @@ The following out-of-the-box implementations exists:
 - OCI SDK based region provider: uses `Region.registerFromInstanceMetadataService()` to find region (this has timeout of 30
   seconds, so if we reach this provider, it may block for a while - but only once); Weight: default - 100
 
+## Instance Metadata Service Instance Information
+
+Any service may need some instance information from the Instance Metadata Service (IMDS) and it can be looked up using 
+Service Registry lookup methods.
+
+The `IMDS` instance information is discovered by simply using an instance of `io.helidon.integrations.oci.ImdsInstanceInfo`.
+The following fields are provided from `io.helidon.integrations.oci.ImdsInstanceInfo`:
+- canonicalRegionName
+- displayName
+- hostName
+- region
+- ociAdName
+- faultDomain
+- compartmentId
+- tenantId
+- A JsonObject containing all the contents of the instance information from IMDS.
+
+

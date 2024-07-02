@@ -26,7 +26,6 @@ import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
-import io.helidon.webserver.testing.junit5.SetUpServer;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryManager;
 
@@ -41,15 +40,6 @@ class InstanceInfoProviderTest {
 
     private ServiceRegistryManager registryManager;
     private ServiceRegistry registry;
-
-    private static String CANONICAL_REGION_NAME = "us-helidon-1";
-    private static String DISPLAY_NAME = "helidon-server";
-    private static String HOST_NAME = DISPLAY_NAME;
-    private static String REGION = "iad";
-    private static String OCI_AD_NAME = "iad-ad-1";
-    private static String FAULT_DOMAIN = "FAULT-DOMAIN-3";
-    private static String COMPARTMENT_ID = "ocid1.compartment.oc1..dummyCompartment";
-    private static String TENANT_ID = "ocid1.tenancy.oc1..dummyTenancy";
 
     private final int port;
 
@@ -124,8 +114,8 @@ class InstanceInfoProviderTest {
         static String CANONICAL_REGION_NAME = "us-helidon-1";
         static String DISPLAY_NAME = "helidon-server";
         static String HOST_NAME = DISPLAY_NAME;
-        static String REGION = "iad";
-        static String OCI_AD_NAME = "iad-ad-1";
+        static String REGION = "hel";
+        static String OCI_AD_NAME = "hel-ad-1";
         static String FAULT_DOMAIN = "FAULT-DOMAIN-3";
         static String COMPARTMENT_ID = "ocid1.compartment.oc1..dummyCompartment";
         static String TENANT_ID = "ocid1.tenancy.oc1..dummyTenancy";
