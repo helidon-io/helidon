@@ -141,6 +141,7 @@ interface OciConfigBlueprint {
      *
      * @return number of retries, each provider has its own defaults
      */
+    @Option.Configured
     Optional<Integer> imdsDetectRetries();
 
     /**

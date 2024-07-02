@@ -22,7 +22,7 @@ import io.helidon.builder.api.Prototype;
 import jakarta.json.JsonObject;
 
 /**
- * Instance information retrieved from Imds
+ * Information about the instance retrieved from Imds.
  */
 @Prototype.Blueprint
 @Prototype.Configured
@@ -76,7 +76,7 @@ interface ImdsInstanceInfoBlueprint {
     String faultDomain();
 
     /**
-     * Compartment Id
+     * Compartment Id.
      *
      * @return Compartment Id where the Instance was provisioned.
      */
@@ -84,7 +84,7 @@ interface ImdsInstanceInfoBlueprint {
     String compartmentId();
 
     /**
-     * Tenant Id
+     * Tenant Id.
      *
      * @return Tenant Id where the Instance was provisioned.
      */
@@ -92,7 +92,7 @@ interface ImdsInstanceInfoBlueprint {
     String tenantId();
 
     /**
-     * Instance Data
+     * Instance Data.
      *
      * @return Full information about the Instance as a {@link jakarta.json.JsonObject}
      */
