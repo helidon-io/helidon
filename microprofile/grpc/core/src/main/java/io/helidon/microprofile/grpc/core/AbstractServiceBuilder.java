@@ -19,7 +19,6 @@ package io.helidon.microprofile.grpc.core;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -30,7 +29,6 @@ import java.util.function.Supplier;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.grpc.core.MarshallerSupplier;
 
-import jakarta.annotation.Priority;
 import jakarta.inject.Singleton;
 
 import static java.lang.System.Logger.Level;
@@ -58,7 +56,7 @@ public abstract class AbstractServiceBuilder {
         this.serviceClass = Objects.requireNonNull(serviceClass);
         this.annotatedServiceClass = ModelHelper.getAnnotatedResourceClass(serviceClass, Grpc.class);
         this.instance = Objects.requireNonNull(instance);
-        this.handlerSuppliers = loadHandlerSuppliers();
+        this.handlerSuppliers = HelidonServiceLoader.create(ServiceLoader.load(MethodHandlerSupplier.class)).asList();
     }
 
     /**
@@ -72,7 +70,7 @@ public abstract class AbstractServiceBuilder {
 
     /**
      * Obtain the service class.
-     * @return  the service class
+     * @return the service class
      */
     protected Class<?> serviceClass() {
         return serviceClass;
@@ -80,7 +78,7 @@ public abstract class AbstractServiceBuilder {
 
     /**
      * Obtain the actual annotated class.
-     * @return  the actual annotated class
+     * @return the actual annotated class
      */
     protected Class<?> annotatedServiceClass() {
         return annotatedServiceClass;
@@ -92,7 +90,7 @@ public abstract class AbstractServiceBuilder {
      * The {@link MarshallerSupplier} will be determined by the {@link GrpcMarshaller}
      * annotation if it is present otherwise the default supplier will be returned.
      *
-     * @return  the {@link MarshallerSupplier} to use
+     * @return the {@link MarshallerSupplier} to use
      */
     protected MarshallerSupplier getMarshallerSupplier() {
         GrpcMarshaller annotation = annotatedServiceClass.getAnnotation(GrpcMarshaller.class);
@@ -122,7 +120,9 @@ public abstract class AbstractServiceBuilder {
         // log warnings for all non-public annotated methods
         allDeclaredMethods.withMetaAnnotation(GrpcMethod.class).isNotPublic()
                 .forEach(method -> LOGGER.log(Level.WARNING, () -> String.format("The gRPC method, %s, MUST be "
-                                              + "public scoped otherwise the method is ignored", method)));
+                                                                                         + "public scoped otherwise the method "
+                                                                                         + "is ignored",
+                                                                                 method)));
     }
 
     /**
@@ -218,31 +218,5 @@ public abstract class AbstractServiceBuilder {
         }
 
         return name;
-    }
-
-    /**
-     * Load the {@link io.helidon.microprofile.grpc.core.MethodHandlerSupplier} instances using the {@link java.util.ServiceLoader}
-     * and return them in priority order.
-     * <p>
-     * Priority is determined by the value obtained from the {@link jakarta.annotation.Priority} annotation on
-     * any implementation classes. Classes not annotated with {@link jakarta.annotation.Priority} have a
-     * priority of zero.
-     *
-     * @return a priority ordered list of {@link io.helidon.microprofile.grpc.core.MethodHandlerSupplier} instances
-     */
-    private List<MethodHandlerSupplier> loadHandlerSuppliers() {
-        List<MethodHandlerSupplier> list = new ArrayList<>();
-
-        HelidonServiceLoader.create(ServiceLoader.load(MethodHandlerSupplier.class)).forEach(list::add);
-
-        list.sort((left, right) -> {
-            Priority leftPriority = left.getClass().getAnnotation(Priority.class);
-            Priority rightPriority = right.getClass().getAnnotation(Priority.class);
-            int leftValue = leftPriority == null ? 0 : leftPriority.value();
-            int rightValue = rightPriority == null ? 0 : rightPriority.value();
-            return leftValue - rightValue;
-        });
-
-        return list;
     }
 }

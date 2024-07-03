@@ -48,6 +48,11 @@ public class CollectingObserver<T, V, U, A, R> implements StreamObserver<V> {
      * @param collector the collector
      * @param observer the observer
      * @return new collecting observer
+     * @param <T> the type of input elements to the reduction operation
+     * @param <A> the mutable accumulation type of the reduction operation
+     * @param <R> the result type of the reduction operation
+     * @param <U> the type of values observed
+     * @param <V> the request type before conversion
      */
     public static <T, V, U, A, R> CollectingObserver<T, V, U, A, R> create(Collector<T, A, R> collector,
                                                                            StreamObserver<U> observer) {
@@ -61,6 +66,11 @@ public class CollectingObserver<T, V, U, A, R> implements StreamObserver<V> {
      * @param observer the observer
      * @param errorHandler the error handler
      * @return new collecting observer
+     * @param <T> the type of input elements to the reduction operation
+     * @param <A> the mutable accumulation type of the reduction operation
+     * @param <R> the result type of the reduction operation
+     * @param <U> the type of values observed
+     * @param <V> the request type before conversion
      */
     public static <T, V, U, A, R> CollectingObserver<T, V, U, A, R> create(Collector<T, A, R> collector,
                                                                            StreamObserver<U> observer,
@@ -77,6 +87,12 @@ public class CollectingObserver<T, V, U, A, R> implements StreamObserver<V> {
      * @param requestConverter request converter
      * @param responseConverter response converter
      * @return new collecting observer
+     * @param <T> the type of input elements to the reduction operation
+     * @param <A> the mutable accumulation type of the reduction operation
+     * @param <R> the result type of the reduction operation
+     * @param <U> the type of values observed
+     * @param <V> the request type before conversion
+     *
      */
     public static <T, V, U, A, R> CollectingObserver<T, V, U, A, R> create(Collector<T, A, R> collector,
                                                                            StreamObserver<U> observer,
@@ -106,7 +122,7 @@ public class CollectingObserver<T, V, U, A, R> implements StreamObserver<V> {
         this.responseObserver = Objects.requireNonNull(observer, "The observer parameter cannot be null");
         this.requestConverter = Optional.ofNullable(requestConverter).orElse(v -> (T) v);
         this.responseConverter = Optional.ofNullable(responseConverter).orElse(r -> (U) r);
-        this.errorHandler = Optional.ofNullable(errorHandler).orElse(t -> { });
+        this.errorHandler = Optional.ofNullable(errorHandler).orElse(t -> {});
         this.accumulator = collector.supplier().get();
     }
 

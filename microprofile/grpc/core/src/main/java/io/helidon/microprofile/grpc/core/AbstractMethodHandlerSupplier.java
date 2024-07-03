@@ -76,7 +76,7 @@ abstract class AbstractMethodHandlerSupplier implements MethodHandlerSupplier {
      * @param <ReqT>  the request type
      * @param <RespT> the response type
      */
-    public abstract static class AbstractHandler<ReqT, RespT> implements MethodHandler<ReqT, RespT> {
+    abstract static class AbstractHandler<ReqT, RespT> implements MethodHandler<ReqT, RespT> {
 
         private final String methodName;
         private final AnnotatedMethod method;

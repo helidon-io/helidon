@@ -31,14 +31,13 @@ module io.helidon.microprofile.grpc.server {
 
     requires io.helidon.common;
     requires io.helidon.common.features.api;
-    requires io.helidon.config.mp;
     requires io.helidon.config;
+    requires io.helidon.config.mp;
     requires io.helidon.microprofile.grpc.core;
     requires io.helidon.microprofile.server;
     requires io.helidon.webserver.grpc;
 
     requires io.grpc;
-    requires io.grpc.inprocess;
     requires io.grpc.protobuf.lite;
     requires com.google.protobuf;
 
