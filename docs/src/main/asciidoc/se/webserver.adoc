@@ -139,8 +139,8 @@ server:
           # load from file system
           path: "/path/to/keystore.p12" # <2>
 ----
-<1> File loaded from classpath
-<2> File loaded from file system
+<1> File loaded from classpath.
+<2> File loaded from file system.
 
 Then, in your application code, load the configuration from that file.
 
