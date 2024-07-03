@@ -17,8 +17,10 @@
 package io.helidon.microprofile.grpc.server;
 
 import io.grpc.stub.StreamObserver;
+
 import io.helidon.microprofile.grpc.server.test.Random;
 import io.helidon.microprofile.grpc.server.test.RandomServiceGrpc;
+
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.WebTarget;
@@ -40,7 +42,8 @@ class RandomServiceTest extends BaseServiceTest {
     void testRandom() {
         RandomServiceGrpc.RandomServiceBlockingStub service = RandomServiceGrpc.newBlockingStub(grpcClient().channel());
         int seed = (int) System.currentTimeMillis();
-        Random.IntValue res = service.random(Random.Seed.newBuilder().setN(seed).build());;
+        Random.IntValue res = service.random(Random.Seed.newBuilder().setN(seed).build());
+        ;
         assertThat(res.getN(), is(lessThan(1000)));
     }
 

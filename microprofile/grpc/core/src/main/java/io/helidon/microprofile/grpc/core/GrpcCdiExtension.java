@@ -16,6 +16,8 @@
 
 package io.helidon.microprofile.grpc.core;
 
+import io.helidon.microprofile.grpc.api.Grpc;
+
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.spi.AnnotatedType;
 import jakarta.enterprise.inject.spi.Extension;

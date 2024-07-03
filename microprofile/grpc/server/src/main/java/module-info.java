@@ -33,6 +33,7 @@ module io.helidon.microprofile.grpc.server {
     requires io.helidon.common.features.api;
     requires io.helidon.config;
     requires io.helidon.config.mp;
+    requires io.helidon.microprofile.grpc.api;
     requires io.helidon.microprofile.grpc.core;
     requires io.helidon.microprofile.server;
     requires io.helidon.webserver.grpc;

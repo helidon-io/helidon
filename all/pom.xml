@@ -283,6 +283,10 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.grpc</groupId>
+            <artifactId>helidon-microprofile-grpc-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.grpc</groupId>
             <artifactId>helidon-microprofile-grpc-core</artifactId>
         </dependency>
         <dependency>

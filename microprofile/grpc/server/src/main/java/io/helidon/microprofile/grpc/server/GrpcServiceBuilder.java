@@ -25,20 +25,19 @@ import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import io.helidon.common.Builder;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.grpc.core.ContextKeys;
 import io.helidon.grpc.core.MethodHandler;
+import io.helidon.microprofile.grpc.api.GrpcInterceptor;
+import io.helidon.microprofile.grpc.api.GrpcInterceptorBinding;
+import io.helidon.microprofile.grpc.api.GrpcInterceptors;
+import io.helidon.microprofile.grpc.api.GrpcMarshaller;
+import io.helidon.microprofile.grpc.api.GrpcMethod;
 import io.helidon.microprofile.grpc.core.AbstractServiceBuilder;
 import io.helidon.microprofile.grpc.core.AnnotatedMethod;
 import io.helidon.microprofile.grpc.core.AnnotatedMethodList;
-import io.helidon.microprofile.grpc.core.GrpcInterceptor;
-import io.helidon.microprofile.grpc.core.GrpcInterceptorBinding;
-import io.helidon.microprofile.grpc.core.GrpcInterceptors;
-import io.helidon.microprofile.grpc.core.GrpcMarshaller;
-import io.helidon.microprofile.grpc.core.GrpcMethod;
 import io.helidon.microprofile.grpc.core.Instance;
 import io.helidon.microprofile.grpc.core.ModelHelper;
 import io.helidon.webserver.grpc.GrpcMethodDescriptor;
@@ -200,26 +199,26 @@ public class GrpcServiceBuilder
         }
 
         AnnotatedMethodConfigurer configurer = new AnnotatedMethodConfigurer(method,
-                requestType,
-                responseType,
-                interceptors);
+                                                                             requestType,
+                                                                             responseType,
+                                                                             interceptors);
 
         switch (annotation.type()) {
-            case UNARY:
-                builder.unary(name, handler, configurer);
-                break;
-            case CLIENT_STREAMING:
-                builder.clientStreaming(name, handler, configurer);
-                break;
-            case SERVER_STREAMING:
-                builder.serverStreaming(name, handler, configurer);
-                break;
-            case BIDI_STREAMING:
-                builder.bidirectional(name, handler, configurer);
-                break;
-            case UNKNOWN:
-            default:
-                LOGGER.log(Level.ERROR, () -> "Unrecognized method type " + annotation.type());
+        case UNARY:
+            builder.unary(name, handler, configurer);
+            break;
+        case CLIENT_STREAMING:
+            builder.clientStreaming(name, handler, configurer);
+            break;
+        case SERVER_STREAMING:
+            builder.serverStreaming(name, handler, configurer);
+            break;
+        case BIDI_STREAMING:
+            builder.bidirectional(name, handler, configurer);
+            break;
+        case UNKNOWN:
+        default:
+            LOGGER.log(Level.ERROR, () -> "Unrecognized method type " + annotation.type());
         }
     }
 
@@ -279,17 +278,17 @@ public class GrpcServiceBuilder
 
         List<ServerInterceptor> interceptors = instance.stream()
                 .filter(interceptor -> hasAnnotation(interceptor, annotation))
-                .collect(Collectors.toList());
+                .toList();
 
         if (interceptors.size() == 1) {
             return interceptors.get(0);
         } else if (interceptors.size() > 1) {
             throw new IllegalStateException("gRPC interceptor annotation"
-                    + "resolves to ambiguous interceptor implementations "
-                    + annotation);
+                                                    + "resolves to ambiguous interceptor implementations "
+                                                    + annotation);
         } else {
             throw new IllegalStateException("Cannot resolve a gRPC interceptor bean for annotation"
-                    + annotation);
+                                                    + annotation);
         }
     }
 

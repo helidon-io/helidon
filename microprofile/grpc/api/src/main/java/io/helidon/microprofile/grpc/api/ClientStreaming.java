@@ -13,39 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.grpc.core;
 
+package io.helidon.microprofile.grpc.api;
+
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import io.grpc.MethodDescriptor.MethodType;
+
 /**
- * Declares an ordered list of gRPC interceptors for a target gRPC
- * service class or a gRPC service method of a target class.
- * <p>
- * The classes specified must be implementations of either
- * {@link io.grpc.ClientInterceptor} or {@link io.grpc.ServerInterceptor}.
- *
- * <pre>
- * &#064;GrpcService
- * &#064;GrpcInterceptors(ValidationInterceptor.class)
- * public class OrderService { ... }
- * </pre>
- *
- * <pre>
- * &#064;Unary
- * &#064;Interceptors({ValidationInterceptor.class, SecurityInterceptor.class})
- * public void updateOrder(Order order) { ... }
- * </pre>
+ * An annotation to mark a class as representing a client streaming gRPC method.
  */
-@Target({ElementType.TYPE, ElementType.METHOD})
+@Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface GrpcInterceptors {
+@GrpcMethod(type = MethodType.CLIENT_STREAMING)
+@Documented
+@Inherited
+public @interface ClientStreaming {
     /**
-     * An ordered list of interceptors.
+     * Obtain the name of the method.
+     * <p>
+     * If not set the name of the actual annotated method is used.
      *
-     * @return the ordered list of interceptors
+     * @return  name of the method
      */
-    Class<?>[] value();
+    String name() default "";
 }

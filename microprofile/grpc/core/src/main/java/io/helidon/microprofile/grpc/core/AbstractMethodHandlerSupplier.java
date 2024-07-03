@@ -25,6 +25,9 @@ import java.util.function.Supplier;
 import io.helidon.grpc.core.GrpcHelper;
 import io.helidon.grpc.core.MethodHandler;
 import io.helidon.grpc.core.SafeStreamObserver;
+import io.helidon.microprofile.grpc.api.GrpcMethod;
+import io.helidon.microprofile.grpc.api.RequestType;
+import io.helidon.microprofile.grpc.api.ResponseType;
 
 import com.google.protobuf.Empty;
 import io.grpc.MethodDescriptor;

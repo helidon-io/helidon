@@ -21,6 +21,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import io.helidon.microprofile.grpc.api.ClientStreaming;
+import io.helidon.microprofile.grpc.api.GrpcMethod;
+import io.helidon.microprofile.grpc.api.RequestType;
+import io.helidon.microprofile.grpc.api.Unary;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;

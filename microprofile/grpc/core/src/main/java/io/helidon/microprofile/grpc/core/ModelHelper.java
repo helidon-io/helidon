@@ -30,6 +30,7 @@ import java.util.ServiceLoader;
 import java.util.stream.StreamSupport;
 
 import io.helidon.grpc.core.MarshallerSupplier;
+import io.helidon.microprofile.grpc.api.GrpcMarshaller;
 
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.CDI;

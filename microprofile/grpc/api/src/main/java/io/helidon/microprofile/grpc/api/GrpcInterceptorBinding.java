@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.grpc.core;
+package io.helidon.microprofile.grpc.api;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;

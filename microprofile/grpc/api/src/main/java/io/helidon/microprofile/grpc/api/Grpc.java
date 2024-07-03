@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.grpc.core;
+package io.helidon.microprofile.grpc.api;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -23,30 +23,28 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import io.grpc.MethodDescriptor.MethodType;
+import jakarta.inject.Qualifier;
 
 /**
- * An annotation to mark a class as representing a gRPC service
- * or a method as a gRPC service method.
+ * An annotation used to mark a class as representing a gRPC service.
  */
-@Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
+@Qualifier
+@Target({ElementType.TYPE, ElementType.FIELD, ElementType.CONSTRUCTOR})
 @Retention(RetentionPolicy.RUNTIME)
-@Documented
 @Inherited
-public @interface GrpcMethod {
+@Documented
+public @interface Grpc {
     /**
-     * Obtain the name of the method.
-     * <p>
-     * If not set the name of the actual annotated method is used.
+     * Obtain the service name.
      *
-     * @return  name of the method
+     * @return  the service name
      */
     String name() default "";
 
     /**
-     * Obtain the gRPC method type.
+     * Obtain the service version.
      *
-     * @return the gRPC method type
+     * @return  the service version
      */
-    MethodType type();
+    int version() default 0;
 }

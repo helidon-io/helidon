@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.grpc.core;
+package io.helidon.microprofile.grpc.api;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -24,17 +24,17 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * An annotation to indicate the request type of a gRPC method.
+ * An annotation to indicate the response type of a gRPC method.
  */
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Inherited
-public @interface RequestType {
+public @interface ResponseType {
     /**
-     * Obtain the gRPC request type.
+     * Obtain the gRPC response type.
      *
-     * @return the gRPC request type
+     * @return the gRPC response type
      */
     Class<?> value();
 }

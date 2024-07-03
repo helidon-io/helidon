@@ -28,6 +28,11 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import io.helidon.microprofile.grpc.api.Bidirectional;
+import io.helidon.microprofile.grpc.api.ClientStreaming;
+import io.helidon.microprofile.grpc.api.GrpcMethod;
+import io.helidon.microprofile.grpc.api.ServerStreaming;
+import io.helidon.microprofile.grpc.api.Unary;
 /**
  * A model of an annotated gRPC method.
  */

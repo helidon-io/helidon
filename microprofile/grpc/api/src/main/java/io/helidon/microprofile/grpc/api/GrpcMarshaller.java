@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.grpc.core;
+package io.helidon.microprofile.grpc.api;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;

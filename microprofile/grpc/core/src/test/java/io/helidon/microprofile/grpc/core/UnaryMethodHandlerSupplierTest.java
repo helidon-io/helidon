@@ -20,6 +20,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 import io.helidon.grpc.core.MethodHandler;
+import io.helidon.microprofile.grpc.api.Bidirectional;
+import io.helidon.microprofile.grpc.api.ClientStreaming;
+import io.helidon.microprofile.grpc.api.Grpc;
+import io.helidon.microprofile.grpc.api.RequestType;
+import io.helidon.microprofile.grpc.api.ResponseType;
+import io.helidon.microprofile.grpc.api.ServerStreaming;
+import io.helidon.microprofile.grpc.api.Unary;
 
 import com.google.protobuf.Empty;
 import io.grpc.MethodDescriptor;

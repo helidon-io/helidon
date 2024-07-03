@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.grpc.core;
+package io.helidon.microprofile.grpc.api;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -26,14 +26,14 @@ import java.lang.annotation.Target;
 import io.grpc.MethodDescriptor.MethodType;
 
 /**
- * An annotation to mark a method as representing a unary gRPC method.
+ * An annotation to mark a class as representing a gRPC service
+ * or a method as a gRPC service method.
  */
-@Target({ElementType.METHOD})
+@Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-@GrpcMethod(type = MethodType.UNARY)
 @Documented
 @Inherited
-public @interface Unary {
+public @interface GrpcMethod {
     /**
      * Obtain the name of the method.
      * <p>
@@ -42,4 +42,11 @@ public @interface Unary {
      * @return  name of the method
      */
     String name() default "";
+
+    /**
+     * Obtain the gRPC method type.
+     *
+     * @return the gRPC method type
+     */
+    MethodType type();
 }

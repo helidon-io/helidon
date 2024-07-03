@@ -20,6 +20,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.function.Supplier;
 
+import io.helidon.microprofile.grpc.api.Bidirectional;
+import io.helidon.microprofile.grpc.api.ClientStreaming;
+import io.helidon.microprofile.grpc.api.ServerStreaming;
+import io.helidon.microprofile.grpc.api.Unary;
+
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
 import io.grpc.StatusException;

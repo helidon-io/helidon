@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.grpc.core;
+package io.helidon.microprofile.grpc.api;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -26,14 +26,14 @@ import java.lang.annotation.Target;
 import io.grpc.MethodDescriptor.MethodType;
 
 /**
- * An annotation to mark a class as representing a server streaming gRPC method.
+ * An annotation to mark a method as representing a unary gRPC method.
  */
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-@GrpcMethod(type = MethodType.SERVER_STREAMING)
+@GrpcMethod(type = MethodType.UNARY)
 @Documented
 @Inherited
-public @interface ServerStreaming {
+public @interface Unary {
     /**
      * Obtain the name of the method.
      * <p>
