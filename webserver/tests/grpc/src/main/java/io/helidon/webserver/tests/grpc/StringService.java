@@ -20,12 +20,13 @@ import java.util.Locale;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.google.protobuf.Descriptors;
-import io.grpc.stub.StreamObserver;
 import io.helidon.grpc.core.CollectingObserver;
 import io.helidon.webserver.grpc.GrpcService;
 import io.helidon.webserver.grpc.strings.Strings;
 import io.helidon.webserver.grpc.strings.Strings.StringMessage;
+
+import com.google.protobuf.Descriptors;
+import io.grpc.stub.StreamObserver;
 
 import static io.helidon.grpc.core.ResponseHelper.complete;
 import static io.helidon.grpc.core.ResponseHelper.stream;
@@ -51,7 +52,7 @@ class StringService implements GrpcService {
     }
 
     private StreamObserver<StringMessage> grpcClientStream(StreamObserver<StringMessage> observer) {
-        return new CollectingObserver<>(
+        return CollectingObserver.create(
                 Collectors.joining(" "),
                 observer,
                 StringMessage::getText,

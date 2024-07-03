@@ -43,45 +43,52 @@ public class CollectingObserver<T, V, U, A, R> implements StreamObserver<V> {
     private final A accumulator;
 
     /**
-     * Constructor.
+     * Creates collecting observer from a collector and another observer.
      *
      * @param collector the collector
      * @param observer the observer
+     * @return new collecting observer
      */
-    public CollectingObserver(Collector<T, A, R> collector, StreamObserver<U> observer) {
-        this(collector, observer, null, null, null);
+    public static <T, V, U, A, R> CollectingObserver<T, V, U, A, R> create(Collector<T, A, R> collector,
+                                                                           StreamObserver<U> observer) {
+        return new CollectingObserver<>(collector, observer, null, null, null);
     }
 
     /**
-     * Constructor.
+     * Creates collecting observer from a collector, another observer and an error handler.
      *
      * @param collector the collector
      * @param observer the observer
      * @param errorHandler the error handler
+     * @return new collecting observer
      */
-    public CollectingObserver(Collector<T, A, R> collector,
-                              StreamObserver<U> observer,
-                              Consumer<Throwable> errorHandler) {
-        this(collector, observer, null, null, errorHandler);
+    public static <T, V, U, A, R> CollectingObserver<T, V, U, A, R> create(Collector<T, A, R> collector,
+                                                                           StreamObserver<U> observer,
+                                                                           Consumer<Throwable> errorHandler) {
+        Objects.requireNonNull(errorHandler);
+        return new CollectingObserver<>(collector, observer, null, null, errorHandler);
     }
 
     /**
-     * Constructor.
+     * Creates collecting observer from a collector, another observer and converters.
      *
      * @param collector the collector
      * @param observer the observer
-     * @param requestConverter the request converter
-     * @param responseConverter the response converterr
+     * @param requestConverter request converter
+     * @param responseConverter response converter
+     * @return new collecting observer
      */
-    public CollectingObserver(Collector<T, A, R> collector,
-                              StreamObserver<U> observer,
-                              Function<V, T> requestConverter,
-                              Function<R, U> responseConverter) {
-        this(collector, observer, requestConverter, responseConverter, null);
+    public static <T, V, U, A, R> CollectingObserver<T, V, U, A, R> create(Collector<T, A, R> collector,
+                                                                           StreamObserver<U> observer,
+                                                                           Function<V, T> requestConverter,
+                                                                           Function<R, U> responseConverter) {
+        Objects.requireNonNull(requestConverter);
+        Objects.requireNonNull(responseConverter);
+        return new CollectingObserver<>(collector, observer, requestConverter, responseConverter, null);
     }
 
     /**
-     * Constructor.
+     * Private constructor.
      *
      * @param collector the collector
      * @param observer the observer
@@ -90,16 +97,16 @@ public class CollectingObserver<T, V, U, A, R> implements StreamObserver<V> {
      * @param errorHandler the error handler
      */
     @SuppressWarnings("unchecked")
-    public CollectingObserver(Collector<T, A, R> collector,
-                              StreamObserver<U> observer,
-                              Function<V, T> requestConverter,
-                              Function<R, U> responseConverter,
-                              Consumer<Throwable> errorHandler) {
+    private CollectingObserver(Collector<T, A, R> collector,
+                               StreamObserver<U> observer,
+                               Function<V, T> requestConverter,
+                               Function<R, U> responseConverter,
+                               Consumer<Throwable> errorHandler) {
         this.collector = Objects.requireNonNull(collector, "The collector parameter cannot be null");
         this.responseObserver = Objects.requireNonNull(observer, "The observer parameter cannot be null");
         this.requestConverter = Optional.ofNullable(requestConverter).orElse(v -> (T) v);
         this.responseConverter = Optional.ofNullable(responseConverter).orElse(r -> (U) r);
-        this.errorHandler = Optional.ofNullable(errorHandler).orElse(t -> {});
+        this.errorHandler = Optional.ofNullable(errorHandler).orElse(t -> { });
         this.accumulator = collector.supplier().get();
     }
 

@@ -24,7 +24,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.grpc.stub.StreamObserver;
+import io.helidon.grpc.core.CollectingObserver;
 import io.helidon.microprofile.grpc.core.Bidirectional;
 import io.helidon.microprofile.grpc.core.ClientStreaming;
 import io.helidon.microprofile.grpc.core.Grpc;
@@ -32,7 +32,8 @@ import io.helidon.microprofile.grpc.core.ServerStreaming;
 import io.helidon.microprofile.grpc.core.Unary;
 import io.helidon.microprofile.grpc.server.test.StringServiceGrpc;
 import io.helidon.microprofile.grpc.server.test.Strings;
-import io.helidon.grpc.core.CollectingObserver;
+
+import io.grpc.stub.StreamObserver;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.WebTarget;
@@ -123,7 +124,7 @@ class StringServiceTest extends BaseServiceTest {
 
         @ClientStreaming(name = "Join")
         public StreamObserver<Strings.StringMessage> join(StreamObserver<Strings.StringMessage> observer) {
-            return new CollectingObserver<>(
+            return CollectingObserver.create(
                     Collectors.joining(" "),
                     observer,
                     Strings.StringMessage::getText,

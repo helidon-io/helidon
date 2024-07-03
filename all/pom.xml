@@ -518,6 +518,10 @@
             <artifactId>helidon-tracing-jersey</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.grpc</groupId>
+            <artifactId>helidon-grpc-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.microprofile.tracing</groupId>
             <artifactId>helidon-microprofile-tracing</artifactId>
         </dependency>

@@ -20,10 +20,11 @@ import java.util.Locale;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.grpc.stub.StreamObserver;
 import io.helidon.grpc.core.CollectingObserver;
 import io.helidon.webserver.grpc.strings.StringServiceGrpc;
 import io.helidon.webserver.grpc.strings.Strings;
+
+import io.grpc.stub.StreamObserver;
 
 import static io.helidon.grpc.core.ResponseHelper.complete;
 import static io.helidon.grpc.core.ResponseHelper.stream;
@@ -54,7 +55,7 @@ public class BindableStringService extends StringServiceGrpc.StringServiceImplBa
 
     @Override
     public StreamObserver<Strings.StringMessage> join(StreamObserver<Strings.StringMessage> observer) {
-        return new CollectingObserver<>(
+        return CollectingObserver.create(
                 Collectors.joining(" "),
                 observer,
                 Strings.StringMessage::getText,
