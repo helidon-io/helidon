@@ -75,14 +75,13 @@ import io.helidon.service.registry.Service;
 @Service.Provider
 // the type must be fully qualified, as it is code generated
 class MyService3 implements Supplier<Optional<com.foo.bar.MyContract3>> {
-    private final MyContract dependency;
-
+    
     MyService3() {
     }
 
     @Override
     public Optional<MyContract3> get() {
-         return "MyService3";
+         return Optional.of(MyContract3.builder().message("MyService3").build());
     }
 }
 ```
