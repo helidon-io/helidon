@@ -57,7 +57,8 @@ interface OciConfigBlueprint {
      * <p>
      * Known and supported authentication strategies for public OCI:
      * <ul>
-     *     <li>{@value #AUTHENTICATION_METHOD_AUTO} - use the list of {@link io.helidon.integrations.oci.OciConfig#allowedAuthenticationMethods()}
+     *     <li>{@value #AUTHENTICATION_METHOD_AUTO} - use the list of
+     *     {@link io.helidon.integrations.oci.OciConfig#allowedAuthenticationMethods()}
      *          (in the provided order), and choose the first one capable of providing data</li>
      *     <li>{@value AuthenticationMethodConfig#METHOD} -
      *     use configuration of the application to obtain values needed to set up connectivity, uses
@@ -82,8 +83,8 @@ interface OciConfigBlueprint {
     String authenticationMethod();
 
     /**
-     * List of attempted authentication strategies in case {@link io.helidon.integrations.oci.OciConfig#authenticationMethod()} is set
-     * to {@value #AUTHENTICATION_METHOD_AUTO}.
+     * List of attempted authentication strategies in case {@link io.helidon.integrations.oci.OciConfig#authenticationMethod()} is
+     * set to {@value #AUTHENTICATION_METHOD_AUTO}.
      * <p>
      * In case the list is empty, all available strategies will be tried, ordered by their {@link io.helidon.common.Weight}
      *
@@ -125,7 +126,7 @@ interface OciConfigBlueprint {
      * @return the OCI IMDS connection timeout
      */
     @Option.Configured
-    @Option.Default("PT0.1S")
+    @Option.Default("PT1S")
     Duration imdsTimeout();
 
     /**

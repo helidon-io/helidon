@@ -23,7 +23,8 @@ Use `io.helidon.service.registry.Service.Provider` annotation on your service pr
 Use `io.helidon.service.registry.Service.Contract` on your contract interface (if not annotated, such an interface would not be
 considered a contract and will not be discoverable using the registry - configurable).
 Use `io.helidon.service.registry.Service.ExternalContracts` on your service provider type to
-add other types as contracts, even if not annotated with `Contract` (i.e. to support third party libraries).
+add other types as contracts, even if not annotated with `Contract` (i.e. to support third party libraries). Alternatively, 
+`java.util.function.Supplier` can also be used in this scenario.
 
 Use `io.helidon.service.registry.Service.Descriptor` to create a hand-crafted service descriptor (see below "Behind the scenes")
 
@@ -60,6 +61,27 @@ class MyService2 implements MyContract2 {
     @Override
     public String message() {
         return dependency.message();
+    }
+}
+```
+
+Service with `java.util.function.Supplier` as a contract example:
+
+```java
+import java.util.function.Supplier;
+
+import io.helidon.service.registry.Service;
+
+@Service.Provider
+// the type must be fully qualified, as it is code generated
+class MyService3 implements Supplier<Optional<com.foo.bar.MyContract3>> {
+    
+    MyService3() {
+    }
+
+    @Override
+    public Optional<MyContract3> get() {
+         return Optional.of(MyContract3.builder().message("MyService3").build());
     }
 }
 ```
