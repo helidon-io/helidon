@@ -48,6 +48,7 @@ module io.helidon.microprofile.grpc.server {
     exports io.helidon.microprofile.grpc.server.spi;
 
     uses io.helidon.microprofile.grpc.server.spi.GrpcMpExtension;
+    uses io.helidon.microprofile.grpc.server.AnnotatedServiceConfigurer;
 
     provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.microprofile.grpc.server.GrpcMpCdiExtension;

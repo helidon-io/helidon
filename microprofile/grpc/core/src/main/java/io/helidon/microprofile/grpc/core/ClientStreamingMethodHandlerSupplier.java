@@ -51,17 +51,17 @@ public class ClientStreamingMethodHandlerSupplier extends AbstractMethodHandlerS
 
     @Override
     @SuppressWarnings("unchecked")
-    public <ReqT, RespT> MethodHandler<ReqT, RespT> get(String methodName, AnnotatedMethod method, Supplier<?> instance) {
+    public <ReqT, RespT> MethodHandler<ReqT, RespT> get(String methodName, AnnotatedMethod method, Supplier<?> instanceSupplier) {
         if (!isRequiredMethodType(method)) {
             throw new IllegalArgumentException("Method not annotated as a client streaming method: " + method);
         }
 
         CallType type = determineCallType(method);
         return switch (type) {
-            case clientStreaming -> (MethodHandler<ReqT, RespT>) new ClientStreaming<>(methodName, method, instance);
-            case futureResponse -> new FutureResponse<>(methodName, method, instance);
-            case clientStreamingIterable -> new ClientStreamingIterable<>(methodName, method, instance);
-            case clientStreamingStream -> new ClientStreamingStream<>(methodName, method, instance);
+            case clientStreaming -> (MethodHandler<ReqT, RespT>) new ClientStreaming<>(methodName, method, instanceSupplier);
+            case futureResponse -> new FutureResponse<>(methodName, method, instanceSupplier);
+            case clientStreamingIterable -> new ClientStreamingIterable<>(methodName, method, instanceSupplier);
+            case clientStreamingStream -> new ClientStreamingStream<>(methodName, method, instanceSupplier);
             default -> throw new IllegalArgumentException("Not a supported client streaming method signature: " + method);
         };
     }
@@ -163,8 +163,8 @@ public class ClientStreamingMethodHandlerSupplier extends AbstractMethodHandlerS
     public abstract static class AbstractClientStreamingHandler<ReqT, RespT>
             extends AbstractHandler<ReqT, RespT> {
 
-        AbstractClientStreamingHandler(String methodName, AnnotatedMethod method, Supplier<?> instance) {
-            super(methodName, method, instance, MethodDescriptor.MethodType.CLIENT_STREAMING);
+        AbstractClientStreamingHandler(String methodName, AnnotatedMethod method, Supplier<?> instanceSupplier) {
+            super(methodName, method, instanceSupplier, MethodDescriptor.MethodType.CLIENT_STREAMING);
         }
 
         @Override
@@ -188,8 +188,8 @@ public class ClientStreamingMethodHandlerSupplier extends AbstractMethodHandlerS
     public static class ClientStreaming<ReqT, RespT>
             extends AbstractClientStreamingHandler<ReqT, RespT> {
 
-        ClientStreaming(String methodName, AnnotatedMethod method, Supplier<?> instance) {
-            super(methodName, method, instance);
+        ClientStreaming(String methodName, AnnotatedMethod method, Supplier<?> instanceSupplier) {
+            super(methodName, method, instanceSupplier);
             setRequestType(getGenericResponseType(method.genericReturnType()));
             setResponseType(getGenericResponseType(method.genericParameterTypes()[0]));
         }
@@ -223,8 +223,8 @@ public class ClientStreamingMethodHandlerSupplier extends AbstractMethodHandlerS
     public static class FutureResponse<ReqT, RespT>
             extends AbstractClientStreamingHandler<ReqT, RespT> {
 
-        FutureResponse(String methodName, AnnotatedMethod method, Supplier<?> instance) {
-            super(methodName, method, instance);
+        FutureResponse(String methodName, AnnotatedMethod method, Supplier<?> instanceSupplier) {
+            super(methodName, method, instanceSupplier);
             setRequestType(getGenericResponseType(method.genericReturnType()));
             setResponseType(getGenericResponseType(method.genericParameterTypes()[0]));
         }
@@ -260,8 +260,8 @@ public class ClientStreamingMethodHandlerSupplier extends AbstractMethodHandlerS
      */
     public static class ClientStreamingIterable<ReqT, RespT> extends AbstractClientStreamingHandler<ReqT, RespT> {
 
-        ClientStreamingIterable(String methodName, AnnotatedMethod method, Supplier<?> instance) {
-            super(methodName, method, instance);
+        ClientStreamingIterable(String methodName, AnnotatedMethod method, Supplier<?> instanceSupplier) {
+            super(methodName, method, instanceSupplier);
             setRequestType(getGenericResponseType(method.genericReturnType()));
             setResponseType(getGenericResponseType(method.genericParameterTypes()[0]));
         }
@@ -312,8 +312,8 @@ public class ClientStreamingMethodHandlerSupplier extends AbstractMethodHandlerS
      */
     public static class ClientStreamingStream<ReqT, RespT> extends AbstractClientStreamingHandler<ReqT, RespT> {
 
-        ClientStreamingStream(String methodName, AnnotatedMethod method, Supplier<?> instance) {
-            super(methodName, method, instance);
+        ClientStreamingStream(String methodName, AnnotatedMethod method, Supplier<?> instanceSupplier) {
+            super(methodName, method, instanceSupplier);
             setRequestType(getGenericResponseType(method.genericReturnType()));
             setResponseType(getGenericResponseType(method.genericParameterTypes()[0]));
         }

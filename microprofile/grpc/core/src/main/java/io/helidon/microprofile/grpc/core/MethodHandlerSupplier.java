@@ -41,11 +41,11 @@ public interface MethodHandlerSupplier {
      * Supply a {@link MethodHandler} for a method.
      * @param methodName the gRPC method name
      * @param method     the method to supply a {@link MethodHandler} for
-     * @param instance   the supplier to supply the actual call handler
+     * @param instanceSupplier   the supplier to supply the actual call handler
      * @param <ReqT>     the request type
      * @param <RespT>    the response type
      * @return  a {@link MethodHandler} for the method
      * @throws java.lang.NullPointerException if the method is null
      */
-    <ReqT, RespT> MethodHandler<ReqT, RespT> get(String methodName, AnnotatedMethod method, Supplier<?> instance);
+    <ReqT, RespT> MethodHandler<ReqT, RespT> get(String methodName, AnnotatedMethod method, Supplier<?> instanceSupplier);
 }

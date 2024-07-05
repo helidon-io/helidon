@@ -54,7 +54,7 @@ public class ServerStreamingMethodHandlerSupplier extends AbstractMethodHandlerS
     }
 
     @Override
-    public <ReqT, RespT> MethodHandler<ReqT, RespT> get(String methodName, AnnotatedMethod method, Supplier<?> instance) {
+    public <ReqT, RespT> MethodHandler<ReqT, RespT> get(String methodName, AnnotatedMethod method, Supplier<?> instanceSupplier) {
         if (!isRequiredMethodType(method)) {
             throw new IllegalArgumentException("Method not annotated as a server streaming method: " + method);
         }
@@ -64,16 +64,16 @@ public class ServerStreamingMethodHandlerSupplier extends AbstractMethodHandlerS
 
         switch (type) {
         case serverStreaming:
-            handler = new ServerStreaming<>(methodName, method, instance);
+            handler = new ServerStreaming<>(methodName, method, instanceSupplier);
             break;
         case serverStreamingNoRequest:
-            handler = new ServerStreamingNoRequest<>(methodName, method, instance);
+            handler = new ServerStreamingNoRequest<>(methodName, method, instanceSupplier);
             break;
         case streamResponse:
-            handler = new StreamResponse<>(methodName, method, instance);
+            handler = new StreamResponse<>(methodName, method, instanceSupplier);
             break;
         case streamResponseNoRequest:
-            handler = new StreamResponseNoRequest<>(methodName, method, instance);
+            handler = new StreamResponseNoRequest<>(methodName, method, instanceSupplier);
             break;
         case unknown:
         default:
@@ -181,8 +181,8 @@ public class ServerStreamingMethodHandlerSupplier extends AbstractMethodHandlerS
     public abstract static class AbstractServerStreamingHandler<ReqT, RespT>
             extends AbstractHandler<ReqT, RespT> {
 
-        AbstractServerStreamingHandler(String methodName, AnnotatedMethod method, Supplier<?> instance) {
-            super(methodName, method, instance, MethodDescriptor.MethodType.SERVER_STREAMING);
+        AbstractServerStreamingHandler(String methodName, AnnotatedMethod method, Supplier<?> instanceSupplier) {
+            super(methodName, method, instanceSupplier, MethodDescriptor.MethodType.SERVER_STREAMING);
         }
 
         @Override
@@ -206,8 +206,8 @@ public class ServerStreamingMethodHandlerSupplier extends AbstractMethodHandlerS
     public static class ServerStreaming<ReqT, RespT>
             extends AbstractServerStreamingHandler<ReqT, RespT> {
 
-        ServerStreaming(String methodName, AnnotatedMethod method, Supplier<?> instance) {
-            super(methodName, method, instance);
+        ServerStreaming(String methodName, AnnotatedMethod method, Supplier<?> instanceSupplier) {
+            super(methodName, method, instanceSupplier);
             setRequestType(method.parameterTypes()[0]);
             setResponseType(getGenericResponseType(method.genericParameterTypes()[1]));
         }
@@ -245,8 +245,8 @@ public class ServerStreamingMethodHandlerSupplier extends AbstractMethodHandlerS
     public static class ServerStreamingNoRequest<ReqT, RespT>
             extends AbstractServerStreamingHandler<ReqT, RespT> {
 
-        ServerStreamingNoRequest(String methodName, AnnotatedMethod method, Supplier<?> instance) {
-            super(methodName, method, instance);
+        ServerStreamingNoRequest(String methodName, AnnotatedMethod method, Supplier<?> instanceSupplier) {
+            super(methodName, method, instanceSupplier);
             setResponseType(getGenericResponseType(method.genericParameterTypes()[0]));
         }
 
@@ -283,8 +283,8 @@ public class ServerStreamingMethodHandlerSupplier extends AbstractMethodHandlerS
     public static class StreamResponse<ReqT, RespT>
             extends AbstractServerStreamingHandler<ReqT, RespT> {
 
-        StreamResponse(String methodName, AnnotatedMethod method, Supplier<?> instance) {
-            super(methodName, method, instance);
+        StreamResponse(String methodName, AnnotatedMethod method, Supplier<?> instanceSupplier) {
+            super(methodName, method, instanceSupplier);
             setRequestType(method.parameterTypes()[0]);
             setResponseType(getGenericResponseType(method.genericReturnType()));
         }
@@ -324,8 +324,8 @@ public class ServerStreamingMethodHandlerSupplier extends AbstractMethodHandlerS
     public static class StreamResponseNoRequest<ReqT, RespT>
             extends AbstractServerStreamingHandler<ReqT, RespT> {
 
-        StreamResponseNoRequest(String methodName, AnnotatedMethod method, Supplier<?> instance) {
-            super(methodName, method, instance);
+        StreamResponseNoRequest(String methodName, AnnotatedMethod method, Supplier<?> instanceSupplier) {
+            super(methodName, method, instanceSupplier);
             setResponseType(getGenericResponseType(method.genericReturnType()));
         }
 

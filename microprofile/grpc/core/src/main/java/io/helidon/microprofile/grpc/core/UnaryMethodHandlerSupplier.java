@@ -50,7 +50,7 @@ public class UnaryMethodHandlerSupplier extends AbstractMethodHandlerSupplier {
     }
 
     @Override
-    public <ReqT, RespT> MethodHandler<ReqT, RespT> get(String methodName, AnnotatedMethod method, Supplier<?> instance) {
+    public <ReqT, RespT> MethodHandler<ReqT, RespT> get(String methodName, AnnotatedMethod method, Supplier<?> instanceSupplier) {
         if (!isRequiredMethodType(method)) {
             throw new IllegalArgumentException("Method not annotated as a unary method: " + method);
         }
@@ -60,34 +60,34 @@ public class UnaryMethodHandlerSupplier extends AbstractMethodHandlerSupplier {
 
         switch (type) {
         case requestResponse:
-            handler = new RequestResponse<>(methodName, method, instance);
+            handler = new RequestResponse<>(methodName, method, instanceSupplier);
             break;
         case responseOnly:
-            handler = new ResponseOnly<>(methodName, method, instance);
+            handler = new ResponseOnly<>(methodName, method, instanceSupplier);
             break;
         case requestNoResponse:
-            handler = new RequestNoResponse<>(methodName, method, instance);
+            handler = new RequestNoResponse<>(methodName, method, instanceSupplier);
             break;
         case noRequestNoResponse:
-            handler = new NoRequestNoResponse<>(methodName, method, instance);
+            handler = new NoRequestNoResponse<>(methodName, method, instanceSupplier);
             break;
         case futureResponse:
-            handler = new FutureResponse<>(methodName, method, instance);
+            handler = new FutureResponse<>(methodName, method, instanceSupplier);
             break;
         case futureResponseNoRequest:
-            handler = new FutureResponseNoRequest<>(methodName, method, instance);
+            handler = new FutureResponseNoRequest<>(methodName, method, instanceSupplier);
             break;
         case unary:
-            handler = new Unary<>(methodName, method, instance);
+            handler = new Unary<>(methodName, method, instanceSupplier);
             break;
         case unaryRequest:
-            handler = new UnaryNoRequest<>(methodName, method, instance);
+            handler = new UnaryNoRequest<>(methodName, method, instanceSupplier);
             break;
         case unaryFuture:
-            handler = new UnaryFuture<>(methodName, method, instance);
+            handler = new UnaryFuture<>(methodName, method, instanceSupplier);
             break;
         case unaryFutureNoRequest:
-            handler = new UnaryFutureNoRequest<>(methodName, method, instance);
+            handler = new UnaryFutureNoRequest<>(methodName, method, instanceSupplier);
             break;
         case unknown:
         default:
@@ -279,8 +279,8 @@ public class UnaryMethodHandlerSupplier extends AbstractMethodHandlerSupplier {
          */
         static final Empty EMPTY = Empty.getDefaultInstance();
 
-        AbstractUnaryHandler(String methodName, AnnotatedMethod method, Supplier<?> instance) {
-            super(methodName, method, instance, MethodDescriptor.MethodType.UNARY);
+        AbstractUnaryHandler(String methodName, AnnotatedMethod method, Supplier<?> instanceSupplier) {
+            super(methodName, method, instanceSupplier, MethodDescriptor.MethodType.UNARY);
         }
 
         @Override
@@ -356,8 +356,8 @@ public class UnaryMethodHandlerSupplier extends AbstractMethodHandlerSupplier {
     public static class RequestResponse<ReqT, RespT>
             extends AbstractUnaryHandler<ReqT, RespT> {
 
-        RequestResponse(String methodName, AnnotatedMethod method, Supplier<?> instance) {
-            super(methodName, method, instance);
+        RequestResponse(String methodName, AnnotatedMethod method, Supplier<?> instanceSupplier) {
+            super(methodName, method, instanceSupplier);
             setRequestType(method.parameterTypes()[0]);
             setResponseType(method.returnType());
         }
@@ -405,8 +405,8 @@ public class UnaryMethodHandlerSupplier extends AbstractMethodHandlerSupplier {
     public static class ResponseOnly<ReqT, RespT>
             extends AbstractUnaryHandler<ReqT, RespT> {
 
-        ResponseOnly(String methodName, AnnotatedMethod method, Supplier<?> instance) {
-            super(methodName, method, instance);
+        ResponseOnly(String methodName, AnnotatedMethod method, Supplier<?> instanceSupplier) {
+            super(methodName, method, instanceSupplier);
             setResponseType(method.returnType());
         }
 
@@ -457,8 +457,8 @@ public class UnaryMethodHandlerSupplier extends AbstractMethodHandlerSupplier {
     public static class RequestNoResponse<ReqT, RespT>
             extends AbstractUnaryHandler<ReqT, RespT> {
 
-        RequestNoResponse(String methodName, AnnotatedMethod method, Supplier<?> instance) {
-            super(methodName, method, instance);
+        RequestNoResponse(String methodName, AnnotatedMethod method, Supplier<?> instanceSupplier) {
+            super(methodName, method, instanceSupplier);
             setRequestType(method.parameterTypes()[0]);
         }
 
@@ -510,8 +510,8 @@ public class UnaryMethodHandlerSupplier extends AbstractMethodHandlerSupplier {
     public static class NoRequestNoResponse<ReqT, RespT>
             extends AbstractUnaryHandler<ReqT, RespT> {
 
-        NoRequestNoResponse(String methodName, AnnotatedMethod method, Supplier<?> instance) {
-            super(methodName, method, instance);
+        NoRequestNoResponse(String methodName, AnnotatedMethod method, Supplier<?> instanceSupplier) {
+            super(methodName, method, instanceSupplier);
         }
 
         @Override
@@ -565,8 +565,8 @@ public class UnaryMethodHandlerSupplier extends AbstractMethodHandlerSupplier {
     public static class FutureResponse<ReqT, RespT>
             extends AbstractUnaryHandler<ReqT, RespT> {
 
-        FutureResponse(String methodName, AnnotatedMethod method, Supplier<?> instance) {
-            super(methodName, method, instance);
+        FutureResponse(String methodName, AnnotatedMethod method, Supplier<?> instanceSupplier) {
+            super(methodName, method, instanceSupplier);
             setRequestType(method.parameterTypes()[0]);
             setResponseType(getGenericResponseType(method.genericReturnType()));
         }
@@ -620,8 +620,8 @@ public class UnaryMethodHandlerSupplier extends AbstractMethodHandlerSupplier {
     public static class FutureResponseNoRequest<ReqT, RespT>
             extends AbstractUnaryHandler<ReqT, RespT> {
 
-        FutureResponseNoRequest(String methodName, AnnotatedMethod method, Supplier<?> instance) {
-            super(methodName, method, instance);
+        FutureResponseNoRequest(String methodName, AnnotatedMethod method, Supplier<?> instanceSupplier) {
+            super(methodName, method, instanceSupplier);
             setResponseType(getGenericResponseType(method.genericReturnType()));
         }
 
@@ -669,8 +669,8 @@ public class UnaryMethodHandlerSupplier extends AbstractMethodHandlerSupplier {
     public static class Unary<ReqT, RespT>
             extends AbstractUnaryHandler<ReqT, RespT> {
 
-        Unary(String methodName, AnnotatedMethod method, Supplier<?> instance) {
-            super(methodName, method, instance);
+        Unary(String methodName, AnnotatedMethod method, Supplier<?> instanceSupplier) {
+            super(methodName, method, instanceSupplier);
             setRequestType(method.parameterTypes()[0]);
             setResponseType(getGenericResponseType(method.genericParameterTypes()[1]));
         }
@@ -720,8 +720,8 @@ public class UnaryMethodHandlerSupplier extends AbstractMethodHandlerSupplier {
     public static class UnaryNoRequest<ReqT, RespT>
             extends AbstractUnaryHandler<ReqT, RespT> {
 
-        UnaryNoRequest(String methodName, AnnotatedMethod method, Supplier<?> instance) {
-            super(methodName, method, instance);
+        UnaryNoRequest(String methodName, AnnotatedMethod method, Supplier<?> instanceSupplier) {
+            super(methodName, method, instanceSupplier);
             setResponseType(getGenericResponseType(method.genericParameterTypes()[0]));
         }
 
@@ -775,8 +775,8 @@ public class UnaryMethodHandlerSupplier extends AbstractMethodHandlerSupplier {
     public static class UnaryFuture<ReqT, RespT>
             extends AbstractUnaryHandler<ReqT, RespT> {
 
-        UnaryFuture(String methodName, AnnotatedMethod method, Supplier<?> instance) {
-            super(methodName, method, instance);
+        UnaryFuture(String methodName, AnnotatedMethod method, Supplier<?> instanceSupplier) {
+            super(methodName, method, instanceSupplier);
             setRequestType(method.parameterTypes()[0]);
             setResponseType(getGenericResponseType(method.genericParameterTypes()[1]));
         }
@@ -833,8 +833,8 @@ public class UnaryMethodHandlerSupplier extends AbstractMethodHandlerSupplier {
     public static class UnaryFutureNoRequest<ReqT, RespT>
             extends AbstractUnaryHandler<ReqT, RespT> {
 
-        UnaryFutureNoRequest(String methodName, AnnotatedMethod method, Supplier<?> instance) {
-            super(methodName, method, instance);
+        UnaryFutureNoRequest(String methodName, AnnotatedMethod method, Supplier<?> instanceSupplier) {
+            super(methodName, method, instanceSupplier);
             setResponseType(getGenericResponseType(method.genericParameterTypes()[0]));
         }
 

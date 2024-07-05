@@ -83,7 +83,7 @@ abstract class AbstractMethodHandlerSupplier implements MethodHandlerSupplier {
 
         private final String methodName;
         private final AnnotatedMethod method;
-        private final Supplier<?> instance;
+        private final Supplier<?> instanceSupplier;
         private final MethodDescriptor.MethodType methodType;
         private Class<?> requestType = Empty.class;
         private Class<?> responseType = Empty.class;
@@ -93,16 +93,16 @@ abstract class AbstractMethodHandlerSupplier implements MethodHandlerSupplier {
          *
          * @param methodName the name of the gRPC method
          * @param method   the underlying handler method this handler should call
-         * @param instance the supplier to use to obtain the object to call the method on
+         * @param instanceSupplier the supplier to use to obtain the object to call the method on
          * @param methodType the type of method handled by this handler
          */
         protected AbstractHandler(String methodName,
                                   AnnotatedMethod method,
-                                  Supplier<?> instance,
+                                  Supplier<?> instanceSupplier,
                                   MethodDescriptor.MethodType methodType) {
             this.methodName = methodName;
             this.method = method;
-            this.instance = instance;
+            this.instanceSupplier = instanceSupplier;
             this.methodType = methodType;
         }
 
@@ -120,7 +120,7 @@ abstract class AbstractMethodHandlerSupplier implements MethodHandlerSupplier {
             }
 
             try {
-                invoke(method.declaredMethod(), instance.get(), request, safe);
+                invoke(method.declaredMethod(), instanceSupplier.get(), request, safe);
             } catch (Throwable thrown) {
                 safe.onError(GrpcHelper.ensureStatusException(thrown, Status.INTERNAL));
             }
@@ -143,7 +143,7 @@ abstract class AbstractMethodHandlerSupplier implements MethodHandlerSupplier {
         public StreamObserver<ReqT> invoke(StreamObserver<RespT> observer) {
             StreamObserver<RespT> safe = SafeStreamObserver.ensureSafeObserver(observer);
             try {
-                return invoke(method.declaredMethod(), instance.get(), safe);
+                return invoke(method.declaredMethod(), instanceSupplier.get(), safe);
             } catch (Throwable thrown) {
                 throw GrpcHelper.ensureStatusRuntimeException(thrown, Status.INTERNAL);
             }

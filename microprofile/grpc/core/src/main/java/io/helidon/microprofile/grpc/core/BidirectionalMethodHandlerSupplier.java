@@ -47,7 +47,7 @@ public class BidirectionalMethodHandlerSupplier extends AbstractMethodHandlerSup
     }
 
     @Override
-    public <ReqT, RespT> MethodHandler<ReqT, RespT> get(String methodName, AnnotatedMethod method, Supplier<?> instance) {
+    public <ReqT, RespT> MethodHandler<ReqT, RespT> get(String methodName, AnnotatedMethod method, Supplier<?> instanceSupplier) {
         if (!isRequiredMethodType(method)) {
             throw new IllegalArgumentException("Method not annotated as a bi-directional streaming method: " + method);
         }
@@ -57,7 +57,7 @@ public class BidirectionalMethodHandlerSupplier extends AbstractMethodHandlerSup
 
         switch (type) {
         case bidiStreaming:
-            handler = new BidiStreaming<>(methodName, method, instance);
+            handler = new BidiStreaming<>(methodName, method, instanceSupplier);
             break;
         case unknown:
         default:
@@ -123,8 +123,8 @@ public class BidirectionalMethodHandlerSupplier extends AbstractMethodHandlerSup
     public abstract static class AbstractServerStreamingHandler<ReqT, RespT>
             extends AbstractHandler<ReqT, RespT> {
 
-        AbstractServerStreamingHandler(String methodName, AnnotatedMethod method, Supplier<?> instance) {
-            super(methodName, method, instance, MethodDescriptor.MethodType.BIDI_STREAMING);
+        AbstractServerStreamingHandler(String methodName, AnnotatedMethod method, Supplier<?> instanceSupplier) {
+            super(methodName, method, instanceSupplier, MethodDescriptor.MethodType.BIDI_STREAMING);
         }
 
         @Override
@@ -148,8 +148,8 @@ public class BidirectionalMethodHandlerSupplier extends AbstractMethodHandlerSup
     public static class BidiStreaming<ReqT, RespT>
             extends AbstractServerStreamingHandler<ReqT, RespT> {
 
-        BidiStreaming(String methodName, AnnotatedMethod method, Supplier<?> instance) {
-            super(methodName, method, instance);
+        BidiStreaming(String methodName, AnnotatedMethod method, Supplier<?> instanceSupplier) {
+            super(methodName, method, instanceSupplier);
             setRequestType(getGenericResponseType(method.genericReturnType()));
             setResponseType(getGenericResponseType(method.genericParameterTypes()[0]));
         }

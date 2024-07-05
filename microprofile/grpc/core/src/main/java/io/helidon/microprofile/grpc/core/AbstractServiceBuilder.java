@@ -45,20 +45,20 @@ public abstract class AbstractServiceBuilder {
 
     private final Class<?> serviceClass;
     private final Class<?> annotatedServiceClass;
-    private final Supplier<?> instance;
+    private final Supplier<?> instanceSupplier;
     private final List<MethodHandlerSupplier> handlerSuppliers;
 
     /**
      * Create a new introspection modeller for a given gRPC service class.
      *
      * @param serviceClass gRPC service (handler) class.
-     * @param instance     the target instance to call gRPC handler methods on
-     * @throws NullPointerException if the service or instance parameters are null
+     * @param instanceSupplier     the target instanceSupplier to call gRPC handler methods on
+     * @throws NullPointerException if the service or instanceSupplier parameters are null
      */
-    protected AbstractServiceBuilder(Class<?> serviceClass, Supplier<?> instance) {
+    protected AbstractServiceBuilder(Class<?> serviceClass, Supplier<?> instanceSupplier) {
         this.serviceClass = Objects.requireNonNull(serviceClass);
         this.annotatedServiceClass = ModelHelper.getAnnotatedResourceClass(serviceClass, Grpc.class);
-        this.instance = Objects.requireNonNull(instance);
+        this.instanceSupplier = Objects.requireNonNull(instanceSupplier);
         this.handlerSuppliers = HelidonServiceLoader.create(ServiceLoader.load(MethodHandlerSupplier.class)).asList();
     }
 
@@ -108,9 +108,9 @@ public abstract class AbstractServiceBuilder {
      */
     protected static Supplier<?> createInstanceSupplier(Class<?> cls) {
         if (cls.isAnnotationPresent(Singleton.class)) {
-            return Instance.singleton(cls);
+            return InstanceSupplier.singleton(cls);
         } else {
-            return Instance.create(cls);
+            return InstanceSupplier.create(cls);
         }
     }
 
@@ -143,7 +143,7 @@ public abstract class AbstractServiceBuilder {
      * @return the service instance supplier
      */
     protected Supplier<?> instanceSupplier() {
-        return instance;
+        return instanceSupplier;
     }
 
     /**

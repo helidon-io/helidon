@@ -26,7 +26,7 @@ import io.grpc.Status;
 /**
  * A supplier of instances of objects.
  */
-public interface Instance {
+public interface InstanceSupplier {
 
     /**
      * Create a {@link Supplier} that supplies a
@@ -34,7 +34,7 @@ public interface Instance {
      *
      * @param instance  the singleton instance to supply
      * @param <T>       the type of instance supplied
-     * @return  the singleton instance
+     * @return the singleton instance
      *
      * @throws java.lang.NullPointerException if the instance parameter is null
      */
@@ -48,9 +48,9 @@ public interface Instance {
      * <p>
      * The Class provided must have a no-args default constructor.
      *
-     * @param cls  the Class of the singleton instance to supply
-     * @param <T>       the type of instance supplied
-     * @return  the singleton instance of the specified Class
+     * @param cls the Class of the singleton instance to supply
+     * @param <T> the type of instance supplied
+     * @return the singleton instance of the specified Class
      *
      * @throws java.lang.NullPointerException if the class is null
      */
@@ -67,9 +67,9 @@ public interface Instance {
      * A new instance of the specified Class is created for every
      * call to {@link Supplier#get()}.
      *
-     * @param cls  the Class of the singleton instance to supply
-     * @param <T>       the type of instance supplied
-     * @return  the singleton instance of the specified Class
+     * @param cls the Class of the singleton instance to supply
+     * @param <T> the type of instance supplied
+     * @return the singleton instance of the specified Class
      *
      * @throws java.lang.NullPointerException if the class is null
      */
@@ -79,13 +79,12 @@ public interface Instance {
 
     /**
      * A {@link Supplier} implementation that supplies new instances
-     * of a class each time its {@link Supplier#get() get()} method
+     * of a class each time its {@link java.util.function.Supplier#get()} method
      * is called.
      *
      * @param <T> the type of instance supplied
      */
-    class NewInstance<T>
-            implements Supplier<T> {
+    class NewInstance<T> implements Supplier<T> {
 
         private final Class<T> instanceClass;
 
@@ -105,7 +104,7 @@ public interface Instance {
 
     /**
      * A {@link Supplier} implementation that supplies the same singleton
-     * instance of a value each time its {@link Supplier#get() get()}
+     * instance of a value each time its {@link java.util.function.Supplier#get()}
      * method is called.
      *
      * @param <T> the type of instance supplied
