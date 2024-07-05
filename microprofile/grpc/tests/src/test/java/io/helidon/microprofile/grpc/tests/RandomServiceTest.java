@@ -14,22 +14,21 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.grpc.server;
+package io.helidon.microprofile.grpc.tests;
+
+import io.helidon.grpc.core.ResponseHelper;
+import io.helidon.microprofile.grpc.tests.test.Random;
+import io.helidon.microprofile.grpc.tests.test.RandomServiceGrpc;
 
 import io.grpc.stub.StreamObserver;
-
-import io.helidon.microprofile.grpc.server.test.Random;
-import io.helidon.microprofile.grpc.server.test.RandomServiceGrpc;
-
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.WebTarget;
+import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.grpc.core.ResponseHelper.complete;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.lessThan;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 class RandomServiceTest extends BaseServiceTest {
 
@@ -43,13 +42,12 @@ class RandomServiceTest extends BaseServiceTest {
         RandomServiceGrpc.RandomServiceBlockingStub service = RandomServiceGrpc.newBlockingStub(grpcClient().channel());
         int seed = (int) System.currentTimeMillis();
         Random.IntValue res = service.random(Random.Seed.newBuilder().setN(seed).build());
-        ;
-        assertThat(res.getN(), is(lessThan(1000)));
+        MatcherAssert.assertThat(res.getN(), is(lessThan(1000)));
     }
 
     /**
      * A service that implements the {@link io.grpc.BindableService} interface. Should be
-     * discovered by {@link GrpcMpCdiExtension}.
+     * discovered by {@link io.helidon.microprofile.grpc.server.GrpcMpCdiExtension}.
      */
     @ApplicationScoped
     public static class RandomService implements io.grpc.BindableService, RandomServiceGrpc.AsyncService {
@@ -64,7 +62,7 @@ class RandomServiceTest extends BaseServiceTest {
             int seed = request.getN();
             java.util.Random random = new java.util.Random();
             random.setSeed(seed);
-            complete(observer, Random.IntValue.newBuilder().setN(random.nextInt(1000)).build());
+            ResponseHelper.complete(observer, Random.IntValue.newBuilder().setN(random.nextInt(1000)).build());
         }
     }
 }

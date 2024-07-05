@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.grpc.server;
+package io.helidon.microprofile.grpc.tests;
 
-import io.helidon.microprofile.grpc.server.test.Hash;
-import io.helidon.microprofile.grpc.server.test.HashServiceGrpc;
+import io.helidon.grpc.core.ResponseHelper;
+import io.helidon.microprofile.grpc.tests.test.Hash;
+import io.helidon.microprofile.grpc.tests.test.HashServiceGrpc;
 import io.helidon.webserver.grpc.GrpcService;
 
 import com.google.protobuf.Descriptors;
@@ -25,10 +26,9 @@ import io.grpc.stub.StreamObserver;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.WebTarget;
+import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.grpc.core.ResponseHelper.complete;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 
 class HashServiceTest extends BaseServiceTest {
@@ -42,12 +42,12 @@ class HashServiceTest extends BaseServiceTest {
     void testHash() {
         HashServiceGrpc.HashServiceBlockingStub service = HashServiceGrpc.newBlockingStub(grpcClient().channel());
         Hash.Value res = service.hash(Hash.Message.newBuilder().setText("hello world").build());
-        assertThat(res.getText(), is(String.valueOf("hello world".hashCode())));
+        MatcherAssert.assertThat(res.getText(), is(String.valueOf("hello world".hashCode())));
     }
 
     /**
      * A service that implements the {@link GrpcService} interface. Should be
-     * discovered by {@link GrpcMpCdiExtension}.
+     * discovered by {@link io.helidon.microprofile.grpc.server.GrpcMpCdiExtension}.
      */
     @ApplicationScoped
     public static class HashService implements GrpcService {
@@ -62,7 +62,7 @@ class HashServiceTest extends BaseServiceTest {
         }
 
         public void hash(Hash.Message request, StreamObserver<Hash.Value> observer) {
-            complete(observer, Hash.Value.newBuilder().setText(
+            ResponseHelper.complete(observer, Hash.Value.newBuilder().setText(
                     String.valueOf(request.getText().hashCode())).build());
         }
     }

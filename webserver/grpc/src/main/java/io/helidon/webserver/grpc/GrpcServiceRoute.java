@@ -22,7 +22,6 @@ import java.util.List;
 import io.helidon.grpc.core.WeightedBag;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.PathMatchers;
-import io.helidon.tracing.Tracer;
 
 import com.google.protobuf.Descriptors;
 import io.grpc.BindableService;
@@ -71,19 +70,14 @@ class GrpcServiceRoute extends GrpcRoute {
 
     /**
      * Creates a gRPC route for an instance CDI bean annotated with {@link @Grpc}.
-     * Registers global interceptors for context and tracing on all the routes.
+     * Registers global interceptors for context on all the routes.
      *
      * @param service the service
-     * @param tracingConfig tracing configuration
+     * @param interceptors interceptor bag
      * @return the route
      */
-    static GrpcRoute create(GrpcServiceDescriptor service, GrpcTracingConfig tracingConfig) {
-        WeightedBag<ServerInterceptor> interceptors = WeightedBag.create();
+    static GrpcRoute create(GrpcServiceDescriptor service, WeightedBag<ServerInterceptor> interceptors) {
         interceptors.add(ContextSettingServerInterceptor.create());
-        if (tracingConfig.enabled()) {
-            Tracer tracer = Tracer.global();
-            interceptors.add(GrpcTracingInterceptor.create(tracer, tracingConfig));
-        }
         return create(BindableServiceImpl.create(service, interceptors));
     }
 

@@ -88,7 +88,7 @@ public class GrpcTracingInterceptor implements ServerInterceptor {
      * @param config the tracing configuration
      * @return a {@link GrpcTracingInterceptor} interceptor instance
      */
-    static GrpcTracingInterceptor create(Tracer tracer, GrpcTracingConfig config) {
+    public static GrpcTracingInterceptor create(Tracer tracer, GrpcTracingConfig config) {
         return new GrpcTracingInterceptor(tracer, config);
     }
 

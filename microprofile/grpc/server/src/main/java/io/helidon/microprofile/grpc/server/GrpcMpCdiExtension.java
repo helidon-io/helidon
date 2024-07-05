@@ -28,7 +28,6 @@ import io.helidon.microprofile.grpc.server.spi.GrpcMpExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.webserver.grpc.GrpcRouting;
 import io.helidon.webserver.grpc.GrpcService;
-import io.helidon.webserver.grpc.GrpcTracingConfig;
 
 import io.grpc.BindableService;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -122,8 +121,7 @@ public class GrpcMpCdiExtension implements Extension {
     private void register(Object service, GrpcRouting.Builder builder, Class<?> cls, BeanManager beanManager) {
         GrpcServiceBuilder serviceBuilder = GrpcServiceBuilder.create(cls, () -> service, beanManager);
         if (serviceBuilder.isAnnotatedService()) {
-            GrpcTracingConfig tracingConfig = GrpcTracingConfig.create(config.get("tracing.grpc"));
-            builder.service(serviceBuilder.build(), tracingConfig);
+            builder.service(serviceBuilder.build());
         } else {
             LOGGER.log(Level.WARNING,
                     () -> "Discovered type is not a properly annotated gRPC service " + service.getClass());

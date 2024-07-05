@@ -294,6 +294,10 @@
             <artifactId>helidon-microprofile-grpc-server</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.microprofile.grpc</groupId>
+            <artifactId>helidon-microprofile-grpc-tracing</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.metrics</groupId>
             <artifactId>helidon-metrics</artifactId>
         </dependency>

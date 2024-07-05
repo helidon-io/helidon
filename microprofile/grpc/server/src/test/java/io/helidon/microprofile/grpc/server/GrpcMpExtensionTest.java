@@ -21,6 +21,7 @@ import java.util.Set;
 
 import io.helidon.microprofile.grpc.server.spi.GrpcMpContext;
 import io.helidon.microprofile.grpc.server.spi.GrpcMpExtension;
+import io.helidon.microprofile.testing.junit5.AddBean;
 import io.helidon.microprofile.testing.junit5.AddExtension;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
@@ -32,6 +33,8 @@ import static org.hamcrest.Matchers.hasItems;
 
 @HelidonTest
 @AddExtension(GrpcMpCdiExtension.class)
+@AddBean(GrpcMpExtensionTest.Extension1.class)
+@AddBean(GrpcMpExtensionTest.Extension2.class)
 public class GrpcMpExtensionTest {
 
     private static final Set<Class<?>> EXTENSIONS_LOADED = new HashSet<>();

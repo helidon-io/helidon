@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,7 @@
  * limitations under the License.
  */
 
-syntax = "proto3";
-option java_package = "io.helidon.microprofile.grpc.server.test";
-
-service EchoService {
-  rpc Echo (EchoRequest) returns (EchoResponse) {}
-}
-
-message EchoRequest {
-  string message = 1;
-}
-
-message EchoResponse {
-  string message = 1;
-}
+/**
+ * Microprofile gRPC tracing implementation.
+ */
+package io.helidon.microprofile.grpc.tracing;

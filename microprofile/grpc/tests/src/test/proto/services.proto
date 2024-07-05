@@ -15,7 +15,7 @@
  */
 
 syntax = "proto3";
-option java_package = "io.helidon.microprofile.grpc.server.test";
+option java_package = "io.helidon.microprofile.grpc.tests.test";
 
 service UnaryService {
   rpc requestResponse (TestRequest) returns (TestResponse) {}

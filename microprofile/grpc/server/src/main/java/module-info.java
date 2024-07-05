@@ -22,7 +22,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  * gRPC microprofile server module
  */
 @Feature(value = "gRPC",
-        description = "Helidon MP gRPC implementation",
+        description = "Helidon gRPC MP server",
         in = HelidonFlavor.MP,
         path = "gRPC"
 )

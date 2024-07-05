@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.grpc.server;
+package io.helidon.microprofile.grpc.tests;
 
 import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
@@ -25,22 +25,22 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.grpc.core.CollectingObserver;
+import io.helidon.grpc.core.ResponseHelper;
 import io.helidon.microprofile.grpc.api.Bidirectional;
 import io.helidon.microprofile.grpc.api.ClientStreaming;
 import io.helidon.microprofile.grpc.api.Grpc;
 import io.helidon.microprofile.grpc.api.ServerStreaming;
 import io.helidon.microprofile.grpc.api.Unary;
-import io.helidon.microprofile.grpc.server.test.StringServiceGrpc;
-import io.helidon.microprofile.grpc.server.test.Strings;
+import io.helidon.microprofile.grpc.tests.test.StringServiceGrpc;
+import io.helidon.microprofile.grpc.tests.test.Strings;
 
 import io.grpc.stub.StreamObserver;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.WebTarget;
+import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.grpc.core.ResponseHelper.complete;
-import static io.helidon.grpc.core.ResponseHelper.stream;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -56,22 +56,22 @@ class StringServiceTest extends BaseServiceTest {
     void testUnaryUpper() {
         StringServiceGrpc.StringServiceBlockingStub service = StringServiceGrpc.newBlockingStub(grpcClient().channel());
         Strings.StringMessage res = service.upper(newStringMessage("hello"));
-        assertThat(res.getText(), is("HELLO"));
+        MatcherAssert.assertThat(res.getText(), is("HELLO"));
     }
 
     @Test
     void testUnaryLower() {
         StringServiceGrpc.StringServiceBlockingStub service = StringServiceGrpc.newBlockingStub(grpcClient().channel());
         Strings.StringMessage res = service.lower(newStringMessage("HELLO"));
-        assertThat(res.getText(), is("hello"));
+        MatcherAssert.assertThat(res.getText(), is("hello"));
     }
 
     @Test
     void testServerStreamingSplit() {
         StringServiceGrpc.StringServiceBlockingStub service = StringServiceGrpc.newBlockingStub(grpcClient().channel());
         Iterator<Strings.StringMessage> res = service.split(newStringMessage("hello world"));
-        assertThat(res.next().getText(), is("hello"));
-        assertThat(res.next().getText(), is("world"));
+        MatcherAssert.assertThat(res.next().getText(), is("hello"));
+        MatcherAssert.assertThat(res.next().getText(), is("world"));
         assertThat(res.hasNext(), is(false));
     }
 
@@ -84,7 +84,7 @@ class StringServiceTest extends BaseServiceTest {
         req.onNext(newStringMessage("world"));
         req.onCompleted();
         Strings.StringMessage res = future.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        assertThat(res.getText(), is("hello world"));
+        MatcherAssert.assertThat(res.getText(), is("hello world"));
     }
 
     @Test
@@ -95,7 +95,7 @@ class StringServiceTest extends BaseServiceTest {
         req.onNext(newStringMessage("hello"));
         req.onCompleted();
         Strings.StringMessage res = future.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        assertThat(res.getText(), is("hello"));
+        MatcherAssert.assertThat(res.getText(), is("hello"));
     }
 
     Strings.StringMessage newStringMessage(String data) {
@@ -108,18 +108,18 @@ class StringServiceTest extends BaseServiceTest {
 
         @Unary(name = "Upper")
         public void upper(Strings.StringMessage request, StreamObserver<Strings.StringMessage> observer) {
-            complete(observer, response(request.getText().toUpperCase()));
+            ResponseHelper.complete(observer, response(request.getText().toUpperCase()));
         }
 
         @Unary(name = "Lower")
         public void lower(Strings.StringMessage request, StreamObserver<Strings.StringMessage> observer) {
-            complete(observer, response(request.getText().toLowerCase()));
+            ResponseHelper.complete(observer, response(request.getText().toLowerCase()));
         }
 
         @ServerStreaming(name = "Split")
         public void split(Strings.StringMessage request, StreamObserver<Strings.StringMessage> observer) {
             String[] parts = request.getText().split(" ");
-            stream(observer, Stream.of(parts).map(this::response));
+            ResponseHelper.stream(observer, Stream.of(parts).map(this::response));
         }
 
         @ClientStreaming(name = "Join")

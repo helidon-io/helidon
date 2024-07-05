@@ -30,7 +30,7 @@ interface GrpcTracingConfigBlueprint {
      * A flag indicating if tracing is enabled.
      */
     @Option.Configured
-    @Option.DefaultBoolean(false)
+    @Option.DefaultBoolean(true)
     boolean enabled();
 
     /**

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.grpc.server;
+package io.helidon.microprofile.grpc.tests;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -27,8 +27,8 @@ import io.helidon.microprofile.grpc.api.GrpcInterceptor;
 import io.helidon.microprofile.grpc.api.GrpcInterceptorBinding;
 import io.helidon.microprofile.grpc.api.GrpcInterceptors;
 import io.helidon.microprofile.grpc.api.Unary;
-import io.helidon.microprofile.grpc.server.test.Echo;
-import io.helidon.microprofile.grpc.server.test.EchoServiceGrpc;
+import io.helidon.microprofile.grpc.tests.test.Echo;
+import io.helidon.microprofile.grpc.tests.test.EchoServiceGrpc;
 import io.helidon.tracing.Tracer;
 
 import io.grpc.Context;
@@ -79,8 +79,8 @@ class EchoServiceTest extends BaseServiceTest {
     }
 
     /**
-     * A service that is annotated by {@link Grpc}. Should be discovered by
-     * {@link GrpcMpCdiExtension}. References two interceptors, one directly
+     * A service that is annotated by {@link io.helidon.microprofile.grpc.api.Grpc}. Should be discovered by
+     * {@link io.helidon.microprofile.grpc.server.GrpcMpCdiExtension}. References two interceptors, one directly
      * and one via an interceptor binding.
      */
     @Grpc
