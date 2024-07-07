@@ -44,7 +44,6 @@ import io.helidon.http.media.ReadableEntityBase;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientResponseEntity;
 import io.helidon.webclient.api.ClientUri;
-import io.helidon.webclient.api.HttpClientConfig;
 import io.helidon.webclient.spi.Source;
 import io.helidon.webclient.spi.SourceHandlerProvider;
 
@@ -57,8 +56,6 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     private static final long ENTITY_LENGTH_CHUNKED = -1;
     private final AtomicBoolean closed = new AtomicBoolean();
 
-    private final HttpClientConfig clientConfig;
-    private final Http1ClientProtocolConfig protocolConfig;
     private final Status responseStatus;
     private final ClientRequestHeaders requestHeaders;
     private final ClientResponseHeaders responseHeaders;
@@ -66,9 +63,6 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     private final MediaContext mediaContext;
     private final CompletableFuture<Void> whenComplete;
     private final boolean hasTrailers;
-    private final List<String> trailerNames;
-    // Media type parsing mode configured on client.
-    private final ParserMode parserMode;
     private final ClientUri lastEndpointUri;
 
     private final ClientConnection connection;
@@ -77,8 +71,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     private long entityLength;
     private boolean entityFullyRead = false;
 
-    Http1ClientResponseImpl(HttpClientConfig clientConfig,
-                            Http1ClientProtocolConfig protocolConfig,
+    Http1ClientResponseImpl(Http1ClientProtocolConfig protocolConfig,
                             Status responseStatus,
                             ClientRequestHeaders requestHeaders,
                             ClientResponseHeaders responseHeaders,
@@ -87,15 +80,12 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
                             MediaContext mediaContext,
                             ClientUri lastEndpointUri,
                             CompletableFuture<Void> whenComplete) {
-        this.clientConfig = clientConfig;
-        this.protocolConfig = protocolConfig;
         this.responseStatus = responseStatus;
         this.requestHeaders = requestHeaders;
         this.responseHeaders = responseHeaders;
         this.connection = connection;
         this.inputStream = inputStream;
         this.mediaContext = mediaContext;
-        this.parserMode = clientConfig.mediaTypeParserMode();
         this.lastEndpointUri = lastEndpointUri;
         this.whenComplete = whenComplete;
         this.trailers = LazyValue.create(() -> Http1HeadersParser.readHeaders(
@@ -111,13 +101,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
             this.entityLength = ENTITY_LENGTH_CHUNKED;
         }
 
-        if (responseHeaders.contains(HeaderNames.TRAILER)) {
-            this.hasTrailers = true;
-            this.trailerNames = responseHeaders.get(HeaderNames.TRAILER).allValues(true);
-        } else {
-            this.hasTrailers = false;
-            this.trailerNames = List.of();
-        }
+        this.hasTrailers = responseHeaders.contains(HeaderNames.TRAILER);
     }
 
     @Override

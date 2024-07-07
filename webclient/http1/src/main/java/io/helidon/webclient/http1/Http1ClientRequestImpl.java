@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -211,8 +211,7 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
                     return null;
                 });
 
-        return new Http1ClientResponseImpl(clientConfig(),
-                                           http1Client().protocolConfig(),
+        return new Http1ClientResponseImpl(http1Client().protocolConfig(),
                                            serviceResponse.status(),
                                            serviceResponse.serviceRequest().headers(),
                                            serviceResponse.headers(),
