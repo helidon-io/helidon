@@ -16,11 +16,17 @@
 
 package io.helidon.config;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import io.helidon.common.GenericType;
@@ -298,6 +304,81 @@ public final class ConfigValues {
         @Override
         public String toString() {
             return key() + ": " + asOptional().map(String::valueOf).orElse("");
+        }
+    }
+    /**
+     * The {@code EnvReader} class is a utility class that provides methods to read and parse environment variables from a file.
+     * It is designed to handle files where each line represents an environment variable in the format {@code KEY=VALUE}.
+     */
+    public static final class EnvReader{
+        /**
+         * A static final {@code Pattern} object that matches self-referencing expressions in the format {@code ${KEY}}.
+         */
+        private static final Pattern SELF_REFERENCE_PATTERN = Pattern.compile("\\$\\{([^}]+)}");
+        
+        /**
+         * This method reads a file from the provided file path and parses it into a {@code Map<String, String>}
+         * where each key-value pair represents an environment variable and its value.
+         * <p>
+         * The method filters out any lines that start with {@code #} (commonly used for comments)
+         * and any lines that do not contain {@code =} (as they do not represent valid environment variables).
+         * <p>
+         * If a value contains a self-reference (e.g., {@code ${OTHER_KEY}}), it is resolved using the {@code resolveSelfReferences} method.
+         * <p>
+         * If an {@code IOException} occurs during file reading, it is wrapped into a {@code RuntimeException} and rethrown.
+         * @example
+         * <pre>
+         *   Map&lt;String, String&gt; env = EnvReader.readEnvFile(".env");
+         *   for (Map.Entry&lt;String, String&gt; entry : env.entrySet()) {
+         *    System.setProperty(entry.getKey(), entry.getValue());
+         *    }
+         * </pre>
+         * OR <p>
+         * <pre>
+         *   <pre>Map&lt;String, String&gt; envVars = EnvReader.readEnvFile("/path/to/env/file");
+         * </pre>
+         * @param filePath The path to the file to read. This should be a valid file path,
+         *                 and the file should contain environment variables in the format {@code KEY=VALUE}.
+         * @return A {@code Map<String, String>} containing the environment variables and their values.
+         * @throws RuntimeException if an {@code IOException} occurs during file reading.
+         */
+        public static Map<String, String> readEnvFile(String filePath)  {
+            Map<String, String> envVars = new HashMap<>();
+            try {
+                Files.lines(Paths.get(filePath))
+                        .filter(line -> !line.startsWith("#") && line.contains("="))
+                        .forEach(line -> {
+                            String[] parts = line.split("=", 2);
+                            String key = parts[0].trim();
+                            String value = parts[1].trim();
+                            envVars.put(key, resolveSelfReferences(value, envVars));
+                        });
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            return envVars;
+        }
+        
+        /**
+         * This private method resolves any self-references in a value.
+         * A self-reference is an expression in the format {@code ${KEY}} that refers to the value of another environment variable.
+         * <p>
+         * If a referenced key does not exist in the provided map of environment variables, the self-reference is left as is.
+         *
+         * @param value The value in which to resolve self-references.
+         * @param envVars A {@code Map<String, String>} containing the environment variables and their values.
+         * @return A {@code String} with all self-references resolved.
+         */
+        private static String resolveSelfReferences(String value, Map<String, String> envVars) {
+            Matcher       matcher = SELF_REFERENCE_PATTERN.matcher(value);
+            StringBuilder result  = new StringBuilder();
+            while (matcher.find()) {
+                String refKey = matcher.group(1);
+                String replacement = envVars.getOrDefault(refKey, "${" + refKey + "}");
+                matcher.appendReplacement(result, Matcher.quoteReplacement(replacement));
+            }
+            matcher.appendTail(result);
+            return result.toString();
         }
     }
 
