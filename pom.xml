@@ -630,7 +630,7 @@
                     <configuration>
                         <skip>${dependency-check.skip}</skip>
                         <skipTestScope>true</skipTestScope>
-                        <failBuildOnAnyVulnerability>false</failBuildOnAnyVulnerability>
+                        <failBuildOnCVSS>0</failBuildOnCVSS>
                         <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
                         <nvdApiKey>${nvd-api-key}</nvdApiKey>
                         <excludes>
