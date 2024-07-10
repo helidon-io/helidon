@@ -40,13 +40,13 @@
         <version.lib.animal-sniffer>1.18</version.lib.animal-sniffer>
         <version.lib.annotation-api>1.3.5</version.lib.annotation-api>
         <version.lib.brave-opentracing>1.0.0</version.lib.brave-opentracing>
-        <version.lib.bytebuddy>1.14.14</version.lib.bytebuddy>
+        <version.lib.bytebuddy>1.14.18</version.lib.bytebuddy>
         <version.lib.commons-codec>1.16.0</version.lib.commons-codec>
         <version.lib.commons-logging>1.2</version.lib.commons-logging>
         <version.lib.cron-utils>9.1.6</version.lib.cron-utils>
         <version.lib.database.messaging>19.3.0.0</version.lib.database.messaging>
         <version.lib.dropwizard.metrics>4.1.36</version.lib.dropwizard.metrics>
-        <version.lib.eclipselink>4.0.2</version.lib.eclipselink>
+        <version.lib.eclipselink>4.0.3</version.lib.eclipselink>
         <version.lib.el-impl>4.0.2</version.lib.el-impl>
         <version.lib.etcd4j>2.18.0</version.lib.etcd4j>
         <version.lib.failsafe>2.3.1</version.lib.failsafe>
