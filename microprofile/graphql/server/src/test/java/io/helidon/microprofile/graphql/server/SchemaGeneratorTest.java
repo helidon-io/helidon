@@ -534,7 +534,7 @@ class SchemaGeneratorTest extends AbstractGraphQLTest {
 
     @Test
     public void testFormatting() {
-        assertFormat(FLOAT, "en-ZA", "¤ 000.00", 100.0d, "R 100,00");
+        assertFormat(FLOAT, "fr-FR", "¤ 000.00", 100.0d, "€ 100,00");
         assertFormat(FLOAT, "en-AU", "¤ 000.00", 100.0d, "$ 100.00");
         assertFormat(FLOAT, "en-AU", "000.00 'ml'", 125.12d, "125.12 ml");
         assertFormat(INT, "en-AU", "0 'years'", 52, "52 years");
