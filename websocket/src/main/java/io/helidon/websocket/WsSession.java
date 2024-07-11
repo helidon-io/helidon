@@ -87,7 +87,7 @@ public interface WsSession {
     /**
      * The underlying socket context.
      *
-     * @return connection context
+     * @return socket context
      */
     SocketContext socketContext();
 }
