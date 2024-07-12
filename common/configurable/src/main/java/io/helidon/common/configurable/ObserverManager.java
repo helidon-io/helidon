@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -51,6 +53,7 @@ class ObserverManager {
             .create(ObserverManager::loadObservers);
 
     private static final Map<Supplier<? extends ExecutorService>, SupplierInfo> SUPPLIERS = new ConcurrentHashMap<>();
+    private static final Lock SUPPLIERS_LOCK = new ReentrantLock();
 
     // A given supplier category can have multiple suppliers, so keep track of the next available index by category.
     private static final Map<String, AtomicInteger> SUPPLIER_CATEGORY_NEXT_INDEX_VALUES = new ConcurrentHashMap<>();
@@ -71,13 +74,18 @@ class ObserverManager {
     static void registerSupplier(Supplier<? extends ExecutorService> supplier,
                                  String supplierCategory,
                                  String executorServiceCategory) {
-        int supplierIndex = SUPPLIER_CATEGORY_NEXT_INDEX_VALUES.computeIfAbsent(supplierCategory, key -> new AtomicInteger())
-                .getAndIncrement();
-        SUPPLIERS.computeIfAbsent(supplier,
-                                  s -> SupplierInfo.create(s,
-                                                           executorServiceCategory,
-                                                           supplierCategory,
-                                                           supplierIndex));
+        SUPPLIERS_LOCK.lock();
+        try {
+            int supplierIndex = SUPPLIER_CATEGORY_NEXT_INDEX_VALUES.computeIfAbsent(supplierCategory, key -> new AtomicInteger())
+                    .getAndIncrement();
+            SUPPLIERS.computeIfAbsent(supplier,
+                                      s -> SupplierInfo.create(s,
+                                                               executorServiceCategory,
+                                                               supplierCategory,
+                                                               supplierIndex));
+        } finally {
+            SUPPLIERS_LOCK.unlock();
+        }
     }
 
     /**
