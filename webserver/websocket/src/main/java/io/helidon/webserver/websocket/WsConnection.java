@@ -25,6 +25,7 @@ import java.util.concurrent.Semaphore;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
+import io.helidon.common.socket.SocketContext;
 import io.helidon.http.DateTime;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpPrologue;
@@ -198,6 +199,11 @@ public class WsConnection implements ServerConnection, WsSession {
     @Override
     public Optional<String> subProtocol() {
         return upgradeHeaders.first(WsUpgrader.PROTOCOL);
+    }
+
+    @Override
+    public SocketContext socketContext() {
+        return ctx;
     }
 
     @Override
