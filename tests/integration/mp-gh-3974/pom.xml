@@ -22,7 +22,7 @@
     <parent>
         <artifactId>helidon-tests-integration</artifactId>
         <groupId>io.helidon.tests.integration</groupId>
-        <version>4.0.10</version>
+        <version>4.0.11-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
