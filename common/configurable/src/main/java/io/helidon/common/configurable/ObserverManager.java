@@ -23,8 +23,8 @@ import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -53,7 +53,7 @@ class ObserverManager {
             .create(ObserverManager::loadObservers);
 
     private static final Map<Supplier<? extends ExecutorService>, SupplierInfo> SUPPLIERS = new ConcurrentHashMap<>();
-    private static final Lock SUPPLIERS_LOCK = new ReentrantLock();
+    private static final ReadWriteLock SUPPLIERS_LOCK = new ReentrantReadWriteLock();
 
     // A given supplier category can have multiple suppliers, so keep track of the next available index by category.
     private static final Map<String, AtomicInteger> SUPPLIER_CATEGORY_NEXT_INDEX_VALUES = new ConcurrentHashMap<>();
@@ -74,7 +74,7 @@ class ObserverManager {
     static void registerSupplier(Supplier<? extends ExecutorService> supplier,
                                  String supplierCategory,
                                  String executorServiceCategory) {
-        SUPPLIERS_LOCK.lock();
+        SUPPLIERS_LOCK.writeLock().lock();
         try {
             int supplierIndex = SUPPLIER_CATEGORY_NEXT_INDEX_VALUES.computeIfAbsent(supplierCategory, key -> new AtomicInteger())
                     .getAndIncrement();
@@ -84,7 +84,7 @@ class ObserverManager {
                                                                supplierCategory,
                                                                supplierIndex));
         } finally {
-            SUPPLIERS_LOCK.unlock();
+            SUPPLIERS_LOCK.writeLock().unlock();
         }
     }
 
@@ -98,7 +98,13 @@ class ObserverManager {
      * @throws IllegalStateException if the supplier has not previously registered itself
      */
     static <E extends ExecutorService> E registerExecutorService(Supplier<E> supplier, E executorService) {
-        SupplierInfo supplierInfo = SUPPLIERS.get(supplier);
+        SUPPLIERS_LOCK.readLock().lock();
+        SupplierInfo supplierInfo;
+        try {
+            supplierInfo = SUPPLIERS.get(supplier);
+        } finally {
+            SUPPLIERS_LOCK.readLock().unlock();
+        }
         if (supplierInfo == null) {
             throw new IllegalStateException("Attempt to register an executor service to an unregistered supplier");
         }
