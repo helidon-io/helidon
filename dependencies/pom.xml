@@ -116,7 +116,7 @@
         <version.lib.microprofile-reactive-streams-operators-api>3.0</version.lib.microprofile-reactive-streams-operators-api>
         <version.lib.microprofile-reactive-streams-operators-core>3.0</version.lib.microprofile-reactive-streams-operators-core>
         <version.lib.microprofile-rest-client>3.0.1</version.lib.microprofile-rest-client>
-        <version.lib.microprofile-telemetry-tck>1.0</version.lib.microprofile-telemetry-tck>
+        <version.lib.microprofile-telemetry-tck>1.1</version.lib.microprofile-telemetry-tck>
         <version.lib.microprofile-tracing>3.0</version.lib.microprofile-tracing>
         <version.lib.microprofile-lra-api>2.0</version.lib.microprofile-lra-api>
         <version.lib.microstream>08.01.01-MS-GA</version.lib.microstream>
@@ -138,10 +138,10 @@
         <version.lib.okio>3.4.0</version.lib.okio>
         <!-- Force upgrade okhttp3 for CVE-2023-0833 -->
         <version.lib.okhttp3>4.11.0</version.lib.okhttp3>
-        <version.lib.opentelemetry.semconv>1.22.0-alpha</version.lib.opentelemetry.semconv>
-        <version.lib.opentelemetry-sdk-extension-autoconfigure>1.22.0-alpha</version.lib.opentelemetry-sdk-extension-autoconfigure>
-        <version.lib.opentelemetry.opentracing.shim>1.22.0-alpha</version.lib.opentelemetry.opentracing.shim>
-        <version.lib.opentelemetry>1.22.0</version.lib.opentelemetry>
+        <version.lib.opentelemetry.semconv>1.29.0-alpha</version.lib.opentelemetry.semconv>
+        <version.lib.opentelemetry-sdk-extension-autoconfigure>1.29.0</version.lib.opentelemetry-sdk-extension-autoconfigure>
+        <version.lib.opentelemetry.opentracing.shim>1.29.0</version.lib.opentelemetry.opentracing.shim>
+        <version.lib.opentelemetry>1.29.0</version.lib.opentelemetry>
         <version.lib.opentracing>0.33.0</version.lib.opentracing>
         <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>
         <version.lib.opentracing.tracerresolver>0.1.8</version.lib.opentracing.tracerresolver>

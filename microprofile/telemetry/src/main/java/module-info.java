@@ -48,6 +48,7 @@ module io.helidon.microprofile.telemetry {
     requires jakarta.inject;
     requires microprofile.config.api;
     requires opentelemetry.instrumentation.annotations;
+    requires io.opentelemetry.semconv;
 
     requires static io.helidon.common.features.api;
 

@@ -18,6 +18,7 @@ package io.helidon.microprofile.telemetry;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
 import io.helidon.common.context.Contexts;
 import io.helidon.config.mp.MpConfig;
@@ -27,6 +28,7 @@ import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
 
 import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.context.Context;
+import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -35,6 +37,7 @@ import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.container.ResourceInfo;
 import jakarta.ws.rs.core.Application;
+import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 import org.glassfish.jersey.server.ExtendedUriInfo;
 import org.glassfish.jersey.server.model.Resource;
@@ -53,13 +56,24 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
     private static final String SPAN = Span.class.getName();
     private static final String SPAN_SCOPE = Scope.class.getName();
     private static final String HTTP_TARGET = "http.target";
+    private static final String HTTP_ROUTE = "http.route";
 
     private static final String SPAN_NAME_FULL_URL = "telemetry.span.full.url";
+
+    @Deprecated(forRemoval = true, since = "4.1")
+    static final String SPAN_NAME_INCLUDES_METHOD = "telemetry.span.name-includes-method";
 
     private static boolean spanNameFullUrl = false;
 
     private final io.helidon.tracing.Tracer helidonTracer;
     private final boolean isAgentPresent;
+
+    /*
+     MP Telemetry 1.1 adopts OpenTelemetry 1.29 semantic conventions which require the route to be in the REST span name.
+     Because Helidon adopts MP Telemetry 1.1 in a dot release (4.1), this would be a backward-incompatible change. This setting,
+     controllable via config, allows users to preserve the earlier behavior. The default is to adopt the new behavior.
+     */
+    private final boolean restSpanNameIncludesMethod;
 
 
     @jakarta.ws.rs.core.Context
@@ -72,6 +86,14 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
         isAgentPresent = HelidonOpenTelemetry.AgentDetector.isAgentPresent(MpConfig.toHelidonConfig(mpConfig));
 
         mpConfig.getOptionalValue(SPAN_NAME_FULL_URL, Boolean.class).ifPresent(e -> spanNameFullUrl = e);
+        Optional<Boolean> includeMethodConfig = mpConfig.getOptionalValue(SPAN_NAME_INCLUDES_METHOD, Boolean.class);
+        restSpanNameIncludesMethod = includeMethodConfig.orElse(true);
+        if (includeMethodConfig.isPresent()) {
+            LOGGER.log(System.Logger.Level.WARNING,
+                       String.format(
+                               "Config property mp.%s is deprecated and marked for removal in a future major release of Helidon",
+                               SPAN_NAME_INCLUDES_METHOD));
+        }
     }
 
     @Override
@@ -86,11 +108,15 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
         }
 
         //Start new span for container request.
-        Span helidonSpan = helidonTracer.spanBuilder(spanName(requestContext))
+        String route = route(requestContext);
+        Span helidonSpan = helidonTracer.spanBuilder(spanName(requestContext, route))
                 .kind(Span.Kind.SERVER)
                 .tag(HTTP_METHOD, requestContext.getMethod())
                 .tag(HTTP_SCHEME, requestContext.getUriInfo().getRequestUri().getScheme())
                 .tag(HTTP_TARGET, resolveTarget(requestContext))
+                .tag(HTTP_ROUTE, route)
+                .tag(SemanticAttributes.NET_HOST_NAME.getKey(), requestContext.getUriInfo().getBaseUri().getHost())
+                .tag(SemanticAttributes.NET_HOST_PORT.getKey(), requestContext.getUriInfo().getBaseUri().getPort())
                 .update(builder -> helidonTracer.extract(new RequestContextHeaderProvider(requestContext.getHeaders()))
                         .ifPresent(builder::parent))
                 .start();
@@ -125,6 +151,12 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
             scope.close();
 
             span.tag(HTTP_STATUS_CODE, response.getStatus());
+
+            // OpenTelemetry semantic conventions dictate what the span status should be.
+            // https://opentelemetry.io/docs/specs/semconv/http/http-spans/#status
+            if (response.getStatusInfo().getFamily().compareTo(Response.Status.Family.SERVER_ERROR) == 0) {
+                span.status(Span.Status.ERROR);
+            }
             span.end();
 
 
@@ -134,18 +166,22 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
         }
     }
 
-    private String spanName(ContainerRequestContext requestContext) {
+    private String spanName(ContainerRequestContext requestContext, String route) {
         // According to recent OpenTelemetry semantic conventions for spans, the span name for a REST endpoint should be
         //
         // http-method-name low-cardinality-path
         //
         // where a low-cardinality path would be, for example /greet/{name} rather than /greet/Joe, /greet/Dmitry, etc.
-        // But the version of semantic conventions in force when the MP Telemetry spec was published did not include the
-        // http-method-name. So our code omits that for now to pass the MP Telemetry TCK.
+        // But the semantic conventions in place with MicroProfile Telemetry 1.0 did not include the method name in the span name.
+        // Users can control the span name either by requesting the full URL be used or by requesting that the method NOT
+        // be included.
+        return (restSpanNameIncludesMethod ? requestContext.getMethod() + " " : "") + (
+                spanNameFullUrl
+                        ? requestContext.getUriInfo().getAbsolutePath().toString()
+                        : route);
+    }
 
-        if (spanNameFullUrl) {
-            return requestContext.getUriInfo().getAbsolutePath().toString();
-        }
+    private String route(ContainerRequestContext requestContext) {
         ExtendedUriInfo extendedUriInfo = (ExtendedUriInfo) requestContext.getUriInfo();
 
         // Derive the original path (including path parameters) of the matched resource from the bottom up.
