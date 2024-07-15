@@ -15,25 +15,24 @@
  */
 package io.helidon.integrations.oci.sdk.cdi;
 
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.nio.file.Path;
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 
-import com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider;
+import io.helidon.common.media.type.MediaTypes;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
+import io.helidon.http.Status;
+import io.helidon.webclient.api.WebClient;
+
 import jakarta.ws.rs.ProcessingException;
 import org.apache.http.client.config.RequestConfig;
 import org.junit.jupiter.api.Test;
 
+import static com.oracle.bmc.auth.AbstractFederationClientAuthenticationDetailsProviderBuilder.METADATA_SERVICE_BASE_URL;
 import static com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider.builder;
 import static com.oracle.bmc.http.client.jersey3.ApacheClientProperties.REQUEST_CONFIG;
 import static com.oracle.bmc.http.client.StandardClientProperties.CONNECT_TIMEOUT;
-import static java.nio.file.Files.createTempFile;
-import static java.nio.file.Files.deleteIfExists;
-import static java.nio.file.Files.newBufferedWriter;
-import static java.util.concurrent.Executors.newScheduledThreadPool;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class TestInstancePrincipalsAuthenticationDetailsProvider {
@@ -47,6 +46,8 @@ class TestInstancePrincipalsAuthenticationDetailsProvider {
         // Don't run in the pipeline/Github Actions; there's no point. See comments below.
         String ci = System.getenv("CI");
         assumeTrue(ci == null || ci.isBlank());
+        // skip if imds is available
+        assumeFalse(imdsAvailable());
 
         assertThrows(ProcessingException.class, () -> builder()
                      // (There does not seem to be a way to avoid this taking multiple seconds, no matter what timeout
@@ -75,4 +76,24 @@ class TestInstancePrincipalsAuthenticationDetailsProvider {
                      .build()); // takes multiple seconds
     }
 
+
+    private static boolean imdsAvailable() {
+        try {
+            var response = WebClient.builder()
+                    .connectTimeout(Duration.ofSeconds(200))
+                    .readTimeout(Duration.ofSeconds(1))
+                    .baseUri(METADATA_SERVICE_BASE_URL)
+                    .build()
+                    .get("instance")
+                    .accept(MediaTypes.APPLICATION_JSON)
+                    .header(HeaderValues.create(HeaderNames.AUTHORIZATION, "Bearer Oracle"))
+                    .request();
+            if (response.status() == Status.OK_200) {
+                return true;
+            }
+        } catch (Exception e) {
+            // noop, just return false
+        }
+        return false;
+    }
 }
