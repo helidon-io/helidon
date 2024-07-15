@@ -22,6 +22,8 @@
 :keywords: helidon, telemetry, microprofile, micro-profile
 :microprofile-bundle: true
 :rootdir: {docdir}/..
+:mp-telemetry-version: 1.1
+:otel-version: 1.29.0
 
 include::{rootdir}/includes/mp.adoc[]
 
@@ -50,7 +52,24 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 link:https://opentelemetry.io/[OpenTelemetry] comprises a collection of APIs, SDKs, integration tools, and other software components intended to facilitate the generation and control of telemetry data, including traces, metrics, and logs. In an environment where distributed tracing is enabled via OpenTelemetry (which combines OpenTracing and OpenCensus), this specification establishes the necessary behaviors for MicroProfile applications to participate seamlessly.
 
-MicroProfile Telemetry 1.0 allows for the exportation of the data it collects to Jaeger or Zipkin and to other systems using a variety of exporters.
+MicroProfile Telemetry {mp-telemetry-version} allows for the exportation of the data it collects to Jaeger or Zipkin and to other systems using a variety of exporters.
+
+[NOTE]
+.Change in Span Names for REST Requests
+====
+Earlier releases of Helidon 4 implemented MicroProfile Telemetry 1.0 which was based on OpenTelemetry semantic conventions 1.22.0-alpha.
+
+MicroProfile Telemetry {mp-telemetry-version} is based on OpenTelemetry {otel-version}, and in that release the semantic convention for the REST span name is now
+[source]
+----
+{http-method-name} {http-request-route}
+----
+The HTTP method name part is new (see https://opentelemetry.io/docs/specs/semconv/http/http-spans/#name).
+
+Although span names are often used only for display in monitoring tools, this is a backward-incompatible change. By default, Helidon {helidon-version} conforms to the new semantic convention so as to comply with MicroProfile Telemetry {mp-telemetry-version}.
+
+If you need to use the previous span naming format, set `mp.telemetry.span.name-includes-method` to `false` in `META-INF/microprofile-config.properties`. This option is deprecated for removal in a future major release of Helidon, and for that reason Helidon logs a warning if you choose this option.
+====
 
 In a distributed tracing system, *traces* are used to capture a series of requests and are composed of multiple *spans* that represent individual operations within those requests. Each *span* includes a name, timestamps, and metadata that provide insights into the corresponding operation.
 
@@ -335,5 +354,5 @@ This example is available at the link:{helidon-github-tree-url}/examples/micropr
 
 == Reference
 
-* link:https://download.eclipse.org/microprofile/microprofile-telemetry-1.0/tracing/microprofile-telemetry-tracing-spec-1.0.pdf[MicroProfile Telemetry Specification]
+* link:https://download.eclipse.org/microprofile/microprofile-telemetry-{mp-telemetry-version}/tracing/microprofile-telemetry-tracing-spec-{mp-telemetry-version}.pdf[MicroProfile Telemetry Specification]
 * link:https://opentelemetry.io/docs/[OpenTelemetry Documentation]
