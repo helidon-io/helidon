@@ -24,9 +24,11 @@ import io.helidon.common.context.Contexts;
 import io.helidon.config.mp.MpConfig;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
+import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
 
 import io.opentelemetry.api.baggage.Baggage;
+import io.opentelemetry.api.baggage.BaggageEntryMetadata;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
 import jakarta.inject.Inject;
@@ -109,6 +111,8 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
 
         //Start new span for container request.
         String route = route(requestContext);
+        Optional<SpanContext> extractedSpanContext =
+                helidonTracer.extract(new RequestContextHeaderProvider(requestContext.getHeaders()));
         Span helidonSpan = helidonTracer.spanBuilder(spanName(requestContext, route))
                 .kind(Span.Kind.SERVER)
                 .tag(HTTP_METHOD, requestContext.getMethod())
@@ -117,8 +121,7 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
                 .tag(HTTP_ROUTE, route)
                 .tag(SemanticAttributes.NET_HOST_NAME.getKey(), requestContext.getUriInfo().getBaseUri().getHost())
                 .tag(SemanticAttributes.NET_HOST_PORT.getKey(), requestContext.getUriInfo().getBaseUri().getPort())
-                .update(builder -> helidonTracer.extract(new RequestContextHeaderProvider(requestContext.getHeaders()))
-                        .ifPresent(builder::parent))
+                .update(builder -> extractedSpanContext.ifPresent(builder::parent))
                 .start();
 
         Scope helidonScope = helidonSpan.activate();
@@ -232,8 +235,11 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
             for (String b : baggageProperties) {
                 String[] split = b.split("=");
                 if (split.length == 2) {
+                    String[] valueAndMetadata = split[1].split(";");
+                    String value = valueAndMetadata.length > 0 ? valueAndMetadata[0] : "";
+                    String metadata = valueAndMetadata.length > 1 ? valueAndMetadata[1] : "";
                     Baggage.builder()
-                            .put(split[0], split[1])
+                            .put(split[0], value, BaggageEntryMetadata.create(metadata))
                             .build()
                             .storeInContext(context)
                             .makeCurrent();

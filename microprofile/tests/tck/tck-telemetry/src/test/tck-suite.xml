@@ -22,11 +22,10 @@
     <test name="microprofile-telemetry-tracing TCK" verbose="10">
         <groups>
             <run>
-<!--                <exclude name="optional-tests"></exclude>-->
                 <!--
-                    We do not have Jakarta Concurrency, which the optional TCK async tests use. So skip those tests.
+                    Helidon does not use Jakarta Concurrency, which the optional 1.1 TCK async tests use. Skip those tests.
                 -->
-<!--                <exclude name="optional-jaxrs-tests"></exclude>-->
+                <exclude name="optional-jaxrs-tests"></exclude>
             </run>
         </groups>
         <packages>

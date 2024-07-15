@@ -36,11 +36,6 @@
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>org.jboss.arquillian.testng</groupId>-->
-<!--            <artifactId>arquillian-testng-container</artifactId>-->
-<!--            <scope>test</scope>-->
-<!--        </dependency>-->
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-otlp</artifactId>

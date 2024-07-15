@@ -24,6 +24,8 @@ import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 
+import io.opentelemetry.api.baggage.Baggage;
+import io.opentelemetry.context.Context;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.ClientRequestContext;
 import jakarta.ws.rs.client.ClientRequestFilter;
@@ -82,6 +84,11 @@ class HelidonTelemetryClientFilter implements ClientRequestFilter, ClientRespons
                         .ifPresent(builder::parent))
                 .start();
 
+        Baggage.fromContext(Context.current())
+                .forEach((key, baggageEntry) ->
+                                 helidonSpan.baggage().set(key,
+                                                           baggageEntry.getValue(),
+                                                           baggageEntry.getMetadata().getValue()));
         Scope helidonScope = helidonSpan.activate();
 
         clientRequestContext.setProperty(SPAN_SCOPE, helidonScope);

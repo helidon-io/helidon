@@ -89,9 +89,13 @@ class MutableOpenTelemetryBaggage implements Baggage, WritableBaggage {
     }
 
     void baggage(String key, String value) {
+        baggage(key, value, "");
+    }
+
+    void baggage(String key, String value, String metadata) {
         Objects.requireNonNull(key, "baggage key cannot be null");
         Objects.requireNonNull(value, "baggage value cannot be null");
-        values.put(key, new HBaggageEntry(value, new HBaggageEntryMetadata("")));
+        values.put(key, new HBaggageEntry(value, new HBaggageEntryMetadata(metadata)));
     }
 
     @Override
@@ -115,7 +119,12 @@ class MutableOpenTelemetryBaggage implements Baggage, WritableBaggage {
 
     @Override
     public WritableBaggage set(String key, String value) {
-        baggage(key, value);
+        return set(key, value, "");
+    }
+
+    @Override
+    public WritableBaggage set(String key, String value, String metadata) {
+        baggage(key, value, metadata);
         return this;
     }
 
