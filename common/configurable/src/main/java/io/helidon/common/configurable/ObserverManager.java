@@ -17,6 +17,7 @@
 package io.helidon.common.configurable;
 
 import java.lang.System.Logger.Level;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
@@ -52,7 +53,7 @@ class ObserverManager {
     private static final LazyValue<List<ExecutorServiceSupplierObserver>> OBSERVERS = LazyValue
             .create(ObserverManager::loadObservers);
 
-    private static final Map<Supplier<? extends ExecutorService>, SupplierInfo> SUPPLIERS = new ConcurrentHashMap<>();
+    private static final Map<Supplier<? extends ExecutorService>, SupplierInfo> SUPPLIERS = new HashMap<>();
     private static final ReadWriteLock SUPPLIERS_LOCK = new ReentrantReadWriteLock();
 
     // A given supplier category can have multiple suppliers, so keep track of the next available index by category.
