@@ -19,6 +19,7 @@ import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.context.Contexts;
 import io.helidon.config.mp.MpConfig;
@@ -66,6 +67,7 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
     static final String SPAN_NAME_INCLUDES_METHOD = "telemetry.span.name-includes-method";
 
     private static boolean spanNameFullUrl = false;
+    private static AtomicBoolean spanNameWarningLogged = new AtomicBoolean();
 
     private final io.helidon.tracing.Tracer helidonTracer;
     private final boolean isAgentPresent;
@@ -87,13 +89,19 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
         this.helidonTracer = helidonTracer;
         isAgentPresent = HelidonOpenTelemetry.AgentDetector.isAgentPresent(MpConfig.toHelidonConfig(mpConfig));
 
+        // TODO In 5.x remove the following.
         mpConfig.getOptionalValue(SPAN_NAME_FULL_URL, Boolean.class).ifPresent(e -> spanNameFullUrl = e);
         Optional<Boolean> includeMethodConfig = mpConfig.getOptionalValue(SPAN_NAME_INCLUDES_METHOD, Boolean.class);
-        restSpanNameIncludesMethod = includeMethodConfig.orElse(true);
-        if (includeMethodConfig.isPresent()) {
+        restSpanNameIncludesMethod = includeMethodConfig.orElse(false);
+        if (!restSpanNameIncludesMethod && !spanNameWarningLogged.get()) {
+            spanNameWarningLogged.set(true);
             LOGGER.log(System.Logger.Level.WARNING,
-                       String.format(
-                               "Config property mp.%s is deprecated and marked for removal in a future major release of Helidon",
+                       String.format("""
+                               Current OpenTelemetry semantic conventions require the HTTP method to be part of REST span
+                               names. Your configuration does not set mp.%s to true, so your service uses the legacy span name
+                               format which excludes the HTTP method. This feature is deprecated and marked for removal in a
+                               future major release of Helidon. Consider adding this setting to your configuration to
+                               migrate to the current conventions.""",
                                SPAN_NAME_INCLUDES_METHOD));
         }
     }
@@ -170,6 +178,7 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
     }
 
     private String spanName(ContainerRequestContext requestContext, String route) {
+        // TODO IN 5.x remove the option of excluding the HTTP method from the REST span name.
         // According to recent OpenTelemetry semantic conventions for spans, the span name for a REST endpoint should be
         //
         // http-method-name low-cardinality-path

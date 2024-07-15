@@ -18,6 +18,7 @@ package io.helidon.microprofile.telemetry;
 import java.util.stream.Stream;
 
 import io.helidon.microprofile.testing.junit5.AddBean;
+import io.helidon.microprofile.testing.junit5.AddConfig;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -33,7 +34,7 @@ class WithSpanWithExplicitAppTest extends WithSpanTestBase {
     }
 
     static Stream<SpanPathTestInfo> testExplicitAppSpanNameFromPath() {
-        return Stream.of(new SpanPathTestInfo("topapp/apptraced", "GET /topapp/apptraced"),
-                         new SpanPathTestInfo("topapp/apptraced/sub/data", "GET /topapp/apptraced/sub/{name}"));
+        return Stream.of(new SpanPathTestInfo("topapp/apptraced", "/topapp/apptraced"),
+                         new SpanPathTestInfo("topapp/apptraced/sub/data", "/topapp/apptraced/sub/{name}"));
     }
 }

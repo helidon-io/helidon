@@ -83,6 +83,14 @@
                         --add-opens=java.base/java.lang=ALL-UNNAMED
                         --add-opens=java.base/java.lang.invoke=ALL-UNNAMED
                     </argLine>
+                    <systemPropertyVariables>
+                        <!--
+                            The TCK expects the current REST span names (which include the HTTP method name). But for backward
+                            compatibility Helidon 4.x defaults to use the previous REST span name format which excludes the
+                            HTTP method name. So override that default for running the TCK.
+                        -->
+                        <mp.telemetry.span.name-includes-method>true</mp.telemetry.span.name-includes-method>
+                    </systemPropertyVariables>
                     <suiteXmlFiles>
                         <suiteXmlFile>src/test/tck-suite.xml</suiteXmlFile>
                     </suiteXmlFiles>

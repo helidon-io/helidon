@@ -25,7 +25,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 @AddBean(App.class)
 @AddBean(AppTracedResource.class)
-@AddConfig(key = HelidonTelemetryContainerFilter.SPAN_NAME_INCLUDES_METHOD, value = "false")
 class WithSpanWithExplicitAppUsingLegacyNamingTest extends WithSpanTestBase {
 
         @ParameterizedTest()

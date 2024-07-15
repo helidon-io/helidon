@@ -18,8 +18,6 @@ package io.helidon.microprofile.telemetry;
 import java.util.List;
 import java.util.stream.Stream;
 
-import io.helidon.microprofile.testing.junit5.AddConfig;
-
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.sdk.trace.data.SpanData;
@@ -60,12 +58,12 @@ class WithSpanTest extends WithSpanTestBase {
 
     @ParameterizedTest()
     @MethodSource()
-    void testDefaultAppSpanNameFromPathWithMethodName(SpanPathTestInfo spanPathTestInfo) {
+    void testDefaultAppSpanNameFromPath(SpanPathTestInfo spanPathTestInfo) {
         testSpanNameFromPath(spanPathTestInfo);
     }
 
-    static Stream<SpanPathTestInfo> testDefaultAppSpanNameFromPathWithMethodName() {
-        return Stream.of(new SpanPathTestInfo("traced", "GET /traced"),
-                         new SpanPathTestInfo("traced/sub/data", "GET /traced/sub/{name}"));
+    static Stream<SpanPathTestInfo> testDefaultAppSpanNameFromPath() {
+        return Stream.of(new SpanPathTestInfo("traced", "/traced"),
+                         new SpanPathTestInfo("traced/sub/data", "/traced/sub/{name}"));
     }
 }
