@@ -34,7 +34,7 @@
                 </option>
                 <option value="database"
                         name="Database"
-                        description="Helidon SE application that uses a database with DbClient">
+                        description="Helidon SE application that uses a database with the DB Client API">
                     <exec src="database/database-se.xml"/>
                 </option>
                 <option value="custom"
