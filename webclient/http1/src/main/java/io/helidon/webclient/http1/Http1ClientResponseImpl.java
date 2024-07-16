@@ -205,9 +205,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
             return false;
         }
         try {
-            for (long i = 0; i < entityLength; i++) {
-                reader.read();
-            }
+            reader.skip((int) entityLength);
             entityFullyRead = true;
             return true;
         } catch (RuntimeException e) {
