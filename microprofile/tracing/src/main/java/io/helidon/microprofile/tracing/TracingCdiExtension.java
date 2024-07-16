@@ -29,7 +29,7 @@ import io.helidon.tracing.TracerBuilder;
 import io.helidon.tracing.config.TracingConfig;
 import io.helidon.webserver.observe.tracing.TracingObserver;
 
-import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.opentracingshim.OpenTracingShim;
 import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
@@ -37,7 +37,6 @@ import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
-import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
 import jakarta.enterprise.inject.spi.DeploymentException;
@@ -67,7 +66,7 @@ public class TracingCdiExtension implements Extension {
     // must be higher priority than security, so tracer is ready when IDCS and OIDC uses webclient
     // the client is used in security configuration
     private void setupTracer(@Observes @Priority(PLATFORM_BEFORE) @RuntimeStart Config rootConfig,
-                             BeanManager bm, Instance<OpenTelemetry> openTelemetryInstance) {
+                             BeanManager bm) {
 
         String serviceName = bm.getExtension(JaxRsCdiExtension.class).serviceName();
         config = rootConfig.get("tracing");
@@ -93,10 +92,7 @@ public class TracingCdiExtension implements Extension {
             registeredTracer = tracer.unwrap(Tracer.class);
         } catch (Exception e) {
             try {
-                if (openTelemetryInstance.isUnsatisfied()) {
-                    throw new RuntimeException("Unable to create an OpenTelemetry instance to create a tracer");
-                }
-                registeredTracer = OpenTracingShim.createTracerShim(openTelemetryInstance.get());
+                registeredTracer = OpenTracingShim.createTracerShim(GlobalOpenTelemetry.get());
             } catch (Exception ex) {
                 throw new DeploymentException("MicroProfile tracing requires an OpenTracing or OpenTelemetry based tracer", ex);
             }
