@@ -24,6 +24,7 @@ import io.helidon.http.DirectHandler;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.RequestException;
+import io.helidon.http.Status;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.http.DirectTransportRequest;
 
@@ -160,8 +161,9 @@ public final class Http1Prologue {
         if (eol == maxLength) {
             // exceeded maximal length, we do not want to parse it anyway
             throw RequestException.builder()
-                    .message("Prologue size exceeded")
+                    .message("Request URI too long.")
                     .type(DirectHandler.EventType.BAD_REQUEST)
+                    .status(Status.REQUEST_URI_TOO_LONG_414)
                     .build();
         }
 
