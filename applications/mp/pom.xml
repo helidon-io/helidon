@@ -58,6 +58,14 @@
                     <groupId>org.hibernate.orm.tooling</groupId>
                     <artifactId>hibernate-enhance-maven-plugin</artifactId>
                     <version>${version.plugin.hibernate-enhance}</version>
+                    <!-- Force upgrade for Java 22 support. Should remove after Hibernate upgrade -->
+                    <dependencies>
+                        <dependency>
+                            <groupId>net.bytebuddy</groupId>
+                            <artifactId>byte-buddy</artifactId>
+                            <version>${version.lib.bytebuddy}</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
             </plugins>
         </pluginManagement>
