@@ -30,7 +30,7 @@ import io.grpc.MethodDescriptor.MethodType;
  */
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-@GrpcMethod(type = MethodType.UNARY)
+@GrpcMethod(MethodType.UNARY)
 @Documented
 @Inherited
 public @interface Unary {
@@ -41,5 +41,5 @@ public @interface Unary {
      *
      * @return  name of the method
      */
-    String name() default "";
+    String value() default "";
 }

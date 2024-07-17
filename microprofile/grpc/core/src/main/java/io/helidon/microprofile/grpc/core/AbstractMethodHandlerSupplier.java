@@ -70,7 +70,7 @@ abstract class AbstractMethodHandlerSupplier implements MethodHandlerSupplier {
         }
 
         GrpcMethod annotation = method.firstAnnotationOrMetaAnnotation(GrpcMethod.class);
-        return annotation != null && methodType.equals(annotation.type());
+        return annotation != null && methodType.equals(annotation.value());
     }
 
     /**

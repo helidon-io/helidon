@@ -106,23 +106,23 @@ class StringServiceTest extends BaseServiceTest {
     @ApplicationScoped
     public static class StringService {
 
-        @Unary(name = "Upper")
+        @Unary("Upper")
         public void upper(Strings.StringMessage request, StreamObserver<Strings.StringMessage> observer) {
             ResponseHelper.complete(observer, response(request.getText().toUpperCase()));
         }
 
-        @Unary(name = "Lower")
+        @Unary("Lower")
         public void lower(Strings.StringMessage request, StreamObserver<Strings.StringMessage> observer) {
             ResponseHelper.complete(observer, response(request.getText().toLowerCase()));
         }
 
-        @ServerStreaming(name = "Split")
+        @ServerStreaming("Split")
         public void split(Strings.StringMessage request, StreamObserver<Strings.StringMessage> observer) {
             String[] parts = request.getText().split(" ");
             ResponseHelper.stream(observer, Stream.of(parts).map(this::response));
         }
 
-        @ClientStreaming(name = "Join")
+        @ClientStreaming("Join")
         public StreamObserver<Strings.StringMessage> join(StreamObserver<Strings.StringMessage> observer) {
             return CollectingObserver.create(
                     Collectors.joining(" "),
@@ -131,7 +131,7 @@ class StringServiceTest extends BaseServiceTest {
                     this::response);
         }
 
-        @Bidirectional(name = "Echo")
+        @Bidirectional("Echo")
         public StreamObserver<Strings.StringMessage> echo(StreamObserver<Strings.StringMessage> observer) {
             return new StreamObserver<>() {
                 public void onNext(Strings.StringMessage value) {

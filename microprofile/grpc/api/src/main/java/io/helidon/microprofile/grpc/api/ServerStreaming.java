@@ -30,7 +30,7 @@ import io.grpc.MethodDescriptor.MethodType;
  */
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-@GrpcMethod(type = MethodType.SERVER_STREAMING)
+@GrpcMethod(MethodType.SERVER_STREAMING)
 @Documented
 @Inherited
 public @interface ServerStreaming {
@@ -41,5 +41,5 @@ public @interface ServerStreaming {
      *
      * @return  name of the method
      */
-    String name() default "";
+    String value() default "";
 }

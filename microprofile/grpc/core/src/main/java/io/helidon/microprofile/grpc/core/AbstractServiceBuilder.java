@@ -72,6 +72,32 @@ public abstract class AbstractServiceBuilder {
     }
 
     /**
+     * Determine the name to use from the method.
+     * <p>
+     * If the method is annotated with {@link GrpcMethod} or an annotation that is annotated with
+     * {@link GrpcMethod}, then attempt to determine the method name from the annotation. If unable,
+     * use the actual method name.
+     *
+     * @param method      the annotated method
+     * @param annotation  the method type annotation
+     * @return the value to use for the method name
+     */
+    public static String determineMethodName(AnnotatedMethod method, GrpcMethod annotation) {
+        Annotation actualAnnotation = method.annotationsWithMetaAnnotation(GrpcMethod.class)
+                .findFirst()
+                .orElse(annotation);
+
+        String name = nameFromMember(actualAnnotation, "value");    // @GrpcMethod is meta annotation
+        if (name == null || name.trim().isEmpty()) {
+            name = nameFromMember(actualAnnotation, "name");        // @GrpcMethod is actual annotation
+        }
+        if (name == null || name.trim().isEmpty()) {
+            name = method.method().getName();
+        }
+        return name;
+    }
+
+    /**
      * Obtain the service class.
      * @return the service class
      */
@@ -177,7 +203,7 @@ public abstract class AbstractServiceBuilder {
         String name = null;
 
         if (serviceAnnotation != null) {
-            name = serviceAnnotation.name().trim();
+            name = serviceAnnotation.value().trim();
         }
 
         if (name == null || name.trim().isEmpty()) {
@@ -188,38 +214,22 @@ public abstract class AbstractServiceBuilder {
     }
 
     /**
-     * Determine the name to use from the method.
-     * <p>
-     * If the method is annotated with {@link GrpcMethod} then use the value of {@link GrpcMethod#name()}
-     * unless {@link GrpcMethod#name()} returns empty string, in which case use the actual method name.
-     * <p>
-     * If the method is annotated with an annotation that has the meta-annotation {@link GrpcMethod} then use
-     * the value of that annotation's {@code name()} method. If that annotation does not have a {@code name()}
-     * method or the {@code name()} method return empty string then use the actual method name.
+     * Get method from annotation member if present and of type {@link String}.
      *
-     * @param method      the annotated method
-     * @param annotation  the method type annotation
-     * @return the value to use for the method name
+     * @param annotation the annotation
+     * @param member the annotation method to call
+     * @return method name or {@code null}
      */
-    public static String determineMethodName(AnnotatedMethod method, GrpcMethod annotation) {
-        Annotation actualAnnotation = method.annotationsWithMetaAnnotation(GrpcMethod.class)
-                .findFirst()
-                .orElse(annotation);
-
-        String name = null;
+    private static String nameFromMember(Annotation annotation, String member) {
         try {
-            Method m = actualAnnotation.annotationType().getMethod("name");
-            name = (String) m.invoke(actualAnnotation);
+            Method m = annotation.annotationType().getMethod(member);
+            Object value = m.invoke(annotation);
+            return value instanceof String s ? s : null;
         } catch (NoSuchMethodException e) {
-            LOGGER.log(Level.WARNING, () -> String.format("Annotation %s has no name() method", actualAnnotation));
+            LOGGER.log(Level.WARNING, () -> String.format("Annotation %s has no name() method", annotation));
         } catch (IllegalAccessException | InvocationTargetException e) {
-            LOGGER.log(Level.WARNING, () -> String.format("Error calling name() method on annotation %s", actualAnnotation), e);
+            LOGGER.log(Level.WARNING, () -> String.format("Error calling name() method on annotation %s", annotation), e);
         }
-
-        if (name == null || name.trim().isEmpty()) {
-            name = method.method().getName();
-        }
-
-        return name;
+        return null;
     }
 }

@@ -33,6 +33,7 @@ import io.helidon.microprofile.grpc.api.ClientStreaming;
 import io.helidon.microprofile.grpc.api.GrpcMethod;
 import io.helidon.microprofile.grpc.api.ServerStreaming;
 import io.helidon.microprofile.grpc.api.Unary;
+
 /**
  * A model of an annotated gRPC method.
  */
@@ -110,9 +111,9 @@ public class AnnotatedMethod implements AnnotatedElement {
      * @throws java.lang.NullPointerException if the method parameter is null
      * @return an {@link AnnotatedMethod} instance representing the Java method
      */
-     public static AnnotatedMethod create(Method method) {
-         return new AnnotatedMethod(Objects.requireNonNull(method));
-     }
+    public static AnnotatedMethod create(Method method) {
+        return new AnnotatedMethod(Objects.requireNonNull(method));
+    }
 
     /**
      * Get the underlying Java method.
@@ -214,8 +215,8 @@ public class AnnotatedMethod implements AnnotatedElement {
      */
     public <T extends Annotation> Stream<T> metaMethodAnnotations(Class<T> annotation) {
         return Arrays.stream(methodAnnotations)
-                     .map(ann -> ann.annotationType().getAnnotation(annotation))
-                     .filter(Objects::nonNull);
+                .map(ann -> ann.annotationType().getAnnotation(annotation))
+                .filter(Objects::nonNull);
     }
 
     /**
@@ -246,8 +247,8 @@ public class AnnotatedMethod implements AnnotatedElement {
      */
     public <T extends Annotation> Stream<T> annotationOrMetaAnnotation(Class<T> type) {
         return Arrays.stream(methodAnnotations)
-                     .map(ann -> annotationOrMetaAnnotation(type, ann))
-                     .filter(Objects::nonNull);
+                .map(ann -> annotationOrMetaAnnotation(type, ann))
+                .filter(Objects::nonNull);
     }
 
     /**
@@ -259,7 +260,7 @@ public class AnnotatedMethod implements AnnotatedElement {
      */
     public Stream<Annotation> annotationsWithMetaAnnotation(Class<? extends Annotation> type) {
         return Arrays.stream(methodAnnotations)
-                     .filter(ann -> ann.annotationType().isAnnotationPresent(type));
+                .filter(ann -> ann.annotationType().isAnnotationPresent(type));
     }
 
     @SuppressWarnings("unchecked")
@@ -303,7 +304,7 @@ public class AnnotatedMethod implements AnnotatedElement {
      *
      * @param declaredMethod  the declared method
      * @param actualMethod    the method that the declared method overrides
-     * @return  an array of merged annotations
+     * @return an array of merged annotations
      */
     private static Annotation[] mergeMethodAnnotations(Method declaredMethod, Method actualMethod) {
         List<Annotation> list = new ArrayList<>(Arrays.asList(declaredMethod.getAnnotations()));
@@ -323,7 +324,7 @@ public class AnnotatedMethod implements AnnotatedElement {
      *
      * @param declaredMethod  the declared method
      * @param actualMethod    the method that the declared method overrides
-     * @return  an array of merged annotations
+     * @return an array of merged annotations
      */
     private static Annotation[][] mergeParameterAnnotations(Method declaredMethod, Method actualMethod) {
         Annotation[][] methodParamAnnotations = declaredMethod.getParameterAnnotations();
@@ -368,7 +369,7 @@ public class AnnotatedMethod implements AnnotatedElement {
      * class hierarchy before searching the implemented interfaces.
      *
      * @param declaredMethod  the declared method
-     * @return  the actual annotated gRPC method or the declared method if no
+     * @return the actual annotated gRPC method or the declared method if no
      *          method in the class hierarchy is annotated
      */
     private static Method findAnnotatedMethod(Method declaredMethod) {
@@ -391,7 +392,7 @@ public class AnnotatedMethod implements AnnotatedElement {
      *
      * @param declaringClass  the Class declaring the method
      * @param declaredMethod  the declared method
-     * @return  the actual annotated gRPC method or the declared method if no
+     * @return the actual annotated gRPC method or the declared method if no
      *          method in the class hierarchy is annotated
      */
     private static Method findAnnotatedMethod(Class<?> declaringClass, Method declaredMethod) {
@@ -464,7 +465,7 @@ public class AnnotatedMethod implements AnnotatedElement {
      */
     private static boolean hasMetaAnnotation(Method method, Class<? extends Annotation> type) {
         return Arrays.stream(method.getAnnotations())
-                     .anyMatch(a -> a.annotationType().isAnnotationPresent(type));
+                .anyMatch(a -> a.annotationType().isAnnotationPresent(type));
     }
 
     /**

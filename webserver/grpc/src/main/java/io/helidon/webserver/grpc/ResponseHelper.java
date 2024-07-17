@@ -34,6 +34,8 @@ import io.grpc.stub.StreamObserver;
 /**
  * This class now lives here {@link io.helidon.grpc.core.ResponseHelper}.
  * Will be removed from this location in a future version.
+ *
+ * @deprecated will be removed in a future version, please use {@link io.helidon.grpc.core.ResponseHelper}
  */
 @Deprecated(since = "4.1.0", forRemoval = true)
 public final class ResponseHelper {

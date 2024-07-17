@@ -179,7 +179,7 @@ public class AnnotatedMethodTest {
     @Grpc
     public static class GrandParent {
 
-        @GrpcMethod(type = MethodDescriptor.MethodType.UNARY)
+        @GrpcMethod(MethodDescriptor.MethodType.UNARY)
         @Inject
         public void one() {
         }
@@ -187,7 +187,7 @@ public class AnnotatedMethodTest {
         public void two() {
         }
 
-        @GrpcMethod(type = MethodDescriptor.MethodType.UNARY)
+        @GrpcMethod(MethodDescriptor.MethodType.UNARY)
         public void three() {
         }
     }
@@ -205,12 +205,12 @@ public class AnnotatedMethodTest {
         public void two() {
         }
 
-        @GrpcMethod(type = MethodDescriptor.MethodType.UNARY)
+        @GrpcMethod(MethodDescriptor.MethodType.UNARY)
         @Override
         public void three() {
         }
 
-        @GrpcMethod(type = MethodDescriptor.MethodType.UNARY)
+        @GrpcMethod(MethodDescriptor.MethodType.UNARY)
         public void four() {
         }
 
@@ -242,26 +242,26 @@ public class AnnotatedMethodTest {
     }
 
     public interface InterfaceOne {
-        @GrpcMethod(type = MethodDescriptor.MethodType.UNARY)
+        @GrpcMethod(MethodDescriptor.MethodType.UNARY)
         void three();
 
-        @GrpcMethod(type = MethodDescriptor.MethodType.UNARY)
+        @GrpcMethod(MethodDescriptor.MethodType.UNARY)
         void six();
     }
 
     public interface InterfaceTwo {
-        @GrpcMethod(type = MethodDescriptor.MethodType.UNARY)
+        @GrpcMethod(MethodDescriptor.MethodType.UNARY)
         void three();
     }
 
     public interface InterfaceThree
             extends InterfaceOne {
-        @GrpcMethod(type = MethodDescriptor.MethodType.UNARY)
+        @GrpcMethod(MethodDescriptor.MethodType.UNARY)
         void six();
     }
 
     public interface InterfaceFour {
-        @GrpcMethod(type = MethodDescriptor.MethodType.UNARY)
+        @GrpcMethod(MethodDescriptor.MethodType.UNARY)
         void seven();
     }
 

@@ -39,7 +39,7 @@ public @interface Grpc {
      *
      * @return  the service name
      */
-    String name() default "";
+    String value() default "";
 
     /**
      * Obtain the service version.

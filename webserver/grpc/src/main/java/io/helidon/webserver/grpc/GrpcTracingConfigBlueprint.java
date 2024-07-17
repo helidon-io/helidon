@@ -59,5 +59,6 @@ interface GrpcTracingConfigBlueprint {
      *
      * @return set of attributes to trace
      */
+    @Option.Singular
     Set<ServerRequestAttribute> tracedAttributes();
 }

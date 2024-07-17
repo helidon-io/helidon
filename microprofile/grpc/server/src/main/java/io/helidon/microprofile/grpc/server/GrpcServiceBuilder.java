@@ -203,7 +203,7 @@ public class GrpcServiceBuilder
                                                                              responseType,
                                                                              interceptors);
 
-        switch (annotation.type()) {
+        switch (annotation.value()) {
         case UNARY:
             builder.unary(name, handler, configurer);
             break;
@@ -218,7 +218,7 @@ public class GrpcServiceBuilder
             break;
         case UNKNOWN:
         default:
-            LOGGER.log(Level.ERROR, () -> "Unrecognized method type " + annotation.type());
+            LOGGER.log(Level.ERROR, () -> "Unrecognized method type " + annotation.value());
         }
     }
 

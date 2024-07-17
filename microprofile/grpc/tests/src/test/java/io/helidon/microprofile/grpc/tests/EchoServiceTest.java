@@ -95,7 +95,7 @@ class EchoServiceTest extends BaseServiceTest {
          * @param request the echo request containing the message to echo
          * @param observer the call response
          */
-        @Unary(name = "Echo")
+        @Unary("Echo")
         public void echo(Echo.EchoRequest request, StreamObserver<Echo.EchoResponse> observer) {
             try {
                 validateContext();

@@ -31,7 +31,7 @@ import io.grpc.MethodDescriptor.MethodType;
  */
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-@GrpcMethod(type = MethodType.BIDI_STREAMING)
+@GrpcMethod(MethodType.BIDI_STREAMING)
 @Documented
 @Inherited
 public @interface Bidirectional {
@@ -42,5 +42,5 @@ public @interface Bidirectional {
      *
      * @return  name of the method
      */
-    String name() default "";
+    String value() default "";
 }

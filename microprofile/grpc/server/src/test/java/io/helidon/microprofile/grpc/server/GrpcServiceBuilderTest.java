@@ -246,23 +246,23 @@ public class GrpcServiceBuilderTest {
         assertThat(captorOne.getValue(), is(sameInstance(captorTwo.getValue())));
     }
 
-    @Grpc(name = "ServiceOne/foo")
+    @Grpc("ServiceOne/foo")
     @GrpcMarshaller("stub")
     public static class ServiceOne {
-        @GrpcMethod(type = io.grpc.MethodDescriptor.MethodType.UNARY)
+        @GrpcMethod(io.grpc.MethodDescriptor.MethodType.UNARY)
         public void unary(String param, StreamObserver<String> observer) {
         }
 
-        @GrpcMethod(type = io.grpc.MethodDescriptor.MethodType.CLIENT_STREAMING)
+        @GrpcMethod(io.grpc.MethodDescriptor.MethodType.CLIENT_STREAMING)
         public StreamObserver<String> clientStreaming(StreamObserver<String> observer) {
             return null;
         }
 
-        @GrpcMethod(type = io.grpc.MethodDescriptor.MethodType.SERVER_STREAMING)
+        @GrpcMethod(io.grpc.MethodDescriptor.MethodType.SERVER_STREAMING)
         public void serverStreaming(String param, StreamObserver<String> observer) {
         }
 
-        @GrpcMethod(type = io.grpc.MethodDescriptor.MethodType.BIDI_STREAMING)
+        @GrpcMethod(io.grpc.MethodDescriptor.MethodType.BIDI_STREAMING)
         public StreamObserver<String> bidiStreaming(StreamObserver<String> observer) {
             return null;
         }
@@ -271,20 +271,20 @@ public class GrpcServiceBuilderTest {
     @Grpc
     @GrpcMarshaller("stub")
     public static class ServiceTwo {
-        @GrpcMethod(name = "One", type = io.grpc.MethodDescriptor.MethodType.UNARY)
+        @GrpcMethod(name = "One", value = io.grpc.MethodDescriptor.MethodType.UNARY)
         public void unary(String param, StreamObserver<String> observer) {
         }
 
-        @GrpcMethod(name = "Two", type = io.grpc.MethodDescriptor.MethodType.CLIENT_STREAMING)
+        @GrpcMethod(name = "Two", value = io.grpc.MethodDescriptor.MethodType.CLIENT_STREAMING)
         public StreamObserver<String> clientStreaming(StreamObserver<String> observer) {
             return null;
         }
 
-        @GrpcMethod(name = "Three", type = io.grpc.MethodDescriptor.MethodType.SERVER_STREAMING)
+        @GrpcMethod(name = "Three", value = io.grpc.MethodDescriptor.MethodType.SERVER_STREAMING)
         public void serverStreaming(String param, StreamObserver<String> observer) {
         }
 
-        @GrpcMethod(name = "Four", type = io.grpc.MethodDescriptor.MethodType.BIDI_STREAMING)
+        @GrpcMethod(name = "Four", value = io.grpc.MethodDescriptor.MethodType.BIDI_STREAMING)
         public StreamObserver<String> bidiStreaming(StreamObserver<String> observer) {
             return null;
         }
@@ -293,7 +293,7 @@ public class GrpcServiceBuilderTest {
     @Grpc
     @GrpcMarshaller("stub")
     public static class ServiceThree {
-        @GrpcMethod(type = io.grpc.MethodDescriptor.MethodType.UNARY)
+        @GrpcMethod(io.grpc.MethodDescriptor.MethodType.UNARY)
         public void unary(String param, StreamObserver<String> observer) {
         }
     }
@@ -301,7 +301,7 @@ public class GrpcServiceBuilderTest {
     @Grpc
     @GrpcMarshaller("stub")
     public static class ServiceFour {
-        @GrpcMethod(type = io.grpc.MethodDescriptor.MethodType.UNARY)
+        @GrpcMethod(io.grpc.MethodDescriptor.MethodType.UNARY)
         @GrpcMarshaller("stub")
         public void unary(String param, StreamObserver<String> observer) {
         }
@@ -311,7 +311,7 @@ public class GrpcServiceBuilderTest {
     @GrpcMarshaller("stub")
     @Singleton
     public static class ServiceFive {
-        @GrpcMethod(type = io.grpc.MethodDescriptor.MethodType.UNARY)
+        @GrpcMethod(io.grpc.MethodDescriptor.MethodType.UNARY)
         @GrpcMarshaller("stub")
         public void unary(String param, StreamObserver<ServiceFive> observer) {
             observer.onNext(this);
@@ -322,7 +322,7 @@ public class GrpcServiceBuilderTest {
     @Grpc
     @GrpcMarshaller("stub")
     public static class ServiceSix {
-        @GrpcMethod(type = io.grpc.MethodDescriptor.MethodType.UNARY)
+        @GrpcMethod(io.grpc.MethodDescriptor.MethodType.UNARY)
         public List<Map<Integer, String>> unary(List<Map<Integer, String>> param) {
             return Collections.singletonList(Collections.singletonMap(1, "One"));
         }

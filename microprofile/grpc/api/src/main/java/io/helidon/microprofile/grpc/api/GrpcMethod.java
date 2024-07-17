@@ -48,5 +48,5 @@ public @interface GrpcMethod {
      *
      * @return the gRPC method type
      */
-    MethodType type();
+    MethodType value();
 }
