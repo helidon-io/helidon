@@ -25,7 +25,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -80,6 +81,11 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     private static final System.Logger LOGGER = System.getLogger(MMeterRegistry.class.getName());
     private final io.micrometer.core.instrument.MeterRegistry delegate;
 
+    /*
+    Note that onMeterAdded and onMeterRemoved which manage these two lists do not lock; they rely on
+    the thread safety provided by the copy-on-write behavior. If you change the implementations here you might need to add
+    locking to those two methods.
+     */
     private final List<Consumer<io.helidon.metrics.api.Meter>> onAddListeners = new CopyOnWriteArrayList<>();
     private final List<Consumer<io.helidon.metrics.api.Meter>> onRemoveListeners = new CopyOnWriteArrayList<>();
 
@@ -102,7 +108,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     private final Map<String, Set<io.helidon.metrics.api.Meter>> scopeMembership = new HashMap<>();
 
     private final Map<io.helidon.metrics.api.Meter.Id, MMeter<?>> metersById = new HashMap<>();
-    private final ReentrantLock lock = new ReentrantLock();
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
     private MMeterRegistry(io.micrometer.core.instrument.MeterRegistry delegate,
                            MicrometerMetricsFactory metricsFactory,
@@ -215,39 +221,65 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     @Override
     public void close() {
-        onAddListeners.clear();
-        onRemoveListeners.clear();
-        List.copyOf(meters.values()).forEach(this::remove);
-        meters.clear();
-        buildersByPromMeterId.clear();
-        scopeMembership.clear();
-        metersById.clear();
+        lock.writeLock().lock();
+        try {
+            onAddListeners.clear();
+            onRemoveListeners.clear();
+            List.copyOf(meters.values()).forEach(this::remove);
+            meters.clear();
+            buildersByPromMeterId.clear();
+            scopeMembership.clear();
+            metersById.clear();
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
     @Override
     public List<io.helidon.metrics.api.Meter> meters() {
-        return meters.values()
-                .stream()
+        lock.readLock().lock();
+        List<io.helidon.metrics.api.Meter> temp;
+        try {
+            temp = new ArrayList<>(meters.values());
+        } finally {
+            lock.readLock().unlock();
+        }
+        return temp.stream()
                 .map(io.helidon.metrics.api.Meter.class::cast)
                 .toList();
     }
 
     @Override
     public Collection<io.helidon.metrics.api.Meter> meters(Predicate<io.helidon.metrics.api.Meter> filter) {
-        return meters.values()
-                .stream()
+        lock.readLock().lock();
+        List<io.helidon.metrics.api.Meter> temp;
+        try {
+            temp = new ArrayList<>(meters.values());
+        } finally {
+            lock.readLock().unlock();
+        }
+        return temp.stream()
                 .map(io.helidon.metrics.api.Meter.class::cast)
                 .filter(filter)
                 .toList();
+
     }
 
     @Override
     public Iterable<String> scopes() {
-        return scopeMembership.keySet();
+        lock.readLock().lock();
+        try {
+            return new HashSet<>(scopeMembership.keySet());
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     @Override
     public boolean isMeterEnabled(String name, Map<String, String> tags, Optional<String> scope) {
+        /*
+        This method uses only config, not any mutable data structures, so no need to lock.
+         */
         String effectiveScope = scope.orElse(SystemTagsManager.instance().effectiveScope(scope)
                                                      .orElse(io.helidon.metrics.api.Meter.Scope.DEFAULT));
         return metricsConfig.enabled()
@@ -278,28 +310,32 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                                                                       String name,
                                                                       Iterable<io.helidon.metrics.api.Tag> tags) {
 
-        Search search = delegate().find(name)
-                .tags(MTag.tags(tags));
-        Meter match = search.meter();
+        lock.readLock().lock();
+        try {
+            Search search = delegate().find(name)
+                    .tags(MTag.tags(tags));
+            Meter match = search.meter();
 
-        if (match == null) {
-            return Optional.empty();
+            if (match == null) {
+                return Optional.empty();
+            }
+            io.helidon.metrics.api.Meter neutralMeter = meters.get(match);
+            if (neutralMeter == null) {
+                LOGGER.log(Level.WARNING, String.format("Found no Helidon counterpart for Micrometer meter %s %s",
+                                                        name,
+                                                        Util.list(tags)));
+                return Optional.empty();
+            }
+            if (mClass.isInstance(neutralMeter)) {
+                return Optional.of(mClass.cast(neutralMeter));
+            }
+            throw new IllegalArgumentException(
+                    String.format("Matching meter is of type %s but %s was requested",
+                                  match.getClass().getName(),
+                                  mClass.getName()));
+        } finally {
+            lock.readLock().unlock();
         }
-        io.helidon.metrics.api.Meter neutralMeter = meters.get(match);
-        if (neutralMeter == null) {
-            LOGGER.log(Level.WARNING, String.format("Found no Helidon counterpart for Micrometer meter %s %s",
-                                                    name,
-                                                    Util.list(tags)));
-            return Optional.empty();
-        }
-        if (mClass.isInstance(neutralMeter)) {
-            return Optional.of(mClass.cast(neutralMeter));
-        }
-        throw new IllegalArgumentException(
-                String.format("Matching meter is of type %s but %s was requested",
-                              match.getClass().getName(),
-                              mClass.getName()));
-
     }
 
     @Override
@@ -343,16 +379,21 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     @Override
     public Iterable<io.helidon.metrics.api.Meter> meters(Iterable<String> scopeSelection) {
-        if (scopeSelection.iterator().hasNext()) {
-            Set<io.helidon.metrics.api.Meter> result = new HashSet<>();
-            for (String scope : scopeSelection) {
-                if (scopeMembership.containsKey(scope)) {
-                    result.addAll(scopeMembership.get(scope));
+        lock.readLock().lock();
+        try {
+            if (scopeSelection.iterator().hasNext()) {
+                Set<io.helidon.metrics.api.Meter> result = new HashSet<>();
+                for (String scope : scopeSelection) {
+                    if (scopeMembership.containsKey(scope)) {
+                        result.addAll(scopeMembership.get(scope));
+                    }
                 }
+                return result;
             }
-            return result;
+            return meters();
+        } finally {
+            lock.readLock().unlock();
         }
-        return meters();
     }
 
     @Override
@@ -368,7 +409,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     }
 
     void erase() {
-        lock.lock();
+        lock.writeLock().lock();
 
         try {
             buildersByPromMeterId.clear();
@@ -378,7 +419,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             scopeMembership.clear();
             metersById.clear();
         } finally {
-            lock.unlock();
+            lock.writeLock().unlock();
         }
     }
 
@@ -391,50 +432,46 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         // Micrometer's register methods will throw an IllegalArgumentException if the caller specifies a builder that finds
         // a previously-registered meter of a different type from that implied by the builder.
 
-        lock.lock();
-
-        try {
-
-            if (!isMeterEnabled(builder.name(), builder.tags(), builder.scope())) {
-                lock.lock();
-                try {
-                    io.helidon.metrics.api.Meter result = metricsFactory.noOpMeter(builder);
-                    onAddListeners.forEach(listener -> listener.accept(result));
-                    return result;
-                } finally {
-                    lock.unlock();
-                }
-            }
-
-            io.helidon.metrics.api.Meter helidonMeter;
-
-            if (builder instanceof MCounter.Builder cBuilder) {
-                helidonMeter = getOrCreate(cBuilder, cBuilder::addTag, cBuilder.delegate()::register);
-            } else if (builder instanceof MFunctionalCounter.Builder<?> fcBuilder) {
-                helidonMeter = getOrCreate(fcBuilder, fcBuilder::addTag, fcBuilder.delegate()::register);
-            } else if (builder instanceof MDistributionSummary.Builder sBuilder) {
-                helidonMeter = getOrCreate(sBuilder, sBuilder::addTag, sBuilder.delegate()::register);
-            } else if (builder instanceof MGauge.Builder gBuilder) {
-                helidonMeter = getOrCreate(gBuilder, gBuilder::addTag, ((MGauge.Builder<?, ?>) gBuilder).delegate()::register);
-            } else if (builder instanceof MTimer.Builder tBuilder) {
-                helidonMeter = getOrCreate(tBuilder, tBuilder::addTag, tBuilder.delegate()::register);
-            } else {
-                throw new IllegalArgumentException(String.format("Unexpected builder type %s, expected one of %s",
-                                                                 builder.getClass().getName(),
-                                                                 List.of(MCounter.Builder.class.getName(),
-                                                                         MFunctionalCounter.Builder.class.getName(),
-                                                                         MDistributionSummary.Builder.class.getName(),
-                                                                         MGauge.Builder.class.getName(),
-                                                                         MTimer.Builder.class.getName())));
-            }
-            return helidonMeter;
-        } finally {
-            lock.unlock();
+        // No locking needed yet. If configuration (which is immutable) says the meter is disabled, we just return a no-op meter;
+        // we do not update any data structures.
+        io.helidon.metrics.api.Meter disabledMeter = noopMeterIfDisabled(builder);
+        if (disabledMeter != null) {
+            return disabledMeter;
         }
+
+        io.helidon.metrics.api.Meter helidonMeter;
+
+        if (builder instanceof MCounter.Builder cBuilder) {
+            helidonMeter = getOrCreate(cBuilder, cBuilder::addTag, cBuilder.delegate()::register);
+        } else if (builder instanceof MFunctionalCounter.Builder<?> fcBuilder) {
+            helidonMeter = getOrCreate(fcBuilder, fcBuilder::addTag, fcBuilder.delegate()::register);
+        } else if (builder instanceof MDistributionSummary.Builder sBuilder) {
+            helidonMeter = getOrCreate(sBuilder, sBuilder::addTag, sBuilder.delegate()::register);
+        } else if (builder instanceof MGauge.Builder gBuilder) {
+            helidonMeter = getOrCreate(gBuilder, gBuilder::addTag, ((MGauge.Builder<?, ?>) gBuilder).delegate()::register);
+        } else if (builder instanceof MTimer.Builder tBuilder) {
+            helidonMeter = getOrCreate(tBuilder, tBuilder::addTag, tBuilder.delegate()::register);
+        } else {
+            throw new IllegalArgumentException(String.format("Unexpected builder type %s, expected one of %s",
+                                                             builder.getClass().getName(),
+                                                             List.of(MCounter.Builder.class.getName(),
+                                                                     MFunctionalCounter.Builder.class.getName(),
+                                                                     MDistributionSummary.Builder.class.getName(),
+                                                                     MGauge.Builder.class.getName(),
+                                                                     MTimer.Builder.class.getName())));
+        }
+        return helidonMeter;
     }
 
     <HM extends MMeter<M>, M extends Meter, B, HB extends MMeter.Builder<B, M, HB, HM>> void onMeterAdded(M addedMeter) {
-        lock.lock();
+
+        /*
+        We are not guaranteed that one of our own update operations--which would already hold the write lock--is triggering
+        this callback from Micrometer. A developer might be using the Micrometer API directly, for example. So acquire the lock
+        in any case.
+         */
+
+        lock.writeLock().lock();
         try {
             /*
             If we originated this callback by invoking the delegate registry, then there should be a builder
@@ -497,12 +534,15 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             });
 
         } finally {
-            lock.unlock();
+            lock.writeLock().unlock();
         }
     }
 
     void onMeterRemoved(Meter removedMeter) {
-        lock.lock();
+        /*
+         See locking comment with onMeterAdded.
+         */
+        lock.writeLock().lock();
 
         try {
             MMeter<?> removedHelidonMeter = meters.remove(removedMeter);
@@ -512,8 +552,41 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                 recordRemove(removedHelidonMeter);
             }
         } finally {
-            lock.unlock();
+            lock.writeLock().unlock();
         }
+    }
+
+    private io.helidon.metrics.api.Meter noopMeterIfDisabled(io.helidon.metrics.api.Meter.Builder<?, ?> builder) {
+        if (!isMeterEnabled(builder.name(), builder.tags(), builder.scope())) {
+
+            io.helidon.metrics.api.Meter result = metricsFactory.noOpMeter(builder);
+            onAddListeners.forEach(listener -> listener.accept(result));
+            return result;
+        }
+        return null;
+    }
+
+    /*
+     * Returns an existing meter matching the specified builder metadata and ID, or null if none.
+     *
+     * The caller must have acquired either the read or write lock.
+     */
+    private <M extends Meter,
+            HB extends MMeter.Builder<?, M, HB, HM>,
+            HM extends MMeter<M>> MMeter<M> meterIfRegistered(MMeter.Builder<?, M, HB, HM> mBuilder,
+                                                              io.helidon.metrics.api.Meter.Id id) {
+        MMeter<?> foundMeter = metersById.get(id);
+        if (foundMeter != null) {
+            if (!mBuilder.meterType().isInstance(foundMeter)) {
+                throw new IllegalArgumentException("Attempt to get or create a meter of type "
+                                                           + mBuilder.meterType().getName()
+                                                           + " when an existing meter " + id
+                                                           + " has an incompatible type " + foundMeter.getClass()
+                        .getName());
+            }
+            return (HM) foundMeter;
+        }
+        return null;
     }
 
     private static io.micrometer.core.instrument.MeterRegistry ensurePrometheusRegistryIsPresent(
@@ -531,10 +604,12 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         return meterRegistry;
     }
 
-    private <M extends Meter, HB extends MMeter.Builder<?, M, HB, HM>, HM extends MMeter<M>> HM getOrCreate(
-            HB mBuilder,
-            Function<Tag, ?> builderTagSetter,
-            Function<io.micrometer.core.instrument.MeterRegistry, M> registration) {
+    private <M extends Meter,
+            HB extends MMeter.Builder<?, M, HB, HM>,
+            HM extends MMeter<M>> io.helidon.metrics.api.Meter getOrCreate(HB mBuilder,
+                                                                           Function<Tag, ?> builderTagSetter,
+                                                                           Function<io.micrometer.core.instrument.MeterRegistry,
+                                                                                   M> registration) {
 
         // Select the actual scope value from the builder (if any) or a default scope value known to the system tags manager.
         Optional<String> effectiveScope = SystemTagsManager.instance()
@@ -546,20 +621,31 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
         io.helidon.metrics.api.Meter.Id id = mBuilder.id();
 
-        MMeter<?> foundMeter = metersById.get(id);
-        if (foundMeter != null) {
-            if (!mBuilder.meterType().isInstance(foundMeter)) {
-                throw new IllegalArgumentException("Attempt to get or create a meter of type "
-                                                           + mBuilder.meterType().getName()
-                                                           + " when an existing meter " + id
-                                                           + " has an incompatible type " + foundMeter.getClass()
-                        .getName());
+        lock.readLock().lock();
+
+        try {
+            MMeter<?> foundMeter = meterIfRegistered(mBuilder, id);
+            if (foundMeter != null) {
+                return (HM) foundMeter;
             }
-            return (HM) foundMeter;
+        } finally {
+            lock.readLock().unlock();
         }
 
-        lock.lock();
+        /*
+         Effectively, "promote" our lock from read (which we acquired a few lines above) to write. Because ReentrantReadWriteLock
+         does not actually support promoting, we have to release the read lock (which we did just above), acquire the write
+         lock, and recheck what we checked earlier while we had the read lock.
+         */
+
+        lock.writeLock().lock();
+
         try {
+            io.helidon.metrics.api.Meter previouslyRegisteredMeter = meterIfRegistered(mBuilder, id);
+            if (previouslyRegisteredMeter != null) {
+                return previouslyRegisteredMeter;
+            }
+
             Map<io.helidon.metrics.api.Meter.Id, MMeter.Builder<?, ?, ?, ?>> pendingBuildersInScope =
                     buildersByPromMeterId.computeIfAbsent(effectiveScope.orElse(""),
                                                           k -> new HashMap<>());
@@ -594,7 +680,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
             return result;
         } finally {
-            lock.unlock();
+            lock.writeLock().unlock();
         }
     }
 
@@ -683,22 +769,30 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
         Iterable<io.helidon.metrics.api.Tag> tags = SystemTagsManager.instance().withScopeTag(id.tags(), scope);
 
-        Meter nativeMeter = delegate.find(id.name())
-                .tags(MTag.tags(tags))
-                .meter();
-
-        lock.lock();
+        lock.writeLock().lock();
 
         try {
+            Meter nativeMeter = delegate.find(id.name())
+                    .tags(MTag.tags(tags))
+                    .meter();
+
             if (nativeMeter != null) {
                 MMeter<?> result = meters.get(nativeMeter);
                 delegate.remove(nativeMeter);
-                onRemoveListeners.forEach(listener -> listener.accept(result));
+                onRemoveListeners.forEach(listener -> {
+                    try {
+                        listener.accept(result);
+                    } catch (Exception ex) {
+                        LOGGER.log(Level.WARNING,
+                                   "Error invoking onRemoveListener " + listener.getClass().getName() + "; continuing",
+                                   ex);
+                    }
+                });
                 return Optional.of(result);
             }
             return Optional.empty();
         } finally {
-            lock.unlock();
+            lock.writeLock().unlock();
         }
     }
 
@@ -727,7 +821,15 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                 scopeMembers.remove(removedHelidonMeter);
             }
         });
-        onRemoveListeners.forEach(listener -> listener.accept(removedHelidonMeter));
+        onRemoveListeners.forEach(listener -> {
+            try {
+                listener.accept(removedHelidonMeter);
+            } catch (Exception ex) {
+                LOGGER.log(Level.WARNING,
+                           "Error invoking onRemoveListener " + listener.getClass().getName() + "; continuing",
+                           ex);
+            }
+        });
         return removedHelidonMeter;
     }
 
