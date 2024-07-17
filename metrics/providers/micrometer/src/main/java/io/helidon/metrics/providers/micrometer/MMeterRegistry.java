@@ -560,11 +560,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         if (!isMeterEnabled(builder.name(), builder.tags(), builder.scope())) {
 
             io.helidon.metrics.api.Meter result = metricsFactory.noOpMeter(builder);
-            try {
-                onAddListeners.forEach(listener -> listener.accept(result));
-            } catch (Exception e) {
-                // Ignored.
-            }
+            onAddListeners.forEach(listener -> listener.accept(result));
             return result;
         }
         return null;
@@ -637,17 +633,14 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         }
 
         /*
-         "Promote" our lock from read to write.
+         Effectively, "promote" our lock from read (which we acquired a few lines above) to write. Because ReentrantReadWriteLock
+         does not actually support promoting, we have to release the read lock (which we did just above), acquire the write
+         lock, and recheck what we checked earlier while we had the read lock.
          */
 
         lock.writeLock().lock();
 
         try {
-            /*
-             Now that we have the write lock, check again to make sure the meter has not been registered since we checked
-             above. Things could have changed between when we released the read lock and acquired the write lock.
-             No need to check again if the meter is disabled. That is based on config which does not change at runtime.
-             */
             io.helidon.metrics.api.Meter previouslyRegisteredMeter = meterIfRegistered(mBuilder, id);
             if (previouslyRegisteredMeter != null) {
                 return previouslyRegisteredMeter;
@@ -786,7 +779,15 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             if (nativeMeter != null) {
                 MMeter<?> result = meters.get(nativeMeter);
                 delegate.remove(nativeMeter);
-                onRemoveListeners.forEach(listener -> listener.accept(result));
+                onRemoveListeners.forEach(listener -> {
+                    try {
+                        listener.accept(result);
+                    } catch (Exception ex) {
+                        LOGGER.log(Level.WARNING,
+                                   "Error invoking onRemoveListener " + listener.getClass().getName() + "; continuing",
+                                   ex);
+                    }
+                });
                 return Optional.of(result);
             }
             return Optional.empty();
@@ -820,7 +821,15 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                 scopeMembers.remove(removedHelidonMeter);
             }
         });
-        onRemoveListeners.forEach(listener -> listener.accept(removedHelidonMeter));
+        onRemoveListeners.forEach(listener -> {
+            try {
+                listener.accept(removedHelidonMeter);
+            } catch (Exception ex) {
+                LOGGER.log(Level.WARNING,
+                           "Error invoking onRemoveListener " + listener.getClass().getName() + "; continuing",
+                           ex);
+            }
+        });
         return removedHelidonMeter;
     }
 
