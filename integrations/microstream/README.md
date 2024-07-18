@@ -1,5 +1,8 @@
 # Microstream integration into Helidon
 
+**[MICROSTREAM](https://microstream.one/) HAS BECOME [ECLIPSE STORE](https://eclipsestore.io/). HELIDON USERS ARE ENCOURAGED TO TRANSITION TO 
+THE EQUIVALENT HELIDON ECLIPSE STORE EXTENSION!**
+
 This projects add [Microstream](https://microstream.one) support to Helidon.
 
 The official [Microstream documentation](https://manual.docs.microstream.one/) can be found here.

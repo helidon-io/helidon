@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,14 @@
 import io.helidon.common.features.api.Aot;
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.common.features.api.Preview;
 
 /**
  * Provides CDI support for Microstream integration.
  *
  * @provides jakarta.enterprise.inject.spi.Extension
  */
-@Preview
+
+
 @Feature(value = "Microstream",
         description = "Microstream Integration",
         in = HelidonFlavor.MP,
@@ -37,11 +37,8 @@ module io.helidon.integrations.microstream.cdi {
     requires io.helidon.integrations.microstream.cache;
     requires io.helidon.integrations.microstream;
     requires jakarta.annotation;
-    //requires microstream.base;
     requires microstream.cache;
-    //requires microstream.persistence;
     requires microstream.storage.embedded;
-    //requires microstream.storage;
 
     requires static io.helidon.common.features.api;
 

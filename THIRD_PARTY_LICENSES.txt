@@ -31,7 +31,7 @@ Fourth Party Runtime Dependencies
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 CDI-API  RedHat, Inc., JBoss community
 Apache 2.0
-Used by: [helidon-health-checks, helidon-integrations-cdi-datasource, helidon-integrations-cdi-datasource-hikaricp, helidon-integrations-cdi-datasource-ucp, helidon-integrations-cdi-delegates, helidon-integrations-cdi-eclipselink, helidon-integrations-cdi-hibernate, helidon-integrations-cdi-jpa, helidon-integrations-cdi-jta, helidon-integrations-cdi-jta-weld, helidon-integrations-cdi-reference-counted-context, helidon-integrations-micrometer-cdi, helidon-integrations-micronaut-cdi, helidon-integrations-micronaut-data, helidon-integrations-microstream-cdi, helidon-integrations-oci-sdk-cdi, helidon-integrations-vault-cdi, helidon-jersey-client, helidon-messaging-aq, helidon-messaging-jms, helidon-messaging-kafka, helidon-messaging-mock, helidon-messaging-wls-jms, helidon-microprofile-config, helidon-microprofile-cors, helidon-microprofile-fault-tolerance, helidon-microprofile-metrics, helidon-microprofile-server, helidon-microprofile-service-common, helidon-microprofile-telemetry, helidon-microprofile-tracing, helidon-microprofile-websocket, weld-se-core]
+Used by: [helidon-health-checks, helidon-integrations-cdi-datasource, helidon-integrations-cdi-datasource-hikaricp, helidon-integrations-cdi-datasource-ucp, helidon-integrations-cdi-delegates, helidon-integrations-cdi-eclipselink, helidon-integrations-cdi-hibernate, helidon-integrations-cdi-jpa, helidon-integrations-cdi-jta, helidon-integrations-cdi-jta-weld, helidon-integrations-cdi-reference-counted-context, helidon-integrations-micrometer-cdi, helidon-integrations-micronaut-cdi, helidon-integrations-micronaut-data,  helidon-integrations-microstream-cdi, helidon-integrations-eclipsestore-cdi, helidon-integrations-oci-sdk-cdi, helidon-integrations-vault-cdi, helidon-jersey-client, helidon-messaging-aq, helidon-messaging-jms, helidon-messaging-kafka, helidon-messaging-mock, helidon-messaging-wls-jms, helidon-microprofile-config, helidon-microprofile-cors, helidon-microprofile-fault-tolerance, helidon-microprofile-metrics, helidon-microprofile-server, helidon-microprofile-service-common, helidon-microprofile-telemetry, helidon-microprofile-tracing, helidon-microprofile-websocket, weld-se-core]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Jakarta CDI API (jakarta.enterprise:jakarta.enterprise.cdi-api)
   Copyright 2010, 2016, Red Hat, Inc., and individual contributors
@@ -1069,7 +1069,7 @@ See full text at the bottom of this document for license: Apache-2.0
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Jakarta Annotations API  Eclipse Foundation
 Eclipse Public License 2.0 + GPL v.2 with CPE
-Used by: [helidon-bundles-config, helidon-config, helidon-config-hocon, helidon-config-mp, helidon-config-tests-module-mappers-1-base, helidon-config-tests-module-mappers-2-override, helidon-config-tests-module-parsers-1-override, helidon-config-tests-test-bundle, helidon-config-yaml, helidon-config-yaml-mp, helidon-http-encoding, helidon-inject-api, helidon-inject-configdriven-runtime, helidon-inject-configdriven-tests-config, helidon-inject-configdriven-tests-configuredby, helidon-inject-configdriven-tests-configuredby-application, helidon-inject-maven-plugin, helidon-inject-runtime, helidon-inject-tests-interception, helidon-inject-tests-resources-inject, helidon-inject-tests-resources-plain, helidon-inject-tests-tck-jsr330, helidon-inject-tools, helidon-integrations-cdi-datasource, helidon-integrations-cdi-datasource-hikaricp, helidon-integrations-cdi-datasource-ucp, helidon-integrations-cdi-jpa, helidon-integrations-cdi-jta, helidon-integrations-micronaut-cdi-processor, helidon-integrations-micronaut-data, helidon-integrations-microstream-cdi, helidon-integrations-oci-sdk-cdi, helidon-integrations-oci-sdk-tests-test-application, helidon-integrations-oci-sdk-tests-test-module1, helidon-integrations-oci-sdk-tests-test-module2, helidon-integrations-oci-tls-certificates, helidon-jersey-client, helidon-messaging-mock, helidon-microprofile-fault-tolerance, helidon-microprofile-telemetry, weld-se-core]
+Used by: [helidon-bundles-config, helidon-config, helidon-config-hocon, helidon-config-mp, helidon-config-tests-module-mappers-1-base, helidon-config-tests-module-mappers-2-override, helidon-config-tests-module-parsers-1-override, helidon-config-tests-test-bundle, helidon-config-yaml, helidon-config-yaml-mp, helidon-http-encoding, helidon-inject-api, helidon-inject-configdriven-runtime, helidon-inject-configdriven-tests-config, helidon-inject-configdriven-tests-configuredby, helidon-inject-configdriven-tests-configuredby-application, helidon-inject-maven-plugin, helidon-inject-runtime, helidon-inject-tests-interception, helidon-inject-tests-resources-inject, helidon-inject-tests-resources-plain, helidon-inject-tests-tck-jsr330, helidon-inject-tools, helidon-integrations-cdi-datasource, helidon-integrations-cdi-datasource-hikaricp, helidon-integrations-cdi-datasource-ucp, helidon-integrations-cdi-jpa, helidon-integrations-cdi-jta, helidon-integrations-micronaut-cdi-processor, helidon-integrations-micronaut-data,  helidon-integrations-microstream-cdi, helidon-integrations-eclipsestore-cdi, helidon-integrations-oci-sdk-cdi, helidon-integrations-oci-sdk-tests-test-application, helidon-integrations-oci-sdk-tests-test-module1, helidon-integrations-oci-sdk-tests-test-module2, helidon-integrations-oci-tls-certificates, helidon-jersey-client, helidon-messaging-mock, helidon-microprofile-fault-tolerance, helidon-microprofile-telemetry, weld-se-core]
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Jakarta Annotations API (jakarta.annotation:jakarta.annotation-api)
 Copyright (c) 2009, 2022 Oracle and/or its affiliates. All rights reserved.
@@ -8221,6 +8221,64 @@ Fourth Party Runtime Dependencies
   Copyright (C) 2019-2021 MicroStream Software
   EPL-2.0
 -----------------------------------------
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+eclipsestore-storage-embedded-configuration  Microstream Software
+Eclipse Public License 2.0
+Used by: [helidon-integrations-eclipsestore]
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+1.  The following files are available in source code form under the Eclipse Public License at:
+    https://github.com/eclipsestore/store/
+    (The EPL license is reproduced below).
+2.  All past Contributors to the Eclipsestore project disclaim all warranties and
+    conditions, express and implied, including warranties or conditions of title and
+    non-infringement, and implied warranties or conditions of merchantability and
+    fitness for a particular purpose.  In addition, such Contributors are not liable
+    for any damages, including direct, indirect, special, incidental and consequential
+    damages, such as lost profits.  
+3.  Any provisions of the Oracle license agreement that differ from the Eclipse Public
+    License are offered by Oracle alone and not by any other party.
+_________________________________________________________
+
+Eclipsestore Embedded Storage Configuration (org.eclipse.store:eclipsestore-storage-embedded-configuration)
+  Copyright (C) 2024 MicroStream Software
+--------------------------------------------
+See full text at the bottom of this document for license: EPL-2.0
+--------------------------------------------
+Fourth Party Runtime Dependencies
+--------------------------------------------
+"Eclipsestore Embedded Storage" (org.eclipse.store:eclipsestore-storage-embedded)
+  Copyright (C) 2024 MicroStream Software
+  EPL-2.0
+--------------------------------------------
+"Eclipsestore Storage" (org.eclipse.store:eclipsestore-storage)
+  Copyright (C) 2024 MicroStream Software
+  EPL-2.0
+--------------------------------------------
+"Eclipsestore Abstract File System - Java NIO" (org.eclipse.store:eclipsestore-afs-nio)
+  Copyright (C) 2024 MicroStream Software
+  EPL-2.0
+--------------------------------------------
+"Eclipsestore Abstract File System" (org.eclipse.store:eclipsestore-afs)
+  Copyright (C) 2024 MicroStream Software
+  EPL-2.0
+--------------------------------------------
+"Eclipsestore Persistence Binary" (org.eclipse.store:eclipsestore-persistence-binary)
+  Copyright (C) 2024 MicroStream Software
+  EPL-2.0
+--------------------------------------------
+"Eclipsestore Persistence" (org.eclipse.store:eclipsestore-persistence)
+  Copyright (C) 2024 MicroStream Software
+  EPL-2.0
+--------------------------------------------
+"Eclipsestore Configuration" (org.eclipse.store:eclipsestore-configuration)
+  Copyright (C) 2024 MicroStream Software
+  EPL-2.0
+--------------------------------------------
+"Eclipsestore Base" (org.eclipse.store:eclipsestore-base)
+  Copyright (C) 2024 MicroStream Software
+  EPL-2.0
+---------------------------------
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 microstream-storage-embedded-configuration  Microstream Software
 Eclipse Public License 2.0
