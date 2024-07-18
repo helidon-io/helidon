@@ -16,7 +16,6 @@
 
 package io.helidon.common.uri;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
 
@@ -41,9 +40,15 @@ class UriQueryTest {
     }
 
     @Test
-    void testEncoded() throws UnsupportedEncodingException {
+    void testEncoded() {
         UriQuery uriQuery = UriQuery.create("a=" + URLEncoder.encode("1&b=2", US_ASCII));
         assertThat(uriQuery.get("a"), is("1&b=2"));
+    }
+
+    @Test
+    void testEncodedWithinBrackets() {
+        UriQuery uriQuery = UriQuery.create("msg=[Hello%20World]");
+        assertThat(uriQuery.get("msg"), is("[Hello World]"));
     }
 
     @Test
