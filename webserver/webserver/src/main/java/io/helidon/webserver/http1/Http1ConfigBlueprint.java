@@ -44,7 +44,7 @@ interface Http1ConfigBlueprint extends ProtocolConfig {
      * @return maximal size in bytes
      */
     @Option.Configured
-    @Option.DefaultInt(2048)
+    @Option.DefaultInt(4096)
     int maxPrologueLength();
 
     /**
