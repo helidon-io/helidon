@@ -283,10 +283,6 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.grpc</groupId>
-            <artifactId>helidon-microprofile-grpc-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.grpc</groupId>
             <artifactId>helidon-microprofile-grpc-core</artifactId>
         </dependency>
         <dependency>
@@ -524,6 +520,10 @@
         <dependency>
             <groupId>io.helidon.tracing</groupId>
             <artifactId>helidon-tracing-jersey</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.grpc</groupId>
+            <artifactId>helidon-grpc-api</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.grpc</groupId>

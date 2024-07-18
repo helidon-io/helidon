@@ -20,8 +20,8 @@
 module io.helidon.microprofile.grpc.core {
 
     requires io.helidon.common;
+    requires io.helidon.grpc.api;
     requires io.helidon.microprofile.config;
-    requires io.helidon.microprofile.grpc.api;
 
     requires transitive io.helidon.grpc.core;
     requires transitive jakarta.cdi;

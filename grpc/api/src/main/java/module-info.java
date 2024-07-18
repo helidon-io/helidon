@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+module io.helidon.grpc.api {
 
-/**
- * API gRPC microprofile classes.
- */
-package io.helidon.microprofile.grpc.api;
+    requires transitive io.grpc;
+
+    exports io.helidon.grpc.api;
+}

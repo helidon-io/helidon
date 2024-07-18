@@ -31,15 +31,15 @@
     <dependencies>
         <dependency>
             <groupId>io.helidon.grpc</groupId>
+            <artifactId>helidon-grpc-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.grpc</groupId>
             <artifactId>helidon-grpc-core</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.grpc</groupId>
-            <artifactId>helidon-microprofile-grpc-api</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.config</groupId>

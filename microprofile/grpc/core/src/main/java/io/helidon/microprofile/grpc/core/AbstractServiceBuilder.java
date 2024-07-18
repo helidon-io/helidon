@@ -27,10 +27,10 @@ import java.util.ServiceLoader;
 import java.util.function.Supplier;
 
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.grpc.api.Grpc;
+import io.helidon.grpc.api.GrpcMarshaller;
+import io.helidon.grpc.api.GrpcMethod;
 import io.helidon.grpc.core.MarshallerSupplier;
-import io.helidon.microprofile.grpc.api.Grpc;
-import io.helidon.microprofile.grpc.api.GrpcMarshaller;
-import io.helidon.microprofile.grpc.api.GrpcMethod;
 
 import jakarta.inject.Singleton;
 

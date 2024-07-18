@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.grpc.api;
+package io.helidon.grpc.api;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -23,23 +23,18 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import io.grpc.MethodDescriptor.MethodType;
-
 /**
- * An annotation to mark a method as representing a unary gRPC method.
+ * An annotation to indicate the response type of a gRPC method.
  */
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-@GrpcMethod(MethodType.UNARY)
 @Documented
 @Inherited
-public @interface Unary {
+public @interface ResponseType {
     /**
-     * Obtain the name of the method.
-     * <p>
-     * If not set the name of the actual annotated method is used.
+     * Obtain the gRPC response type.
      *
-     * @return  name of the method
+     * @return the gRPC response type
      */
-    String value() default "";
+    Class<?> value();
 }

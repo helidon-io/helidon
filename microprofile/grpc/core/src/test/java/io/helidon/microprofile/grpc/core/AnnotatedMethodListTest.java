@@ -21,10 +21,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import io.helidon.microprofile.grpc.api.ClientStreaming;
-import io.helidon.microprofile.grpc.api.GrpcMethod;
-import io.helidon.microprofile.grpc.api.RequestType;
-import io.helidon.microprofile.grpc.api.Unary;
+import io.helidon.grpc.api.ClientStreaming;
+import io.helidon.grpc.api.GrpcMethod;
+import io.helidon.grpc.api.RequestType;
+import io.helidon.grpc.api.Unary;
 
 import org.junit.jupiter.api.Test;
 

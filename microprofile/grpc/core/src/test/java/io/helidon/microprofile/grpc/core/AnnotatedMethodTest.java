@@ -19,8 +19,8 @@ package io.helidon.microprofile.grpc.core;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
-import io.helidon.microprofile.grpc.api.Grpc;
-import io.helidon.microprofile.grpc.api.GrpcMethod;
+import io.helidon.grpc.api.Grpc;
+import io.helidon.grpc.api.GrpcMethod;
 
 import io.grpc.MethodDescriptor;
 import jakarta.inject.Inject;

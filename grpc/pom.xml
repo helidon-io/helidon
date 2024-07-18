@@ -33,6 +33,7 @@
     <description>gRPC support for Helidon</description>
 
     <modules>
+        <module>api</module>
         <module>core</module>
     </modules>
 

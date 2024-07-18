@@ -13,8 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package io.helidon.microprofile.grpc.api;
+package io.helidon.grpc.api;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -23,23 +22,29 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import io.grpc.MethodDescriptor.MethodType;
-
 /**
- * An annotation to mark a class as representing a server streaming gRPC method.
+ * An annotation used to annotate a type or method to specify the
+ * named marshaller supplier to use for rpc method calls.
  */
-@Target({ElementType.METHOD})
+@Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-@GrpcMethod(MethodType.SERVER_STREAMING)
 @Documented
 @Inherited
-public @interface ServerStreaming {
+public @interface GrpcMarshaller {
+
     /**
-     * Obtain the name of the method.
-     * <p>
-     * If not set the name of the actual annotated method is used.
-     *
-     * @return  name of the method
+     * The name of the Protocol Buffer marshaller supplier.
      */
-    String value() default "";
+    String PROTO = "proto";
+
+    /**
+     * The name to use to specify the default marshaller supplier.
+     */
+    String DEFAULT = "default";
+
+    /**
+     * Obtain the type of the {@code MarshallerSupplier} to use.
+     * @return  the type of the {@code MarshallerSupplier} to use
+     */
+    String value() default DEFAULT;
 }

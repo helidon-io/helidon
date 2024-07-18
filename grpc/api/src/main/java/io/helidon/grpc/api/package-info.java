@@ -14,11 +14,7 @@
  * limitations under the License.
  */
 
-module io.helidon.microprofile.grpc.api {
-
-    requires io.helidon.grpc.core;
-    requires jakarta.inject;
-    requires jakarta.cdi;
-
-    exports io.helidon.microprofile.grpc.api;
-}
+/**
+ * Helidon gRPC API module.
+ */
+package io.helidon.grpc.api;

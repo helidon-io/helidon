@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.grpc.api;
+package io.helidon.grpc.api;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -23,18 +23,23 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import io.grpc.MethodDescriptor.MethodType;
+
 /**
- * An annotation to indicate the response type of a gRPC method.
+ * An annotation to mark a class as representing a client streaming gRPC method.
  */
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
+@GrpcMethod(MethodType.CLIENT_STREAMING)
 @Documented
 @Inherited
-public @interface ResponseType {
+public @interface ClientStreaming {
     /**
-     * Obtain the gRPC response type.
+     * Obtain the name of the method.
+     * <p>
+     * If not set the name of the actual annotated method is used.
      *
-     * @return the gRPC response type
+     * @return name of the method
      */
-    Class<?> value();
+    String value() default "";
 }

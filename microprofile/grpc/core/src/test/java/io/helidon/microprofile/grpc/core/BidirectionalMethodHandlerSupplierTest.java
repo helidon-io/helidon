@@ -17,12 +17,12 @@
 package io.helidon.microprofile.grpc.core;
 
 import io.helidon.grpc.core.MethodHandler;
-import io.helidon.microprofile.grpc.api.Bidirectional;
-import io.helidon.microprofile.grpc.api.ClientStreaming;
-import io.helidon.microprofile.grpc.api.RequestType;
-import io.helidon.microprofile.grpc.api.ResponseType;
-import io.helidon.microprofile.grpc.api.ServerStreaming;
-import io.helidon.microprofile.grpc.api.Unary;
+import io.helidon.grpc.api.Bidirectional;
+import io.helidon.grpc.api.ClientStreaming;
+import io.helidon.grpc.api.RequestType;
+import io.helidon.grpc.api.ResponseType;
+import io.helidon.grpc.api.ServerStreaming;
+import io.helidon.grpc.api.Unary;
 
 import io.grpc.MethodDescriptor;
 import io.grpc.stub.StreamObserver;

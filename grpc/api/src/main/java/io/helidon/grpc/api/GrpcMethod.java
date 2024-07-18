@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.grpc.api;
+
+package io.helidon.grpc.api;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -22,20 +23,30 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import io.helidon.grpc.core.MarshallerSupplier;
+import io.grpc.MethodDescriptor.MethodType;
 
 /**
- * An annotation used to annotate a type or method to specify the
- * named marshaller supplier to use for rpc method calls.
+ * An annotation to mark a class as representing a gRPC service
+ * or a method as a gRPC service method.
  */
-@Target({ElementType.TYPE, ElementType.METHOD})
+@Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Inherited
-public @interface GrpcMarshaller {
+public @interface GrpcMethod {
     /**
-     * Obtain the type of the {@link MarshallerSupplier} to use.
-     * @return  the type of the {@link MarshallerSupplier} to use
+     * Obtain the name of the method.
+     * <p>
+     * If not set the name of the actual annotated method is used.
+     *
+     * @return  name of the method
      */
-    String value() default MarshallerSupplier.DEFAULT;
+    String name() default "";
+
+    /**
+     * Obtain the gRPC method type.
+     *
+     * @return the gRPC method type
+     */
+    MethodType value();
 }

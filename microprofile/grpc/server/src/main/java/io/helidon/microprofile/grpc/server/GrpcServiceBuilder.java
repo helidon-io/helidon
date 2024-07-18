@@ -28,13 +28,12 @@ import java.util.function.Supplier;
 
 import io.helidon.common.Builder;
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.grpc.api.GrpcInterceptorBinding;
+import io.helidon.grpc.api.GrpcInterceptors;
+import io.helidon.grpc.api.GrpcMarshaller;
+import io.helidon.grpc.api.GrpcMethod;
 import io.helidon.grpc.core.ContextKeys;
 import io.helidon.grpc.core.MethodHandler;
-import io.helidon.microprofile.grpc.api.GrpcInterceptor;
-import io.helidon.microprofile.grpc.api.GrpcInterceptorBinding;
-import io.helidon.microprofile.grpc.api.GrpcInterceptors;
-import io.helidon.microprofile.grpc.api.GrpcMarshaller;
-import io.helidon.microprofile.grpc.api.GrpcMethod;
 import io.helidon.microprofile.grpc.core.AbstractServiceBuilder;
 import io.helidon.microprofile.grpc.core.AnnotatedMethod;
 import io.helidon.microprofile.grpc.core.AnnotatedMethodList;
@@ -273,8 +272,7 @@ public class GrpcServiceBuilder
 
     private ServerInterceptor lookupInterceptor(Annotation annotation, BeanManager beanManager) {
         jakarta.enterprise.inject.Instance<ServerInterceptor> instance;
-        instance = beanManager.createInstance()
-                .select(ServerInterceptor.class, GrpcInterceptor.Literal.INSTANCE);
+        instance = beanManager.createInstance().select(ServerInterceptor.class);
 
         List<ServerInterceptor> interceptors = instance.stream()
                 .filter(interceptor -> hasAnnotation(interceptor, annotation))

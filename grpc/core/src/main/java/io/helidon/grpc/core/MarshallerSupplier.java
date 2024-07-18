@@ -26,16 +26,6 @@ import io.grpc.MethodDescriptor;
 public interface MarshallerSupplier {
 
     /**
-     * The name of the Protocol Buffer marshaller supplier.
-     */
-    String PROTO = "proto";
-
-    /**
-     * The name to use to specify the default marshaller supplier.
-     */
-    String DEFAULT = "default";
-
-    /**
      * Obtain a {@link MethodDescriptor.Marshaller} for a type.
      *
      * @param clazz the {@link Class} of the type to obtain the {@link MethodDescriptor.Marshaller} for

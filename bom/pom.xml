@@ -101,8 +101,8 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.microprofile.grpc</groupId>
-                <artifactId>helidon-microprofile-grpc-api</artifactId>
+                <groupId>io.helidon.grpc</groupId>
+                <artifactId>helidon-grpc-api</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>

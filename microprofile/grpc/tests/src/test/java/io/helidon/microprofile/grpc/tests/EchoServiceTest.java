@@ -22,11 +22,11 @@ import java.util.HashSet;
 import java.util.Set;
 
 import io.helidon.grpc.core.ContextKeys;
-import io.helidon.microprofile.grpc.api.Grpc;
-import io.helidon.microprofile.grpc.api.GrpcInterceptor;
-import io.helidon.microprofile.grpc.api.GrpcInterceptorBinding;
-import io.helidon.microprofile.grpc.api.GrpcInterceptors;
-import io.helidon.microprofile.grpc.api.Unary;
+import io.helidon.grpc.api.Grpc;
+import io.helidon.grpc.api.GrpcInterceptor;
+import io.helidon.grpc.api.GrpcInterceptorBinding;
+import io.helidon.grpc.api.GrpcInterceptors;
+import io.helidon.grpc.api.Unary;
 import io.helidon.microprofile.grpc.tests.test.Echo;
 import io.helidon.microprofile.grpc.tests.test.EchoServiceGrpc;
 import io.helidon.tracing.Tracer;

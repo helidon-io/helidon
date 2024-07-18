@@ -18,9 +18,8 @@ package io.helidon.microprofile.grpc.core;
 
 import java.util.AbstractMap;
 
-import io.helidon.grpc.core.MarshallerSupplier;
-import io.helidon.microprofile.grpc.api.Grpc;
-import io.helidon.microprofile.grpc.api.GrpcMarshaller;
+import io.helidon.grpc.api.Grpc;
+import io.helidon.grpc.api.GrpcMarshaller;
 
 import org.junit.jupiter.api.Test;
 
@@ -65,7 +64,7 @@ public class ModelHelperTest {
         return ModelHelperTest.class.getMethod(method).getAnnotation(GrpcMarshaller.class);
     }
 
-    @GrpcMarshaller(MarshallerSupplier.PROTO)
+    @GrpcMarshaller(GrpcMarshaller.PROTO)
     public void protoMarshaller() {
     }
 
@@ -73,7 +72,7 @@ public class ModelHelperTest {
     public void implicitDefaultMarshaller() {
     }
 
-    @GrpcMarshaller(MarshallerSupplier.DEFAULT)
+    @GrpcMarshaller
     public void explicitDefaultMarshaller() {
     }
 

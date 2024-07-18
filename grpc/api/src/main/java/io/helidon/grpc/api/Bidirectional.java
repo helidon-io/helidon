@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.grpc.api;
+package io.helidon.grpc.api;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -23,18 +23,23 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import io.grpc.MethodDescriptor.MethodType;
+
 /**
- * An annotation to indicate the request type of gRPC method.
+ * An annotation to mark a class as representing a bi-directional streaming gRPC method.
  */
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
+@GrpcMethod(MethodType.BIDI_STREAMING)
 @Documented
 @Inherited
-public @interface RequestType {
+public @interface Bidirectional {
     /**
-     * Obtain the gRPC request type.
+     * Obtain the name of the method.
+     * <p>
+     * If not set the name of the actual annotated method is used.
      *
-     * @return the gRPC request type
+     * @return name of the method
      */
-    Class<?> value();
+    String value() default "";
 }

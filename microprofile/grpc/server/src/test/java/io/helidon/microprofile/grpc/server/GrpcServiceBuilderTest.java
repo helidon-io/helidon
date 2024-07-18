@@ -20,9 +20,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.microprofile.grpc.api.Grpc;
-import io.helidon.microprofile.grpc.api.GrpcMarshaller;
-import io.helidon.microprofile.grpc.api.GrpcMethod;
+import io.helidon.grpc.api.Grpc;
+import io.helidon.grpc.api.GrpcMarshaller;
+import io.helidon.grpc.api.GrpcMethod;
 import io.helidon.webserver.grpc.GrpcMethodDescriptor;
 import io.helidon.webserver.grpc.GrpcServiceDescriptor;
 

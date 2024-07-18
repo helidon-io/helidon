@@ -14,15 +14,11 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.grpc.api;
+package io.helidon.grpc.api;
 
-import java.io.Serial;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
-
-import jakarta.enterprise.util.AnnotationLiteral;
-import jakarta.inject.Qualifier;
 
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -57,23 +53,8 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * It is required when a {@linkplain GrpcInterceptorBinding interceptor binding}
  * is used.</p>
  */
-@Qualifier
 @Retention(RUNTIME)
 @Target(TYPE)
 @Documented
 public @interface GrpcInterceptor {
-
-    /**
-     * An {@link AnnotationLiteral} for the {@link GrpcInterceptor} annotation.
-     */
-    class Literal extends AnnotationLiteral<GrpcInterceptor> implements GrpcInterceptor {
-
-        @Serial
-        private static final long serialVersionUID = 1L;
-
-        /**
-         * The singleton instance of {@link GrpcInterceptor.Literal}.
-         */
-        public static final Literal INSTANCE = new Literal();
-    }
 }

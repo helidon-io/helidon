@@ -22,7 +22,7 @@ import java.util.ServiceLoader;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.config.mp.MpConfig;
-import io.helidon.microprofile.grpc.api.Grpc;
+import io.helidon.grpc.api.Grpc;
 import io.helidon.microprofile.grpc.server.spi.GrpcMpContext;
 import io.helidon.microprofile.grpc.server.spi.GrpcMpExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
@@ -74,7 +74,7 @@ public class GrpcMpCdiExtension implements Extension {
         // we use the bean manager to do this as we need the actual bean class
         beanManager.getBeans(Object.class, Any.Literal.INSTANCE)
                 .stream()
-                .filter(this::hasGrpcQualifier)
+                .filter(this::hasGrpcAnnotation)
                 .forEach(bean -> {
                     Class<?> beanClass = bean.getBeanClass();
                     Annotation[] qualifiers = bean.getQualifiers().toArray(new Annotation[0]);
@@ -103,10 +103,19 @@ public class GrpcMpCdiExtension implements Extension {
         return builder;
     }
 
-    private boolean hasGrpcQualifier(Bean<?> bean) {
-        return bean.getQualifiers()
+    /**
+     * Checks if bean is annotated with {@link Grpc}. Does not inherit annotation from
+     * an interface to avoid any confusion with client proxies that also use the same
+     * {@link Grpc} annotation.
+     *
+     * @param bean the bean
+     * @return outcome of test
+     */
+    private boolean hasGrpcAnnotation(Bean<?> bean) {
+        return bean.getTypes()
                 .stream()
-                .anyMatch(q -> Grpc.class.isAssignableFrom(q.annotationType()));
+                .filter(t -> t instanceof Class<?> && !((Class<?>) t).isInterface())
+                .anyMatch(c -> ((Class<?>) c).isAnnotationPresent(Grpc.class));
     }
 
     /**
@@ -124,7 +133,7 @@ public class GrpcMpCdiExtension implements Extension {
             builder.service(serviceBuilder.build());
         } else {
             LOGGER.log(Level.WARNING,
-                    () -> "Discovered type is not a properly annotated gRPC service " + service.getClass());
+                       () -> "Discovered type is not a properly annotated gRPC service " + service.getClass());
         }
     }
 
@@ -157,7 +166,7 @@ public class GrpcMpCdiExtension implements Extension {
         };
 
         HelidonServiceLoader.create(ServiceLoader.load(GrpcMpExtension.class))
-                            .forEach(ext -> ext.configure(context));
+                .forEach(ext -> ext.configure(context));
         beanManager.createInstance()
                 .select(GrpcMpExtension.class)
                 .stream()

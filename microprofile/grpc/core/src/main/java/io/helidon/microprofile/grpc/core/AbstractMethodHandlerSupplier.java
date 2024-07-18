@@ -22,12 +22,12 @@ import java.lang.reflect.Type;
 import java.util.Objects;
 import java.util.function.Supplier;
 
+import io.helidon.grpc.api.GrpcMethod;
+import io.helidon.grpc.api.RequestType;
+import io.helidon.grpc.api.ResponseType;
 import io.helidon.grpc.core.GrpcHelper;
 import io.helidon.grpc.core.MethodHandler;
 import io.helidon.grpc.core.SafeStreamObserver;
-import io.helidon.microprofile.grpc.api.GrpcMethod;
-import io.helidon.microprofile.grpc.api.RequestType;
-import io.helidon.microprofile.grpc.api.ResponseType;
 
 import com.google.protobuf.Empty;
 import io.grpc.MethodDescriptor;
@@ -155,7 +155,7 @@ abstract class AbstractMethodHandlerSupplier implements MethodHandlerSupplier {
          * @param method    the {@link Method} to invoke
          * @param instance  the service instance to invoke the method on
          * @param observer  the method response observer
-         * @return  the {@link StreamObserver} to receive requests from the client
+         * @return the {@link StreamObserver} to receive requests from the client
          * @throws InvocationTargetException if an error occurs invoking the method
          * @throws IllegalAccessException    if the method cannot be accessed
          */

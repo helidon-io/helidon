@@ -32,7 +32,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>api</module>
         <module>core</module>
         <module>server</module>
         <module>tracing</module>
