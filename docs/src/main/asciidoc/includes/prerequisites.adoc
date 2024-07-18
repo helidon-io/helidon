@@ -144,9 +144,7 @@ export JAVA_HOME=/usr/lib/jvm/jdk-21
 [role="flex, sm7"]
 |=======
 include::prerequisites.adoc[tag=prerequisites-table-contents]
-| https://www.graalvm.org/release-notes/JDK_21/[GraalVM 21.0.2+13 for JDK 21]| Helidon support
-GraalVM for JDK 21 and higher except for `native-image`, Helidon requires GraalVM 21.0.2+13
-specific version.
+| https://www.graalvm.org/release-notes/JDK_21/[GraalVM for JDK 21]| `native-image` support requires GraalVM for JDK 21. When running in the Graal JVM (not native-image) Helidon supports GraalVM for JDK 21 or newer.
 |=======
 
 
