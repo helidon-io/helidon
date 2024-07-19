@@ -215,7 +215,6 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                            .cause(e)
                                            .type(EventType.BAD_REQUEST)
                                            .status(e.status())
-                                           .setKeepAlive(e.keepAlive())
                                            .build());
         } catch (RequestException e) {
             handleRequestException(e);
@@ -465,9 +464,10 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
 
         BufferData buffer = BufferData.growing(128);
         ServerResponseHeaders headers = response.headers();
-        if (!e.keepAlive()) {
-            headers.set(HeaderValues.CONNECTION_CLOSE);
-        }
+
+        // we are escaping the connection loop, the connection will be closed
+        headers.set(HeaderValues.CONNECTION_CLOSE);
+
         byte[] message = response.entity().orElse(BufferData.EMPTY_BYTES);
         headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, String.valueOf(message.length)));
 

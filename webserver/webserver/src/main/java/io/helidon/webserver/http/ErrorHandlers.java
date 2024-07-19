@@ -67,6 +67,7 @@ public final class ErrorHandlers {
      * @param response HTTP server response
      * @param task     task to execute
      */
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public void runWithErrorHandling(ConnectionContext ctx,
                                      RoutingRequest request,
                                      RoutingResponse response,
@@ -116,7 +117,7 @@ public final class ErrorHandlers {
             }
         } catch (RuntimeException e) {
             handleError(ctx, request, response, e);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             if (e.getCause() instanceof SocketException se) {
                 throw new UncheckedIOException(se);
             }
@@ -176,6 +177,7 @@ public final class ErrorHandlers {
         response.commit();
     }
 
+    @SuppressWarnings("unchecked")
     private void handleError(ConnectionContext ctx, RoutingRequest request, RoutingResponse response, Throwable e) {
         errorHandler(e.getClass())
                 .ifPresentOrElse(it -> handleError(ctx, request, response, e, (ErrorHandler<Throwable>) it),
