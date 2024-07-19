@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.bundles</groupId>
         <artifactId>helidon-bundles-project</artifactId>
-        <version>4.0.11-SNAPSHOT</version>
+        <version>4.0.11</version>
     </parent>
 
     <artifactId>helidon-bundles-config</artifactId>

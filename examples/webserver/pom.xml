@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.examples</groupId>
         <artifactId>helidon-examples-project</artifactId>
-        <version>4.0.11-SNAPSHOT</version>
+        <version>4.0.11</version>
     </parent>
     <groupId>io.helidon.examples.webserver</groupId>
     <artifactId>helidon-examples-webserver-project</artifactId>

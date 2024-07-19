@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.metrics</groupId>
         <artifactId>helidon-metrics-project</artifactId>
-        <version>4.0.11-SNAPSHOT</version>
+        <version>4.0.11</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <packaging>pom</packaging>
