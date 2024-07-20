@@ -29,7 +29,6 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
-import io.helidon.common.media.type.ParserMode;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.ClientResponseTrailers;
