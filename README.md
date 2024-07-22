@@ -107,7 +107,7 @@ $ mvn validate  -Pcopyright
 $ mvn verify  -Pspotbugs
 ```
 
-**Documentatonn**
+**Documentation**
 
 ```bash
 # At the root of the project
