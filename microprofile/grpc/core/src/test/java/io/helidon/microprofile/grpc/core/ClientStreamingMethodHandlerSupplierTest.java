@@ -22,13 +22,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Stream;
 
+import io.helidon.grpc.api.Grpc;
 import io.helidon.grpc.core.MethodHandler;
-import io.helidon.grpc.api.Bidirectional;
-import io.helidon.grpc.api.ClientStreaming;
-import io.helidon.grpc.api.RequestType;
-import io.helidon.grpc.api.ResponseType;
-import io.helidon.grpc.api.ServerStreaming;
-import io.helidon.grpc.api.Unary;
 
 import io.grpc.MethodDescriptor;
 import io.grpc.stub.StreamObserver;
@@ -427,42 +422,42 @@ public class ClientStreamingMethodHandlerSupplierTest {
      * The test service with bi-directional streaming methods.
      */
     public interface Service {
-        @ClientStreaming
+        @Grpc.ClientStreaming
         StreamObserver<Long> clientStreaming(StreamObserver<String> observer);
 
-        @ClientStreaming
+        @Grpc.ClientStreaming
         StreamObserver<Long> future(CompletableFuture<String> future);
 
-        @ClientStreaming
+        @Grpc.ClientStreaming
         CompletableFuture<Long> iterable(Iterable<String> requests);
 
-        @ClientStreaming
+        @Grpc.ClientStreaming
         CompletableFuture<Long> stream(Stream<String> requests);
 
-        @ClientStreaming
+        @Grpc.ClientStreaming
         CompletionStage<Long> iterableCompletionStage(Iterable<String> requests);
 
-        @ClientStreaming
+        @Grpc.ClientStreaming
         CompletionStage<Long> streamCompletionStage(Stream<String> requests);
 
-        @ClientStreaming
-        @RequestType(Long.class)
-        @ResponseType(String.class)
+        @Grpc.ClientStreaming
+        @Grpc.RequestType(Long.class)
+        @Grpc.ResponseType(String.class)
         StreamObserver reqResp(StreamObserver observer);
 
-        @ClientStreaming
+        @Grpc.ClientStreaming
         StreamObserver<Long> badArg(String bad);
 
-        @ClientStreaming
+        @Grpc.ClientStreaming
         StreamObserver<Long> tooManyArgs(StreamObserver<String> observer, String bad);
 
-        @Bidirectional
+        @Grpc.Bidirectional
         StreamObserver<Long> bidi(StreamObserver<String> observer);
 
-        @Unary
+        @Grpc.Unary
         void unary(String request, StreamObserver<String> observer);
 
-        @ServerStreaming
+        @Grpc.ServerStreaming
         void serverStreaming(String request, StreamObserver<String> observer);
     }
 }

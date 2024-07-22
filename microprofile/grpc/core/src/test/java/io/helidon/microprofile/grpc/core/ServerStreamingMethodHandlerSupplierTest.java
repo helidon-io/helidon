@@ -20,14 +20,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import io.helidon.grpc.core.MethodHandler;
-import io.helidon.grpc.api.Bidirectional;
-import io.helidon.grpc.api.ClientStreaming;
 import io.helidon.grpc.api.Grpc;
-import io.helidon.grpc.api.RequestType;
-import io.helidon.grpc.api.ResponseType;
-import io.helidon.grpc.api.ServerStreaming;
-import io.helidon.grpc.api.Unary;
+import io.helidon.grpc.core.MethodHandler;
 
 import com.google.protobuf.Empty;
 import io.grpc.MethodDescriptor;
@@ -404,38 +398,38 @@ public class ServerStreamingMethodHandlerSupplierTest {
     /**
      * The unary methods service implementation.
      */
-    @Grpc
+    @Grpc.GrpcService
     public interface Service {
-        @ServerStreaming
+        @Grpc.ServerStreaming
         void serverStreaming(String request, StreamObserver<Long> observer);
 
-        @ServerStreaming
+        @Grpc.ServerStreaming
         void serverStreamingNoRequest(StreamObserver<Long> observer);
 
-        @ServerStreaming
+        @Grpc.ServerStreaming
         Stream<Long> streamResponse(String request);
 
-        @ServerStreaming
+        @Grpc.ServerStreaming
         Stream<Long> streamResponseNoRequest();
 
-        @ServerStreaming
-        @RequestType(Long.class)
-        @ResponseType(String.class)
+        @Grpc.ServerStreaming
+        @Grpc.RequestType(Long.class)
+        @Grpc.ResponseType(String.class)
         void reqResp(Object request, StreamObserver observer);
 
-        @ServerStreaming
+        @Grpc.ServerStreaming
         StreamObserver<Long> badArg(String bad, String badToo);
 
-        @ServerStreaming
+        @Grpc.ServerStreaming
         StreamObserver<Long> tooManyArgs(String bad, StreamObserver<Long> observer, String badToo);
 
-        @Unary
+        @Grpc.Unary
         void unary(String request, StreamObserver<Long> observer);
 
-        @ClientStreaming
+        @Grpc.ClientStreaming
         StreamObserver<Long> clientStreaming(StreamObserver<String> request);
 
-        @Bidirectional
+        @Grpc.Bidirectional
         StreamObserver<Long> bidi(StreamObserver<String> observer);
     }
 }

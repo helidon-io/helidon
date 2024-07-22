@@ -28,10 +28,7 @@ import java.util.function.Supplier;
 
 import io.helidon.common.Builder;
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.grpc.api.GrpcInterceptorBinding;
-import io.helidon.grpc.api.GrpcInterceptors;
-import io.helidon.grpc.api.GrpcMarshaller;
-import io.helidon.grpc.api.GrpcMethod;
+import io.helidon.grpc.api.Grpc;
 import io.helidon.grpc.core.ContextKeys;
 import io.helidon.grpc.core.MethodHandler;
 import io.helidon.microprofile.grpc.core.AbstractServiceBuilder;
@@ -151,10 +148,10 @@ public class GrpcServiceBuilder
      */
     private void addServiceMethods(GrpcServiceDescriptor.Builder builder, AnnotatedMethodList methodList,
                                    BeanManager beanManager) {
-        for (AnnotatedMethod am : methodList.withAnnotation(GrpcMethod.class)) {
+        for (AnnotatedMethod am : methodList.withAnnotation(Grpc.GrpcMethod.class)) {
             addServiceMethod(builder, am, beanManager);
         }
-        for (AnnotatedMethod am : methodList.withMetaAnnotation(GrpcMethod.class)) {
+        for (AnnotatedMethod am : methodList.withMetaAnnotation(Grpc.GrpcMethod.class)) {
             addServiceMethod(builder, am, beanManager);
         }
     }
@@ -172,7 +169,7 @@ public class GrpcServiceBuilder
      */
     @SuppressWarnings("unchecked")
     private void addServiceMethod(GrpcServiceDescriptor.Builder builder, AnnotatedMethod method, BeanManager beanManager) {
-        GrpcMethod annotation = method.firstAnnotationOrMetaAnnotation(GrpcMethod.class);
+        Grpc.GrpcMethod annotation = method.firstAnnotationOrMetaAnnotation(Grpc.GrpcMethod.class);
         String name = determineMethodName(method, annotation);
         Supplier<?> instanceSupplier = instanceSupplier();
 
@@ -186,7 +183,7 @@ public class GrpcServiceBuilder
         Class<?> responseType = handler.getResponseType();
         List<ServerInterceptor> interceptors = lookupMethodInterceptors(beanManager, method);
 
-        GrpcInterceptors grpcInterceptors = method.getAnnotation(GrpcInterceptors.class);
+        Grpc.GrpcInterceptors grpcInterceptors = method.getAnnotation(Grpc.GrpcInterceptors.class);
 
         if (grpcInterceptors != null) {
             for (Class<?> interceptorClass : grpcInterceptors.value()) {
@@ -237,12 +234,12 @@ public class GrpcServiceBuilder
     private void configureServiceInterceptors(GrpcServiceDescriptor.Builder builder, BeanManager beanManager, Class<?> cls) {
         if (beanManager != null) {
             for (Annotation annotation : cls.getAnnotations()) {
-                if (annotation.annotationType().isAnnotationPresent(GrpcInterceptorBinding.class)) {
+                if (annotation.annotationType().isAnnotationPresent(Grpc.GrpcInterceptorBinding.class)) {
                     builder.intercept(lookupInterceptor(annotation, beanManager));
                 }
             }
 
-            GrpcInterceptors grpcInterceptors = cls.getAnnotation(GrpcInterceptors.class);
+            Grpc.GrpcInterceptors grpcInterceptors = cls.getAnnotation(Grpc.GrpcInterceptors.class);
             if (grpcInterceptors != null) {
                 for (Class<?> interceptorClass : grpcInterceptors.value()) {
                     if (ServerInterceptor.class.isAssignableFrom(interceptorClass)) {
@@ -263,7 +260,7 @@ public class GrpcServiceBuilder
 
         List<ServerInterceptor> interceptors = new ArrayList<>();
         for (Annotation annotation : method.getAnnotations()) {
-            if (annotation.annotationType().isAnnotationPresent(GrpcInterceptorBinding.class)) {
+            if (annotation.annotationType().isAnnotationPresent(Grpc.GrpcInterceptorBinding.class)) {
                 interceptors.add(lookupInterceptor(annotation, beanManager));
             }
         }
@@ -353,8 +350,8 @@ public class GrpcServiceBuilder
                     .requestType(requestType)
                     .responseType(responseType);
 
-            if (method.isAnnotationPresent(GrpcMarshaller.class)) {
-                rules.marshallerSupplier(ModelHelper.getMarshallerSupplier(method.getAnnotation(GrpcMarshaller.class)));
+            if (method.isAnnotationPresent(Grpc.GrpcMarshaller.class)) {
+                rules.marshallerSupplier(ModelHelper.getMarshallerSupplier(method.getAnnotation(Grpc.GrpcMarshaller.class)));
             }
 
             interceptors.forEach(rules::intercept);

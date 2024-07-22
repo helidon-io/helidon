@@ -24,13 +24,9 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.helidon.grpc.api.Grpc;
 import io.helidon.grpc.core.CollectingObserver;
 import io.helidon.grpc.core.ResponseHelper;
-import io.helidon.grpc.api.Bidirectional;
-import io.helidon.grpc.api.ClientStreaming;
-import io.helidon.grpc.api.Grpc;
-import io.helidon.grpc.api.ServerStreaming;
-import io.helidon.grpc.api.Unary;
 import io.helidon.microprofile.grpc.tests.test.StringServiceGrpc;
 import io.helidon.microprofile.grpc.tests.test.Strings;
 
@@ -102,27 +98,27 @@ class StringServiceTest extends BaseServiceTest {
         return Strings.StringMessage.newBuilder().setText(data).build();
     }
 
-    @Grpc
+    @Grpc.GrpcService
     @ApplicationScoped
     public static class StringService {
 
-        @Unary("Upper")
+        @Grpc.Unary("Upper")
         public void upper(Strings.StringMessage request, StreamObserver<Strings.StringMessage> observer) {
             ResponseHelper.complete(observer, response(request.getText().toUpperCase()));
         }
 
-        @Unary("Lower")
+        @Grpc.Unary("Lower")
         public void lower(Strings.StringMessage request, StreamObserver<Strings.StringMessage> observer) {
             ResponseHelper.complete(observer, response(request.getText().toLowerCase()));
         }
 
-        @ServerStreaming("Split")
+        @Grpc.ServerStreaming("Split")
         public void split(Strings.StringMessage request, StreamObserver<Strings.StringMessage> observer) {
             String[] parts = request.getText().split(" ");
             ResponseHelper.stream(observer, Stream.of(parts).map(this::response));
         }
 
-        @ClientStreaming("Join")
+        @Grpc.ClientStreaming("Join")
         public StreamObserver<Strings.StringMessage> join(StreamObserver<Strings.StringMessage> observer) {
             return CollectingObserver.create(
                     Collectors.joining(" "),
@@ -131,7 +127,7 @@ class StringServiceTest extends BaseServiceTest {
                     this::response);
         }
 
-        @Bidirectional("Echo")
+        @Grpc.Bidirectional("Echo")
         public StreamObserver<Strings.StringMessage> echo(StreamObserver<Strings.StringMessage> observer) {
             return new StreamObserver<>() {
                 public void onNext(Strings.StringMessage value) {

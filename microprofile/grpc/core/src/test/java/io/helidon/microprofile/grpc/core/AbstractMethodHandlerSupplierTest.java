@@ -20,10 +20,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.function.Supplier;
 
-import io.helidon.grpc.api.Bidirectional;
-import io.helidon.grpc.api.ClientStreaming;
-import io.helidon.grpc.api.ServerStreaming;
-import io.helidon.grpc.api.Unary;
+import io.helidon.grpc.api.Grpc;
 
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
@@ -151,7 +148,7 @@ public class AbstractMethodHandlerSupplierTest {
         return getClass().getMethod("bidi", StreamObserver.class);
     }
 
-    @Bidirectional
+    @Grpc.Bidirectional
     public StreamObserver<String> bidi(StreamObserver<String> observer) {
         return null;
     }
@@ -160,7 +157,7 @@ public class AbstractMethodHandlerSupplierTest {
         return getClass().getMethod("clientStreaming", StreamObserver.class);
     }
 
-    @ClientStreaming
+    @Grpc.ClientStreaming
     public StreamObserver<String> clientStreaming(StreamObserver<String> observer) {
         return null;
     }
@@ -169,7 +166,7 @@ public class AbstractMethodHandlerSupplierTest {
         return getClass().getMethod("serverStreaming", String.class, StreamObserver.class);
     }
 
-    @ServerStreaming
+    @Grpc.ServerStreaming
     public void serverStreaming(String request, StreamObserver<String> observer) {
     }
 
@@ -177,7 +174,7 @@ public class AbstractMethodHandlerSupplierTest {
         return getClass().getMethod("unary", String.class, StreamObserver.class);
     }
 
-    @Unary
+    @Grpc.Unary
     public void unary(String request, StreamObserver<String> observer) {
     }
 

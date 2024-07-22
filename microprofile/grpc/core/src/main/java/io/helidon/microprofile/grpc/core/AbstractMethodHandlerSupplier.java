@@ -22,9 +22,7 @@ import java.lang.reflect.Type;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-import io.helidon.grpc.api.GrpcMethod;
-import io.helidon.grpc.api.RequestType;
-import io.helidon.grpc.api.ResponseType;
+import io.helidon.grpc.api.Grpc;
 import io.helidon.grpc.core.GrpcHelper;
 import io.helidon.grpc.core.MethodHandler;
 import io.helidon.grpc.core.SafeStreamObserver;
@@ -57,8 +55,8 @@ abstract class AbstractMethodHandlerSupplier implements MethodHandlerSupplier {
     }
 
     /**
-     * Determine whether the specified method is annotated with {@link GrpcMethod}
-     * or another annotation that is itself annotated with {@link GrpcMethod}
+     * Determine whether the specified method is annotated with {@link io.helidon.grpc.api.Grpc.GrpcMethod}
+     * or another annotation that is itself annotated with {@link io.helidon.grpc.api.Grpc.GrpcMethod}
      * with a type matching this handler's {@link #methodType}.
      *
      * @param method  the method to test
@@ -69,7 +67,7 @@ abstract class AbstractMethodHandlerSupplier implements MethodHandlerSupplier {
             return false;
         }
 
-        GrpcMethod annotation = method.firstAnnotationOrMetaAnnotation(GrpcMethod.class);
+        Grpc.GrpcMethod annotation = method.firstAnnotationOrMetaAnnotation(Grpc.GrpcMethod.class);
         return annotation != null && methodType.equals(annotation.value());
     }
 
@@ -164,7 +162,7 @@ abstract class AbstractMethodHandlerSupplier implements MethodHandlerSupplier {
 
         @Override
         public Class<?> getRequestType() {
-            RequestType annotation = method.getAnnotation(RequestType.class);
+            Grpc.RequestType annotation = method.getAnnotation(Grpc.RequestType.class);
             if (annotation != null) {
                 return annotation.value();
             }
@@ -172,7 +170,7 @@ abstract class AbstractMethodHandlerSupplier implements MethodHandlerSupplier {
         }
 
         /**
-         * Set the request type to use if no {@link RequestType} annotation
+         * Set the request type to use if no {@link io.helidon.grpc.api.Grpc.RequestType} annotation
          * is present on the annotated method.
          *
          * @param requestType  the request type
@@ -183,7 +181,7 @@ abstract class AbstractMethodHandlerSupplier implements MethodHandlerSupplier {
 
         @Override
         public Class<?> getResponseType() {
-            ResponseType annotation = method.getAnnotation(ResponseType.class);
+            Grpc.ResponseType annotation = method.getAnnotation(Grpc.ResponseType.class);
             if (annotation != null) {
                 return annotation.value();
             }
@@ -196,7 +194,7 @@ abstract class AbstractMethodHandlerSupplier implements MethodHandlerSupplier {
         }
 
         /**
-         * Set the response type to use if no {@link ResponseType} annotation
+         * Set the response type to use if no {@link io.helidon.grpc.api.Grpc.ResponseType} annotation
          * is present on the annotated method.
          * @param responseType  the response type
          */

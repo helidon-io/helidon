@@ -19,14 +19,8 @@ package io.helidon.microprofile.grpc.core;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-import io.helidon.grpc.core.MethodHandler;
-import io.helidon.grpc.api.Bidirectional;
-import io.helidon.grpc.api.ClientStreaming;
 import io.helidon.grpc.api.Grpc;
-import io.helidon.grpc.api.RequestType;
-import io.helidon.grpc.api.ResponseType;
-import io.helidon.grpc.api.ServerStreaming;
-import io.helidon.grpc.api.Unary;
+import io.helidon.grpc.core.MethodHandler;
 
 import com.google.protobuf.Empty;
 import io.grpc.MethodDescriptor;
@@ -774,63 +768,63 @@ public class UnaryMethodHandlerSupplierTest {
     /**
      * The unary methods service implementation.
      */
-    @Grpc
+    @Grpc.GrpcService
     @SuppressWarnings("CdiManagedBeanInconsistencyInspection")
     public interface UnaryService {
-        @Unary
+        @Grpc.Unary
         Long requestResponse(String request);
 
-        @Unary
+        @Grpc.Unary
         Long responseOnly();
 
-        @Unary
+        @Grpc.Unary
         void requestNoResponse(String request);
 
-        @Unary
+        @Grpc.Unary
         void noRequestNoResponse();
 
-        @Unary
+        @Grpc.Unary
         CompletableFuture<Long> futureResponse(String request);
 
-        @Unary
+        @Grpc.Unary
         CompletableFuture<Long> futureResponseNoRequest();
 
-        @Unary
+        @Grpc.Unary
         CompletionStage<Long> completionStageResponse(String request);
 
-        @Unary
+        @Grpc.Unary
         CompletionStage<Long> completionStageResponseNoRequest();
 
-        @Unary
+        @Grpc.Unary
         void unary(String request, StreamObserver<Long> observer);
 
-        @Unary
+        @Grpc.Unary
         void unaryNoRequest(StreamObserver<Long> observer);
 
-        @Unary
+        @Grpc.Unary
         void unaryFuture(String request, CompletableFuture<Long> future);
 
-        @Unary
+        @Grpc.Unary
         void unaryFutureNoRequest(CompletableFuture<Long> future);
 
-        @Unary
-        @RequestType(Long.class)
-        @ResponseType(String.class)
+        @Grpc.Unary
+        @Grpc.RequestType(Long.class)
+        @Grpc.ResponseType(String.class)
         Number reqResp(StreamObserver observer);
 
-        @Unary
+        @Grpc.Unary
         StreamObserver<Long> badArg(String bad, String badToo);
 
-        @Unary
+        @Grpc.Unary
         StreamObserver<Long> tooManyArgs(StreamObserver<Long> observer, String bad);
 
-        @ClientStreaming
+        @Grpc.ClientStreaming
         StreamObserver<Long> clientStreaming(StreamObserver<String> request);
 
-        @Bidirectional
+        @Grpc.Bidirectional
         StreamObserver<Long> bidi(StreamObserver<String> observer);
 
-        @ServerStreaming
+        @Grpc.ServerStreaming
         void serverStreaming(String request, StreamObserver<String> observer);
     }
 }

@@ -28,11 +28,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import io.helidon.grpc.api.Bidirectional;
-import io.helidon.grpc.api.ClientStreaming;
-import io.helidon.grpc.api.GrpcMethod;
-import io.helidon.grpc.api.ServerStreaming;
-import io.helidon.grpc.api.Unary;
+import io.helidon.grpc.api.Grpc;
 
 /**
  * A model of an annotated gRPC method.
@@ -43,17 +39,17 @@ public class AnnotatedMethod implements AnnotatedElement {
      * The set of meta-annotations that are used to identify an annotated gRPC method.
      */
     private static final Set<Class<? extends Annotation>> METHOD_META_ANNOTATIONS
-            = Set.of(GrpcMethod.class);
+            = Set.of(Grpc.GrpcMethod.class);
 
     /**
      * The set of annotations that are used to identify an annotated gRPC method.
      */
     private static final Set<Class<? extends Annotation>> METHOD_ANNOTATIONS
-            = Set.of(GrpcMethod.class,
-                     Bidirectional.class,
-                     ClientStreaming.class,
-                     ServerStreaming.class,
-                     Unary.class);
+            = Set.of(Grpc.GrpcMethod.class,
+                     Grpc.Bidirectional.class,
+                     Grpc.ClientStreaming.class,
+                     Grpc.ServerStreaming.class,
+                     Grpc.Unary.class);
 
     /**
      * The set of method parameter annotations that are used to identify an annotated gRPC method.
@@ -118,7 +114,7 @@ public class AnnotatedMethod implements AnnotatedElement {
     /**
      * Get the underlying Java method.
      * <p>
-     * This will be the method that is actually annotated with {@link GrpcMethod},
+     * This will be the method that is actually annotated with {@link io.helidon.grpc.api.Grpc.GrpcMethod},
      * which may be the same as or overridden by the method returned by {@link #declaredMethod()}.
      *
      * @return the actual annotated Java method.

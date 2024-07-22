@@ -27,7 +27,6 @@ import io.helidon.microprofile.grpc.server.spi.GrpcMpContext;
 import io.helidon.microprofile.grpc.server.spi.GrpcMpExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.webserver.grpc.GrpcRouting;
-import io.helidon.webserver.grpc.GrpcService;
 
 import io.grpc.BindableService;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -83,12 +82,12 @@ public class GrpcMpCdiExtension implements Extension {
                 });
 
         // discover beans of type GrpcService
-        beanManager.getBeans(GrpcService.class)
+        beanManager.getBeans(io.helidon.webserver.grpc.GrpcService.class)
                 .forEach(bean -> {
                     Class<?> beanClass = bean.getBeanClass();
                     Annotation[] qualifiers = bean.getQualifiers().toArray(new Annotation[0]);
                     Object service = instance.select(beanClass, qualifiers).get();
-                    builder.service((GrpcService) service);
+                    builder.service((io.helidon.webserver.grpc.GrpcService) service);
                 });
 
         // discover beans of type BindableService
@@ -104,9 +103,9 @@ public class GrpcMpCdiExtension implements Extension {
     }
 
     /**
-     * Checks if bean is annotated with {@link Grpc}. Does not inherit annotation from
+     * Checks if bean is annotated with {@link io.helidon.grpc.api.Grpc.GrpcService}. Does not inherit annotation from
      * an interface to avoid any confusion with client proxies that also use the same
-     * {@link Grpc} annotation.
+     * {@link io.helidon.grpc.api.Grpc.GrpcService} annotation.
      *
      * @param bean the bean
      * @return outcome of test
@@ -115,7 +114,7 @@ public class GrpcMpCdiExtension implements Extension {
         return bean.getTypes()
                 .stream()
                 .filter(t -> t instanceof Class<?> && !((Class<?>) t).isInterface())
-                .anyMatch(c -> ((Class<?>) c).isAnnotationPresent(Grpc.class));
+                .anyMatch(c -> ((Class<?>) c).isAnnotationPresent(Grpc.GrpcService.class));
     }
 
     /**

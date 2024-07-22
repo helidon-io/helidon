@@ -16,13 +16,8 @@
 
 package io.helidon.microprofile.grpc.core;
 
+import io.helidon.grpc.api.Grpc;
 import io.helidon.grpc.core.MethodHandler;
-import io.helidon.grpc.api.Bidirectional;
-import io.helidon.grpc.api.ClientStreaming;
-import io.helidon.grpc.api.RequestType;
-import io.helidon.grpc.api.ResponseType;
-import io.helidon.grpc.api.ServerStreaming;
-import io.helidon.grpc.api.Unary;
 
 import io.grpc.MethodDescriptor;
 import io.grpc.stub.StreamObserver;
@@ -203,27 +198,27 @@ public class BidirectionalMethodHandlerSupplierTest {
      * The test service with bi-directional streaming methods.
      */
     public interface Service {
-        @Bidirectional
+        @Grpc.Bidirectional
         StreamObserver<Long> bidi(StreamObserver<String> observer);
 
-        @Bidirectional
-        @RequestType(Long.class)
-        @ResponseType(String.class)
+        @Grpc.Bidirectional
+        @Grpc.RequestType(Long.class)
+        @Grpc.ResponseType(String.class)
         StreamObserver bidiReqResp(StreamObserver observer);
 
-        @Bidirectional
+        @Grpc.Bidirectional
         StreamObserver<Long> badArg(String bad);
 
-        @Bidirectional
+        @Grpc.Bidirectional
         StreamObserver<Long> tooManyArgs(StreamObserver<String> observer, String bad);
 
-        @Unary
+        @Grpc.Unary
         void unary(String request, StreamObserver<String> observer);
 
-        @ServerStreaming
+        @Grpc.ServerStreaming
         void serverStreaming(String request, StreamObserver<String> observer);
 
-        @ClientStreaming
+        @Grpc.ClientStreaming
         StreamObserver<String> clientStreaming(StreamObserver<String> request);
     }
 }

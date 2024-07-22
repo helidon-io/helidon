@@ -19,7 +19,6 @@ package io.helidon.microprofile.grpc.core;
 import java.util.AbstractMap;
 
 import io.helidon.grpc.api.Grpc;
-import io.helidon.grpc.api.GrpcMarshaller;
 
 import org.junit.jupiter.api.Test;
 
@@ -30,57 +29,57 @@ public class ModelHelperTest {
 
     @Test
     public void shouldGetAnnotatedSuperClass() {
-        Class<?> cls = ModelHelper.getAnnotatedResourceClass(ChildOne.class, Grpc.class);
+        Class<?> cls = ModelHelper.getAnnotatedResourceClass(ChildOne.class, Grpc.GrpcService.class);
         assertThat(cls, equalTo(Parent.class));
     }
 
     @Test
     public void shouldGetSelfIfAnnotated() {
-        Class<?> cls = ModelHelper.getAnnotatedResourceClass(Parent.class, Grpc.class);
+        Class<?> cls = ModelHelper.getAnnotatedResourceClass(Parent.class, Grpc.GrpcService.class);
         assertThat(cls, equalTo(Parent.class));
     }
 
     @Test
     public void shouldGetSelfIfNothingAnnotated() {
-        Class<?> cls = ModelHelper.getAnnotatedResourceClass(NoAnnotated.class, Grpc.class);
+        Class<?> cls = ModelHelper.getAnnotatedResourceClass(NoAnnotated.class, Grpc.GrpcService.class);
         assertThat(cls, equalTo(NoAnnotated.class));
     }
 
     @Test
     public void shouldGetAnnotatedSuperClassBeforeInterface() {
-        Class<?> cls = ModelHelper.getAnnotatedResourceClass(ChildTwo.class, Grpc.class);
+        Class<?> cls = ModelHelper.getAnnotatedResourceClass(ChildTwo.class, Grpc.GrpcService.class);
         assertThat(cls, equalTo(Parent.class));
     }
 
     @Test
     public void shouldGetAnnotatedInterface() {
-        Class<?> cls = ModelHelper.getAnnotatedResourceClass(ChildThree.class, Grpc.class);
+        Class<?> cls = ModelHelper.getAnnotatedResourceClass(ChildThree.class, Grpc.GrpcService.class);
         assertThat(cls, equalTo(IFaceOne.class));
     }
 
     // ----- helper methods -------------------------------------------------
 
-    private GrpcMarshaller getAnnotation(String method) throws Exception {
-        return ModelHelperTest.class.getMethod(method).getAnnotation(GrpcMarshaller.class);
+    private Grpc.GrpcMarshaller getAnnotation(String method) throws Exception {
+        return ModelHelperTest.class.getMethod(method).getAnnotation(Grpc.GrpcMarshaller.class);
     }
 
-    @GrpcMarshaller(GrpcMarshaller.PROTO)
+    @Grpc.GrpcMarshaller(Grpc.GrpcMarshaller.PROTO)
     public void protoMarshaller() {
     }
 
-    @GrpcMarshaller
+    @Grpc.GrpcMarshaller
     public void implicitDefaultMarshaller() {
     }
 
-    @GrpcMarshaller
+    @Grpc.GrpcMarshaller
     public void explicitDefaultMarshaller() {
     }
 
-    @Grpc
+    @Grpc.GrpcService
     public static class GrandParent {
     }
 
-    @Grpc
+    @Grpc.GrpcService
     public static class Parent
             extends GrandParent {
     }
@@ -89,7 +88,7 @@ public class ModelHelperTest {
             extends Parent {
     }
 
-    @Grpc
+    @Grpc.GrpcService
     public interface IFaceOne {
     }
 

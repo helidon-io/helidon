@@ -21,10 +21,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import io.helidon.grpc.api.ClientStreaming;
-import io.helidon.grpc.api.GrpcMethod;
-import io.helidon.grpc.api.RequestType;
-import io.helidon.grpc.api.Unary;
+import io.helidon.grpc.api.Grpc;
 
 import org.junit.jupiter.api.Test;
 
@@ -112,7 +109,7 @@ public class AnnotatedMethodListTest {
     @Test
     public void shouldGetMethodsWithWithAnnotation() {
         AnnotatedMethodList list = AnnotatedMethodList.create(Stub.class, true);
-        AnnotatedMethodList methods = list.withAnnotation(Unary.class);
+        AnnotatedMethodList methods = list.withAnnotation(Grpc.Unary.class);
         List<String> names = methods.stream()
                 .map(am -> am.method().getName())
                 .collect(Collectors.toList());
@@ -123,7 +120,7 @@ public class AnnotatedMethodListTest {
     @Test
     public void shouldGetMethodsWithoutAnnotation() {
         AnnotatedMethodList list = AnnotatedMethodList.create(Stub.class, true);
-        AnnotatedMethodList methods = list.withoutAnnotation(Unary.class);
+        AnnotatedMethodList methods = list.withoutAnnotation(Grpc.Unary.class);
         List<String> names = methods.stream()
                 .map(am -> am.method().getName())
                 .collect(Collectors.toList());
@@ -134,7 +131,7 @@ public class AnnotatedMethodListTest {
     @Test
     public void shouldGetMethodsWithMetaAnnotation() {
         AnnotatedMethodList list = AnnotatedMethodList.create(Stub.class, true);
-        AnnotatedMethodList methods = list.withMetaAnnotation(GrpcMethod.class);
+        AnnotatedMethodList methods = list.withMetaAnnotation(Grpc.GrpcMethod.class);
         List<String> names = methods.stream()
                 .map(am -> am.method().getName())
                 .collect(Collectors.toList());
@@ -145,7 +142,7 @@ public class AnnotatedMethodListTest {
     @Test
     public void shouldGetMethodsWithoutMetaAnnotation() {
         AnnotatedMethodList list = AnnotatedMethodList.create(Stub.class, true);
-        AnnotatedMethodList methods = list.withoutMetaAnnotation(GrpcMethod.class);
+        AnnotatedMethodList methods = list.withoutMetaAnnotation(Grpc.GrpcMethod.class);
         List<String> names = methods.stream()
                 .map(am -> am.method().getName())
                 .collect(Collectors.toList());
@@ -157,26 +154,26 @@ public class AnnotatedMethodListTest {
      * A stub class to test annotation processing.
      */
     public class Stub {
-        @Unary
+        @Grpc.Unary
         public String one(int a) {
             return "";
         }
 
-        @ClientStreaming
+        @Grpc.ClientStreaming
         public Long two(int a, int b) {
             return 0L;
         }
 
-        @Unary
+        @Grpc.Unary
         private void three(int a) {
         }
 
-        @RequestType(String.class)
+        @Grpc.RequestType(String.class)
         protected String four(int a, int b) {
             return "";
         }
 
-        @ClientStreaming
+        @Grpc.ClientStreaming
         void five() {
         }
     }

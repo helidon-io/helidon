@@ -29,7 +29,7 @@ import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.stream.StreamSupport;
 
-import io.helidon.grpc.api.GrpcMarshaller;
+import io.helidon.grpc.api.Grpc;
 import io.helidon.grpc.core.MarshallerSupplier;
 
 import jakarta.enterprise.inject.Instance;
@@ -220,8 +220,8 @@ public final class ModelHelper {
      *
      * @return the {@link MarshallerSupplier} specified by the annotation
      */
-    public static MarshallerSupplier getMarshallerSupplier(GrpcMarshaller annotation) {
-        String name = annotation == null ? GrpcMarshaller.DEFAULT : annotation.value();
+    public static MarshallerSupplier getMarshallerSupplier(Grpc.GrpcMarshaller annotation) {
+        String name = annotation == null ? Grpc.GrpcMarshaller.DEFAULT : annotation.value();
 
         Instance<MarshallerSupplier> instance = null;
         try {

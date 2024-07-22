@@ -28,8 +28,6 @@ import java.util.function.Supplier;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.grpc.api.Grpc;
-import io.helidon.grpc.api.GrpcMarshaller;
-import io.helidon.grpc.api.GrpcMethod;
 import io.helidon.grpc.core.MarshallerSupplier;
 
 import jakarta.inject.Singleton;
@@ -57,7 +55,7 @@ public abstract class AbstractServiceBuilder {
      */
     protected AbstractServiceBuilder(Class<?> serviceClass, Supplier<?> instanceSupplier) {
         this.serviceClass = Objects.requireNonNull(serviceClass);
-        this.annotatedServiceClass = ModelHelper.getAnnotatedResourceClass(serviceClass, Grpc.class);
+        this.annotatedServiceClass = ModelHelper.getAnnotatedResourceClass(serviceClass, Grpc.GrpcService.class);
         this.instanceSupplier = Objects.requireNonNull(instanceSupplier);
         this.handlerSuppliers = HelidonServiceLoader.create(ServiceLoader.load(MethodHandlerSupplier.class)).asList();
     }
@@ -68,22 +66,22 @@ public abstract class AbstractServiceBuilder {
      * @return  {@code true} if this modeller contains an annotated service
      */
     public boolean isAnnotatedService() {
-        return annotatedServiceClass.isAnnotationPresent(Grpc.class);
+        return annotatedServiceClass.isAnnotationPresent(Grpc.GrpcService.class);
     }
 
     /**
      * Determine the name to use from the method.
      * <p>
-     * If the method is annotated with {@link GrpcMethod} or an annotation that is annotated with
-     * {@link GrpcMethod}, then attempt to determine the method name from the annotation. If unable,
+     * If the method is annotated with {@link io.helidon.grpc.api.Grpc.GrpcMethod} or an annotation that is annotated with
+     * {@link io.helidon.grpc.api.Grpc.GrpcMethod}, then attempt to determine the method name from the annotation. If unable,
      * use the actual method name.
      *
      * @param method      the annotated method
      * @param annotation  the method type annotation
      * @return the value to use for the method name
      */
-    public static String determineMethodName(AnnotatedMethod method, GrpcMethod annotation) {
-        Annotation actualAnnotation = method.annotationsWithMetaAnnotation(GrpcMethod.class)
+    public static String determineMethodName(AnnotatedMethod method, Grpc.GrpcMethod annotation) {
+        Annotation actualAnnotation = method.annotationsWithMetaAnnotation(Grpc.GrpcMethod.class)
                 .findFirst()
                 .orElse(annotation);
 
@@ -116,13 +114,13 @@ public abstract class AbstractServiceBuilder {
     /**
      * Obtain the {@link MarshallerSupplier} to use.
      * <p>
-     * The {@link MarshallerSupplier} will be determined by the {@link GrpcMarshaller}
+     * The {@link MarshallerSupplier} will be determined by the {@link io.helidon.grpc.api.Grpc.GrpcMarshaller}
      * annotation if it is present otherwise the default supplier will be returned.
      *
      * @return the {@link MarshallerSupplier} to use
      */
     protected MarshallerSupplier getMarshallerSupplier() {
-        GrpcMarshaller annotation = annotatedServiceClass.getAnnotation(GrpcMarshaller.class);
+        Grpc.GrpcMarshaller annotation = annotatedServiceClass.getAnnotation(Grpc.GrpcMarshaller.class);
         return annotation == null ? MarshallerSupplier.create() : ModelHelper.getMarshallerSupplier(annotation);
     }
 
@@ -147,7 +145,7 @@ public abstract class AbstractServiceBuilder {
         AnnotatedMethodList allDeclaredMethods = AnnotatedMethodList.create(getAllDeclaredMethods(serviceClass));
 
         // log warnings for all non-public annotated methods
-        allDeclaredMethods.withMetaAnnotation(GrpcMethod.class).isNotPublic()
+        allDeclaredMethods.withMetaAnnotation(Grpc.GrpcMethod.class).isNotPublic()
                 .forEach(method -> LOGGER.log(Level.WARNING, () -> String.format("The gRPC method, %s, MUST be "
                                                                                          + "public scoped otherwise the method "
                                                                                          + "is ignored",
@@ -191,7 +189,7 @@ public abstract class AbstractServiceBuilder {
     /**
      * Determine the name of the gRPC service.
      * <p>
-     * If the class is annotated with {@link Grpc}
+     * If the class is annotated with {@link io.helidon.grpc.api.Grpc.GrpcService}
      * then the name value from the annotation is used as the service name. If the annotation
      * has no name value or the annotation is not present the simple name of the class is used.
      *
@@ -199,7 +197,7 @@ public abstract class AbstractServiceBuilder {
      * @return the name of the gRPC service
      */
     protected String determineServiceName(Class<?> annotatedClass) {
-        Grpc serviceAnnotation = annotatedClass.getAnnotation(Grpc.class);
+        Grpc.GrpcService serviceAnnotation = annotatedClass.getAnnotation(Grpc.GrpcService.class);
         String name = null;
 
         if (serviceAnnotation != null) {

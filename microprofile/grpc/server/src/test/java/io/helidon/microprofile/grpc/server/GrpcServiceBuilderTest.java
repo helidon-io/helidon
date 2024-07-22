@@ -21,8 +21,6 @@ import java.util.List;
 import java.util.Map;
 
 import io.helidon.grpc.api.Grpc;
-import io.helidon.grpc.api.GrpcMarshaller;
-import io.helidon.grpc.api.GrpcMethod;
 import io.helidon.webserver.grpc.GrpcMethodDescriptor;
 import io.helidon.webserver.grpc.GrpcServiceDescriptor;
 
@@ -246,83 +244,83 @@ public class GrpcServiceBuilderTest {
         assertThat(captorOne.getValue(), is(sameInstance(captorTwo.getValue())));
     }
 
-    @Grpc("ServiceOne/foo")
-    @GrpcMarshaller("stub")
+    @Grpc.GrpcService("ServiceOne/foo")
+    @Grpc.GrpcMarshaller("stub")
     public static class ServiceOne {
-        @GrpcMethod(io.grpc.MethodDescriptor.MethodType.UNARY)
+        @Grpc.GrpcMethod(io.grpc.MethodDescriptor.MethodType.UNARY)
         public void unary(String param, StreamObserver<String> observer) {
         }
 
-        @GrpcMethod(io.grpc.MethodDescriptor.MethodType.CLIENT_STREAMING)
+        @Grpc.GrpcMethod(io.grpc.MethodDescriptor.MethodType.CLIENT_STREAMING)
         public StreamObserver<String> clientStreaming(StreamObserver<String> observer) {
             return null;
         }
 
-        @GrpcMethod(io.grpc.MethodDescriptor.MethodType.SERVER_STREAMING)
+        @Grpc.GrpcMethod(io.grpc.MethodDescriptor.MethodType.SERVER_STREAMING)
         public void serverStreaming(String param, StreamObserver<String> observer) {
         }
 
-        @GrpcMethod(io.grpc.MethodDescriptor.MethodType.BIDI_STREAMING)
+        @Grpc.GrpcMethod(io.grpc.MethodDescriptor.MethodType.BIDI_STREAMING)
         public StreamObserver<String> bidiStreaming(StreamObserver<String> observer) {
             return null;
         }
     }
 
-    @Grpc
-    @GrpcMarshaller("stub")
+    @Grpc.GrpcService
+    @Grpc.GrpcMarshaller("stub")
     public static class ServiceTwo {
-        @GrpcMethod(name = "One", value = io.grpc.MethodDescriptor.MethodType.UNARY)
+        @Grpc.GrpcMethod(name = "One", value = io.grpc.MethodDescriptor.MethodType.UNARY)
         public void unary(String param, StreamObserver<String> observer) {
         }
 
-        @GrpcMethod(name = "Two", value = io.grpc.MethodDescriptor.MethodType.CLIENT_STREAMING)
+        @Grpc.GrpcMethod(name = "Two", value = io.grpc.MethodDescriptor.MethodType.CLIENT_STREAMING)
         public StreamObserver<String> clientStreaming(StreamObserver<String> observer) {
             return null;
         }
 
-        @GrpcMethod(name = "Three", value = io.grpc.MethodDescriptor.MethodType.SERVER_STREAMING)
+        @Grpc.GrpcMethod(name = "Three", value = io.grpc.MethodDescriptor.MethodType.SERVER_STREAMING)
         public void serverStreaming(String param, StreamObserver<String> observer) {
         }
 
-        @GrpcMethod(name = "Four", value = io.grpc.MethodDescriptor.MethodType.BIDI_STREAMING)
+        @Grpc.GrpcMethod(name = "Four", value = io.grpc.MethodDescriptor.MethodType.BIDI_STREAMING)
         public StreamObserver<String> bidiStreaming(StreamObserver<String> observer) {
             return null;
         }
     }
 
-    @Grpc
-    @GrpcMarshaller("stub")
+    @Grpc.GrpcService
+    @Grpc.GrpcMarshaller("stub")
     public static class ServiceThree {
-        @GrpcMethod(io.grpc.MethodDescriptor.MethodType.UNARY)
+        @Grpc.GrpcMethod(io.grpc.MethodDescriptor.MethodType.UNARY)
         public void unary(String param, StreamObserver<String> observer) {
         }
     }
 
-    @Grpc
-    @GrpcMarshaller("stub")
+    @Grpc.GrpcService
+    @Grpc.GrpcMarshaller("stub")
     public static class ServiceFour {
-        @GrpcMethod(io.grpc.MethodDescriptor.MethodType.UNARY)
-        @GrpcMarshaller("stub")
+        @Grpc.GrpcMethod(io.grpc.MethodDescriptor.MethodType.UNARY)
+        @Grpc.GrpcMarshaller("stub")
         public void unary(String param, StreamObserver<String> observer) {
         }
     }
 
-    @Grpc
-    @GrpcMarshaller("stub")
+    @Grpc.GrpcService
+    @Grpc.GrpcMarshaller("stub")
     @Singleton
     public static class ServiceFive {
-        @GrpcMethod(io.grpc.MethodDescriptor.MethodType.UNARY)
-        @GrpcMarshaller("stub")
+        @Grpc.GrpcMethod(io.grpc.MethodDescriptor.MethodType.UNARY)
+        @Grpc.GrpcMarshaller("stub")
         public void unary(String param, StreamObserver<ServiceFive> observer) {
             observer.onNext(this);
             observer.onCompleted();
         }
     }
 
-    @Grpc
-    @GrpcMarshaller("stub")
+    @Grpc.GrpcService
+    @Grpc.GrpcMarshaller("stub")
     public static class ServiceSix {
-        @GrpcMethod(io.grpc.MethodDescriptor.MethodType.UNARY)
+        @Grpc.GrpcMethod(io.grpc.MethodDescriptor.MethodType.UNARY)
         public List<Map<Integer, String>> unary(List<Map<Integer, String>> param) {
             return Collections.singletonList(Collections.singletonMap(1, "One"));
         }

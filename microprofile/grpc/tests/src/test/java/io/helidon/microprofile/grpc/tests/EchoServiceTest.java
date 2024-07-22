@@ -21,12 +21,8 @@ import java.lang.annotation.Target;
 import java.util.HashSet;
 import java.util.Set;
 
-import io.helidon.grpc.core.ContextKeys;
 import io.helidon.grpc.api.Grpc;
-import io.helidon.grpc.api.GrpcInterceptor;
-import io.helidon.grpc.api.GrpcInterceptorBinding;
-import io.helidon.grpc.api.GrpcInterceptors;
-import io.helidon.grpc.api.Unary;
+import io.helidon.grpc.core.ContextKeys;
 import io.helidon.microprofile.grpc.tests.test.Echo;
 import io.helidon.microprofile.grpc.tests.test.EchoServiceGrpc;
 import io.helidon.tracing.Tracer;
@@ -72,7 +68,7 @@ class EchoServiceTest extends BaseServiceTest {
         return Echo.EchoRequest.newBuilder().setMessage(value).build();
     }
 
-    @GrpcInterceptorBinding
+    @Grpc.GrpcInterceptorBinding
     @Retention(RUNTIME)
     @Target({TYPE, METHOD})
     public @interface EchoInterceptorBinding {
@@ -83,10 +79,10 @@ class EchoServiceTest extends BaseServiceTest {
      * {@link io.helidon.microprofile.grpc.server.GrpcMpCdiExtension}. References two interceptors, one directly
      * and one via an interceptor binding.
      */
-    @Grpc
+    @Grpc.GrpcService
     @ApplicationScoped
     @EchoInterceptorBinding
-    @GrpcInterceptors(EchoInterceptor1.class)
+    @Grpc.GrpcInterceptors(EchoInterceptor1.class)
     public static class EchoService {
 
         /**
@@ -95,7 +91,7 @@ class EchoServiceTest extends BaseServiceTest {
          * @param request the echo request containing the message to echo
          * @param observer the call response
          */
-        @Unary("Echo")
+        @Grpc.Unary("Echo")
         public void echo(Echo.EchoRequest request, StreamObserver<Echo.EchoResponse> observer) {
             try {
                 validateContext();
@@ -109,7 +105,7 @@ class EchoServiceTest extends BaseServiceTest {
 
     }
 
-    @GrpcInterceptor
+    @Grpc.GrpcInterceptor
     @ApplicationScoped
     public static class EchoInterceptor1 implements ServerInterceptor {
 
@@ -124,7 +120,7 @@ class EchoServiceTest extends BaseServiceTest {
         }
     }
 
-    @GrpcInterceptor
+    @Grpc.GrpcInterceptor
     @EchoInterceptorBinding
     @ApplicationScoped
     public static class EchoInterceptor2 implements ServerInterceptor {
