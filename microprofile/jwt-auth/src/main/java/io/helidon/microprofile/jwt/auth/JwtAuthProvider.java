@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -145,6 +146,7 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
     private final LazyValue<Jwk> defaultJwk;
     private final LazyValue<Jwk> defaultDecryptionJwk;
     private final Map<OutboundTarget, JwtOutboundTarget> targetToJwtConfig = new IdentityHashMap<>();
+    private final ReentrantLock targetToJwtConfigLock = new ReentrantLock();
     private final String expectedIssuer;
     private final String cookiePrefix;
     private final String decryptionKeyAlgorithm;
@@ -394,7 +396,13 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
                     Optional<OutboundTarget> maybeTarget = outboundConfig.findTarget(outboundEnv);
 
                     return maybeTarget.flatMap(target -> {
-                        JwtOutboundTarget jwtOutboundTarget = targetToJwtConfig.computeIfAbsent(target, this::toOutboundTarget);
+                        JwtOutboundTarget jwtOutboundTarget;
+                        try {
+                            targetToJwtConfigLock.lock();
+                            jwtOutboundTarget = targetToJwtConfig.computeIfAbsent(target, this::toOutboundTarget);
+                        } finally {
+                            targetToJwtConfigLock.unlock();
+                        }
 
                         if (null == jwtOutboundTarget.jwkKid) {
                             return Optional.of(OutboundSecurityResponse.builder()
@@ -418,8 +426,13 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
                         Optional<OutboundTarget> maybeTarget = outboundConfig.findTarget(outboundEnv);
 
                         return maybeTarget.flatMap(target -> {
-                            JwtOutboundTarget jwtOutboundTarget = targetToJwtConfig
-                                    .computeIfAbsent(target, this::toOutboundTarget);
+                            JwtOutboundTarget jwtOutboundTarget;
+                            try {
+                                targetToJwtConfigLock.lock();
+                                jwtOutboundTarget = targetToJwtConfig.computeIfAbsent(target, this::toOutboundTarget);
+                            } finally {
+                                targetToJwtConfigLock.unlock();
+                            }
 
                             if (null == jwtOutboundTarget.jwkKid) {
                                 // just propagate existing token
