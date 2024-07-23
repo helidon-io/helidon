@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonServiceLoader;
@@ -485,6 +486,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
     }
 
     private static final class OidcOutboundConfig {
+        private final ReentrantLock targetCacheLock = new ReentrantLock();
         private final Map<OutboundTarget, OidcOutboundTarget> targetCache = new HashMap<>();
         private final OutboundConfig outboundConfig;
         private final TokenHandler defaultTokenHandler;
@@ -503,17 +505,24 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
 
         private OidcOutboundTarget findTarget(SecurityEnvironment env) {
             return outboundConfig.findTarget(env)
-                    .map(value -> targetCache.computeIfAbsent(value, outboundTarget -> {
-                        boolean propagate = outboundTarget.getConfig()
-                                .flatMap(cfg -> cfg.get("propagate").asBoolean().asOptional())
-                                .orElse(true);
-                        TokenHandler handler = outboundTarget.getConfig()
-                                .flatMap(cfg -> cfg.get("outbound-token")
-                                        .map(TokenHandler::create)
-                                        .asOptional())
-                                .orElse(defaultTokenHandler);
-                        return new OidcOutboundTarget(propagate, handler);
-                    })).orElse(defaultTarget);
+                    .map(value -> {
+                        try {
+                            targetCacheLock.lock();
+                            return targetCache.computeIfAbsent(value, outboundTarget -> {
+                                boolean propagate = outboundTarget.getConfig()
+                                        .flatMap(cfg -> cfg.get("propagate").asBoolean().asOptional())
+                                        .orElse(true);
+                                TokenHandler handler = outboundTarget.getConfig()
+                                        .flatMap(cfg -> cfg.get("outbound-token")
+                                                .map(TokenHandler::create)
+                                                .asOptional())
+                                        .orElse(defaultTokenHandler);
+                                return new OidcOutboundTarget(propagate, handler);
+                            });
+                        } finally {
+                            targetCacheLock.unlock();
+                        }
+                    }).orElse(defaultTarget);
         }
     }
 
