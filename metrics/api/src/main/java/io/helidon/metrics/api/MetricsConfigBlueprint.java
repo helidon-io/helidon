@@ -73,7 +73,7 @@ interface MetricsConfigBlueprint {
 
         /**
          * Implement the meter as a counter. This is backward-compatible with Helidon 4.0.x releases but does not comply with
-         * MicorProfile 5.1.
+         * MicroProfile 5.1.
          */
         COUNTER }
 
