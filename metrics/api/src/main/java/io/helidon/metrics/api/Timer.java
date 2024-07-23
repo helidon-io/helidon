@@ -261,5 +261,12 @@ public interface Timer extends Meter, HistogramSupport {
          * @return maximum expected value if set; empty otherwise
          */
         Optional<Duration> maximumExpectedValue();
+
+        /**
+         * Returns the setting for publishing percentile histogram.
+         *
+         * @return whether to publish percentile histogram
+         */
+        Optional<Boolean> publishPercentileHistogram();
     }
 }

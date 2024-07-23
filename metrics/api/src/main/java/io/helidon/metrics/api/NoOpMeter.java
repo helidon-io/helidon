@@ -393,6 +393,12 @@ class NoOpMeter implements Meter, NoOpWrapper {
             public Optional<io.helidon.metrics.api.DistributionStatisticsConfig.Builder> distributionStatisticsConfig() {
                 return Optional.ofNullable(distributionStatisticsConfigBuilder);
             }
+
+            @Override
+            public Optional<Boolean> publishPercentileHistogram() {
+                return Optional.ofNullable(publishPercentileHistogram);
+            }
+
         }
     }
 
@@ -635,7 +641,7 @@ class NoOpMeter implements Meter, NoOpWrapper {
             private Duration[] buckets;
             private Duration min;
             private Duration max;
-            private boolean publishPercentileHistogram;
+            private Boolean publishPercentileHistogram;
 
             private Builder(String name) {
                 super(name, Type.TIMER);
@@ -695,6 +701,11 @@ class NoOpMeter implements Meter, NoOpWrapper {
             @Override
             public Optional<Duration> maximumExpectedValue() {
                 return Optional.ofNullable(max);
+            }
+
+            @Override
+            public Optional<Boolean> publishPercentileHistogram() {
+                return Optional.ofNullable(publishPercentileHistogram);
             }
 
         }

@@ -134,5 +134,12 @@ public interface DistributionSummary extends Meter {
          * @return distribution statistics config, if set; empty otherwise
          */
         Optional<DistributionStatisticsConfig.Builder> distributionStatisticsConfig();
+
+        /**
+         * Returns whether to publsh percentile histogram.
+         *
+         * @return true/false
+         */
+        Optional<Boolean> publishPercentileHistogram();
     }
 }

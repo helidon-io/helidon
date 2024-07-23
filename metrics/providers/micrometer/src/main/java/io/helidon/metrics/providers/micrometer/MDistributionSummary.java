@@ -127,6 +127,7 @@ class MDistributionSummary extends MMeter<io.micrometer.core.instrument.Distribu
 
         private Double scale;
         private DistributionStatisticsConfig.Builder distributionStatisticsConfigBuilder;
+        private Boolean publishPercentileHistogram;
 
         private Builder(String name, DistributionStatisticsConfig.Builder configBuilder) {
             this(name, configBuilder.build());
@@ -206,6 +207,7 @@ class MDistributionSummary extends MMeter<io.micrometer.core.instrument.Distribu
         @Override
         public DistributionSummary.Builder publishPercentileHistogram(boolean value) {
             delegate().publishPercentileHistogram(value);
+            publishPercentileHistogram = value;
             return identity();
         }
 
@@ -217,6 +219,11 @@ class MDistributionSummary extends MMeter<io.micrometer.core.instrument.Distribu
         @Override
         public Optional<DistributionStatisticsConfig.Builder> distributionStatisticsConfig() {
             return Optional.ofNullable(distributionStatisticsConfigBuilder);
+        }
+
+        @Override
+        public Optional<Boolean> publishPercentileHistogram() {
+            return Optional.ofNullable(publishPercentileHistogram);
         }
 
         protected Builder from(DistributionSummary.Builder other) {

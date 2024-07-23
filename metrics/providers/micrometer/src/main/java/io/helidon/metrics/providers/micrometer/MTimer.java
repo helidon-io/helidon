@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -195,6 +195,7 @@ class MTimer extends MMeter<io.micrometer.core.instrument.Timer> implements io.h
         private Duration[] buckets;
         private Duration min;
         private Duration max;
+        private Boolean publishPercentileHistogram;
 
         private Builder(String name) {
             super(name, io.micrometer.core.instrument.Timer.builder(name));
@@ -254,7 +255,7 @@ class MTimer extends MMeter<io.micrometer.core.instrument.Timer> implements io.h
         }
 
         @Override
-        public Timer.Builder publishPercentileHistogram(boolean value) {
+        public Builder publishPercentileHistogram(boolean value) {
             delegate().publishPercentileHistogram(value);
             return identity();
         }
@@ -277,6 +278,11 @@ class MTimer extends MMeter<io.micrometer.core.instrument.Timer> implements io.h
         @Override
         public Optional<Duration> maximumExpectedValue() {
             return Optional.ofNullable(max);
+        }
+
+        @Override
+        public Optional<Boolean> publishPercentileHistogram() {
+            return Optional.ofNullable(publishPercentileHistogram);
         }
 
         @Override
