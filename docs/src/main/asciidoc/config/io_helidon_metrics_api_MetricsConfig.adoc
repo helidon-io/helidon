@@ -53,13 +53,19 @@ This is a standalone configuration type, prefix from configuration root: `metric
 |`enabled` |boolean |`true` |Whether metrics functionality is enabled.
 
  If metrics are configured to be enabled
+|[.line-through]#`gc-time-type`# |xref:{rootdir}/config/io_helidon_metrics_api_MetricsConfigBlueprint_GcTimeType.adoc[GcTimeType] |`GcTimeType.COUNTER` |*Deprecated* Whether the `gc.time` meter should be registered as a gauge (vs. a counter).
+ The `gc.time` meter is inspired by the MicroProfile Metrics spec, in which the meter was originally checked to
+ be a counter but starting in 5.1 was checked be a gauge. For the duration of Helidon 4.x users can choose which
+ type of meter Helidon registers for `gc.time`.
+ The type of meter to use for registering `gc.time`
+ @deprecated Provided for backward compatibility only; no replacement
 |`key-performance-indicators` |xref:{rootdir}/config/io_helidon_metrics_api_KeyPerformanceIndicatorMetricsConfig.adoc[KeyPerformanceIndicatorMetricsConfig] |{nbsp} |Key performance indicator metrics settings.
 
  Key performance indicator metrics settings
 |`permit-all` |boolean |`true` |Whether to allow anybody to access the endpoint.
 
  Whether to permit access to metrics endpoint to anybody, defaults to `true`
- @see #roles()
+ See roles()
 |`rest-request-enabled` |boolean |`false` |Whether automatic REST request metrics should be measured.
 
  True/false

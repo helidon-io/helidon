@@ -60,6 +60,9 @@ interface MetricsConfigBlueprint {
      */
     String KEY_PERFORMANCE_INDICATORS_CONFIG_KEY = "key-performance-indicators";
 
+    @Deprecated(since = "4.1", forRemoval = true)
+    enum GcTimeType { GAUGE, COUNTER }
+
     @Prototype.FactoryMethod
     static List<Tag> createTags(Config globalTagExpression) {
         return createTags(globalTagExpression.asString().get());
@@ -205,6 +208,19 @@ interface MetricsConfigBlueprint {
      */
     @Option.Redundant
     Config config();
+
+    /**
+     * Whether the {@code gc.time} meter should be registered as a gauge (vs. a counter).
+     * The {@code gc.time} meter is inspired by the MicroProfile Metrics spec, in which the meter was originally checked to
+     * be a counter but starting in 5.1 was checked be a gauge. For the duration of Helidon 4.x users can choose which
+     * type of meter Helidon registers for {@code gc.time}.
+     * @return the type of meter to use for registering {@code gc.time}
+     * @deprecated Provided for backward compatibility only; no replacement
+     */
+    @Deprecated(since = "4.1", forRemoval = true)
+    @Option.Configured
+    @Option.Default("COUNTER")
+    GcTimeType gcTimeType();
 
     /**
      * Reports whether the specified scope is enabled, according to any scope configuration that

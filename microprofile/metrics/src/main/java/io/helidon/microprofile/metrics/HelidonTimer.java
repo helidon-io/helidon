@@ -51,10 +51,11 @@ final class HelidonTimer extends MetricImpl<io.helidon.metrics.api.Timer> implem
         return create(meterRegistry,
                       scope,
                       metadata,
-                      meterRegistry.getOrCreate(io.helidon.metrics.api.Timer.builder(metadata.getName())
-                                                        .description(metadata.getDescription())
-                                                        .baseUnit(sanitizeUnit(metadata.getUnit()))
-                                                        .tags(allTags(scope, tags))));
+                      meterRegistry.getOrCreate(DistributionCustomizations
+                                                        .apply(io.helidon.metrics.api.Timer.builder(metadata.getName())
+                                                                       .description(metadata.getDescription())
+                                                                       .baseUnit(sanitizeUnit(metadata.getUnit()))
+                                                                       .tags(allTags(scope, tags)))));
     }
 
     static HelidonTimer create(MeterRegistry meterRegistry,

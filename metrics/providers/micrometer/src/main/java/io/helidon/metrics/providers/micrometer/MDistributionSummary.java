@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,14 +50,20 @@ class MDistributionSummary extends MMeter<io.micrometer.core.instrument.Distribu
         return new Builder(name, configBuilder);
     }
 
+    static Builder builder(String name) {
+        return new Builder(name);
+    }
+
     static Builder builderFrom(DistributionSummary.Builder sBuilder) {
 
-        MDistributionStatisticsConfig.Builder configBuilder = sBuilder.distributionStatisticsConfig().isPresent()
-                ? MDistributionStatisticsConfig.builder()
-                : MDistributionStatisticsConfig.builderFrom(sBuilder.distributionStatisticsConfig().get());
 
-        MDistributionSummary.Builder b = MDistributionSummary.builder(sBuilder.name(), configBuilder);
-        b.from(sBuilder);
+        MDistributionSummary.Builder b = MDistributionSummary.builder(sBuilder.name());
+        MDistributionStatisticsConfig.Builder configBuilder = sBuilder.distributionStatisticsConfig().isPresent()
+                ? MDistributionStatisticsConfig.builder(b.delegate())
+                : MDistributionStatisticsConfig.builderFrom(b, sBuilder.distributionStatisticsConfig().get());
+
+        b.distributionStatisticsConfig(configBuilder)
+                .from(sBuilder);
         return b;
     }
 
@@ -127,17 +133,23 @@ class MDistributionSummary extends MMeter<io.micrometer.core.instrument.Distribu
         }
 
         private Builder(String name, DistributionStatisticsConfig config) {
-            super(name, io.micrometer.core.instrument.DistributionSummary.builder(name)
-                    .publishPercentiles(config.percentiles()
+            this(name);
+            distributionStatisticsConfigBuilder
+                    .percentiles(config.percentiles()
                                                 .map(Util::doubleArray)
                                                 .orElse(DEFAULT.getPercentiles()))
-                    .serviceLevelObjectives(config.buckets()
+                    .buckets(config.buckets()
                                                     .map(Util::doubleArray)
                                                     .orElse(DEFAULT.getServiceLevelObjectiveBoundaries()))
                     .minimumExpectedValue(config.minimumExpectedValue()
                                                   .orElse(DEFAULT.getMinimumExpectedValueAsDouble()))
                     .maximumExpectedValue(config.maximumExpectedValue()
-                                                  .orElse(DEFAULT.getMaximumExpectedValueAsDouble())));
+                                                  .orElse(DEFAULT.getMaximumExpectedValueAsDouble()));
+        }
+
+        private Builder(String name) {
+            super(name, io.micrometer.core.instrument.DistributionSummary.builder(name));
+            distributionStatisticsConfigBuilder = MDistributionStatisticsConfig.builder(delegate());
         }
 
         @Override
@@ -188,6 +200,12 @@ class MDistributionSummary extends MMeter<io.micrometer.core.instrument.Distribu
         @Override
         protected Builder delegateBaseUnit(String baseUnit) {
             delegate().baseUnit(baseUnit);
+            return identity();
+        }
+
+        @Override
+        public DistributionSummary.Builder publishPercentileHistogram(boolean value) {
+            delegate().publishPercentileHistogram(value);
             return identity();
         }
 

@@ -56,6 +56,26 @@ ifdef::mp-flavor[`application`]
 
 |====
 --
+
+[[controlling-gc-time]]
+=== Controlling the {metric_uc} Type for `gc.time`
+To date Helidon 4 releases have implemented the system-provided {metric} `gc.time` as a counter.
+In fact, a gauge is more suitable for the approximate time the JVM has spent doing garbage
+ifdef::se-flavor[collection.]
+ifdef::mp-flavor[]
+collection, and beginning with MicroProfile Metrics 5.1 the TCK relies on `gc.time` being a gauge.
+endif::mp-flavor[]
+
+Helidon {helidon-version} continues to use a counter by default to preserve backward compatibility, but you can choose to use a gauge by setting the configuration property `metrics.gc-time-type` to `gauge`.
+You can also set the config property to `counter` which is the default.
+
+Why should you care?
+In fact, this distinction might not make a difference for many users.
+But for others the differences between the programmatic APIs for `Counter` and `Gauge` would affect application code that works directly with the `gc-time`
+{metric}. Further, the difference in output--particularly in the OpenMetrics/Prometheus format--might affect their application or downstream monitoring tools.
+
+The ability to choose the {metric} type for `gc.time` is deprecated and is planned for removal in a future major release of Helidon at which time Helidon will always use a gauge.
+
 // end::config-intro[]
 
 // tag::config-examples[]

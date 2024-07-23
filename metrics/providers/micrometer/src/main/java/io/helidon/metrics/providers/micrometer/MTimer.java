@@ -254,6 +254,12 @@ class MTimer extends MMeter<io.micrometer.core.instrument.Timer> implements io.h
         }
 
         @Override
+        public Timer.Builder publishPercentileHistogram(boolean value) {
+            delegate().publishPercentileHistogram(value);
+            return identity();
+        }
+
+        @Override
         public Iterable<Double> percentiles() {
             return Util.iterable(percentiles);
         }

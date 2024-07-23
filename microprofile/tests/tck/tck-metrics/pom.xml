@@ -131,6 +131,10 @@
                     <systemPropertyVariables>
                         <context.root/> <!-- Suppress the TCK's default of /optionalTCK -->
                         <metrics.rest-request.enabled>true</metrics.rest-request.enabled> <!-- off by default -->
+                        <!-- TODO - remove setting of gc-time-type for Helidon 5
+                         This is required starting in 4.1 to use a gauge instead of the backward-compatible counter
+                         for gc.time. -->
+                        <metrics.gc-time-type>gauge</metrics.gc-time-type>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>

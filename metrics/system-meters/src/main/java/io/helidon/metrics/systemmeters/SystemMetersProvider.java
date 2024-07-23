@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -240,11 +240,20 @@ public class SystemMetersProvider implements MetersProvider {
                           GarbageCollectorMXBean::getCollectionCount,
                           Tag.create("name", poolName));
             // Express the GC time in seconds.
-            registerFunctionalCounter(result,
-                          GC_TIME,
-                          gcBean,
-                          bean -> (long) (bean.getCollectionTime() / 1000.0D),
-                          Tag.create("name", poolName));
+            // TODO - Starting in Helidon 5 always register a gauge.
+            if (isGcTimeGauge()) {
+                registerGauge(result,
+                              GC_TIME,
+                              gcBean,
+                              bean -> (long) (bean.getCollectionTime() / 1000.0D),
+                              Tag.create("name", poolName));
+            } else {
+                registerFunctionalCounter(result,
+                                          GC_TIME,
+                                          gcBean,
+                                          bean -> (long) (bean.getCollectionTime() / 1000.0D),
+                                          Tag.create("name", poolName));
+            }
         }
         return result;
     }
@@ -271,6 +280,12 @@ public class SystemMetersProvider implements MetersProvider {
                            .description(metadata.description)
                            .baseUnit(metadata.baseUnit)
                            .tags(Arrays.asList(tags)));
+    }
+
+    @Deprecated(since = "4.1", forRemoval = true)
+    private boolean isGcTimeGauge() {
+        // Compare using the string so we can avoid exposing the temporary, deprecated enum as public in the config type.
+        return metricsFactory.metricsConfig().gcTimeType().name().equals("GAUGE");
     }
 
     private static class Metadata {

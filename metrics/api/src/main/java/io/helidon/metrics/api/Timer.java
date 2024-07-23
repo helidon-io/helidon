@@ -227,6 +227,14 @@ public interface Timer extends Meter, HistogramSupport {
         Builder maximumExpectedValue(Duration max);
 
         /**
+         * Prepares the timer to publish a percentile histogram.
+         *
+         * @param value whether to publish a percentile histogram
+         * @return updated builder
+         */
+        Builder publishPercentileHistogram(boolean value);
+
+        /**
          * Returns the percentiles set in the builder, if any.
          *
          * @return percentiles
