@@ -60,8 +60,22 @@ interface MetricsConfigBlueprint {
      */
     String KEY_PERFORMANCE_INDICATORS_CONFIG_KEY = "key-performance-indicators";
 
+    /**
+     * Choices for the meter type for the {@code gc.time} meter.
+     */
     @Deprecated(since = "4.1", forRemoval = true)
-    enum GcTimeType { GAUGE, COUNTER }
+    enum GcTimeType {
+        /**
+         * Implement the meter as a gauge. This is backward-incompatible with Helidon 4.0.x releases but complies with
+         * MicroProfile 5.1.
+         */
+        GAUGE,
+
+        /**
+         * Implement the meter as a counter. This is backward-compatible with Helidon 4.0.x releases but does not comply with
+         * MicorProfile 5.1.
+         */
+        COUNTER }
 
     @Prototype.FactoryMethod
     static List<Tag> createTags(Config globalTagExpression) {
