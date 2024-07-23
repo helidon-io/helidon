@@ -24,6 +24,7 @@ import io.helidon.webserver.spi.ProtocolConfigProvider;
 @Prototype.Configured(root = false, value = GrpcProtocolProvider.CONFIG_NAME)
 @Prototype.Provides(ProtocolConfigProvider.class)
 interface GrpcConfigBlueprint extends ProtocolConfig {
+
     /**
      * Protocol configuration type.
      *

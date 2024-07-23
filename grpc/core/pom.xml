@@ -26,12 +26,24 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>helidon-grpc-core</artifactId>
-    <name>Helidon gRPC related modules</name>
+    <name>Helidon gRPC Core</name>
 
     <dependencies>
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-context</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.http</groupId>
+            <artifactId>helidon-http</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.tracing</groupId>
+            <artifactId>helidon-tracing</artifactId>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>

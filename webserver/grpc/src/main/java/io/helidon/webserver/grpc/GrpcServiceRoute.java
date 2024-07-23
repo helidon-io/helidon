@@ -19,13 +19,18 @@ package io.helidon.webserver.grpc;
 import java.util.LinkedList;
 import java.util.List;
 
+import io.helidon.grpc.core.WeightedBag;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.PathMatchers;
 
 import com.google.protobuf.Descriptors;
+import io.grpc.BindableService;
+import io.grpc.ServerInterceptor;
+import io.grpc.ServerServiceDefinition;
 import io.grpc.stub.ServerCalls;
 
 class GrpcServiceRoute extends GrpcRoute {
+
     private final String serviceName;
     private final List<Grpc<?, ?>> routes;
 
@@ -34,10 +39,46 @@ class GrpcServiceRoute extends GrpcRoute {
         this.routes = routes;
     }
 
+    /**
+     * Creates a gRPC route for an instance of {@link GrpcService}.
+     * A server interceptor chain will not be automatically associated
+     * with calls to this service.
+     *
+     * @param service the service
+     * @return the route
+     */
     static GrpcRoute create(GrpcService service) {
         Routing svcRouter = new Routing(service);
         service.update(svcRouter);
         return svcRouter.build();
+    }
+
+    /**
+     * Creates a gRPC route for an instance of {@link BindableService}.
+     *
+     * @param service the service
+     * @return the route
+     */
+    static GrpcRoute create(BindableService service) {
+        ServerServiceDefinition definition = service.bindService();
+        String serviceName = definition.getServiceDescriptor().getName();
+        List<Grpc<?, ?>> routes = new LinkedList<>();
+        service.bindService().getMethods().forEach(
+                method -> routes.add(Grpc.bindableMethod(service, method)));
+        return new GrpcServiceRoute(serviceName, routes);
+    }
+
+    /**
+     * Creates a gRPC route for an instance CDI bean annotated with {@link @Grpc}.
+     * Registers global interceptors for context on all the routes.
+     *
+     * @param service the service
+     * @param interceptors interceptor bag
+     * @return the route
+     */
+    static GrpcRoute create(GrpcServiceDescriptor service, WeightedBag<ServerInterceptor> interceptors) {
+        interceptors.add(ContextSettingServerInterceptor.create());
+        return create(BindableServiceImpl.create(service, interceptors));
     }
 
     @Override
@@ -48,11 +89,11 @@ class GrpcServiceRoute extends GrpcRoute {
                 return route;
             }
         }
-        throw new IllegalStateException("GrpcServiceRoute(" + serviceName + ") accepted prologue, but cannot provide route: "
-                                                + prologue);
+        throw new IllegalStateException("GrpcServiceRoute(" + serviceName
+                + ") accepted prologue, but cannot provide route: " + prologue);
     }
 
-    public PathMatchers.MatchResult accepts(HttpPrologue prologue) {
+    PathMatchers.MatchResult accepts(HttpPrologue prologue) {
         for (Grpc<?, ?> route : routes) {
             PathMatchers.MatchResult accepts = route.accepts(prologue);
             if (accepts.accepted()) {
