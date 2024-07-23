@@ -98,8 +98,6 @@ public class GrpcChannelsProvider {
         return new Builder(config);
     }
 
-    // --------------- private methods of GrpcChannelsProvider ---------------
-
     /**
      * Returns a {@link Channel} for the specified channel or host name.
      * <p>
@@ -125,14 +123,21 @@ public class GrpcChannelsProvider {
         return createChannel(name, chCfg);
     }
 
-    Channel createChannel(String name, GrpcChannelDescriptor descriptor) {
+    /**
+     * Creates a channel from a channel descriptor.
+     *
+     * @param name the channel name
+     * @param descriptor the channel descriptor
+     * @return the channel
+     */
+    private Channel createChannel(String name, GrpcChannelDescriptor descriptor) {
         Tls clientTls = descriptor.tls().orElse(null);
         if (clientTls == null) {
             throw new IllegalArgumentException("Client TLS must be configured for gRPC proxy client");
         }
         int port = descriptor.port();
         if (port <= 0) {
-            port = discoverServerPort();
+            port = discoverServerPort(name);
         }
         GrpcClient grpcClient = GrpcClient.builder()
                 .tls(clientTls)
@@ -142,13 +147,15 @@ public class GrpcChannelsProvider {
     }
 
     /**
-     * Used for unit testing: if port not set, then obtain port from CDI extension
-     * via reflection. Should be moved to a testing module.
+     * Used for unit testing: if port not set, try to obtain port from server CDI
+     * extension via reflection, without introducing a static dependency.
      *
+     * @param name the channel name
      * @return server port
+     * @throws java.lang.IllegalArgumentException if unable to discover port
      */
     @SuppressWarnings("unchecked")
-    private static int discoverServerPort() {
+    private static int discoverServerPort(String name) {
         try {
             Class<? extends Extension> extClass = (Class<? extends Extension>) Class
                     .forName("io.helidon.microprofile.server.ServerCdiExtension");
@@ -156,7 +163,7 @@ public class GrpcChannelsProvider {
             Method m = extension.getClass().getMethod("port", String.class);
             return (int) m.invoke(extension, new Object[] {"@default"});
         } catch (ReflectiveOperationException e) {
-            return 0;
+            throw new IllegalArgumentException("Unable to determine server port for channel " + name);
         }
     }
 

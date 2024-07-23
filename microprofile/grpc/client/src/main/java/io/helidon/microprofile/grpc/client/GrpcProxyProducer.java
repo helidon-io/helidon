@@ -48,7 +48,7 @@ class GrpcProxyProducer {
      * @return a gRPC client proxy
      */
     @Grpc.GrpcProxy
-    @Grpc.GrpcChannel(value = GrpcChannelsProvider.DEFAULT_CHANNEL_NAME)
+    @Grpc.GrpcChannel(GrpcChannelsProvider.DEFAULT_CHANNEL_NAME)
     static Object proxyUsingNamedChannel(InjectionPoint injectionPoint, ChannelProducer producer) {
         Class<?> type = ModelHelper.getGenericType(injectionPoint.getType());
 

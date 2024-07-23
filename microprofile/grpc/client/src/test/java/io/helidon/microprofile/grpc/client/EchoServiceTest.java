@@ -130,7 +130,7 @@ class EchoServiceTest {
 
     @Grpc.GrpcService("EchoService")
     @Grpc.GrpcMarshaller("java")
-    @Grpc.GrpcChannel(value = "echo-channel")
+    @Grpc.GrpcChannel("echo-channel")
     public interface EchoServiceClient {
 
         @Grpc.Unary("Echo")
