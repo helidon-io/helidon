@@ -67,5 +67,10 @@
             <artifactId>vertx-core</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.mock-server</groupId>
+            <artifactId>mockserver-netty-no-dependencies</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

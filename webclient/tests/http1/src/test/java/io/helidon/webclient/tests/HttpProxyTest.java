@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -128,37 +128,37 @@ class HttpProxyTest {
 
     @Test
     void testNoProxyTypeButHasHost1() {
-        Proxy proxy = Proxy.builder().host(PROXY_HOST).port(proxyPort).build();
+        Proxy proxy = Proxy.builder().forceHttpConnect(true).host(PROXY_HOST).port(proxyPort).build();
         successVerify(proxy, clientHttp1);
     }
 
     @Test
     void testNoProxyTypeButHasHost2() {
-        Proxy proxy = Proxy.builder().host(PROXY_HOST).port(proxyPort).build();
+        Proxy proxy = Proxy.builder().forceHttpConnect(true).host(PROXY_HOST).port(proxyPort).build();
         successVerify(proxy, clientHttp2);
     }
 
     @Test
     void testProxyNoneTypeButHasHost1() {
-        Proxy proxy = Proxy.builder().type(ProxyType.NONE).host(PROXY_HOST).port(proxyPort).build();
+        Proxy proxy = Proxy.builder().forceHttpConnect(true).type(ProxyType.NONE).host(PROXY_HOST).port(proxyPort).build();
         successVerify(proxy, clientHttp1);
     }
 
     @Test
     void testProxyNoneTypeButHasHost2() {
-        Proxy proxy = Proxy.builder().type(ProxyType.NONE).host(PROXY_HOST).port(proxyPort).build();
+        Proxy proxy = Proxy.builder().forceHttpConnect(true).type(ProxyType.NONE).host(PROXY_HOST).port(proxyPort).build();
         successVerify(proxy, clientHttp2);
     }
 
     @Test
     void testSimpleProxy1() {
-        Proxy proxy = Proxy.builder().type(ProxyType.HTTP).host(PROXY_HOST).port(proxyPort).build();
+        Proxy proxy = Proxy.builder().forceHttpConnect(true).type(ProxyType.HTTP).host(PROXY_HOST).port(proxyPort).build();
         successVerify(proxy, clientHttp1);
     }
 
     @Test
     void testSimpleProxy2() {
-        Proxy proxy = Proxy.builder().type(ProxyType.HTTP).host(PROXY_HOST).port(proxyPort).build();
+        Proxy proxy = Proxy.builder().forceHttpConnect(true).type(ProxyType.HTTP).host(PROXY_HOST).port(proxyPort).build();
         successVerify(proxy, clientHttp2);
     }
 

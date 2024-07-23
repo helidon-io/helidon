@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,6 +90,7 @@ public class Proxy {
     private final Optional<char[]> password;
     private final ProxySelector systemProxySelector;
     private final Optional<Header> proxyAuthHeader;
+    private final boolean forceHttpConnect;
 
     private Proxy(Proxy.Builder builder) {
         this.host = builder.host();
@@ -102,6 +103,7 @@ public class Proxy {
         this.port = builder.port();
         this.username = builder.username();
         this.password = builder.password();
+        this.forceHttpConnect = builder.forceHttpConnect();
 
         if (type == ProxyType.SYSTEM) {
             this.noProxy = inetSocketAddress -> true;
@@ -451,7 +453,8 @@ public class Proxy {
     private static Socket connectToProxy(WebClient webClient,
                                          InetSocketAddress proxyAddress,
                                          InetSocketAddress targetAddress,
-                                         Proxy proxy) {
+                                         Proxy proxy,
+                                         boolean tls) {
 
         WebClientConfig clientConfig = webClient.prototype();
         TcpClientConnection connection = TcpClientConnection.create(webClient,
@@ -469,26 +472,26 @@ public class Proxy {
                                                                     it -> {
                                                                     })
                 .connect();
-
-        HttpClientRequest request = webClient.method(Method.CONNECT)
-                .followRedirects(false) // do not follow redirects for proxy connect itself
-                .connection(connection)
-                .uri("http://" + proxyAddress.getHostName() + ":" + proxyAddress.getPort())
-                .protocolId("http/1.1") // MUST be 1.1, if not available, proxy connection will fail
-                .header(HeaderNames.HOST, targetAddress.getHostName() + ":" + targetAddress.getPort())
-                .accept(MediaTypes.WILDCARD);
-        if (clientConfig.keepAlive()) {
-            request.header(HeaderValues.CONNECTION_KEEP_ALIVE)
-                .header(PROXY_CONNECTION);
+        if (proxy.forceHttpConnect || tls || proxy.username.isPresent()) {
+            HttpClientRequest request = webClient.method(Method.CONNECT)
+                    .followRedirects(false) // do not follow redirects for proxy connect itself
+                    .connection(connection)
+                    .uri("http://" + proxyAddress.getHostName() + ":" + proxyAddress.getPort())
+                    .protocolId("http/1.1") // MUST be 1.1, if not available, proxy connection will fail
+                    .header(HeaderNames.HOST, targetAddress.getHostName() + ":" + targetAddress.getPort())
+                    .accept(MediaTypes.WILDCARD);
+            if (clientConfig.keepAlive()) {
+                request.header(HeaderValues.CONNECTION_KEEP_ALIVE)
+                    .header(PROXY_CONNECTION);
+            }
+            proxy.proxyAuthHeader.ifPresent(request::header);
+            // we cannot close the response, as that would close the connection
+            HttpClientResponse response = request.request();
+            if (response.status().family() != Status.Family.SUCCESSFUL) {
+                response.close();
+                throw new IllegalStateException("Proxy sent wrong HTTP response code: " + response.status());
+            }
         }
-        proxy.proxyAuthHeader.ifPresent(request::header);
-        // we cannot close the response, as that would close the connection
-        HttpClientResponse response = request.request();
-        if (response.status().family() != Status.Family.SUCCESSFUL) {
-            response.close();
-            throw new IllegalStateException("Proxy sent wrong HTTP response code: " + response.status());
-        }
-
         return connection.socket();
     }
 
@@ -562,7 +565,8 @@ public class Proxy {
                         .map(proxyAddress -> connectToProxy(webClient,
                                                             proxyAddress,
                                                             targetAddress,
-                                                            proxy))
+                                                            proxy,
+                                                            tls))
                         .orElseGet(() -> NONE.connect(webClient, proxy, targetAddress, socketOptions, tls));
             }
         };
@@ -587,6 +591,7 @@ public class Proxy {
         private int port = 80;
         private String username;
         private char[] password;
+        private boolean forceHttpConnect = false;
 
         private Builder() {
         }
@@ -632,6 +637,11 @@ public class Proxy {
          *     <td>Proxy password</td>
          * </tr>
          * <tr>
+         *     <td>httpConnect</td>
+         *     <td>{@code false}</td>
+         *     <td>Specify whether the HTTP client will always execute HTTP CONNECT.</td>
+         * </tr>
+         * <tr>
          *     <td>no-proxy</td>
          *     <td>{@code no default}</td>
          *     <td>Contains list of the hosts which should be excluded from using proxy</td>
@@ -664,6 +674,19 @@ public class Proxy {
         @ConfiguredOption("HTTP")
         public Builder type(ProxyType type) {
             this.type = Objects.requireNonNull(type);
+            return this;
+        }
+
+        /**
+         * Forces HTTP CONNECT with the proxy server.
+         * Otherwise it will not execute HTTP CONNECT for HTTP protocol.
+         *
+         * @param forceHttpConnect HTTP CONNECT
+         * @return updated builder instance
+         */
+        @ConfiguredOption
+        public Builder forceHttpConnect(boolean forceHttpConnect) {
+            this.forceHttpConnect = forceHttpConnect;
             return this;
         }
 
@@ -740,6 +763,10 @@ public class Proxy {
 
         ProxyType type() {
             return type;
+        }
+
+        boolean forceHttpConnect() {
+            return forceHttpConnect;
         }
 
         String host() {
