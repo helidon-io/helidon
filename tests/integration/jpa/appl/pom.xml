@@ -298,12 +298,6 @@
                 </property>
             </activation>
             <id>native-image</id>
-            <dependencies>
-                <dependency>
-                    <groupId>io.helidon.integrations.graal</groupId>
-                    <artifactId>helidon-graal-native-image-extension</artifactId>
-                </dependency>
-            </dependencies>
             <build>
                 <plugins>
                     <plugin>
