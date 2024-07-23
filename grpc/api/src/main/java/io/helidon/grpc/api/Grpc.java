@@ -293,4 +293,27 @@ public interface Grpc {
          */
         Class<?> value();
     }
+
+    /**
+     * An annotation that can be used to specify the name of a configured gRPC channel.
+     */
+    @Target({TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.FIELD, ElementType.PARAMETER})
+    @Retention(RUNTIME)
+    @interface GrpcChannel {
+
+        /**
+         * The name of the configured channel.
+         *
+         * @return name of the channel
+         */
+        String value();
+    }
+
+    /**
+     * An annotation used to mark an injection point for a gRPC service client proxy.
+     */
+    @Target({ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER})
+    @Retention(RUNTIME)
+    @interface GrpcProxy {
+    }
 }
