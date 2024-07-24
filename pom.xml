@@ -1319,7 +1319,7 @@
         <profile>
             <id>examples</id>
             <modules>
-                <module>examples</module>
+                <module>helidon-examples</module>
             </modules>
         </profile>
         <profile>
