@@ -82,10 +82,8 @@ class TestAnnotationRewriting {
 
     @BeforeEach
     void startCdiContainer() {
-        this.jpaExtensionEnabledProperty = System.getProperty(JpaExtension.class.getName() + ".enabled");
-        System.setProperty(JpaExtension.class.getName() + ".enabled", "true");
-        this.persistenceExtensionEnabledProperty = System.getProperty(PersistenceExtension.class.getName() + ".enabled");
-        System.setProperty(PersistenceExtension.class.getName() + ".enabled", "false");
+        this.jpaExtensionEnabledProperty = System.setProperty(JpaExtension.class.getName() + ".enabled", "true");
+        this.persistenceExtensionEnabledProperty = System.setProperty(PersistenceExtension.class.getName() + ".enabled", "false");
 
         SeContainerInitializer initializer = SeContainerInitializer.newInstance()
             .addBeanClasses(this.getClass());
