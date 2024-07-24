@@ -34,7 +34,7 @@ class TestGcTimeTypeChoice {
     void checkDefaultIsCounterForBackwardCompatibility() {
         Config config = Config.just(ConfigSources.create(Map.of()));
         MetricsConfig metricsConfig = MetricsConfig.create(config);
-        assertThat("Defaulted gc.time type", metricsConfig.gcTimeType(), is(MetricsConfigBlueprint.GcTimeType.COUNTER));
+        assertThat("Defaulted gc.time type", metricsConfig.gcTimeType(), is(GcTimeType.COUNTER));
     }
 
     @Test
@@ -43,7 +43,7 @@ class TestGcTimeTypeChoice {
         MetricsConfig metricsConfig = MetricsConfig.create(config);
         assertThat("Explicit gc.time type as counter",
                    metricsConfig.gcTimeType(),
-                   is(MetricsConfigBlueprint.GcTimeType.COUNTER));
+                   is(GcTimeType.COUNTER));
     }
 
     @Test
@@ -52,7 +52,7 @@ class TestGcTimeTypeChoice {
         MetricsConfig metricsConfig = MetricsConfig.create(config);
         assertThat("Explicit gc.time type as gauge",
                    metricsConfig.gcTimeType(),
-                   is(MetricsConfigBlueprint.GcTimeType.GAUGE));
+                   is(GcTimeType.GAUGE));
     }
 
     @Test
