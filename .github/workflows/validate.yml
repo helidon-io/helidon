@@ -113,8 +113,15 @@ jobs:
       - name: Maven build
         run: |
           mvn -B -e "-Dmaven.test.skip=true" $MAVEN_HTTP_ARGS -DskipTests -Ppipeline install 
-          cd examples
-          mvn -B verify
+      - name: Examples checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+          repository: helidon-io/helidon-examples.git
+          ref: dev-4.x
+          path: helidon-examples
+      - name: Examples build
+        run: etc/scripts/build-examples.sh
       - name: Test quickstarts native image
         run: etc/scripts/test-quickstarts.sh
   mp-tck:
