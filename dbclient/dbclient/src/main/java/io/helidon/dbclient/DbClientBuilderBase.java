@@ -50,7 +50,6 @@ public abstract class DbClientBuilderBase<T extends DbClientBuilderBase<T>>
      */
     protected DbClientBuilderBase() {
         this.clientServices = new LinkedList<>();
-        this.missingMapParametersAsNull = false;
     }
 
     @Override
