@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import io.helidon.grpc.api.Grpc;
 import io.helidon.microprofile.grpc.client.GrpcClientCdiExtension;
@@ -57,10 +58,9 @@ class StringServiceTest {
     }
 
     @Test
-    void testServerStreamingSplit() throws InterruptedException {
-        ListObserver<Strings.StringMessage> response = new ListObserver<>();
-        client.split(newMessage("hello world"), response);
-        List<Strings.StringMessage> value = response.value();
+    void testServerStreamingSplit() {
+        Stream<Strings.StringMessage> stream = client.split(newMessage("hello world"));
+        List<Strings.StringMessage> value = stream.toList();
         assertThat(value, hasSize(2));
         assertThat(value, contains(newMessage("hello"), newMessage("world")));
     }

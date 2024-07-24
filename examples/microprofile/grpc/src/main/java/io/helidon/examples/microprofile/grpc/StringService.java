@@ -21,31 +21,57 @@ import java.util.stream.Stream;
 
 import io.helidon.grpc.api.Grpc;
 import io.helidon.grpc.core.CollectingObserver;
-import io.helidon.grpc.core.ResponseHelper;
 
 import io.grpc.stub.StreamObserver;
 import jakarta.enterprise.context.ApplicationScoped;
 
+/**
+ * An implementation of a string service.
+ */
 @Grpc.GrpcService
 @ApplicationScoped
 public class StringService {
 
+    /**
+     * Uppercase a string.
+     *
+     * @param request string message
+     * @return string message
+     */
     @Grpc.Unary("Upper")
     public Strings.StringMessage upper(Strings.StringMessage request) {
         return newMessage(request.getText().toUpperCase());
     }
 
+    /**
+     * Lowercase a string.
+     *
+     * @param request string message
+     * @return string message
+     */
     @Grpc.Unary("Lower")
     public Strings.StringMessage lower(Strings.StringMessage request) {
         return newMessage(request.getText().toLowerCase());
     }
 
+    /**
+     * Split a string using space delimiters.
+     *
+     * @param request string message
+     * @return stream of string messages
+     */
     @Grpc.ServerStreaming("Split")
-    public void split(Strings.StringMessage request, StreamObserver<Strings.StringMessage> observer) {
+    public Stream<Strings.StringMessage> split(Strings.StringMessage request) {
         String[] parts = request.getText().split(" ");
-        ResponseHelper.stream(observer, Stream.of(parts).map(this::newMessage));
+        return Stream.of(parts).map(this::newMessage);
     }
 
+    /**
+     * Join a stream of messages using spaces.
+     *
+     * @param observer stream of messages
+     * @return single message as a stream
+     */
     @Grpc.ClientStreaming("Join")
     public StreamObserver<Strings.StringMessage> join(StreamObserver<Strings.StringMessage> observer) {
         return CollectingObserver.create(

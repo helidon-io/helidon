@@ -16,23 +16,52 @@
 
 package io.helidon.examples.microprofile.grpc;
 
+import java.util.stream.Stream;
+
 import io.helidon.grpc.api.Grpc;
 
 import io.grpc.stub.StreamObserver;
 
+/**
+ * A client for a {@link StringService}.
+ */
 @Grpc.GrpcService("StringService")
 @Grpc.GrpcChannel("string-channel")         // see application.yaml
 public interface StringServiceClient {
 
+    /**
+     * Uppercase a string.
+     *
+     * @param request string message
+     * @return string message
+     */
     @Grpc.Unary("Upper")
     Strings.StringMessage upper(Strings.StringMessage request);
 
+    /**
+     * Lowercase a string.
+     *
+     * @param request string message
+     * @return string message
+     */
     @Grpc.Unary("Lower")
     Strings.StringMessage lower(Strings.StringMessage request);
 
+    /**
+     * Split a string using space delimiters.
+     *
+     * @param request string message
+     * @return stream of string messages
+     */
     @Grpc.ServerStreaming("Split")
-    void split(Strings.StringMessage request, StreamObserver<Strings.StringMessage> observer);
+    Stream<Strings.StringMessage> split(Strings.StringMessage request);
 
+    /**
+     * Join a stream of messages using spaces.
+     *
+     * @param observer stream of messages
+     * @return single message as a stream
+     */
     @Grpc.ClientStreaming("Join")
     StreamObserver<Strings.StringMessage> join(StreamObserver<Strings.StringMessage> observer);
 }
