@@ -122,7 +122,6 @@ public class DbClientContext implements DbContext {
          * Creates an instance of base builder for {@link DbClientContext}.
          */
         protected BuilderBase() {
-            this.missingMapParametersAsNull = false;
         }
 
         /**

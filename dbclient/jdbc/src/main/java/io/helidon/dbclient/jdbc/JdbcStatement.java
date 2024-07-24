@@ -148,12 +148,16 @@ public abstract class JdbcStatement<S extends DbStatement<S>> extends DbStatemen
             for (String name : namesOrder) {
                 if (parameters.containsKey(name)) {
                     Object value = parameters.get(name);
-                    LOGGER.log(Level.TRACE, String.format("Mapped parameter %d: %s -> %s", i, name, value));
+                    if (LOGGER.isLoggable(Level.TRACE)) {
+                        LOGGER.log(Level.TRACE, String.format("Mapped parameter %d: %s -> %s", i, name, value));
+                    }
                     setParameter(preparedStatement, i, value);
                     i++;
                 } else {
                     if (context().missingMapParametersAsNull()) {
-                        LOGGER.log(Level.TRACE, String.format("Mapped parameter %d: %s -> null", i, name));
+                        if (LOGGER.isLoggable(Level.TRACE)) {
+                            LOGGER.log(Level.TRACE, String.format("Mapped parameter %d: %s -> null", i, name));
+                        }
                         setParameter(preparedStatement, i, null);
                         i++;
                     } else {
@@ -174,7 +178,9 @@ public abstract class JdbcStatement<S extends DbStatement<S>> extends DbStatemen
             preparedStatement = prepareStatement(stmtName, stmt);
             int i = 1; // JDBC set position parameter starts from 1.
             for (Object value : parameters) {
-                LOGGER.log(Level.TRACE, String.format("Indexed parameter %d: %s", i, value));
+                if (LOGGER.isLoggable(Level.TRACE)) {
+                    LOGGER.log(Level.TRACE, String.format("Indexed parameter %d: %s", i, value));
+                }
                 setParameter(preparedStatement, i, value);
                 i++;
             }
