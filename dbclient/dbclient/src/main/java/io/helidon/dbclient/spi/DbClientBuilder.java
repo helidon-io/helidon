@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,6 +63,17 @@ public interface DbClientBuilder<T extends DbClientBuilder<T>> extends Builder<T
      * @return database provider builder
      */
     T password(String password);
+
+    /**
+     * Missing values in named parameters {@link java.util.Map} are considered as null values.
+     * When set to {@code true}, named parameters value missing in the {@code Map} is considered
+     * as {@code null}. When set to {@code false}, any parameter value missing in the {@code Map}
+     * will cause an exception.
+     * @param missingMapParametersAsNull whether missing values in named parameters {@code Map}
+     *                                   are considered as null values
+     * @return updated builder instance
+     */
+    T missingMapParametersAsNull(boolean missingMapParametersAsNull);
 
     /**
      * Statements to use either from configuration

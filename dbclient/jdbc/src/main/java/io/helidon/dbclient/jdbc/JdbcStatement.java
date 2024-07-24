@@ -152,7 +152,13 @@ public abstract class JdbcStatement<S extends DbStatement<S>> extends DbStatemen
                     setParameter(preparedStatement, i, value);
                     i++;
                 } else {
-                    throw new DbClientException(namedStatementErrorMessage(namesOrder, parameters));
+                    if (context().missingMapParametersAsNull()) {
+                        LOGGER.log(Level.TRACE, String.format("Mapped parameter %d: %s -> null", i, name));
+                        setParameter(preparedStatement, i, null);
+                        i++;
+                    } else {
+                        throw new DbClientException(namedStatementErrorMessage(namesOrder, parameters));
+                    }
                 }
             }
             return preparedStatement;
