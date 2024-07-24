@@ -123,47 +123,55 @@ class ContextAwareExecutorImpl implements ContextAwareExecutorService {
 
     }
 
-    @SuppressWarnings(value = "unchecked")
     protected <T> Callable<T> wrap(Callable<T> task) {
         Map<Class<?>, Object> properties = new HashMap<>();
         PROVIDERS.forEach(provider -> properties.put(provider.getClass(), provider.data()));
         Optional<Context> context = Contexts.context();
         return context.<Callable<T>>map(value -> () -> {
             try {
-                PROVIDERS.forEach(provider -> provider.propagateData(properties.get(provider.getClass())));
+                propagateMdcData(properties);
                 return Contexts.runInContext(value, task);
             } finally {
-                PROVIDERS.forEach(provider -> provider.clearData(properties.get(provider.getClass())));
+                clearMdcData(properties);
             }
         }).orElseGet(() -> () -> {
             try {
-                PROVIDERS.forEach(provider -> provider.propagateData(properties.get(provider.getClass())));
+                propagateMdcData(properties);
                 return task.call();
             } finally {
-                PROVIDERS.forEach(provider -> provider.clearData(properties.get(provider.getClass())));
+                clearMdcData(properties);
             }
         });
     }
 
-    @SuppressWarnings(value = "unchecked")
     protected Runnable wrap(Runnable command) {
         Optional<Context> context = Contexts.context();
         Map<Class<?>, Object> properties = new HashMap<>();
         PROVIDERS.forEach(provider -> properties.put(provider.getClass(), provider.data()));
         return context.<Runnable>map(value -> () -> {
             try {
-                PROVIDERS.forEach(provider -> provider.propagateData(properties.get(provider.getClass())));
+                propagateMdcData(properties);
                 Contexts.runInContext(value, command);
             } finally {
-                PROVIDERS.forEach(provider -> provider.clearData(properties.get(provider.getClass())));
+                clearMdcData(properties);
             }
         }).orElseGet(() -> () -> {
             try {
-                PROVIDERS.forEach(provider -> provider.propagateData(properties.get(provider.getClass())));
+                propagateMdcData(properties);
                 command.run();
             } finally {
-                PROVIDERS.forEach(provider -> provider.clearData(properties.get(provider.getClass())));
+                clearMdcData(properties);
             }
         });
+    }
+
+    @SuppressWarnings(value = "unchecked")
+    private static void propagateMdcData(Map<Class<?>, Object> properties) {
+        PROVIDERS.forEach(provider -> provider.propagateData(properties.get(provider.getClass())));
+    }
+
+    @SuppressWarnings(value = "unchecked")
+    private static void clearMdcData(Map<Class<?>, Object> properties) {
+        PROVIDERS.forEach(provider -> provider.clearData(properties.get(provider.getClass())));
     }
 }
