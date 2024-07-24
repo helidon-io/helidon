@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ public abstract class DbClientBuilderBase<T extends DbClientBuilderBase<T>>
     private String url;
     private String username;
     private String password;
+    private boolean missingMapParametersAsNull;
     private DbStatements statements;
     private MapperManager mapperManager;
     private DbMapperManager dbMapperManager;
@@ -49,6 +50,7 @@ public abstract class DbClientBuilderBase<T extends DbClientBuilderBase<T>>
      */
     protected DbClientBuilderBase() {
         this.clientServices = new LinkedList<>();
+        this.missingMapParametersAsNull = false;
     }
 
     @Override
@@ -71,6 +73,7 @@ public abstract class DbClientBuilderBase<T extends DbClientBuilderBase<T>>
 
     @Override
     public T config(Config config) {
+        config.get("missing-map-parameters-as-null").as(Boolean.class).ifPresent(this::missingMapParametersAsNull);
         config.get("statements").map(DbStatements::create).ifPresent(this::statements);
         return identity();
     }
@@ -90,6 +93,12 @@ public abstract class DbClientBuilderBase<T extends DbClientBuilderBase<T>>
     @Override
     public T password(String password) {
         this.password = password;
+        return identity();
+    }
+
+    @Override
+    public T missingMapParametersAsNull(boolean missingMapParametersAsNull) {
+        this.missingMapParametersAsNull = missingMapParametersAsNull;
         return identity();
     }
 
@@ -183,6 +192,17 @@ public abstract class DbClientBuilderBase<T extends DbClientBuilderBase<T>>
      */
     public String password() {
         return password;
+    }
+
+    /**
+     * Configured missing values in named parameters {@link java.util.Map} handling.
+     *
+     * @return when set to {@code true}, named parameters value missing in the {@code Map} is considered
+     *         as {@code null}, when set to {@code false}, any parameter value missing in the {@code Map}
+     *         will cause an exception.
+     */
+    public boolean missingMapParametersAsNull() {
+        return missingMapParametersAsNull;
     }
 
     /**
