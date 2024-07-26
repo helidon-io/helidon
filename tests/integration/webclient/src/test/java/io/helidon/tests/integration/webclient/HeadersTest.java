@@ -43,6 +43,10 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 public class HeadersTest {
 
+    private static final String INVALID_CONTENT_TYPE_VALUE = "invalid header value";
+    private static final String INVALID_CONTENT_TYPE_TEXT = "text";
+    private static final String RELAXED_CONTENT_TYPE_TEXT = "text/plain";
+
     private static WebServer server;
     private static WebClient client;
 
@@ -66,6 +70,18 @@ public class HeadersTest {
                 .build();
     }
 
+    // HTTP service with invalid Content-Type
+    private static void invalidContentType(ServerRequest request, ServerResponse response) {
+        response.addHeader(Http.Header.CONTENT_TYPE, INVALID_CONTENT_TYPE_VALUE)
+                .send();
+    }
+
+    // HTTP service with Content-Type: text instead of text/plain
+    private static void invalidTextContentType(ServerRequest request, ServerResponse response) {
+        response.addHeader(Http.Header.CONTENT_TYPE, INVALID_CONTENT_TYPE_TEXT)
+                .send();
+    }
+
     @AfterAll
     static void afterAll() throws ExecutionException, InterruptedException, TimeoutException {
         if (server != null) {
@@ -82,7 +98,7 @@ public class HeadersTest {
             client.get()
                     .path("/invalidContentType")
                     .request()
-                    .await();
+                    .await(10, TimeUnit.SECONDS);
             fail("WebClient shall throw an exception");
         } catch (Exception ex) {
             assertThat(ex, is(instanceOf(CompletionException.class)));
@@ -97,10 +113,10 @@ public class HeadersTest {
     @Test
     void testInvalidTextContentTypeStrict() {
         try {
-        client.get()
-                .path("/invalidTextContentType")
-                .request()
-                .await();
+            client.get()
+                    .path("/invalidTextContentType")
+                    .request()
+                    .await(10, TimeUnit.SECONDS);
         } catch (Exception ex) {
             assertThat(ex, is(instanceOf(CompletionException.class)));
             Throwable cause = ex.getCause();
@@ -122,27 +138,10 @@ public class HeadersTest {
         WebClientResponse response = client.get()
                 .path("/invalidTextContentType")
                 .request()
-                .await();
+                .await(10, TimeUnit.SECONDS);
         Optional<MediaType> maybeContentType = response.headers().contentType();
         assertThat(maybeContentType.isPresent(), is(true));
         assertThat(maybeContentType.get().toString(), is(RELAXED_CONTENT_TYPE_TEXT));
-    }
-
-    private static final String INVALID_CONTENT_TYPE_VALUE = "invalid header value";
-
-    // HTTP service with invalid Content-Type
-    private static void invalidContentType(ServerRequest request, ServerResponse response) {
-        response.addHeader(Http.Header.CONTENT_TYPE, INVALID_CONTENT_TYPE_VALUE)
-                .send();
-    }
-
-    private static final String INVALID_CONTENT_TYPE_TEXT = "text";
-    private static final String RELAXED_CONTENT_TYPE_TEXT = "text/plain";
-
-    // HTTP service with Content-Type: text instead of text/plain
-    private static void invalidTextContentType(ServerRequest request, ServerResponse response) {
-        response.addHeader(Http.Header.CONTENT_TYPE, INVALID_CONTENT_TYPE_TEXT)
-                .send();
     }
 
 }
