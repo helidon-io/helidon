@@ -14,22 +14,22 @@
  * limitations under the License.
  */
 
-package io.helidon.service.codegen;
+package io.helidon.service.inject.api;
 
 /**
- * Code generation extension for Helidon Service REgistry.
+ * Invocation of an element that has parameters, and may throw checked exceptions.
+ * This type is used to handle intercepted methods, constructors, and field injections.
+ *
+ * @param <T> type of the result of the invocation
  */
-interface RegistryCodegenExtension {
+@FunctionalInterface
+public interface Invoker<T> {
     /**
-     * Process a single round.
+     * Invoke the element.
      *
-     * @param roundContext round context
+     * @param parameters to pass to the element
+     * @return result of the invocation
+     * @throws Exception any exception that may be required by the invoked element
      */
-    void process(RegistryRoundContext roundContext);
-
-    /**
-     * Called when the processing is over, and there will not be an additional processing round.
-     */
-    default void processingOver() {
-    }
+    T invoke(Object... parameters) throws Exception;
 }

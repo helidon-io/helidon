@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import io.helidon.service.codegen.ServiceRegistryCodegenProvider;
-
 /**
  * Code generation for Helidon Service Registry.
  */
@@ -25,7 +23,20 @@ module io.helidon.service.codegen {
     requires transitive io.helidon.codegen;
 
     exports io.helidon.service.codegen;
+    exports io.helidon.service.codegen.spi;
+
+    uses io.helidon.service.codegen.spi.InjectCodegenObserverProvider;
+    uses io.helidon.service.codegen.spi.RegistryCodegenExtensionProvider;
+    uses io.helidon.service.codegen.spi.InjectAssignmentProvider;
 
     provides io.helidon.codegen.spi.CodegenExtensionProvider
-            with ServiceRegistryCodegenProvider;
+            with io.helidon.service.codegen.ServiceRegistryCodegenProvider;
+    provides io.helidon.service.codegen.spi.RegistryCodegenExtensionProvider
+            with io.helidon.service.codegen.InjectionExtensionProvider,
+                    io.helidon.service.codegen.ServiceExtensionProvider,
+                    io.helidon.service.codegen.ConfigBeanCodegenProvider;
+
+    provides io.helidon.codegen.spi.AnnotationMapperProvider
+            with io.helidon.service.codegen.MapNamedByClassProvider,
+                    io.helidon.service.codegen.MapCreateFor;
 }

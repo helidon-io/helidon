@@ -46,6 +46,7 @@
     <modules>
         <module>registry</module>
         <module>codegen</module>
+        <module>inject</module>
     </modules>
 
 </project>
