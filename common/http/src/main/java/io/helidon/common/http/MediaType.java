@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -268,6 +268,12 @@ public final class MediaType implements AcceptPredicate<MediaType> {
      */
     private static final CharMatcher LINEAR_WHITE_SPACE = CharMatcher.anyOf(" \t\r\n");
     private static final String CHARSET_ATTRIBUTE = "charset";
+
+    // Relaxed media types mapping
+    private static final Map<String, MediaType> RELAXED_TYPES = Map.of(
+            "text",  MediaType.TEXT_PLAIN // text -> text/plain
+    );
+
     private final String type;
     private final String subtype;
     private final Map<String, String> parameters;
@@ -319,13 +325,43 @@ public final class MediaType implements AcceptPredicate<MediaType> {
      * @throws NullPointerException     if the input is {@code null}
      */
     public static MediaType parse(String input) {
+        return parse(input, true);
+    }
+
+    /**
+     * Parses a media type from its string representation in relaxed mode.
+     * Predefined incomplete media types are replaced with corresponding valid media types.
+     *
+     * @param input the input string representing a media type
+     * @return parsed {@link MediaType} instance
+     * @throws IllegalArgumentException if the input is not parsable
+     * @throws NullPointerException     if the input is {@code null}
+     */
+    public static MediaType parseRelaxed(String input) {
+        return parse(input, false);
+    }
+
+    /**
+     * Parses a media type from its string representation.
+     *
+     * @param input the input string representing a media type
+     * @param strictMode whether strict mode (default) shall be used
+     * @return parsed {@link MediaType} instance
+     * @throws IllegalArgumentException if the input is not parsable
+     * @throws NullPointerException     if the input is {@code null}
+     */
+    private static MediaType parse(String input, boolean strictMode) {
         Objects.requireNonNull(input, "Parameter 'input' is null!");
         Tokenizer tokenizer = new Tokenizer(input);
         try {
             String type = tokenizer.consumeToken(TOKEN_MATCHER);
+            Map<String, String> parameters = new HashMap<>();
+            // Handle relaxed media type parsing when '/' character is not present
+            if (!strictMode && !tokenizer.hasMore() && RELAXED_TYPES.containsKey(type)) {
+                return RELAXED_TYPES.get(type);
+            }
             tokenizer.consumeCharacter('/');
             String subtype = tokenizer.consumeToken(TOKEN_MATCHER);
-            Map<String, String> parameters = new HashMap<>();
             while (tokenizer.hasMore()) {
                 tokenizer.consumeTokenIfPresent(LINEAR_WHITE_SPACE);
                 tokenizer.consumeCharacter(';');

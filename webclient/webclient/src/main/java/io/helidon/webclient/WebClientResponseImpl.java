@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ final class WebClientResponseImpl implements WebClientResponse {
     private final URI lastEndpointUri;
 
     private WebClientResponseImpl(Builder builder) {
-        headers = WebClientResponseHeadersImpl.create(builder.headers);
+        headers = WebClientResponseHeadersImpl.create(builder.headers, builder.mediaTypeParserRelaxed);
         publisher = builder.publisher;
         status = builder.status;
         version = builder.version;
@@ -109,6 +109,7 @@ final class WebClientResponseImpl implements WebClientResponse {
         private NettyClientHandler.ResponseCloser responseCloser;
         private MessageBodyReaderContext readerContext;
         private URI lastEndpointUri;
+        private boolean mediaTypeParserRelaxed;
 
         @Override
         public WebClientResponseImpl build() {
@@ -192,5 +193,18 @@ final class WebClientResponseImpl implements WebClientResponse {
             this.lastEndpointUri = lastEndpointUri;
             return this;
         }
+
+        /**
+         * Set media type parsing mode for HTTP {@code Content-Type} header.
+         *
+         * @param mediaTypeParserRelaxed value of {@code true} sets relaxed media type parsing mode,
+         *                               value of {@code false} sets strict media type parsing mode
+         * @return updated builder instance
+         */
+        Builder mediaTypeParserRelaxed(boolean mediaTypeParserRelaxed) {
+            this.mediaTypeParserRelaxed = mediaTypeParserRelaxed;
+            return this;
+        }
+
     }
 }
