@@ -209,7 +209,7 @@ class OpenTracingSpan implements Span {
 
         @Override
         public Optional<String> baggage(String key) {
-            return delegate.baggage(key);
+            return delegate.baggage().get(key);
         }
 
         @Override
