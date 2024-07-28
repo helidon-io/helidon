@@ -23,42 +23,31 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon.config</groupId>
-        <artifactId>helidon-config-project</artifactId>
+        <artifactId>helidon-config-metadata-project</artifactId>
         <version>4.1.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <!-- normally we would use io.helidon.config.metadata group id, but this would introduce backward incompatibility -->
-    <artifactId>helidon-config-metadata-project</artifactId>
-    <name>Helidon Config Metadata Project</name>
-    <packaging>pom</packaging>
-
-    <description>
-        Configuration Metadata annotations and codegen.
-    </description>
+    <artifactId>helidon-config-metadata</artifactId>
+    <name>Helidon Config Metadata</name>
 
     <properties>
-        <javadoc.fail-on-warnings>true</javadoc.fail-on-warnings>
+        <helidon.services.skip>true</helidon.services.skip>
     </properties>
 
-    <modules>
-        <module>metadata</module>
-        <module>codegen</module>
-        <module>processor</module>
-        <module>docs</module>
-    </modules>
+    <description>
+        Configuration Metadata annotations and processing.
+    </description>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>check-dependencies</id>
-                        <phase>verify</phase>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
+    <dependencies>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>
