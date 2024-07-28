@@ -199,6 +199,7 @@
                             </dependencyIncludes>
                             <dependencyExcludes>
                                 <exclude>*:*-tests</exclude>
+                                <exclude>io.helidon.config.metadata:helidon-config-metadata-docs</exclude>
                             </dependencyExcludes>
                             <sourceExcludes>
                                 <exclude>**/src/main/templates</exclude>
