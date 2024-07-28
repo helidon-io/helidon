@@ -44,7 +44,7 @@ Type: link:{javadoc-base-url}/io.helidon.webclient.websocket/io/helidon/webclien
 
 |`protocol-config` |xref:{rootdir}/config/io_helidon_webclient_websocket_WsClientProtocolConfig.adoc[WsClientProtocolConfig] |`create()` |WebSocket specific configuration.
 
- Protocol specific configuration
+Protocol specific configuration
 
 |===
 

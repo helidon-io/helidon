@@ -44,13 +44,13 @@ Type: link:{javadoc-base-url}/io.helidon.integrations.openapi.ui/io/helidon/inte
 
 |`enabled` |boolean |`true` |Sets whether the service should be enabled.
 
- `true` if enabled, `false` otherwise
+`true` if enabled, `false` otherwise
 |`options` |Map&lt;string, string&gt; |{nbsp} |Merges implementation-specific UI options.
 
- Options for the UI to merge
+Options for the UI to merge
 |`web-context` |string |{nbsp} |Full web context (not just the suffix).
 
- Full web context path
+Full web context path
 
 |===
 

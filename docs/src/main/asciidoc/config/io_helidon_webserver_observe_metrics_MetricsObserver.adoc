@@ -50,33 +50,33 @@ This type provides the following service implementations:
 
 |`app-name` |string |{nbsp} |Value for the application tag to be added to each meter ID.
 
- Application tag value
+Application tag value
 |`app-tag-name` |string |{nbsp} |Name for the application tag to be added to each meter ID.
 
- Application tag name
+Application tag name
 |`enabled` |boolean |`true` |Whether metrics functionality is enabled.
 
- If metrics are configured to be enabled
+If metrics are configured to be enabled
 |`endpoint` |string |`metrics` |
 |`key-performance-indicators` |xref:{rootdir}/config/io_helidon_metrics_api_KeyPerformanceIndicatorMetricsConfig.adoc[KeyPerformanceIndicatorMetricsConfig] |{nbsp} |Key performance indicator metrics settings.
 
- Key performance indicator metrics settings
+Key performance indicator metrics settings
 |`permit-all` |boolean |`true` |Whether to allow anybody to access the endpoint.
 
- Whether to permit access to metrics endpoint to anybody, defaults to `true`
- See roles()
-|`rest-request-enabled` |boolean |{nbsp} |Whether automatic REST request metrics should be measured.
+Whether to permit access to metrics endpoint to anybody, defaults to `true`
+See roles()
+|`rest-request-enabled` |boolean |`false` |Whether automatic REST request metrics should be measured.
 
- True/false
+True/false
 |`roles` |string[&#93; |`observe` |Hints for role names the user is expected to be in.
 
- List of hints
+List of hints
 |`scoping` |xref:{rootdir}/config/io_helidon_metrics_api_ScopingConfig.adoc[ScopingConfig] |{nbsp} |Settings related to scoping management.
 
- Scoping settings
+Scoping settings
 |`tags` |xref:{rootdir}/config/io_helidon_metrics_api_Tag.adoc[Tag[&#93;] |{nbsp} |Global tags.
 
- Name/value pairs for global tags
+Name/value pairs for global tags
 
 |===
 

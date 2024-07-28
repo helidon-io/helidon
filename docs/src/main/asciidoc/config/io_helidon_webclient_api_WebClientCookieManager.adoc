@@ -44,13 +44,13 @@ Type: link:{javadoc-base-url}/io.helidon.webclient.api/io/helidon/webclient/api/
 
 |`automatic-store-enabled` |boolean |`false` |Whether automatic cookie store is enabled or not.
 
- Status of cookie store
+Status of cookie store
 |`cookie-policy` |CookiePolicy |`java.net.CookiePolicy.ACCEPT_ORIGINAL_SERVER` |Current cookie policy for this client.
 
- The cookie policy
+The cookie policy
 |`default-cookies` |Map&lt;string, string&gt; |{nbsp} |Map of default cookies to include in all requests if cookies enabled.
 
- Map of default cookies
+Map of default cookies
 
 |===
 

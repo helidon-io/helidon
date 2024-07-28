@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ Type: link:{javadoc-base-url}/io.helidon.webclient.api/io/helidon/webclient/api/
 |`host` |string |{nbsp} |Sets a new host value.
 |`no-proxy` |string[&#93; |{nbsp} |Configure a host pattern that is not going through a proxy.
 
- Options are:
+Options are:
 
 - IP Address, such as `192.168.1.1`
 - IP V6 Address, such as `[2001:db8:85a3:8d3:1319:8a2e:370:7348]`
@@ -58,6 +58,13 @@ Type: link:{javadoc-base-url}/io.helidon.webclient.api/io/helidon/webclient/api/
 |`password` |string |{nbsp} |Sets a new password for the proxy.
 |`port` |int |{nbsp} |Sets a port value.
 |`type` |ProxyType (NONE, SYSTEM, HTTP) |`HTTP` |Sets a new proxy type.
+
+Allowed values:
+
+- `NONE`: No proxy.
+- `SYSTEM`: Proxy obtained from system.
+- `HTTP`: HTTP proxy.
+
 |`username` |string |{nbsp} |Sets a new username for the proxy.
 
 |===

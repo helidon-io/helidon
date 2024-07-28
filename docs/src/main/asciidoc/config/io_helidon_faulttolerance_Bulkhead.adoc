@@ -45,14 +45,14 @@ This is a standalone configuration type, prefix from configuration root: `fault-
 |key |type |default value |description
 
 |`limit` |int |`10` |Maximal number of parallel requests going through this bulkhead.
- When the limit is reached, additional requests are enqueued.
+When the limit is reached, additional requests are enqueued.
 
- Maximal number of parallel calls, defaults is DEFAULT_LIMIT
+Maximal number of parallel calls, defaults is DEFAULT_LIMIT
 |`queue-length` |int |`10` |Maximal number of enqueued requests waiting for processing.
- When the limit is reached, additional attempts to invoke
- a request will receive a BulkheadException.
+When the limit is reached, additional attempts to invoke
+a request will receive a BulkheadException.
 
- Length of the queue
+Length of the queue
 
 |===
 

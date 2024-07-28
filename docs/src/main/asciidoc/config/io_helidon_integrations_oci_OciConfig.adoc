@@ -44,62 +44,66 @@ This is a standalone configuration type, prefix from configuration root: `helido
 |===
 |key |type |default value |description
 
-|`allowed-atn-methods` |string[&#93; |{nbsp} |List of attempted authentication strategies in case atnMethod() is set to ATN_METHOD_AUTO.
+|`allowed-authentication-methods` |string[&#93; |{nbsp} |List of attempted authentication strategies in case io.helidon.integrations.oci.OciConfig.authenticationMethod() is
+set to AUTHENTICATION_METHOD_AUTO.
 
- In case the list is empty, all available strategies will be tried, ordered by their io.helidon.common.Weight
+In case the list is empty, all available strategies will be tried, ordered by their io.helidon.common.Weight
 
- List of authentication strategies to be tried
- See atnMethod()
-|`atn-method` |string |`auto` |Authentication method to use. If the configured method is not available, an exception
- would be thrown for OCI related services.
+List of authentication strategies to be tried
+See io.helidon.integrations.oci.OciConfig.authenticationMethod()
+|`authentication-method` |string |`auto` |Authentication method to use. If the configured method is not available, an exception
+would be thrown for OCI related services.
 
- Known and supported authentication strategies for public OCI:
+Known and supported authentication strategies for public OCI:
 
-- ATN_METHOD_AUTO - use the list of allowedAtnMethods() (in the provided order), and choose
-     the first one
-     capable of providing data
+- AUTHENTICATION_METHOD_AUTO - use the list of
+    io.helidon.integrations.oci.OciConfig.allowedAuthenticationMethods()
+         (in the provided order), and choose the first one capable of providing data
 - AuthenticationMethodConfig.METHOD -
-     use configuration of the application to obtain values needed to set up connectivity, uses
-     com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider
+    use configuration of the application to obtain values needed to set up connectivity, uses
+    com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider
 - AuthenticationMethodConfigFile.METHOD - use configuration file of OCI (`home/.oci/config`), uses
-     com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider
+    com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider
 - `resource-principal`  - use identity of the OCI resource the service is executed on
-     (fn), uses
-     com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider, and is available in a
-     separate module `helidon-integrations-oci-authentication-resource`
+    (fn), uses
+    com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider, and is available in a
+    separate module `helidon-integrations-oci-authentication-resource`
 - `instance-principal` - use identity of the OCI instance the service is running on, uses
-     com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider, and is available in a
-     separate module `helidon-integrations-oci-authentication-resource`
+    com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider, and is available in a
+    separate module `helidon-integrations-oci-authentication-resource`
 - `workload` - use workload identity of the OCI Kubernetes workload, available in a
-     separate module `helidon-integrations-oci-authentication-workload`
+    separate module `helidon-integrations-oci-authentication-workload`
 
 The authentication method to apply
-|`atn-timeout` |Duration |`PT10S` |Timeout of authentication operations, where applicable.
- This is a timeout for each operation (if there are retries, each timeout will be this duration).
- Defaults to 10 seconds.
+|`authentication-timeout` |Duration |`PT10S` |Timeout of authentication operations, where applicable.
+This is a timeout for each operation (if there are retries, each timeout will be this duration).
+Defaults to 10 seconds.
 
- Authentication operation timeout
+Authentication operation timeout
 |`authentication.config` |xref:{rootdir}/config/io_helidon_integrations_oci_ConfigMethodConfig.adoc[ConfigMethodConfig] |{nbsp} |Config method configuration (if provided and used).
 
- Information needed for config atnMethod()
+Information needed for config io.helidon.integrations.oci.OciConfig.authenticationMethod()
 |`authentication.config-file` |xref:{rootdir}/config/io_helidon_integrations_oci_ConfigFileMethodConfig.adoc[ConfigFileMethodConfig] |{nbsp} |Config file method configuration (if provided and used).
 
- Information to customize config for atnMethod()
+Information to customize config for io.helidon.integrations.oci.OciConfig.authenticationMethod()
 |`authentication.session-token` |xref:{rootdir}/config/io_helidon_integrations_oci_SessionTokenMethodConfig.adoc[SessionTokenMethodConfig] |{nbsp} |Session token method configuration (if provided and used).
 
- Information to customize config for atnMethod()
+Information to customize config for io.helidon.integrations.oci.OciConfig.authenticationMethod()
 |`imds-base-uri` |URI |{nbsp} |The OCI IMDS URI (http URL pointing to the metadata service, if customization needed).
 
- The OCI IMDS URI
-|`imds-timeout` |Duration |`PT0.1S` |The OCI IMDS connection timeout. This is used to auto-detect availability.
+The OCI IMDS URI
+|`imds-detect-retries` |int |{nbsp} |Customize the number of retries to contact IMDS service.
 
- This configuration property is used when attempting to connect to the metadata service.
+Number of retries, each provider has its own defaults
+|`imds-timeout` |Duration |`PT1S` |The OCI IMDS connection timeout. This is used to auto-detect availability.
 
- The OCI IMDS connection timeout
+This configuration property is used when attempting to connect to the metadata service.
+
+The OCI IMDS connection timeout
 |`region` |Region |{nbsp} |Explicit region. The configured region will be used by region provider.
- This may be ignored by authentication detail providers, as in most cases region is provided by them.
+This may be ignored by authentication detail providers, as in most cases region is provided by them.
 
- Explicit region
+Explicit region
 
 |===
 

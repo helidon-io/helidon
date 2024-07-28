@@ -55,7 +55,7 @@ This type provides the following service implementations:
 |`endpoint` |string |`info` |
 |`values` |Map&lt;string, string&gt; |{nbsp} |Values to be exposed using this observability endpoint.
 
- Value map
+Value map
 
 |===
 

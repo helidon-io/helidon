@@ -43,40 +43,40 @@ Type: link:{javadoc-base-url}/io.helidon.webserver/io/helidon/webserver/Connecti
 |key |type |default value |description
 
 |`connect-timeout` |Duration |`PT10S` |Connect timeout.
- Default is DEFAULT_CONNECT_TIMEOUT_DURATION.
+Default is DEFAULT_CONNECT_TIMEOUT_DURATION.
 
- Connect timeout
+Connect timeout
 |`keep-alive` |boolean |`true` |Configure socket keep alive.
- Default is `true`.
+Default is `true`.
 
- Keep alive
- See java.net.StandardSocketOptions.SO_KEEPALIVE
+Keep alive
+See java.net.StandardSocketOptions.SO_KEEPALIVE
 |`read-timeout` |Duration |`PT30S` |Read timeout.
- Default is DEFAULT_READ_TIMEOUT_DURATION
+Default is DEFAULT_READ_TIMEOUT_DURATION
 
- Read timeout
+Read timeout
 |`receive-buffer-size` |int |`32768` |Socket receive buffer size.
- Default is DEFAULT_SO_BUFFER_SIZE.
+Default is DEFAULT_SO_BUFFER_SIZE.
 
- Buffer size, in bytes
- See java.net.StandardSocketOptions.SO_RCVBUF
+Buffer size, in bytes
+See java.net.StandardSocketOptions.SO_RCVBUF
 |`reuse-address` |boolean |`true` |Socket reuse address.
- Default is `true`.
+Default is `true`.
 
- Whether to reuse address
- See java.net.StandardSocketOptions.SO_REUSEADDR
+Whether to reuse address
+See java.net.StandardSocketOptions.SO_REUSEADDR
 |`send-buffer-size` |int |`32768` |Socket send buffer size.
- Default is DEFAULT_SO_BUFFER_SIZE.
+Default is DEFAULT_SO_BUFFER_SIZE.
 
- Buffer size, in bytes
- See java.net.StandardSocketOptions.SO_SNDBUF
-|`tcp-no-delay` |boolean |`false` |Disable <a href="https://en.wikipedia.org/wiki/Nagle%27s_algorithm">Nagle's algorithm</a> by setting
- TCP_NODELAY to true. This can result in better performance on Mac or newer linux kernels for some
- payload types.
- Default is `false`.
+Buffer size, in bytes
+See java.net.StandardSocketOptions.SO_SNDBUF
+|`tcp-no-delay` |boolean |`false` |Disable https://en.wikipedia.org/wiki/Nagle%27s_algorithm[Nagle's algorithm] by setting
+TCP_NODELAY to true. This can result in better performance on Mac or newer linux kernels for some
+payload types.
+Default is `false`.
 
- Whether to use TCP_NODELAY, defaults to `false`
- See java.net.StandardSocketOptions.TCP_NODELAY
+Whether to use TCP_NODELAY, defaults to `false`
+See java.net.StandardSocketOptions.TCP_NODELAY
 
 |===
 

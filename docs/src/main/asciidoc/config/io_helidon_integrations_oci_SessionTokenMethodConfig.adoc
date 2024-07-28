@@ -44,62 +44,61 @@ Type: link:{javadoc-base-url}/io.helidon.integrations.oci/io/helidon/integration
 
 |`fingerprint` |string |{nbsp} |The OCI authentication fingerprint.
 
- This configuration property must be provided in order to set the <a
- href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm">API signing key's fingerprint</a>.
- See com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.getFingerprint() for more details.
+This configuration property must be provided in order to set the https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm[API signing key's fingerprint].
+See com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.getFingerprint() for more details.
 
- The OCI authentication fingerprint
+The OCI authentication fingerprint
 |`initial-refresh-delay` |Duration |{nbsp} |Delay of the first refresh.
- Defaults to 0, to refresh immediately (implemented in the authentication details provider).
+Defaults to 0, to refresh immediately (implemented in the authentication details provider).
 
- Initial refresh delay
- See SessionTokenAuthenticationDetailsProviderBuilder.initialRefreshDelay(long)
+Initial refresh delay
+See com.oracle.bmc.auth.SessionTokenAuthenticationDetailsProvider.SessionTokenAuthenticationDetailsProviderBuilder.initialRefreshDelay(long)
 |`passphrase` |char[] |{nbsp} |The OCI authentication passphrase.
 
- This property must be provided in order to set the
- com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.getPassphraseCharacters().
+This property must be provided in order to set the
+com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.getPassphraseCharacters().
 
- The OCI authentication passphrase
+The OCI authentication passphrase
 |`private-key-path` |Path |{nbsp} |The OCI authentication private key resource.
- A resource can be defined as a resource on classpath, file on the file system,
- base64 encoded text value in config, or plain-text value in config.
+A resource can be defined as a resource on classpath, file on the file system,
+base64 encoded text value in config, or plain-text value in config.
 
- If not defined, we will use `".oci/sessions/DEFAULT/oci_api_key.pem` file in user home directory.
+If not defined, we will use `".oci/sessions/DEFAULT/oci_api_key.pem` file in user home directory.
 
- The OCI authentication key file
+The OCI authentication key file
 |`refresh-period` |Duration |{nbsp} |Refresh period, i.e. how often refresh occurs.
- Defaults to 55 minutes (implemented in the authentication details provider).
+Defaults to 55 minutes (implemented in the authentication details provider).
 
- Refresh period
- See SessionTokenAuthenticationDetailsProviderBuilder.refreshPeriod(long)
+Refresh period
+See com.oracle.bmc.auth.SessionTokenAuthenticationDetailsProvider.SessionTokenAuthenticationDetailsProviderBuilder.refreshPeriod(long)
 |`region` |string |{nbsp} |The OCI region.
 
- The OCI region
+The OCI region
 |`session-lifetime-hours` |long |{nbsp} |Maximal lifetime of a session.
- Defaults to (and maximum is) 24 hours.
- Can only be set to a lower value.
+Defaults to (and maximum is) 24 hours.
+Can only be set to a lower value.
 
- Lifetime of a session in hours
+Lifetime of a session in hours
 |`session-token` |string |{nbsp} |Session token value.
- If both this value, and sessionTokenPath() is defined, this value is used.
+If both this value, and sessionTokenPath() is defined, this value is used.
 
- Session token
+Session token
 |`session-token-path` |Path |{nbsp} |Session token path.
- If both this value, and sessionToken() is defined, the value of sessionToken() is used.
+If both this value, and sessionToken() is defined, the value of sessionToken() is used.
 
- Session token path
+Session token path
 |`tenant-id` |string |{nbsp} |The OCI tenant id.
 
- This property must be provided in order to set the
- com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.getTenantId().
+This property must be provided in order to set the
+com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.getTenantId().
 
- The OCI tenant id
+The OCI tenant id
 |`user-id` |string |{nbsp} |The OCI user id.
 
- This property must be provided in order to set the
- com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.getUserId().
+This property must be provided in order to set the
+com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.getUserId().
 
- The OCI user id
+The OCI user id
 
 |===
 

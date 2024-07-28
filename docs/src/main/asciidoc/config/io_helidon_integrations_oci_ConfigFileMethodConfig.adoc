@@ -44,10 +44,10 @@ Type: link:{javadoc-base-url}/io.helidon.integrations.oci/io/helidon/integration
 
 |`path` |string |{nbsp} |The OCI configuration profile path.
 
- The OCI configuration profile path
+The OCI configuration profile path
 |`profile` |string |`DEFAULT` |The OCI configuration/auth profile name.
 
- The optional OCI configuration/auth profile name
+The optional OCI configuration/auth profile name
 
 |===
 

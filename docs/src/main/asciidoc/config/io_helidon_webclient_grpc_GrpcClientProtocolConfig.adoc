@@ -43,28 +43,28 @@ Type: link:{javadoc-base-url}/io.helidon.webclient.grpc/io/helidon/webclient/grp
 |key |type |default value |description
 
 |`abort-poll-time-expired` |boolean |`false` |Whether to continue retrying after a poll wait timeout expired or not. If a read
- operation timeouts out and this flag is set to `false`, the event is logged
- and the client will retry. Otherwise, an exception is thrown.
+operation timeouts out and this flag is set to `false`, the event is logged
+and the client will retry. Otherwise, an exception is thrown.
 
- Abort timeout flag
+Abort timeout flag
 |`heartbeat-period` |Duration |`PT0S` |How often to send a heartbeat (HTTP/2 ping) to check if the connection is still
- alive. This is useful for long-running, streaming gRPC calls. It is turned off by
- default but can be enabled by setting the period to a value greater than 0.
+alive. This is useful for long-running, streaming gRPC calls. It is turned off by
+default but can be enabled by setting the period to a value greater than 0.
 
- Heartbeat period
+Heartbeat period
 |`init-buffer-size` |int |`2048` |Initial buffer size used to serialize gRPC request payloads. Buffers shall grow
- according to the payload size, but setting this initial buffer size to a larger value
- may improve performance for certain applications.
+according to the payload size, but setting this initial buffer size to a larger value
+may improve performance for certain applications.
 
- Initial buffer size
+Initial buffer size
 |`name` |string |`grpc` |Name identifying this client protocol. Defaults to type.
 
- Name of client protocol
+Name of client protocol
 |`poll-wait-time` |Duration |`PT10S` |How long to wait for the next HTTP/2 data frame to arrive in underlying stream.
- Whether this is a fatal error or not is controlled by abortPollTimeExpired().
+Whether this is a fatal error or not is controlled by abortPollTimeExpired().
 
- Poll time as a duration
- See io.helidon.common.socket.SocketOptions.readTimeout()
+Poll time as a duration
+See io.helidon.common.socket.SocketOptions.readTimeout()
 
 |===
 

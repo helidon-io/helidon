@@ -56,75 +56,91 @@ This type provides the following service implementations:
 
 |`backward-compatible-eol` |boolean |`false` |Enable support for Helidon versions before 3.0.0 (exclusive).
 
- Until version 3.0.0 (exclusive) there was a trailing end of line added to the signed
- data.
- To be able to communicate cross versions, we must configure this when talking to older versions of Helidon.
- Default value is `false`. In Helidon 2.x, this switch exists as well and the default is `true`, to
- allow communication between versions as needed.
+Until version 3.0.0 (exclusive) there was a trailing end of line added to the signed
+data.
+To be able to communicate cross versions, we must configure this when talking to older versions of Helidon.
+Default value is `false`. In Helidon 2.x, this switch exists as well and the default is `true`, to
+allow communication between versions as needed.
 |`headers` |HttpSignHeader[&#93; (SIGNATURE, AUTHORIZATION, CUSTOM) |{nbsp} |Add a header that is validated on inbound requests. Provider may support more than
- one header to validate.
+one header to validate.
+
+Allowed values:
+
+- `SIGNATURE`: Creates (or validates) a "Signature" header.
+- `AUTHORIZATION`: Creates (or validates) an "Authorization" header, that contains "Signature" as the
+beginning of its content (the rest of the header is the same as for SIGNATURE.
+- `CUSTOM`: Custom provided using a io.helidon.security.util.TokenHandler.
+
 |`inbound.keys` |xref:{rootdir}/config/io_helidon_security_providers_httpsign_InboundClientDefinition.adoc[InboundClientDefinition[&#93;] |{nbsp} |Add inbound configuration. This is used to validate signature and authenticate the
- party.
+party.
 
- The same can be done through configuration:
- <pre>
- {
-  name = "http-signatures"
-  class = "HttpSignProvider"
-  http-signatures {
-      inbound {
-          # This configures the InboundClientDefinition
-          keys: [
-          {
-              key-id = "service1"
-              hmac.secret = "${CLEAR=password}"
-          }]
-      }
-  }
+The same can be done through configuration:
+
+----
+
+{
+ name = "http-signatures"
+ class = "HttpSignProvider"
+ http-signatures {
+     inbound {
+         # This configures the InboundClientDefinition
+         keys: [
+         {
+             key-id = "service1"
+             hmac.secret = "${CLEAR=password}"
+         }]
+     }
  }
- </pre>
+}
+
+----
+
 |`optional` |boolean |`true` |Set whether the signature is optional. If set to true (default), this provider will
- SecurityResponse.SecurityStatus.ABSTAIN from this request if signature is not
- present. If set to false, this provider will SecurityResponse.SecurityStatus.FAILURE fail
- if signature is not present.
+SecurityResponse.SecurityStatus.ABSTAIN from this request if signature is not
+present. If set to false, this provider will SecurityResponse.SecurityStatus.FAILURE fail
+if signature is not present.
 |`outbound` |xref:{rootdir}/config/io_helidon_security_providers_common_OutboundConfig.adoc[OutboundConfig] |{nbsp} |Add outbound targets to this builder.
- The targets are used to chose what to do for outbound communication.
- The targets should have OutboundTargetDefinition attached through
- OutboundTarget.Builder.customObject(Class, Object) to tell us how to sign
- the request.
+The targets are used to chose what to do for outbound communication.
+The targets should have OutboundTargetDefinition attached through
+OutboundTarget.Builder.customObject(Class, Object) to tell us how to sign
+the request.
 
- The same can be done through configuration:
- <pre>
- {
-  name = "http-signatures"
-  class = "HttpSignProvider"
-  http-signatures {
-      targets: [
-      {
-          name = "service2"
-          hosts = ["localhost"]
-          paths = ["/service2/.*"]
+The same can be done through configuration:
 
-          # This configures the OutboundTargetDefinition
-          signature {
-              key-id = "service1"
-              hmac.secret = "${CLEAR=password}"
-          }
-      }]
-  }
+----
+
+{
+ name = "http-signatures"
+ class = "HttpSignProvider"
+ http-signatures {
+     targets: [
+     {
+         name = "service2"
+         hosts = ["localhost"]
+         paths = ["/service2/.*"]
+
+         # This configures the OutboundTargetDefinition
+         signature {
+             key-id = "service1"
+             hmac.secret = "${CLEAR=password}"
+         }
+     }]
  }
- </pre>
-|`realm` |string |`helidon` |Realm to use for challenging inbound requests that do not have "Authorization" header
- in case header is HttpSignHeader.AUTHORIZATION and singatures are not optional.
-|`sign-headers` |xref:{rootdir}/config/io_helidon_security_providers_httpsign_SignedHeadersConfig_HeadersConfig.adoc[HeadersConfig[&#93;] |{nbsp} |Override the default inbound required headers (e.g. headers that MUST be signed and
- headers that MUST be signed IF present).
+}
 
- Defaults:
+----
+
+|`realm` |string |`helidon` |Realm to use for challenging inbound requests that do not have "Authorization" header
+in case header is HttpSignHeader.AUTHORIZATION and singatures are not optional.
+|`sign-headers` |xref:{rootdir}/config/io_helidon_security_providers_httpsign_SignedHeadersConfig_HeadersConfig.adoc[HeadersConfig[&#93;] |{nbsp} |Override the default inbound required headers (e.g. headers that MUST be signed and
+headers that MUST be signed IF present).
+
+Defaults:
 
 - get, head, delete methods: date, (request-target), host are mandatory; authorization if present (unless we are
- creating/validating the HttpSignHeader.AUTHORIZATION ourselves
+creating/validating the HttpSignHeader.AUTHORIZATION ourselves
 - put, post: same as above, with addition of: content-length, content-type and digest if present
- 
+
 - for other methods: date, (request-target)
 
 Note that this provider DOES NOT validate the "Digest" HTTP header, only the signature.

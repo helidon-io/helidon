@@ -50,36 +50,36 @@ This type provides the following service implementations:
 
 |`cors` |xref:{rootdir}/config/io_helidon_cors_CrossOriginConfig.adoc[CrossOriginConfig] |{nbsp} |CORS config.
 
- CORS config
+CORS config
 |`enabled` |boolean |`true` |Sets whether the feature should be enabled.
 
- `true` if enabled, `false` otherwise
+`true` if enabled, `false` otherwise
 |`manager` |io.helidon.openapi.OpenApiManager (service provider interface) |{nbsp} |OpenAPI manager.
 
- The OpenAPI manager
+The OpenAPI manager
 |`permit-all` |boolean |`true` |Whether to allow anybody to access the endpoint.
 
- Whether to permit access to metrics endpoint to anybody, defaults to `true`
- See roles()
+Whether to permit access to metrics endpoint to anybody, defaults to `true`
+See roles()
 |`roles` |string[&#93; |`openapi` |Hints for role names the user is expected to be in.
 
- List of hints
+List of hints
 |`services` |io.helidon.openapi.OpenApiService[&#93; (service provider interface) |{nbsp} |OpenAPI services.
 
- The OpenAPI services
+The OpenAPI services
 |`sockets` |string[&#93; |{nbsp} |List of sockets to register this feature on. If empty, it would get registered on all sockets.
 
- Socket names to register on, defaults to empty (all available sockets)
+Socket names to register on, defaults to empty (all available sockets)
 |`static-file` |string |{nbsp} |Path of the static OpenAPI document file. Default types are `json`, `yaml`, and `yml`.
 
- Location of the static OpenAPI document file
+Location of the static OpenAPI document file
 |`web-context` |string |`/openapi` |Web context path for the OpenAPI endpoint.
 
- WebContext to use
+WebContext to use
 |`weight` |double |`90.0` |Weight of the OpenAPI feature. This is quite low, to be registered after routing.
- io.helidon.openapi.OpenApiFeature.WEIGHT.
+io.helidon.openapi.OpenApiFeature.WEIGHT.
 
- Weight of the feature
+Weight of the feature
 
 |===
 

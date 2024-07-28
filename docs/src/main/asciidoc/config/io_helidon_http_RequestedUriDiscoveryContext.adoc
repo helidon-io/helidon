@@ -46,6 +46,19 @@ Type: link:{javadoc-base-url}/io.helidon.http/io/helidon/http/RequestedUriDiscov
 |`trusted-proxies` |xref:{rootdir}/config/io_helidon_common_configurable_AllowList.adoc[AllowList] |{nbsp} |Sets the trusted proxies for requested URI discovery for requests arriving on the socket.
 |`types` |RequestedUriDiscoveryType[&#93; (FORWARDED, X_FORWARDED, HOST) |{nbsp} |Sets the discovery types for requested URI discovery for requests arriving on the socket.
 
+Allowed values:
+
+- `FORWARDED`: The `io.helidon.http.Header#FORWARDED` header is used to discover the original requested URI.
+- `X_FORWARDED`: The
+`io.helidon.http.Header#X_FORWARDED_PROTO`,
+`io.helidon.http.Header#X_FORWARDED_HOST`,
+`io.helidon.http.Header#X_FORWARDED_PORT`,
+`io.helidon.http.Header#X_FORWARDED_PREFIX`
+headers are used to discover the original requested URI.
+- `HOST`: This is the default, only the `io.helidon.http.Header#HOST` header is used to discover
+requested URI.
+
+
 |===
 
 // end::config[]
