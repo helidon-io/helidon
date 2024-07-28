@@ -1,0 +1,36 @@
+{
+    "nulls": {
+        "field": null
+    },
+    "array": [
+        true,
+        null,
+        "string",
+        14,
+        {
+            "object": "value"
+        },
+        [
+            "first",
+            "second"
+        ]
+    ],
+    "escapes": {
+        "newline": "a\nb",
+        "quotes": "a\"b",
+        "backslash": "a\\b",
+        "slash": "a\/b",
+        "backspace": "a\bb",
+        "formfeed": "a\fb",
+        "cr": "a\rb",
+        "tab": "a\tb",
+        "unicode": "a\u0048b"
+    },
+    "numbers": {
+        "number1": 1,
+        "number2": 1.5,
+        "number3": 1.5e2,
+        "number4": 1.5e-2,
+        "number5": 1.5e+2
+    }
+}
