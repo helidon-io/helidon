@@ -1,0 +1,86 @@
+{{!
+Copyright (c) 2024 Oracle and/or its affiliates.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+}}///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) {{year}} Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+:description: Configuration of {{type.type}}
+:keywords: helidon, config, {{type.type}}
+:basic-table-intro: The table below lists the configuration keys that configure {{type.type}}
+include::{rootdir}/includes/attributes.adoc[]
+
+= {{type.title}} Configuration
+
+// tag::config[]
+{{#if type.description}}
+{{type.description}}
+{{/if}}
+
+Type: {{type.typeReference}}
+
+{{#if type.standalone}}
+This is a standalone configuration type, prefix from configuration root: `{{type.prefix}}`
+{{else if type.prefix}}
+[source,text]
+.Config key
+----
+{{type.prefix}}
+----
+{{/if}}
+
+{{#if type.hasProvides}}This type provides the following service implementations:
+
+{{#each type.provides}}- `{{this}}`
+{{/each}}
+{{/if}}
+== Configuration options
+{{#if hasRequired}}
+.Required configuration options
+[cols="3,3a,2,5a"]
+|===
+|key |type |default value |description
+
+{{#each type.options}}{{#if this.required}}|{{#if this.deprecated}}[.line-through]#{{/if}}`{{this.key}}`{{#if this.deprecated}}#{{/if}} |{{{this.refType}}} |{{#if this.defaultValue}}`{{this.defaultValue}}`{{else}}{nbsp}{{/if}} |{{#if this.deprecated}}*Deprecated* {{/if}}{{#if this.experimental}}*Experimental* {{/if}}{{{this.description}}}
+{{/if}}{{/each}}
+|===
+{{/if}}
+
+{{#if hasOptional}}
+.Optional configuration options
+[cols="3,3a,2,5a"]
+
+|===
+|key |type |default value |description
+
+{{#each type.options}}{{#unless this.required}}|{{#if this.deprecated}}[.line-through]#{{/if}}`{{this.key}}`{{#if this.deprecated}}#{{/if}} |{{{this.refType}}} |{{#if this.defaultValue}}`{{this.defaultValue}}`{{else}}{nbsp}{{/if}} |{{#if this.deprecated}}*Deprecated* {{/if}}{{#if this.experimental}}*Experimental* {{/if}}{{{this.description}}}
+{{/unless}}{{/each}}
+|===
+{{/if}}
+// end::config[]
