@@ -1447,6 +1447,13 @@
                 <version>${helidon.version}</version>
             </dependency>
 
+            <!-- Metadata -->
+            <dependency>
+                <groupId>io.helidon.metadata</groupId>
+                <artifactId>helidon-metadata-hson</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+
             <!-- Injection Integrations related -->
             <dependency>
                 <groupId>io.helidon.integrations.oci.sdk</groupId>
