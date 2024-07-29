@@ -176,7 +176,7 @@
                         <goals>
                             <goal>parse-version</goal>
                         </goals>
-                        <phase>validate</phase>
+                        <phase>initialize</phase>
                         <configuration>
                             <propertyPrefix>parsedHelidonVersion</propertyPrefix>
                         </configuration>
@@ -188,7 +188,7 @@
                 <artifactId>openapi-generator-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>create-openapi-generator-project</id>
+                        <id>create-openapi-generator-project-mp</id>
                         <goals>
                             <goal>generate</goal>
                         </goals>
@@ -206,8 +206,33 @@
                                 <groupId>io.helidon.docs.openapi.gen.mp</groupId>
                                 <artifactId>helidon-docs-openapi-gen-mp-client</artifactId>
                                 <apiPackage>io.helidon.docs.openapi.gen.mp.client.api</apiPackage>
-                                <modelPackage>io.helidon.docs.openapi.gen.model</modelPackage>
+                                <modelPackage>io.helidon.docs.openapi.gen.mp.model</modelPackage>
                                 <invokerPackage>io.helidon.docs.openapi.gen.mp.client</invokerPackage>
+                            </configOptions>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>create-openapi-generator-project-se-server-useabstractclass</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <phase>generate-sources</phase>
+                        <configuration>
+                            <generatorName>java-helidon-server</generatorName>
+                            <library>se</library>
+                            <inputSpec>${project.basedir}/src/main/resources/petstorex.yaml</inputSpec>
+                            <additionalProperties>
+                                <additionalProperty>helidonVersion=${parsedHelidonVersion.majorVersion}</additionalProperty>
+                                <additionalProperty>useAbstractClass=true</additionalProperty>
+                            </additionalProperties>
+                            <output>${project.build.directory}/generated-sources/se/server</output>
+                            <addCompileSourceRoot>true</addCompileSourceRoot>
+                            <configOptions>
+                                <groupId>io.helidon.docs.openapi.gen.se</groupId>
+                                <artifactId>helidon-docs-openapi-gen-se-server</artifactId>
+                                <apiPackage>io.helidon.docs.se.openapi.gen.server.api</apiPackage>
+                                <modelPackage>io.helidon.docs.se.openapi.gen.model</modelPackage>
+                                <invokerPackage>io.helidon.docs.se.openapi.gen.server</invokerPackage>
                             </configOptions>
                         </configuration>
                     </execution>

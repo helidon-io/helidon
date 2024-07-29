@@ -22,7 +22,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 
-import io.helidon.docs.openapi.gen.model.Pet;
+import io.helidon.docs.openapi.gen.mp.model.Pet;
 import io.helidon.docs.openapi.gen.mp.client.api.ApiException;
 import io.helidon.docs.openapi.gen.mp.client.api.PetApi;
 

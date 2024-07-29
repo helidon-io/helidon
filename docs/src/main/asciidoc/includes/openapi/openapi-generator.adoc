@@ -307,7 +307,7 @@ Among the many configuration settings available to you, some you should particul
 
 |Version of Helidon for which to generate the files
 | {nbsp}
-|`2.5.2`
+|Latest published Helidon release *
 a|Affects:
 
 * Helidon version for the `<parent>`
@@ -327,11 +327,13 @@ and the model classes.
 |`jackson`
 |
 |===
+* The generator attempts to retrieve the list of released Helidon versions from the Helidon website, falling back to locally-stored Java preferences loaded from the previous generator run, and as a last resort using hard-coded values for each major Helidon release.
 
 
 // end::config[]
 
 // tag::usage[]
+// tag::usage-basics[]
 
 [[usage-section]]
 == Usage
@@ -400,15 +402,24 @@ The generator replaces the generated classes or interfaces but does not touch ot
 
 The Helidon _client_ generator always creates concrete classes. Typically, you do not need to customize the behavior in the generated client API classes. If you choose to do so, write your own subclass of the generated client API class; _do not_ modify the generated files.
 
-==== Grouping Operations into "APIs"
-Each operation in an OpenAPI document can have a `tags` attribute.
-The generators group operations with the same `tags` value into the same API.
+// end::usage-basics[]
+// tag::usage-grouping-intro[]
 
+==== Grouping Operations into APIs
+Each operation in an OpenAPI document can have a `tags` attribute.
+By default, the generators group operations with the same `tags` value into the same API or service. Alternatively, if you specify the option `x-helidon-groupBy` as `first-path-segment`, the generators use the first segment of the path to group operations together.
+
+// end::usage-grouping-intro[]
+// tag::usage-grouping-server[]
 When you generate a Helidon {flavor-uc} server, the generator creates a separate interface or class for each API your service _exposes_.
 You implement each interface or extend each class to add your business logic for that API.
+// end::usage-grouping-server[]
+// tag::usage-grouping-client[]
 
 When you generate a Helidon {flavor-uc} client, the generated code contains a separate API class for each distinct API your code might _invoke_.
 
+// end::usage-grouping-client[]
+// tag::usage-after-grouping[]
 [[usage-running]]
 === Running the OpenAPI Generators
 
@@ -522,6 +533,7 @@ Before you use the online generator, consider whether any of the input you provi
 
 This document does not explore further the use of the online generator.
 
+// end::usage-after-grouping[]
 // end::usage[]
 
 
@@ -536,8 +548,9 @@ The Helidon generators go a long way in helping you write your client or server.
 // tag::using-generated-code-server-intro[]
 
 === Completing the Server
-Recall from earlier how the OpenAPI generator gathers operations into one or more "APIs" and generates either a class or an interface--your choice--for each API.
+Recall from earlier how the OpenAPI generator gathers operations into one or more APIs or services and generates either an abstract class or an interface--your choice--for each API.
 You need to extend each generated API class or implement each generated API interface by writing your own classes.
+
 Any input parameters to the endpoints are expressed as POJO model objects or Java types, as declared in the OpenAPI document. Your server code uses each of the input parameters to accomplish whatever business purpose that endpoint is responsible for, possibly returning a result as a POJO or Java type as indicated for that operation in the OpenAPI document.
 // end::using-generated-code-server-intro[]
 
