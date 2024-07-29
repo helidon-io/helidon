@@ -113,6 +113,16 @@
    <vulnerabilityName>CVE-2024-20932</vulnerabilityName>
 </suppress>
 
+<!-- This low priority CVE does not apply to our use of the graalvm sdk.
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: graal-sdk-22.3.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\.sdk/graal-sdk@.*$</packageUrl>
+   <vulnerabilityName>CVE-2024-21138</vulnerabilityName>
+</suppress>
+
 <!-- 
     This CVE is being disputed by the Jackson project and the community seems in agreement that this
     CVE should be rejected. We are suppressing this for now to reduce noise in our scan and will
