@@ -679,7 +679,8 @@ public class Proxy {
 
         /**
          * Forces HTTP CONNECT with the proxy server.
-         * Otherwise it will not execute HTTP CONNECT for HTTP protocol.
+         * Otherwise it will not execute HTTP CONNECT when the request is
+         * plain HTTP with no authentication.
          *
          * @param forceHttpConnect HTTP CONNECT
          * @return updated builder instance
