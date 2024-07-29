@@ -55,13 +55,8 @@ public final class Main {
         }
 
         Path path = targetPath.toAbsolutePath().normalize();
-        if (Files.exists(path) && Files.isDirectory(path)) {
-            ConfigDocs docs = ConfigDocs.create(path);
-            docs.process();
-        } else {
-            throw new IllegalArgumentException("Target path must be a directory and must exist: "
-                                                       + path.toAbsolutePath().normalize());
-        }
+        ConfigDocs docs = ConfigDocs.create(path);
+        docs.process();
     }
 
     private static Path findReasonablePath() {

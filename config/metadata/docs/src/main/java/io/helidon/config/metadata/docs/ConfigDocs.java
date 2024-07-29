@@ -19,6 +19,7 @@ package io.helidon.config.metadata.docs;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
 import java.lang.System.Logger.Level;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -60,7 +61,6 @@ public class ConfigDocs {
     private static final System.Logger LOGGER = System.getLogger(ConfigDocs.class.getName());
     private static final String CONFIG_REFERENCE_ADOC = "config_reference.adoc";
     private static final String METADATA_JSON_LOCATION = "META-INF/helidon/config-metadata.json";
-    private static final String CODEGEN_BOUNDARY = "// do not remove: codegen boundary";
     private static final String RELATIVE_PATH_ADOC = "{rootdir}/config/";
     private static final Pattern MODULE_PATTERN = Pattern.compile("(.*?)(\\.spi)?\\.([a-zA-Z0-9]*?)");
     private static final Pattern COPYRIGHT_LINE_PATTERN = Pattern.compile(".*Copyright \\(c\\) (.*) Oracle and/or its "
@@ -90,7 +90,7 @@ public class ConfigDocs {
      * Create a new instance that will update config reference documentation in the {code targetPath}.
      *
      * @param targetPath path of the config reference documentation, must contain the {@value #CONFIG_REFERENCE_ADOC}
-     *                   file, with {@value #CODEGEN_BOUNDARY} boundary String, after which the list of all files is pasted
+     *                   file, or be empty
      * @return new instance of config documentation to call {@link #process()} on
      */
     public static ConfigDocs create(Path targetPath) {
@@ -171,24 +171,16 @@ public class ConfigDocs {
      * The documentation is updated, including copyright years
      */
     public void process() {
-        // make sure it contains the config_reference.adoc
         Path configReference = path.resolve(ConfigDocs.CONFIG_REFERENCE_ADOC);
-        if (!(Files.exists(configReference) && Files.isRegularFile(configReference))) {
-            throw new ConfigDocsException("Cannot generate config reference documentation, unless target path contains "
-                                                  + CONFIG_REFERENCE_ADOC + " file. Target path: " + path.toAbsolutePath());
+        try {
+            checkTargetPath(configReference);
+        } catch (IOException e) {
+            throw new ConfigDocsException("Failed to check if target path exists and is valid", e);
         }
 
         Handlebars handlebars = new Handlebars();
-        URL resource = ConfigDocs.class.getResource("type-docs.adoc.hbs");
-        if (resource == null) {
-            throw new ConfigDocsException("Failed to locate required handlebars template on classpath: type-docs.adoc.hbs");
-        }
-        Template template;
-        try {
-            template = handlebars.compile(new URLTemplateSource("type-docs.adoc.hbs", resource));
-        } catch (IOException e) {
-            throw new ConfigDocsException("Failed to load handlebars template on classpath: type-docs.adoc.hbs", e);
-        }
+        Template typeTemplate = template(handlebars, "type-docs.adoc.hbs");
+        Template configReferenceTemplate = template(handlebars, "config_reference.adoc.hbs");
 
         Enumeration<URL> files;
         try {
@@ -233,31 +225,13 @@ public class ConfigDocs {
 
         List<String> generatedFiles = new LinkedList<>();
         for (CmModule module : allModules) {
-            moduleDocs(configuredTypes, template, path, module, generatedFiles);
+            moduleDocs(configuredTypes, typeTemplate, path, module, generatedFiles);
         }
 
         // sort alphabetically by page title
         generatedFiles.sort(Comparator.comparing(ConfigDocs::titleFromFileName));
 
-        try {
-            List<String> existingLines = Files.readAllLines(configReference, StandardCharsets.UTF_8);
-            List<String> newLines = new ArrayList<>();
-            for (String existingLine : existingLines) {
-                newLines.add(existingLine);
-                if (existingLine.equals(CODEGEN_BOUNDARY)) {
-                    break;
-                }
-            }
-
-            for (String generatedFile : generatedFiles) {
-                newLines.add("- xref:" + RELATIVE_PATH_ADOC + generatedFile + "[" + titleFromFileName(generatedFile) + "]");
-            }
-
-            LOGGER.log(Level.INFO, "Updating " + configReference.toAbsolutePath());
-            Files.write(configReference, newLines);
-        } catch (IOException e) {
-            LOGGER.log(Level.ERROR, "Failed to update " + configReference.toAbsolutePath(), e);
-        }
+        generateConfigReference(configReference, configReferenceTemplate, generatedFiles);
 
         // and now report obsolete files
         // filter out generated files
@@ -427,9 +401,9 @@ public class ConfigDocs {
         }
     }
 
-    private static boolean sameContent(Path typePath, CharSequence current) {
+    private static boolean sameContent(Path path, CharSequence current) {
         try {
-            return Files.readString(typePath).equals(current.toString());
+            return Files.readString(path).equals(current.toString());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -443,6 +417,23 @@ public class ConfigDocs {
         List<CmOption> options = new ArrayList<>(type.getOptions());
         options.sort(Comparator.comparing(CmOption::getKey));
         type.setOptions(options);
+    }
+
+    private static CharSequence configReferenceFile(Template template,
+                                                    List<String> generatedFiles,
+                                                    String copyrightYears) {
+        List<CmReference> references = new ArrayList<>();
+        for (String generatedFile : generatedFiles) {
+            references.add(new CmReference(generatedFile,
+                                           titleFromFileName(generatedFile)));
+        }
+        Map<String, Object> context = Map.of("year", copyrightYears,
+                                             "data", references);
+        try {
+            return template.apply(context);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private static CharSequence typeFile(Map<String, CmType> configuredTypes,
@@ -468,12 +459,12 @@ public class ConfigDocs {
         return template.apply(context);
     }
 
-    private static String newCopyrightYears(Path typePath) {
+    private static String newCopyrightYears(Path path) {
         String currentYear = String.valueOf(ZonedDateTime.now().getYear());
 
-        if (Files.exists(typePath)) {
+        if (Files.exists(path)) {
             // get current copyright year
-            String copyrightYears = currentCopyrightYears(typePath);
+            String copyrightYears = currentCopyrightYears(path);
             if (copyrightYears == null) {
                 return currentYear;
             }
@@ -489,8 +480,8 @@ public class ConfigDocs {
         return currentYear;
     }
 
-    private static String currentCopyrightYears(Path typePath) {
-        try (var lines = Files.lines(typePath)) {
+    private static String currentCopyrightYears(Path path) {
+        try (var lines = Files.lines(path)) {
             return lines.flatMap(line -> {
                         Matcher matcher = COPYRIGHT_LINE_PATTERN.matcher(line);
                         if (matcher.matches()) {
@@ -501,7 +492,7 @@ public class ConfigDocs {
                     .findFirst()
                     .orElse(null);
         } catch (IOException e) {
-            LOGGER.log(Level.WARNING, "Could not discover existing copyright year for " + typePath.toAbsolutePath(), e);
+            LOGGER.log(Level.WARNING, "Could not discover existing copyright year for " + path.toAbsolutePath(), e);
             return null;
         }
     }
@@ -602,6 +593,70 @@ public class ConfigDocs {
 
         return displayType
                 + " (" + values.stream().map(CmAllowedValue::getValue).collect(Collectors.joining(", ")) + ")";
+    }
+
+    // the target path must either contain zero files, or the config reference
+    // and it must exist
+    private void checkTargetPath(Path configReference) throws IOException {
+        if (Files.exists(path) && Files.isDirectory(path)) {
+            // either empty, or contains config reference
+            if (Files.exists(configReference) && Files.isRegularFile(configReference)) {
+                return;
+            }
+            // must be empty
+            try (Stream<Path> stream = Files.list(path)) {
+                if (stream.findAny()
+                        .isPresent()) {
+
+                    throw new ConfigDocsException("Cannot generate config reference documentation, unless target path contains "
+                                                          + CONFIG_REFERENCE_ADOC + " file or it is empty. "
+                                                          + "Target path: " + path.toAbsolutePath() + " contains files");
+                }
+            }
+        } else {
+            throw new IllegalArgumentException("Target path must be a directory and must exist: "
+                                                       + path.toAbsolutePath().normalize());
+        }
+    }
+
+    private Template template(Handlebars handlebars, String template) {
+        URL resource = ConfigDocs.class.getResource(template);
+        if (resource == null) {
+            throw new ConfigDocsException("Failed to locate required handlebars template on classpath: " + template);
+        }
+        Template typeTemplate;
+        Template configReferenceTemplate;
+        try {
+            return handlebars.compile(new URLTemplateSource(template, resource));
+        } catch (IOException e) {
+            throw new ConfigDocsException("Failed to load handlebars template on classpath: " + template, e);
+        }
+    }
+
+    private void generateConfigReference(Path configReference, Template template, List<String> generatedFiles) {
+        if (Files.exists(configReference)) {
+            // if content not modified, do not update copyright
+            CharSequence current = configReferenceFile(template,
+                                                       generatedFiles,
+                                                       currentCopyrightYears(configReference));
+            if (sameContent(configReference, current)) {
+                return;
+            }
+        }
+
+        CharSequence fileContent = configReferenceFile(template,
+                                                       generatedFiles,
+                                                       newCopyrightYears(configReference));
+
+        try {
+            LOGGER.log(Level.INFO, "Updating " + configReference.toAbsolutePath());
+            Files.writeString(configReference,
+                              fileContent,
+                              StandardOpenOption.TRUNCATE_EXISTING,
+                              StandardOpenOption.CREATE);
+        } catch (IOException e) {
+            LOGGER.log(Level.ERROR, "Failed to update " + configReference.toAbsolutePath(), e);
+        }
     }
 
     private void addTitle(Map<String, CmType> configuredTypes) {
@@ -775,7 +830,8 @@ public class ConfigDocs {
 
         List<String> inherits = next.getInherits();
         // Traverse from higher to lower in the inheritance structure so more specific settings take precedence.
-        for (ListIterator<String> inheritsIt = inherits.listIterator(inherits.size()); inheritsIt.hasPrevious();) {
+        ListIterator<String> inheritsIt = inherits.listIterator(inherits.size());
+        while (inheritsIt.hasPrevious()) {
             resolved.get(inheritsIt.previous())
                     .getOptions()
                     .forEach(inheritedOption -> options.put(inheritedOption.getKey(), inheritedOption));
