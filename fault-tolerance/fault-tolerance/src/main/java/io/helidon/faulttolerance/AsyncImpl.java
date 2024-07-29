@@ -32,7 +32,7 @@ class AsyncImpl implements Async {
     private final CompletableFuture<Async> onStart;
     private final AsyncConfig config;
 
-    AsyncImpl(AsyncConfig config, boolean internal) {
+    AsyncImpl(AsyncConfig config) {
         this.executor = config.executor().orElseGet(() -> FaultTolerance.executor().get());
         this.onStart = config.onStart().orElseGet(CompletableFuture::new);
         this.config = config;
