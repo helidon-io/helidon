@@ -1,0 +1,285 @@
+[
+    {
+        "module": "io.helidon.common.configurable",
+        "types": [
+            {
+                "annotatedType": "io.helidon.common.configurable.ResourceConfig",
+                "type": "io.helidon.common.configurable.Resource",
+                "is": true,
+                "number": 49,
+                "producers": [
+                    "io.helidon.common.configurable.ResourceConfig#create(io.helidon.common.config.Config)",
+                    "io.helidon.common.configurable.ResourceConfig#builder()",
+                    "io.helidon.common.configurable.Resource#create(io.helidon.common.configurable.ResourceConfig)"
+                ],
+                "options": [
+                    {
+                        "description": "Resource is located on filesystem.\n\n Path of the resource",
+                        "key": "path",
+                        "method": "io.helidon.common.configurable.ResourceConfig.Builder#path(java.util.Optional<java.nio.file.Path>)",
+                        "type": "java.nio.file.Path"
+                    },
+                    {
+                        "description": "Resource is located on classpath.\n\n Classpath location of the resource",
+                        "key": "resource-path",
+                        "method": "io.helidon.common.configurable.ResourceConfig.Builder#resourcePath(java.util.Optional<java.lang.String>)"
+                    },
+                    {
+                        "description": "Host of the proxy when using URI.\n\n Proxy host",
+                        "key": "proxy-host",
+                        "method": "io.helidon.common.configurable.ResourceConfig.Builder#proxyHost(java.util.Optional<java.lang.String>)"
+                    },
+                    {
+                        "description": "Resource is available on a java.net.URI.\n\n Of the resource\n See proxy()\n See useProxy()",
+                        "key": "uri",
+                        "method": "io.helidon.common.configurable.ResourceConfig.Builder#uri(java.util.Optional<java.net.URI>)",
+                        "type": "java.net.URI"
+                    },
+                    {
+                        "defaultValue": "true",
+                        "description": "Whether to use proxy. If set to `false`, proxy will not be used even if configured.\n When set to `true` (default), proxy will be used if configured.\n\n Whether to use proxy if configured",
+                        "key": "use-proxy",
+                        "method": "io.helidon.common.configurable.ResourceConfig.Builder#useProxy(boolean)",
+                        "type": "java.lang.Boolean"
+                    },
+                    {
+                        "description": "Plain content of the resource (text).\n\n Plain content",
+                        "key": "content-plain",
+                        "method": "io.helidon.common.configurable.ResourceConfig.Builder#contentPlain(java.util.Optional<java.lang.String>)"
+                    },
+                    {
+                        "defaultValue": "80",
+                        "description": "Port of the proxy when using URI.\n\n Proxy port",
+                        "key": "proxy-port",
+                        "method": "io.helidon.common.configurable.ResourceConfig.Builder#proxyPort(int)",
+                        "type": "java.lang.Integer"
+                    },
+                    {
+                        "defaultValue": "",
+                        "description": "Description of this resource when configured through plain text or binary.\n\n Description",
+                        "key": "description",
+                        "method": "io.helidon.common.configurable.ResourceConfig.Builder#description(java.lang.String)"
+                    },
+                    {
+                        "description": "Binary content of the resource (base64 encoded).\n\n Binary content",
+                        "key": "content",
+                        "method": "io.helidon.common.configurable.ResourceConfig.Builder#content(java.util.Optional<java.lang.String>)"
+                    }
+                ]
+            },
+            {
+                "annotatedType": "io.helidon.common.configurable.AllowListConfig",
+                "type": "io.helidon.common.configurable.AllowList",
+                "producers": [
+                    "io.helidon.common.configurable.AllowListConfig#create(io.helidon.common.config.Config)",
+                    "io.helidon.common.configurable.AllowListConfig#builder()",
+                    "io.helidon.common.configurable.AllowList#create(io.helidon.common.configurable.AllowListConfig)"
+                ],
+                "options": [
+                    {
+                        "defaultValue": "false",
+                        "description": "Allows all strings to match (subject to \"deny\" conditions). An `allow.all` setting of `false` does\n not deny all strings but rather represents the absence of a universal match, meaning that other allow and deny settings\n determine the matching outcomes.\n\n Whether to allow all strings to match (subject to \"deny\" conditions)",
+                        "key": "allow.all",
+                        "method": "io.helidon.common.configurable.AllowListConfig.Builder#allowAll(boolean)",
+                        "type": "java.lang.Boolean"
+                    },
+                    {
+                        "description": "Patterns specifying strings to allow.\n\n Patterns which allow matching",
+                        "key": "allow.pattern",
+                        "kind": "LIST",
+                        "method": "io.helidon.common.configurable.AllowListConfig.Builder#allowedPatterns(java.util.List<java.util.regex.Pattern>)",
+                        "type": "java.util.regex.Pattern"
+                    },
+                    {
+                        "description": "Suffixes specifying strings to deny.\n\n Suffixes which deny matching",
+                        "key": "deny.suffix",
+                        "kind": "LIST",
+                        "method": "io.helidon.common.configurable.AllowListConfig.Builder#deniedSuffixes(java.util.List<java.lang.String>)"
+                    },
+                    {
+                        "description": "Prefixes specifying strings to allow.\n\n Prefixes which allow matching",
+                        "key": "allow.prefix",
+                        "kind": "LIST",
+                        "method": "io.helidon.common.configurable.AllowListConfig.Builder#allowedPrefixes(java.util.List<java.lang.String>)"
+                    },
+                    {
+                        "description": "Exact strings to deny.\n\n Exact strings to allow",
+                        "key": "deny.exact",
+                        "kind": "LIST",
+                        "method": "io.helidon.common.configurable.AllowListConfig.Builder#denied(java.util.List<java.lang.String>)"
+                    },
+                    {
+                        "description": "Patterns specifying strings to deny.\n\n Patterns which deny matching",
+                        "key": "deny.pattern",
+                        "kind": "LIST",
+                        "method": "io.helidon.common.configurable.AllowListConfig.Builder#deniedPatterns(java.util.List<java.util.regex.Pattern>)",
+                        "type": "java.util.regex.Pattern"
+                    },
+                    {
+                        "description": "Exact strings to allow.\n\n Exact strings to allow",
+                        "key": "allow.exact",
+                        "kind": "LIST",
+                        "method": "io.helidon.common.configurable.AllowListConfig.Builder#allowed(java.util.List<java.lang.String>)"
+                    },
+                    {
+                        "description": "Prefixes specifying strings to deny.\n\n Prefixes which deny matching",
+                        "key": "deny.prefix",
+                        "kind": "LIST",
+                        "method": "io.helidon.common.configurable.AllowListConfig.Builder#deniedPrefixes(java.util.List<java.lang.String>)"
+                    },
+                    {
+                        "description": "Suffixes specifying strings to allow.\n\n Suffixes which allow matching",
+                        "key": "allow.suffix",
+                        "kind": "LIST",
+                        "method": "io.helidon.common.configurable.AllowListConfig.Builder#allowedSuffixes(java.util.List<java.lang.String>)"
+                    }
+                ]
+            },
+            {
+                "annotatedType": "io.helidon.common.configurable.ThreadPoolConfig",
+                "type": "io.helidon.common.configurable.ThreadPoolSupplier",
+                "producers": [
+                    "io.helidon.common.configurable.ThreadPoolConfig#create(io.helidon.common.config.Config)",
+                    "io.helidon.common.configurable.ThreadPoolConfig#builder()",
+                    "io.helidon.common.configurable.ThreadPoolSupplier#create(io.helidon.common.configurable.ThreadPoolConfig)"
+                ],
+                "options": [
+                    {
+                        "defaultValue": "50",
+                        "description": "Max pool size of the thread pool executor.\n Defaults to DEFAULT_MAX_POOL_SIZE.\n\n MaxPoolSize see java.util.concurrent.ThreadPoolExecutor.getMaximumPoolSize()",
+                        "key": "max-pool-size",
+                        "method": "io.helidon.common.configurable.ThreadPoolConfig.Builder#maxPoolSize(int)",
+                        "type": "java.lang.Integer"
+                    },
+                    {
+                        "defaultValue": "PT3M",
+                        "description": "Keep alive of the thread pool executor.\n Defaults to DEFAULT_KEEP_ALIVE.\n\n Keep alive see java.util.concurrent.ThreadPoolExecutor.getKeepAliveTime(java.util.concurrent.TimeUnit)",
+                        "key": "keep-alive",
+                        "method": "io.helidon.common.configurable.ThreadPoolConfig.Builder#keepAlive(java.time.Duration)",
+                        "type": "java.time.Duration"
+                    },
+                    {
+                        "description": "Name prefix for threads in this thread pool executor.\n Defaults to DEFAULT_THREAD_NAME_PREFIX.\n\n Prefix of a thread name",
+                        "key": "thread-name-prefix",
+                        "method": "io.helidon.common.configurable.ThreadPoolConfig.Builder#threadNamePrefix(java.util.Optional<java.lang.String>)"
+                    },
+                    {
+                        "defaultValue": "true",
+                        "description": "Whether to prestart core threads in this thread pool executor.\n Defaults to DEFAULT_PRESTART.\n\n Whether to prestart the threads",
+                        "key": "should-prestart",
+                        "method": "io.helidon.common.configurable.ThreadPoolConfig.Builder#shouldPrestart(boolean)",
+                        "type": "java.lang.Boolean"
+                    },
+                    {
+                        "description": "When configured to `true`, an unbounded virtual executor service (project Loom) will be used.\n <p>\n If enabled, all other configuration options of this executor service are ignored!\n\n Whether to use virtual threads or not, defaults to `false`",
+                        "key": "virtual-threads",
+                        "method": "io.helidon.common.configurable.ThreadPoolConfig.Builder#virtualThreads(boolean)",
+                        "type": "java.lang.Boolean"
+                    },
+                    {
+                        "defaultValue": "10",
+                        "description": "Core pool size of the thread pool executor.\n Defaults to DEFAULT_CORE_POOL_SIZE.\n\n CorePoolSize see java.util.concurrent.ThreadPoolExecutor.getCorePoolSize()",
+                        "key": "core-pool-size",
+                        "method": "io.helidon.common.configurable.ThreadPoolConfig.Builder#corePoolSize(int)",
+                        "type": "java.lang.Integer"
+                    },
+                    {
+                        "description": "Name of this thread pool executor.\n\n The pool name",
+                        "key": "name",
+                        "method": "io.helidon.common.configurable.ThreadPoolConfig.Builder#name(java.util.Optional<java.lang.String>)"
+                    },
+                    {
+                        "defaultValue": "true",
+                        "description": "Is daemon of the thread pool executor.\n Defaults to DEFAULT_IS_DAEMON.\n\n Whether the threads are daemon threads",
+                        "key": "is-daemon",
+                        "method": "io.helidon.common.configurable.ThreadPoolConfig.Builder#daemon(boolean)",
+                        "type": "java.lang.Boolean"
+                    },
+                    {
+                        "defaultValue": "1000",
+                        "description": "The queue size above which pool growth will be considered if the pool is not fixed size.\n Defaults to DEFAULT_GROWTH_THRESHOLD.\n\n The growth threshold",
+                        "key": "growth-threshold",
+                        "method": "io.helidon.common.configurable.ThreadPoolConfig.Builder#growthThreshold(int)",
+                        "type": "java.lang.Integer"
+                    },
+                    {
+                        "defaultValue": "10000",
+                        "description": "Queue capacity of the thread pool executor.\n Defaults to DEFAULT_QUEUE_CAPACITY.\n\n Capacity of the queue backing the executor",
+                        "key": "queue-capacity",
+                        "method": "io.helidon.common.configurable.ThreadPoolConfig.Builder#queueCapacity(int)",
+                        "type": "java.lang.Integer"
+                    },
+                    {
+                        "defaultValue": "0",
+                        "description": "The percentage of task submissions that should result in adding threads, expressed as a value from 1 to 100. The\n rate applies only when all of the following are true:\n <ul>\n <li>the pool size is below the maximum, and</li>\n <li>there are no idle threads, and</li>\n <li>the number of tasks in the queue exceeds the `growthThreshold`</li>\n </ul>\n For example, a rate of 20 means that while these conditions are met one thread will be added for every 5 submitted\n tasks.\n <p>\n Defaults to DEFAULT_GROWTH_RATE\n\n The growth rate",
+                        "key": "growth-rate",
+                        "method": "io.helidon.common.configurable.ThreadPoolConfig.Builder#growthRate(int)",
+                        "type": "java.lang.Integer"
+                    }
+                ]
+            },
+            {
+                "annotatedType": "io.helidon.common.configurable.LruCacheConfig",
+                "type": "io.helidon.common.configurable.LruCache",
+                "producers": [
+                    "io.helidon.common.configurable.LruCacheConfig#create(io.helidon.common.config.Config)",
+                    "io.helidon.common.configurable.LruCacheConfig#builder()",
+                    "io.helidon.common.configurable.LruCache#create(io.helidon.common.configurable.LruCacheConfig)"
+                ],
+                "options": [
+                    {
+                        "defaultValue": "10000",
+                        "description": "Configure capacity of the cache. Defaults to LruCache.DEFAULT_CAPACITY.\n\n Maximal number of records in the cache before the oldest one is removed",
+                        "key": "capacity",
+                        "method": "io.helidon.common.configurable.LruCacheConfig.Builder#capacity(int)",
+                        "type": "java.lang.Integer"
+                    }
+                ]
+            },
+            {
+                "annotatedType": "io.helidon.common.configurable.ScheduledThreadPoolConfig",
+                "type": "io.helidon.common.configurable.ScheduledThreadPoolSupplier",
+                "producers": [
+                    "io.helidon.common.configurable.ScheduledThreadPoolConfig#create(io.helidon.common.config.Config)",
+                    "io.helidon.common.configurable.ScheduledThreadPoolConfig#builder()",
+                    "io.helidon.common.configurable.ScheduledThreadPoolSupplier#create(io.helidon.common.configurable.ScheduledThreadPoolConfig)"
+                ],
+                "options": [
+                    {
+                        "defaultValue": "false",
+                        "description": "Whether to prestart core threads in this thread pool executor.\n Defaults to DEFAULT_PRESTART.\n\n Whether to prestart the threads",
+                        "key": "prestart",
+                        "method": "io.helidon.common.configurable.ScheduledThreadPoolConfig.Builder#prestart(boolean)",
+                        "type": "java.lang.Boolean"
+                    },
+                    {
+                        "defaultValue": "helidon-",
+                        "description": "Name prefix for threads in this thread pool executor.\n Defaults to DEFAULT_THREAD_NAME_PREFIX.\n\n Prefix of a thread name",
+                        "key": "thread-name-prefix",
+                        "method": "io.helidon.common.configurable.ScheduledThreadPoolConfig.Builder#threadNamePrefix(java.lang.String)"
+                    },
+                    {
+                        "description": "When configured to `true`, an unbounded virtual executor service (project Loom) will be used.\n <p>\n If enabled, all other configuration options of this executor service are ignored!\n\n Whether to use virtual threads or not, defaults to `false`",
+                        "key": "virtual-threads",
+                        "method": "io.helidon.common.configurable.ScheduledThreadPoolConfig.Builder#virtualThreads(boolean)",
+                        "type": "java.lang.Boolean"
+                    },
+                    {
+                        "defaultValue": "16",
+                        "description": "Core pool size of the thread pool executor.\n Defaults to DEFAULT_CORE_POOL_SIZE.\n\n CorePoolSize see java.util.concurrent.ThreadPoolExecutor.getCorePoolSize()",
+                        "key": "core-pool-size",
+                        "method": "io.helidon.common.configurable.ScheduledThreadPoolConfig.Builder#corePoolSize(int)",
+                        "type": "java.lang.Integer"
+                    },
+                    {
+                        "defaultValue": "true",
+                        "description": "Is daemon of the thread pool executor.\n Defaults to DEFAULT_IS_DAEMON.\n\n Whether the threads are daemon threads",
+                        "key": "is-daemon",
+                        "method": "io.helidon.common.configurable.ScheduledThreadPoolConfig.Builder#daemon(boolean)",
+                        "type": "java.lang.Boolean"
+                    }
+                ]
+            }
+        ]
+    }
+]
