@@ -235,6 +235,19 @@ public class JsonTest {
         testFeaturesArray(object);
         testFeaturesEscapes(object);
         testFeaturesNumbers(object);
+
+        StringWriter sw = new StringWriter();
+        try (PrintWriter pw = new PrintWriter(sw)) {
+            object.write(pw);
+        }
+        String result = sw.toString();
+
+        assertThat(result,
+                   is("{\"nulls\":{\"field\":null},\"array\":[true,null,\"string\",14,{\"object\":\"value\"},[\"first\","
+                              + "\"second\"]],\"escapes\":{\"newline\":\"a\\nb\",\"quotes\":\"a\\\"b\","
+                              + "\"backslash\":\"a\\\\b\",\"slash\":\"a\\/b\",\"backspace\":\"a\\bb\",\"formfeed\":\"a\\fb\","
+                              + "\"cr\":\"a\\rb\",\"tab\":\"a\\tb\",\"unicode\":\"aHb\"},\"numbers\":{\"number1\":1,"
+                              + "\"number2\":1.5,\"number3\":1.5E+2,\"number4\":0.015,\"number5\":1.5E+2}}"));
     }
 
     private void testFeaturesNumbers(JObject object) {
@@ -247,6 +260,7 @@ public class JsonTest {
         assertThat(numbers.numberValue("number3"), optionalValue(is(new BigDecimal("1.5e2"))));
         assertThat(numbers.numberValue("number4"), optionalValue(is(new BigDecimal("1.5e-2"))));
         assertThat(numbers.numberValue("number5"), optionalValue(is(new BigDecimal("1.5e2"))));
+
     }
 
     private void testFeaturesEscapes(JObject object) {

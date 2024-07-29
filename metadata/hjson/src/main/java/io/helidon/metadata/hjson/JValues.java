@@ -76,13 +76,18 @@ final class JValues {
         }
 
         private String escape(String string) {
-            return string.replaceAll("\n", "\\\\n")
-                    .replaceAll("\"", "\\\\\"")
-                    .replaceAll("\t", "\\\\\t")
-                    .replaceAll("\r", "\\\\\r")
-                    // replace two backslashes with four backslashes
-                    .replaceAll("\\\\\\\\", "\\\\\\\\\\\\\\\\")
-                    .replaceAll("\f", "\\\\\f");
+            // replace two backslashes with four backslashes
+            String result = string.replaceAll("\\\\\\\\", "\\\\\\\\\\\\\\\\");
+            // backslash not followed by a backlash by two backslashes
+            result = result.replaceAll("\\\\($|[^\\\\])", "\\\\\\\\$1");
+            result = result.replaceAll("/", "\\\\/");
+            result = result.replaceAll("\"", "\\\\\"");
+            result = result.replaceAll("\n", "\\\\n");
+            result = result.replaceAll("\t", "\\\\t");
+            result = result.replaceAll("\r", "\\\\r");
+            result = result.replaceAll("\f", "\\\\f");
+            result = result.replaceAll("\b", "\\\\b");
+            return result;
         }
     }
 
