@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+
+    <output>
+        <files transformations="basedir">
+            <directory>files</directory>
+            <includes>
+                <include>src/main/resources/META-INF/init_script.sql</include>
+            </includes>
+        </files>
+        <model>
+            <value key="readme-description">Helidon MP application that uses JPA with an in-memory H2 database.</value>
+            <value key="integration-artifactId">h2</value>
+            <value key="db">H2</value>
+            <value key="start-db" file="files/README.md"/>
+            <list key="main-persistence-properties">
+                <map if="${db.jpa-impl} == 'hibernate'">
+                    <value key="name">hibernate.column_ordering_strategy</value>
+                    <value key="value">legacy</value>
+                    <value key="name">hibernate.dialect</value>
+                    <value key="value">org.hibernate.dialect.H2Dialect</value>
+                </map>
+                <map if="${db.jpa-impl} == 'eclipselink'">
+                    <value key="name">eclipselink.target-database</value>
+                    <value key="value">org.eclipse.persistence.platform.database.H2Platform</value>
+                </map>
+            </list>
+            <list key="dependencies">
+                <map>
+                    <value key="groupId">io.helidon.integrations.db</value>
+                    <value key="artifactId">h2</value>
+                </map>
+            </list>
+            <value key="jdbcDataSource">org.h2.jdbcx.JdbcDataSource</value>
+            <value key="databaseUrl">jdbc:h2:mem:test;DB_CLOSE_DELAY=-1</value>
+            <value key="dbUser">sa</value>
+            <value key="userPassword"></value>
+            <list key="MainTest-methods">
+                <value><![CDATA[
+    @Test
+    void testPokemonTypes() {
+        JsonArray types = target
+                .path("type")
+                .request()
+                .get(JsonArray.class);
+        assertThat(types.size(), is(18));
+    }
+
+    @Test
+    void testPokemon() {
+        assertThat(getPokemonCount(), is(6));
+
+        Pokemon pokemon = target
+                .path("pokemon/1")
+                .request()
+                .get(Pokemon.class);
+        assertThat(pokemon.getName(), is("Bulbasaur"));
+
+        pokemon = target
+                .path("pokemon/name/Charmander")
+                .request()
+                .get(Pokemon.class);
+        assertThat(pokemon.getType(), is(10));
+
+        Response response = target
+                .path("pokemon/1")
+                .request()
+                .get();
+        assertThat(response.getStatus(), is(200));
+
+        Pokemon test = new Pokemon();
+        test.setType(1);
+        test.setId(100);
+        test.setName("Test");
+        response = target
+                .path("pokemon")
+                .request()
+                .post(Entity.entity(test, MediaType.APPLICATION_JSON));
+        assertThat(response.getStatus(), is(204));
+        assertThat(getPokemonCount(), is(7));
+
+        response = target
+                .path("pokemon/100")
+                .request()
+                .delete();
+        assertThat(response.getStatus(), is(204));
+        assertThat(getPokemonCount(), is(6));
+    }
+
+    private int getPokemonCount() {
+        JsonArray pokemons = target
+                .path("pokemon")
+                .request()
+                .get(JsonArray.class);
+        return pokemons.size();
+    }]]>
+                </value>
+            </list>
+            <list key="main-persistence-properties">
+                <map>
+                    <value key="name">jakarta.persistence.sql-load-script-source</value>
+                    <value key="value">META-INF/init_script.sql</value>
+                </map>
+                <map>
+                    <value key="name">jakarta.persistence.schema-generation.database.action</value>
+                    <value key="value">drop-and-create</value>
+                </map>
+            </list>
+        </model>
+    </output>
+
+</archetype-script>

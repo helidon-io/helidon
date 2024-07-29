@@ -1,0 +1,20 @@
+    - google-login:
+        # Create your own application in Google developer console
+        # Also update the client id configured in header of index.html
+        # Detailed how-to for login button (including links how to create an application):
+        # https://developers.google.com/identity/sign-in/web/sign-in
+        client-id: "your-app-id.apps.googleusercontent.com"
+        # Defaults for Helidon
+        # realm: "helidon"
+        # Configure proxy host if needed
+        proxy-host: ""
+        # proxy-port: 80
+
+        # This is the default for GoogleTokenProvider
+        #token:
+        #  header: "Authorization"
+        # or do not specify - then the whole header is considered to be the token value
+        #  prefix: "bearer "
+        # optional alternative - looking for first matching group
+        #  regexp: "bearer (.*)"
+        #}

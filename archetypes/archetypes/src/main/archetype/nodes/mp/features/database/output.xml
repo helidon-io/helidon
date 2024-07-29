@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+
+    <variables>
+        <boolean path="requires-jakarta-xml-bind">true</boolean>
+        <boolean path="requires-jakarta-annotation">true</boolean>
+        <boolean path="requires-jakarta-persistence">true</boolean>
+        <boolean path="requires-jakarta-transaction">true</boolean>
+    </variables>
+
+    <exec src="nodes/hibernate/output.xml"  if="${db.jpa-impl} == 'hibernate'"/>
+    <exec src="nodes/eclipselink/output.xml"  if="${db.jpa-impl} == 'eclipselink'"/>
+    <exec src="nodes/hikaricp/output.xml"  if="${db.cp} == 'hikaricp'"/>
+    <exec src="nodes/ucp/output.xml"  if="${db.cp} == 'ucp'"/>
+    <exec src="nodes/h2/output.xml"  if="${db.server} == 'h2'"/>
+    <exec src="nodes/mysql/output.xml"  if="${db.server} == 'mysql'"/>
+    <exec src="nodes/oracledb/output.xml"  if="${db.server} == 'oracledb'"/>
+
+    <output>
+        <templates engine="mustache" transformations="basedir,hbs,packaged">
+            <directory>files</directory>
+            <includes>
+                <include>src/main/java/**/Pokemon.java.hbs</include>
+                <include>src/main/java/**/PokemonResource.java.hbs</include>
+                <include>src/main/java/**/PokemonType.java.hbs</include>
+                <include>src/main/java/**/PokemonTypeResource.java.hbs</include>
+                <include>src/main/resources/**/persistence.xml.hbs</include>
+            </includes>
+        </templates>
+        <model>
+            <list key="main-persistence-properties">
+                <map if="${db.server} != 'h2'">
+                    <value key="name">jakarta.persistence.sql-load-script-source</value>
+                    <value key="value">META-INF/init_script.sql</value>
+                </map>
+            </list>
+            <value key="database">true</value>
+            <value key="pu-name">${db.pu-name}</value>
+            <value key="ds-name">${db.ds-name}</value>
+            <list key="MainTest-java-imports">
+                <value>jakarta.json.JsonArray</value>
+                <value>jakarta.ws.rs.core.MediaType</value>
+                <value>jakarta.ws.rs.client.Entity</value>
+            </list>
+            <list key="dependencies">
+                <map>
+                    <value key="groupId">jakarta.annotation</value>
+                    <value key="artifactId">jakarta.annotation-api</value>
+                </map>
+                <map>
+                    <value key="groupId">jakarta.enterprise</value>
+                    <value key="artifactId">jakarta.enterprise.cdi-api</value>
+                </map>
+                <map>
+                    <value key="groupId">jakarta.inject</value>
+                    <value key="artifactId">jakarta.inject-api</value>
+                </map>
+                <map>
+                    <value key="groupId">jakarta.ws.rs</value>
+                    <value key="artifactId">jakarta.ws.rs-api</value>
+                </map>
+                <map>
+                    <value key="groupId">jakarta.persistence</value>
+                    <value key="artifactId">jakarta.persistence-api</value>
+                </map>
+                <map>
+                    <value key="groupId">jakarta.transaction</value>
+                    <value key="artifactId">jakarta.transaction-api</value>
+                </map>
+                <map>
+                    <value key="groupId">io.helidon.common</value>
+                    <value key="artifactId">helidon-common</value>
+                </map>
+                <map>
+                    <value key="groupId">io.helidon.integrations.cdi</value>
+                    <value key="artifactId">helidon-integrations-cdi-jta-weld</value>
+                    <value key="scope">runtime</value>
+                </map>
+                <map>
+                    <value key="groupId">io.helidon.integrations.cdi</value>
+                    <value key="artifactId">helidon-integrations-cdi-jpa</value>
+                    <value key="scope">runtime</value>
+                </map>
+                <map>
+                    <value key="groupId">org.hibernate.validator</value>
+                    <value key="artifactId">hibernate-validator</value>
+                    <value key="scope">runtime</value>
+                </map>
+                <map>
+                    <value key="groupId">org.glassfish</value>
+                    <value key="artifactId">jakarta.el</value>
+                    <value key="scope">runtime</value>
+                </map>
+                <!-- TODO - find out why this if condition -->
+                <map if="${media.json-lib} != 'jackson'">
+                    <value key="groupId">jakarta.xml.bind</value>
+                    <value key="artifactId">jakarta.xml.bind-api</value>
+                </map>
+            </list>
+            <list key="readme-sections">
+                <value template="mustache" file="files/README.md.hbs"/>
+            </list>
+            <list key="gitignore">
+                <value file="files/gitignore"/>
+            </list>
+            <list key="readme-exercise-the-application">
+                <value file="files/README.md"/>
+            </list>
+        </model>
+    </output>
+</archetype-script>

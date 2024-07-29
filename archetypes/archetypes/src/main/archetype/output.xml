@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+
+    <methods>
+        <method name="transformations">
+            <output>
+                <transformation id="hbs">
+                    <replace regex="\.hbs$" replacement=""/>
+                </transformation>
+                <transformation id="packaged">
+                    <replace regex="__pkg__" replacement="${package/\./\/}"/>
+                </transformation>
+                <transformation id="gav">
+                    <replace regex="groupid" replacement="${groupId/\./\/}"/>
+                    <replace regex="artifactid" replacement="${artifactId}"/>
+                    <replace regex="version" replacement="${version}"/>
+                </transformation>
+                <transformation id="basedir">
+                    <replace regex="^(?![^}]+(?:[\\/]|$))(.*)$" replacement="${basedir}/$1"/>
+                </transformation>
+            </output>
+        </method>
+    </methods>
+    <!--
+        Set all variables with default values first.
+        They are overridden based on inputs.
+    -->
+    <exec src="defaults.xml"/>
+    <call method="transformations"/>
+    <!--
+        Has to be called here otherwise, the module name is not set and files
+        generated under the aggregator dir instead of the module
+    -->
+    <exec src="features/multi-module/output.xml" if="${multi-module}"/>
+
+    <!-- flavor step -->
+    <exec src="nodes/mp/output.xml" if="${flavor} == 'mp'"/>
+    <exec src="nodes/se/output.xml" if="${flavor} == 'se'"/>
+
+    <!-- packaging step -->
+    <exec src="features/docker/output.xml" if="${docker}"/>
+    <exec src="features/kubernetes/output.xml" if="${k8s}"/>
+    <exec src="features/jpms/output.xml" if="${jpms}"/>
+
+    <!-- customize step -->
+    <exec src="features/customize-project/output.xml"/>
+
+    <output>
+        <templates engine="mustache" transformations="basedir,hbs,packaged">
+            <directory>files</directory>
+            <includes>
+                <include>.helidon.hbs</include>
+                <include>README.md.hbs</include>
+            </includes>
+        </templates>
+        <template source="files/.gitignore.hbs" target=".gitignore" engine="mustache"/>
+        <model>
+            <value key="flavor">${flavor}</value>
+            <value key="helidon-version">${helidon-version}</value>
+            <value key="dot-helidon-schema-version">1.1.0</value>
+            <value key="basedir">${basedir}</value>
+        </model>
+    </output>
+</archetype-script>

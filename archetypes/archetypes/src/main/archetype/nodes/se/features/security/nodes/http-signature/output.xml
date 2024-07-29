@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+
+    <variables>
+        <boolean path="requires-io-helidon-webclient-http1">true</boolean>
+        <boolean path="requires-io-helidon-common-pki">true</boolean>
+        <boolean path="requires-io-helidon-webserver-context">true</boolean>
+        <boolean path="requires-io-helidon-security-providers-common">true</boolean>
+        <boolean path="requires-io-helidon-security-providers-httpauth">true</boolean>
+        <boolean path="requires-io-helidon-security-providers-httpsign">true</boolean>
+    </variables>
+    <output>
+        <templates engine="mustache" transformations="basedir,hbs,packaged">
+            <directory>files</directory>
+            <includes>
+                <include>src/*/java/**/Service1.java.hbs</include>
+                <include>src/*/java/**/Service2.java.hbs</include>
+            </includes>
+        </templates>
+        <files transformations="basedir">
+            <directory>files</directory>
+            <includes>
+                <include>src/main/resources/keystore.p12</include>
+            </includes>
+        </files>
+        <model>
+            <list key="dependencies">
+                <map>
+                    <value key="groupId">io.helidon.webclient</value>
+                    <value key="artifactId">helidon-webclient-security</value>
+                </map>
+                <map>
+                    <value key="groupId">io.helidon.security.providers</value>
+                    <value key="artifactId">helidon-security-providers-http-sign</value>
+                </map>
+                <map>
+                    <value key="groupId">io.helidon.bundles</value>
+                    <value key="artifactId">helidon-bundles-security</value>
+                </map>
+                <map>
+                    <value key="groupId">io.helidon.config</value>
+                    <value key="artifactId">helidon-config-hocon</value>
+                </map>
+            </list>
+            <list key="Main-java-imports">
+                <value>java.util.Arrays</value>
+                <value>java.util.Collection</value>
+                <value>java.util.HashMap</value>
+                <value>java.util.List</value>
+                <value>java.util.Map</value>
+                <value>java.util.Optional</value>
+            </list>
+            <list key="Main-helidon-imports">
+                <value>io.helidon.common.configurable.Resource</value>
+                <value>io.helidon.common.pki.Keys</value>
+                <value>io.helidon.security.CompositeProviderFlag</value>
+                <value>io.helidon.security.CompositeProviderSelectionPolicy</value>
+                <value>io.helidon.security.Security</value>
+                <value>io.helidon.security.providers.common.OutboundConfig</value>
+                <value>io.helidon.security.providers.common.OutboundTarget</value>
+                <value>io.helidon.security.providers.httpauth.HttpBasicAuthProvider</value>
+                <value>io.helidon.security.providers.httpauth.SecureUserStore</value>
+                <value>io.helidon.security.providers.httpsign.HttpSignProvider</value>
+                <value>io.helidon.security.providers.httpsign.InboundClientDefinition</value>
+                <value>io.helidon.security.providers.httpsign.OutboundTargetDefinition</value>
+                <value>io.helidon.webserver.security.SecurityFeature</value>
+                <value>io.helidon.webserver.security.SecurityHttpFeature</value>
+            </list>
+            <list key="main-class-fields">
+                <value><![CDATA[
+    private static final Map<String, SecureUserStore.User> USERS = new HashMap<>();
+
+    static {
+        addUser("jack", "changeit", List.of("user", "admin"));
+        addUser("jill", "changeit", List.of("user"));
+        addUser("john", "changeit", List.of());
+    }
+
+    private static void addUser(String user, String password, List<String> roles) {
+        USERS.put(user, new SecureUserStore.User() {
+            @Override
+            public String login() {
+                return user;
+            }
+
+            char[] password() {
+                return password.toCharArray();
+            }
+
+            @Override
+            public boolean isPasswordValid(char[] password) {
+                return Arrays.equals(password(), password);
+            }
+
+            @Override
+            public Collection<String> roles() {
+                return roles;
+            }
+        });
+    }]]>
+                </value>
+            </list>
+            <list key="Main-routing">
+                <value><![CDATA[
+        SecurityHttpFeature security = SecurityHttpFeature.create(security1())
+                .securityDefaults(SecurityFeature.authenticate());]]>
+                </value>
+            </list>
+            <list key="Main-routing-builder">
+                <value><![CDATA[
+            .addFeature(security)
+            .get("/service1*", SecurityFeature.rolesAllowed("user"))
+            .register(new Service1())]]>
+                </value>
+            </list>
+            <list key="Main-class-content">
+                <value><![CDATA[
+    private static void routing2(HttpRouting.Builder routing) {
+        SecurityHttpFeature security = SecurityHttpFeature.create(security2())
+                .securityDefaults(SecurityFeature.authenticate());
+
+        routing.addFeature(security)
+                .get("/service2*", SecurityFeature.rolesAllowed("user"))
+                .register(new Service2());
+    }
+
+    private static Security security2() {
+        return Security.builder()
+                .providerSelectionPolicy(CompositeProviderSelectionPolicy
+                        .builder()
+                        .addAuthenticationProvider("http-signatures", CompositeProviderFlag.OPTIONAL)
+                        .addAuthenticationProvider("basic-auth")
+                        .build())
+                .addProvider(HttpBasicAuthProvider
+                                .builder()
+                                .realm("mic")
+                                .userStore(users()),
+                        "basic-auth")
+                .addProvider(HttpSignProvider.builder()
+                                .addInbound(InboundClientDefinition
+                                        .builder("service1-hmac")
+                                        .principalName("Service1 - HMAC signature")
+                                        .hmacSecret("changeit")
+                                        .build())
+                                .addInbound(InboundClientDefinition
+                                        .builder("service1-rsa")
+                                        .principalName("Service1 - RSA signature")
+                                        .publicKeyConfig(Keys.builder()
+                                                .keystore(k -> k
+                                                        .keystore(Resource.create("keystore.p12"))
+                                                        .passphrase("changeit")
+                                                        .certAlias("service_cert")
+                                                        .build())
+                                                .build())
+                                        .build()),
+                        "http-signatures")
+                .build();
+    }
+
+    private static Security security1() {
+        return Security.builder()
+                .providerSelectionPolicy(CompositeProviderSelectionPolicy
+                        .builder()
+                        .addOutboundProvider("basic-auth")
+                        .addOutboundProvider("http-signatures")
+                        .build())
+                .addProvider(HttpBasicAuthProvider
+                                .builder()
+                                .realm("mic")
+                                .userStore(users())
+                                .addOutboundTarget(OutboundTarget.builder("propagate-all").build()),
+                        "basic-auth")
+                .addProvider(HttpSignProvider
+                                .builder()
+                                .outbound(OutboundConfig
+                                        .builder()
+                                        .addTarget(hmacTarget())
+                                        .addTarget(rsaTarget())
+                                        .build()),
+                        "http-signatures")
+                .build();
+    }
+
+    private static OutboundTarget rsaTarget() {
+        return OutboundTarget.builder("service2-rsa")
+                .addHost("localhost")
+                .addPath("/service2-rsa.*")
+                .customObject(OutboundTargetDefinition.class,
+                        OutboundTargetDefinition.builder("service1-rsa")
+                                .privateKeyConfig(Keys.builder()
+                                        .keystore(k -> k
+                                                .keystore(Resource.create("keystore.p12"))
+                                                .passphrase("changeit")
+                                                .keyAlias("myPrivateKey")
+                                                .build())
+                                        .build())
+                                .build())
+                .build();
+    }
+
+    private static OutboundTarget hmacTarget() {
+        return OutboundTarget.builder("service2")
+                .addHost("localhost")
+                .addPath("/service2")
+                .customObject(
+                        OutboundTargetDefinition.class,
+                        OutboundTargetDefinition
+                                .builder("service1-hmac")
+                                .hmacSecret("changeit")
+                                .build())
+                .build();
+    }
+
+    private static SecureUserStore users() {
+        return login -> Optional.ofNullable(USERS.get(login));
+    }]]>
+                </value>
+            </list>
+            <list key="Main-server-builder">
+                <value><![CDATA[
+                .putSocket("service2", socket -> socket
+                        .routing(Main::routing2))]]>
+                </value>
+            </list>
+            <list key="Main-after-server">
+                <value><![CDATA[
+        server.context().register(server);]]>
+                </value>
+            </list>
+            <list key="readme-sections">
+                <value file="files/README.md"/>
+            </list>
+        </model>
+    </output>
+</archetype-script>

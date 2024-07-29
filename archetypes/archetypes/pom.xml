@@ -49,7 +49,8 @@
                                 <variables>
                                     <text path="helidon-version" transient="true">${project.version}</text>
                                 </variables>
-                                <exec src="flavor.xml"/>
+                                <exec src="inputs.xml"/>
+                                <exec src="output.xml"/>
                             </entrypoint>
                         </configuration>
                     </execution>

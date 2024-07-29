@@ -1,0 +1,23 @@
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>weave</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration combine.self="override">
+                            <mainClass>org.eclipse.persistence.tools.weaving.jpa.StaticWeave</mainClass>
+                            <arguments>
+                                <argument>-loglevel</argument>
+                                <argument>INFO</argument>
+                                <argument>${project.build.outputDirectory}</argument>
+                                <argument>${project.build.outputDirectory}</argument>
+                            </arguments>
+                            <skip>${eclipselink.weave.skip}</skip>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>

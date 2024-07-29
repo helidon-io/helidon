@@ -17,6 +17,73 @@
 
 -->
 <rules>
+    <rule if="${app-type} == 'quickstart'">
+        <!-- Enforce the preset for quickstart using rule -->
+        <exclude if="${media} != ['json']"/>
+        <exclude if="!(${metrics})"/>
+        <exclude if="${metrics.provider} != 'microprofile'"/>
+        <exclude if="!(${metrics.builtin})"/>
+        <exclude if="!(${health})"/>
+        <exclude if="!(${health.builtin})"/>
+        <exclude if="${tracing}"/>
+        <exclude if="${extra} != []"/>
+        <exclude if="${security}"/>
+        <exclude if="!(${docker})"/>
+        <exclude if="!(${docker.native-image})"/>
+        <exclude if="!(${docker.jlink-image})"/>
+        <exclude if="!(${k8s})"/>
+        <exclude if="${jpms}"/>
+        <exclude if="${db}"/>
+        <exclude if="${multi-module}"/>
+    </rule>
+    <rule if="${app-type} == 'oci'">
+        <!-- Enforce the preset for OCI using rule -->
+        <exclude if="${media} != []"/>
+        <exclude if="${metrics}"/>
+        <exclude if="${metrics.provider} != 'microprofile'"/>
+        <exclude if="${metrics.builtin}"/>
+        <exclude if="${health}"/>
+        <exclude if="${health.builtin}"/>
+        <exclude if="${tracing}"/>
+        <exclude if="${extra} != []"/>
+        <exclude if="${security}"/>
+        <exclude if="${docker}"/>
+        <exclude if="${docker.native-image}"/>
+        <exclude if="${docker.jlink-image}"/>
+        <exclude if="!(${k8s})"/>
+        <exclude if="${jpms}"/>
+        <exclude if="${db}"/>
+        <exclude if="!(${multi-module})"/>
+    </rule>
+    <rule if="${app-type} == 'database'">
+        <!-- Enforce the preset for database using rule -->
+        <exclude if="${media} != ['json']"/>
+        <exclude if="!(${metrics})"/>
+        <exclude if="${metrics.provider} != 'microprofile'"/>
+        <exclude if="!(${metrics.builtin})"/>
+        <exclude if="!(${health})"/>
+        <exclude if="!(${health.builtin})"/>
+        <exclude if="${tracing}"/>
+        <exclude if="${extra} != []"/>
+        <exclude if="${security}"/>
+        <exclude if="!(${docker})"/>
+        <exclude if="!(${docker.native-image})"/>
+        <exclude if="!(${docker.jlink-image})"/>
+        <exclude if="!(${k8s})"/>
+        <exclude if="${jpms}"/>
+        <exclude if="!(${db})"/>
+        <exclude if="${multi-module}"/>
+
+        <!-- do not combine auto-ddl and jackson -->
+        <rule if="${db.auto-ddl}">
+            <exclude if="${media.json-lib} == 'jackson'"/>
+        </rule>
+
+        <!-- do not combine hikaricp and jackson -->
+        <rule if="${db.cp} == 'hikaricp'">
+            <exclude if="${media.json-lib} == 'jackson'"/>
+        </rule>
+    </rule>
     <rule if="${app-type} == 'custom'">
 
         <!-- media -->
@@ -97,23 +164,8 @@
             <exclude if="${flavor} != 'se'"/>
             <exclude if="${extra} != []"/>
             <exclude if="${db}"/>
-            <exclude if="${security}" />
-            <exclude if="${metrics}" />
             <exclude if="${docker}" />
             <exclude if="${jpms}" />
-            <exclude if="${media} != ['json']"/>
-            <rule if="${media} == ['json']">
-                <exclude if="${media.json-lib} != 'jsonp'"/>
-            </rule>
         </rule>
-    </rule>
-
-    <!-- database -->
-    <rule if="${app-type} == 'database'">
-        <!-- do not combine auto-ddl and jackson -->
-        <exclude if="${db.auto-ddl} != (${media.json-lib} == 'jackson')"/>
-
-        <!-- do not combine hikaricp and jackson -->
-        <exclude if="(${db.cp} == 'hikaricp') != (${media.json-lib} == 'jackson')"/>
     </rule>
 </rules>

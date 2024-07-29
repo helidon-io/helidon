@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+
+    <output>
+        <model>
+            <list key="main-persistence-properties">
+                <map>
+                    <value key="name">eclipselink.deploy-on-startup</value>
+                    <value key="value">true</value>
+                </map>
+                <map>
+                    <value key="name">eclipselink.jdbc.native-sql</value>
+                    <value key="value">true</value>
+                </map>
+                <map>
+                    <value key="name">eclipselink.logging.logger</value>
+                    <value key="value">JavaLogger</value>
+                </map>
+                <map>
+                    <value key="name">eclipselink.logging.parameters</value>
+                    <value key="value">true</value>
+                </map>
+                <map>
+                    <value key="name">eclipselink.weaving</value>
+                    <value key="value">false</value>
+                </map>
+            </list>
+            <list key="test-persistence-properties">
+                <map>
+                    <value key="name">eclipselink.target-database</value>
+                    <value key="value">org.eclipse.persistence.platform.database.H2Platform</value>
+                </map>
+            </list>
+            <list key="dependencies">
+                <map>
+                    <value key="groupId">io.helidon.integrations.cdi</value>
+                    <value key="artifactId">helidon-integrations-cdi-eclipselink</value>
+                    <value key="scope">runtime</value>
+                </map>
+            </list>
+            <list key="maven-plugins">
+                <!-- use template to avoid the substitutions ${} -->
+                <value template="mustache" file="files/maven-plugins.xml"/>
+            </list>
+            <list key="main-persistence-properties">
+                <map if="${db.auto-ddl} &amp;&amp; ${db.server} != 'h2'">
+                    <value key="name">eclipselink.ddl-generation</value>
+                    <value key="value">drop-and-create-tables</value>
+                </map>
+            </list>
+        </model>
+    </output>
+</archetype-script>

@@ -1,0 +1,21 @@
+
+## Exercise Webclient
+
+First, start the server:
+
+```
+java -jar target/{{artifactId}}.jar
+```
+
+Note the port number that it displays. For example:
+
+```
+WEB server is up! http://localhost:8080/simple-greet
+```
+
+Then run the client, passing the port number. It will connect
+to the server:
+
+```
+java -cp "target/classes:target/libs/*" {{package}}.WebClientMain PORT
+```

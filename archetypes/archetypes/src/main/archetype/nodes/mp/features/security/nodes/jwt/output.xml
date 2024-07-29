@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+
+    <variables>
+        <boolean path="requires-io-helidon-microprofile-jwt-auth">true</boolean>
+        <boolean path="requires-io-helidon-webserver-context">true</boolean>
+    </variables>
+    <output>
+        <templates engine="mustache" transformations="basedir,hbs,packaged">
+            <directory>files</directory>
+            <includes>
+                <include>**/JwtApplication.java.hbs</include>
+                <include>**/JwtResource.java.hbs</include>
+            </includes>
+        </templates>
+        <model>
+            <list key="dependencies">
+                <map>
+                    <value key="groupId">io.helidon.microprofile.jwt</value>
+                    <value key="artifactId">helidon-microprofile-jwt-auth</value>
+                </map>
+            </list>
+            <list key="microprofile-config">
+                <value>mp.jwt.verify.issuer=https://{IssuerPublicDomain}/oauth2/default</value>
+                <value template="mustache">mp.jwt.verify.publickey.location=${mp.jwt.verify.issuer}/v1/keys</value>
+            </list>
+        </model>
+    </output>
+</archetype-script>

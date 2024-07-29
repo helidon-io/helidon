@@ -1,0 +1,9 @@
+    security:
+      defaults:
+        authenticate: true
+{{#security-server-paths}}
+{{#first}}
+      paths:
+{{/first}}
+{{.}}
+{{/security-server-paths}}

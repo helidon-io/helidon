@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+    <variables>
+        <boolean path="requires-io-helidon-microprofile-openapi">true</boolean>
+    </variables>
+    <output>
+        <templates transformations="basedir,packaged,hbs" engine="mustache">
+            <directory>files</directory>
+            <includes>
+                <include>**/*.hbs</include>
+            </includes>
+        </templates>
+        <model>
+            <value key="readme-description">Sample Helidon MP project that includes multiple REST operations.</value>
+            <list key="MainTest-java-imports">
+                <value>jakarta.ws.rs.client.Entity</value>
+                <value>jakarta.ws.rs.core.MediaType</value>
+            </list>
+            <list key="MainTest-methods">
+                <value><![CDATA[
+    @Test
+    void testGreetings() {
+        Message jsonMessage = target
+                .path("greet/Joe")
+                .request()
+                .get(Message.class);
+        assertThat(jsonMessage.getMessage(), is("Hello Joe!"));
+
+        try (Response r = target
+                .path("greet/greeting")
+                .request()
+                .put(Entity.entity("{\"greeting\" : \"Hola\"}", MediaType.APPLICATION_JSON))) {
+            assertThat(r.getStatus(), is(204));
+        }
+
+        jsonMessage = target
+                .path("greet/Jose")
+                .request()
+                .get(Message.class);
+        assertThat(jsonMessage.getMessage(), is("Hola Jose!"));
+    }]]>
+                </value>
+            </list>
+            <list key="dependencies">
+                <map order="1000">
+                    <value key="groupId">io.helidon.microprofile.openapi</value>
+                    <value key="artifactId">helidon-microprofile-openapi</value>
+                </map>
+            </list>
+        </model>
+    </output>
+</archetype-script>
