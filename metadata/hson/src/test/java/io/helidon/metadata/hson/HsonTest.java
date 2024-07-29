@@ -36,7 +36,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class HsonTest {
+class HsonTest {
     @Test
     void testWrongTypes() {
         Hson.Object object = Hson.objectBuilder()

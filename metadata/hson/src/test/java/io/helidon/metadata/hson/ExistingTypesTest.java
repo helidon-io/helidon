@@ -32,7 +32,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 
-public class TestExistingTypes {
+class ExistingTypesTest {
     @Test
     void testServiceRegistry() throws IOException {
         Hson.Object object;
@@ -133,7 +133,7 @@ public class TestExistingTypes {
     }
 
     private InputStream resource(String location) {
-        return TestExistingTypes.class.getResourceAsStream(location);
+        return ExistingTypesTest.class.getResourceAsStream(location);
     }
 
 }
