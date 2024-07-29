@@ -145,6 +145,16 @@
    <vulnerabilityName>CVE-2023-22006</vulnerabilityName>
 </suppress>
 
+<!-- This low priority CVE does not apply to our use of the graalvm compiler.
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: compiler-23.1.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\.compiler/compiler@.*$</packageUrl>
+   <vulnerabilityName>CVE-2024-21138</vulnerabilityName>
+</suppress>
+
 <!--
     This CVE is is concerning proper use of Netty's hostname verification. Helidon enables hostname
     verification by default and therefore this CVE does not apply. Some more info on the CVE here:
