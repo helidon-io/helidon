@@ -1,0 +1,5 @@
+cors:
+  paths:
+    - path-pattern: "/cors-greet"
+      allow-origins: ["http://foo.com", "http://there.com"]
+      allow-methods: ["PUT", "DELETE", "GET"]

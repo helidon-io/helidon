@@ -63,15 +63,36 @@
         <values>
             <flavor>se</flavor>
             <app-type>custom</app-type>
+            <multi-module>false</multi-module>
             <security>false</security>
             <db>false</db>
         </values>
     </fragment>
 
-    <plan id="se/quickstart">
+    <fragment id="se/preset">
+        <values>
+            <flavor>se</flavor>
+            <media>json</media>
+            <metrics>true</metrics>
+            <metrics.builtin>true</metrics.builtin>
+            <health>true</health>
+            <health.builtin>true</health.builtin>
+            <tracing>false</tracing>
+            <extra>none</extra>
+            <security>false</security>
+            <docker>true</docker>
+            <docker.jlink-image>true</docker.jlink-image>
+            <k8s>true</k8s>
+            <jpms>false</jpms>
+            <multi-module>false</multi-module>
+        </values>
+    </fragment>
+
+    <plan id="se/quickstart" extends="se/preset">
         <values>
             <flavor>se</flavor>
             <app-type>quickstart</app-type>
+            <db>false</db>
         </values>
     </plan>
 
@@ -110,10 +131,22 @@
         </rules>
     </plan>
 
-    <plan id="se/database">
+    <plan id="se/database" extends="se/preset">
         <values>
             <flavor>se</flavor>
             <app-type>database</app-type>
+            <db>true</db>
         </values>
+    </plan>
+    <plan id="se/multi-module" extends="se/custom, security, no-observability, no-docker">
+        <values>
+            <media>none</media>
+            <multi-module>true</multi-module>
+            <jpms>false</jpms>
+        </values>
+        <rules>
+            <exclude if="${security.atz} == [] AND sizeof ((list) ${security.atn}) != 1"/>
+            <exclude if="${security.atz} == ['abac'] AND ${security.atn} != ['oidc']"/>
+        </rules>
     </plan>
 </plans>
