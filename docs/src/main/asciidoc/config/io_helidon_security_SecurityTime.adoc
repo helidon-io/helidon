@@ -51,8 +51,8 @@ Type: link:{javadoc-base-url}/io.helidon.security/io/helidon/security/SecurityTi
 |`shift-by-seconds` |long |`0` |Configure a time-shift in seconds, to move the current time to past or future.
 |`time-zone` |ZoneId |{nbsp} |Override current time zone. The time will represent the SAME instant, in an explicit timezone.
 
- If we are in a UTC time zone and you set the timezone to "Europe/Prague", the time will be shifted by the offset
- of Prague (e.g. if it is noon right now in UTC, you would get 14:00).
+If we are in a UTC time zone and you set the timezone to "Europe/Prague", the time will be shifted by the offset
+of Prague (e.g. if it is noon right now in UTC, you would get 14:00).
 |`year` |long |{nbsp} |Set an explicit value for one of the time fields (such as ChronoField.YEAR).
 
 |===

@@ -54,79 +54,79 @@ This type provides the following service implementations:
 
 |`enabled` |boolean |`true` |Whether this feature will be enabled.
 
- Whether enabled
+Whether enabled
 |`format` |string |{nbsp} |The format for log entries (similar to the Apache `LogFormat`).
- 
+
 ++++
 <table class="config">
-     <caption>Log format elements</caption>
-     <tr>
-         <td>%h</td>
-         <td>IP address of the remote host</td>
-         <td>HostLogEntry</td>
-     </tr>
-     <tr>
-         <td>%l</td>
-         <td>The client identity. This is always undefined in Helidon.</td>
-         <td>UserIdLogEntry</td>
-     </tr>
-     <tr>
-         <td>%u</td>
-         <td>User ID as asserted by Helidon Security.</td>
-         <td>UserLogEntry</td>
-     </tr>
-     <tr>
-         <td>%t</td>
-         <td>The timestamp</td>
-         <td>TimestampLogEntry</td>
-     </tr>
-     <tr>
-         <td>%r</td>
-         <td>The request line (`"GET /favicon.ico HTTP/1.0"`)</td>
-         <td>RequestLineLogEntry</td>
-     </tr>
-     <tr>
-         <td>%s</td>
-         <td>The status code returned to the client</td>
-         <td>StatusLogEntry</td>
-     </tr>
-     <tr>
-         <td>%b</td>
-         <td>The entity size in bytes</td>
-         <td>SizeLogEntry</td>
-     </tr>
-     <tr>
-         <td>%D</td>
-         <td>The time taken in microseconds (start of request until last byte written)</td>
-         <td>TimeTakenLogEntry</td>
-     </tr>
-     <tr>
-         <td>%T</td>
-         <td>The time taken in seconds (start of request until last byte written), integer</td>
-         <td>TimeTakenLogEntry</td>
-     </tr>
-     <tr>
-         <td>%{header-name}i</td>
-         <td>Value of header `header-name`</td>
-         <td>HeaderLogEntry</td>
-     </tr>
- </table>
+    <caption>Log format elements</caption>
+    <tr>
+        <td>%h</td>
+        <td>IP address of the remote host</td>
+        <td>HostLogEntry</td>
+    </tr>
+    <tr>
+        <td>%l</td>
+        <td>The client identity. This is always undefined in Helidon.</td>
+        <td>UserIdLogEntry</td>
+    </tr>
+    <tr>
+        <td>%u</td>
+        <td>User ID as asserted by Helidon Security.</td>
+        <td>UserLogEntry</td>
+    </tr>
+    <tr>
+        <td>%t</td>
+        <td>The timestamp</td>
+        <td>TimestampLogEntry</td>
+    </tr>
+    <tr>
+        <td>%r</td>
+        <td>The request line (`"GET /favicon.ico HTTP/1.0"`)</td>
+        <td>RequestLineLogEntry</td>
+    </tr>
+    <tr>
+        <td>%s</td>
+        <td>The status code returned to the client</td>
+        <td>StatusLogEntry</td>
+    </tr>
+    <tr>
+        <td>%b</td>
+        <td>The entity size in bytes</td>
+        <td>SizeLogEntry</td>
+    </tr>
+    <tr>
+        <td>%D</td>
+        <td>The time taken in microseconds (start of request until last byte written)</td>
+        <td>TimeTakenLogEntry</td>
+    </tr>
+    <tr>
+        <td>%T</td>
+        <td>The time taken in seconds (start of request until last byte written), integer</td>
+        <td>TimeTakenLogEntry</td>
+    </tr>
+    <tr>
+        <td>%{header-name}i</td>
+        <td>Value of header `header-name`</td>
+        <td>HeaderLogEntry</td>
+    </tr>
+</table>
 ++++
 
 
- Format string, such as `%h %l %u %t %r %b %{Referer`i}
+Format string, such as `%h %l %u %t %r %b %{Referer`i}
 |`logger-name` |string |`io.helidon.webserver.AccessLog` |Name of the logger used to obtain access log logger from System.getLogger(String).
- Defaults to AccessLogFeature.DEFAULT_LOGGER_NAME.
+Defaults to AccessLogFeature.DEFAULT_LOGGER_NAME.
 
- Name of the logger to use
+Name of the logger to use
 |`sockets` |string[&#93; |{nbsp} |List of sockets to register this feature on. If empty, it would get registered on all sockets.
- The logger used will have the expected logger with a suffix of the socket name.
+The logger used will have the expected logger with a suffix of the socket name.
 
- Socket names to register on, defaults to empty (all available sockets)
+Socket names to register on, defaults to empty (all available sockets)
 |`weight` |double |`1000.0` |Weight of the access log feature. We need to log access for anything happening on the server, so weight is high:
- io.helidon.webserver.accesslog.AccessLogFeature.WEIGHT.
+io.helidon.webserver.accesslog.AccessLogFeature.WEIGHT.
 
- Weight of the feature
+Weight of the feature
 
 |===
 

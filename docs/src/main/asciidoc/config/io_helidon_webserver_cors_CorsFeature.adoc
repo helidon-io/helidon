@@ -51,7 +51,7 @@ This type provides the following service implementations:
 
 |`enabled` |boolean |{nbsp} |This feature can be disabled.
 
- Whether the feature is enabled
+Whether the feature is enabled
 
 |===
 
@@ -65,11 +65,11 @@ This type provides the following service implementations:
 
 |`sockets` |string[&#93; |{nbsp} |List of sockets to register this feature on. If empty, it would get registered on all sockets.
 
- Socket names to register on, defaults to empty (all available sockets)
+Socket names to register on, defaults to empty (all available sockets)
 |`weight` |double |`850.0` |Weight of the CORS feature. As it is used by other features, the default is quite high:
- CorsFeature.WEIGHT.
+CorsFeature.WEIGHT.
 
- Weight of the feature
+Weight of the feature
 
 |===
 

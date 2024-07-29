@@ -48,6 +48,7 @@ This is a standalone configuration type, prefix from configuration root: `securi
 Such as:
 
  - xref:{rootdir}/config/io_helidon_security_providers_idcs_mapper_IdcsRoleMapperProvider.adoc[idcs-role-mapper (IdcsRoleMapperProvider)]
+ - xref:{rootdir}/config/io_helidon_security_providers_config_vault_ConfigVaultProvider.adoc[config-vault (ConfigVaultProvider)]
  - xref:{rootdir}/config/io_helidon_security_providers_jwt_JwtProvider.adoc[jwt (JwtProvider)]
  - xref:{rootdir}/config/io_helidon_security_providers_httpauth_HttpBasicAuthProvider.adoc[http-basic-auth (HttpBasicAuthProvider)]
  - xref:{rootdir}/config/io_helidon_security_providers_idcs_mapper_IdcsMtRoleMapperProvider.adoc[idcs-role-mapper (IdcsMtRoleMapperProvider)]
@@ -58,7 +59,7 @@ Such as:
  - xref:{rootdir}/config/io_helidon_security_providers_abac_AbacProvider.adoc[abac (AbacProvider)]
 
  |{nbsp} |Add a provider, works as addProvider(io.helidon.security.spi.SecurityProvider, String), where the name is set
- to `Class#getSimpleName()`.
+to `Class#getSimpleName()`.
 
 |===
 
@@ -73,14 +74,29 @@ Such as:
 |`default-authentication-provider` |string (service provider interface) |{nbsp} |ID of the default authentication provider
 |`default-authorization-provider` |string |{nbsp} |ID of the default authorization provider
 |`enabled` |boolean |`true` |Security can be disabled using configuration, or explicitly.
- By default, security instance is enabled.
- Disabled security instance will not perform any checks and allow
- all requests.
+By default, security instance is enabled.
+Disabled security instance will not perform any checks and allow
+all requests.
 |`environment.server-time` |xref:{rootdir}/config/io_helidon_security_SecurityTime.adoc[SecurityTime] |{nbsp} |Server time to use when evaluating security policies that depend on time.
 |`provider-policy.class-name` |Class |{nbsp} |Provider selection policy class name, only used when type is set to CLASS
 |`provider-policy.type` |ProviderSelectionPolicyType (FIRST, COMPOSITE, CLASS) |`FIRST` |Type of the policy.
+
+Allowed values:
+
+- `FIRST`: Choose first provider from the list by default.
+Choose provider with the name defined when explicit provider requested.
+- `COMPOSITE`: Can compose multiple providers together to form a single
+logical provider.
+- `CLASS`: Explicit class for a custom ProviderSelectionPolicyType.
+
 |`secrets` |Map&lt;string, string&gt; (documented for specific cases) |{nbsp} |Configured secrets
-|`secrets.*.config` |io.helidon.security.SecretsProviderConfig (service provider interface) |{nbsp} |Configuration specific to the secret provider
+|`secrets.*.config` |io.helidon.security.SecretsProviderConfig (service provider interface)
+
+Such as:
+
+ - xref:{rootdir}/config/io_helidon_security_providers_config_vault_ConfigVaultProvider_SecretConfig.adoc[SecretConfig]
+
+ |{nbsp} |Configuration specific to the secret provider
 |`secrets.*.name` |string |{nbsp} |Name of the secret, used for lookup
 |`secrets.*.provider` |string |{nbsp} |Name of the secret provider
 |`tracing.enabled` |boolean |`true` |Whether or not tracing should be enabled. If set to false, security tracer will be a no-op tracer.

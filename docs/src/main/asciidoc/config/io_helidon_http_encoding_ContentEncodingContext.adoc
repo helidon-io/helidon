@@ -43,9 +43,9 @@ Type: link:{javadoc-base-url}/io.helidon.http.encoding/io/helidon/http/encoding/
 |key |type |default value |description
 
 |`content-encodings` |io.helidon.http.encoding.ContentEncoding[&#93; (service provider interface) |{nbsp} |List of content encodings that should be used.
- Encodings configured here have priority over encodings discovered through service loader.
+Encodings configured here have priority over encodings discovered through service loader.
 
- List of content encodings to be used (such as `gzip,deflate`)
+List of content encodings to be used (such as `gzip,deflate`)
 
 |===
 

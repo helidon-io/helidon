@@ -44,7 +44,7 @@ Type: link:{javadoc-base-url}/io.helidon.webclient.grpc/io/helidon/webclient/grp
 
 |`protocol-config` |xref:{rootdir}/config/io_helidon_webclient_grpc_GrpcClientProtocolConfig.adoc[GrpcClientProtocolConfig] |`create()` |gRPC specific configuration.
 
- Protocol specific configuration
+Protocol specific configuration
 
 |===
 

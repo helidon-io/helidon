@@ -43,34 +43,34 @@ Type: link:{javadoc-base-url}/io.helidon.common.configurable/io/helidon/common/c
 |key |type |default value |description
 
 |`allow.all` |boolean |`false` |Allows all strings to match (subject to "deny" conditions). An `allow.all` setting of `false` does
- not deny all strings but rather represents the absence of a universal match, meaning that other allow and deny settings
- determine the matching outcomes.
+not deny all strings but rather represents the absence of a universal match, meaning that other allow and deny settings
+determine the matching outcomes.
 
- Whether to allow all strings to match (subject to "deny" conditions)
+Whether to allow all strings to match (subject to "deny" conditions)
 |`allow.exact` |string[&#93; |{nbsp} |Exact strings to allow.
 
- Exact strings to allow
+Exact strings to allow
 |`allow.pattern` |Pattern[&#93; |{nbsp} |Patterns specifying strings to allow.
 
- Patterns which allow matching
+Patterns which allow matching
 |`allow.prefix` |string[&#93; |{nbsp} |Prefixes specifying strings to allow.
 
- Prefixes which allow matching
+Prefixes which allow matching
 |`allow.suffix` |string[&#93; |{nbsp} |Suffixes specifying strings to allow.
 
- Suffixes which allow matching
+Suffixes which allow matching
 |`deny.exact` |string[&#93; |{nbsp} |Exact strings to deny.
 
- Exact strings to allow
+Exact strings to deny
 |`deny.pattern` |Pattern[&#93; |{nbsp} |Patterns specifying strings to deny.
 
- Patterns which deny matching
+Patterns which deny matching
 |`deny.prefix` |string[&#93; |{nbsp} |Prefixes specifying strings to deny.
 
- Prefixes which deny matching
+Prefixes which deny matching
 |`deny.suffix` |string[&#93; |{nbsp} |Suffixes specifying strings to deny.
 
- Suffixes which deny matching
+Suffixes which deny matching
 
 |===
 

@@ -45,13 +45,13 @@ This is a standalone configuration type, prefix from configuration root: `fault-
 |key |type |default value |description
 
 |`current-thread` |boolean |`false` |Flag to indicate that code must be executed in current thread instead
- of in an executor's thread. This flag is `false` by default.
+of in an executor's thread. This flag is `false` by default.
 
-  whether to execute on current thread (`true`), or in an executor service (`false`})
+Whether to execute on current thread (`true`), or in an executor service (`false`})
 |`timeout` |Duration |`PT10S` |Duration to wait before timing out.
- Defaults to `10 seconds`.
+Defaults to `10 seconds`.
 
- Timeout
+Timeout
 
 |===
 

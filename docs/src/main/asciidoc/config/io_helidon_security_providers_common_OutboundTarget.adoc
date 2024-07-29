@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -53,31 +53,31 @@ Type: link:{javadoc-base-url}/io.helidon.security.providers.common/io/helidon/se
 
 |`hosts` |string[&#93; |{nbsp} |Add supported host for this target. May be called more than once to add more hosts.
 
- Valid examples:
+Valid examples:
 
 - localhost
- 
+
 - www.google.com
- 
+
 - 127.0.0.1
- 
+
 - *.oracle.com
- 
+
 - 192.169.*.*
- 
+
 - *.google.*
 
 
 |`methods` |string[&#93; |{nbsp} |Add supported method for this target. May be called more than once to add more methods.
- The method is tested as is ignoring case against the used method.
+The method is tested as is ignoring case against the used method.
 |`paths` |string[&#93; |{nbsp} |Add supported paths for this target. May be called more than once to add more paths.
- The path is tested as is against called path, and also tested as a regular expression.
+The path is tested as is against called path, and also tested as a regular expression.
 |`transport` |string[&#93; |{nbsp} |Add supported transports for this target. May be called more than once to add more transports.
 
- Valid examples:
+Valid examples:
 
 - http
- 
+
 - https
 
 There is no wildcard support

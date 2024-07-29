@@ -44,27 +44,27 @@ Type: link:{javadoc-base-url}/io.helidon.webclient.http1/io/helidon/webclient/ht
 
 |`default-keep-alive` |boolean |`true` |Whether to use keep alive by default.
 
- `true` for keeping connections alive and re-using them for multiple requests (default), `false`
-  to create a new connection for each request
+`true` for keeping connections alive and re-using them for multiple requests (default), `false`
+ to create a new connection for each request
 |`max-header-size` |int |`16384` |Configure the maximum allowed header size of the response.
 
-  maximum header size
+Maximum header size
 |`max-status-line-length` |int |`256` |Configure the maximum allowed length of the status line from the response.
 
- Maximum status line length
+Maximum status line length
 |`name` |string |`http_1_1` |
 |`validate-request-headers` |boolean |`false` |Sets whether the request header format is validated or not.
 
-     Defaults to `false` as user has control on the header creation.
- 
+    Defaults to `false` as user has control on the header creation.
 
- Whether request header validation should be enabled
+
+Whether request header validation should be enabled
 |`validate-response-headers` |boolean |`true` |Sets whether the response header format is validated or not.
 
-     Defaults to `true`.
- 
+    Defaults to `true`.
 
- Whether response header validation should be enabled
+
+Whether response header validation should be enabled
 
 |===
 

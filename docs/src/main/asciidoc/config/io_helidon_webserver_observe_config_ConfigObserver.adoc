@@ -55,11 +55,11 @@ This type provides the following service implementations:
 |`endpoint` |string |`config` |
 |`permit-all` |boolean |{nbsp} |Permit all access, even when not authorized.
 
- Whether to permit access for anybody
+Whether to permit access for anybody
 |`secrets` |string[&#93; |`.*password, .*passphrase, .*secret` |Secret patterns (regular expressions) to exclude from output.
- Any pattern that matches a key will cause the output to be obfuscated and not contain the value.
+Any pattern that matches a key will cause the output to be obfuscated and not contain the value.
 
- Patterns always added:
+Patterns always added:
 
 - `.*password`
 - `.*passphrase`

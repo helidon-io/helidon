@@ -54,7 +54,7 @@ This type provides the following service implementations:
 
 |`env-config` |TracingConfig |`TracingConfig.ENABLED` |Use the provided configuration as a default for any request.
 
- Default web server tracing configuration
+Default web server tracing configuration
 |`paths` |PathTracingConfig[&#93; |`new @java.util.ArrayList@(@java.util.List@.of(PathTracingConfig.builder()
                                   .path(&quot;/metrics/*&quot;)
                                   .tracingConfig(TracingConfig.DISABLED)
@@ -80,12 +80,12 @@ This type provides the following service implementations:
                                   .tracingConfig(TracingConfig.DISABLED)
                                   .build()))` |Path specific configuration of tracing.
 
- Configuration of tracing for specific paths
+Configuration of tracing for specific paths
 |`weight` |double |`900.0` |Weight of the feature registered with WebServer.
- Changing weight may cause tracing to be executed at a different time (such as after security, or even after
- all routes). Please understand feature weights before changing this order.
+Changing weight may cause tracing to be executed at a different time (such as after security, or even after
+all routes). Please understand feature weights before changing this order.
 
- Weight of tracing feature
+Weight of tracing feature
 
 |===
 

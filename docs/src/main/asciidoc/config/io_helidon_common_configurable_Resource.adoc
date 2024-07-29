@@ -44,34 +44,34 @@ Type: link:{javadoc-base-url}/io.helidon.common.configurable/io/helidon/common/c
 
 |`content` |string |{nbsp} |Binary content of the resource (base64 encoded).
 
- Binary content
+Binary content
 |`content-plain` |string |{nbsp} |Plain content of the resource (text).
 
- Plain content
+Plain content
 |`description` |string |{nbsp} |Description of this resource when configured through plain text or binary.
 
- Description
+Description
 |`path` |Path |{nbsp} |Resource is located on filesystem.
 
- Path of the resource
+Path of the resource
 |`proxy-host` |string |{nbsp} |Host of the proxy when using URI.
 
- Proxy host
+Proxy host
 |`proxy-port` |int |`80` |Port of the proxy when using URI.
 
- Proxy port
+Proxy port
 |`resource-path` |string |{nbsp} |Resource is located on classpath.
 
- Classpath location of the resource
+Classpath location of the resource
 |`uri` |URI |{nbsp} |Resource is available on a java.net.URI.
 
- Of the resource
- See proxy()
- See useProxy()
+Of the resource
+See proxy()
+See useProxy()
 |`use-proxy` |boolean |`true` |Whether to use proxy. If set to `false`, proxy will not be used even if configured.
- When set to `true` (default), proxy will be used if configured.
+When set to `true` (default), proxy will be used if configured.
 
- Whether to use proxy if configured
+Whether to use proxy if configured
 
 |===
 

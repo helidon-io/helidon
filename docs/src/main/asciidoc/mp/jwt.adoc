@@ -77,7 +77,7 @@ The following interfaces and annotations are used to work with JWT in Helidon MP
 
 == Configuration
 
-include::{rootdir}/config/io_helidon_microprofile_jwt.adoc[leveloffset=+1,tag=config]
+include::{rootdir}/config/io_helidon_microprofile_jwt_auth_JwtAuthProvider.adoc[leveloffset=+1,tag=config]
 
 A configuration example in `microprofile-config.properties`:
 [source, properties]

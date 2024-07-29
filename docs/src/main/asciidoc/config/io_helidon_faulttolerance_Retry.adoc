@@ -46,25 +46,25 @@ This is a standalone configuration type, prefix from configuration root: `fault-
 
 |`calls` |int |`3` |Number of calls (first try + retries).
 
- Number of desired calls, must be 1 (means no retries) or higher.
+Number of desired calls, must be 1 (means no retries) or higher.
 |`delay` |Duration |`PT0.2S` |Base delay between try and retry.
- Defaults to `200 ms`.
+Defaults to `200 ms`.
 
- Delay between retries (combines with retry policy)
+Delay between retries (combines with retry policy)
 |`delay-factor` |double |`-1.0` |Delay retry policy factor. If unspecified (value of `-1`), Jitter retry policy would be used, unless
- jitter is also unspecified.
+jitter is also unspecified.
 
- Default when Retry.DelayingRetryPolicy is used is `2`.
+Default when Retry.DelayingRetryPolicy is used is `2`.
 
- Delay factor for delaying retry policy
+Delay factor for delaying retry policy
 |`jitter` |Duration |`PT-1S` |Jitter for Retry.JitterRetryPolicy. If unspecified (value of `-1`),
- delaying retry policy is used. If both this value, and delayFactor() are specified, delaying retry policy
- would be used.
+delaying retry policy is used. If both this value, and delayFactor() are specified, delaying retry policy
+would be used.
 
- Jitter
+Jitter
 |`overall-timeout` |Duration |`PT1S` |Overall timeout of all retries combined.
 
- Overall timeout
+Overall timeout
 
 |===
 
