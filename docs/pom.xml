@@ -34,7 +34,7 @@
         <helidon.sitegen.skip>false</helidon.sitegen.skip>
         <version.lib.jbatch-api>2.1.0</version.lib.jbatch-api>
         <version.lib.jbatch.container>2.1.0</version.lib.jbatch.container>
-        <version.plugin.openapi-generator>7.6.0</version.plugin.openapi-generator>
+        <version.plugin.openapi-generator>7.7.0</version.plugin.openapi-generator>
     </properties>
 
     <dependencies>
