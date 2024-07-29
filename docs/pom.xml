@@ -44,6 +44,10 @@
             <optional>true</optional>
         </dependency>
         <dependency>
+            <groupId>io.helidon.config.metadata</groupId>
+            <artifactId>helidon-config-metadata-docs</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
         </dependency>
@@ -126,6 +130,34 @@
 
     <profiles>
         <profile>
+            <id>configdoc</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>regenerate-config-docs</id>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                                <phase>generate-sources</phase>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <commandlineArgs>${project.basedir}/src/main/asciidoc/config</commandlineArgs>
+                            <mainClass>io.helidon.config.metadata.docs.Main</mainClass>
+                            <classpathFilenameExclusions>
+                                <exclusion>helidon-logging-slf4j-${helidon.version}.jar</exclusion>
+                                <exclusion>helidon-logging-log4j-${helidon.version}.jar</exclusion>
+                            </classpathFilenameExclusions>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
             <id>javadoc</id>
             <build>
                 <plugins>
@@ -167,6 +199,7 @@
                             </dependencyIncludes>
                             <dependencyExcludes>
                                 <exclude>*:*-tests</exclude>
+                                <exclude>io.helidon.config.metadata:helidon-config-metadata-docs</exclude>
                             </dependencyExcludes>
                             <sourceExcludes>
                                 <exclude>**/src/main/templates</exclude>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,7 +87,7 @@ interface AllowListConfigBlueprint extends Prototype.Factory<AllowList> {
     /**
      * Exact strings to deny.
      *
-     * @return exact strings to allow
+     * @return exact strings to deny
      */
     @Option.Configured("deny.exact")
     @Option.Singular
