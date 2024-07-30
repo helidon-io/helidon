@@ -48,7 +48,7 @@ class TestBaggageApi {
 
         baggage.set("keyB", "valB");
         assertThat("Assigned baggage via baggage API value from span",
-                   span.baggage("keyB"),
+                   span.baggage().get("keyB"),
                    OptionalMatcher.optionalValue(is(equalTo("valB"))));
         assertThat("Assigned via baggage API value is present", baggage.containsKey("keyB"), is(true));
         assertThat("Assigned via baggage API value from baggage API",
