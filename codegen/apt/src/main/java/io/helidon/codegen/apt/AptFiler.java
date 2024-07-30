@@ -17,6 +17,7 @@
 package io.helidon.codegen.apt;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -35,6 +36,7 @@ import javax.tools.StandardLocation;
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenFiler;
 import io.helidon.codegen.CodegenOptions;
+import io.helidon.codegen.FilerResource;
 import io.helidon.codegen.FilerTextResource;
 import io.helidon.codegen.IndentType;
 import io.helidon.codegen.classmodel.ClassModel;
@@ -104,6 +106,20 @@ class AptFiler implements CodegenFiler {
             return new FilerTextResourceImpl(filer, location, toElements(originatingElements), resource, lines);
         } catch (IOException e) {
             return new FilerTextResourceImpl(filer, location, toElements(originatingElements));
+        }
+    }
+
+    @Override
+    public FilerResource resource(String location, Object... originatingElements) {
+        try {
+            var resource = filer.getResource(StandardLocation.CLASS_OUTPUT, "", location);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            try (var is = resource.openInputStream()) {
+                is.transferTo(baos);
+            }
+            return new FilerResourceImpl(filer, location, toElements(originatingElements), resource, baos.toByteArray());
+        } catch (IOException e) {
+            return new FilerResourceImpl(filer, location, toElements(originatingElements));
         }
     }
 

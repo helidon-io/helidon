@@ -28,39 +28,43 @@ import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weighted;
 import io.helidon.common.Weights;
 import io.helidon.common.types.TypeName;
+import io.helidon.metadata.hson.Hson;
+import io.helidon.service.metadata.DescriptorMetadata;
+import io.helidon.service.metadata.Descriptors;
 import io.helidon.service.registry.GeneratedService.Descriptor;
 
+import static io.helidon.service.metadata.Descriptors.SERVICE_REGISTRY_LOCATION;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.function.Predicate.not;
 
 class CoreServiceDiscovery implements ServiceDiscovery {
     private static final System.Logger LOGGER = System.getLogger(CoreServiceDiscovery.class.getName());
 
-    private final List<DescriptorMetadata> allDescriptors;
+    private final List<DescriptorHandler> allDescriptors;
 
     private CoreServiceDiscovery(ServiceRegistryConfig config) {
-        Map<TypeName, DescriptorMetadata> allDescriptors = new LinkedHashMap<>();
+        Map<TypeName, DescriptorHandler> allDescriptors = new LinkedHashMap<>();
 
         ClassLoader classLoader = classLoader();
 
         // each line is a type:service-descriptor:weight:contract,contract
         if (config.discoverServices()) {
-            classLoader.resources(SERVICES_RESOURCE)
-                    .flatMap(CoreServiceDiscovery::loadLines)
-                    .filter(not(Line::isEmpty))
-                    .filter(not(Line::isComment))
-                    .flatMap(DescriptorMeta::parse)
-                    .forEach(it -> allDescriptors.putIfAbsent(it.descriptorType(), it));
+            classLoader.resources(SERVICE_REGISTRY_LOCATION)
+                    .forEach(url -> {
+                        loadServices(url)
+                                .map(DescriptorHandlerImpl::new)
+                                .forEach(it -> allDescriptors.putIfAbsent(it.descriptorType(),
+                                                                          it));
+                    });
         }
 
-        List<DescriptorMetadata> result = new ArrayList<>(allDescriptors.values());
+        List<DescriptorHandler> result = new ArrayList<>(allDescriptors.values());
 
         if (config.discoverServicesFromServiceLoader()) {
             // each line is a provider type name (and may have zero or more implementations)
@@ -68,7 +72,7 @@ class CoreServiceDiscovery implements ServiceDiscovery {
                     .flatMap(CoreServiceDiscovery::loadLines)
                     .filter(not(Line::isEmpty))
                     .filter(not(Line::isComment))
-                    .flatMap(DescriptorMeta::parseServiceProvider)
+                    .flatMap(DescriptorHandlerImpl::parseServiceProvider)
                     .forEach(result::add);
         }
 
@@ -84,7 +88,7 @@ class CoreServiceDiscovery implements ServiceDiscovery {
     }
 
     @Override
-    public List<DescriptorMetadata> allMetadata() {
+    public List<DescriptorHandler> allMetadata() {
         return allDescriptors;
     }
 
@@ -143,8 +147,8 @@ class CoreServiceDiscovery implements ServiceDiscovery {
         }
     }
 
-    private static DescriptorMeta createServiceProviderDescriptor(TypeName providerType,
-                                                                  ServiceLoader.Provider<Object> provider) {
+    private static DescriptorHandlerImpl createServiceProviderDescriptor(TypeName providerType,
+                                                                         ServiceLoader.Provider<Object> provider) {
         Class<?> serviceClass = provider.type();
         double weight = Weights.find(serviceClass, Weighted.DEFAULT_WEIGHT);
 
@@ -156,11 +160,29 @@ class CoreServiceDiscovery implements ServiceDiscovery {
         }
 
         Descriptor<Object> descriptor = ServiceLoader__ServiceDescriptor.create(providerType, provider, weight);
-        return new DescriptorMeta("core",
-                                  descriptor.descriptorType(),
-                                  weight,
-                                  descriptor.contracts(),
-                                  LazyValue.create(descriptor));
+        return new DescriptorHandlerImpl(DescriptorMetadata.create("core",
+                                                                   descriptor.descriptorType(),
+                                                                   weight,
+                                                                   descriptor.contracts()),
+                                         LazyValue.create(descriptor));
+    }
+
+    private Stream<DescriptorMetadata> loadServices(URL url) {
+
+        Hson.Array array;
+
+        try (var stream = url.openStream()) {
+            array = Hson.parse(stream)
+                    .asArray();
+        } catch (IOException e) {
+            LOGGER.log(Level.WARNING, "Failed to read services from " + url, e);
+            return Stream.of();
+        }
+
+        return Descriptors.descriptors("classpath descriptor " + url,
+                                       array)
+                .stream();
+
     }
 
     private record Line(String source, String line, int lineNumber) {
@@ -173,13 +195,11 @@ class CoreServiceDiscovery implements ServiceDiscovery {
         }
     }
 
-    private record DescriptorMeta(String registryType,
-                                  TypeName descriptorType,
-                                  double weight,
-                                  Set<TypeName> contracts,
-                                  LazyValue<Descriptor<?>> descriptorSupplier) implements DescriptorMetadata {
-        DescriptorMeta(String registryType, TypeName descriptorType, double weight, Set<TypeName> contract) {
-            this(registryType, descriptorType, weight, contract, LazyValue.create(() -> getDescriptorInstance(descriptorType)));
+    private record DescriptorHandlerImpl(DescriptorMetadata metadata,
+                                         LazyValue<Descriptor<?>> descriptorSupplier) implements DescriptorHandler {
+
+        DescriptorHandlerImpl(DescriptorMetadata metadata) {
+            this(metadata, LazyValue.create(() -> getDescriptorInstance(metadata.descriptorType())));
         }
 
         @Override
@@ -187,7 +207,32 @@ class CoreServiceDiscovery implements ServiceDiscovery {
             return descriptorSupplier.get();
         }
 
-        private static Stream<DescriptorMeta> parseServiceProvider(Line line) {
+        @Override
+        public String registryType() {
+            return metadata.registryType();
+        }
+
+        @Override
+        public TypeName descriptorType() {
+            return metadata.descriptorType();
+        }
+
+        @Override
+        public Set<TypeName> contracts() {
+            return metadata.contracts();
+        }
+
+        @Override
+        public double weight() {
+            return metadata.weight();
+        }
+
+        @Override
+        public Hson.Object toHson() {
+            return metadata.toHson();
+        }
+
+        private static Stream<DescriptorHandlerImpl> parseServiceProvider(Line line) {
             // io.helidon.config.ConfigSource
             TypeName providerType = TypeName.create(line.line.trim());
 
@@ -200,49 +245,13 @@ class CoreServiceDiscovery implements ServiceDiscovery {
             return serviceLoader.stream()
                     .map(it -> CoreServiceDiscovery.createServiceProviderDescriptor(providerType, it));
         }
-
-        private static Stream<DescriptorMeta> parse(Line line) {
-            // core:io.helidon.ContractImpl__ServiceDescriptor:101.3:io.helidon.Contract,io.helidon.Contract2
-            // inject:io.helidon.ContractImpl__ServiceDescriptor:101.3:io.helidon.Contract,io.helidon.Contract2
-            String[] components = line.line().split(":");
-            if (components.length < 4) {
-                // allow more, if we need more info in the future, to be backward compatible for libraries
-                LOGGER.log(Level.WARNING,
-                           "Line " + line.lineNumber() + " of " + line.source()
-                                   + " is invalid, should be registry-type:service-descriptor:weight:contracts");
-            }
-            try {
-                String registryType = components[0];
-                TypeName descriptor = TypeName.create(components[1]);
-                double weight = Double.parseDouble(components[2]);
-
-                if (LOGGER.isLoggable(Level.TRACE)) {
-                    LOGGER.log(Level.TRACE,
-                               "Discovered service descriptor %s, weight: %s".formatted(descriptor.fqName(),
-                                                                                        weight));
-                }
-
-                Set<TypeName> contracts = Stream.of(components[3].split(","))
-                        .map(String::trim)
-                        .map(TypeName::create)
-                        .collect(Collectors.toSet());
-
-                return Stream.of(new DescriptorMeta(registryType, descriptor, weight, contracts));
-            } catch (RuntimeException e) {
-                LOGGER.log(Level.WARNING,
-                           "Line " + line.lineNumber() + " of " + line.source()
-                                   + " is invalid, should be service-descriptor:weight:contracts",
-                           e);
-                return Stream.empty();
-            }
-        }
     }
 
     static class NoopServiceDiscovery implements ServiceDiscovery {
         private static final ServiceDiscovery INSTANCE = new NoopServiceDiscovery();
 
         @Override
-        public List<DescriptorMetadata> allMetadata() {
+        public List<DescriptorHandler> allMetadata() {
             return List.of();
         }
     }

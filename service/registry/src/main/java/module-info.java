@@ -22,13 +22,16 @@ import io.helidon.common.features.api.Preview;
  * Core service registry, supporting {@link io.helidon.service.registry.Service.Provider}.
  */
 @Feature(value = "registry",
-        description = "Service Registry",
-        in = HelidonFlavor.SE,
-        path = "Registry"
+         description = "Service Registry",
+         in = HelidonFlavor.SE,
+         path = "Registry"
 )
 @Preview
 module io.helidon.service.registry {
     requires static io.helidon.common.features.api;
+
+    requires io.helidon.service.metadata;
+    requires io.helidon.metadata.hson;
 
     requires transitive io.helidon.common.config;
     requires transitive io.helidon.builder.api;

@@ -14,21 +14,17 @@
  * limitations under the License.
  */
 
-import io.helidon.service.codegen.ServiceRegistryCodegenProvider;
+package io.helidon.service.registry;
 
 /**
- * Code generation for Helidon Service Registry.
+ * Metadata of a single service descriptor.
+ * This information is stored within the Helidon specific {code META-INF} services file.
  */
-module io.helidon.service.codegen {
-    requires transitive io.helidon.builder.api;
-    requires transitive io.helidon.codegen.classmodel;
-    requires transitive io.helidon.codegen;
-
-    requires io.helidon.metadata.hson;
-    requires io.helidon.service.metadata;
-
-    exports io.helidon.service.codegen;
-
-    provides io.helidon.codegen.spi.CodegenExtensionProvider
-            with ServiceRegistryCodegenProvider;
+public interface DescriptorHandler extends io.helidon.service.metadata.DescriptorMetadata {
+    /**
+     * Descriptor instance.
+     *
+     * @return the descriptor
+     */
+    GeneratedService.Descriptor<?> descriptor();
 }

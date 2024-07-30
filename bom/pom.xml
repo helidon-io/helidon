@@ -1438,6 +1438,11 @@
             <!-- Service registry -->
             <dependency>
                 <groupId>io.helidon.service</groupId>
+                <artifactId>helidon-service-metadata</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.service</groupId>
                 <artifactId>helidon-service-registry</artifactId>
                 <version>${helidon.version}</version>
             </dependency>

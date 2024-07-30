@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -28,36 +28,24 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>helidon-service-codegen</artifactId>
-    <name>Helidon Service Codegen</name>
+    <artifactId>helidon-service-metadata</artifactId>
+    <name>Helidon Service Metadata</name>
     <description>
-        Code generation implementation for Helidon Service, to be used from annotation processing and from maven plugin
+        Metadata library to read and write service registry information.
     </description>
 
     <dependencies>
         <dependency>
             <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-types</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.codegen</groupId>
-            <artifactId>helidon-codegen</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.codegen</groupId>
-            <artifactId>helidon-codegen-class-model</artifactId>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-types</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.metadata</groupId>
             <artifactId>helidon-metadata-hson</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.service</groupId>
-            <artifactId>helidon-service-metadata</artifactId>
         </dependency>
     </dependencies>
 </project>
