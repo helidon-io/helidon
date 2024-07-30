@@ -27,6 +27,7 @@ include::{rootdir}/includes/se.adoc[]
 :gen-inc: {incdir}/openapi-generator.adoc
 :petServiceImpl: {sourcedir}/se/openapi/gen/server/api/PetServiceImplCustom.java
 :addPetOpCustom: {sourcedir}/se/openapi/gen/server/api/AddPetOpCustom.java
+:exampleClient: {sourcedir}/se/openapi/gen/client/ExampleClient.java
 
 :helidon-client-xref: {webclient-page}
 
@@ -163,68 +164,71 @@ The `ApiClient.Builder` automatically prepares a Helidon
 link:{webclient-javadoc-base-url}.api/io/helidon/webclient/api/WebClientConfig.Builder.html[`WebClientConfig.Builder`]
 object using information from the OpenAPI document.
 
-The next sections describe, from simplest to most complicated, the ways your code can create an `ApiClient` instance, each involving increased involvement with the `WebClient.Builder` object.
+The next sections describe, from simplest to most complicated, the ways your code can create an `ApiClient` instance, each involving increased involvement with the `WebClientConfig.Builder` object.
 
-===== Accepting the Automatic `WebClient.Builder`
+===== Accepting the Automatic `WebClientConfig.Builder`
 In the simplest case, your code can get an `ApiClient` instance directly.
 
 [source,java]
 .Creating an `ApiClient` instance - simple case
 ----
-ApiClient apiClient = ApiClient.builder().build();
+include::{exampleClient}[tags=classDecl;initDecl;defaultApiClient;initEnd;classEnd]
 ----
+<1> The same `ApiClient` instance can be reused to invoke multiple APIs handled by the same server.
+<2> Creates an `ApiClient` instance using default settings from the OpenAPI document.
 
-Your code relies fully on the automatic `WebClient.Builder`.
+Your code relies fully on the automatic `WebClient`.
 In many cases, this approach works very well, especially if the OpenAPI document correctly declares the servers and their URIs.
 
-===== Influencing the Automatic `WebClient.Builder`
-Your code can use the `ApiClient.Builder` to fine-tune the settings for the internal `WebClient.Builder`.
+===== Influencing the Automatic `WebClientConfig.Builder`
+Your code can use the `ApiClient.Builder` to fine-tune the settings for the internal `WebClientConfig.Builder`.
 For instance, your code can set an object mapper to be used for Jackson processing or the `JsonbConfig` object to be used for JSON-B processing, depending on which serialization library you chose when you ran the generator.
 
-Your code does not need to know how the object mapper setting is conveyed to the internal `WebClient.Builder`. The `ApiClient.Builder` knows how to do that.
+Your code does not need to know how the object mapper setting is conveyed to the internal `WebClientConfig.Builder`. The `ApiClient.Builder` knows how to do that.
 
 [source,java]
 .Creating an `ApiClient` instance - influencing the `ApiClient.Builder`
 ----
-ApiClient apiClient = apiClient.builder()
-                            .objectMapper(yourCustomMapper)
-                            .build();
+include::{exampleClient}[tags=classDecl;initDecl;apiClientWithObjMapper;initEnd;classEnd]
 ----
+<1> Stores a reusable `ApiClient`.
+<2> A real app would fully set up the `ObjectMapper`.
+<3> Sets the object mapper for use in the `ApiClient.Builder` 's internal `WebClientConfig.Builder`.
 
-===== Adjusting the Automatic `WebClient.Builder`
-In more complicated situations, your code can adjust the settings of the `WebClient.Builder` the `ApiClient.Builder` creates.
+===== Adjusting the Automatic `WebClientConfig.Builder`
+In more complicated situations, your code can adjust the settings of the `WebClientConfig.Builder` which the `ApiClient.Builder` creates.
 
 [source,java]
-.Creating an `ApiClient` instance - adjusting the `WebClient.Builder`
+.Creating an `ApiClient` instance - adjusting the `WebClientConfig.Builder`
 ----
-ApiClient.Builder apiClientBuilder = ApiClient.builder();
-
-apiClientBuilder.webClientBuilder() // <1>
-                .connectTimeout(4, TimeUnit.SECONDS); // <2>
-
-ApiClient apiClient = apiClientBuilder.build(); // <3>
+include::{exampleClient}[tags=classDecl;initDecl;apiClientWithAdjustedBuilder;initEnd;classEnd]
 ----
-<1> Access the `ApiClient.Builder`'s automatic `WebClient.Builder` instance.
-<2> Adjust a setting of the `WebClient.Builder` directly.
-<3> Build the `ApiClient` which implicitly builds the `WebClient` from the now-adjusted internal `WebClient.Builder`.
+<1> Stores a reusable `AppClient`.
+<2> Creates a new `AppClient` builder.
+<3> Access the `ApiClient.Builder`'s automatic `WebClientConfig.Builder` instance.
+<4> Adjusts a setting of the `WebClientConfig.Builder` directly.
+<5> Builds the `ApiClient` which implicitly builds the `WebClient` from the now-adjusted internal `WebClientConfig.Builder`.
 
-The automatic `WebClient.Builder` retains information derived from the OpenAPI document unless your code overrides those specific settings.
+The automatic `WebClientConfig.Builder` retains information derived from the OpenAPI document unless your code overrides those specific settings.
 
-===== Providing a Custom `WebClient.Builder`
-Lastly, you can construct the `WebClient.Builder` entirely yourself and have the `ApiClient.Builder` use it instead of its own internal builder.
+===== Providing a Custom `WebClientConfig.Builder`
+Lastly, you can construct the `WebClientConfig.Builder` entirely yourself and have the `ApiClient.Builder` use it instead of its own internal builder.
 
 [source,java]
-.Creating an `ApiClient` instance - using a custom `WebClient.Builder`
+.Creating an `ApiClient` instance - using a custom `WebClientConfig.Builder`
 ----
-WebClient.Builder customWebClientBuilder = WebClient.builder()
-                .connectTimeout(3, TimeUnit.SECONDS)
-                .baseUri("https://myservice.mycompany.com");
+include::{exampleClient}[tags=classDecl;initDecl;apiClientWithCustomWebClientBuilder;initEnd;classEnd]
+----
+<1> Stores a reusable `AppClient`.
+<2> Creates a new `WebClientConfig.Builder`.
+<3> Sets the connection timeout directly on the `WebClientConfig.Builder`.
+<4> Sets the base URI on the `WebClienConfig.Builder`.
+<5> Creates a new `ApiClient.Builder'.
+<6> Sets the `WebClientConfig.Builder` which the `ApiClient.Builder` should use (instead of the one it prepares internally).
+<7> Builds the `ApiClient` which uses the newly-assigned `WebClientConfig.Builder` in the process.
 
-ApiClient apiClient = ApiClient.builder()
-                        .webClientBuilder(customWebClientBuilder)
-                        .build();
-----
-Note that this approach entirely replaces the internal, automatically-prepared `WebClient.Builder` with yours; it _does not_ merge the new builder with the internal one. In particular, any information from the OpenAPI document the generator used to prepare the internal  `WebClient.Builder` is lost.
+
+Note that this approach entirely replaces the internal, automatically-prepared `WebClientConfig.Builder` with yours; it _does not_ merge the new builder with the internal one. In particular, any information from the OpenAPI document the generator used to prepare the internal  `WebClientConfig.Builder` is lost.
 
 
 ==== Creating a `PetApi` Instance
@@ -237,15 +241,18 @@ To invoke an operation defined on the `PetApi` interface, your code instantiates
 [source,java]
 .Preparing the PetStore Client API
 ----
-ApiClient apiClient = ApiClient.builder().build();
-PetApi petApi = PetApiImpl.create(apiClient);
+include::{exampleClient}[tags=classDeclFull;prepPetApi;classEnd]
 ----
+<1> Stores a reusable `AppClient`.
+<2> Stores a reusable `PetApi` for invoking pet-related operations.
+<3> Initializes and saves the `PetApi` instance using the previously-prepared `apiClient`.
+
 
 ==== Invoking Remote Endpoints
 With the `petApi` object, your code can invoke any of the methods on the `PetApi` interface to contact the remote service.
 
 The Helidon SE client generator creates an `ApiResponse` interface.
-Each generated `PetApi` method returns an `ApiResponse<returnType>` where the `returnType` is the return type declared in the OpenAPI document for the corresponding operation.
+Each generated `PetApi` method returns an `ApiResponse<returnType>` where the `returnType` is the return type (if any) declared in the OpenAPI document for the corresponding operation.
 
 The `ApiResponse` interface exposes two methods your code can use to work with the response from the remote service invocation:
 
@@ -266,6 +273,15 @@ So there are two events associated with an incoming HTTP response:
 
 You can adopt different styles of retrieving the results, depending on the specific needs of the code you are writing.
 
+===== Access only the result
+[source,java]
+.Access with only result access
+----
+include::{exampleClient}[tags=findAvailableDecl;findAvailableSimple;findAvailableUseResult;findAvailableEnd]
+----
+<1> Use the previously-prepared `petApi` to find pets that have the `available` status.
+<2> Retrieve the typed result from the `ApiResponse`.
+
 ===== Access with status checking
 The Helidon WebClient programming model includes a `HTTPClientResponse` interface which exposes all aspects of the HTTP response returned from the remote service.
 
@@ -274,20 +290,12 @@ The next example shows how your code can use the `HTTPClientResponse`.
 [source,java]
 .Access with status checking
 ----
-ApiResponse<List<Pet>> apiResponse = petApi.findPetsByStatus(List.of(Pet.StatusEnum.AVAILABLE.value())); // <1>
-
-HTTPClientResponse webClientResponse = apiResponse.webClientResponse(); // <2>
-
-if (webClientResponse.status().code() != 200) { // <3>
-    // Handle a non-successful status.
-}
-
-List<Pet>> availablePets = apiResponse.result(); // <4>
+include::{exampleClient}[tags=findAvailableDecl;findAvailableSimple;findAvailableResponseCheck;findAvailableEnd]
 ----
 <1> Start the remote service invocation.
 <2> Wait for the HTTP response status and headers to arrive.
 <3> Check the status in the HTTP response.
-<4> Wait for the content to arrive subject to a four-second timeout.
+<4> Wait for the content to arrive, extracting the result and converting it to the proper type.
 
 This code also blocks the current thread, first to wait for the initial response and then to wait for the result content.
 

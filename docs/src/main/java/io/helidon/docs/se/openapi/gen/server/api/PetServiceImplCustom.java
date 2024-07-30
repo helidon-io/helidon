@@ -31,7 +31,7 @@ import io.helidon.http.media.multipart.MultiPart;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Optional;
 import io.helidon.common.parameters.Parameters;
-import io.helidon.docs.se.openapi.gen.model.Pet;
+import io.helidon.docs.se.openapi.gen.server.model.Pet;
 import io.helidon.http.media.multipart.ReadablePart;
 import java.util.Set;
 import io.helidon.http.Status;

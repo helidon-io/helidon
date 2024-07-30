@@ -231,8 +231,37 @@
                                 <groupId>io.helidon.docs.openapi.gen.se</groupId>
                                 <artifactId>helidon-docs-openapi-gen-se-server</artifactId>
                                 <apiPackage>io.helidon.docs.se.openapi.gen.server.api</apiPackage>
-                                <modelPackage>io.helidon.docs.se.openapi.gen.model</modelPackage>
+                                <modelPackage>io.helidon.docs.se.openapi.gen.server.model</modelPackage>
                                 <invokerPackage>io.helidon.docs.se.openapi.gen.server</invokerPackage>
+                            </configOptions>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>create-openapi-generator-project-se-client</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <phase>generate-sources</phase>
+                        <configuration>
+                            <generatorName>java-helidon-client</generatorName>
+                            <library>se</library>
+                            <inputSpec>${project.basedir}/src/main/resources/petstorex.yaml</inputSpec>
+                            <additionalProperties>
+                                <additionalProperty>helidonVersion=${parsedHelidonVersion.majorVersion}</additionalProperty>
+                                <!--
+                                    The following setting avoids having to add an OpenAPITools library to this build to resolve
+                                    JsonNullableModule.
+                                -->
+                                <additionalProperty>openApiNullable=false</additionalProperty>
+                            </additionalProperties>
+                            <output>${project.build.directory}/generated-sources/se/client</output>
+                            <addCompileSourceRoot>true</addCompileSourceRoot>
+                            <configOptions>
+                                <groupId>io.helidon.docs.openapi.gen.se</groupId>
+                                <artifactId>helidon-docs-openapi-gen-se-client</artifactId>
+                                <apiPackage>io.helidon.docs.se.openapi.gen.client.api</apiPackage>
+                                <modelPackage>io.helidon.docs.se.openapi.gen.client.model</modelPackage>
+                                <invokerPackage>io.helidon.docs.se.openapi.gen.client</invokerPackage>
                             </configOptions>
                         </configuration>
                     </execution>

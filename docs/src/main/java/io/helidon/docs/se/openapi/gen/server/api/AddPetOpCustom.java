@@ -15,7 +15,7 @@
  */
 package io.helidon.docs.se.openapi.gen.server.api;
 
-import io.helidon.docs.se.openapi.gen.model.Pet;
+import io.helidon.docs.se.openapi.gen.server.model.Pet;
 import io.helidon.webserver.http.ServerRequest;
 
 // tag::classDecl[]
