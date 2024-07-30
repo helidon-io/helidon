@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import io.helidon.http.media.InstanceWriter;
 import io.helidon.http.media.MediaContext;
 import io.helidon.webclient.api.ClientRequestBase;
 import io.helidon.webclient.api.ClientUri;
+import io.helidon.webclient.api.Proxy.ProxyType;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 
@@ -177,6 +178,14 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
     @Override
     protected MediaContext mediaContext() {
         return super.mediaContext();
+    }
+
+    @Override
+    protected void additionalHeaders() {
+        super.additionalHeaders();
+        if (proxy() != null && proxy().type() != ProxyType.NONE) {
+            header(PROXY_CONNECTION);
+        }
     }
 
     Http1ClientImpl http1Client() {

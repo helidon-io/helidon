@@ -58,8 +58,6 @@ import io.helidon.http.Status;
 public class Proxy {
     private static final System.Logger LOGGER = System.getLogger(Proxy.class.getName());
     private static final Tls NO_TLS = Tls.builder().enabled(false).build();
-    private static final Header PROXY_CONNECTION =
-            HeaderValues.create("Proxy-Connection", "keep-alive");
 
     /**
      * No proxy instance.
@@ -482,7 +480,7 @@ public class Proxy {
                     .accept(MediaTypes.WILDCARD);
             if (clientConfig.keepAlive()) {
                 request.header(HeaderValues.CONNECTION_KEEP_ALIVE)
-                    .header(PROXY_CONNECTION);
+                    .header(ClientRequestBase.PROXY_CONNECTION);
             }
             proxy.proxyAuthHeader.ifPresent(request::header);
             // we cannot close the response, as that would close the connection

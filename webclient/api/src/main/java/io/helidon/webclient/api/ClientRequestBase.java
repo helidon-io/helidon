@@ -59,6 +59,10 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
      */
     public static final Header USER_AGENT_HEADER = HeaderValues.create(HeaderNames.USER_AGENT,
                                                                        "Helidon " + Version.VERSION);
+    /**
+     * Proxy connection header.
+     */
+    public static final Header PROXY_CONNECTION = HeaderValues.create("Proxy-Connection", "keep-alive");
     private static final Map<String, AtomicLong> COUNTERS = new ConcurrentHashMap<>();
     private static final Set<String> SUPPORTED_SCHEMES = Set.of("https", "http");
 
@@ -253,7 +257,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
 
     @Override
     public R request() {
-        headers.setIfAbsent(USER_AGENT_HEADER);
+        additionalHeaders();
         return validateAndSubmit(BufferData.EMPTY_BYTES);
     }
 
@@ -262,15 +266,22 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
         if (!(entity instanceof byte[] bytes && bytes.length == 0)) {
             rejectHeadWithEntity();
         }
-        headers.setIfAbsent(USER_AGENT_HEADER);
+        additionalHeaders();
         return validateAndSubmit(entity);
     }
 
     @Override
     public final R outputStream(OutputStreamHandler outputStreamConsumer) {
         rejectHeadWithEntity();
-        headers.setIfAbsent(USER_AGENT_HEADER);
+        additionalHeaders();
         return doOutputStream(outputStreamConsumer);
+    }
+
+    /**
+     * Append additional headers before sending the request.
+     */
+    protected void additionalHeaders() {
+        headers.setIfAbsent(USER_AGENT_HEADER);
     }
 
     /**
