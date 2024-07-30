@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.1.0-SNAPSHOT</version>
     </parent>
     <packaging>pom</packaging>
     <artifactId>helidon-all</artifactId>
@@ -282,6 +282,18 @@
             <artifactId>helidon-microprofile-service-common</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.microprofile.grpc</groupId>
+            <artifactId>helidon-microprofile-grpc-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.grpc</groupId>
+            <artifactId>helidon-microprofile-grpc-server</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.grpc</groupId>
+            <artifactId>helidon-microprofile-grpc-tracing</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.metrics</groupId>
             <artifactId>helidon-metrics</artifactId>
         </dependency>
@@ -292,10 +304,6 @@
         <dependency>
             <groupId>io.helidon.metrics</groupId>
             <artifactId>helidon-metrics-system-meters</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.metrics</groupId>
-            <artifactId>helidon-metrics-provider-tests</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.metrics.providers</groupId>
@@ -384,6 +392,30 @@
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-tls</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.codegen</groupId>
+            <artifactId>helidon-codegen</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.codegen</groupId>
+            <artifactId>helidon-codegen-apt</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.codegen</groupId>
+            <artifactId>helidon-codegen-scan</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.codegen</groupId>
+            <artifactId>helidon-codegen-compiler</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.codegen</groupId>
+            <artifactId>helidon-codegen-class-model</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.codegen</groupId>
+            <artifactId>helidon-codegen-helidon-copyright</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.processor</groupId>
@@ -490,6 +522,14 @@
             <artifactId>helidon-tracing-jersey</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.grpc</groupId>
+            <artifactId>helidon-grpc-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.grpc</groupId>
+            <artifactId>helidon-grpc-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.microprofile.tracing</groupId>
             <artifactId>helidon-microprofile-tracing</artifactId>
         </dependency>
@@ -544,6 +584,10 @@
         <dependency>
             <groupId>io.helidon.integrations.db</groupId>
             <artifactId>helidon-integrations-db-mysql</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.cdi</groupId>
+            <artifactId>helidon-integrations-cdi-configurable</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.integrations.cdi</groupId>
@@ -612,6 +656,22 @@
         <dependency>
             <groupId>io.helidon.integrations.micrometer</groupId>
             <artifactId>helidon-integrations-micrometer-cdi</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.oci</groupId>
+            <artifactId>helidon-integrations-oci</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.oci.authentication</groupId>
+            <artifactId>helidon-integrations-oci-authentication-instance</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.oci.authentication</groupId>
+            <artifactId>helidon-integrations-oci-authentication-resource</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.oci.authentication</groupId>
+            <artifactId>helidon-integrations-oci-authentication-oke-workload</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.integrations.oci.sdk</groupId>
@@ -744,6 +804,10 @@
         <dependency>
             <groupId>io.helidon.messaging.mock</groupId>
             <artifactId>helidon-messaging-mock</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.testing</groupId>
+            <artifactId>helidon-microprofile-testing-mocking</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.logging</groupId>
@@ -948,6 +1012,10 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient-grpc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
             <artifactId>helidon-webclient-sse</artifactId>
         </dependency>
         <dependency>
@@ -987,6 +1055,10 @@
             <artifactId>helidon-builder-processor</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.builder</groupId>
+            <artifactId>helidon-builder-codegen</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.inject</groupId>
             <artifactId>helidon-inject-api</artifactId>
         </dependency>
@@ -997,10 +1069,6 @@
         <dependency>
             <groupId>io.helidon.inject</groupId>
             <artifactId>helidon-inject-processor</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject-maven-plugin</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.inject</groupId>
@@ -1021,6 +1089,18 @@
         <dependency>
             <groupId>io.helidon.inject.configdriven</groupId>
             <artifactId>helidon-inject-configdriven-processor</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-registry</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-codegen</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.metadata</groupId>
+            <artifactId>helidon-metadata-hson</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.integrations.oci.sdk</groupId>

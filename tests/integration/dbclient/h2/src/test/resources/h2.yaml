@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+# Copyright (c) 2019, 2024 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ db:
   port: 9092
   password: "password"
   database: "test"
+  missing-map-parameters-as-null: true
   connection:
     url: jdbc:h2:tcp://${db.host}:${db.port}/${db.database};DATABASE_TO_UPPER=FALSE
   health-check:
@@ -56,6 +57,7 @@ db:
     select-pokemons-idrng-named-arg: "SELECT id, name FROM Pokemons WHERE id > :idmin AND id < :idmax"
     select-pokemons-idrng-order-arg: "SELECT id, name FROM Pokemons WHERE id > ? AND id < ?"
     select-pokemons-error-arg: "SELECT id, name FROM Pokemons WHERE id > :id AND name = ?"
+    select-pokemons-idname-named-arg: "SELECT id, name FROM Pokemons WHERE name=:name AND id=:id"
 
 test:
   ping-dml: false

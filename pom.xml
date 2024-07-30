@@ -25,7 +25,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-dependencies</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.1.0-SNAPSHOT</version>
         <relativePath>./dependencies/pom.xml</relativePath>
     </parent>
     <artifactId>helidon-project</artifactId>
@@ -49,23 +49,29 @@
         <spotbugs.skip>false</spotbugs.skip>
         <spotbugs.threshold>Medium</spotbugs.threshold>
 
+        <!-- owasp dependency check -->
         <dependency-check.skip>false</dependency-check.skip>
         <checkstyle.skip>false</checkstyle.skip>
+
+        <!-- Maven dependency check -->
+        <dependency-plugin-check-dependencies.skip>false</dependency-plugin-check-dependencies.skip>
+        <javadoc.fail-on-warnings>false</javadoc.fail-on-warnings>
+
         <!--
         !Version statement! - begin
 
         Changing these version requires approval for a new third party dependency!
         -->
         <version.lib.arquillian>1.7.0.Final</version.lib.arquillian>
-        <version.lib.asm>9.5</version.lib.asm>
-        <version.lib.checkstyle>9.1</version.lib.checkstyle>
+        <version.lib.asm>9.7</version.lib.asm>
+        <version.lib.checkstyle>10.12.5</version.lib.checkstyle>
         <version.lib.commons-io>2.11.0</version.lib.commons-io>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
-        <version.lib.microprofile-core-profile>10.0.2</version.lib.microprofile-core-profile>
+        <version.lib.microprofile-core-profile>10.0.3</version.lib.microprofile-core-profile>
         <version.lib.sigtest>1.4</version.lib.sigtest>
         <version.lib.jsonp-tck>2.1.1</version.lib.jsonp-tck>
         <version.lib.microprofile-cdi-tck>4.0.12</version.lib.microprofile-cdi-tck>
-        <version.lib.microprofile-restful-tck>3.1.4</version.lib.microprofile-restful-tck>
+        <version.lib.microprofile-restful-tck>3.1.5</version.lib.microprofile-restful-tck>
         <!-- Silence javadoc error org.jboss.logging.annotations.Message$Format not found -->
         <version.lib.jboss-logging-annotations>2.2.1.Final</version.lib.jboss-logging-annotations>
         <version.lib.jsoup>1.15.3</version.lib.jsoup>
@@ -91,7 +97,7 @@
         <version.lib.vertx-core>4.3.8</version.lib.vertx-core>
         <version.lib.wiremock>2.26.3</version.lib.wiremock>
         <version.lib.commons-lang3>3.10</version.lib.commons-lang3>
-        <version.lib.classgraph>4.8.154</version.lib.classgraph>
+        <version.lib.classgraph>4.8.165</version.lib.classgraph>
         <!--
         !Version statement! - end
         -->
@@ -101,7 +107,7 @@
         <version.plugin.archetype>3.1.2</version.plugin.archetype>
         <version.plugin.ant>3.1.0</version.plugin.ant>
         <version.plugin.build-helper>3.4.0</version.plugin.build-helper>
-        <version.plugin.checkstyle>3.1.2</version.plugin.checkstyle>
+        <version.plugin.checkstyle>3.3.1</version.plugin.checkstyle>
         <version.plugin.compiler>3.11.0</version.plugin.compiler>
         <version.plugin.dependency>3.6.0</version.plugin.dependency>
         <version.plugin.directory>1.0</version.plugin.directory>
@@ -110,7 +116,7 @@
         <version.plugin.exec>3.1.0</version.plugin.exec>
         <version.plugin.failsafe>3.1.2</version.plugin.failsafe>
         <version.plugin.glassfish-copyright>2.3</version.plugin.glassfish-copyright>
-        <version.plugin.helidon-build-tools>4.0.2</version.plugin.helidon-build-tools>
+        <version.plugin.helidon-build-tools>4.0.6</version.plugin.helidon-build-tools>
         <version.plugin.hibernate-enhance>${version.lib.hibernate}</version.plugin.hibernate-enhance>
         <version.plugin.jacoco>0.8.5</version.plugin.jacoco>
         <version.plugin.jandex>3.1.2</version.plugin.jandex>
@@ -127,7 +133,7 @@
         <version.plugin.source>3.0.1</version.plugin.source>
         <version.plugin.spotbugs>4.7.3.5</version.plugin.spotbugs>
         <version.plugin.findsecbugs>1.12.0</version.plugin.findsecbugs>
-        <version.plugin.dependency-check>9.0.8</version.plugin.dependency-check>
+        <version.plugin.dependency-check>10.0.2</version.plugin.dependency-check>
         <version.plugin.surefire>3.1.0</version.plugin.surefire>
         <version.plugin.toolchains>1.1</version.plugin.toolchains>
         <version.plugin.version-plugin>2.3</version.plugin.version-plugin>
@@ -165,11 +171,15 @@
         <javadoc.link.narayana>https://narayana.io/docs/api/</javadoc.link.narayana>
         <javadoc.link.eclipselink>https://www.eclipse.org/eclipselink/api/4.0/</javadoc.link.eclipselink>
         <javadoc.link.hibernate>https://docs.jboss.org/hibernate/orm/${version.lib.hibernate.family}/javadocs/</javadoc.link.hibernate>
+        <javadoc.link.ojdbc>https://docs.oracle.com/en/database/oracle/oracle-database/${version.lib.ojdbc.family}/jajdb/</javadoc.link.ojdbc>
+        <javadoc.link.ucp>https://docs.oracle.com/en/database/oracle/oracle-database/${version.lib.ojdbc.family}/jjuar/</javadoc.link.ucp>
 
         <javadoc.jackson.version>2.14</javadoc.jackson.version>
         <javadoc.link.jackson-annotations>https://fasterxml.github.io/jackson-annotations/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-annotations>
         <javadoc.link.jackson-core>https://fasterxml.github.io/jackson-core/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-core>
         <javadoc.link.jackson-databind>https://fasterxml.github.io/jackson-databind/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-databind>
+        <javadoc.link.oci-common>https://javadoc.io/static/com.oracle.oci.sdk/oci-java-sdk-common/${version.lib.oci}/</javadoc.link.oci-common>
+        <javadoc.link.oci-addons-oke-workload-identity>https://javadoc.io/static/com.oracle.oci.sdk/oci-java-sdk-addons-oke-workload-identity/${version.lib.oci}/</javadoc.link.oci-addons-oke-workload-identity>
         <javadoc.link.reactive-streams>https://www.reactive-streams.org/reactive-streams-${version.lib.reactivestreams}-javadoc</javadoc.link.reactive-streams>
         <javadoc.link.typesafe-config>https://static.javadoc.io/com.typesafe/config/${version.lib.typesafe-config}</javadoc.link.typesafe-config>
         <javadoc.link.opentracing>https://static.javadoc.io/io.opentracing/opentracing-api/${version.lib.opentracing}</javadoc.link.opentracing>
@@ -193,6 +203,7 @@
         <module>dependencies</module>
         <module>fault-tolerance</module>
         <module>graphql</module>
+        <module>grpc</module>
         <module>health</module>
         <module>helidon</module>
         <module>http</module>
@@ -213,6 +224,9 @@
         <module>webclient</module>
         <module>webserver</module>
         <module>websocket</module>
+        <module>codegen</module>
+        <module>service</module>
+        <module>metadata</module>
     </modules>
 
     <build>
@@ -259,6 +273,7 @@
                     <configuration>
                         <source>${version.java}</source>
                         <failOnError>true</failOnError>
+                        <failOnWarnings>${javadoc.fail-on-warnings}</failOnWarnings>
                         <!-- we are not interested in each file that is generated -->
                         <quiet>true</quiet>
                         <offline>true</offline>
@@ -398,6 +413,22 @@
                                 <url>${javadoc.link.hibernate}</url>
                                 <location>${javadoc.pkg.dir}/hibernate</location>
                             </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.ojdbc}</url>
+                                <location>${javadoc.pkg.dir}/ojdbc</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.ucp}</url>
+                                <location>${javadoc.pkg.dir}/ucp</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.oci-common}</url>
+                                <location>${javadoc.pkg.dir}/oci-common</location>
+                            </offlineLink>
+                            <offlineLink>
+                                <url>${javadoc.link.oci-addons-oke-workload-identity}</url>
+                                <location>${javadoc.pkg.dir}/oci-addons-oke-workload-identity</location>
+                            </offlineLink>
                         </offlineLinks>
                         <additionalJOptions combine.children="append">
                             <additionalJOption>-J-Dhttp.agent=maven-javadoc-plugin</additionalJOption>
@@ -506,6 +537,26 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
                     <version>${version.plugin.dependency}</version>
+                    <executions>
+                        <execution>
+                            <id>check-dependencies</id>
+                            <goals>
+                                <goal>analyze-only</goal>
+                            </goals>
+                            <phase>none</phase>
+                            <configuration>
+                                <skip>${dependency-plugin-check-dependencies.skip}</skip>
+                                <ignoredPackagings>
+                                    <packaging>pom</packaging>
+                                </ignoredPackagings>
+                                <ignoreNonCompile>true</ignoreNonCompile>
+                                <failOnWarning>true</failOnWarning>
+                                <ignoredDependencies>
+                                    <dependency>io.helidon.common.features:helidon-common-features-api:*</dependency>
+                                </ignoredDependencies>
+                            </configuration>
+                        </execution>
+                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -580,7 +631,7 @@
                     <configuration>
                         <skip>${dependency-check.skip}</skip>
                         <skipTestScope>true</skipTestScope>
-                        <failBuildOnAnyVulnerability>false</failBuildOnAnyVulnerability>
+                        <failBuildOnCVSS>0</failBuildOnCVSS>
                         <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
                         <nvdApiKey>${nvd-api-key}</nvdApiKey>
                         <excludes>
@@ -643,6 +694,14 @@
                     <groupId>org.hibernate.orm.tooling</groupId>
                     <artifactId>hibernate-enhance-maven-plugin</artifactId>
                     <version>${version.plugin.hibernate-enhance}</version>
+                    <!-- Force upgrade for Java 22 support. Should remove after Hibernate upgrade -->
+                    <dependencies>
+                        <dependency>
+                            <groupId>net.bytebuddy</groupId>
+                            <artifactId>byte-buddy</artifactId>
+                            <version>${version.lib.bytebuddy}</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
@@ -766,6 +825,8 @@
                                 <typo>bidler</typo>
                                 <typo>microrpofile</typo>
                                 <typo>depenedency</typo>
+                                <typo>configuraiton</typo>
+                                <typo>Respnose</typo>
                             </typos>
                         </typosConfig>
                     </configuration>

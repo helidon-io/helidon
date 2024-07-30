@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -30,10 +30,16 @@ include::{rootdir}/includes/attributes.adoc[]
 Type: link:{javadoc-base-url}/io.helidon.webserver.http2/io/helidon/webserver/http2/Http2Config.html[io.helidon.webserver.http2.Http2Config]
 
 
+[source,text]
+.Config key
+----
+http_2
+----
+
 
 This type provides the following service implementations:
 
-- `io.helidon.webserver.spi.ProtocolConfig`
+- `io.helidon.webserver.spi.ProtocolConfigProvider`
 
 
 == Configuration options
@@ -52,51 +58,70 @@ This type provides the following service implementations:
  before the next blocking iteration.
  Default value is `PT0.1S`.
 
- <table>
+ 
+++++
+<table>
      <caption><b>ISO_8601 format examples:</b></caption>
      <tr><th>PT0.1S</th><th>100 milliseconds</th></tr>
      <tr><th>PT0.5S</th><th>500 milliseconds</th></tr>
      <tr><th>PT2S</th><th>2 seconds</th></tr>
  </table>
+++++
 
- @return duration
- @see <a href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO_8601 Durations</a>
+
+ Duration
+ See <a href="https://en.wikipedia.org/wiki/ISO_8601.Durations">ISO_8601 Durations</a>
 |`initial-window-size` |int |`1048576` |This setting indicates the sender's maximum window size in bytes for stream-level flow control.
  Default and maximum value is 2<sup>31</sup>-1 = 2147483647 bytes. This setting affects the window size
  of HTTP/2 connection.
  Any value greater than 2147483647 causes an error. Any value smaller than initial window size causes an error.
  See RFC 9113 section 6.9.1 for details.
 
- @return maximum window size in bytes
+ Maximum window size in bytes
 |`max-concurrent-streams` |long |`8192` |Maximum number of concurrent streams that the server will allow.
  Defaults to `8192`. This limit is directional: it applies to the number of streams that the sender
  permits the receiver to create.
  It is recommended that this value be no smaller than 100 to not unnecessarily limit parallelism
  See RFC 9113 section 6.5.2 for details.
 
- @return maximal number of concurrent streams
+ Maximal number of concurrent streams
+|`max-empty-frames` |int |`10` |Maximum number of consecutive empty frames allowed on connection.
+
+ Max number of consecutive empty frames
 |`max-frame-size` |int |`16384` |The size of the largest frame payload that the sender is willing to receive in bytes.
  Default value is `16384` and maximum value is 2<sup>24</sup>-1 = 16777215 bytes.
  See RFC 9113 section 6.5.2 for details.
 
- @return maximal frame size
+ Maximal frame size
 |`max-header-list-size` |long |`8192` |The maximum field section size that the sender is prepared to accept in bytes.
  See RFC 9113 section 6.5.2 for details.
  Default is 8192.
 
- @return maximal header list size in bytes
+ Maximal header list size in bytes
+|`max-rapid-resets` |int |`100` |Maximum number of rapid resets(stream RST sent by client before any data have been sent by server).
+ When reached within rapidResetCheckPeriod(), GOAWAY is sent to client and connection is closed.
+ Default value is `100`.
+
+ Maximum number of rapid resets
+ See <a href="https://nvd.nist.gov/vuln/detail/CVE-2023-44487">CVE-2023-44487</a>
+|`rapid-reset-check-period` |Duration |`PT10S` |Period for counting rapid resets(stream RST sent by client before any data have been sent by server).
+ Default value is `PT10S`.
+
+ Duration
+ See <a href="https://nvd.nist.gov/vuln/detail/CVE-2023-44487">CVE-2023-44487</a>
+ See <a href="https://en.wikipedia.org/wiki/ISO_8601.Durations">ISO_8601 Durations</a>
 |`requested-uri-discovery` |xref:{rootdir}/config/io_helidon_http_RequestedUriDiscoveryContext.adoc[RequestedUriDiscoveryContext] |{nbsp} |Requested URI discovery settings.
 
- @return settings for computing the requested URI
+ Settings for computing the requested URI
 |`send-error-details` |boolean |`false` |Whether to send error message over HTTP to client.
  Defaults to `false`, as exception message may contain internal information that could be used as an
  attack vector. Use with care and in cases where both server and clients are under your full control (such as for
  testing).
 
- @return whether to send error messages over the network
+ Whether to send error messages over the network
 |`validate-path` |boolean |`true` |If set to false, any path is accepted (even containing illegal characters).
 
- @return whether to validate path
+ Whether to validate path
 
 |===
 

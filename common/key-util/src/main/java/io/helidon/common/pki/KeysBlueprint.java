@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,6 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Configuration of keys. If a key is defined in multiple places (keystore, pem, or explicit), the order of preference is:
@@ -36,8 +34,8 @@ import io.helidon.config.metadata.ConfiguredOption;
  * </ul>
  * So if a Private key is defined both explicitly and through PEM, the explicitly defined key would be used.
  */
-@Configured
 @Prototype.Blueprint(decorator = KeysBuilderDecorator.class)
+@Prototype.Configured
 interface KeysBlueprint {
     /**
      * Configure keys from a keystore.
@@ -46,7 +44,7 @@ interface KeysBlueprint {
      *
      * @return keystore configuration
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<KeystoreKeys> keystore();
 
     /**
@@ -56,7 +54,7 @@ interface KeysBlueprint {
      *
      * @return pem based definition
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<PemKeys> pem();
 
     /**

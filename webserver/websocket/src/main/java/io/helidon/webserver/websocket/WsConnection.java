@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.util.concurrent.Semaphore;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
+import io.helidon.common.socket.SocketContext;
 import io.helidon.http.DateTime;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpPrologue;
@@ -45,7 +46,7 @@ import io.helidon.websocket.WsSession;
 public class WsConnection implements ServerConnection, WsSession {
     private static final System.Logger LOGGER = System.getLogger(WsConnection.class.getName());
 
-    static final String MAX_FRAME_LENGTH = "1048576";
+    static final int MAX_FRAME_LENGTH = 1048576;
 
     private final ConnectionContext ctx;
     private final HttpPrologue prologue;
@@ -201,6 +202,11 @@ public class WsConnection implements ServerConnection, WsSession {
     }
 
     @Override
+    public SocketContext socketContext() {
+        return ctx;
+    }
+
+    @Override
     public Duration idleTime() {
         return Duration.between(lastRequestTimestamp, DateTime.timestamp());
     }
@@ -249,12 +255,13 @@ public class WsConnection implements ServerConnection, WsSession {
             listener.onMessage(this, payload, frame.fin());
         }
         case CLOSE -> {
-            int status = payload.readInt16();
-            String reason;
+            int status = WsCloseCodes.NORMAL_CLOSE;
+            String reason = "normal";
             if (payload.available() > 0) {
-                reason = payload.readString(payload.available(), StandardCharsets.UTF_8);
-            } else {
-                reason = "normal";
+                status = payload.readInt16();
+                if (payload.available() > 0) {
+                    reason = payload.readString(payload.available(), StandardCharsets.UTF_8);
+                }
             }
             listener.onClose(this, status, reason);
             if (!closeSent) {

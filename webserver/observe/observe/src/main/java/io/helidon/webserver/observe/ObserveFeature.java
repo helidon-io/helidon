@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -183,7 +183,7 @@ public class ObserveFeature implements ServerFeature, Weighted, RuntimeType.Api<
                     .map(it -> featureContext.socket(it).httpRouting())
                     .toList();
         }
-
+        // we must guarantee that each observer adding its own HttpFeature adds it with correct weight
         if (enabled) {
             for (Observer observer : observers) {
                 observer.register(featureContext, observeEndpointRouting, endpoint(config.endpoint()));

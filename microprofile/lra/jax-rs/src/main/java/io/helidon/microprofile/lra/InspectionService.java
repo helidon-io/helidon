@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -191,7 +191,7 @@ class InspectionService {
 
     AnnotationInstance deepScanClassLevelLraAnnotation(ClassInfo classInfo) {
         if (classInfo == null) return null;
-        AnnotationInstance lraClassAnnotation = classInfo.classAnnotation(DotName.createSimple(LRA.class.getName()));
+        AnnotationInstance lraClassAnnotation = classInfo.declaredAnnotation(DotName.createSimple(LRA.class.getName()));
         if (lraClassAnnotation != null) {
             return lraClassAnnotation;
         }

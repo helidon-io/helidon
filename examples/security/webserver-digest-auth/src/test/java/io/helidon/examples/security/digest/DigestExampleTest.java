@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,9 +67,9 @@ public abstract class DigestExampleTest {
         testNotAuthorized(uri);
 
         //Must be accessible with authentication - to everybody
-        testProtected(uri, "jack", "password", Set.of("admin", "user"), Set.of());
-        testProtected(uri, "jill", "password", Set.of("user"), Set.of("admin"));
-        testProtected(uri, "john", "password", Set.of(), Set.of("admin", "user"));
+        testProtected(uri, "jack", "changeit", Set.of("admin", "user"), Set.of());
+        testProtected(uri, "jill", "changeit", Set.of("user"), Set.of("admin"));
+        testProtected(uri, "john", "changeit", Set.of(), Set.of("admin", "user"));
     }
 
     @Test
@@ -79,9 +79,9 @@ public abstract class DigestExampleTest {
         testNotAuthorized(uri);
 
         //Jack and Jill allowed (user role)
-        testProtected(uri, "jack", "password", Set.of("admin", "user"), Set.of());
-        testProtected(uri, "jill", "password", Set.of("user"), Set.of("admin"));
-        testProtectedDenied(uri, "john", "password");
+        testProtected(uri, "jack", "changeit", Set.of("admin", "user"), Set.of());
+        testProtected(uri, "jill", "changeit", Set.of("user"), Set.of("admin"));
+        testProtectedDenied(uri, "john", "changeit");
     }
 
     @Test
@@ -91,9 +91,9 @@ public abstract class DigestExampleTest {
         testNotAuthorized(uri);
 
         //Only jack is allowed - admin role...
-        testProtected(uri, "jack", "password", Set.of("admin", "user"), Set.of());
-        testProtectedDenied(uri, "jill", "password");
-        testProtectedDenied(uri, "john", "password");
+        testProtected(uri, "jack", "changeit", Set.of("admin", "user"), Set.of());
+        testProtectedDenied(uri, "jill", "changeit");
+        testProtectedDenied(uri, "john", "changeit");
     }
 
     @Test
@@ -103,9 +103,9 @@ public abstract class DigestExampleTest {
         testNotAuthorized(uri);
 
         // nobody has the correct role
-        testProtectedDenied(uri, "jack", "password");
-        testProtectedDenied(uri, "jill", "password");
-        testProtectedDenied(uri, "john", "password");
+        testProtectedDenied(uri, "jack", "changeit");
+        testProtectedDenied(uri, "jill", "changeit");
+        testProtectedDenied(uri, "john", "changeit");
     }
 
     @Test
@@ -117,9 +117,9 @@ public abstract class DigestExampleTest {
             assertThat(response.status().code(), is(403));
 
             // doesn't matter, we are never challenged
-            testProtectedDenied(uri, "jack", "password");
-            testProtectedDenied(uri, "jill", "password");
-            testProtectedDenied(uri, "john", "password");
+            testProtectedDenied(uri, "jack", "changeit");
+            testProtectedDenied(uri, "jill", "changeit");
+            testProtectedDenied(uri, "john", "changeit");
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,4 +39,11 @@ public interface SpanContext {
      * @param spanBuilder span builder to update, it will be a child of this span context
      */
     void asParent(Span.Builder<?> spanBuilder);
+
+    /**
+     * Returns the baggage extractable from the span context.
+     *
+     * @return {@link io.helidon.tracing.Baggage} instance; empty if no baggage is available from the span context
+     */
+    Baggage baggage();
 }

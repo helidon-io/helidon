@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -71,25 +71,13 @@ To help illustrate the differences, below are two samples implementing a simple 
 .Helidon SE sample
 [source,java]
 ----
-Routing routing = Routing.builder()
-    .get("/hello", 
-        (req, res) -> res.send("Hello World"))
-    .build();
-
-WebServer.create(routing)
-    .start();
+include::{sourcedir}/about/IntroductionSnippets.java[tag=snippet_1, indent=0]
 ----
 
 .Helidon MP sample
 [source,java]
 ----
-@Path("hello")
-public class HelloWorld {
-    @GET
-    public String hello() {
-        return "Hello World";
-    }
-}
+include::{sourcedir}/about/IntroductionSnippets.java[tag=snippet_2, indent=0]
 ----
 
 Even though Helidon MP supports Jakarta EE APIs it does not require

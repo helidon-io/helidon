@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,7 +78,7 @@ public interface ServerRequestHeaders extends Headers {
     default Optional<ZonedDateTime> ifModifiedSince() {
         if (contains(HeaderNames.IF_MODIFIED_SINCE)) {
             return Optional.of(get(HeaderNames.IF_MODIFIED_SINCE))
-                    .map(Header::value)
+                    .map(Header::get)
                     .map(DateTime::parse);
         }
 
@@ -95,7 +95,7 @@ public interface ServerRequestHeaders extends Headers {
     default Optional<ZonedDateTime> ifUnmodifiedSince() {
         if (contains(HeaderNames.IF_UNMODIFIED_SINCE)) {
             return Optional.of(get(HeaderNames.IF_UNMODIFIED_SINCE))
-                    .map(Header::value)
+                    .map(Header::get)
                     .map(DateTime::parse);
         }
         return Optional.empty();
@@ -136,27 +136,30 @@ public interface ServerRequestHeaders extends Headers {
         if (mediaTypes.length == 0) {
             return Optional.empty();
         }
-        List<HttpMediaType> accepted = acceptedTypes();
-        if (accepted.isEmpty()) {
-            return Optional.of(mediaTypes[0]);
-        }
-        double best = 0;
-        MediaType result = null;
-        for (MediaType mt : mediaTypes) {
-            for (HttpMediaType acc : accepted) {
-                double q = acc.qualityFactor();
-                if (q > best && acc.test(mt)) {
-                    if (q == 1) {
-                        return Optional.of(mt);
-                    } else {
-                        best = q;
-                        result = mt;
+        try {
+            List<HttpMediaType> accepted = acceptedTypes();
+            if (accepted.isEmpty()) {
+                return Optional.of(mediaTypes[0]);
+            }
+            double best = 0;
+            MediaType result = null;
+            for (MediaType mt : mediaTypes) {
+                for (HttpMediaType acc : accepted) {
+                    double q = acc.qualityFactor();
+                    if (q > best && acc.test(mt)) {
+                        if (q == 1) {
+                            return Optional.of(mt);
+                        } else {
+                            best = q;
+                            result = mt;
+                        }
                     }
                 }
             }
+            return Optional.ofNullable(result);
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("Unable to parse Accept header", e);
         }
-
-        return Optional.ofNullable(result);
     }
 
     /**
@@ -186,7 +189,7 @@ public interface ServerRequestHeaders extends Headers {
     default Optional<ZonedDateTime> acceptDatetime() {
         if (contains(HeaderNames.ACCEPT_DATETIME)) {
             return Optional.of(get(HeaderNames.ACCEPT_DATETIME))
-                    .map(Header::value)
+                    .map(Header::get)
                     .map(DateTime::parse);
         }
         return Optional.empty();
@@ -200,7 +203,7 @@ public interface ServerRequestHeaders extends Headers {
     default Optional<ZonedDateTime> date() {
         if (contains(HeaderNames.DATE)) {
             return Optional.of(get(HeaderNames.DATE))
-                    .map(Header::value)
+                    .map(Header::get)
                     .map(DateTime::parse);
         }
         return Optional.empty();
@@ -218,7 +221,7 @@ public interface ServerRequestHeaders extends Headers {
     default Optional<URI> referer() {
         if (contains(HeaderNames.REFERER)) {
             return Optional.of(get(HeaderNames.REFERER))
-                    .map(Header::value)
+                    .map(Header::get)
                     .map(URI::create);
         }
         return Optional.empty();

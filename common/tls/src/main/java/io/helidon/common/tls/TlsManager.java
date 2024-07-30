@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 
 import io.helidon.common.config.NamedService;
-import io.helidon.inject.api.Contract;
+import io.helidon.service.registry.Service;
 
 /**
  * Implementors of this contract are responsible for managing the {@link javax.net.ssl.SSLContext} instance lifecycle, as well
@@ -32,7 +32,7 @@ import io.helidon.inject.api.Contract;
  * <p>
  * How context changes are observed is based upon the implementation of the manager.
  */
-@Contract
+@Service.Contract
 public interface TlsManager extends NamedService {
 
     /**

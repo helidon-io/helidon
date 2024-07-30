@@ -6,6 +6,10 @@
 * [Kafka bootstrap server](../README.md) running on `localhost:9092`
 
 ## Build & Run
-1. `mvn clean install`
-2. `java -jar mp-example.jar`
+```shell
+#1.
+mvn clean package
+#2.
+java -jar target/kafka-websocket-mp.jar
+```
 3. Visit http://localhost:7001

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +27,12 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.config.ConfigValues.simpleValue;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -85,6 +88,16 @@ abstract class AbstractSecureConfigTest {
     void testSymmetric() {
         testPassword(getConfig(), "pwd4", TEST_STRING);
         testPassword(getConfig(), "pwd6", "");
+    }
+
+    @Test
+    void testDecryptedValuesNotCached() {
+        String value1 = getConfig().get("pwd4").asString().get();
+        String value2 = getConfig().get("pwd4").asString().get();
+        assertThat(value1, is(TEST_STRING));
+        assertThat(value2, is(TEST_STRING));
+        //This is intended, since we want to verify, that the new String has been created and was not reused
+        assertThat(value1, not(sameInstance(value2)));
     }
 
     @Test

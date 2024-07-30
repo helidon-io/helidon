@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -286,8 +286,8 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
         return result;
     }
 
-    private static boolean equals(SSLParameters first, SSLParameters second) {
-        return first.getAlgorithmConstraints().equals(second.getAlgorithmConstraints())
+    static boolean equals(SSLParameters first, SSLParameters second) {
+        return Objects.equals(first.getAlgorithmConstraints(), second.getAlgorithmConstraints())
                 && Arrays.equals(first.getApplicationProtocols(), second.getApplicationProtocols())
                 && Arrays.equals(first.getCipherSuites(), second.getCipherSuites())
                 && (first.getEnableRetransmissions() == second.getEnableRetransmissions())
@@ -297,8 +297,8 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
                 && Arrays.equals(first.getProtocols(), second.getProtocols())
                 && (first.getUseCipherSuitesOrder() == second.getUseCipherSuitesOrder())
                 && (first.getWantClientAuth() == second.getWantClientAuth())
-                && first.getServerNames().equals(second.getServerNames())
-                && first.getSNIMatchers().equals(second.getSNIMatchers());
+                && Objects.equals(first.getServerNames(), second.getServerNames())
+                && Objects.equals(first.getSNIMatchers(), second.getSNIMatchers());
     }
 
     private void checkEnabled() {

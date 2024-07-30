@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,21 @@ class ReadablePartLength extends ReadablePartAbstract {
     public <T> T as(GenericType<T> type) {
         return context.reader(type, partHeaders())
                 .read(type, inputStream(), partHeaders());
+    }
+
+    @Override
+    public void consume() {
+        if (inputStream == null) {
+            inputStream = inputStream();
+        }
+        try {
+            byte[] buffer = new byte[2048];
+            while (inputStream.read(buffer) > 0) {
+                // ignore
+            }
+        } finally {
+            inputStream.close();
+        }
     }
 
     @Override

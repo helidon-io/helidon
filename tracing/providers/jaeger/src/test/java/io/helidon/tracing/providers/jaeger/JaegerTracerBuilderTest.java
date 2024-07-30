@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,18 @@ import java.util.List;
 import java.util.Map;
 
 import io.helidon.config.Config;
+import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
+import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
 
 import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator;
+import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.context.propagation.TextMapPropagator;
 import io.opentelemetry.extension.trace.propagation.B3Propagator;
 import io.opentelemetry.extension.trace.propagation.JaegerPropagator;
+import io.opentelemetry.sdk.autoconfigure.spi.ConfigProperties;
+import io.opentelemetry.sdk.trace.data.SpanData;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -125,5 +130,28 @@ class JaegerTracerBuilderTest {
         assertThat(propagators.get(0), instanceOf(B3Propagator.class));
         assertThat(propagators.get(1), instanceOf(JaegerPropagator.class));
         assertThat(propagators.get(2), instanceOf(W3CBaggagePropagator.class));
+    }
+
+    @Test
+    void testProcessTagHandling() {
+        TracerBuilder<?> builder = TracerBuilder.create(config.get("jaeger-defaults"));
+        builder.addTracerTag("tracerLevelTag", "val-1");
+        JaegerTracerBuilder jaegerTracerBuilder = builder.unwrap(JaegerTracerBuilder.class);
+        jaegerTracerBuilder.scheduleDelay(Duration.ofMillis(100)); // for faster test runs
+        jaegerTracerBuilder.exporter(new TestSpanExporterProvider().createExporter(null));
+        Tracer tracer = builder.build();
+
+        Span span = tracer.spanBuilder("testSpan").tag("spanLevelTag", "val-2").start();
+        span.end();
+
+        try (TestSpanExporter exporter = TestSpanExporterProvider.exporter()) {
+            List<SpanData> spanData = exporter.spanData(1);
+            assertThat("Expect span count", spanData.size(), is(1));
+            SpanData spanDataItem = spanData.get(0);
+            assertThat("Trace-level attribute tracerLevelTag",
+                       spanDataItem.getResource().getAttributes().get(AttributeKey.stringKey("tracerLevelTag")),
+                       is("val-1"));
+        }
+
     }
 }

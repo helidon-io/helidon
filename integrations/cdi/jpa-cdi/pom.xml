@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -24,16 +24,19 @@
     <parent>
         <groupId>io.helidon.integrations.cdi</groupId>
         <artifactId>helidon-integrations-cdi-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.1.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-integrations-cdi-jpa</artifactId>
     <name>Helidon CDI Integrations JPA</name>
 
     <properties>
-      <doclint>-syntax</doclint>
-      <eclipselink.skip>false</eclipselink.skip>
-      <hibernate.skip>false</hibernate.skip>
-      <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+        <doclint>-syntax</doclint>
+        <eclipselink.skip>false</eclipselink.skip>
+        <helidon.jta.immediateEnlistment>false</helidon.jta.immediateEnlistment>
+        <helidon.jta.interposedSynchronizations>true</helidon.jta.interposedSynchronizations>
+        <helidon.jta.preemptiveEnlistmentChecks>true</helidon.jta.preemptiveEnlistmentChecks>
+        <hibernate.skip>false</hibernate.skip>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
     </properties>
 
     <dependencies>
@@ -291,6 +294,9 @@
                     <reportNameSuffix>eclipselink</reportNameSuffix>
                     <skip>${eclipselink.skip}</skip>
                     <systemPropertyVariables>
+                        <helidon.jta.immediateEnlistment>${helidon.jta.immediateEnlistment}</helidon.jta.immediateEnlistment>
+                        <helidon.jta.interposedSynchronizations>${helidon.jta.interposedSynchronizations}</helidon.jta.interposedSynchronizations>
+                        <helidon.jta.preemptiveEnlistmentChecks>${helidon.jta.preemptiveEnlistmentChecks}</helidon.jta.preemptiveEnlistmentChecks>
                         <java.util.logging.config.file>${project.basedir}/src/test/logging.properties</java.util.logging.config.file>
                     </systemPropertyVariables>
                     <testClassesDirectory>${project.build.directory}/eclipselink/test-classes</testClassesDirectory>

@@ -171,8 +171,8 @@ NOTE: There is currently _no support_ to configure these executor properties via
 `microprofile-config.properties` file.
 
 For a complete set of properties available to configure these executors, see
-link:{configurable-javadoc-base-url}/io.helidon.common.configurable/ThreadPoolSupplier.Builder.html#config(io.helidon.config.Config)[ServerThreadPoolSupplier] and
-link:{configurable-javadoc-base-url}/io.helidon.common.configurable/ScheduledThreadPoolSupplier.Builder.html#config(io.helidon.config.Config)[ScheduledThreadPoolSupplier].
+link:{configurable-javadoc-base-url}/io/helidon/common/configurable/ThreadPoolConfig.html[ThreadPoolConfig].
+link:{configurable-javadoc-base-url}/io/helidon/common/configurable/ScheduledThreadPoolConfig.html[ScheduledThreadPoolConfig].
 
 == Examples
 
@@ -182,11 +182,7 @@ calls is successful, the `onFailure` method shall be called as a fallback mechan
 +
 [source,java]
 ----
-@Retry(maxRetries = 2, delay = 400L)
-@Fallback(fallbackMethod = "onFailure")
-String retryWithFallback() {
-    //...
-}
+include::{sourcedir}/mp/FaultToleranceSnippets.java[tag=snippet_1, indent=0]
 ----
 
 2. The method `timedCircuitBreaker` defines a _rolling window_ of size 10 and a policy
@@ -196,13 +192,7 @@ for the invocation of 1.5 seconds.
 +
 [source,java]
 ----
-@Timeout(1500)
-@CircuitBreaker(requestVolumeThreshold = 10,
-                failureRatio = .4
-                successThreshold = 3)
-void timedCircuitBreaker() throws InterruptedException {
-    //...
-}
+include::{sourcedir}/mp/FaultToleranceSnippets.java[tag=snippet_2, indent=0]
 ----
 
 3. The method `executeWithQueueAndFallback` defines a bulkhead that will limit the number of
@@ -212,12 +202,7 @@ The `@Asynchronous` annotation is needed to enable queueing of bulkhead tasks.
 +
 [source,java]
 ----
-@Asynchronous
-@Fallback(fallbackMethod = "onFailure")
-@Bulkhead(value = 2, waitingTaskQueue = 10)
-CompletableFuture<String> executeWithQueueAndFallback() {
-    //...
-}
+include::{sourcedir}/mp/FaultToleranceSnippets.java[tag=snippet_3, indent=0]
 ----
 
 == Additional Information

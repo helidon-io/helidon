@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,16 @@
  */
 package io.helidon.tracing.providers.opentracing;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.ServiceLoader;
 
+import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.tracing.Span;
+import io.helidon.tracing.SpanListener;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
 import io.helidon.tracing.spi.TracerProvider;
@@ -33,6 +38,10 @@ import io.opentracing.util.GlobalTracer;
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 50) // low weight, so it is easy to override
 public class OpenTracingTracerProvider implements TracerProvider {
+
+    private static final LazyValue<List<SpanListener>> SPAN_LISTENERS =
+            LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(SpanListener.class)).asList());
+
     @Override
     public TracerBuilder<?> createBuilder() {
         return OpenTracingTracer.builder();
@@ -55,11 +64,13 @@ public class OpenTracingTracerProvider implements TracerProvider {
         io.opentracing.Tracer tracer = GlobalTracer.get();
         return Optional.ofNullable(tracer.activeSpan())
                 .flatMap(it -> it instanceof NoopSpan ? Optional.empty() : Optional.of(it))
-                .map(it -> new OpenTracingSpan(tracer, it));
+                .map(it -> new OpenTracingSpan(tracer, it,
+                                               SPAN_LISTENERS.get()));
     }
 
     @Override
     public boolean available() {
         return OpenTracingProviderHelper.available();
     }
+
 }

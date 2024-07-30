@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.Set;
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.common.mapper.OptionalValue;
+import io.helidon.common.mapper.Value;
 
 class ParametersSingleValueMap implements Parameters {
     private final MapperManager mapperManager;
@@ -45,6 +46,15 @@ class ParametersSingleValueMap implements Parameters {
             throw new NoSuchElementException("This " + component + " does not contain parameter named \"" + name + "\"");
         }
         return List.of(value);
+    }
+
+    @Override
+    public List<Value<String>> allValues(String name) throws NoSuchElementException {
+        String value = params.get(name);
+        if (value == null) {
+            throw new NoSuchElementException("This " + component + " does not contain parameter named \"" + name + "\"");
+        }
+        return List.of(Value.create(mapperManager, name, value, qualifiers));
     }
 
     @Override

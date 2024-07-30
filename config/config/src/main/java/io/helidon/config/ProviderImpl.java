@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.config.spi.ConfigFilter;
+import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 
 /**
@@ -114,6 +115,10 @@ class ProviderImpl implements Config.Context {
     @Override
     public synchronized Config last() {
         return lastConfig;
+    }
+
+    Optional<ConfigNode> lazyValue(String string) {
+        return configSource.lazyValue(string);
     }
 
     void onChange(Consumer<ConfigDiff> listener) {
@@ -312,22 +317,33 @@ class ProviderImpl implements Config.Context {
         public String apply(Config.Key key, String stringValue) {
             if (cachingEnabled) {
                 if (!valueCache.containsKey(key)) {
-                    String value = proceedFilters(key, stringValue);
-                    valueCache.put(key, value);
+                    ConfigItem configItem = ConfigItem.builder()
+                            .cacheItem(cachingEnabled)
+                            .item(stringValue)
+                            .build();
+                    configItem = proceedFilters(key, configItem);
+                    String value = configItem.item();
+                    if (configItem.cacheItem()) {
+                        valueCache.put(key, value);
+                    }
                     return value;
                 }
                 return valueCache.get(key);
             } else {
-                return proceedFilters(key, stringValue);
+                ConfigItem configItem = ConfigItem.builder()
+                        .cacheItem(cachingEnabled)
+                        .item(stringValue)
+                        .build();
+                return proceedFilters(key, configItem).item();
             }
-
         }
 
-        private String proceedFilters(Config.Key key, String stringValue) {
+        private ConfigItem proceedFilters(Config.Key key, ConfigItem configItem) {
+            ConfigItem toReturn = configItem;
             for (Function<Config, ConfigFilter> configFilterProvider : filterProviders) {
-                stringValue = configFilterProvider.apply(config).apply(key, stringValue);
+                toReturn = configFilterProvider.apply(config).apply(key, toReturn);
             }
-            return stringValue;
+            return toReturn;
         }
 
         void enableCaching() {

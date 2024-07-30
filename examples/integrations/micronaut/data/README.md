@@ -28,14 +28,14 @@ The following classes are pure Micronaut beans (and cannot have CDI injected int
 
 Start the application:
 
-```bash
+```shell
 mvn package
 java -jar target/helidon-examples-integrations-micronaut-data.jar
 ```
 
 Access endpoints
 
-```bash
+```shell
 # Get all pets
 curl -i http://localhost:8080/pets
 # Get all owners
@@ -62,9 +62,13 @@ curl -i http://localhost:8080/pets/s
 - Update ./pom.xml to replace dependency on com.h2database with following
 ```
         <dependency>
+            <groupId>io.helidon.integrations.db</groupId>
+            <artifactId>ojdbc</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
             <groupId>com.oracle.database.jdbc</groupId>
-            <artifactId>ojdbc8-production</artifactId>
-            <type>pom</type>
+            <artifactId>ucp</artifactId>
             <scope>runtime</scope>
         </dependency>
 ```
@@ -103,9 +107,13 @@ curl -i http://localhost:8080/pets/s
 - Update ./pom.xml to replace dependency on com.h2database with following
 ```
         <dependency>
+            <groupId>io.helidon.integrations.db</groupId>
+            <artifactId>ojdbc</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
             <groupId>com.oracle.database.jdbc</groupId>
-            <artifactId>ojdbc8-production</artifactId>
-            <type>pom</type>
+            <artifactId>ucp</artifactId>
             <scope>runtime</scope>
         </dependency>
 ```

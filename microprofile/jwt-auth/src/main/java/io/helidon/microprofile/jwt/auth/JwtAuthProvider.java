@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -73,6 +74,7 @@ import io.helidon.security.jwt.EncryptedJwt;
 import io.helidon.security.jwt.Jwt;
 import io.helidon.security.jwt.JwtException;
 import io.helidon.security.jwt.JwtHeaders;
+import io.helidon.security.jwt.JwtValidator;
 import io.helidon.security.jwt.SignedJwt;
 import io.helidon.security.jwt.Validator;
 import io.helidon.security.jwt.jwk.Jwk;
@@ -144,6 +146,7 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
     private final LazyValue<Jwk> defaultJwk;
     private final LazyValue<Jwk> defaultDecryptionJwk;
     private final Map<OutboundTarget, JwtOutboundTarget> targetToJwtConfig = new IdentityHashMap<>();
+    private final ReentrantLock targetToJwtConfigLock = new ReentrantLock();
     private final String expectedIssuer;
     private final String cookiePrefix;
     private final String decryptionKeyAlgorithm;
@@ -154,7 +157,7 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
     private JwtAuthProvider(Builder builder) {
         this.optional = builder.optional;
         this.authenticate = builder.authenticate;
-        this.propagate = builder.propagate;
+        this.propagate = builder.propagate && builder.outboundConfig.targets().size() > 0;
         this.allowImpersonation = builder.allowImpersonation;
         this.subjectType = builder.subjectType;
         this.atnTokenHandler = builder.atnTokenHandler;
@@ -278,27 +281,27 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
                     Errors errors = signedJwt.verifySignature(verifyKeys.get(), defaultJwk.get());
                     if (errors.isValid()) {
                         Jwt jwt = signedJwt.getJwt();
-
-                        List<Validator<Jwt>> validators = new LinkedList<>();
+                        JwtValidator.Builder valBuilder = JwtValidator.builder();
                         if (expectedIssuer != null) {
                             // validate issuer
-                            Jwt.addIssuerValidator(validators, expectedIssuer, true);
+                            valBuilder.addIssuerValidator(expectedIssuer);
                         }
-                        if (expectedAudiences.size() > 0) {
+                        if (!expectedAudiences.isEmpty()) {
                             // validate audience(s)
-                            Jwt.addAudienceValidator(validators, expectedAudiences, true);
+                            valBuilder.addAudienceValidator(expectedAudiences);
                         }
                         // validate user principal is present
-                        Jwt.addUserPrincipalValidator(validators);
-                        validators.add(Jwt.ExpirationValidator.create(Instant.now(),
-                                                                      (int) clockSkew.getSeconds(),
-                                                                      ChronoUnit.SECONDS,
-                                                                      true));
+                        valBuilder.addUserPrincipalValidator()
+                                .addExpirationValidator(builder -> builder.now(Instant.now())
+                                        .allowedTimeSkew(clockSkew)
+                                        .mandatory(true));
                         if (expectedMaxTokenAge != null) {
-                            Jwt.addMaxTokenAgeValidator(validators, expectedMaxTokenAge, clockSkew, true);
+                            valBuilder.addMaxTokenAgeValidator(builder -> builder.expectedMaxTokenAge(expectedMaxTokenAge)
+                                    .allowedTimeSkew(clockSkew)
+                                    .mandatory(true));
                         }
-
-                        Errors validate = jwt.validate(validators);
+                        JwtValidator jwtValidator = valBuilder.build();
+                        Errors validate = jwtValidator.validate(jwt);
 
                         if (validate.isValid()) {
                             return AuthenticationResponse.success(buildSubject(jwt, signedJwt));
@@ -368,7 +371,8 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
     public boolean isOutboundSupported(ProviderRequest providerRequest,
                                        SecurityEnvironment outboundEnv,
                                        EndpointConfig outboundConfig) {
-        return propagate;
+        // only propagate if we have an actual target configured
+        return propagate && this.outboundConfig.findTarget(outboundEnv).isPresent();
     }
 
     @Override
@@ -392,7 +396,13 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
                     Optional<OutboundTarget> maybeTarget = outboundConfig.findTarget(outboundEnv);
 
                     return maybeTarget.flatMap(target -> {
-                        JwtOutboundTarget jwtOutboundTarget = targetToJwtConfig.computeIfAbsent(target, this::toOutboundTarget);
+                        JwtOutboundTarget jwtOutboundTarget;
+                        try {
+                            targetToJwtConfigLock.lock();
+                            jwtOutboundTarget = targetToJwtConfig.computeIfAbsent(target, this::toOutboundTarget);
+                        } finally {
+                            targetToJwtConfigLock.unlock();
+                        }
 
                         if (null == jwtOutboundTarget.jwkKid) {
                             return Optional.of(OutboundSecurityResponse.builder()
@@ -416,8 +426,13 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
                         Optional<OutboundTarget> maybeTarget = outboundConfig.findTarget(outboundEnv);
 
                         return maybeTarget.flatMap(target -> {
-                            JwtOutboundTarget jwtOutboundTarget = targetToJwtConfig
-                                    .computeIfAbsent(target, this::toOutboundTarget);
+                            JwtOutboundTarget jwtOutboundTarget;
+                            try {
+                                targetToJwtConfigLock.lock();
+                                jwtOutboundTarget = targetToJwtConfig.computeIfAbsent(target, this::toOutboundTarget);
+                            } finally {
+                                targetToJwtConfigLock.unlock();
+                            }
 
                             if (null == jwtOutboundTarget.jwkKid) {
                                 // just propagate existing token
@@ -622,7 +637,7 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
                 .tokenHeader("Authorization")
                 .tokenPrefix("bearer ")
                 .build();
-        private OutboundConfig outboundConfig;
+        private OutboundConfig outboundConfig = OutboundConfig.builder().build();
         private LazyValue<JwkKeys> verifyKeys;
         private LazyValue<JwkKeys> decryptionKeys;
         private LazyValue<Jwk> defaultJwk;

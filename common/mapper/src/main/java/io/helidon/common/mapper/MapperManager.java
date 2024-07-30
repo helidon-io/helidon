@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -287,6 +287,7 @@ public interface MapperManager {
         /**
          * Whether to use built-in mappers.
          *
+         * @param useBuiltIn whether to use built in mappers (such as String to Integer)
          * @return updated builder
          */
         public Builder useBuiltIn(boolean useBuiltIn) {

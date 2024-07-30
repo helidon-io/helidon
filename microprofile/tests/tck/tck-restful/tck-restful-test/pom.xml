@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.microprofile.tests.tck</groupId>
         <artifactId>tck-restful</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.1.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>helidon-microprofile-tests-tck-restful-test</artifactId>
@@ -127,10 +127,6 @@
                     <includes>
                         <include>*IT.java</include>
                     </includes>
-                    <excludes>
-                        <!-- TCK Challenge: https://github.com/jakartaee/rest/issues/1199 -->
-                        <exclude>ee/jakarta/tck/ws/rs/ee/rs/container/responsecontext/JAXRSClientIT.java</exclude>
-                    </excludes>
                     <systemPropertyVariables>
                         <webServerHost>localhost</webServerHost>
                         <webServerPort>8080</webServerPort>

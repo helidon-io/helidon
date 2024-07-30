@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,8 @@ class ProxyBuilder {
                 if ("HTTP".equals(u.getScheme().toUpperCase(Locale.ROOT))) {
                     builder.type(Proxy.ProxyType.HTTP);
                 } else {
-                    HelidonConnector.LOGGER.warning(String.format("Proxy schema %s not supported.", u.getScheme()));
+                    HelidonConnector.LOGGER.log(System.Logger.Level.WARNING,
+                            String.format("Proxy schema %s not supported.", u.getScheme()));
                     return Optional.empty();
                 }
             }

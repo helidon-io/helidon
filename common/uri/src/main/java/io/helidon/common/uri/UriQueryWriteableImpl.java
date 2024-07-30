@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,10 +24,12 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.common.mapper.OptionalValue;
+import io.helidon.common.mapper.Value;
 
 final class UriQueryWriteableImpl implements UriQueryWriteable {
     private final Map<String, List<String>> rawQueryParams = new HashMap<>();
@@ -79,7 +81,7 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
                         .addAll(raw);
                 List<String> decoded = uriQuery.all(name);
                 decodedQueryParams.computeIfAbsent(name, it -> new ArrayList<>())
-                        .addAll(raw);
+                        .addAll(decoded);
             }
         }
 
@@ -162,6 +164,17 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
             throw new NoSuchElementException("Query parameter \"" + name + "\" is not available");
         }
         return values;
+    }
+
+    @Override
+    public List<Value<String>> allValues(String name) throws NoSuchElementException {
+        List<String> values = decodedQueryParams.get(name);
+        if (values == null) {
+            throw new NoSuchElementException("Query parameter \"" + name + "\" is not available");
+        }
+        return values.stream()
+                .map(it -> Value.create(MapperManager.global(), name, it, GenericType.STRING, "uri", "query"))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -279,11 +292,21 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
     private void addRaw(String next) {
         int eq = next.indexOf('=');
         if (eq == -1) {
-            set(next);
+            addRaw(next, "");
         } else {
             String name = next.substring(0, eq);
             String value = next.substring(eq + 1);
-            set(name, value);
+            addRaw(name, value);
         }
+    }
+
+    private void addRaw(String encodedName, String encodedValue) {
+        String decodedName = UriEncoding.decodeUri(encodedName);
+        String decodedValue = UriEncoding.decodeUri(encodedValue);
+
+        rawQueryParams.computeIfAbsent(encodedName, it -> new ArrayList<>(1))
+                .add(encodedValue);
+        decodedQueryParams.computeIfAbsent(decodedName, it -> new ArrayList<>(1))
+                .add(decodedValue);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -197,14 +197,15 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     }
 
     /**
-     * Entity bytes encoded using content encoding.
+     * Entity bytes encoded using content encoding. Does not attempt encoding
+     * if entity is empty.
      *
      * @param configuredEntity plain bytes
      * @return encoded bytes
      */
     protected byte[] entityBytes(byte[] configuredEntity) {
         byte[] entity = configuredEntity;
-        if (contentEncodingContext.contentEncodingEnabled()) {
+        if (contentEncodingContext.contentEncodingEnabled() && entity.length > 0) {
             ContentEncoder encoder = contentEncodingContext.encoder(requestHeaders);
             // we want to preserve optimization here, let's create a new byte array
             ByteArrayOutputStream baos = new ByteArrayOutputStream(entity.length);

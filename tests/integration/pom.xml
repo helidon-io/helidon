@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.tests</groupId>
         <artifactId>helidon-tests-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.1.0-SNAPSHOT</version>
     </parent>
 
     <groupId>io.helidon.tests.integration</groupId>
@@ -33,7 +33,6 @@
     <name>Helidon Tests Integration</name>
 
     <properties>
-        <version.lib.testcontainers>1.17.5</version.lib.testcontainers>
         <version.lib.testcontainers.keycloak>2.3.0</version.lib.testcontainers.keycloak>
     </properties>
 
@@ -54,15 +53,21 @@
         <module>mp-gh-4123</module>
         <module>mp-gh-4654</module>
         <module>mp-gh-5328</module>
+        <module>mp-gh-8349</module>
+        <module>mp-gh-8478</module>
+        <module>mp-gh-8495</module>
+        <module>mp-gh-8493</module>
         <module>mp-graphql</module>
         <module>mp-security-client</module>
         <module>mp-ws-services</module>
         <module>native-image</module>
         <module>oidc</module>
         <module>restclient</module>
+        <module>restclient-connector</module>
         <module>security</module>
         <module>vault</module>
         <module>zipkin-mp-2.2</module>
+        <module>tls-revocation-config</module>
     </modules>
 
     <dependencyManagement>

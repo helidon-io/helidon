@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.http.media;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.util.Optional;
 
 import io.helidon.common.GenericType;
 
@@ -30,6 +31,7 @@ public interface ReadableEntity {
     /**
      * Input stream to read bytes of the entity.
      * Cannot be combined with methods {@link #as(Class)} or {@link #as(io.helidon.common.GenericType)}
+     * If there is no entity, returns input stream on empty byte array.
      *
      * @return input stream to entity bytes
      */
@@ -42,11 +44,26 @@ public interface ReadableEntity {
      * @param type class of the entity
      * @param <T>  type of the entity
      * @return entity correctly typed
-     * @throws IllegalArgumentException     in case the entity type is not supported
-     * @throws java.io.UncheckedIOException in case I/O fails
+     * @throws IllegalArgumentException        in case the entity type is not supported
+     * @throws java.lang.IllegalStateException in case there is no entity
+     * @throws java.io.UncheckedIOException    in case I/O fails
      */
     default <T> T as(Class<T> type) {
         return as(GenericType.create(type));
+    }
+
+    /**
+     * Get the entity as a specific class (optional).
+     * The entity will use {@link MediaContext} to find correct media mapper.
+     *
+     * @param type class of the entity
+     * @param <T>  type of the entity
+     * @return entity correctly typed, or an empty optional if entity is not present
+     * @throws IllegalArgumentException     in case the entity type is not supported
+     * @throws java.io.UncheckedIOException in case I/O fails
+     */
+    default <T> Optional<T> asOptional(Class<T> type) {
+        return asOptional(GenericType.create(type));
     }
 
     /**
@@ -56,10 +73,23 @@ public interface ReadableEntity {
      * @param type generic type of the entity
      * @param <T>  type of the entity
      * @return entity correctly typed
+     * @throws IllegalArgumentException        in case the entity type is not supported
+     * @throws java.lang.IllegalStateException in case there is no entity
+     * @throws java.io.UncheckedIOException    in case I/O fails
+     */
+    <T> T as(GenericType<T> type);
+
+    /**
+     * Get the entity as a specific type (optional).
+     * The entity will use {@link MediaContext} to find correct media mapper.
+     *
+     * @param type generic type of the entity
+     * @param <T>  type of the entity
+     * @return entity correctly typed, or an empty optional if entity is not present
      * @throws IllegalArgumentException     in case the entity type is not supported
      * @throws java.io.UncheckedIOException in case I/O fails
      */
-    <T> T as(GenericType<T> type);
+    <T> Optional<T> asOptional(GenericType<T> type);
 
     /**
      * Whether an entity actually exists.

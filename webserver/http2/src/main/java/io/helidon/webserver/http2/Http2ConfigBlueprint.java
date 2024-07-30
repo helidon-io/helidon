@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,17 +18,18 @@ package io.helidon.webserver.http2;
 
 import java.time.Duration;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.http.RequestedUriDiscoveryContext;
 import io.helidon.webserver.spi.ProtocolConfig;
+import io.helidon.webserver.spi.ProtocolConfigProvider;
 
 /**
  * HTTP/2 server configuration.
  */
 @Prototype.Blueprint(decorator = Http2ConfigBlueprint.Http2ConfigDecorator.class)
-@Configured(provides = ProtocolConfig.class)
+@Prototype.Configured(root = false, value = Http2ConnectionProvider.CONFIG_NAME)
+@Prototype.Provides(ProtocolConfigProvider.class)
 interface Http2ConfigBlueprint extends ProtocolConfig {
     /**
      * The size of the largest frame payload that the sender is willing to receive in bytes.
@@ -37,7 +38,8 @@ interface Http2ConfigBlueprint extends ProtocolConfig {
      *
      * @return maximal frame size
      */
-    @ConfiguredOption("16384")
+    @Option.Configured
+    @Option.DefaultInt(16384)
     int maxFrameSize();
 
     /**
@@ -47,7 +49,8 @@ interface Http2ConfigBlueprint extends ProtocolConfig {
      *
      * @return maximal header list size in bytes
      */
-    @ConfiguredOption("8192")
+    @Option.Configured
+    @Option.DefaultInt(8192)
     long maxHeaderListSize();
 
     /**
@@ -59,7 +62,8 @@ interface Http2ConfigBlueprint extends ProtocolConfig {
      *
      * @return maximal number of concurrent streams
      */
-    @ConfiguredOption("8192")
+    @Option.Configured
+    @Option.DefaultLong(8192)
     long maxConcurrentStreams();
 
     /**
@@ -71,7 +75,8 @@ interface Http2ConfigBlueprint extends ProtocolConfig {
      *
      * @return maximum window size in bytes
      */
-    @ConfiguredOption("1048576")
+    @Option.Configured
+    @Option.DefaultInt(1048576)
     int initialWindowSize();
 
     /**
@@ -91,7 +96,8 @@ interface Http2ConfigBlueprint extends ProtocolConfig {
      * @return duration
      * @see <a href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO_8601 Durations</a>
      */
-    @ConfiguredOption("PT0.1S")
+    @Option.Configured
+    @Option.Default("PT0.1S")
     Duration flowControlTimeout();
 
     /**
@@ -102,7 +108,8 @@ interface Http2ConfigBlueprint extends ProtocolConfig {
      *
      * @return whether to send error messages over the network
      */
-    @ConfiguredOption("false")
+    @Option.Configured
+    @Option.DefaultBoolean(false)
     boolean sendErrorDetails();
 
     /**
@@ -113,7 +120,8 @@ interface Http2ConfigBlueprint extends ProtocolConfig {
      * @see <a href="https://nvd.nist.gov/vuln/detail/CVE-2023-44487">CVE-2023-44487</a>
      * @see <a href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO_8601 Durations</a>
      */
-    @ConfiguredOption("PT10S")
+    @Option.Configured
+    @Option.Default("PT10S")
     Duration rapidResetCheckPeriod();
 
     /**
@@ -124,7 +132,8 @@ interface Http2ConfigBlueprint extends ProtocolConfig {
      * @return maximum number of rapid resets
      * @see <a href="https://nvd.nist.gov/vuln/detail/CVE-2023-44487">CVE-2023-44487</a>
      */
-    @ConfiguredOption("100")
+    @Option.Configured
+    @Option.DefaultInt(100)
     int maxRapidResets();
 
     /**
@@ -132,7 +141,8 @@ interface Http2ConfigBlueprint extends ProtocolConfig {
      *
      * @return max number of consecutive empty frames
      */
-    @ConfiguredOption("10")
+    @Option.Configured
+    @Option.DefaultInt(10)
     int maxEmptyFrames();
 
     /**
@@ -140,7 +150,8 @@ interface Http2ConfigBlueprint extends ProtocolConfig {
      *
      * @return whether to validate path
      */
-    @ConfiguredOption("true")
+    @Option.Configured
+    @Option.DefaultBoolean(true)
     boolean validatePath();
 
     /**
@@ -148,7 +159,7 @@ interface Http2ConfigBlueprint extends ProtocolConfig {
      *
      * @return settings for computing the requested URI
      */
-    @ConfiguredOption
+    @Option.Configured
     RequestedUriDiscoveryContext requestedUriDiscovery();
 
     /**

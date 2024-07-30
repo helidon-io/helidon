@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,11 +45,12 @@ public final class Main {
         Config config = Config.create();
 
         WebServerConfig.Builder builder1 = WebServer.builder();
-        setupConfigBased(builder1, config);
+        setupConfigBased(builder1, config.get("config-based"));
         WebServer server1 = builder1.build().start();
         System.out.println("Started config based WebServer on https://localhost:" + server1.port());
 
-        WebServerConfig.Builder builder2 = WebServer.builder();
+        WebServerConfig.Builder builder2 = WebServer.builder()
+                .config(config.get("builder-based")); // we want port to be configurable always
         setupBuilderBased(builder2);
         WebServer server2 = builder2.build().start();
         System.out.println("Started builder based WebServer on http://localhost:" + server2.port());
@@ -60,16 +61,17 @@ public final class Main {
                 .tls(tls -> tls
                         .privateKey(key -> key
                                 .keystore(store -> store
-                                        .passphrase("password")
+                                        .passphrase("changeit")
                                         .keystore(Resource.create("server.p12"))))
                         .privateKeyCertChain(key -> key
                                 .keystore(store -> store
-                                        .passphrase("password")
+                                        .passphrase("changeit")
                                         .keystore(Resource.create("server.p12")))));
     }
 
     static void setupConfigBased(WebServerConfig.Builder server, Config config) {
-        server.config(config).routing(Main::routing);
+        server.config(config)
+                .routing(Main::routing);
     }
 
     static void routing(HttpRouting.Builder routing) {

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -44,27 +44,27 @@ Type: link:{javadoc-base-url}/io.helidon.webclient.http1/io/helidon/webclient/ht
 
 |`default-keep-alive` |boolean |`true` |Whether to use keep alive by default.
 
- @return `true` for keeping connections alive and re-using them for multiple requests (default), `false`
+ `true` for keeping connections alive and re-using them for multiple requests (default), `false`
   to create a new connection for each request
 |`max-header-size` |int |`16384` |Configure the maximum allowed header size of the response.
 
- @return  maximum header size
+  maximum header size
 |`max-status-line-length` |int |`256` |Configure the maximum allowed length of the status line from the response.
 
- @return maximum status line length
+ Maximum status line length
 |`name` |string |`http_1_1` |
 |`validate-request-headers` |boolean |`false` |Sets whether the request header format is validated or not.
 
      Defaults to `false` as user has control on the header creation.
  
 
- @return whether request header validation should be enabled
+ Whether request header validation should be enabled
 |`validate-response-headers` |boolean |`true` |Sets whether the response header format is validated or not.
 
      Defaults to `true`.
  
 
- @return whether response header validation should be enabled
+ Whether response header validation should be enabled
 
 |===
 

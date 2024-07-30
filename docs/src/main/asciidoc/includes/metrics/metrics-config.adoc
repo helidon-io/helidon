@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -29,8 +29,33 @@ To control how the Helidon metrics subsystem behaves, add a `metrics` section to
 ifdef::mp-flavor[your `META-INF/microprofile-config.properties` file.]
 ifdef::se-flavor[your configuration file, such as `application.yaml`.]
 
+Certain default configuration values depend on the fact that you are using Helidon {flavor-uc} as described in the <<flavor-specific-defaults,second table below>>.
+
 include::{rootdir}/config/io_helidon_webserver_observe_metrics_MetricsObserver.adoc[tag=config,leveloffset=+1]
 
+// It seems we need an explicit open block for the website rendering to create the anchor properly. I tried adding the anchor to the table (without the block) but that didn't work on the live site.
+[#flavor-specific-defaults]
+--
+.Default Values Specific to Helidon {flavor-uc}
+[%autowidth]
+|====
+|Key | Default Value
+
+| `app-tag-name`
+a| ifdef::se-flavor[`app`]
+ifdef::mp-flavor[`mp_app`]
+
+| `scoping.tag-name`
+a| ifdef::se-flavor[`scope`]
+ifdef::mp-flavor[`mp_scope`]
+
+| `scoping.default`
+// Use two ifdefs even though the value is the same because without that the resulting formatting can look different vs. the preceding cells.
+a| ifdef::se-flavor[`application`]
+ifdef::mp-flavor[`application`]
+
+|====
+--
 // end::config-intro[]
 
 // tag::config-examples[]

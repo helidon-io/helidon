@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static java.time.Duration.ofMillis;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -405,7 +406,7 @@ public class MultiTest {
         List<Integer> result = Multi.just(1, 2, 3)
                 .onCompleteResume(4)
                 .collectList()
-                .await(100, TimeUnit.MILLISECONDS);
+                .await(ofMillis(100));
 
         assertThat(result, is(equalTo(List.of(1, 2, 3, 4))));
     }
@@ -415,7 +416,7 @@ public class MultiTest {
         List<Integer> result = Multi.just(1, 2, 3)
                 .onCompleteResumeWith(Multi.just(4, 5, 6))
                 .collectList()
-                .await(100, TimeUnit.MILLISECONDS);
+                .await(ofMillis(100));
 
         assertThat(result, is(equalTo(List.of(1, 2, 3, 4, 5, 6))));
     }
@@ -425,7 +426,7 @@ public class MultiTest {
         Integer result = Multi.<Integer>empty()
                 .onCompleteResume(1)
                 .first()
-                .await(100, TimeUnit.MILLISECONDS);
+                .await(ofMillis(100));
 
         assertThat(result, is(equalTo(1)));
     }

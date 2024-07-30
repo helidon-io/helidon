@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,19 +32,18 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
-import java.util.logging.Handler;
-import java.util.logging.LogManager;
-import java.util.logging.LogRecord;
-import java.util.logging.Logger;
 
+import io.helidon.Main;
 import io.helidon.common.SerializationConfig;
 import io.helidon.common.Version;
+import io.helidon.common.Weights;
 import io.helidon.common.context.Context;
 import io.helidon.common.features.HelidonFeatures;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
+import io.helidon.spi.HelidonShutdownHandler;
 import io.helidon.webserver.http.DirectHandlers;
 import io.helidon.webserver.spi.ServerFeature;
 
@@ -61,7 +60,7 @@ class LoomServer implements WebServer {
     private final WebServerConfig serverConfig;
     private final boolean registerShutdownHook;
 
-    private volatile Thread shutdownHook;
+    private volatile HelidonShutdownHandler shutdownHandler;
     private volatile List<ListenerFuture> startFutures;
     private volatile boolean alreadyStarted = false;
 
@@ -78,10 +77,12 @@ class LoomServer implements WebServer {
         sockets.put(DEFAULT_SOCKET_NAME, serverConfig);
 
         // features ordered by weight
-        List<ServerFeature> features = serverConfig.features();
+        List<ServerFeature> features = new ArrayList<>(serverConfig.features());
+        Weights.sort(features);
+
         ServerFeatureContextImpl featureContext = ServerFeatureContextImpl.create(serverConfig);
         for (ServerFeature feature : features) {
-            feature.setup(featureContext);
+            featureContext.setUpFeature(feature);
         }
 
         Timer idleConnectionTimer = new Timer("helidon-idle-connection-timer", true);
@@ -231,29 +232,14 @@ class LoomServer implements WebServer {
     }
 
     private void registerShutdownHook() {
-        this.shutdownHook = new Thread(() -> {
-            LOGGER.log(System.Logger.Level.INFO, "Shutdown requested by JVM shutting down");
-            listeners.values().forEach(ServerListener::stop);
-            if (startFutures != null) {
-                startFutures.forEach(future -> future.future().cancel(true));
-            }
-
-            running.set(false);
-
-            LOGGER.log(System.Logger.Level.INFO, "Shutdown finished");
-        }, "webserver-shutdown-hook");
-
-        Runtime.getRuntime().addShutdownHook(shutdownHook);
-        // we also need to keep the logging system active until the shutdown hook completes
-        // this introduces a hard dependency on JUL, as we cannot abstract this easily away
-        // this is to workaround https://bugs.openjdk.java.net/browse/JDK-8161253
-        keepLoggingActive(shutdownHook);
+        this.shutdownHandler = new ServerShutdownHandler(listeners, startFutures, running, context.id());
+        Main.addShutdownHandler(this.shutdownHandler);
     }
 
     private void deregisterShutdownHook() {
-        if (shutdownHook != null) {
-            Runtime.getRuntime().removeShutdownHook(shutdownHook);
-            shutdownHook = null;
+        if (shutdownHandler != null) {
+            Main.removeShutdownHandler(shutdownHandler);
+            shutdownHandler = null;
         }
     }
 
@@ -286,61 +272,38 @@ class LoomServer implements WebServer {
         return result;
     }
 
-    private void keepLoggingActive(Thread shutdownHook) {
-        Logger rootLogger = LogManager.getLogManager().getLogger("");
-        Handler[] handlers = rootLogger.getHandlers();
-
-        List<Handler> newHandlers = new ArrayList<>();
-
-        boolean added = false;
-        for (Handler handler : handlers) {
-            if (handler instanceof KeepLoggingActiveHandler) {
-                // we want to replace it with our current shutdown hook
-                newHandlers.add(new KeepLoggingActiveHandler(shutdownHook));
-                added = true;
-            } else {
-                newHandlers.add(handler);
-            }
-        }
-        if (!added) {
-            // out handler must be first, so other handlers are not closed before we finish shutdown hook
-            newHandlers.add(0, new KeepLoggingActiveHandler(shutdownHook));
-        }
-
-        for (Handler handler : handlers) {
-            rootLogger.removeHandler(handler);
-        }
-        for (Handler newHandler : newHandlers) {
-            rootLogger.addHandler(newHandler);
-        }
-    }
-
     private record ListenerFuture(ServerListener listener, Future<?> future) {
     }
 
-    private static final class KeepLoggingActiveHandler extends Handler {
-        private final Thread shutdownHook;
+    private static final class ServerShutdownHandler implements HelidonShutdownHandler {
+        private final Map<String, ServerListener> listeners;
+        private final List<ListenerFuture> startFutures;
+        private final AtomicBoolean running;
+        private final String id;
 
-        private KeepLoggingActiveHandler(Thread shutdownHook) {
-            this.shutdownHook = shutdownHook;
+        private ServerShutdownHandler(Map<String, ServerListener> listeners,
+                                      List<ListenerFuture> startFutures,
+                                      AtomicBoolean running,
+                                      String id) {
+            this.listeners = listeners;
+            this.startFutures = startFutures;
+            this.running = running;
+            this.id = id;
         }
 
         @Override
-        public void publish(LogRecord record) {
-            // noop
-        }
-
-        @Override
-        public void flush() {
-            // noop
-        }
-
-        @Override
-        public void close() {
-            try {
-                shutdownHook.join();
-            } catch (InterruptedException ignored) {
+        public void shutdown() {
+            listeners.values().forEach(ServerListener::stop);
+            if (startFutures != null) {
+                startFutures.forEach(future -> future.future().cancel(true));
             }
+
+            running.set(false);
+        }
+
+        @Override
+        public String toString() {
+            return "WebServer shutdown handler for id: " + id;
         }
     }
 }

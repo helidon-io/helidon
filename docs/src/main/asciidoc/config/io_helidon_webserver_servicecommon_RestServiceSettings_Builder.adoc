@@ -1,0 +1,52 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+:description: Configuration of io.helidon.webserver.servicecommon.RestServiceSettings.Builder
+:keywords: helidon, config, io.helidon.webserver.servicecommon.RestServiceSettings.Builder
+:basic-table-intro: The table below lists the configuration keys that configure io.helidon.webserver.servicecommon.RestServiceSettings.Builder
+include::{rootdir}/includes/attributes.adoc[]
+
+= Builder (webserver.servicecommon.RestServiceSettings) Configuration
+
+// tag::config[]
+
+
+Type: link:{javadoc-base-url}/io.helidon.webserver.servicecommon.RestServiceSettings/io/helidon/webserver/servicecommon/RestServiceSettings/Builder.html[io.helidon.webserver.servicecommon.RestServiceSettings.Builder]
+
+
+
+
+== Configuration options
+
+
+
+.Optional configuration options
+[cols="3,3a,2,5a"]
+
+|===
+|key |type |default value |description
+
+|`cors` |xref:{rootdir}/config/io_helidon_cors_CrossOriginConfig.adoc[Map&lt;string, CrossOriginConfig&gt;] |{nbsp} |Sets the cross-origin config builder for use in establishing CORS support for the service endpoints.
+|`enabled` |boolean |`true` |Is this service enabled or not.
+|`routing` |string |{nbsp} |Sets the routing name to use for setting up the service's endpoint.
+|`web-context` |string |{nbsp} |Sets the web context to use for the service's endpoint.
+
+|===
+
+// end::config[]

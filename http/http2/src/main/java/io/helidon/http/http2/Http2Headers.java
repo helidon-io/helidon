@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -453,7 +453,7 @@ public class Http2Headers {
         }
 
         for (Header header : headers) {
-            String value = header.value();
+            String value = header.get();
             boolean shouldIndex = !header.changing();
             boolean neverIndex = header.sensitive();
 
@@ -649,7 +649,7 @@ public class Http2Headers {
 
         headers.remove(HeaderNames.HOST, it -> {
             if (!pseudoHeaders.hasAuthority()) {
-                pseudoHeaders.authority(it.value());
+                pseudoHeaders.authority(it.get());
             }
         });
 
@@ -689,7 +689,7 @@ public class Http2Headers {
     private static void removeFromHeadersAddToPseudo(WritableHeaders<?> headers,
                                                      Consumer<String> valueConsumer,
                                                      HeaderName pseudoHeader) {
-        headers.remove(pseudoHeader, it -> valueConsumer.accept(it.value()));
+        headers.remove(pseudoHeader, it -> valueConsumer.accept(it.get()));
     }
 
     private void writeHeader(Http2HuffmanEncoder huffman, DynamicTable table,
@@ -1277,10 +1277,10 @@ public class Http2Headers {
         }
     }
 
-    private static record DynamicHeader(HeaderName headerName, String value, int size) implements HeaderRecord {
+    private record DynamicHeader(HeaderName headerName, String value, int size) implements HeaderRecord {
     }
 
-    private static record IndexedHeader(HeaderRecord delegate, int index) implements IndexedHeaderRecord {
+    private record IndexedHeader(HeaderRecord delegate, int index) implements IndexedHeaderRecord {
         @Override
         public HeaderName headerName() {
             return delegate().headerName();

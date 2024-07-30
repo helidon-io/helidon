@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import io.helidon.websocket.WsListener;
 @RuntimeType.PrototypedBy(WsClientConfig.class)
 public interface WsClient extends RuntimeType.Api<WsClientConfig> {
     /**
-     * Protocol to use to obtain an instance of WebSocket specific clietn from
+     * Protocol to use to obtain an instance of WebSocket specific client from
      * {@link io.helidon.webclient.api.WebClient#client(io.helidon.webclient.spi.Protocol)}.
      */
     Protocol<WsClient, WsClientProtocolConfig> PROTOCOL = WsProtocolProvider::new;

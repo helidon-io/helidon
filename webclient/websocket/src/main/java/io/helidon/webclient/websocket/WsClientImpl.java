@@ -55,6 +55,7 @@ class WsClientImpl implements WsClient {
 
     private static final System.Logger LOGGER = System.getLogger(WsClient.class.getName());
     private static final Header HEADER_CONN_UPGRADE = HeaderValues.create(HeaderNames.CONNECTION, "Upgrade");
+    private static final Header HEADER_CONN_UPGRADE_LOWERCASE = HeaderValues.create(HeaderNames.CONNECTION, "upgrade");
     private static final HeaderName HEADER_WS_ACCEPT = HeaderNames.create("Sec-WebSocket-Accept");
     private static final HeaderName HEADER_WS_KEY = HeaderNames.create("Sec-WebSocket-Key");
     private static final LazyValue<Random> RANDOM = LazyValue.create(SecureRandom::new);
@@ -127,9 +128,10 @@ class WsClientImpl implements WsClient {
         ClientWsConnection session;
         try (HttpClientResponse response = upgradeResponse.response()) {
             ClientResponseHeaders responseHeaders = response.headers();
-            if (!responseHeaders.contains(HEADER_CONN_UPGRADE)) {
-                throw new WsClientException("Failed to upgrade to WebSocket, expected Connection: Upgrade header. Headers: "
-                                                    + responseHeaders);
+            if (!responseHeaders.contains(HEADER_CONN_UPGRADE)
+                    && !responseHeaders.contains(HEADER_CONN_UPGRADE_LOWERCASE)) {
+                throw new WsClientException("Failed to upgrade to WebSocket, expected one of "
+                        + "[Connection: Upgrade, Connection: upgrade] header. Headers: " + responseHeaders);
             }
             if (!responseHeaders.contains(HEADER_UPGRADE_WS)) {
                 throw new WsClientException("Failed to upgrade to WebSocket, expected Upgrade: websocket header. Headers: "
@@ -140,14 +142,14 @@ class WsClientImpl implements WsClient {
                                                     + responseHeaders);
             }
             ClientConnection connection = upgradeResponse.connection();
-            String secWsAccept = responseHeaders.get(HEADER_WS_ACCEPT).value();
+            String secWsAccept = responseHeaders.get(HEADER_WS_ACCEPT).get();
             if (!hash(connection.helidonSocket(), secWsKey).equals(secWsAccept)) {
                 throw new WsClientException("Failed to upgrade to WebSocket, expected valid secWsKey. Headers: "
                                                     + responseHeaders);
             }
             // we are upgraded, let's switch to web socket
             if (headers.contains(HEADER_WS_PROTOCOL)) {
-                session = new ClientWsConnection(connection, listener, headers.get(HEADER_WS_PROTOCOL).value());
+                session = new ClientWsConnection(connection, listener, headers.get(HEADER_WS_PROTOCOL).get());
             } else {
                 session = new ClientWsConnection(connection, listener);
             }

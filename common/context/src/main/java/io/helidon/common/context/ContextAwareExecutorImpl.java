@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -123,41 +123,55 @@ class ContextAwareExecutorImpl implements ContextAwareExecutorService {
 
     }
 
-    @SuppressWarnings(value = "unchecked")
     protected <T> Callable<T> wrap(Callable<T> task) {
+        Map<Class<?>, Object> properties = new HashMap<>();
+        PROVIDERS.forEach(provider -> properties.put(provider.getClass(), provider.data()));
         Optional<Context> context = Contexts.context();
-        if (context.isPresent()) {
-            Map<Class<?>, Object> properties = new HashMap<>();
-            PROVIDERS.forEach(provider -> properties.put(provider.getClass(), provider.data()));
-            return () -> {
-                try {
-                    PROVIDERS.forEach(provider -> provider.propagateData(properties.get(provider.getClass())));
-                    return Contexts.runInContext(context.get(), task);
-                } finally {
-                    PROVIDERS.forEach(provider -> provider.clearData(properties.get(provider.getClass())));
-                }
-            };
-        } else {
-            return task;
-        }
+        return context.<Callable<T>>map(value -> () -> {
+            try {
+                propagateMdcData(properties);
+                return Contexts.runInContext(value, task);
+            } finally {
+                clearMdcData(properties);
+            }
+        }).orElseGet(() -> () -> {
+            try {
+                propagateMdcData(properties);
+                return task.call();
+            } finally {
+                clearMdcData(properties);
+            }
+        });
+    }
+
+    protected Runnable wrap(Runnable command) {
+        Optional<Context> context = Contexts.context();
+        Map<Class<?>, Object> properties = new HashMap<>();
+        PROVIDERS.forEach(provider -> properties.put(provider.getClass(), provider.data()));
+        return context.<Runnable>map(value -> () -> {
+            try {
+                propagateMdcData(properties);
+                Contexts.runInContext(value, command);
+            } finally {
+                clearMdcData(properties);
+            }
+        }).orElseGet(() -> () -> {
+            try {
+                propagateMdcData(properties);
+                command.run();
+            } finally {
+                clearMdcData(properties);
+            }
+        });
     }
 
     @SuppressWarnings(value = "unchecked")
-    protected Runnable wrap(Runnable command) {
-        Optional<Context> context = Contexts.context();
-        if (context.isPresent()) {
-            Map<Class<?>, Object> properties = new HashMap<>();
-            PROVIDERS.forEach(provider -> properties.put(provider.getClass(), provider.data()));
-            return () -> {
-                try {
-                    PROVIDERS.forEach(provider -> provider.propagateData(properties.get(provider.getClass())));
-                    Contexts.runInContext(context.get(), command);
-                } finally {
-                    PROVIDERS.forEach(provider -> provider.clearData(properties.get(provider.getClass())));
-                }
-            };
-        } else {
-            return command;
-        }
+    private static void propagateMdcData(Map<Class<?>, Object> properties) {
+        PROVIDERS.forEach(provider -> provider.propagateData(properties.get(provider.getClass())));
+    }
+
+    @SuppressWarnings(value = "unchecked")
+    private static void clearMdcData(Map<Class<?>, Object> properties) {
+        PROVIDERS.forEach(provider -> provider.clearData(properties.get(provider.getClass())));
     }
 }

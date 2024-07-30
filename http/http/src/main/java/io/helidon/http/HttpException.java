@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ public class HttpException extends RuntimeException {
 
     private final Status status;
     private final boolean keepAlive;
+    private final ServerResponseHeaders headers = ServerResponseHeaders.create();
 
     /**
      * Creates {@link HttpException} associated with {@link Status#INTERNAL_SERVER_ERROR_500}.
@@ -112,5 +113,25 @@ public class HttpException extends RuntimeException {
      */
     public boolean keepAlive() {
         return keepAlive;
+    }
+
+    /**
+     * Set a response header that should be used if this exception is not handled.
+     *
+     * @param header header to set
+     * @return updated instance
+     */
+    public HttpException header(Header header) {
+        headers.set(header);
+        return this;
+    }
+
+    /**
+     * Headers as currently configured in this exception.
+     *
+     * @return headers configured for this exception
+     */
+    public Headers headers() {
+        return headers;
     }
 }

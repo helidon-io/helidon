@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.Optional;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.socket.HelidonSocket;
+import io.helidon.common.socket.SocketContext;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.websocket.ClientWsFrame;
 import io.helidon.websocket.ServerWsFrame;
@@ -130,16 +131,29 @@ public class ClientWsConnection implements WsSession, Runnable {
         return send(ClientWsFrame.control(WsOpCode.PONG, bufferData));
     }
 
+    /**
+     * Closes WebSocket session. If {@code code} is negative, then a CLOSE frame
+     * with no code or reason is sent. This can be used to test CLOSE frames with
+     * no payload, as required by the spec.
+     *
+     * @param code   close code, may be one of {@link WsCloseCodes}
+     * @param reason reason description
+     * @return the session
+     */
     @Override
     public WsSession close(int code, String reason) {
         closeSent = true;
 
-        byte[] reasonBytes = reason.getBytes(StandardCharsets.UTF_8);
-        BufferData bufferData = BufferData.create(2 + reasonBytes.length);
-        bufferData.writeInt16(code);
-        bufferData.write(reasonBytes);
-        send(ClientWsFrame.control(WsOpCode.CLOSE, bufferData));
-
+        // send empty close (no code or reason) if code is negative
+        if (code < 0) {
+            send(ClientWsFrame.control(WsOpCode.CLOSE, BufferData.empty()));
+        } else {
+            byte[] reasonBytes = reason.getBytes(StandardCharsets.UTF_8);
+            BufferData bufferData = BufferData.create(2 + reasonBytes.length);
+            bufferData.writeInt16(code);
+            bufferData.write(reasonBytes);
+            send(ClientWsFrame.control(WsOpCode.CLOSE, bufferData));
+        }
         return this;
     }
 
@@ -154,6 +168,11 @@ public class ClientWsConnection implements WsSession, Runnable {
     @Override
     public Optional<String> subProtocol() {
         return Optional.ofNullable(subProtocol);
+    }
+
+    @Override
+    public SocketContext socketContext() {
+        return helidonSocket;
     }
 
     private ClientWsConnection send(ClientWsFrame frame) {

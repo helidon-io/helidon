@@ -210,7 +210,7 @@ import io.helidon.webclient.api.WebClientConfig;
  *     <td>URI of an authorization endpoint used to redirect users to for logging-in.</td>
  * </tr>
  * <tr>
- *     <td>validate-with-jwk</td>
+ *     <td>validate-jwt-with-jwk</td>
  *     <td>true</td>
  *     <td>When true  - validate against jwk defined by "sign-jwk", when false
  *          validate JWT through OIDC Server endpoint "validation-endpoint-uri"</td>
@@ -225,7 +225,7 @@ import io.helidon.webclient.api.WebClientConfig;
  * <tr>
  *     <td>introspect-endpoint-uri</td>
  *     <td>"introspection_endpoint" in OIDC metadata, or identity-uri/oauth2/v1/introspect</td>
- *     <td>When validate-with-jwk is set to "false", this is the endpoint used</td>
+ *     <td>When validate-jwt-with-jwk is set to "false", this is the endpoint used</td>
  * </tr>
  * <tr>
  *     <td>base-scopes</td>
@@ -348,6 +348,10 @@ public final class OidcConfig extends TenantConfigImpl {
      * Default tenant cookie name.
      */
     public static final String DEFAULT_TENANT_COOKIE_NAME = "HELIDON_TENANT";
+    /**
+     * Default state cookie name.
+     */
+    public static final String DEFAULT_STATE_COOKIE_NAME = "OIDC_STATE";
     static final String DEFAULT_REDIRECT_URI = "/oidc/redirect";
     static final String DEFAULT_LOGOUT_URI = "/oidc/logout";
     static final boolean DEFAULT_REDIRECT = true;
@@ -394,8 +398,10 @@ public final class OidcConfig extends TenantConfigImpl {
     private final OidcCookieHandler idTokenCookieHandler;
     private final OidcCookieHandler refreshTokenCookieHandler;
     private final OidcCookieHandler tenantCookieHandler;
+    private final OidcCookieHandler stateCookieHandler;
     private final boolean tokenSignatureValidation;
     private final boolean idTokenSignatureValidation;
+    private final boolean accessTokenIpCheck;
 
     private OidcConfig(Builder builder) {
         super(builder);
@@ -425,8 +431,10 @@ public final class OidcConfig extends TenantConfigImpl {
         this.idTokenCookieHandler = builder.idTokenCookieBuilder.build();
         this.tenantCookieHandler = builder.tenantCookieBuilder.build();
         this.refreshTokenCookieHandler = builder.refreshTokenCookieBuilder.build();
+        this.stateCookieHandler = builder.stateCookieBuilder.build();
         this.tokenSignatureValidation = builder.tokenSignatureValidation;
         this.idTokenSignatureValidation = builder.idTokenSignatureValidation;
+        this.accessTokenIpCheck = builder.accessTokenIpCheck;
 
         this.webClientBuilderSupplier = builder.webClientBuilderSupplier;
         this.defaultTenant = LazyValue.create(() -> Tenant.create(this, this));
@@ -560,6 +568,15 @@ public final class OidcConfig extends TenantConfigImpl {
      */
     public OidcCookieHandler refreshTokenCookieHandler() {
         return refreshTokenCookieHandler;
+    }
+
+    /**
+     * Cookie handler to create cookies or unset cookies for state value.
+     *
+     * @return a new cookie handler
+     */
+    public OidcCookieHandler stateCookieHandler() {
+        return stateCookieHandler;
     }
 
     /**
@@ -801,6 +818,15 @@ public final class OidcConfig extends TenantConfigImpl {
         return idTokenSignatureValidation;
     }
 
+    /**
+     * Whether to check IP address access token was issued for.
+     *
+     * @return whether to check IP address access token was issued for
+     */
+    public boolean accessTokenIpCheck() {
+        return accessTokenIpCheck;
+    }
+
     Supplier<WebClientConfig.Builder> webClientBuilderSupplier() {
         return webClientBuilderSupplier;
     }
@@ -919,6 +945,9 @@ public final class OidcConfig extends TenantConfigImpl {
         private final OidcCookieHandler.Builder refreshTokenCookieBuilder = OidcCookieHandler.builder()
                 .encryptionEnabled(true)
                 .cookieName(DEFAULT_REFRESH_COOKIE_NAME);
+        private final OidcCookieHandler.Builder stateCookieBuilder = OidcCookieHandler.builder()
+                .encryptionEnabled(true)
+                .cookieName(DEFAULT_STATE_COOKIE_NAME);
         private TokenHandler headerHandler = TokenHandler.builder()
                 .tokenHeader("Authorization")
                 .tokenPrefix("bearer ")
@@ -928,6 +957,7 @@ public final class OidcConfig extends TenantConfigImpl {
         private boolean relativeUris = DEFAULT_RELATIVE_URIS;
         private boolean tokenSignatureValidation = true;
         private boolean idTokenSignatureValidation = true;
+        private boolean accessTokenIpCheck = true;
 
         protected Builder() {
         }
@@ -1016,6 +1046,7 @@ public final class OidcConfig extends TenantConfigImpl {
             config.get("cookie-name-id-token").asString().ifPresent(this::cookieNameIdToken);
             config.get("cookie-name-tenant").asString().ifPresent(this::cookieTenantName);
             config.get("cookie-name-refresh-token").asString().ifPresent(this::cookieNameRefreshToken);
+            config.get("cookie-name-state").asString().ifPresent(this::cookieNameState);
             config.get("cookie-domain").asString().ifPresent(this::cookieDomain);
             config.get("cookie-path").asString().ifPresent(this::cookiePath);
             config.get("cookie-max-age-seconds").asLong().ifPresent(this::cookieMaxAgeSeconds);
@@ -1027,6 +1058,7 @@ public final class OidcConfig extends TenantConfigImpl {
             config.get("cookie-encryption-id-enabled").asBoolean().ifPresent(this::cookieEncryptionEnabledIdToken);
             config.get("cookie-encryption-tenant-enabled").asBoolean().ifPresent(this::cookieEncryptionEnabledTenantName);
             config.get("cookie-encryption-refresh-enabled").asBoolean().ifPresent(this::cookieEncryptionEnabledRefreshToken);
+            config.get("cookie-encryption-state-enabled").asBoolean().ifPresent(this::cookieEncryptionEnabledState);
             config.get("cookie-encryption-password").as(String.class)
                     .map(String::toCharArray)
                     .ifPresent(this::cookieEncryptionPassword);
@@ -1050,6 +1082,7 @@ public final class OidcConfig extends TenantConfigImpl {
 
             config.get("token-signature-validation").asBoolean().ifPresent(this::tokenSignatureValidation);
             config.get("id-token-signature-validation").asBoolean().ifPresent(this::idTokenSignatureValidation);
+            config.get("access-token-ip-check").asBoolean().ifPresent(this::accessTokenIpCheck);
 
             config.get("tenants").asList(Config.class)
                     .ifPresent(confList -> confList.forEach(tenantConfig -> tenantFromConfig(config, tenantConfig)));
@@ -1374,6 +1407,7 @@ public final class OidcConfig extends TenantConfigImpl {
             this.idTokenCookieBuilder.encryptionName(cookieEncryptionName);
             this.tenantCookieBuilder.encryptionName(cookieEncryptionName);
             this.refreshTokenCookieBuilder.encryptionName(cookieEncryptionName);
+            this.stateCookieBuilder.encryptionName(cookieEncryptionName);
             return this;
         }
 
@@ -1390,6 +1424,7 @@ public final class OidcConfig extends TenantConfigImpl {
             this.idTokenCookieBuilder.encryptionPassword(cookieEncryptionPassword);
             this.tenantCookieBuilder.encryptionPassword(cookieEncryptionPassword);
             this.refreshTokenCookieBuilder.encryptionPassword(cookieEncryptionPassword);
+            this.stateCookieBuilder.encryptionPassword(cookieEncryptionPassword);
             return this;
         }
 
@@ -1415,7 +1450,7 @@ public final class OidcConfig extends TenantConfigImpl {
          *                                OIDC server {@code false}
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "true")
+        @ConfiguredOption(key = "cookie-encryption-id-enabled", value = "true")
         public Builder cookieEncryptionEnabledIdToken(boolean cookieEncryptionEnabled) {
             this.idTokenCookieBuilder.encryptionEnabled(cookieEncryptionEnabled);
             return this;
@@ -1428,7 +1463,7 @@ public final class OidcConfig extends TenantConfigImpl {
          * @param cookieEncryptionEnabled whether cookie should be encrypted {@code true}, or as plain text name {@code false}
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "true")
+        @ConfiguredOption(key = "cookie-encryption-tenant-enabled", value = "true")
         public Builder cookieEncryptionEnabledTenantName(boolean cookieEncryptionEnabled) {
             this.tenantCookieBuilder.encryptionEnabled(cookieEncryptionEnabled);
             return this;
@@ -1442,9 +1477,23 @@ public final class OidcConfig extends TenantConfigImpl {
          *                                OIDC server {@code false}
          * @return updated builder instance
          */
-        @ConfiguredOption(value = "true")
+        @ConfiguredOption(key = "cookie-encryption-refresh-enabled", value = "true")
         public Builder cookieEncryptionEnabledRefreshToken(boolean cookieEncryptionEnabled) {
             this.refreshTokenCookieBuilder.encryptionEnabled(cookieEncryptionEnabled);
+            return this;
+        }
+
+        /**
+         * Whether to encrypt state cookie created by this microservice.
+         * Defaults to {@code true}.
+         *
+         * @param cookieEncryptionEnabled whether cookie should be encrypted {@code true}, or as sent to
+         *                                OIDC server {@code false}
+         * @return updated builder instance
+         */
+        @ConfiguredOption(key = "cookie-encryption-state-enabled", value = "true")
+        public Builder cookieEncryptionEnabledState(boolean cookieEncryptionEnabled) {
+            this.stateCookieBuilder.encryptionEnabled(cookieEncryptionEnabled);
             return this;
         }
 
@@ -1472,6 +1521,7 @@ public final class OidcConfig extends TenantConfigImpl {
             this.idTokenCookieBuilder.sameSite(sameSite);
             this.tenantCookieBuilder.sameSite(sameSite);
             this.refreshTokenCookieBuilder.sameSite(sameSite);
+            this.stateCookieBuilder.sameSite(sameSite);
             this.cookieSameSiteDefault = false;
             return this;
         }
@@ -1489,6 +1539,7 @@ public final class OidcConfig extends TenantConfigImpl {
             this.idTokenCookieBuilder.secure(secure);
             this.tenantCookieBuilder.secure(secure);
             this.refreshTokenCookieBuilder.secure(secure);
+            this.stateCookieBuilder.secure(secure);
             return this;
         }
 
@@ -1505,6 +1556,7 @@ public final class OidcConfig extends TenantConfigImpl {
             this.idTokenCookieBuilder.httpOnly(httpOnly);
             this.tenantCookieBuilder.httpOnly(httpOnly);
             this.refreshTokenCookieBuilder.httpOnly(httpOnly);
+            this.stateCookieBuilder.httpOnly(httpOnly);
             return this;
         }
 
@@ -1522,6 +1574,7 @@ public final class OidcConfig extends TenantConfigImpl {
             this.idTokenCookieBuilder.maxAge(age);
             this.tenantCookieBuilder.maxAge(age);
             this.refreshTokenCookieBuilder.maxAge(age);
+            this.stateCookieBuilder.maxAge(age);
             return this;
         }
 
@@ -1538,6 +1591,7 @@ public final class OidcConfig extends TenantConfigImpl {
             this.idTokenCookieBuilder.path(path);
             this.tenantCookieBuilder.path(path);
             this.refreshTokenCookieBuilder.path(path);
+            this.stateCookieBuilder.path(path);
             return this;
         }
 
@@ -1554,6 +1608,7 @@ public final class OidcConfig extends TenantConfigImpl {
             this.idTokenCookieBuilder.domain(domain);
             this.tenantCookieBuilder.domain(domain);
             this.refreshTokenCookieBuilder.domain(domain);
+            this.stateCookieBuilder.domain(domain);
             return this;
         }
 
@@ -1613,6 +1668,19 @@ public final class OidcConfig extends TenantConfigImpl {
         }
 
         /**
+         * The name of the cookie to use for the state storage.
+         * Defaults to {@value #DEFAULT_STATE_COOKIE_NAME}.
+         *
+         * @param cookieName name of a cookie
+         * @return updated builder instance
+         */
+        @ConfiguredOption(DEFAULT_REFRESH_COOKIE_NAME)
+        public Builder cookieNameState(String cookieName) {
+            this.stateCookieBuilder.cookieName(cookieName);
+            return this;
+        }
+
+        /**
          * Whether to use cookie to store JWT between requests.
          * Defaults to {@value #DEFAULT_COOKIE_USE}.
          *
@@ -1662,6 +1730,19 @@ public final class OidcConfig extends TenantConfigImpl {
         @ConfiguredOption("true")
         public Builder idTokenSignatureValidation(boolean enabled) {
             idTokenSignatureValidation = enabled;
+            return this;
+        }
+
+        /**
+         * Whether to check if current IP address matches the one access token was issued for.
+         * This check helps with cookie replay attack prevention.
+         *
+         * @param enabled whether to check if current IP address matches the one access token was issued for
+         * @return updated builder instance
+         */
+        @ConfiguredOption("true")
+        public Builder accessTokenIpCheck(boolean enabled) {
+            accessTokenIpCheck = enabled;
             return this;
         }
 

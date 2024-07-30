@@ -1,10 +1,12 @@
 # Notes
 # - cannot run on Windows, as we use shell scripts
-# - removed macos-latest from most jobs to speed up the process
+# - removed macos from most jobs to speed up the process
 
 name: "Validate"
 
-on: [pull_request, push]
+on:
+  pull_request:
+  workflow_call:
 
 env:
   JAVA_VERSION: '21'
@@ -13,7 +15,7 @@ env:
   MAVEN_HTTP_ARGS: '-Dmaven.wagon.httpconnectionManager.ttlSeconds=60 -Dmaven.wagon.http.retryHandler.count=3'
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: Validate-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -21,11 +23,11 @@ jobs:
     timeout-minutes: 10
     runs-on: ubuntu-20.04
     steps:
-     - uses: actions/checkout@v3
+     - uses: actions/checkout@v4
        with:
          fetch-depth: 0
      - name: Set up JDK ${{ env.JAVA_VERSION }}
-       uses: actions/setup-java@v3.13.0
+       uses: actions/setup-java@v4.1.0
        with:
          distribution: ${{ env.JAVA_DISTRO }}
          java-version: ${{ env.JAVA_VERSION }}
@@ -36,9 +38,9 @@ jobs:
     timeout-minutes: 10
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v3.13.0
+        uses: actions/setup-java@v4.1.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
           java-version: ${{ env.JAVA_VERSION }}
@@ -49,9 +51,9 @@ jobs:
     timeout-minutes: 45
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v3.13.0
+        uses: actions/setup-java@v4.1.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
           java-version: ${{ env.JAVA_VERSION }}
@@ -62,9 +64,9 @@ jobs:
     timeout-minutes: 30
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v3.13.0
+        uses: actions/setup-java@v4.1.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
           java-version: ${{ env.JAVA_VERSION }}
@@ -78,9 +80,9 @@ jobs:
         os: [ ubuntu-20.04 ]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v3.13.0
+        uses: actions/setup-java@v4.1.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
           java-version: ${{ env.JAVA_VERSION }}
@@ -88,24 +90,33 @@ jobs:
       - name: Maven build
         run: etc/scripts/github-build.sh
   examples:
-    timeout-minutes: 30
+    timeout-minutes: 40
     strategy:
       matrix:
-        os: [ ubuntu-20.04, macos-latest ]
+        os: [ ubuntu-20.04, macos-14 ]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v3.13.0
+        uses: actions/setup-java@v4.1.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
           java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+      - uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: 21
+          distribution: graalvm-community
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          native-image-job-reports: true
           cache: maven
       - name: Maven build
         run: |
           mvn -B -e "-Dmaven.test.skip=true" $MAVEN_HTTP_ARGS -DskipTests -Ppipeline install 
           cd examples
           mvn -B verify
+      - name: Test quickstarts native image
+        run: etc/scripts/test-quickstarts.sh
   mp-tck:
     timeout-minutes: 60
     name: "MicroProfile TCKs"
@@ -114,9 +125,9 @@ jobs:
         os: [ ubuntu-20.04 ]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v3.13.0
+        uses: actions/setup-java@v4.1.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
           java-version: ${{ env.JAVA_VERSION }}
@@ -130,9 +141,9 @@ jobs:
         os: [ ubuntu-20.04 ]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v3.13.0
+        uses: actions/setup-java@v4.1.0
         with:
           distribution: ${{ env.JAVA_DISTRO }}
           java-version: ${{ env.JAVA_VERSION }}
@@ -143,10 +154,10 @@ jobs:
     timeout-minutes: 60
     strategy:
       matrix:
-        os: [ ubuntu-20.04, macos-latest]
+        os: [ ubuntu-20.04, macos-14]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: graalvm/setup-graalvm@v1
         with:
           java-version: 21

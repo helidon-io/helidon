@@ -81,17 +81,13 @@ instance programmatically or injecting configuration values with `@ConfigPropert
 [source,java]
 .Using `Config`
 ----
-org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
-config.getOptionalValue("app.greeting", String.class).orElse("Hello");
+include::{sourcedir}/mp/config/IntroductionSnippets.java[tag=snippet_1, indent=0]
 ----
 
 [source,java]
 .Injecting configured properties into a constructor
 ----
-@Inject
-public GreetingProvider(@ConfigProperty(name = "app.greeting", defaultValue = "Hello") String message) {
-    this.message = message
-}
+include::{sourcedir}/mp/config/IntroductionSnippets.java[tag=snippet_2, indent=0]
 ----
 
 {spec-name} provides typed access to configuration values, using built-in converters, and `Converter` implementations located by Java Service Loader.
@@ -107,7 +103,10 @@ In order to properly configure your application using configuration sources, you
 Each Config Source has an ordinal that determines the priority of the Config Source.
 A Config Source with higher ordinal has higher priority as compared to the Config Source with
 lower ordinal. The values taken from the high-priority Config Source overrides the values
-from low-priority Config Source.
+from low-priority Config Source. The default value is 100.
+
+NOTE: In MP, the ordering is not defined for sources that have the same ordinal. 
+
 
 This helps to customize the configuration of Config Sources using external Config Source
 if an external Config Source has higher ordinal values than the built-in Config Sources of the application.
@@ -116,10 +115,10 @@ The example below shows how the MicroProfile configuration file `microprofile-co
 
 [source,properties]
 ----
-// Application properties. This is the default greeting
+# Application properties. This is the default greeting
 app.greeting=Hello
 
-// Microprofile server properties
+# Microprofile server properties
 server.port=8080
 server.host=0.0.0.0
 ----
@@ -202,10 +201,10 @@ For more information, see xref:{rootdir}/mp/security/configuration-secrets.adoc[
 # Password encrypted using a master password
 client_secret=${GCM=mYRkg+4Q4hua1kvpCCI2hg==}
 # Password encrypted using public key (there are length limits when using RSA)
-client_secret=${RSA=mYRkg+4Q4hua1kvpCCI2hg==}
+client_secret_pke=${RSA=mYRkg+4Q4hua1kvpCCI2hg==}
 # Password in clear text, can be used in development
 # The system needs to be configured to accept clear text
-client_secret=${CLEAR=known_password}
+client_secret_clear=${CLEAR=known_password}
 ----
 
 ==== Meta Configuration
@@ -244,4 +243,4 @@ Step-by-step guide about using {spec-name} in your Helidon MP application.
 == Reference
 
 * link:{microprofile-config-spec-url}[{spec-name} Specifications]
-* link:{microprofile-fault-tolerance-javadoc-url}[{spec-name} Javadocs]
+* link:{microprofile-config-javadoc-url}[{spec-name} Javadocs]

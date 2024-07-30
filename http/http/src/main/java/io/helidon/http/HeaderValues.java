@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -290,9 +290,10 @@ public final class HeaderValues {
      * Create a new header. This header is considered unchanging and not sensitive.
      *
      * @param name   name of the header
-     * @param values values of the header
+     * @param values values of the header, must contain at least one value (which may be an empty String)
      * @return a new header
      * @see #create(io.helidon.http.HeaderName, boolean, boolean, String...)
+     * @throws java.lang.IllegalArgumentException in case the collection is empty
      */
     public static Header create(HeaderName name, String... values) {
         if (values.length == 0) {
@@ -305,9 +306,10 @@ public final class HeaderValues {
      * Create a new header. This header is considered unchanging and not sensitive.
      *
      * @param name   name of the header
-     * @param values values of the header
+     * @param values values of the header, must contain at least one value (which may be an empty String)
      * @return a new header
      * @see #create(io.helidon.http.HeaderName, boolean, boolean, String...)
+     * @throws java.lang.IllegalArgumentException in case the collection is empty
      */
     public static Header create(String name, String... values) {
         return create(HeaderNames.create(name), values);
@@ -317,11 +319,15 @@ public final class HeaderValues {
      * Create a new header. This header is considered unchanging and not sensitive.
      *
      * @param name   name of the header
-     * @param values values of the header
+     * @param values values of the header, must contain at least one value (which may be an empty String)
      * @return a new header
      * @see #create(io.helidon.http.HeaderName, boolean, boolean, String...)
+     * @throws java.lang.IllegalArgumentException in case the collection is empty
      */
     public static Header create(HeaderName name, Collection<String> values) {
+        if (values.isEmpty()) {
+            throw new IllegalArgumentException("Cannot create a header without a value. Header: " + name);
+        }
         return new HeaderValueList(name, false, false, values);
     }
 
@@ -329,9 +335,10 @@ public final class HeaderValues {
      * Create a new header. This header is considered unchanging and not sensitive.
      *
      * @param name   name of the header
-     * @param values values of the header
+     * @param values values of the header, must contain at least one value (which may be an empty String)
      * @return a new header
      * @see #create(io.helidon.http.HeaderName, boolean, boolean, String...)
+     * @throws java.lang.IllegalArgumentException in case the collection is empty
      */
     public static Header create(String name, Collection<String> values) {
         return create(HeaderNames.create(name), values);

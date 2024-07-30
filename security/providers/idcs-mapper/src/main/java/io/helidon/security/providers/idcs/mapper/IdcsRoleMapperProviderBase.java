@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,8 +44,8 @@ import io.helidon.security.Subject;
 import io.helidon.security.SubjectType;
 import io.helidon.security.integration.common.RoleMapTracing;
 import io.helidon.security.jwt.Jwt;
+import io.helidon.security.jwt.JwtValidator;
 import io.helidon.security.jwt.SignedJwt;
-import io.helidon.security.jwt.Validator;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.spi.SubjectMappingProvider;
 import io.helidon.webclient.api.HttpClientRequest;
@@ -122,7 +122,8 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
 
         // create a new response
         AuthenticationResponse.Builder builder = AuthenticationResponse.builder()
-                .requestHeaders(previousResponse.requestHeaders());
+                .requestHeaders(previousResponse.requestHeaders())
+                .responseHeaders(previousResponse.responseHeaders());
         previousResponse.description().ifPresent(builder::description);
 
         if (maybeUser.isPresent()) {
@@ -381,7 +382,9 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
      * Reactive token for app access to IDCS.
      */
     protected static class AppToken {
-        private static final List<Validator<Jwt>> TIME_VALIDATORS = Jwt.defaultTimeValidators();
+        private static final JwtValidator TIME_VALIDATORS = JwtValidator.builder()
+                .addDefaultTimeValidators()
+                .build();
 
         private final AtomicReference<LazyValue<AppTokenData>> token = new AtomicReference<>();
         private final WebClient webClient;
@@ -410,7 +413,7 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
             AppTokenData tokenData = currentTokenData.get();
             Jwt jwt = tokenData.appJwt();
             if (jwt == null
-                    || !jwt.validate(TIME_VALIDATORS).isValid()
+                    || !TIME_VALIDATORS.validate(jwt).isValid()
                     || isNearExpiration(jwt)) {
                 // it is not valid or is very close to expiration - we must get a new value
                 LazyValue<AppTokenData> newLazyValue = LazyValue.create(() -> fromServer(tracing));

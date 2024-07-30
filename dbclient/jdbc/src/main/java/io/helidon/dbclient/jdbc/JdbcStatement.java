@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -148,11 +148,21 @@ public abstract class JdbcStatement<S extends DbStatement<S>> extends DbStatemen
             for (String name : namesOrder) {
                 if (parameters.containsKey(name)) {
                     Object value = parameters.get(name);
-                    LOGGER.log(Level.TRACE, String.format("Mapped parameter %d: %s -> %s", i, name, value));
+                    if (LOGGER.isLoggable(Level.TRACE)) {
+                        LOGGER.log(Level.TRACE, String.format("Mapped parameter %d: %s -> %s", i, name, value));
+                    }
                     setParameter(preparedStatement, i, value);
                     i++;
                 } else {
-                    throw new DbClientException(namedStatementErrorMessage(namesOrder, parameters));
+                    if (context().missingMapParametersAsNull()) {
+                        if (LOGGER.isLoggable(Level.TRACE)) {
+                            LOGGER.log(Level.TRACE, String.format("Mapped parameter %d: %s -> null", i, name));
+                        }
+                        setParameter(preparedStatement, i, null);
+                        i++;
+                    } else {
+                        throw new DbClientException(namedStatementErrorMessage(namesOrder, parameters));
+                    }
                 }
             }
             return preparedStatement;
@@ -168,7 +178,9 @@ public abstract class JdbcStatement<S extends DbStatement<S>> extends DbStatemen
             preparedStatement = prepareStatement(stmtName, stmt);
             int i = 1; // JDBC set position parameter starts from 1.
             for (Object value : parameters) {
-                LOGGER.log(Level.TRACE, String.format("Indexed parameter %d: %s", i, value));
+                if (LOGGER.isLoggable(Level.TRACE)) {
+                    LOGGER.log(Level.TRACE, String.format("Indexed parameter %d: %s", i, value));
+                }
                 setParameter(preparedStatement, i, value);
                 i++;
             }
@@ -299,7 +311,7 @@ public abstract class JdbcStatement<S extends DbStatement<S>> extends DbStatemen
             statement.setBoolean(index, b);
         } else if (parameter == null) {
             // Normally null is passed as a DatabaseField so the type is included, but in some case may be passed directly.
-            statement.setNull(index, Types.VARCHAR);
+            statement.setNull(index, Types.NULL);
         } else if (parameter instanceof byte[] b) {
             if (jdbcContext().parametersConfig().useByteArrayBinding()) {
                 ByteArrayInputStream inputStream = new ByteArrayInputStream(b);

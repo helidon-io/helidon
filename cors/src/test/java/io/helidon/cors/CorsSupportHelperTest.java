@@ -76,6 +76,17 @@ class CorsSupportHelperTest {
     }
 
     @Test
+    void opaqueOrigin() {
+        assertThat("Opaque origin",
+                   CorsSupportHelper.isOriginOpaque(CorsSupportHelper.OPAQUE_ORIGIN),
+                   is(true));
+
+        assertThat("Non-opaque origin",
+                   CorsSupportHelper.isOriginOpaque("http://ok.com"),
+                   is(false));
+    }
+
+    @Test
     void sameNodeSamePort() {
         assertThat("Default origin port",
                    CorsSupportHelper.requestType("http://ok.com",

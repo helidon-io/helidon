@@ -1,0 +1,7 @@
+{
+  "bundles": [
+    {
+      "name": "jakarta.xml.bind.Messages"
+    }
+  ]
+}

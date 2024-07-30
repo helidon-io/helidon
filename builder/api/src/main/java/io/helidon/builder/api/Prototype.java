@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,7 +106,7 @@ public final class Prototype {
          * @param configType           type of the configured service
          * @param allFromServiceLoader whether all services from service loader should be used, or only the ones with configured
          *                             node
-         * @param existingInstances  already configured instances
+         * @param existingInstances    already configured instances
          * @param <S>                  type of the expected service
          * @param <T>                  type of the configured service provider that creates instances of S
          * @return list of discovered services, ordered by {@link io.helidon.common.Weight} (highest weight is first in the list)
@@ -164,6 +164,8 @@ public final class Prototype {
                                                 allFromServiceLoader,
                                                 existingValue);
         }
+
+
     }
 
     /**
@@ -209,7 +211,7 @@ public final class Prototype {
     public @interface Blueprint {
         /**
          * The generated interface is public by default. We can switch it to package local
-         * by setting this property to {@code false}-
+         * by setting this property to {@code false}.
          *
          * @return whether the generated interface should be public
          */
@@ -231,9 +233,10 @@ public final class Prototype {
         boolean createFromConfigPublic() default true;
 
         /**
-         * Method create() is public by default.
+         * Method create() is created whenever there are no fields required (or all have default values).
+         * This property can disable generation of the method.
          *
-         * @return whether factory method create() should be public on prototype
+         * @return whether factory method create() should be created on prototype
          */
         boolean createEmptyPublic() default true;
 
@@ -309,7 +312,7 @@ public final class Prototype {
      * The builder provides accessors to all types, using {@link java.util.Optional} for any field that is optional,
      * or any other field unless it has a default value. Primitive types are an exception (unless declared as required).
      *
-     * @param <T> the type of the bean builder to intercept
+     * @param <T> the type of the builder to decorate
      * @see io.helidon.builder.api.Prototype.Blueprint#decorator()
      */
     @FunctionalInterface
@@ -320,6 +323,28 @@ public final class Prototype {
          * @param target the target being decorated
          */
         void decorate(T target);
+    }
+
+    /**
+     * Provides a way to decorate a single option when it is applied to the builder.
+     * The decorator must have an accessible no argument constructor (at least package local).
+     *
+     * @param <B> the type of the builder to decorate
+     * @param <T> the type of the option to decorate
+     * @see io.helidon.builder.api.Prototype.Blueprint#decorator()
+     */
+    @FunctionalInterface
+    public interface OptionDecorator<B, T> {
+        /**
+         * Provides the ability to decorate option as it is being set on the target builder.
+         * This method is invoked from within the setter of the value before the value is set on the builder (i.e. the
+         * builder still contains previous value).
+         * Do not call the same setter again from within this method, as it would end in a stack overflow.
+         *
+         * @param builder     the target builder being decorated
+         * @param optionValue option value set by the caller of the setter method
+         */
+        void decorate(B builder, T optionValue);
     }
 
     /**
@@ -408,8 +433,19 @@ public final class Prototype {
     }
 
     /**
+     * Annotated constant of a custom methods type to be added to prototype interface.
+     * The constant will be generated as a reference to the annotated constant (so it must be package local).
+     */
+    @Target(ElementType.FIELD)
+    @Retention(RetentionPolicy.CLASS)
+    public @interface Constant {
+    }
+
+    /**
      * Add additional interfaces to implement by the prototype. Provide correct types (fully qualified) for generics.
      */
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.CLASS)
     public @interface Implement {
         /**
          * Interfaces to implement, such as {@code java.lang.Comparable<io.helidon.common.types.TypeName>}.
@@ -419,5 +455,29 @@ public final class Prototype {
         String[] value();
     }
 
+    /**
+     * Generate support for Service Registry ({@code helidon-service-registry}) for any option that is annotated
+     * as {@link io.helidon.builder.api.Option.Provider}.
+     * When enabled (i.e. when this annotation is present), the service registry would be used to discover any service
+     * implementations including implementations discovered by service loader - appropriate {@code service.loader}
+     * metadata file will be generated for the service provider interfaces.
+     * <p>
+     * Simply add this annotation to your {@link io.helidon.builder.api.Prototype.Blueprint} type to enable service registry.
+     * Note that if this annotation is NOT present, service registry would not be used, and {@link java.util.ServiceLoader}
+     * is used instead.
+     * <p>
+     * When using this annotation, you cannot use {@code serviceRegistry} as a custom option in your blueprint, as it will
+     * be added by the annotation processor, to allow customization of the registry instance.
+     */
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.CLASS)
+    public @interface RegistrySupport {
+        /**
+         * Whether to enable (default) or disable (set to {@code false}) registry support for this blueprint.
+         *
+         * @return whether the registry support should be enabled
+         */
+        boolean value() default true;
+    }
 }
 

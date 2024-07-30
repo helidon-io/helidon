@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,9 +34,10 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
      Optimization for most commonly used header names
      */
     private final Header[] knownHeaders = new Header[KNOWN_HEADER_SIZE];
-    // custom (unknown) headers are slower
-    private final Map<HeaderName, Header> customHeaders = new HashMap<>();
     private IntSet knownHeaderIndices = new IntSet(KNOWN_HEADER_SIZE);
+
+    // custom (unknown) headers are slower
+    private Map<HeaderName, Header> customHeaders = null;
 
     HeadersImpl() {
     }
@@ -85,7 +86,7 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
 
     @Override
     public int size() {
-        return customHeaders.size() + knownHeaderIndices.size();
+        return (customHeaders == null ? 0 : customHeaders.size()) + knownHeaderIndices.size();
     }
 
     @Override
@@ -161,13 +162,15 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
         HeaderName name = header.headerName();
 
         Header usedHeader = header;
-        if (header instanceof HeaderWriteable) {
+        if (header instanceof HeaderValueLazy) {
+            // use it directly (lazy values are write once)
+        } else if (header instanceof HeaderWriteable) {
             // we must create a new instance, as we risk modifying state of the provided header
             usedHeader = new HeaderValueCopy(header);
         }
         int index = name.index();
         if (index == -1) {
-            customHeaders.put(name, usedHeader);
+            customHeaders().put(name, usedHeader);
         } else {
             knownHeaders[index] = usedHeader;
             knownHeaderIndices.add(index);
@@ -179,7 +182,7 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
     public T clear() {
         Arrays.fill(knownHeaders, null);
         knownHeaderIndices = new IntSet(KNOWN_HEADER_SIZE);
-        customHeaders.clear();
+        customHeaders().clear();
         return (T) this;
     }
 
@@ -231,8 +234,9 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
             knownHeaderIndices.remove(index);
             return value;
         }
-        return customHeaders.remove(name);
+        return customHeaders().remove(name);
     }
+
     private Header find(HeaderName name) {
         int index = name.index();
 
@@ -240,11 +244,18 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
             return knownHeaders[index];
         }
 
-        return customHeaders.get(name);
+        return customHeaders().get(name);
+    }
+
+    private Map<HeaderName, Header> customHeaders() {
+        if (customHeaders == null) {
+            customHeaders = new HashMap<>();
+        }
+        return customHeaders;
     }
 
     private class HeaderIterator implements Iterator<Header> {
-        private final boolean noCustom = customHeaders.isEmpty();
+        private final boolean noCustom = (customHeaders == null || customHeaders.isEmpty());
 
         private boolean inKnown = true;
         private int last = -1;

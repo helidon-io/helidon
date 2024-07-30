@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,23 @@
 
 package io.helidon.webclient.http1;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.webclient.spi.ProtocolConfig;
 
 /**
  * Configuration of an HTTP/1.1 client.
  */
 @Prototype.Blueprint
-@Configured
+@Prototype.Configured
 interface Http1ClientProtocolConfigBlueprint extends ProtocolConfig {
     @Override
     default String type() {
         return Http1ProtocolProvider.CONFIG_KEY;
     }
 
-    @ConfiguredOption(Http1ProtocolProvider.CONFIG_KEY)
+    @Option.Configured
+    @Option.Default(Http1ProtocolProvider.CONFIG_KEY)
     @Override
     String name();
 
@@ -42,7 +42,8 @@ interface Http1ClientProtocolConfigBlueprint extends ProtocolConfig {
      * @return {@code true} for keeping connections alive and re-using them for multiple requests (default), {@code false}
      *  to create a new connection for each request
      */
-    @ConfiguredOption("true")
+    @Option.Configured
+    @Option.DefaultBoolean(true)
     boolean defaultKeepAlive();
 
     /**
@@ -50,7 +51,8 @@ interface Http1ClientProtocolConfigBlueprint extends ProtocolConfig {
      *
      * @return  maximum header size
      */
-    @ConfiguredOption("16384")
+    @Option.Configured
+    @Option.DefaultInt(16384)
     int maxHeaderSize();
 
     /**
@@ -58,7 +60,8 @@ interface Http1ClientProtocolConfigBlueprint extends ProtocolConfig {
      *
      * @return maximum status line length
      */
-    @ConfiguredOption("256")
+    @Option.Configured
+    @Option.DefaultInt(256)
     int maxStatusLineLength();
 
     /**
@@ -69,7 +72,8 @@ interface Http1ClientProtocolConfigBlueprint extends ProtocolConfig {
      *
      * @return whether request header validation should be enabled
      */
-    @ConfiguredOption("false")
+    @Option.Configured
+    @Option.DefaultBoolean(false)
     boolean validateRequestHeaders();
 
     /**
@@ -80,6 +84,7 @@ interface Http1ClientProtocolConfigBlueprint extends ProtocolConfig {
      *
      * @return whether response header validation should be enabled
      */
-    @ConfiguredOption("true")
+    @Option.Configured
+    @Option.DefaultBoolean(true)
     boolean validateResponseHeaders();
 }

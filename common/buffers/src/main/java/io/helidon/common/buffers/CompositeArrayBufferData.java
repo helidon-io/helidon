@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
-class CompositeArrayBufferData extends ReadOnlyBufferData {
+class CompositeArrayBufferData extends ReadOnlyBufferData implements CompositeBufferData {
     private final BufferData[] data;
 
     CompositeArrayBufferData(BufferData[] data) {
@@ -38,6 +38,13 @@ class CompositeArrayBufferData extends ReadOnlyBufferData {
 
     @Override
     public void writeTo(OutputStream out) {
+        if (data.length == 1) {
+            BufferData datum = data[0];
+            if (!(datum instanceof CompositeBufferData)) {
+                datum.writeTo(out);
+                return;
+            }
+        }
         copy().writeTo(out);
     }
 
@@ -259,5 +266,10 @@ class CompositeArrayBufferData extends ReadOnlyBufferData {
     @Override
     public String toString() {
         return "comp-array: a=" + available();
+    }
+
+    @Override
+    public CompositeBufferData add(BufferData bufferData) {
+        throw new UnsupportedOperationException("Add not supported for " + getClass().getSimpleName() + " buffer");
     }
 }

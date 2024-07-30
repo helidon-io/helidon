@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -58,9 +58,7 @@ as shown below:
 
 [source,java]
 ----
-  ClientConfig clientConfig = new ClientConfig();
-  clientConfig.connectorProvider(HelidonConnectorProvider.create());       // Helidon connector
-  Client client = ClientBuilder.newClient(clientConfig);
+include::{sourcedir}/mp/jaxrs/HelidonConnectorSnippets.java[tag=snippet_1, indent=0]
 ----
 
 Any subsequent requests using a `Client` instance configured this way will defer to the
@@ -79,8 +77,8 @@ turn off redirects, you can add the following lines to your `microprofile-config
 
 [source, properties]
 ----
-  jersey.connector.helidon.config.cookie-manager.automatic-store-enabled=true
-  jersey.connector.helidon.config.follow-redirects=false
+jersey.connector.helidon.config.cookie-manager.automatic-store-enabled=true
+jersey.connector.helidon.config.follow-redirects=false
 ----
 
 Alternatively, assuming the root of the `WebClient` configuration is located at
@@ -89,7 +87,7 @@ instance as follows:
 
 [source,java]
 ----
-  clientConfig.property(HelidonProperties.CONFIG, config.get("my.webclient"));
+include::{sourcedir}/mp/jaxrs/HelidonConnectorSnippets.java[tag=snippet_2, indent=0]
 ----
 
 There are additional properties that can be set programmatically and that shall
@@ -170,15 +168,7 @@ that it applies to all requests created from it.
 
 [source,java]
 ----
-  ClientConfig clientConfig = new ClientConfig();
-  clientConfig.connectorProvider(HelidonConnectorProvider.create());
-  Client client = ClientBuilder.newClient(clientConfig);
-
-  WebTarget webTarget = client.target(...).path(...)
-      .property(HelidonProperties.PROTOCOL_ID, Http2Client.PROTOCOL_ID);      // HTTP/2 upgrade
-  try (Response response = webTarget.request().get()) {
-      // ...
-  }
+include::{sourcedir}/mp/jaxrs/HelidonConnectorSnippets.java[tag=snippet_3, indent=0]
 ----
 
 NOTE: Properties in the Jakarta REST Client API can be set on `Client`, `WebTarget` and
@@ -195,21 +185,7 @@ negotiate an HTTP/2 upgrade as shown below.
 
 [source,java]
 ----
-  Tls tls = Tls.builder()
-               .trustAll(true)
-               .addApplicationProtocol(Http2Client.PROTOCOL_ID)        // HTTP/2 upgrade
-               .endpointIdentificationAlgorithm(Tls.ENDPOINT_IDENTIFICATION_NONE)
-               .build();
-
-  ClientConfig clientConfig = new ClientConfig();
-  clientConfig.connectorProvider(HelidonConnectorProvider.create());
-  config.property(HelidonProperties.TLS, tls);
-  Client client = ClientBuilder.newClient(clientConfig);
-
-  WebTarget webTarget = client.target(...).path(...);
-  try (Response response = webTarget.request().get()) {
-      // ...
-  }
+include::{sourcedir}/mp/jaxrs/HelidonConnectorSnippets.java[tag=snippet_4, indent=0]
 ----
 
 The call to `addApplicationProtocol()` indicates the desire to negotiate a protocol upgrade. Naturally,
@@ -225,24 +201,7 @@ we take advantage of this mechanism to pre-configure the desired HTTP/2 support 
 
 [source,java]
 ----
-  Tls tls = Tls.builder()
-               .trustAll(true)
-               .endpointIdentificationAlgorithm(Tls.ENDPOINT_IDENTIFICATION_NONE)
-               .build();
-
-  ClientConfig clientConfig = new ClientConfig();
-  clientConfig.connectorProvider(HelidonConnectorProvider.create());
-  clientConfig.property(HelidonProperties.TLS, tls);
-  clientConfig.property(HelidonProperties.PROTOCOL_CONFIGS,
-                        List.of(Http2ClientProtocolConfig.builder()
-                                                   .priorKnowledge(true)    // HTTP/2 knowlege
-                                                   .build()));
-  Client client = ClientBuilder.newClient(clientConfig);
-
-  WebTarget webTarget = client.target(...).path(...);
-  try (Response response = webTarget.request().get()) {
-      // ...
-  }
+include::{sourcedir}/mp/jaxrs/HelidonConnectorSnippets.java[tag=snippet_5, indent=0]
 ----
 
 The property `HelidonProperties.PROTOCOL_CONFIGS` accepts a list of protocol configurations

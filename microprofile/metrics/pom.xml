@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.microprofile</groupId>
         <artifactId>helidon-microprofile-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.1.0-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.microprofile.metrics</groupId>
     <artifactId>helidon-microprofile-metrics</artifactId>
@@ -103,6 +103,11 @@
             <artifactId>helidon-common-testing-junit5</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.logging</groupId>
+            <artifactId>helidon-logging-jul</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -123,6 +128,7 @@
                                 <exclude>**/HelloWorldAsyncResponseTest.java</exclude>
                                 <exclude>**/TestMetricsOnOwnSocket.java</exclude>
                                 <exclude>**/TestDisabledMetrics.java</exclude>
+                                <exclude>**/TestSelectivelyDisabledMetrics.java</exclude>
                                 <exclude>**/TestConfigProcessing.java</exclude>
                             </excludes>
                             <systemPropertyVariables>
@@ -160,6 +166,17 @@
                                 <exclude>**/HelloWorldTest.java</exclude>
                                 <exclude>**/HelloWorldAsyncResponseWithRestRequestTest.java</exclude>
                             </excludes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>test-selectively-disabled-metrics</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/TestSelectivelyDisabledMetric.java</include>
+                            </includes>
                         </configuration>
                     </execution>
                     <execution>

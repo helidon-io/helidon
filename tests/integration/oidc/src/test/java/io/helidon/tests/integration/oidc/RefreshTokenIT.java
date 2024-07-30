@@ -16,7 +16,9 @@
 
 package io.helidon.tests.integration.oidc;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.List;
 
 import io.helidon.microprofile.testing.junit5.AddConfig;
@@ -25,6 +27,7 @@ import io.helidon.security.jwt.SignedJwt;
 import io.helidon.security.jwt.jwk.Jwk;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 
+import jakarta.json.JsonObject;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Form;
@@ -86,12 +89,17 @@ class RefreshTokenIT extends CommonLoginBase {
                 .notBefore(Instant.ofEpochMilli(1))
                 .build();
         SignedJwt signedJwt = SignedJwt.sign(jwt, Jwk.NONE_JWK);
+        JsonObject jsonObject = JSON_OBJECT_BUILDER_FACTORY.createObjectBuilder()
+                .add("accessToken", signedJwt.tokenContent())
+                .add("remotePeer", "127.0.0.1")
+                .build();
+        String base64 = Base64.getEncoder().encodeToString(jsonObject.toString().getBytes(StandardCharsets.UTF_8));
 
         try (Response response = client
                 .target(webTarget.getUri())
                 .path("/test")
                 .request()
-                .header(HttpHeaders.COOKIE, OidcConfig.DEFAULT_COOKIE_NAME + "=" + signedJwt.tokenContent())
+                .header(HttpHeaders.COOKIE, OidcConfig.DEFAULT_COOKIE_NAME + "=" + base64)
                 .get()) {
             assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
             assertThat(response.readEntity(String.class), is(EXPECTED_TEST_MESSAGE));
@@ -108,11 +116,6 @@ class RefreshTokenIT extends CommonLoginBase {
             assertThat(response.getHeaderString(HttpHeaders.SET_COOKIE), nullValue());
         }
 
-    }
-
-    private String getRequestUri(String html) {
-        Document document = Jsoup.parse(html);
-        return document.getElementById("kc-form-login").attr("action");
     }
 
 }

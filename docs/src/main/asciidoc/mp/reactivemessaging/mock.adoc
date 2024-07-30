@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -54,9 +54,7 @@ WARNING: Mock connector should be used in the test environment only!
 For injecting Mock Connector use `@TestConnector` qualifier:
 [source,java]
 ----
-@Inject
-@TestConnector
-MockConnector mockConnector;
+include::{sourcedir}/mp/reactivemessaging/MockSnippets.java[tag=snippet_1, indent=0]
 ----
 
 === Emitting Data
@@ -64,9 +62,7 @@ MockConnector mockConnector;
 .Emitting String values `a`, `b`, `c`
 [source,java]
 ----
-mockConnector
-     .incoming("my-incoming-channel", String.class) // <1>
-     .emit("a", "b", "c");
+include::{sourcedir}/mp/reactivemessaging/MockSnippets.java[tag=snippet_2, indent=0]
 ----
 <1> Get incoming channel of given name and payload type
 
@@ -75,9 +71,7 @@ mockConnector
 .Awaiting and asserting payloads with custom mapper
 [source,java]
 ----
-mockConnector
-    .outgoing("my-outgoing-channel", String.class)           // <1>
-    .awaitData(TIMEOUT, Message::getPayload, "a", "b", "c"); // <2>
+include::{sourcedir}/mp/reactivemessaging/MockSnippets.java[tag=snippet_3, indent=0]
 ----
 <1> Get outgoing channel of given name and payload type
 <2> Request number of expected items and block the thread until items arrive then assert the payloads
@@ -97,34 +91,7 @@ As Helidon test support makes a bean out of your test, you can inject MockConnec
 
 [source,java]
 ----
-@HelidonTest
-@DisableDiscovery // <1>
-@AddBean(MockConnector.class) // <2>
-@AddExtension(MessagingCdiExtension.class) // <3>
-@AddConfig(key = "mp.messaging.incoming.test-channel-in.connector", value = MockConnector.CONNECTOR_NAME)  // <4>
-@AddConfig(key = "mp.messaging.incoming.test-channel-in.mock-data-type", value = "java.lang.Integer")      // <5>
-@AddConfig(key = "mp.messaging.incoming.test-channel-in.mock-data", value = "6,7,8")                       // <6>
-@AddConfig(key = "mp.messaging.outgoing.test-channel-out.connector", value = MockConnector.CONNECTOR_NAME) // <7>
-public class MessagingTest {
-
-    private static final Duration TIMEOUT = Duration.ofSeconds(15);
-
-    @Inject
-    @TestConnector
-    private MockConnector mockConnector; // <8>
-
-    @Incoming("test-channel-in")
-    @Outgoing("test-channel-out")
-    int multiply(int payload) {  // <9>
-        return payload * 10;
-    }
-
-    @Test
-    void testMultiplyChannel() {
-        mockConnector.outgoing("test-channel-out", Integer.TYPE) // <10>
-                .awaitPayloads(TIMEOUT, 60, 70, 80);
-    }
-}
+include::{sourcedir}/mp/reactivemessaging/MockSnippets.java[tag=snippet_4, indent=0]
 ----
 
 <1> If you want to add all the beans manually

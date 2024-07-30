@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,18 +77,22 @@ class ServerRequestHeadersImpl implements ServerRequestHeaders {
         List<HttpMediaType> acceptedTypes;
 
         List<String> acceptValues = all(HeaderNames.ACCEPT, List::of);
-        if (acceptValues.size() == 1 && HUC_ACCEPT_DEFAULT.value().equals(acceptValues.get(0))) {
+        if (acceptValues.size() == 1 && HUC_ACCEPT_DEFAULT.get().equals(acceptValues.get(0))) {
             acceptedTypes = HUC_ACCEPT_DEFAULT_TYPES;
         } else {
             acceptedTypes = new ArrayList<>(5);
 
-            for (String acceptValue : acceptValues) {
-                List<String> tokenized = HeaderHelper.tokenize(',', acceptValue);
-                for (String token : tokenized) {
-                    acceptedTypes.add(HttpMediaType.create(token.trim()));
+            try {
+                for (String acceptValue : acceptValues) {
+                    List<String> tokenized = HeaderHelper.tokenize(',', acceptValue);
+                    for (String token : tokenized) {
+                        acceptedTypes.add(HttpMediaType.create(token.trim()));
+                    }
                 }
+                Collections.sort(acceptedTypes);
+            } catch (IllegalArgumentException e) {
+                throw new BadRequestException("Unable to parse Accept header", e);
             }
-            Collections.sort(acceptedTypes);
         }
         cachedAccepted = acceptedTypes;
 

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@
 :keywords: helidon, java, microservices, Helidon N&iacute;ma, Project N&iacute;ma
 :rootdir: {docdir}/..
 
+include::{rootdir}/includes/attributes.adoc[]
 
 
 == What's New in This Release
@@ -52,18 +53,13 @@ To give a very simple example of the differences between Helidon 3 SE and Helido
 .Helidon 3
 [source,java]
 ----
-
-request.content().as(JsonObject.class)
-        	.thenAccept(jo -> doSomething(jo, response));
-
+include::{sourcedir}/about/IntroSnippets.java[tag=snippet_1, indent=0]
 ----
 
 .Helidon 4
 [source,java]
 ----
-
-doSomething(request.content().as(JsonObject.class), response);
-
+include::{sourcedir}/about/IntroSnippets.java[tag=snippet_2, indent=0]
 ----
 
 

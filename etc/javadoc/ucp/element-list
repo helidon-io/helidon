@@ -1,0 +1,5 @@
+oracle.ucp
+oracle.ucp.admin
+oracle.ucp.jdbc
+oracle.ucp.jdbc.oracle
+oracle.ucp.util.logging

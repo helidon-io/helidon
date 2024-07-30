@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ import io.helidon.security.providers.httpsign.InboundClientDefinition;
 import io.helidon.security.providers.httpsign.OutboundTargetDefinition;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.context.ContextFeature;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.security.SecurityFeature;
 import io.helidon.webserver.security.SecurityHttpFeature;
@@ -52,9 +53,9 @@ public class SignatureExampleBuilderMain {
     private static final Map<String, SecureUserStore.User> USERS = new HashMap<>();
 
     static {
-        addUser("jack", "password", List.of("user", "admin"));
-        addUser("jill", "password", List.of("user"));
-        addUser("john", "password", List.of());
+        addUser("jack", "changeit", List.of("user", "admin"));
+        addUser("jill", "changeit", List.of("user"));
+        addUser("john", "changeit", List.of());
     }
 
     private SignatureExampleBuilderMain() {
@@ -121,7 +122,12 @@ public class SignatureExampleBuilderMain {
     }
 
     static void setup(WebServerConfig.Builder server) {
-        server.routing(SignatureExampleBuilderMain::routing1)
+        // as we explicitly configure SecurityHttpFeature, we must disable automated loading of security,
+        // as it would add another feature with different configuration
+        server.featuresDiscoverServices(false)
+                // context is a required pre-requisite of security
+                .addFeature(ContextFeature.create())
+                .routing(SignatureExampleBuilderMain::routing1)
                 .putSocket("service2", socket -> socket
                         .routing(SignatureExampleBuilderMain::routing2));
     }
@@ -159,7 +165,7 @@ public class SignatureExampleBuilderMain {
                                 .addInbound(InboundClientDefinition
                                         .builder("service1-hmac")
                                         .principalName("Service1 - HMAC signature")
-                                        .hmacSecret("somePasswordForHmacShouldBeEncrypted")
+                                        .hmacSecret("changeit")
                                         .build())
                                 .addInbound(InboundClientDefinition
                                         .builder("service1-rsa")
@@ -167,7 +173,7 @@ public class SignatureExampleBuilderMain {
                                         .publicKeyConfig(Keys.builder()
                                                 .keystore(k -> k
                                                         .keystore(Resource.create("keystore.p12"))
-                                                        .passphrase("password")
+                                                        .passphrase("changeit")
                                                         .certAlias("service_cert")
                                                         .build())
                                                 .build())
@@ -209,7 +215,7 @@ public class SignatureExampleBuilderMain {
                                 .privateKeyConfig(Keys.builder()
                                         .keystore(k -> k
                                                 .keystore(Resource.create("keystore.p12"))
-                                                .passphrase("password")
+                                                .passphrase("changeit")
                                                 .keyAlias("myPrivateKey")
                                                 .build())
                                         .build())
@@ -225,7 +231,7 @@ public class SignatureExampleBuilderMain {
                         OutboundTargetDefinition.class,
                         OutboundTargetDefinition
                                 .builder("service1-hmac")
-                                .hmacSecret("somePasswordForHmacShouldBeEncrypted")
+                                .hmacSecret("changeit")
                                 .build())
                 .build();
     }

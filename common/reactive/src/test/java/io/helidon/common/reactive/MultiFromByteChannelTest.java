@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ import org.hamcrest.collection.IsCollectionWithSize;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import static java.time.Duration.ofSeconds;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -70,7 +71,7 @@ public class MultiFromByteChannelTest {
         // assert
         byte[] bytes = Multi.create(publisher)
                 .collect(new BufferCollector())
-                .await(5, TimeUnit.SECONDS);
+                .await(ofSeconds(5));
 
         assertThat(bytes.length, is(TEST_DATA_SIZE));
         assertByteSequence(bytes);
@@ -92,7 +93,7 @@ public class MultiFromByteChannelTest {
         // assert
         byte[] bytes = Multi.create(publisher)
                 .collect(new BufferCollector())
-                .await(5, TimeUnit.SECONDS);
+                .await(ofSeconds(5));
 
         assertThat(bytes.length, is(TEST_DATA_SIZE));
         assertByteSequence(bytes);
@@ -119,7 +120,7 @@ public class MultiFromByteChannelTest {
         // assert
         byte[] bytes = Multi.create(publisher)
                 .collect(new BufferCollector())
-                .await(5, TimeUnit.SECONDS);
+                .await(ofSeconds(5));
 
         assertThat(bytes.length, is(TEST_DATA_SIZE));
         assertByteSequence(bytes);
@@ -148,7 +149,7 @@ public class MultiFromByteChannelTest {
         // assert
         byte[] bytes = Multi.create(publisher)
                 .collect(new BufferCollector())
-                .await(5, TimeUnit.SECONDS);
+                .await(ofSeconds(5));
 
         assertThat(bytes.length, is(TEST_DATA_SIZE));
         assertByteSequence(bytes);
@@ -170,7 +171,7 @@ public class MultiFromByteChannelTest {
         try {
             Multi.create(publisher)
                     .collect(new BufferCollector())
-                    .await(5, TimeUnit.SECONDS);
+                    .await(ofSeconds(5));
             fail("Did not throw expected CompletionException!");
         } catch (CompletionException e) {
             assertThat(e.getCause(), instanceOf(ClosedChannelException.class));
@@ -201,7 +202,7 @@ public class MultiFromByteChannelTest {
         // immediately close the channel, so we fail reading
         pc.close();
 
-        CompletionException c = assertThrows(CompletionException.class, () -> data.await(5, TimeUnit.SECONDS));
+        CompletionException c = assertThrows(CompletionException.class, () -> data.await(ofSeconds(5)));
         assertThat(c.getCause(), instanceOf(ClosedChannelException.class));
 
         MultiFromByteChannel multi = (MultiFromByteChannel) publisher;
@@ -272,7 +273,7 @@ public class MultiFromByteChannelTest {
         try {
             Multi.create(publisher)
                     .collect(new BufferCollector())
-                    .await(5, TimeUnit.SECONDS);
+                    .await(ofSeconds(5));
 
             fail("Did not throw expected CompletionException!");
         } catch (CompletionException e) {

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.1.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-docs</artifactId>
     <packaging>site</packaging>
@@ -32,6 +32,8 @@
     <properties>
         <helidon.services.skip>true</helidon.services.skip>
         <helidon.sitegen.skip>false</helidon.sitegen.skip>
+        <version.lib.jbatch-api>2.1.0</version.lib.jbatch-api>
+        <version.lib.jbatch.container>2.1.0</version.lib.jbatch.container>
     </properties>
 
     <dependencies>
@@ -39,6 +41,40 @@
             <groupId>io.helidon</groupId>
             <artifactId>helidon-all</artifactId>
             <type>pom</type>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+        </dependency>
+        <!-- snippets dependencies -->
+        <dependency>
+            <groupId>org.apache.activemq</groupId>
+            <artifactId>activemq-client</artifactId>
+            <optional>true</optional>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.oracle.oci.sdk</groupId>
+            <artifactId>oci-java-sdk-objectstorage</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.batch</groupId>
+            <artifactId>jakarta.batch-api</artifactId>
+            <version>${version.lib.jbatch-api}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>com.ibm.jbatch</groupId>
+            <artifactId>com.ibm.jbatch.spi</artifactId>
+            <version>${version.lib.jbatch.container}</version>
+            <optional>true</optional>
         </dependency>
     </dependencies>
 
@@ -68,6 +104,22 @@
                     <siteGenerateSkip>${helidon.sitegen.skip}</siteGenerateSkip>
                     <siteArchiveSkip>${helidon.sitegen.skip}</siteArchiveSkip>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <proc>none</proc>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>compile-snippets</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

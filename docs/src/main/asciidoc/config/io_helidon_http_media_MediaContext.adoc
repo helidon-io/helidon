@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -44,16 +44,16 @@ Type: link:{javadoc-base-url}/io.helidon.http.media/io/helidon/http/media/MediaC
 
 |`fallback` |xref:{rootdir}/config/io_helidon_http_media_MediaContext.adoc[MediaContext] |{nbsp} |Existing context to be used as a fallback for this context.
 
- @return media context to use if supports configured on this request cannot provide a good result
+ Media context to use if supports configured on this request cannot provide a good result
 |`media-supports` |io.helidon.http.media.MediaSupport[&#93; (service provider interface) |{nbsp} |Media supports to use.
  This instance has priority over provider(s) discovered by service loader.
  The providers are used in order of calling this method, where the first support added is the
  first one to be queried for readers and writers.
 
- @return media supports
+ Media supports
 |`register-defaults` |boolean |`true` |Should we register defaults of Helidon, such as String media support.
 
- @return whether to register default media supports
+ Whether to register default media supports
 
 |===
 

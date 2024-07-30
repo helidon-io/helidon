@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ The support for Neo4j is implemented in Neo4j driver level. Just add the depende
 
 First describe Neo4j connection properties:
 
-[source,properties]
+[source,yaml]
 ----
 neo4j:
  uri: bolt://localhost:7687
@@ -70,8 +70,7 @@ Then just get the driver:
 
 [source,java]
 ----
-Neo4j neo4j = Neo4j.create(config.get("neo4j"));
-Driver neo4jDriver = neo4j.driver();
+include::{sourcedir}/se/integrations/Neo4jSnippets.java[tag=snippet_1, indent=0]
 ----
 
 The driver can be used according to the link:https://neo4j.com/developer/java/[Neo4j documentation].
@@ -86,9 +85,10 @@ This example implements a simple Neo4j REST service using MicroProfile. For this
 
 Bring up a Neo4j instance via Docker
 
-```bash
+[source, bash]
+----
 docker run --publish=7474:7474 --publish=7687:7687 -e 'NEO4J_AUTH=neo4j/secret'  neo4j:latest
-```
+----
 
 Go to the Neo4j browser and play the first step of the movies graph: link:http://localhost:7474/browser/?cmd=play&arg=movies[`:play movies`]
 
@@ -96,23 +96,25 @@ Now go to the `pom.xml` and add the following dependencies:
 
 [source,xml]
 ----
- <dependency>
-    <groupId>io.helidon.integrations.neo4j</groupId>
-    <artifactId>helidon-integrations-neo4j</artifactId>
-</dependency>
-<dependency>
-    <groupId>io.helidon.integrations.neo4j</groupId>
-    <artifactId>helidon-integrations-neo4j-metrics</artifactId>
-</dependency>
-<dependency>
-    <groupId>io.helidon.integrations.neo4j</groupId>
-    <artifactId>helidon-integrations-neo4j-health</artifactId>
-</dependency>
+<dependencies>
+    <dependency>
+        <groupId>io.helidon.integrations.neo4j</groupId>
+        <artifactId>helidon-integrations-neo4j</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.integrations.neo4j</groupId>
+        <artifactId>helidon-integrations-neo4j-metrics</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.integrations.neo4j</groupId>
+        <artifactId>helidon-integrations-neo4j-health</artifactId>
+    </dependency>
+</dependencies>
 ----
 
 Next add the connection configuration properties for Neo4j:
 
-[source,properties]
+[source,yaml]
 ----
 neo4j:
  uri: bolt://localhost:7687
@@ -129,47 +131,7 @@ Finally, we are able to use the `Neo4j` driver.
 
 [source,java]
 ----
-@ApplicationScoped
-public class MovieRepository {
-
-    private final Driver driver;
-
-    public MovieRepository(Driver driver) { // <1>
-        this.driver = driver;
-    }
-
-    public List<Movie> findAll() { // <2>
-
-        try (var session = driver.session()) {
-
-            var query = ""
-                    + "match (m:Movie) "
-                    + "match (m) <- [:DIRECTED] - (d:Person) "
-                    + "match (m) <- [r:ACTED_IN] - (a:Person) "
-                    + "return m, collect(d) as directors, collect({name:a.name, roles: r.roles}) as actors";
-
-            return session.readTransaction(tx -> tx.run(query).list(r -> {
-                var movieNode = r.get("m").asNode();
-
-                var directors = r.get("directors").asList(v -> {
-                    var personNode = v.asNode();
-                    return new Person(personNode.get("born").asInt(), personNode.get("name").asString());
-                });
-
-                var actors = r.get("actors").asList(v -> {
-                    return new Actor(v.get("name").asString(), v.get("roles").asList(Value::asString));
-                });
-
-                var m = new Movie(movieNode.get("title").asString(), movieNode.get("tagline").asString());
-                m.setReleased(movieNode.get("released").asInt());
-                m.setDirectorss(directors);
-                m.setActors(actors);
-                return m;
-            }));
-        }
-    }
-}
-
+include::{sourcedir}/se/integrations/Neo4jSnippets.java[tag=snippet_2, indent=0]
 ----
 <1> Constructor with `Neo4j` driver parameter
 <2> Use `Neo4j` driver to extract all Movies
@@ -178,64 +140,19 @@ Movies can now be returned as JSON objects:
 
 [source,java]
 ----
-public class MovieService implements HttpService {
-    private final MovieRepository movieRepository;
-
-    public MovieService(MovieRepository movieRepository) {
-        this.movieRepository = movieRepository;
-    }
-
-    @Override
-    public void routing(HttpRules rules) {
-        rules.get("/api/movies", this::findMoviesHandler);
-    }
-
-    private void findMoviesHandler(ServerRequest request, ServerResponse response) {
-        response.send(this.movieRepository.findAll());
-    }
-}
-
+include::{sourcedir}/se/integrations/Neo4jSnippets.java[tag=snippet_3, indent=0]
 ----
 
 To use the service, as well as to add metrics and health support the following routing should be created:
 
 [source,java]
 ----
-private static Routing createRouting(Config config) {
-
-        MetricsSupport metrics = MetricsSupport.create();
-
-        Neo4j neo4j = Neo4j.create(config.get("neo4j")); // <1>
-
-        // registers all metrics
-        Neo4jMetricsSupport.builder() // <2>
-                .driver(neo4j.driver())
-                .build()
-                .initialize();
-
-        Neo4jHealthCheck healthCheck = Neo4jHealthCheck.create(neo4j.driver()); // <3>
-
-        Driver neo4jDriver = neo4j.driver();
-
-        MovieService movieService = new MovieService(new MovieRepository(neo4jDriver)); // <4>
-
-        HealthSupport health = HealthSupport.builder()
-                .add(HealthChecks.healthChecks())   // Adds a convenient set of checks
-                .add(healthCheck)
-                .build();
-
-        return Routing.builder() // <5>
-                .register(health)                   // Health at "/health"
-                .register(metrics)                  // Metrics at "/metrics"
-                .register(movieService)
-                .build();
-        }
+include::{sourcedir}/se/integrations/Neo4jSnippets.java[tag=snippet_4, indent=0]
 ----
 <1> Use of `Neo4j` support object to initialise and configure the driver.
 <2> Use of `Neo4jMetricsSupport` to add _Neo4j_ metrics to `/metrics` output.
 <3> Use of `Neo4jHealthCheck` to add _Neo4j_ health support.
-<4> Initialize `MovieService` with _Neo4j_ driver.
-<5> Register the services in _Routing_.
+<4> Register  `MovieService`  in _Routing_.
 
 Now build and run with JDK17+
 [source,bash]
@@ -249,33 +166,25 @@ Exercise the application:
 [source,bash]
 ----
 curl -X GET http://localhost:8080/movies
-{. . .}
 
-# Try health and metrics
+# Try health
 curl -s -X GET http://localhost:8080/health
-{"outcome":"UP",...
-. . .
 
-# Prometheus Format
+# Try metrics in Prometheus Format
 curl -s -X GET http://localhost:8080/metrics
-# TYPE base:gc_g1_young_generation_count gauge
-. . .
 
-# JSON Format
+# Try metrics in JSON Format
 curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
-{"base":...
-. . .
-
 ----
 
-Full example code is available in link:https://github.com/oracle/helidon/tree/master/examples/integrations/neo4j/neo4j-mp[Helidon GitHub Repository].
+Full example code is available in link:{helidon-github-tree-url}/examples/integrations/neo4j/neo4j-mp[Helidon GitHub Repository].
 
 
 == Additional Information
 
 === Neo4j Metrics propagation
 
-Neo4j metrics can be propagated to the user as `MicroProfile` metrics. This is implemented in a separate Maven module. Just add:
+Neo4j's metrics can be propagated to the user as `MicroProfile` metrics. This is implemented in a separate Maven module. Just add:
 
 [source,xml]
 ----
@@ -298,13 +207,10 @@ pool:
 Finally, to initialize metrics run:
 [source,java]
 ----
-Neo4jMetricsSupport.builder()
-        .driver(neo4j.driver())
-        .build()
-        .initialize();
+include::{sourcedir}/se/integrations/Neo4jSnippets.java[tag=snippet_5, indent=0]
 ----
 
-Neo4j metrics will be automatically added to the output of the `/metrics` endpoint.
+Neo4j's metrics will be automatically added to the output of the `/metrics` endpoint.
 
 === Neo4j Health Checks
 
@@ -326,11 +232,7 @@ To enable health checks run the following code:
 
 [source,java]
 ----
-Neo4jHealthCheck healthCheck = Neo4jHealthCheck.create(neo4j.driver());
-
-HealthSupport health = HealthSupport.builder()
-        .add(healthCheck)
-        .build();
+include::{sourcedir}/se/integrations/Neo4jSnippets.java[tag=snippet_6, indent=0]
 ----
 
 Health checks for Neo4j will be included in `/health` endpoint output.

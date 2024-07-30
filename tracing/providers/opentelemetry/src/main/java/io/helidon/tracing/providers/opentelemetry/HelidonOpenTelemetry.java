@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,14 +15,22 @@
  */
 package io.helidon.tracing.providers.opentelemetry;
 
-
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.ServiceLoader;
+import java.util.function.Consumer;
 
+import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
+import io.helidon.tracing.SpanListener;
 
 import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.Tracer;
 
 import static io.opentelemetry.context.Context.current;
@@ -32,9 +40,23 @@ import static io.opentelemetry.context.Context.current;
  */
 public final class HelidonOpenTelemetry {
 
+    /**
+     * OpenTelemetry property for indicating if the Java agent is present.
+     */
+    public static final String OTEL_AGENT_PRESENT_PROPERTY = "otel.agent.present";
+
+    /**
+     * OpenTelemetry property for the Java agent.
+     */
+    public static final String IO_OPENTELEMETRY_JAVAAGENT = "io.opentelemetry.javaagent";
+
+    static final String UNSUPPORTED_OPERATION_MESSAGE = "Span listener attempted to invoke an illegal operation";
+
     private static final System.Logger LOGGER = System.getLogger(HelidonOpenTelemetry.class.getName());
-    private static final String OTEL_AGENT_PRESENT_PROPERTY = "otel.agent.present";
-    private static final String IO_OPENTELEMETRY_JAVAAGENT = "io.opentelemetry.javaagent";
+    private static final LazyValue<List<SpanListener>> SPAN_LISTENERS =
+            LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(SpanListener.class)).asList());
+
+
     private HelidonOpenTelemetry() {
     }
     /**
@@ -56,7 +78,31 @@ public final class HelidonOpenTelemetry {
      * @return Helidon {@link io.helidon.tracing.Span}
      */
     public static io.helidon.tracing.Span create(Span span) {
-        return new OpenTelemetrySpan(span);
+        return new OpenTelemetrySpan(span, SPAN_LISTENERS.get());
+    }
+
+    /**
+     * Wrap an open telemetry span.
+     *
+     * @param span open telemetry span
+     * @param baggage open telemetry baggage
+     * @return Helidon (@link io.helidon.tracing.Span}
+     */
+    public static io.helidon.tracing.Span create(Span span, Baggage baggage) {
+        return new OpenTelemetrySpan(span, baggage, SPAN_LISTENERS.get());
+    }
+
+    /**
+     * Wrap an open telemetry span builder.
+     *
+     * @param spanBuilder open telemetry span builder
+     * @param helidonTracer Helidon {@link io.helidon.tracing.Tracer} to use in creating the wrapping span builder
+     * @return Helidon {@link io.helidon.tracing.Span.Builder}
+     */
+    public static io.helidon.tracing.Span.Builder<?> create(SpanBuilder spanBuilder,
+                                                            io.helidon.tracing.Tracer helidonTracer) {
+
+        return new OpenTelemetrySpanBuilder(spanBuilder, helidonTracer.unwrap(OpenTelemetryTracer.class).spanListeners());
     }
 
     /**
@@ -108,5 +154,32 @@ public final class HelidonOpenTelemetry {
             return current().getClass().getName().contains("agent");
         }
 
+    }
+
+    static void invokeListeners(List<SpanListener> spanListeners, System.Logger logger, Consumer<SpanListener> operation) {
+        if (spanListeners.isEmpty()) {
+            return;
+        }
+        List<Throwable> throwables = new ArrayList<>();
+        for (SpanListener listener : spanListeners) {
+            try {
+                operation.accept(listener);
+            } catch (Throwable t) {
+                throwables.add(t);
+            }
+        }
+
+        Throwable throwableToLog = null;
+        if (throwables.size() == 1) {
+            // If only one exception is present, propagate that one in the log record.
+            throwableToLog = throwables.getFirst();
+        } else if (!throwables.isEmpty()) {
+            // Propagate a RuntimeException with multiple suppressed exceptions in the log record.
+            throwableToLog = new RuntimeException();
+            throwables.forEach(throwableToLog::addSuppressed);
+        }
+        if (throwableToLog != null) {
+            logger.log(System.Logger.Level.WARNING, "Error(s) from listener(s)", throwableToLog);
+        }
     }
 }

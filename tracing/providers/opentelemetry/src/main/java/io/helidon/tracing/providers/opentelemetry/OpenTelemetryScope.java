@@ -15,32 +15,62 @@
  */
 package io.helidon.tracing.providers.opentelemetry;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.tracing.Scope;
+import io.helidon.tracing.SpanListener;
 
 class OpenTelemetryScope implements Scope {
+    private static final System.Logger LOGGER = System.getLogger(OpenTelemetryScope.class.getName());
+    private final OpenTelemetrySpan span;
     private final io.opentelemetry.context.Scope delegate;
-    private final io.opentelemetry.context.Scope baggageScope;
     private final AtomicBoolean closed = new AtomicBoolean();
+    private final List<SpanListener> spanListeners;
+    private Limited limited;
 
-    OpenTelemetryScope(io.opentelemetry.context.Scope scope, io.opentelemetry.context.Scope baggageScope) {
+    OpenTelemetryScope(OpenTelemetrySpan span,
+                       io.opentelemetry.context.Scope scope,
+                       List<SpanListener> spanListeners) {
+        this.span = span;
         delegate = scope;
-        this.baggageScope = baggageScope;
+        this.spanListeners = spanListeners;
     }
 
     @Override
     public void close() {
         if (closed.compareAndSet(false, true) && delegate != null) {
             delegate.close();
-            if (baggageScope != null) {
-                baggageScope.close();
-            }
+            HelidonOpenTelemetry.invokeListeners(spanListeners, LOGGER, listener -> listener.closed(span.limited(), limited()));
         }
     }
 
     @Override
     public boolean isClosed() {
         return closed.get();
+    }
+
+    Limited limited() {
+        if (limited !=  null) {
+            return limited;
+        }
+        if (spanListeners.isEmpty()) {
+            return null;
+        }
+        limited = new Limited(this);
+        return limited;
+    }
+
+    private record Limited(OpenTelemetryScope delegate) implements Scope {
+
+        @Override
+        public void close() {
+            throw new SpanListener.ForbiddenOperationException();
+        }
+
+        @Override
+        public boolean isClosed() {
+            return delegate.isClosed();
+        }
     }
 }

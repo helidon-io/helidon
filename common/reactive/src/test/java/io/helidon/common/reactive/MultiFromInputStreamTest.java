@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -36,6 +35,8 @@ import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.RepetitionInfo;
 import org.junit.jupiter.api.Test;
 
+import static java.time.Duration.ofMillis;
+import static java.time.Duration.ofSeconds;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
@@ -68,7 +69,7 @@ public class MultiFromInputStreamTest {
                     return list;
                 })
                 .collectList()
-                .await(100, TimeUnit.MILLISECONDS);
+                .await(ofMillis(100));
         assertThat(result, equalTo(toList(initialArray)));
     }
 
@@ -111,7 +112,7 @@ public class MultiFromInputStreamTest {
                 .map(CharBuffer::toString)
                 .map(CharSequence.class::cast)
                 .collectStream(Collectors.joining())
-                .await(100, TimeUnit.SECONDS);
+                .await(ofSeconds(100));
 
         assertThat(result, equalTo(expected));
     }

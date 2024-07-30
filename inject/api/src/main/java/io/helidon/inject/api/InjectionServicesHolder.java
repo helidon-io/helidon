@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,9 @@ import io.helidon.inject.spi.InjectionServicesProvider;
 /**
  * The holder for the globally active {@link InjectionServices} singleton instance, as well as its associated
  * {@link Bootstrap} primordial configuration.
+ * @deprecated Helidon inject is deprecated and will be replaced in a future version
  */
+@Deprecated(forRemoval = true, since = "4.0.8")
 // exposed in the testing module as non deprecated
 public abstract class InjectionServicesHolder {
     /**

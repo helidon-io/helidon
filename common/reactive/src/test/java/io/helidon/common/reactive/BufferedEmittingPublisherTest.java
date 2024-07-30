@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.junit.jupiter.api.Test;
 
+import static java.time.Duration.ofSeconds;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
@@ -280,7 +281,7 @@ public class BufferedEmittingPublisherTest {
                 .forEach(unused -> cnt.incrementAndGet());
 
         try {
-            promise.await(10, TimeUnit.SECONDS);
+            promise.await(ofSeconds(10));
             assertThat(cnt.get(), is(equalTo(STREAM_SIZE)));
         } finally {
             exec.shutdown();

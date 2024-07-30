@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -30,11 +30,14 @@ The following section lists all configurable types in Helidon.
 - xref:{rootdir}/config/io_helidon_common_configurable_AllowList.adoc[AllowList (common.configurable)]
 - xref:{rootdir}/config/io_helidon_faulttolerance_Async.adoc[Async (faulttolerance)]
 - xref:{rootdir}/config/io_helidon_security_providers_oidc_common_BaseBuilder.adoc[BaseBuilder (security.providers.oidc.common)]
+- xref:{rootdir}/config/io_helidon_metrics_api_ComponentMetricsSettings_Builder.adoc[Builder (metrics.api.ComponentMetricsSettings)]
 - xref:{rootdir}/config/io_helidon_security_providers_idcs_mapper_IdcsRoleMapperProviderBase_Builder.adoc[Builder (security.providers.idcs.mapper.IdcsRoleMapperProviderBase)]
 - xref:{rootdir}/config/io_helidon_webserver_servicecommon_HelidonFeatureSupport_Builder.adoc[Builder (webserver.servicecommon.HelidonFeatureSupport)]
+- xref:{rootdir}/config/io_helidon_webserver_servicecommon_RestServiceSettings_Builder.adoc[Builder (webserver.servicecommon.RestServiceSettings)]
 - xref:{rootdir}/config/io_helidon_faulttolerance_Bulkhead.adoc[Bulkhead (faulttolerance)]
 - xref:{rootdir}/config/io_helidon_faulttolerance_CircuitBreaker.adoc[CircuitBreaker (faulttolerance)]
-- xref:{rootdir}/config/io_helidon_metrics_api_ComponentMetricsSettings.adoc[ComponentMetricsSettings (metrics.api)]
+- xref:{rootdir}/config/io_helidon_integrations_oci_ConfigFileMethodConfig.adoc[ConfigFileMethodConfig (integrations.oci)]
+- xref:{rootdir}/config/io_helidon_integrations_oci_ConfigMethodConfig.adoc[ConfigMethodConfig (integrations.oci)]
 - xref:{rootdir}/config/io_helidon_webserver_observe_config_ConfigObserver.adoc[ConfigObserver (webserver.observe.config)]
 - xref:{rootdir}/config/io_helidon_security_providers_httpauth_ConfigUserStore_ConfigUser.adoc[ConfigUser (security.providers.httpauth.ConfigUserStore)]
 - xref:{rootdir}/config/io_helidon_webserver_ConnectionConfig.adoc[ConnectionConfig (webserver)]
@@ -42,9 +45,13 @@ The following section lists all configurable types in Helidon.
 - xref:{rootdir}/config/io_helidon_webserver_context_ContextFeature.adoc[ContextFeature (webserver.context)]
 - xref:{rootdir}/config/io_helidon_webserver_cors_CorsConfig.adoc[CorsConfig (webserver.cors)]
 - xref:{rootdir}/config/io_helidon_webserver_cors_CorsFeature.adoc[CorsFeature (webserver.cors)]
+- xref:{rootdir}/config/io_helidon_scheduling_Cron.adoc[Cron (scheduling)]
 - xref:{rootdir}/config/io_helidon_cors_CrossOriginConfig.adoc[CrossOriginConfig (cors)]
 - xref:{rootdir}/config/io_helidon_security_providers_common_EvictableCache.adoc[EvictableCache (security.providers.common)]
+- xref:{rootdir}/config/io_helidon_scheduling_FixedRate.adoc[FixedRate (scheduling)]
 - xref:{rootdir}/config/io_helidon_security_providers_google_login_GoogleTokenProvider.adoc[GoogleTokenProvider (security.providers.google.login)]
+- xref:{rootdir}/config/io_helidon_webclient_grpc_GrpcClient.adoc[GrpcClient (webclient.grpc)]
+- xref:{rootdir}/config/io_helidon_webclient_grpc_GrpcClientProtocolConfig.adoc[GrpcClientProtocolConfig (webclient.grpc)]
 - xref:{rootdir}/config/io_helidon_webserver_grpc_GrpcConfig.adoc[GrpcConfig (webserver.grpc)]
 - xref:{rootdir}/config/io_helidon_security_providers_header_HeaderAtnProvider.adoc[HeaderAtnProvider (security.providers.header)]
 - xref:{rootdir}/config/io_helidon_security_providers_httpsign_SignedHeadersConfig_HeadersConfig.adoc[HeadersConfig (security.providers.httpsign.SignedHeadersConfig)]
@@ -78,8 +85,11 @@ The following section lists all configurable types in Helidon.
 - xref:{rootdir}/config/io_helidon_integrations_micrometer_MicrometerFeature.adoc[MicrometerFeature (integrations.micrometer)]
 - xref:{rootdir}/config/io_helidon_config_mp_MpConfigBuilder.adoc[MpConfigBuilder (config.mp)]
 - xref:{rootdir}/config/io_helidon_microprofile_openapi_MpOpenApiManagerConfig.adoc[MpOpenApiManagerConfig (microprofile.openapi)]
+- xref:{rootdir}/config/io_helidon_integrations_neo4j_Neo4j.adoc[Neo4j (integrations.neo4j)]
 - xref:{rootdir}/config/io_helidon_webserver_observe_ObserveFeature.adoc[ObserveFeature (webserver.observe)]
 - xref:{rootdir}/config/io_helidon_webserver_observe_ObserverConfigBase.adoc[ObserverConfigBase (webserver.observe)]
+- xref:{rootdir}/config/io_helidon_integrations_oci_tls_certificates_OciCertificatesTlsManager.adoc[OciCertificatesTlsManager (integrations.oci.tls.certificates)]
+- xref:{rootdir}/config/io_helidon_integrations_oci_OciConfig.adoc[OciConfig (integrations.oci)]
 - xref:{rootdir}/config/io_helidon_integrations_oci_sdk_runtime_OciConfig.adoc[OciConfig (integrations.oci.sdk.runtime)]
 - xref:{rootdir}/config/io_helidon_integrations_oci_metrics_OciMetricsSupport.adoc[OciMetricsSupport (integrations.oci.metrics)]
 - xref:{rootdir}/config/io_helidon_security_providers_oidc_common_OidcConfig.adoc[OidcConfig (security.providers.oidc.common)]
@@ -94,8 +104,8 @@ The following section lists all configurable types in Helidon.
 - xref:{rootdir}/config/io_helidon_webclient_api_Proxy.adoc[Proxy (webclient.api)]
 - xref:{rootdir}/config/io_helidon_http_RequestedUriDiscoveryContext.adoc[RequestedUriDiscoveryContext (http)]
 - xref:{rootdir}/config/io_helidon_common_configurable_Resource.adoc[Resource (common.configurable)]
-- xref:{rootdir}/config/io_helidon_webserver_servicecommon_RestServiceSettings.adoc[RestServiceSettings (webserver.servicecommon)]
 - xref:{rootdir}/config/io_helidon_faulttolerance_Retry.adoc[Retry (faulttolerance)]
+- xref:{rootdir}/config/io_helidon_common_tls_RevocationConfig.adoc[RevocationConfig (common.tls)]
 - xref:{rootdir}/config/io_helidon_common_configurable_ScheduledThreadPoolConfig.adoc[ScheduledThreadPoolConfig (common.configurable)]
 - xref:{rootdir}/config/io_helidon_common_configurable_ScheduledThreadPoolSupplier.adoc[ScheduledThreadPoolSupplier (common.configurable)]
 - xref:{rootdir}/config/io_helidon_metrics_api_ScopeConfig.adoc[ScopeConfig (metrics.api)]
@@ -105,8 +115,10 @@ The following section lists all configurable types in Helidon.
 - xref:{rootdir}/config/io_helidon_webserver_security_SecurityHandler.adoc[SecurityHandler (webserver.security)]
 - xref:{rootdir}/config/io_helidon_security_SecurityTime.adoc[SecurityTime (security)]
 - xref:{rootdir}/config/io_helidon_microprofile_server_Server.adoc[Server (microprofile.server)]
+- xref:{rootdir}/config/io_helidon_integrations_oci_SessionTokenMethodConfig.adoc[SessionTokenMethodConfig (integrations.oci)]
 - xref:{rootdir}/config/io_helidon_common_socket_SocketOptions.adoc[SocketOptions (common.socket)]
 - xref:{rootdir}/config/io_helidon_metrics_api_Tag.adoc[Tag (metrics.api)]
+- xref:{rootdir}/config/io_helidon_scheduling_TaskConfig.adoc[TaskConfig (scheduling)]
 - xref:{rootdir}/config/io_helidon_security_providers_oidc_common_TenantConfig.adoc[TenantConfig (security.providers.oidc.common)]
 - xref:{rootdir}/config/io_helidon_common_configurable_ThreadPoolConfig.adoc[ThreadPoolConfig (common.configurable)]
 - xref:{rootdir}/config/io_helidon_common_configurable_ThreadPoolSupplier.adoc[ThreadPoolSupplier (common.configurable)]
@@ -125,7 +137,3 @@ The following section lists all configurable types in Helidon.
 - xref:{rootdir}/config/io_helidon_tracing_providers_zipkin_ZipkinTracerBuilder.adoc[ZipkinTracerBuilder (tracing.providers.zipkin)]
 - xref:{rootdir}/config/io_opentracing_Tracer.adoc[io_opentracing_Tracer]
 - xref:{rootdir}/config/org_eclipse_microprofile_config_Config.adoc[org_eclipse_microprofile_config_Config]
-- xref:{rootdir}/config/io_helidon_scheduling_Cron.adoc[Cron (scheduling)]
-- xref:{rootdir}/config/io_helidon_scheduling_FixedRate.adoc[FixedRate (scheduling)]
-- xref:{rootdir}/config/io_helidon_scheduling_TaskConfig.adoc[TaskConfig (scheduling)]
-

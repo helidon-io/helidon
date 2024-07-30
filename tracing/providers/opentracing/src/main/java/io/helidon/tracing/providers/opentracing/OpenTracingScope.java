@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,27 +15,59 @@
  */
 package io.helidon.tracing.providers.opentracing;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.tracing.Scope;
+import io.helidon.tracing.SpanListener;
 
 class OpenTracingScope implements Scope {
+    private static final System.Logger LOGGER = System.getLogger(OpenTracingScope.class.getName());
+
+    private final OpenTracingSpan span;
     private final io.opentracing.Scope delegate;
     private final AtomicBoolean closed = new AtomicBoolean();
+    private final List<SpanListener> spanListeners;
+    private Limited limited;
 
-    OpenTracingScope(io.opentracing.Scope scope) {
+    OpenTracingScope(OpenTracingSpan span, io.opentracing.Scope scope, List<SpanListener> spanListeners) {
+        this.span = span;
         this.delegate = scope;
+        this.spanListeners = spanListeners;
     }
 
     @Override
     public void close() {
         if (closed.compareAndSet(false, true) && delegate != null) {
             delegate.close();
+            OpenTracing.invokeListeners(spanListeners, LOGGER, listener -> listener.closed(span.limited(), limited()));
         }
     }
 
     @Override
     public boolean isClosed() {
         return closed.get();
+    }
+
+    Limited limited() {
+        if (limited == null) {
+            if (!spanListeners.isEmpty()) {
+                limited = new Limited(this);
+            }
+        }
+        return limited;
+    }
+
+    private record Limited(OpenTracingScope delegate) implements Scope {
+
+        @Override
+        public void close() {
+            throw new SpanListener.ForbiddenOperationException();
+        }
+
+        @Override
+        public boolean isClosed() {
+            return delegate.isClosed();
+        }
     }
 }

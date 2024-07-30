@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.config.hocon.mp;
 
+import java.io.Reader;
 import java.util.List;
 import java.util.Set;
 
@@ -24,6 +25,7 @@ import io.helidon.config.mp.MpMetaConfigUtils;
 import io.helidon.config.mp.Prioritized;
 import io.helidon.config.mp.spi.MpMetaConfigProvider;
 
+import com.typesafe.config.ConfigParseOptions;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 /**
@@ -50,5 +52,11 @@ public class HoconMpMetaConfigProvider implements MpMetaConfigProvider, Prioriti
     @Override
     public int priority() {
         return 300;
+    }
+
+    @Override
+    public ConfigSource create(Reader content) {
+        return HoconMpConfigSource.create("HoconMpMetaConfigProvider", content,
+                ConfigParseOptions.defaults());
     }
 }

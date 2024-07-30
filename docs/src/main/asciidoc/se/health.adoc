@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -79,19 +79,19 @@ Optional dependency to use built-in health checks:
 == API
 
 === Enabling Health Support (and Built-in Health Checks) in Your Application
-The health subsystem is part of Helidon's observability support. As a result, your application includes health support by default provided your project meets several conditions:
+The health subsystem is part of the observability support. As a result, your application includes health support by default provided your project meets several conditions:
 
 * Your project depends on the `helidon-webserver-observe-health` component as described above.
-* (Optional) Your project depends on the `helidon-health-checks` component (if you want Helidon's built-in health checks).
+* (Optional) Your project depends on the `helidon-health-checks` component (if you want the built-in health checks).
 * Your code allows the webserver's automatic feature discovery (enabled by default).
 * Your code allows the observe feature's automatic observer discovery (also enabled by default).
 
-If you disable either type of automatic discovery you can add the observe feature to the webserver explicitly and you can add the health observer to the observe feature explicitly, customizing the behavior of each programmatically if you wish.
+If you disable either type of automatic discovery you can add the observe feature to the webserver explicitly, and you can add the health observer to the observe feature explicitly, customizing the behavior of each programmatically if you wish.
 You can also use configuration to tailor some of the behavior of the health component (such as changing the URI path from `/observe/health` to something else).
 
 === Writing Custom Health Checks
 In many cases, the ability of your application to do its job depends on conditions known only to your application: for example, whether certain external resources such as databases are available.
-You can create custom health checks which reflect those conditions and add them to Helidon's overall health assessment of your application.
+You can create custom health checks which reflect those conditions and add them to the overall health assessment of your application.
 
 A health check is a Java functional interface that returns a new
 `HealthCheckResponse` instance each time Helidon queries the health check.
@@ -112,27 +112,13 @@ If you gather the logic for computing the health check response into a method, t
 [source,java]
 .Declaring a health check response supplier method
 ----
-static HealthCheckResponse slowStartLivenessResponse() {
-    long now = System.currentTimeMillis();
-    return HealthCheckResponse.builder()
-            .detail("time", now)
-            .status(now - serverStartTime >= 8000)
-            .build();
-}
+include::{sourcedir}/se/HealthSnippets.java[tag=snippet_1, indent=0]
 ----
 
 [source,java]
 .Registering a health check using a method reference
 ----
-ObserveFeature observe = ObserveFeature.builder()
-        .config(config.get("server.features.observe"))                  // <1>
-        .addObserver(HealthObserver.builder()                           // <2>
-                             .useSystemServices(true)                   // <3>
-                             .addCheck(Main::slowStartLivenessResponse, // <4>
-                                       HealthCheckType.LIVENESS,        // <5>
-                                       "live-after-8-seconds")          // <6>
-                             .build())
-        .build();
+include::{sourcedir}/se/HealthSnippets.java[tag=snippet_2, indent=0]
 ----
 <1> Apply configuration to auto-discovered observers (e.g., health, metrics).
 <2> Augment the web server by adding the `ObserveFeature` containing the `HealthObserver`. This replaces the auto-discovered health observer.
@@ -147,18 +133,7 @@ If the logic for computing the health check response is fairly simple, express i
 [source,java]
 .Registering a health check using an in-line lambda expression
 ----
-ObserveFeature observe = ObserveFeature.builder()
-        .config(config.get("server.features.observe"))
-        .addObserver(HealthObserver.builder()                                              // <1>
-                             .useSystemServices(true) // Include Helidon-provided health checks.
-                             .addCheck(() -> HealthCheckResponse.builder()                 // <2>
-                                               .status(System.currentTimeMillis() - serverStartTime >= 8000) // <3>
-                                               .detail("time", System.currentTimeMillis()) // <4>
-                                               .build(),                                   // <5>
-                                       HealthCheckType.READINESS,                          // <6>
-                                       "live-after-8-seconds")                             // <7>
-                            .build())
-        .build();
+include::{sourcedir}/se/HealthSnippets.java[tag=snippet_3, indent=0]
 ----
 <1> Augment the web server by adding the `ObserveFeature` containing the `HealthObserver`.
 <2> Add the custom health check passing a lambda expression supplying the health check response.
@@ -174,30 +149,12 @@ Note that the logic in the lambda expression runs every time Helidon probes the 
 If a custom health check requires a lot of information to compute its health check response, it might be clearest to implement it as a class that implements the `HealthCheck` interface.
 Your code instantiates the class with all the information, including references to other data, it might need to compute the response each time Helidon probes it.
 
-This example _is not_ complicated in that way but it's useful to illustrate this technique of writing a custom health check.
+This example _is not_ complicated in that way, but it's useful to illustrate this technique of writing a custom health check.
 
 [source,java]
 .Declaring a concrete `HealthCheck` implementation
 ----
-/**
- * A custom readiness health check that reports UP 8 seconds after server start-up.
- */
-class SlowStartHealthCheck implements HealthCheck {     // <1>
-
-    @Override
-    public HealthCheckType type() {
-        return HealthCheckType.READINESS;               // <2>
-    }
-
-    @Override
-    public HealthCheckResponse call() {
-        long now = System.currentTimeMillis();
-        return HealthCheckResponse.builder()
-                .detail("time", now)                    // <3>
-                .status(now - serverStartTime >= 8000)  // <4>
-                .build();
-    }
-}
+include::{sourcedir}/se/HealthSnippets.java[tag=snippet_4, indent=0]
 ----
 <1> Implement the `io.helidon.health.HealthCheck` interface. The default health check name is the simple class name of the implementing class. Your code can override the `name()` method to return a different name. (Not shown in this example)
 <2> The default health check type is `LIVENESS` so this implementation overrides `type()` to declare a `READINESS` check.
@@ -207,12 +164,7 @@ class SlowStartHealthCheck implements HealthCheck {     // <1>
 [source,java]
 .Registering a `HealthCheck` instance
 ----
-ObserveFeature observe = ObserveFeature.builder()
-        .config(config.get("server.features.observe"))
-        .addObserver(HealthObserver.builder()                     // <1>
-                            .addCheck(new SlowStartHealthCheck()) // <2>
-                            .build())
-        .build();
+include::{sourcedir}/se/HealthSnippets.java[tag=snippet_5, indent=0]
 ----
 <1> Augment the web server by adding the `ObserveFeature` containing the `HealthObserver`.
 <2> Instantiate the custom health check class and add the instance to the `HealthObserver`.
@@ -224,18 +176,13 @@ To activate the health subsystem and other auto-discovered observability subsyst
 [source,java]
 .Register the observe feature with the server and start it
 ----
-WebServer server = WebServer.builder()
-        .featuresDiscoverServices(false)
-        .addFeature(observe) // <1>
-        .routing(Main::routing)
-        .build()
-        .start();
+include::{sourcedir}/se/HealthSnippets.java[tag=snippet_6, indent=0]
 ----
 <1> Add the previously-prepared health observer to the server as a feature
 
 ==== Triggering and Interpreting Health Check Output
 
-Health support in Helidon is part of Helidon's observability feature.
+Health support in Helidon is part of the observability feature.
 `HealthObserver` is a Helidon-provided observability implementation that contains a collection of
 registered `HealthCheck` instances and, when queried, invokes the registered
 health checks and returns a response with a status code representing the overall
@@ -273,8 +220,8 @@ This first response shows the health output within the first eight seconds after
       "data": {
         "time": 1701984253071
       }
-    },
-...
+    }
+  ]
 }
 ----
 
@@ -292,8 +239,9 @@ The next response shows the health output once the server has been running for a
       "data": {
         "time": 1701984258292
       }
-    },
-
+    }
+  ]
+}
 ----
 
 TIP: Balance collecting a lot of information with the need to avoid overloading
@@ -358,17 +306,7 @@ The following code adds only selected built-in health checks to your application
 [source,java]
 .Adding selected built-in health checks
 ----
-WebServer server = WebServer.builder()
-        .config(config.get("server"))
-        .addFeature(ObserveFeature.create(HealthObserver.builder()
-                                                  .useSystemServices(false) // <1>
-                                                  .addCheck(HealthChecks.deadlockCheck()) // <2>
-                                                  .addCheck(hc) // <3>
-                                                  .details(true)
-                                                  .build()))
-        .routing(Main::routing)
-        .build()
-        .start();
+include::{sourcedir}/se/HealthSnippets.java[tag=snippet_7, indent=0]
 ----
 <1> Disables automatic registration of the built-in health checks.
 <2> Adds the specific built-in check(s) you want.
@@ -504,7 +442,7 @@ Accessing the Helidon-provided `/observe/health` endpoint reports the health of 
 as shown below:
 
 [source,json]
-.JSON response.
+.JSON response:
 ----
 {
     "status": "UP",
@@ -552,40 +490,16 @@ specification is also provided for the Kubernetes service and deployment.
 [source,java]
 .Application code:
 ----
-ObserveFeature observeFeature = ObserveFeature.builder()
-    .addObserver(HealthObserver.builder()
-                         .useSystemServices(false)
-                         .endpoint("/health/live") // <1>
-                         .addChecks(HealthChecks.healthChecks()) // <2>
-                         .build())
-    .addObserver(HealthObserver.builder()
-                         .useSystemServices(false)
-                         .endpoint("/health/ready") // <3>
-                         .addCheck(() -> HealthCheckResponse.builder() // <4>
-                                      .status(true)
-                                      .build(),
-                              HealthCheckType.READINESS,
-                              "database")
-                         .build())
-    .build();
-WebServer server = WebServer.builder()
-    .putSocket("@default", socket -> socket
-        .port(8080) // <5>
-        .routing(r -> r.any((req, res) -> res.send("It works!")))) // <6>
-    .putSocket("observe", socket -> socket
-        .port(8081) // <7>
-        .routing(r -> r.addFeature(observeFeature))) // <8>
-    .build()
-    .start();
+include::{sourcedir}/se/HealthSnippets.java[tag=snippet_8, indent=0]
 ----
-<1> The health service for the `liveness` probe is exposed at `/observe/health/live`.
+<1> The health service for the `liveness` probe is exposed at `/health/live`.
 <2> Using the built-in health checks for the `liveness` probe.
-<3> The health service for the `readiness` probe is exposed at `/observe/health/ready`.
+<3> The health service for the `readiness` probe is exposed at `/health/ready`.
 <4> Using a custom health check for a pseudo database that is always `UP`.
-<5> The default socket uses port 8080 for the default routes.
-<6> The default route: returns It works! for any request.
-<7> The `observe` socket uses port 8081 for the "/observe" routes.
-<8> Route the `observe` feature exclusively on the `observe` socket.
+<5> Route the `observe` feature exclusively on the `observe` socket.
+<6> The default socket uses port 8080 for the default routes.
+<7> The default route: returns It works! for any request.
+<8> The `observe` socket uses port 8081 for the "/observe" routes.
 
 [source,yaml]
 .Kubernetes descriptor:

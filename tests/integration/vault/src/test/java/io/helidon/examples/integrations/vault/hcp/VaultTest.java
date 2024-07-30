@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,14 +94,16 @@ class VaultTest {
     private static final String APPROLE_POLICY_NAME = "approle_policy";
     private static final String APPROLE_ROLE_NAME = "approle_role";
     private static final Duration TIMEOUT = Duration.ofSeconds(5);
-    private static final DockerImageName MYSQL_IMAGE = DockerImageName.parse("mysql:8");
+    private static final DockerImageName MYSQL_IMAGE = DockerImageName.parse("mysql:8.0.36");
     private static final DockerImageName HCP_VAULT_IMAGE = DockerImageName.parse("vault:1.11.3");
 
     private static final Network NETWORK = Network.newNetwork();
+    private static final String MYSQL_USER = "root";
+    private static final String MYSQL_PASSWORD = "changeit";
     @Container
     private static final MySQLContainer<?> MY_SQL_CONTAINER = new MySQLContainer<>(MYSQL_IMAGE)
-            .withUsername("root")
-            .withPassword("root")
+            .withUsername(MYSQL_USER)
+            .withPassword(MYSQL_PASSWORD)
             .withNetworkAliases("mysql")
             .withDatabaseName("pokemon")
             .withNetwork(NETWORK);
@@ -278,8 +280,8 @@ class VaultTest {
         DbConfigure.Response dbConfigResponse = database
                 .configure(MySqlConfigureRequest.builder(connectionTemplate)
                                    .name("mysql")
-                                   .username("root")
-                                   .password("root")
+                                   .username(MYSQL_USER)
+                                   .password(MYSQL_PASSWORD)
                                    .maxOpenConnections(5)
                                    .maxConnectionLifetime(Duration.ofMinutes(1))
                                    .addAllowedRole("readonly"));

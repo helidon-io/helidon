@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,11 @@
 
 package io.helidon.faulttolerance;
 
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
-
-import io.helidon.inject.api.InjectionServices;
-import io.helidon.inject.api.Qualifier;
-import io.helidon.inject.api.ServiceInfoCriteria;
-import io.helidon.inject.api.ServiceProvider;
-
-import jakarta.inject.Inject;
 
 /**
  * Implementation of {@code Async}. Default executor accessed from {@link FaultTolerance#executor()}.
@@ -40,17 +32,7 @@ class AsyncImpl implements Async {
     private final CompletableFuture<Async> onStart;
     private final AsyncConfig config;
 
-    // this must only be invoked when within Pico, so we can use pico services
-    @Inject
     AsyncImpl(AsyncConfig config) {
-        this.executor = config.executor()
-                .or(() -> config.executorName().flatMap(AsyncImpl::executorService))
-                .orElseGet(() -> FaultTolerance.executor().get());
-        this.onStart = config.onStart().orElseGet(CompletableFuture::new);
-        this.config = config;
-    }
-
-    AsyncImpl(AsyncConfig config, boolean internal) {
         this.executor = config.executor().orElseGet(() -> FaultTolerance.executor().get());
         this.onStart = config.onStart().orElseGet(CompletableFuture::new);
         this.config = config;
@@ -95,15 +77,5 @@ class AsyncImpl implements Async {
         ourFuture.set(future);
 
         return result;
-    }
-
-    private static Optional<ExecutorService> executorService(String name) {
-        var qualifier = Qualifier.createNamed(name);
-        return InjectionServices.realizedServices().lookupFirst(ExecutorService.class,
-                                                                ServiceInfoCriteria.builder()
-                                                                   .addQualifier(qualifier)
-                                                                   .build(),
-                                                                false)
-                .map(ServiceProvider::get);
     }
 }

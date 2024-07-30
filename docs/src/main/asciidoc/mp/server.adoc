@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -183,14 +183,18 @@ server:
         passphrase: "password"
         trust-store: true
         resource:
-          resource-path: "keystore.p12"
+          # load from classpath
+          resource-path: "keystore.p12" # <1>
     #Keystore with private key and server certificate
     private-key:
       keystore:
         passphrase: "password"
         resource:
-          resource-path: "keystore.p12"
+          # load from file system
+          path: "/path/to/keystore.p12" # <2>
 ----
+<1> File loaded from the classpath.
+<2> File loaded from the file system.
 
 === Configuring additional ports [[conf-additional-ports]]
 
@@ -263,11 +267,7 @@ The annotation has two attributes:
 [source,java]
 .`@RoutingName` example
 ----
-@ApplicationScoped
-@RoutingName(value="admin", required="true")
-@RoutingPath("/admin")
-public class AdminService implements HttpService {
-}
+include::{sourcedir}/mp/ServerSnippets.java[tag=snippet_1, indent=0]
 ----
 
 The example above will be bound to `admin` routing (and port) and will fail if such a port
@@ -304,7 +304,8 @@ You can configure `@RoutingPath` to define the path a service is registered on.
 ===== Configuration override of routing path
 
 For each HTTP service class you can define the routing path by specifying a configuration
-option `class-name.routing-path.path`.
+option `class-name.routing-path.path`. The `routing-path` configuration can be applied to Jax-RS application.
+See xref:jaxrs/jaxrs-applications.adoc[Jakarta REST Application] for more information.
 
 Example (YAML) configuration for a class `io.helidon.example.AdminService` that changes the
 routing path to `/management`:
@@ -361,6 +362,7 @@ io.helidon.examples.AdminApplication:
     path: "/management"
 ----
 
+[[_using_requested_uri_discovery]]
 === Using Requested URI Discovery
 include::{requested-uri-discovery-inc}[tag=intro]
 
@@ -384,16 +386,7 @@ Helidon makes the requested URI information available as a property in the reque
 [source,java]
 .Retrieving Requested URI Information
 ----
-import io.helidon.common.uri.UriInfo;
-
-public class MyFilter implements ContainerRequestFilter {
-
-    @Override
-    public void filter(ContainerRequestContext requestContext) {
-        UriInfo uriInfo = (UriInfo) requestContext.getProperty("io.helidon.jaxrs.requested-uri");
-        // ...
-    }
-}
+include::{sourcedir}/mp/ServerSnippets.java[tag=snippet_2, indent=0]
 ----
 See the link:{uri-javadoc-base-url}/io/helidon/common/uri/UriInfo.html[`UriInfo`] JavaDoc for more information.
 
@@ -401,5 +394,5 @@ NOTE: The `requestContext.getUriInfo()` method returns the Jakarta RESTful web s
 
 == Reference
 
-* link:https://helidon.io/docs/v2/apidocs/io.helidon.microprofile.server/module-summary.html[Helidon MicroProfile Server Javadoc]
-* link:https://github.com/oracle/helidon/tree/master/microprofile/server[Helidon MicroProfile Server on GitHub]
+* link:{mp-server-javadoc-base-url}/module-summary.html[Helidon MicroProfile Server Javadoc]
+* link:{helidon-github-tree-url}/microprofile/server[Helidon MicroProfile Server on GitHub]

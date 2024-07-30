@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,14 @@
  */
 package io.helidon.dbclient.jdbc;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * JDBC parameters setter configuration.
  */
 @Prototype.Blueprint
-@Configured(prefix = "parameters")
+@Prototype.Configured(value = "parameters", root = false)
 interface JdbcParametersConfigBlueprint {
 
     /**
@@ -33,7 +32,8 @@ interface JdbcParametersConfigBlueprint {
      *
      * @return whether N{@link String} conversion is used
      */
-    @ConfiguredOption("false")
+    @Option.Configured
+    @Option.DefaultBoolean(false)
     boolean useNString();
 
     /**
@@ -43,7 +43,8 @@ interface JdbcParametersConfigBlueprint {
      *
      * @return whether to use {@link java.io.CharArrayReader} binding
      */
-    @ConfiguredOption("true")
+    @Option.Configured
+    @Option.DefaultBoolean(true)
     boolean useStringBinding();
 
     /**
@@ -54,7 +55,8 @@ interface JdbcParametersConfigBlueprint {
      *
      * @return {@link String} values length limit for {@link java.io.CharArrayReader} binding
      */
-    @ConfiguredOption("1024")
+    @Option.Configured
+    @Option.DefaultInt(1024)
     int stringBindingSize();
 
     /**
@@ -64,7 +66,8 @@ interface JdbcParametersConfigBlueprint {
      *
      * @return whether to use {@link java.io.ByteArrayInputStream} binding
      */
-    @ConfiguredOption("true")
+    @Option.Configured
+    @Option.DefaultBoolean(true)
     boolean useByteArrayBinding();
 
     /**
@@ -79,7 +82,8 @@ interface JdbcParametersConfigBlueprint {
      * @return whether to use {@link java.sql.Timestamp} instead of {@link java.sql.Time}
      *         for {@link java.time.LocalTime} values
      */
-    @ConfiguredOption("true")
+    @Option.Configured
+    @Option.DefaultBoolean(true)
     boolean timestampForLocalTime();
 
     /**
@@ -89,7 +93,8 @@ interface JdbcParametersConfigBlueprint {
      *
      * @return whether to use {@link java.sql.PreparedStatement#setObject(int, Object)} for {@code java.time} Date/Time values
      */
-    @ConfiguredOption("true")
+    @Option.Configured
+    @Option.DefaultBoolean(true)
     boolean setObjectForJavaTime();
 
 }

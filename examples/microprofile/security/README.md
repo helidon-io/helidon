@@ -9,7 +9,7 @@ levels of security.
 
 ## Build and run
 
-```bash
+```shell
 mvn package
 java -jar target/helidon-examples-microprofile-mp1_1-security.jar
 ```

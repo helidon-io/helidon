@@ -115,11 +115,11 @@ abstract class ConnectorBase {
     @Test
     public void queryGetTest() {
         try (Response response = target("basic").path("getquery")
-                .queryParam("first", "hello there ")
-                .queryParam("second", "world")
+                .queryParam("first", "\"hello there ")
+                .queryParam("second", "world\"")
                 .request().get()) {
             assertThat(response.getStatus(), is(200));
-            assertThat(response.readEntity(String.class), is("hello there world"));
+            assertThat(response.readEntity(String.class), is("\"hello there world\""));
         }
     }
 

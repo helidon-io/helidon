@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import io.helidon.common.uri.UriQueryWriteable;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -64,7 +65,12 @@ class ClientUriTest {
     void testQueryParams() {
         UriQueryWriteable query = UriQueryWriteable.create();
         query.fromQueryString("p1=v1&p2=v2&p3=%2F%2Fv3%2F%2F");
-        ClientUri helper = ClientUri.create(URI.create("http://localhost:8080/loom/quick?" + query.value()));
+        assertThat(query.get("p1"), is("v1"));
+        assertThat(query.get("p2"), is("v2"));
+        assertThat(query.get("p3"), is("//v3//"));
+        assertThat(query.getRaw("p3"), is("%2F%2Fv3%2F%2F"));
+
+        ClientUri helper = ClientUri.create(URI.create("http://localhost:8080/loom/quick?" + query.rawValue()));
 
         assertThat(helper.authority(), is("localhost:8080"));
         assertThat(helper.host(), is("localhost"));
@@ -75,6 +81,13 @@ class ClientUriTest {
         assertThat(helper.query().get("p2"), is("v2"));
         assertThat(helper.query().get("p3"), is("//v3//"));
         assertThat(helper.query().getRaw("p3"), is("%2F%2Fv3%2F%2F"));
+    }
+
+    @Test
+    void testQueryMultipleValues() {
+        UriQueryWriteable query = UriQueryWriteable.create();
+        query.fromQueryString("p1=v1&p1=v2");
+        assertThat(query.all("p1"), hasItems("v1", "v2"));
     }
 
     @Test
@@ -104,5 +117,18 @@ class ClientUriTest {
         assertThat(helper.path(), is(UriPath.root()));
         assertThat(helper.port(), is(80));
         assertThat(helper.scheme(), is("https"));
+    }
+
+    /**
+     * Verifies that "+" is interpreted as a space character the query strings.
+     * Note that the {@link URI} class does not appear to handle this correctly.
+     */
+    @Test
+    void testResolveQuery() {
+        URI uri = URI.create("http://localhost:8080/greet?filter=a+b+c");
+        ClientUri clientUri = ClientUri.create();
+        clientUri.resolve(uri);
+        assertThat(clientUri.query().get("filter"), is("a b c"));
+        assertThat(clientUri.query().getRaw("filter"), is("a%20b%20c"));
     }
 }

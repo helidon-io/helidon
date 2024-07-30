@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import java.util.Optional;
 
 import io.helidon.common.configurable.LruCache;
 import io.helidon.common.socket.HelidonSocket;
-import io.helidon.common.tls.Tls;
 import io.helidon.http.Method;
 import io.helidon.webclient.spi.HttpClientSpi;
 
@@ -35,7 +34,7 @@ import io.helidon.webclient.spi.HttpClientSpi;
 public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, HttpClientResponse> {
     private static final System.Logger LOGGER = System.getLogger(HttpClientRequest.class.getName());
 
-    private final LruCache<EndpointKey, HttpClientSpi> clientSpiCache = LruCache.create();
+    private final LruCache<LoomClient.EndpointKey, HttpClientSpi> clientSpiCache;
     private final WebClient webClient;
     private final Map<String, LoomClient.ProtocolSpi> clients;
     private final List<LoomClient.ProtocolSpi> tcpProtocols;
@@ -50,13 +49,15 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
                       Map<String, LoomClient.ProtocolSpi> protocolsToClients,
                       List<LoomClient.ProtocolSpi> protocols,
                       List<LoomClient.ProtocolSpi> tcpProtocols,
-                      List<String> tcpProtocolIds) {
+                      List<String> tcpProtocolIds,
+                      LruCache<LoomClient.EndpointKey, HttpClientSpi> clientSpiCache) {
         super(clientConfig, webClient.cookieManager(), "any", method, clientUri, clientConfig.properties());
         this.webClient = webClient;
         this.clients = protocolsToClients;
         this.protocols = protocols;
         this.tcpProtocols = tcpProtocols;
         this.tcpProtocolIds = tcpProtocolIds;
+        this.clientSpiCache = clientSpiCache;
     }
 
     /**
@@ -99,10 +100,10 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
             return httpClientSpi.spi().clientRequest(this, resolvedUri);
         }
 
-        EndpointKey endpointKey = new EndpointKey(resolvedUri.scheme(),
-                                                  resolvedUri.authority(),
-                                                  tls(),
-                                                  proxy());
+        LoomClient.EndpointKey endpointKey = new LoomClient.EndpointKey(resolvedUri.scheme(),
+                                                                        resolvedUri.authority(),
+                                                                        tls(),
+                                                                        proxy());
         Optional<HttpClientSpi> spi = clientSpiCache.get(endpointKey);
         if (spi.isPresent()) {
             /*
@@ -187,12 +188,5 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
 
         throw new IllegalArgumentException("Cannot handle request to " + resolvedUri + ", did not discover any HTTP version "
                                                    + "willing to handle it. HTTP versions supported: " + clients.keySet());
-    }
-
-    private record EndpointKey(String scheme, // http/https
-                               String authority, // myserver:80
-                               Tls tlsConfig, // TLS configuration (may be disabled, never null)
-                               Proxy proxy) { // proxy, never null
-
     }
 }

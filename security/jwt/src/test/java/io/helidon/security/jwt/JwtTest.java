@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import io.helidon.common.Errors;
@@ -86,17 +87,27 @@ public class JwtTest {
         assertThat(jwt.notBefore(), is(Optional.of(notBefore)));
 
         //and this one should be valid
-        List<Validator<Jwt>> vals = Jwt.defaultTimeValidators();
-        Jwt.addIssuerValidator(vals, issuer, true);
-        Jwt.addAudienceValidator(vals, audience, true);
+        JwtValidator jwtValidator = JwtValidator.builder()
+                .addDefaultTimeValidators()
+                .addIssuerValidator(issuer, true)
+                .addAudienceValidator(audience)
+                .build();
 
-        Errors errors = jwt.validate(vals);
+        Errors errors = jwtValidator.validate(jwt);
 
         errors.log(LOGGER);
         errors.checkValid();
 
         //another try with defaults
-        errors = jwt.validate(issuer, audience);
+        jwtValidator = JwtValidator.builder()
+                .addDefaultTimeValidators()
+                .addCriticalValidator()
+                .addUserPrincipalValidator()
+                .addIssuerValidator(issuer)
+                .addAudienceValidator(audience)
+                .build();
+
+        errors = jwtValidator.validate(jwt);
         errors.log(LOGGER);
         errors.checkValid();
     }

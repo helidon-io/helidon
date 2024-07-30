@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,11 @@
 
 package io.helidon.integrations.graal.nativeimage.extension;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -39,6 +41,8 @@ import io.github.classgraph.ClassRefTypeSignature;
 import io.github.classgraph.FieldInfo;
 import io.github.classgraph.MethodParameterInfo;
 import io.github.classgraph.ReferenceTypeSignature;
+import io.github.classgraph.Resource;
+import io.github.classgraph.ResourceList;
 import io.github.classgraph.ScanResult;
 import io.github.classgraph.TypeArgument;
 import io.github.classgraph.TypeSignature;
@@ -263,6 +267,21 @@ public final class NativeUtil {
         }
 
         return result;
+    }
+
+    List<String> findResources(String name) {
+        ResourceList allResources = scan.getResourcesWithPath(name);
+        List<String> list = new ArrayList<>();
+        for (Resource resource : allResources) {
+            String contentAsString = null;
+            try {
+                contentAsString = resource.getContentAsString();
+            } catch (IOException e) {
+                tracer.parsing(() -> "Failed to load resource " + resource.getPath(), e);
+            }
+            list.add(contentAsString);
+        }
+        return list;
     }
 
     void processAnnotatedFields(String annotation, BiConsumer<Class<?>, Field> fieldProcessor) {

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -45,8 +45,8 @@ This is a standalone configuration type, prefix from configuration root: `oci`
 |key |type |default value |description
 
 |`auth-strategies` |string[&#93; (auto, config, config-file, instance-principals, resource-principal) |{nbsp} |The list of authentication strategies that will be attempted by
- com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider when one is
- called for. This is only used if #authStrategy() is not present.
+ com.oracle.bmc.auth.BasicAuthenticationDetailsProvider when one is
+ called for. This is only used if authStrategy() is not present.
 
 - `auto` - if present in the list, or if no value
           for this property exists.
@@ -68,112 +68,112 @@ This is a standalone configuration type, prefix from configuration root: `oci`
 If there are more than one strategy descriptors defined, the
  first one that is deemed to be available/suitable will be used and all others will be ignored.
 
- @return the list of authentication strategies that will be applied, defaulting to `auto`
- @see io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.AuthStrategy
-|`auth-strategy` |string (auto, config, config-file, instance-principals, resource-principal) |{nbsp} |The singular authentication strategy to apply. This will be preferred over #authStrategies() if both are
+ The list of authentication strategies that will be applied, defaulting to `auto`
+ See io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.AuthStrategy
+|`auth-strategy` |string (auto, config, config-file, instance-principals, resource-principal) |{nbsp} |The singular authentication strategy to apply. This will be preferred over authStrategies() if both are
  present.
 
- @return the singular authentication strategy to be applied
+ The singular authentication strategy to be applied
 |`auth.fingerprint` |string |{nbsp} |The OCI authentication fingerprint.
 
  This configuration property has an effect only when `config` is, explicitly or implicitly,
- present in the value for the #authStrategies(). This is also known as #simpleConfigIsPresent().
+ present in the value for the authStrategies(). This is also known as simpleConfigIsPresent().
  When it is present, this property must be provided in order to set the <a
  href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm">API signing key's fingerprint</a>.
- See {@linkplain com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider#getFingerprint()} for more details.
+ See com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.getFingerprint() for more details.
 
- @return the OCI authentication fingerprint
+ The OCI authentication fingerprint
 |`auth.keyFile` |string |`oci_api_key.pem` |The OCI authentication key file.
 
  This configuration property has an effect only when `config` is, explicitly or implicitly,
- present in the value for the #authStrategies(). This is also known as #simpleConfigIsPresent().
+ present in the value for the authStrategies(). This is also known as simpleConfigIsPresent().
  When it is present, this property must be provided in order to set the
- {@linkplain com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider#getPrivateKey()}. This file must exist in the
- `user.home` directory. Alternatively, this property can be set using either #authPrivateKey() or
- using #authPrivateKeyPath().
+ com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.getPrivateKey(). This file must exist in the
+ `user.home` directory. Alternatively, this property can be set using either authPrivateKey() or
+ using authPrivateKeyPath().
 
- @return the OCI authentication key file
+ The OCI authentication key file
 |`auth.passphrase` |char[] |{nbsp} |The OCI authentication passphrase.
 
  This configuration property has an effect only when `config` is, explicitly or implicitly,
- present in the value for the #authStrategies(). This is also known as #simpleConfigIsPresent().
+ present in the value for the authStrategies(). This is also known as simpleConfigIsPresent().
  When it is present, this property must be provided in order to set the
- {@linkplain com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider#getPassphraseCharacters()}.
+ com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.getPassphraseCharacters().
 
- @return the OCI authentication passphrase
+ The OCI authentication passphrase
 |`auth.private-key` |char[] |{nbsp} |The OCI authentication private key.
 
  This configuration property has an effect only when `config` is, explicitly or implicitly,
- present in the value for the #authStrategies(). This is also known as #simpleConfigIsPresent().
+ present in the value for the authStrategies(). This is also known as simpleConfigIsPresent().
  When it is present, this property must be provided in order to set the
- {@linkplain com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider#getPrivateKey()}. Alternatively, this property
- can be set using either #authKeyFile() residing in the `user.home` directory, or using
- #authPrivateKeyPath().
+ com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.getPrivateKey(). Alternatively, this property
+ can be set using either authKeyFile() residing in the `user.home` directory, or using
+ authPrivateKeyPath().
 
- @return the OCI authentication private key
+ The OCI authentication private key
 |`auth.private-key-path` |string |{nbsp} |The OCI authentication key file path.
 
  This configuration property has an effect only when `config` is, explicitly or implicitly,
- present in the value for the #authStrategies(). This is also known as #simpleConfigIsPresent().
+ present in the value for the authStrategies(). This is also known as simpleConfigIsPresent().
  When it is present, this property must be provided in order to set the
- {@linkplain com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider#getPrivateKey()}. This file path is
- an alternative for using #authKeyFile() where the file must exist in the `user.home` directory.
- Alternatively, this property can be set using #authPrivateKey().
+ com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.getPrivateKey(). This file path is
+ an alternative for using authKeyFile() where the file must exist in the `user.home` directory.
+ Alternatively, this property can be set using authPrivateKey().
 
- @return the OCI authentication key file path
+ The OCI authentication key file path
 |`auth.region` |string |{nbsp} |The OCI region.
 
  This configuration property has an effect only when `config` is, explicitly or implicitly,
- present in the value for the #authStrategies(). This is also known as #simpleConfigIsPresent().
+ present in the value for the authStrategies(). This is also known as simpleConfigIsPresent().
  When it is present, either this property or com.oracle.bmc.auth.RegionProvider must be provide a value in order
- to set the {@linkplain com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider#getRegion()}.
+ to set the com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider.getRegion().
 
- @return the OCI region
+ The OCI region
 |`auth.tenant-id` |string |{nbsp} |The OCI tenant id.
 
  This configuration property has an effect only when `config` is, explicitly or implicitly,
- present in the value for the #authStrategies(). This is also known as #simpleConfigIsPresent().
+ present in the value for the authStrategies(). This is also known as simpleConfigIsPresent().
  When it is present, this property must be provided in order to set the
- {@linkplain com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider#getTenantId()}.
+ com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider.getTenantId().
 
- @return the OCI tenant id
+ The OCI tenant id
 |`auth.user-id` |string |{nbsp} |The OCI user id.
 
  This configuration property has an effect only when `config` is, explicitly or implicitly,
- present in the value for the #authStrategies().
+ present in the value for the authStrategies().
  When it is present, this property must be provided in order to set the
- {@linkplain com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider#getUserId()}.
+ com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider.getUserId().
 
- @return the OCI user id
+ The OCI user id
 |`config.path` |string |{nbsp} |The OCI configuration profile path.
 
  This configuration property has an effect only when `config-file` is, explicitly or implicitly,
- present in the value for the #authStrategies(). This is also known as #fileConfigIsPresent().
+ present in the value for the authStrategies(). This is also known as fileConfigIsPresent().
  When it is present, this property must also be present and then the
- {@linkplain com.oracle.bmc.ConfigFileReader#parse(String)}
+ com.oracle.bmc.ConfigFileReader.parse(String)
  method will be passed this value. It is expected to be passed with a
  valid OCI configuration file path.
 
- @return the OCI configuration profile path
+ The OCI configuration profile path
 |`config.profile` |string |`DEFAULT` |The OCI configuration/auth profile name.
 
  This configuration property has an effect only when `config-file` is, explicitly or implicitly,
- present in the value for the #authStrategies(). This is also known as #fileConfigIsPresent().
+ present in the value for the authStrategies(). This is also known as fileConfigIsPresent().
  When it is present, this property may also be optionally provided in order to override the default
- `DEFAULT_PROFILE_NAME`.
+ DEFAULT_PROFILE_NAME.
 
- @return the optional OCI configuration/auth profile name
+ The optional OCI configuration/auth profile name
 |`imds.hostname` |string |`169.254.169.254` |The OCI IMDS hostname.
 
  This configuration property is used to identify the metadata service url.
 
- @return the OCI IMDS hostname
+ The OCI IMDS hostname
 |`imds.timeout.milliseconds` |Duration |`PT0.1S` |The OCI IMDS connection timeout. This is used to auto-detect availability.
 
  This configuration property is used when attempting to connect to the metadata service.
 
- @return the OCI IMDS connection timeout
- @see OciAvailability
+ The OCI IMDS connection timeout
+ See OciAvailability
 
 |===
 

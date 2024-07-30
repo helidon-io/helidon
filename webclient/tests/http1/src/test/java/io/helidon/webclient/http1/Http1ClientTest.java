@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -246,6 +246,37 @@ class Http1ClientTest {
                                 true);
             request.connection(connectionNow);
             HttpClientResponse response = request.request();
+            // connection will be queued up
+            response.close();
+            if (connectionPrior != null) {
+                assertThat(connectionNow, is(connectionPrior));
+            }
+            connectionPrior = connectionNow;
+        }
+    }
+
+    @Test
+    void testConnectionCachingUnreadEntity() {
+        ClientConnection connectionNow;
+        ClientConnection connectionPrior = null;
+        for (int i = 0; i < 5; ++i) {
+            HttpClientRequest request = injectedHttp1client.put("/test");
+            // connection will be dequeued if queue is not empty
+            WebClient webClient = WebClient.create();
+            Http1ClientConfig clientConfig = Http1ClientConfig.create();
+            Http1ClientImpl http1Client = new Http1ClientImpl(webClient, clientConfig);
+            connectionNow = http1Client
+                    .connectionCache()
+                    .connection(http1Client,
+                                Duration.ZERO,
+                                injectedHttp1client.prototype().tls(),
+                                Proxy.noProxy(),
+                                request.resolvedUri(),
+                                request.headers(),
+                                true);
+            request.connection(connectionNow);
+            // submitted entity is echoed back but not consumed here
+            HttpClientResponse response = request.submit("this is an entity");
             // connection will be queued up
             response.close();
             if (connectionPrior != null) {

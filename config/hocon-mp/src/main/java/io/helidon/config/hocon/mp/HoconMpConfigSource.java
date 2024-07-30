@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,15 +109,26 @@ public class HoconMpConfigSource implements ConfigSource {
 
         try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
             ConfigParseOptions parseOptions = getConfigParseOptions(path);
-
-            Config typesafeConfig = toConfig(reader, parseOptions);
-            // this is a mutable HashMap that we can use
-            Map<String, String> props =
-                    fromConfig(typesafeConfig.root().isEmpty() ? ConfigFactory.empty().root() : typesafeConfig.root());
-            return new HoconMpConfigSource(name, props);
+            return create(name, reader, parseOptions);
         } catch (IOException e) {
             throw new ConfigException("Failed to load HOCON/JSON config source from path: " + path.toAbsolutePath(), e);
         }
+    }
+
+    /**
+     * Load a HOCON/JSON config source from a reader.
+     *
+     * @param name the name of the config
+     * @param reader that will read the configuration
+     * @param parseOptions of the content
+     * @return config source loaded
+     */
+    public static ConfigSource create(String name, Reader reader, ConfigParseOptions parseOptions) {
+        Config typesafeConfig = toConfig(reader, parseOptions);
+        // this is a mutable HashMap that we can use
+        Map<String, String> props =
+                fromConfig(typesafeConfig.root().isEmpty() ? ConfigFactory.empty().root() : typesafeConfig.root());
+        return new HoconMpConfigSource(name, props);
     }
 
     /**

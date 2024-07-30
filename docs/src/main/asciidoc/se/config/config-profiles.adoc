@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -147,7 +147,7 @@ Except for the `system-properties` and `environment-variables` types, the profil
 `properties` section for a source can also specify any optional settings for the
 corresponding config source type. The JavaDoc for the related config source
 type builders lists the supported properties for each type. (For example,
-link:{config-javadoc-base-url}/io/helidon/config/internal/FileConfigSource.FileBuilder.html[`FileConfigSource.FileBuilder`].)
+link:{config-javadoc-base-url}/io/helidon/config/FileConfigSource.Builder.html[`FileConfigSource.Builder`].)
 
 Here is an example profile in YAML format. Note how the `properties` sections
 are at the same level as the `type` or `class` within a `sources` array entry.
@@ -206,39 +206,14 @@ Profiles can be used to set up custom config sources as well as the built-in one
 Implement the `ConfigSourceProvider`
 [source,java]
 ----
-public class MyConfigSourceProvider implements ConfigSourceProvider {
-    private static final String TYPE = "my-type";
-
-    @Override
-    public boolean supports(String type) {
-        return TYPE.equals(type);
-    }
-
-    @Override
-    public ConfigSource create(String type, Config metaConfig) {
-        // as we only support one in this implementation, we can just return it
-        return MyConfigSource.create(metaConfig);
-    }
-
-    @Override
-    public Set<String> supported() {
-        return Collections.singleton(TYPE);
-    }
-}
+include::{sourcedir}/se/config/ConfigProfilesSnippets.java[tag=snippet_1, indent=0]
 ----
 
 Register it as a java service loader service
-[source]
+[source, text]
 .File `META-INF/services/io.helidon.config.spi.ConfigSourceProvider`
 ----
 io.helidon.examples.MyConfigSourceProvider
-----
-
-And in `module-info.java` if using JPMS:
-[source,java]
-.File `module-info.java`
-----
-provides io.helidon.config.spi.ConfigSourceProvider with io.helidon.examples.MyConfigSourceProvider
 ----
 
 Now you can use the following profile:
@@ -291,7 +266,7 @@ accompanying `properties`.
 |Policy Type |Usage |Properties
 
 |`repeat`
-|Regularly-scheduled - see link:{config-javadoc-base-url}/io/helidon/configRetryPolicies.html#repeat-int-[`RetryPolicies.repeat`].
+|Regularly-scheduled - see link:{config-javadoc-base-url}/io/helidon/config/RetryPolicies.html#repeat-int-[`RetryPolicies.repeat`].
 a|`retries` (`int`) - number of retries to perform +
 
 Optional:

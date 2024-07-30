@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ class SecureService implements HttpService {
         rules.any((req, res) -> {
             // close to avoid re-using cached connections on the client side
             res.header(HeaderValues.CONNECTION_CLOSE);
-            res.send("Hello " + req.headers().get(X_HELIDON_CN).value() + "!");
+            res.send("Hello " + req.headers().get(X_HELIDON_CN).get() + "!");
         });
     }
 }

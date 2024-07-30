@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package io.helidon.microprofile.messaging;
 
 import java.util.Optional;
-import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
@@ -29,7 +28,7 @@ import org.reactivestreams.Subscriber;
 
 class UniversalChannel {
 
-    private static final Logger LOGGER = Logger.getLogger(UniversalChannel.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(UniversalChannel.class.getName());
 
     private String name;
     private IncomingMember incomingMember;
@@ -124,7 +123,7 @@ class UniversalChannel {
                 .append(name).append(" with outgoing method ");
 
         if (outgoingMember == null) {
-            LOGGER.severe(connectMessage.append("and no outgoing method found!").toString());
+            LOGGER.log(System.Logger.Level.ERROR, connectMessage.append("and no outgoing method found!").toString());
             throw ExceptionUtils.createNoOutgoingMethodForChannel(name);
         }
 
@@ -140,7 +139,7 @@ class UniversalChannel {
         var optUpstreamChannel = Optional.ofNullable(this.upstreamChannel);
 
         if (incomingMember == null) {
-            LOGGER.severe(connectMessage.append("and no incoming method found!").toString());
+            LOGGER.log(System.Logger.Level.ERROR, connectMessage.append("and no incoming method found!").toString());
             throw ExceptionUtils.createNoIncomingMethodForChannel(name);
         }
 

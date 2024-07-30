@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import static io.helidon.tests.integration.dbclient.common.utils.VerifyData.verifyPokemonsIdRange;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.notNullValue;
 
 /**
  * Test DbStatementQuery methods.
@@ -85,6 +88,19 @@ public class QueryStatementIT {
                 .execute();
 
         verifyPokemonsIdRange(rows, 1, 7);
+    }
+
+    @Test
+    public void testQueryMapMissingParams() {
+        Map<String, Integer> params = new HashMap<>(2);
+        params.put("id", 1);
+        Stream<DbRow> rows = dbClient.execute()
+                .createNamedQuery("select-pokemons-idname-named-arg")
+                .params(params)
+                .execute();
+        assertThat(rows, notNullValue());
+        List<DbRow> rowsList = rows.toList();
+        assertThat(rowsList, hasSize(0));
     }
 
     /**

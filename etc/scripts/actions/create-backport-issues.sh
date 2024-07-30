@@ -1,6 +1,6 @@
 #!/bin/bash -l
 #
-# Copyright (c) 2022 Oracle and/or its affiliates.
+# Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -38,8 +38,8 @@ readonly REPOSITORY_FULL_NAME="$1"
 readonly ISSUE_NUMBER="$2"
 readonly HELIDON_VERSION="$3"
 
-if [ -z "${REPOSITORY_FULL_NAME}" -o -z "${ISSUE_NUMBER}" -o -z "${HELIDON_VERSION}" ]; then
-  echo "usage: $0 <repository-name> <issue-number> <helidon-version>"
+if [ -z "${REPOSITORY_FULL_NAME}" -o -z "${ISSUE_NUMBER}" -o -z "${HELIDON_VERSION}" -o $# -le 3 ]; then
+  echo "usage: $0 <repository-name> <issue-number> <helidon-version> <helidon-versions-to-port-to...>"
   exit 1
 fi
 
@@ -112,11 +112,15 @@ fi
 issue_title=$(sed "s/\"/'/g" <<< "$issue_title")
 
 ############################################################
-# For each version that is not the issue's version, add backport
+# For each version the caller specified add a porting issue.
 ############################################################
-for version in ${VERSIONS[@]}; do
-  if [ "$version" != "$HELIDON_VERSION" ]; then
-    # Create issue for all other versions and add the same labels and assignee
+version_targets=()
+next_version_to_check=2
+for is_version_selected in "${@:4}"; do
+  version=${next_version_to_check}.x
+  next_version_to_check=$((next_version_to_check+1))
+  if [ "$version" != "$HELIDON_VERSION" -a "$is_version_selected" = "true" ]; then
+    # Create issue for other indicated versions and add the same labels and assignee
     new_issue_title="[$version] ${issue_title}"
     new_issue_text="Backport of #${ISSUE_NUMBER} for Helidon ${version}"
 

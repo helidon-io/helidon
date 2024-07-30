@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ import io.helidon.http.http2.Http2Util;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.ConnectionKey;
 import io.helidon.webclient.api.DefaultDnsResolver;
+import io.helidon.webclient.api.DnsAddressLookup;
 import io.helidon.webclient.api.Proxy;
 import io.helidon.webclient.api.TcpClientConnection;
 import io.helidon.webclient.api.WebClient;
@@ -95,7 +96,7 @@ class EmptyFrameCntTest {
                                                         Duration.ZERO,
                                                         Tls.builder().enabled(false).build(),
                                                         DefaultDnsResolver.create(),
-                                                        null,
+                                                        DnsAddressLookup.defaultLookup(),
                                                         Proxy.noProxy());
 
         TcpClientConnection conn = TcpClientConnection.create(WebClient.builder()

@@ -40,7 +40,7 @@ javax.sql.DataSource.example.dataSource.password = tiger
 
 ## Build and run
 
-```bash
+```shell
 mvn package
 java -jar target/helidon-integrations-examples-datasource-hikaricp-mysql.jar
 ```
@@ -51,7 +51,7 @@ curl http://localhost:8080/tables
 ```
 
 Stop the docker container:
-```bash
+```shell
 docker stop mysql
 ```
 

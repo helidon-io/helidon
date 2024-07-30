@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,14 +21,13 @@
 module io.helidon.integrations.oci.metrics {
 
     requires io.helidon.http;
-    requires io.helidon.metrics.api;
-    requires java.logging;
     requires oci.java.sdk.common;
 
     requires static io.helidon.config.metadata;
 
     requires transitive io.helidon.common;
     requires transitive io.helidon.config;
+    requires transitive io.helidon.metrics.api;
     requires transitive io.helidon.webserver;
     requires transitive oci.java.sdk.monitoring;
 

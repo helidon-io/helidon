@@ -16,10 +16,14 @@
 
 package io.helidon.security.providers.oidc;
 
+import java.io.StringReader;
+import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -34,9 +38,11 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import io.helidon.common.Errors;
+import io.helidon.common.LazyValue;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.SetCookie;
 import io.helidon.http.Status;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
@@ -54,6 +60,7 @@ import io.helidon.security.abac.scope.ScopeValidator;
 import io.helidon.security.jwt.Jwt;
 import io.helidon.security.jwt.JwtException;
 import io.helidon.security.jwt.JwtUtil;
+import io.helidon.security.jwt.JwtValidator;
 import io.helidon.security.jwt.SignedJwt;
 import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.providers.common.TokenCredential;
@@ -67,6 +74,8 @@ import io.helidon.webclient.api.WebClient;
 
 import jakarta.json.JsonObject;
 
+import static io.helidon.security.providers.oidc.OidcFeature.JSON_BUILDER_FACTORY;
+import static io.helidon.security.providers.oidc.OidcFeature.JSON_READER_FACTORY;
 import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.DEFAULT_TENANT_ID;
 
 /**
@@ -76,6 +85,10 @@ class TenantAuthenticationHandler {
     private static final System.Logger LOGGER = System.getLogger(TenantAuthenticationHandler.class.getName());
     private static final TokenHandler PARAM_HEADER_HANDLER = TokenHandler.forHeader(OidcConfig.PARAM_HEADER_NAME);
     private static final TokenHandler PARAM_ID_HEADER_HANDLER = TokenHandler.forHeader(OidcConfig.PARAM_ID_HEADER_NAME);
+    private static final LazyValue<SecureRandom> RANDOM = LazyValue.create(SecureRandom::new);
+    private static final JwtValidator TIME_VALIDATORS = JwtValidator.builder()
+            .addDefaultTimeValidators()
+            .build();
 
     private final boolean optional;
     private final OidcConfig oidcConfig;
@@ -257,7 +270,23 @@ class TenantAuthenticationHandler {
                     } else {
                         try {
                             String tokenValue = cookie.get();
-                            return validateAccessToken(tenantId, providerRequest, tokenValue, idToken);
+                            String decodedJson = new String(Base64.getDecoder().decode(tokenValue), StandardCharsets.UTF_8);
+                            JsonObject jsonObject = JSON_READER_FACTORY.createReader(new StringReader(decodedJson)).readObject();
+                            if (oidcConfig.accessTokenIpCheck()) {
+                                Object userIp = providerRequest.env().abacAttribute("userIp").orElseThrow();
+                                if (!jsonObject.getString("remotePeer").equals(userIp)) {
+                                    if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                                        LOGGER.log(System.Logger.Level.DEBUG,
+                                                   "Current peer IP does not match the one this access token was issued for");
+                                    }
+                                    return errorResponse(providerRequest,
+                                                         Status.UNAUTHORIZED_401,
+                                                         "peer_host_mismatch",
+                                                         "Peer host access token mismatch",
+                                                         tenantId);
+                                }
+                            }
+                            return validateAccessToken(tenantId, providerRequest, jsonObject.getString("accessToken"), idToken);
                         } catch (Exception e) {
                             if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
                                 LOGGER.log(System.Logger.Level.DEBUG, "Invalid access token in cookie", e);
@@ -322,11 +351,12 @@ class TenantAuthenticationHandler {
                                                  String tenantId) {
         if (oidcConfig.shouldRedirect()) {
             // make sure we do not exceed redirect limit
-            String state = origUri(providerRequest);
-            int redirectAttempt = redirectAttempt(state);
+            String origUri = origUri(providerRequest);
+            int redirectAttempt = redirectAttempt(origUri);
             if (redirectAttempt >= oidcConfig.maxRedirects()) {
                 return errorResponseNoRedirect(code, description, status);
             }
+            String state = generateRandomString();
 
             Set<String> expectedScopes = expectedScopes(providerRequest);
 
@@ -362,13 +392,23 @@ class TenantAuthenticationHandler {
                     + "redirect_uri=" + redirectUri + "&"
                     + "scope=" + scopeString + "&"
                     + "nonce=" + nonce + "&"
-                    + "state=" + encode(state);
+                    + "state=" + state;
+
+            JsonObject stateJson = JSON_BUILDER_FACTORY.createObjectBuilder()
+                    .add("originalUri", origUri)
+                    .add("state", state)
+                    .add("nonce", nonce)
+                    .build();
+
+            String stateBase64 = Base64.getEncoder().encodeToString(stateJson.toString().getBytes(StandardCharsets.UTF_8));
+            SetCookie cookie = oidcConfig.stateCookieHandler().createCookie(stateBase64).build();
 
             // must redirect
             return AuthenticationResponse
                     .builder()
                     .status(SecurityResponse.SecurityStatus.FAILURE_FINISH)
                     .statusCode(Status.TEMPORARY_REDIRECT_307.code())
+                    .responseHeader(HeaderNames.SET_COOKIE.defaultCase(), cookie.toString())
                     .description("Redirecting to identity server: " + description)
                     .responseHeader("Location", authorizationEndpoint + queryString)
                     .build();
@@ -381,8 +421,8 @@ class TenantAuthenticationHandler {
         for (Map.Entry<String, List<String>> entry : env.headers().entrySet()) {
             if (entry.getKey().equalsIgnoreCase("host") && !entry.getValue().isEmpty()) {
                 String firstHost = entry.getValue().getFirst();
-                return oidcConfig.redirectUriWithHost(oidcConfig.forceHttpsRedirects() ? "https" : env.transport()
-                        + "://" + firstHost);
+                String schema = oidcConfig.forceHttpsRedirects() ? "https" : env.transport();
+                return oidcConfig.redirectUriWithHost(schema + "://" + firstHost);
             }
         }
 
@@ -444,12 +484,19 @@ class TenantAuthenticationHandler {
         return "Bearer realm=\"" + tenantConfig.realm() + "\", error=\"" + code + "\", error_description=\"" + description + "\"";
     }
 
-    private String origUri(ProviderRequest providerRequest) {
+    String origUri(ProviderRequest providerRequest) {
         List<String> origUri = providerRequest.env().headers()
                 .getOrDefault(Security.HEADER_ORIG_URI, List.of());
 
         if (origUri.isEmpty()) {
-            origUri = List.of(providerRequest.env().targetUri().getPath());
+            URI targetUri = providerRequest.env().targetUri();
+            String query = targetUri.getQuery();
+            String path = targetUri.getPath();
+            if (query == null || query.isEmpty()) {
+                return path;
+            } else {
+                return path + "?" + query;
+            }
         }
 
         return origUri.getFirst();
@@ -479,9 +526,19 @@ class TenantAuthenticationHandler {
                 errors = Errors.collector().collect();
             }
             Jwt jwt = signedJwt.getJwt();
-            Errors validationErrors = jwt.validate(tenant.issuer(),
-                                                   tenantConfig.clientId(),
-                                                   true);
+
+            JwtValidator.Builder jwtValidatorBuilder = JwtValidator.builder()
+                    .addDefaultTimeValidators()
+                    .addCriticalValidator()
+                    .addUserPrincipalValidator()
+                    .addAudienceValidator(tenantConfig.clientId());
+
+            if (tenant.issuer() != null) {
+                jwtValidatorBuilder.addIssuerValidator(tenant.issuer());
+            }
+
+            JwtValidator jwtValidation = jwtValidatorBuilder.build();
+            Errors validationErrors = jwtValidation.validate(jwt);
 
             if (errors.isValid() && validationErrors.isValid()) {
                 return processAccessToken(tenantId, providerRequest, jwt);
@@ -526,7 +583,7 @@ class TenantAuthenticationHandler {
             } else {
                 collector = Errors.collector();
             }
-            Errors timeErrors = signedJwt.getJwt().validate(Jwt.defaultTimeValidators());
+            Errors timeErrors = TIME_VALIDATORS.validate(signedJwt.getJwt());
             if (timeErrors.isValid()) {
                 return processValidationResult(providerRequest, signedJwt, idToken, tenantId, collector);
             } else {
@@ -557,8 +614,7 @@ class TenantAuthenticationHandler {
             Parameters.Builder form = Parameters.builder("oidc-form-params")
                     .add("grant_type", "refresh_token")
                     .add("refresh_token", refreshTokenString)
-                    .add("client_id", tenantConfig.clientId())
-                    .add("client_secret", tenantConfig.clientSecret());
+                    .add("client_id", tenantConfig.clientId());
 
             HttpClientRequest post = webClient.post()
                     .uri(tenant.tokenEndpointUri())
@@ -582,10 +638,18 @@ class TenantAuthenticationHandler {
                             return AuthenticationResponse.failed("Invalid access token", e);
                         }
                         Errors.Collector newAccessTokenCollector = jwtValidator.apply(signedAccessToken, Errors.collector());
+                        Object remotePeer = providerRequest.env().abacAttribute("userIp").orElseThrow();
+
+                        JsonObject accessTokenCookie = JSON_BUILDER_FACTORY.createObjectBuilder()
+                                .add("accessToken", signedAccessToken.tokenContent())
+                                .add("remotePeer", remotePeer.toString())
+                                .build();
+                        String base64 = Base64.getEncoder()
+                                .encodeToString(accessTokenCookie.toString().getBytes(StandardCharsets.UTF_8));
 
                         List<String> setCookieParts = new ArrayList<>();
                         setCookieParts.add(oidcConfig.tokenCookieHandler()
-                                                   .createCookie(accessToken)
+                                                   .createCookie(base64)
                                                    .build()
                                                    .toString());
                         if (refreshToken != null) {
@@ -653,9 +717,18 @@ class TenantAuthenticationHandler {
                                                            List<String> cookies) {
         Jwt jwt = signedJwt.getJwt();
         Errors errors = collector.collect();
-        Errors validationErrors = jwt.validate(tenant.issuer(),
-                                               tenantConfig.audience(),
-                                               tenantConfig.checkAudience());
+        JwtValidator.Builder jwtValidatorBuilder = JwtValidator.builder()
+                .addDefaultTimeValidators()
+                .addCriticalValidator()
+                .addUserPrincipalValidator();
+        if (tenant.issuer() != null) {
+            jwtValidatorBuilder.addIssuerValidator(tenant.issuer());
+        }
+        if (tenantConfig.checkAudience()) {
+            jwtValidatorBuilder.addAudienceValidator(tenantConfig.audience());
+        }
+        JwtValidator jwtValidation = jwtValidatorBuilder.build();
+        Errors validationErrors = jwtValidation.validate(jwt);
 
         if (errors.isValid() && validationErrors.isValid()) {
 
@@ -677,11 +750,17 @@ class TenantAuthenticationHandler {
             }
 
             if (missingScopes.isEmpty()) {
-                return AuthenticationResponse.builder()
+                AuthenticationResponse.Builder response = AuthenticationResponse.builder()
                         .status(SecurityResponse.SecurityStatus.SUCCESS)
-                        .user(subject)
-                        .responseHeader(HeaderNames.SET_COOKIE.defaultCase(), cookies)
-                        .build();
+                        .user(subject);
+
+                if (cookies.isEmpty()) {
+                    return response.build();
+                } else {
+                    return response
+                            .responseHeader(HeaderNames.SET_COOKIE.defaultCase(), cookies)
+                            .build();
+                }
             } else {
                 return errorResponse(providerRequest,
                                      Status.FORBIDDEN_403,
@@ -761,5 +840,18 @@ class TenantAuthenticationHandler {
         tokenToUse.fullName().ifPresent(value -> builder.addAttribute("full_name", value));
 
         return builder.build();
+    }
+
+    //Obtained from https://www.baeldung.com/java-random-string
+    private static String generateRandomString() {
+        int leftLimit = 48; // numeral '0'
+        int rightLimit = 122; // letter 'z'
+        int targetStringLength = 10;
+
+        return RANDOM.get().ints(leftLimit, rightLimit + 1)
+                .filter(i -> (i <= 57 || i >= 65) && (i <= 90 || i >= 97))
+                .limit(targetStringLength)
+                .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
+                .toString();
     }
 }

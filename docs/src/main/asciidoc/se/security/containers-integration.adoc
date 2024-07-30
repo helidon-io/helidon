@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -47,43 +47,32 @@ There are two steps to configure security with WebServer:
 [source,java]
 .Example using builders
 ----
-// web server's Routing
-HttpRouting.builder()
-    // This is step 1 - register security instance with web server processing
-    // security - instance of security either from config or from a builder
-    // securityDefaults - default enforcement for each route that has a security definition
-    .addFeature(SecurityFeature.create(security).securityDefaults(SecurityFeature.authenticate()))
-    // this is step 2 - protect a route
-    // protect this route with authentication (from defaults) and role "user"
-    .get("/service1", SecurityFeature.rolesAllowed("user"), (req, res) -> {
-        processService1Request(req, res);
-    })
-    .build();
+include::{sourcedir}/se/security/ContainersIntegrationSnippets.java[tag=snippet_1, indent=0]
 ----
+<1> Register the security feature in the web server, enforce authentication by default
+<2> Protect this route with authentication (from defaults) and role "user"
 
 [source,java]
 .Example using configuration
 ----
-HttpRouting.builder()
-    // helper method to load both security and web server security from configuration
-    .addFeature(SecurityFeature.create(config))
-    // continue with web server route configuration
-    .build();
+include::{sourcedir}/se/security/ContainersIntegrationSnippets.java[tag=snippet_2, indent=0]
 ----
+<1> Helper method to load both security and web server security from configuration
+<2> Security for this route is defined in the configuration
 
 [source,yaml]
 .Example using configuration (YAML)
 ----
-# This may change in the future - to align with web server configuration, once it is supported
-security.web-server:
-  # Configuration of integration with web server
-  defaults:
-    authenticate: true
-  paths:
-    - path: "/service1/[/{*}]"
-      methods: ["get"]
-      roles-allowed: ["user"]
+security:
+  web-server: # <1>
+      defaults:
+        authenticate: true
+      paths:
+        - path: "/service1/[/{*}]"
+          methods: ["get"]
+          roles-allowed: ["user"]
 ----
+<1> Configuration of integration with web server
 
 include::{rootdir}/includes/security/helidon-endpoints.adoc[]
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,11 +23,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
-import io.helidon.inject.configdriven.api.ConfigDriven;
-
-import jakarta.inject.Inject;
-
-@ConfigDriven(CircuitBreakerConfigBlueprint.class)
 class CircuitBreakerImpl implements CircuitBreaker {
     /*
      Configuration options
@@ -52,7 +47,6 @@ class CircuitBreakerImpl implements CircuitBreaker {
     private final String name;
     private final CircuitBreakerConfig config;
 
-    @Inject
     CircuitBreakerImpl(CircuitBreakerConfig config) {
         this.delayMillis = config.delay().toMillis();
         this.successThreshold = config.successThreshold();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -118,8 +118,22 @@ class RetryBean {
             // fails twice
             future.completeExceptionally(new RuntimeException("Simulated error"));
         } else {
-            future.complete("Success");
+            future.complete("success");
         }
         return future;
+    }
+
+    @Asynchronous
+    @Retry(maxRetries = 2, retryOn = {CustomRuntimeException.class})
+    public CompletableFuture<String> retryOnCustomRuntimeException() {
+        if (invocations.incrementAndGet() <= 2) {
+            printStatus("RetryBean::retryOnCustomRuntimeException()", "failure");
+            return CompletableFuture.failedFuture(new CustomRuntimeException());
+        }
+        printStatus("RetryBean::retryOnCustomRuntimeException()", "success");
+        return CompletableFuture.completedFuture("success");
+    }
+
+    static class CustomRuntimeException extends RuntimeException {
     }
 }

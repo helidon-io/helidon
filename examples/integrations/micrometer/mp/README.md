@@ -22,7 +22,7 @@ The example is similar to the one from the Helidon MP QuickStart with these diff
 
 ## Build and run
 
-```bash
+```shell
 mvn package
 java -jar target/helidon-examples-integrations-micrometer-mp.jar
 ```
@@ -31,24 +31,28 @@ java -jar target/helidon-examples-integrations-micrometer-mp.jar
 
 These normal greeting app endpoints work just as in the original greeting app:
 
-```bash
+```shell
 curl -X GET http://localhost:8080/greet
-{"message":"Hello World!"}
+#Output: {"message":"Hello World!"}
+```
 
+```shell
 curl -X GET http://localhost:8080/greet/Joe
-{"message":"Hello Joe!"}
+#Output: {"message":"Hello Joe!"}
+```
 
+```shell
 curl -X PUT -H "Content-Type: application/json" -d '{"greeting" : "Hola"}' http://localhost:8080/greet/greeting
 
 curl -X GET http://localhost:8080/greet/Jose
-{"message":"Hola Jose!"}
+#Output: {"message":"Hola Jose!"}
 ```
 
 ## Using Micrometer
 
 Access the `/micrometer` endpoint which reports the newly-added timer and counter.
 
-```bash
+```shell
 curl http://localhost:8080/micrometer
 ```
 Because the `@Timer` annotation specifies a histogram, 
@@ -56,8 +60,10 @@ the actual timer output includes a lengthy histogram (only part of which is show
 Your output might show the `personalizedGets` output before the `allGets` output,
 rather than after as shown here.
 
-```
+```shell
 curl http://localhost:8080/micrometer
+```
+```listing
 # HELP allGets_seconds_max Tracks all GET operations
 # TYPE allGets_seconds_max gauge
 allGets_seconds_max 0.004840005

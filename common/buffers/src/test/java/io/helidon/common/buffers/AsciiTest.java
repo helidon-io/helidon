@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,24 +19,21 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AsciiTest {
     @Test
     void testIsLowerCaseOne() {
-        assertFalse(Ascii.isLowerCase('{'));
+        assertThat(Ascii.isLowerCase('{'), is(false));
     }
 
     @Test
     void testIsLowerCaseReturningTrue() {
-        assertTrue(Ascii.isLowerCase('o'));
+        assertThat(Ascii.isLowerCase('o'), is(true));
     }
 
     @Test
     void testIsLowerCaseTwo() {
-        assertFalse(Ascii.isLowerCase('\"'));
+        assertThat(Ascii.isLowerCase('\"'), is(false));
     }
 
     @Test
@@ -52,32 +49,32 @@ class AsciiTest {
     void testToLowerCaseTakingCharSequenceOne() {
         StringBuilder stringBuilder = new StringBuilder("uhho^s} b'jdwtym");
 
-        assertEquals("uhho^s} b'jdwtym", Ascii.toLowerCase(stringBuilder));
+        assertThat(Ascii.toLowerCase(stringBuilder), is("uhho^s} b'jdwtym"));
     }
 
     @Test
     void testToLowerCaseTakingCharSequenceTwo() {
-        assertEquals("uhho^s} b'jdwtym", Ascii.toLowerCase((CharSequence) "uHHO^S} b'jDwTYM"));
+        assertThat(Ascii.toLowerCase((CharSequence) "uHHO^S} b'jDwTYM"), is("uhho^s} b'jdwtym"));
     }
 
     @Test
     void testToLowerCaseTakingString() {
-        assertEquals("", Ascii.toLowerCase(""));
+        assertThat(Ascii.toLowerCase(""), is(""));
     }
 
     @Test
     void testIsUpperCaseOne() {
-        assertFalse(Ascii.isUpperCase('{'));
+        assertThat(Ascii.isUpperCase('{'), is(false));
     }
 
     @Test
     void testIsUpperCaseReturningTrue() {
-        assertTrue(Ascii.isUpperCase('O'));
+        assertThat(Ascii.isUpperCase('O'), is(true));
     }
 
     @Test
     void testIsUpperCaseTwo() {
-        assertFalse(Ascii.isUpperCase('\"'));
+        assertThat(Ascii.isUpperCase('\"'), is(false));
     }
 
     @Test
@@ -93,16 +90,16 @@ class AsciiTest {
     void testToUpperCaseTakingCharSequenceOne() {
         StringBuilder stringBuilder = new StringBuilder("UhHO^S} B'JDWTYM");
 
-        assertEquals("UHHO^S} B'JDWTYM", Ascii.toUpperCase(stringBuilder));
+        assertThat(Ascii.toUpperCase(stringBuilder), is("UHHO^S} B'JDWTYM"));
     }
 
     @Test
     void testToUpperCaseTakingCharSequenceTwo() {
-        assertEquals("UHHO^S} B'JDWTYM", Ascii.toUpperCase((CharSequence) "uHHO^S} b'jDwTYM"));
+        assertThat(Ascii.toUpperCase((CharSequence) "uHHO^S} b'jDwTYM"), is("UHHO^S} B'JDWTYM"));
     }
 
     @Test
     void testToUpperCaseTakingString() {
-        assertEquals("UHHO^S} B'JDWTYM", Ascii.toUpperCase("uHHO^S} b'jDwTYM"));
+        assertThat(Ascii.toUpperCase("uHHO^S} b'jDwTYM"), is("UHHO^S} B'JDWTYM"));
     }
 }

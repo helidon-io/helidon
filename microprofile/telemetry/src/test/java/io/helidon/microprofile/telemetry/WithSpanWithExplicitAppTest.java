@@ -15,14 +15,10 @@
  */
 package io.helidon.microprofile.telemetry;
 
-import java.util.List;
 import java.util.stream.Stream;
 
-import io.helidon.microprofile.server.JaxRsApplication;
-import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.microprofile.testing.junit5.AddBean;
 
-import jakarta.enterprise.inject.spi.CDI;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -33,7 +29,6 @@ class WithSpanWithExplicitAppTest extends WithSpanTestBase {
     @ParameterizedTest()
     @MethodSource()
     void testExplicitAppSpanNameFromPath(SpanPathTestInfo spanPathTestInfo) {
-        List<JaxRsApplication> apps = CDI.current().getBeanManager().getExtension(JaxRsCdiExtension.class).applicationsToRun();
         testSpanNameFromPath(spanPathTestInfo);
     }
 

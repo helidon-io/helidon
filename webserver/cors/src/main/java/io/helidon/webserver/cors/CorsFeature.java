@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Weighted;
 import io.helidon.common.config.Config;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.spi.ServerFeature;
@@ -29,11 +30,11 @@ import io.helidon.webserver.spi.ServerFeature;
  * Adds CORS support to Helidon WebServer.
  */
 @RuntimeType.PrototypedBy(CorsConfig.class)
-public class CorsFeature implements ServerFeature, RuntimeType.Api<CorsConfig> {
+public class CorsFeature implements Weighted, ServerFeature, RuntimeType.Api<CorsConfig> {
     /**
      * Default weight of the feature.
      */
-    public static final double WEIGHT = 950;
+    public static final double WEIGHT = 850;
     static final String CORS_ID = "cors";
     private final CorsConfig config;
 
@@ -133,5 +134,10 @@ public class CorsFeature implements ServerFeature, RuntimeType.Api<CorsConfig> {
     @Override
     public CorsConfig prototype() {
         return config;
+    }
+
+    @Override
+    public double weight() {
+        return config.weight();
     }
 }

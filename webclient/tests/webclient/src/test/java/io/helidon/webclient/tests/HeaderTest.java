@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.webclient.tests;
 import java.util.List;
 
 import io.helidon.http.HeaderNames;
+import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.http1.Http1Client;
@@ -82,6 +83,18 @@ public class HeaderTest extends TestParent {
             String contentLength = res.as(String.class);
             assertThat(contentLength, is(HeaderNames.CONTENT_LENGTH + " is " + sampleSmallEntity.length()));
         }
+    }
+
+    @Test
+    public void testHeaderDuplication() {
+        WebClient webClient = WebClient.builder()
+                .servicesDiscoverServices(false)
+                .baseUri("http://localhost:" + server.port() + "/greet/header")
+                .addHeader("someCustomHeader", "header value")
+                .build();
+
+        String response = webClient.get().requestEntity(String.class);
+        assertThat(response, is("\"someCustomHeader\" header was not duplicated!"));
     }
 
     private record HeaderTestService(String user) implements WebClientService {

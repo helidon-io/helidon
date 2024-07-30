@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ module io.helidon.jersey.connector {
     requires io.helidon.webclient;
     requires io.helidon.webclient.http2;
     requires jakarta.ws.rs;
-    requires java.logging;
     requires jersey.common;
 
     requires transitive jersey.client;

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -46,24 +46,24 @@ This is a standalone configuration type, prefix from configuration root: `fault-
 
 |`delay` |Duration |`PT5S` |How long to wait before transitioning from open to half-open state.
 
- @return delay
+ Delay
 |`error-ratio` |int |`60` |How many failures out of 100 will trigger the circuit to open.
- This is adapted to the #volume() used to handle the window of requests.
+ This is adapted to the volume() used to handle the window of requests.
 If errorRatio is 40, and volume is 10, 4 failed requests will open the circuit.
- Default is `DEFAULT_ERROR_RATIO`.
+ Default is DEFAULT_ERROR_RATIO.
 
- @return percent of failure that trigger the circuit to open
- @see #volume()
+ Percent of failure that trigger the circuit to open
+ See volume()
 |`success-threshold` |int |`1` |How many successful calls will close a half-open circuit.
  Nevertheless, the first failed call will open the circuit again.
- Default is `DEFAULT_SUCCESS_THRESHOLD`.
+ Default is DEFAULT_SUCCESS_THRESHOLD.
 
- @return number of calls
+ Number of calls
 |`volume` |int |`10` |Rolling window size used to calculate ratio of failed requests.
- Default is `DEFAULT_VOLUME`.
+ Default is DEFAULT_VOLUME.
 
- @return how big a window is used to calculate error errorRatio
- @see #errorRatio()
+ How big a window is used to calculate error errorRatio
+ See errorRatio()
 
 |===
 

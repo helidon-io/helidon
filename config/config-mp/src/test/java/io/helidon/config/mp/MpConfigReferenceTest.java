@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,16 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigValue;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class MpConfigReferenceTest {
@@ -65,6 +68,15 @@ public class MpConfigReferenceTest {
         // since Config 2.0, missing references must throw an exception
         assertThrows(NoSuchElementException.class, () -> config.getValue("referencing4-1", String.class));
         assertThrows(NoSuchElementException.class, () -> config.getValue( "referencing4-2", String.class));
+
+        // MP Config 3.1 TCK requires well-formed ConfigValue when missing reference
+        ConfigValue configValue = config.getConfigValue("referencing4-1");
+        assertThat(configValue, notNullValue());
+        assertThat(configValue.getName(), is("referencing4-1"));
+        assertThat(configValue.getValue(), nullValue());
+        assertThat(configValue.getRawValue(), is("${missing}"));
+        assertThat(configValue.getSourceName(), endsWith("microprofile-config.properties"));
+        assertThat(configValue.getSourceOrdinal(), is(100));
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import io.helidon.security.SecurityContext;
 import io.helidon.security.Subject;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.context.ContextFeature;
 import io.helidon.webserver.security.SecurityHttpFeature;
 
 /**
@@ -69,14 +70,20 @@ public final class OutboundOverrideExample {
 
                 Backend service started on: http://localhost:%2d/hello
 
-                """, server.port(), server.port("backend"), TimeUnit.MILLISECONDS.convert(time, TimeUnit.NANOSECONDS));
+                """, TimeUnit.MILLISECONDS.convert(time, TimeUnit.NANOSECONDS),
+                server.port(), server.port(), server.port("backend"));
     }
 
     static void setup(WebServerConfig.Builder server) {
         Config clientConfig = Config.create(ConfigSources.classpath("client-service.yaml"));
         Config backendConfig = Config.create(ConfigSources.classpath("backend-service.yaml"));
 
-        server.config(clientConfig.get("security"))
+        // as we use the security http feature directly, we cannot use discovered security feature
+        // this is a unique case where we combine two sets of server set-ups in a single webserver
+        server.featuresDiscoverServices(false)
+                // context feature is a pre-requisite of security
+                .addFeature(ContextFeature.create())
+                .config(clientConfig.get("security"))
                 .routing(routing -> routing
                         .addFeature(SecurityHttpFeature.create(clientConfig.get("security.web-server")))
                         .register(new OverrideService()))

@@ -17,7 +17,6 @@ package io.helidon.microprofile.telemetry;
 
 import java.util.List;
 
-import io.helidon.microprofile.server.JaxRsApplication;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.microprofile.testing.junit5.AddBean;
 import io.helidon.microprofile.testing.junit5.AddConfig;
@@ -58,7 +57,6 @@ class WithSpanTestBase {
 
     void testSpanNameFromPath(SpanPathTestInfo spanPathTestInfo) {
         JaxRsCdiExtension jaxRsCdiExtension = CDI.current().getBeanManager().getExtension(JaxRsCdiExtension.class);
-        List<JaxRsApplication> apps = jaxRsCdiExtension.applicationsToRun();
         Response response = webTarget.path(spanPathTestInfo.requestPath)
                 .request(MediaType.TEXT_PLAIN)
                 .get();

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.helidon</groupId>
     <artifactId>helidon-parent</artifactId>
-    <version>4.0.0-SNAPSHOT</version>
+    <version>4.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Helidon Parent</name>
@@ -144,7 +144,7 @@
 
     <properties>
         <version.plugin.clean>3.2.0</version.plugin.clean>
-        <version.plugin.deploy>2.8.2</version.plugin.deploy>
+        <version.plugin.deploy>3.1.1</version.plugin.deploy>
         <version.plugin.gpg>1.6</version.plugin.gpg>
         <version.plugin.install>3.1.1</version.plugin.install>
         <version.plugin.nexus-staging>1.6.13</version.plugin.nexus-staging>

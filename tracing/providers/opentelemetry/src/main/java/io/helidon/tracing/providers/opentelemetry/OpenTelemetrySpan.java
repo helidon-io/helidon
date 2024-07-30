@@ -15,26 +15,39 @@
  */
 package io.helidon.tracing.providers.opentelemetry;
 
+import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import io.helidon.common.context.Contexts;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
+import io.helidon.tracing.SpanListener;
+import io.helidon.tracing.WritableBaggage;
 
+import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Context;
 
 class OpenTelemetrySpan implements Span {
+    private static final System.Logger LOGGER = System.getLogger(OpenTelemetrySpan.class.getName());
     private final io.opentelemetry.api.trace.Span delegate;
-    private final MutableOpenTelemetryBaggage baggage = new MutableOpenTelemetryBaggage();
+    private final Baggage baggage;
+    private final List<SpanListener> spanListeners;
+    private Limited limited;
 
-    OpenTelemetrySpan(io.opentelemetry.api.trace.Span span) {
-        this.delegate = span;
+    OpenTelemetrySpan(io.opentelemetry.api.trace.Span span, List<SpanListener> spanListeners) {
+        this(span, new MutableOpenTelemetryBaggage(), spanListeners);
+    }
+
+    OpenTelemetrySpan(io.opentelemetry.api.trace.Span span, Baggage baggage, List<SpanListener> spanListeners) {
+        delegate = span;
+        this.baggage = baggage;
+        this.spanListeners = spanListeners;
     }
 
     @Override
@@ -71,7 +84,7 @@ class OpenTelemetrySpan implements Span {
 
     @Override
     public SpanContext context() {
-        return new OpenTelemetrySpanContext(Context.current().with(delegate));
+        return new OpenTelemetrySpanContext(otelContextWithSpanAndBaggage());
     }
 
     @Override
@@ -82,6 +95,7 @@ class OpenTelemetrySpan implements Span {
     @Override
     public void end() {
         delegate.end();
+        HelidonOpenTelemetry.invokeListeners(spanListeners, LOGGER, (listener -> listener.ended(limited())));
     }
 
     @Override
@@ -89,26 +103,59 @@ class OpenTelemetrySpan implements Span {
         delegate.recordException(t);
         delegate.setStatus(StatusCode.ERROR);
         delegate.end();
+        HelidonOpenTelemetry.invokeListeners(spanListeners, LOGGER, listener -> listener.ended(limited(), t));
     }
 
     @Override
     public Scope activate() {
-        io.opentelemetry.context.Scope baggageScope = baggage.makeCurrent();
-        return new OpenTelemetryScope(delegate.makeCurrent(), baggageScope);
+        io.opentelemetry.context.Scope scope = otelContextWithSpanAndBaggage().makeCurrent();
+        var result = new OpenTelemetryScope(this, scope, spanListeners);
+        HelidonOpenTelemetry.invokeListeners(spanListeners, LOGGER, listener -> listener.activated(limited(), result.limited()));
+        return result;
     }
 
     @Override
     public Span baggage(String key, String value) {
-        Objects.requireNonNull(key, "baggage key cannot be null");
-        Objects.requireNonNull(value, "baggage value cannot be null");
-        baggage.baggage(key, value);
+        if (baggage instanceof WritableBaggage writableBaggage) {
+            writableBaggage.set(key, value);
+        } else {
+            throw new SpanListener.ForbiddenOperationException(
+                    "Attempt to set baggage on a span with read-only baggage (perhaps from context");
+        }
         return this;
     }
 
     @Override
     public Optional<String> baggage(String key) {
-        Objects.requireNonNull(key, "Baggage Key cannot be null");
         return Optional.ofNullable(baggage.getEntryValue(key));
+    }
+
+    @Override
+    public WritableBaggage baggage() {
+        return baggage instanceof WritableBaggage writableBaggage ? writableBaggage : writableBaggage(baggage);
+    }
+
+    @Override
+    public <T> T unwrap(Class<T> spanClass) {
+        if (spanClass.isInstance(delegate)) {
+            return spanClass.cast(delegate);
+        }
+        if (spanClass.isInstance(this)) {
+            return spanClass.cast(this);
+        }
+        throw new IllegalArgumentException("Cannot provide an instance of " + spanClass.getName()
+                                                   + ", telemetry span is: " + delegate.getClass().getName());
+    }
+
+    Limited limited() {
+        if (limited !=  null) {
+            return limited;
+        }
+        if (spanListeners.isEmpty()) {
+            return null;
+        }
+        limited = new Limited(this);
+        return limited;
     }
 
     // Check if OTEL Context is already available in Global Helidon Context.
@@ -117,6 +164,47 @@ class OpenTelemetrySpan implements Span {
         return Contexts.context()
                 .flatMap(ctx -> ctx.get(Context.class))
                 .orElseGet(Context::current);
+    }
+
+    /**
+     * Writable wrapper around non-writable baggage.
+     *
+     * <p>
+     *     Used only if the baggage in the current context is not our writable variety when it is extracted and attached to
+     *     the current span. This should be very rare.
+     * </p>
+     *
+     * @param baggage non-writable baggage to wrap
+     * @return wrapper
+     */
+    private static WritableBaggage writableBaggage(Baggage baggage) {
+        return new WritableBaggage() {
+            @Override
+            public WritableBaggage set(String key, String value) {
+                throw new SpanListener.ForbiddenOperationException("Attempt to modify read-only baggage");
+            }
+
+            @Override
+            public Optional<String> get(String key) {
+                return Optional.ofNullable(baggage.getEntryValue(key));
+            }
+
+            @Override
+            public Set<String> keys() {
+                return baggage.asMap().keySet();
+            }
+
+            @Override
+            public boolean containsKey(String key) {
+                return baggage.asMap().containsKey(key);
+            }
+        };
+    }
+
+    private Context otelContextWithSpanAndBaggage() {
+        // Because the Helidon tracing API links baggage with a span, any OTel context we create for the span
+        // needs to have the baggage with it.
+        return getContext().with(delegate).with(baggage);
     }
 
     private Attributes toAttributes(Map<String, ?> attributes) {
@@ -133,5 +221,80 @@ class OpenTelemetrySpan implements Span {
             }
         });
         return builder.build();
+    }
+
+    private record Limited(OpenTelemetrySpan delegate) implements Span {
+
+        @Override
+        public Span tag(String key, String value) {
+            delegate.tag(key, value);
+            return this;
+        }
+
+        @Override
+        public Span tag(String key, Boolean value) {
+            delegate.tag(key, value);
+            return this;
+        }
+
+        @Override
+        public Span tag(String key, Number value) {
+            delegate.tag(key, value);
+            return this;
+        }
+
+        @Override
+        public void status(Status status) {
+            throw new SpanListener.ForbiddenOperationException();
+        }
+
+        @Override
+        public SpanContext context() {
+            return delegate.context();
+        }
+
+        @Override
+        public void addEvent(String name, Map<String, ?> attributes) {
+            delegate.addEvent(name, attributes);
+        }
+
+        @Override
+        public void end() {
+            throw new SpanListener.ForbiddenOperationException();
+        }
+
+        @Override
+        public void end(Throwable t) {
+            throw new SpanListener.ForbiddenOperationException();
+        }
+
+        @Override
+        public Scope activate() {
+            throw new SpanListener.ForbiddenOperationException();
+        }
+
+        @Override
+        public Span baggage(String key, String value) {
+            delegate.baggage().set(key, value);
+            return this;
+        }
+
+        @Override
+        public Optional<String> baggage(String key) {
+            return delegate.baggage(key);
+        }
+
+        @Override
+        public WritableBaggage baggage() {
+            return delegate.baggage();
+        }
+
+        @Override
+        public <T> T unwrap(Class<T> spanClass) {
+            if (spanClass.isInstance(this)) {
+                return spanClass.cast(this);
+            }
+            return delegate.unwrap(spanClass);
+        }
     }
 }

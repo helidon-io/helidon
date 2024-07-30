@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class TodoServiceTest {
 
     private static final JsonObject TODO = Json.createObjectBuilder().add("msg", "todo").build();
-    private static final String ENCODED_ID = Base64.getEncoder().encodeToString("john:password".getBytes());
+    private static final String ENCODED_ID = Base64.getEncoder().encodeToString("john:changeit".getBytes());
     private static final Header BASIC_AUTH = HeaderValues.create(HeaderNames.AUTHORIZATION, "Basic " + ENCODED_ID);
 
     private static URI backendUri;

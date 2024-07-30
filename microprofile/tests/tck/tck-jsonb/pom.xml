@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.microprofile.tests.tck</groupId>
         <artifactId>helidon-microprofile-tests-tck-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.1.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <packaging>pom</packaging>
@@ -48,7 +48,7 @@
                         <configuration>
                             <target>
                                 <!-- If you use proxy you need to set it as a system properties -->
-                                <get skipexisting="true" src="https://www.eclipse.org/downloads/download.php?file=/ee4j/jakartaee-tck/jakartaee10/promoted/eftl/jakarta-jsonb-tck-${version.lib.jakarta.jsonb-api}.zip" dest="jakarta-jsonb-tck-${version.lib.jakarta.jsonb-api}.zip"/>
+                                <get skipexisting="true" src="https://download.eclipse.org/ee4j/jakartaee-tck/jakartaee10/promoted/eftl/jakarta-jsonb-tck-${version.lib.jakarta.jsonb-api}.zip" dest="jakarta-jsonb-tck-${version.lib.jakarta.jsonb-api}.zip"/>
                                 <unzip src="jakarta-jsonb-tck-${version.lib.jakarta.jsonb-api}.zip" dest="./target"/>
                                 <chmod file="target/jsonb-tck/artifacts/artifact-install.sh" perm="+x"/>
                                 <exec dir="target/jsonb-tck/artifacts" executable="sh">

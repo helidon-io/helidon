@@ -5,7 +5,7 @@ This application demonstrates use of the StaticContentService to serve static fi
 
 ## Build and run
 
-```bash
+```shell
 mvn package
 java -jar target/helidon-examples-webserver-static-content.jar
 ```

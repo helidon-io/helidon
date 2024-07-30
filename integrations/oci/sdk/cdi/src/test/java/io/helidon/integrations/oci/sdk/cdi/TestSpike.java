@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package io.helidon.integrations.oci.sdk.cdi;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.InetAddress;
 
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.testing.junit5.AddBean;
@@ -45,6 +44,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.integrations.oci.sdk.cdi.Utils.imdsAvailable;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -112,16 +112,6 @@ class TestSpike {
             return false;
         }
     }
-
-    private static final boolean imdsAvailable() {
-        try {
-            return InetAddress.getByName(System.getProperty("oci.imds.hostname", "169.254.169.254"))
-                .isReachable(Integer.getInteger("oci.imds.timeout", 100).intValue());
-        } catch (final IOException ignored) {
-            return false;
-        }
-    }
-
 
     /*
      * Inner and nested classes.

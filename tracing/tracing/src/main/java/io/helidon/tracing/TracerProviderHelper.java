@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,18 +58,33 @@ final class TracerProviderHelper {
     }
 
     public static Optional<Span> currentSpan() {
-        return TRACER_PROVIDER.currentSpan();
+        /*
+        If a custom TracerProvider implementation indirectly tries to access the current span (for example, by triggering custom
+        logging that adds the current span to each message), then this method can be invoked before the static initializer has
+        completed and, therefore, before TRACER_PROVIDER is assigned.
+         */
+        return (TRACER_PROVIDER == null) ? Optional.empty() : TRACER_PROVIDER.currentSpan();
     }
 
     static Tracer global() {
+        if (TRACER_PROVIDER == null) {
+            throw new IllegalStateException("Use before initialization has completed");
+        }
         return TRACER_PROVIDER.global();
     }
 
     static void global(Tracer tracer) {
+        if (TRACER_PROVIDER == null) {
+            throw new IllegalStateException("Use before initialization has completed");
+        }
         TRACER_PROVIDER.global(tracer);
     }
 
     static TracerBuilder<?> findTracerBuilder() {
+        if (TRACER_PROVIDER == null) {
+            throw new IllegalStateException("Use before initialization has completed");
+        }
         return TRACER_PROVIDER.createBuilder();
     }
+
 }

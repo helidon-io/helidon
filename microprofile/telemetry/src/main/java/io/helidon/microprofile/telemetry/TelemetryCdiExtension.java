@@ -61,6 +61,5 @@ public class TelemetryCdiExtension implements Extension {
                 method.add(HelidonWithSpan.Literal.INSTANCE);
             }
         }
-
     }
 }

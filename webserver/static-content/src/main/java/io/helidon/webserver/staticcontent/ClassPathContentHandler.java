@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,12 +29,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiFunction;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -62,7 +63,8 @@ class ClassPathContentHandler extends FileBasedContentHandler {
     private final Set<String> cacheInMemory;
 
     // URL's hash code and equal are not suitable for map or set
-    private final Map<String, ExtractedJarEntry> extracted = new ConcurrentHashMap<>();
+    private final Map<String, ExtractedJarEntry> extracted = new HashMap<>();
+    private final ReentrantLock lock = new ReentrantLock();
 
     ClassPathContentHandler(StaticContentService.ClassPathBuilder builder) {
         super(builder);
@@ -231,7 +233,13 @@ class ClassPathContentHandler extends FileBasedContentHandler {
     }
 
     private Optional<CachedHandler> jarHandler(String requestedResource, URL url) {
-        ExtractedJarEntry extrEntry = extracted.compute(requestedResource, (key, entry) -> existOrCreate(url, entry));
+        ExtractedJarEntry extrEntry;
+        lock.lock();
+        try {
+            extrEntry = extracted.compute(requestedResource, (key, entry) -> existOrCreate(url, entry));
+        } finally {
+            lock.unlock();
+        }
 
         if (extrEntry.tempFile == null) {
             // once again, not caching 404

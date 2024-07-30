@@ -36,6 +36,7 @@ module io.helidon.microprofile.telemetry {
     requires io.helidon.config.mp;
     requires io.helidon.config;
     requires io.helidon.microprofile.server;
+    requires io.helidon.tracing;
     requires io.helidon.tracing.providers.opentelemetry;
     requires io.opentelemetry.api;
     requires io.opentelemetry.context;
@@ -45,7 +46,6 @@ module io.helidon.microprofile.telemetry {
     requires io.opentelemetry.sdk;
     requires jakarta.annotation;
     requires jakarta.inject;
-    requires java.logging;
     requires microprofile.config.api;
     requires opentelemetry.instrumentation.annotations;
 

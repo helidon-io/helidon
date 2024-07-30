@@ -208,7 +208,7 @@ managed]
 [source,xml]
 ----
 <dependency>
-    <groupId>com.h2database</groupId>
+    <groupId>io.helidon.integrations.db</groupId>
     <artifactId>h2</artifactId>
     <scope>runtime</scope> <!--1-->
 </dependency>
@@ -240,19 +240,12 @@ managed]
 [source,xml]
 ----
 <dependency>
-    <groupId>com.oracle.database.jdbc</groupId> <!--1-->
-    <artifactId>ojdbc11</artifactId> <!--2-->
-    <scope>runtime</scope> <!--3-->
+    <groupId>io.helidon.integrations.db</groupId>
+    <artifactId>ojdbc</artifactId>
+    <scope>runtime</scope> <!--1-->
 </dependency>
 ----
-<1> See
-    https://www.oracle.com/database/technologies/maven-central-guide.html[[Developer's
-    Guide For Oracle JDBC 21c on Maven Central] for more details.
-<2> The `ojdbc11` artifact
-    https://www.oracle.com/database/technologies/maven-central-guide.html#:~:text=ojdbc11.jar,JDK14%20and%20JDK15[implements
-    relevant parts of the JDBC 4.3 specification], which forms part of
-    Java 21, which is the Java version targeted by Helidon 4.
-<3> The `scope` is `runtime`, indicating that the Oracle
+<1> The `scope` is `runtime`, indicating that the Oracle
     JDBC driver classes will be available on the runtime classpath.
 
 === Configuration [[DS-Configuration]]
@@ -513,7 +506,7 @@ javax.sql.DataSource.test.dataSource.password =
 
 HikariCP's configuration properties are described
 https://github.com/brettwooldridge/HikariCP#gear-configuration-knobs-baby[on
-its Github repository].  Properties that should be forwarded on to the
+its GitHub repository].  Properties that should be forwarded on to the
 vendor-supplied `DataSource`
 link:{hikaricp-base-url}/src/main/java/com/zaxxer/hikari/util/PropertyElf.java#L46-L53[are
 prefixed with `dataSource.`] as seen in the example above.
@@ -545,16 +538,7 @@ Here is how to define such a field-backed injection point:
 
 [source,java]
 ----
-import javax.sql.DataSource;
-
-import jakarta.inject.Inject;
-import jakarta.inject.Named;
-
-// ...
-
-@Inject // <1>
-@Named("test") // <2>
-private DataSource ds; // <3>
+include::{sourcedir}/mp/PersistenceSnippets.java[tag=snippet_1, indent=0]
 ----
 <1> link:{jakarta-inject-javadoc-url}/jakarta/inject/inject[`@Inject`]
     marks the field as an injection point.  Its behavior is defined by
@@ -572,19 +556,7 @@ Here is how to define such a constructor parameter injection point:
 
 [source,java]
 ----
-import javax.sql.DataSource;
-
-import jakarta.inject.Inject;
-import jakarta.inject.Named;
-
-// ...
-
-private final DataSource ds; // <1>
-
-@Inject // <2>
-public SomeObject(@Named("test") DataSource ds) { // <3>
-    this.ds = ds; // <4>
-}
+include::{sourcedir}/mp/PersistenceSnippets.java[tag=snippet_2, indent=0]
 ----
 <1> This is the field whose value will be set in the constructor.
 <2> link:{jakarta-inject-javadoc-url}/jakarta/inject/inject[`@Inject`]
@@ -625,16 +597,18 @@ managed]
 +
 [source,xml]
 ----
-<dependency>
-    <groupId>jakarta.transaction</groupId>
-    <artifactId>jakarta.transaction-api</artifactId>
-    <scope>provided</scope> <!--1-->
-</dependency>
-<dependency>
-    <groupId>io.helidon.integrations.cdi</groupId>
-    <artifactId>helidon-integrations-cdi-jta-weld</artifactId>
-    <scope>runtime</scope> <!--2-->
-</dependency>
+<dependencies>
+    <dependency>
+        <groupId>jakarta.transaction</groupId>
+        <artifactId>jakarta.transaction-api</artifactId>
+        <scope>provided</scope> <!--1-->
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.integrations.cdi</groupId>
+        <artifactId>helidon-integrations-cdi-jta-weld</artifactId>
+        <scope>runtime</scope> <!--2-->
+    </dependency>
+</dependencies>
 ----
 <1> The `scope` is `provided`, which ensures that the
     link:{jakarta-transactions-javadoc-url}/jakarta/transaction/transactional[JTA
@@ -699,14 +673,7 @@ annotation:
 
 [source,java]
 ----
-import jakarta.transaction.Transactional;
-
-// ...
-
-@Transactional // <1>
-public String getGreeting(Integer id) {
-  // Use a JTA-aware facility to do something transactional here. <2>
-}
+include::{sourcedir}/mp/PersistenceSnippets.java[tag=snippet_3, indent=0]
 ----
 <1> The
     link:{jakarta-transactions-javadoc-url}/jakarta/transaction/transactional[`@Transactional`
@@ -832,16 +799,18 @@ include the core of Helidon's Jakarta Persistence integration:
 +
 [source,xml]
 ----
-<dependency>
-    <groupId>jakarta.persistence</groupId>
-    <artifactId>jakarta.persistence-api</artifactId>
-    <scope>provided</scope> <!--1-->
-</dependency>
-<dependency>
-    <groupId>io.helidon.integrations.cdi</groupId>
-    <artifactId>helidon-integrations-cdi-jpa</artifactId>
-    <scope>runtime</scope> <!--2-->
-</dependency>
+<dependencies>
+    <dependency>
+        <groupId>jakarta.persistence</groupId>
+        <artifactId>jakarta.persistence-api</artifactId>
+        <scope>provided</scope> <!--1-->
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.integrations.cdi</groupId>
+        <artifactId>helidon-integrations-cdi-jpa</artifactId>
+        <scope>runtime</scope> <!--2-->
+    </dependency>
+</dependencies>
 ----
 <1> The `scope` is `provided`, which ensures that the
     link:{jakarta-persistence-javadoc-url}/jakarta.persistence/jakarta/persistence/package-summary.html[JPA
@@ -1206,7 +1175,7 @@ helpful description, linked with a JTA data source named `main`:
 .`META-INF/persistence.xml`
 [source,xml]
 ----
-<!-- ... --->
+<!-- ... -->
 
 <persistence-unit name="test" transaction-type="JTA">
     <description>A testing database</description>
@@ -1259,7 +1228,7 @@ containing two entity classes:
 .`META-INF/persistence.xml`
 [source,xml]
 ----
-<!-- ... --->
+<!-- ... -->
 
 <persistence-unit name="test" transaction-type="JTA">
     <description>A testing database</description>
@@ -1303,7 +1272,7 @@ property:
 .`META-INF/persistence.xml`
 [source,xml]
 ----
-<!-- ... --->
+<!-- ... -->
 
 <persistence-unit name="test" transaction-type="JTA">
     <description>A testing database</description>
@@ -1423,10 +1392,10 @@ relational database tables, and how to perform other related tasks.
 * https://www.narayana.io/docs/api/index.html[Narayana API Reference]
 
 * link:{jakarta-persistence-spec-url}[Jakarta Persistence
-  {persistence-lib-jakarta-persistence-api} Specification]
+  {version-lib-jakarta-persistence-api} Specification]
 
 * link:{jakarta-persistence-javadoc-url}/[Jakarta Persistence
-  {persistence-lib-jakarta-persistence-api} API Reference]
+  {version-lib-jakarta-persistence-api} API Reference]
 
 * link:{hibernate-doc-jboss-url}/userguide/html_single/Hibernate_User_Guide.html[Hibernate
   ORM User Guide]

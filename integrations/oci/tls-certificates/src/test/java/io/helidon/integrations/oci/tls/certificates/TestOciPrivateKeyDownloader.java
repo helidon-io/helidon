@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,19 +19,26 @@ package io.helidon.integrations.oci.tls.certificates;
 import java.net.URI;
 import java.security.PrivateKey;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.pki.Keys;
 import io.helidon.config.Config;
+import io.helidon.integrations.oci.tls.certificates.spi.OciPrivateKeyDownloader;
+import io.helidon.service.registry.Service;
 
-import jakarta.inject.Singleton;
-
-@Singleton
+@Service.Provider
 @Weight(Weighted.DEFAULT_WEIGHT + 1)
-class TestOciPrivateKeyDownloader extends DefaultOciPrivateKeyDownloader {
+class TestOciPrivateKeyDownloader implements OciPrivateKeyDownloader {
 
-    static int callCount;
+    static volatile int callCount;
+
+    private final Supplier<DefaultOciPrivateKeyDownloader> realDownloader;
+
+    TestOciPrivateKeyDownloader(Supplier<DefaultOciPrivateKeyDownloader> realDownloader) {
+        this.realDownloader = realDownloader;
+    }
 
     @Override
     public PrivateKey loadKey(String keyOcid,
@@ -40,7 +47,7 @@ class TestOciPrivateKeyDownloader extends DefaultOciPrivateKeyDownloader {
 
         try {
             if (OciTestUtils.ociRealUsage()) {
-                return super.loadKey(keyOcid, vaultCryptoEndpoint);
+                return realDownloader.get().loadKey(keyOcid, vaultCryptoEndpoint);
             } else {
                 Objects.requireNonNull(keyOcid);
                 Objects.requireNonNull(vaultCryptoEndpoint);

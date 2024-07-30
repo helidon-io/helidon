@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,21 +71,6 @@ class MaxPayloadSizeTest {
     }
 
     /**
-     * If content length is greater than max, a 413 must be returned. No actual
-     * payload in this case.
-     */
-    @Test
-    void testContentLengthExceeded() {
-        try (Http1ClientResponse response = client.method(Method.POST)
-                .path("/maxpayload")
-                .header(HeaderValues.CONTENT_TYPE_OCTET_STREAM)
-                .submit(new byte[512])) {
-            assertThat(response.status(), is(Status.REQUEST_ENTITY_TOO_LARGE_413));
-            assertThat(response.headers(), hasHeader(HeaderValues.CONNECTION_CLOSE));
-        }
-    }
-
-    /**
      * If content length is greater than max, a 413 must be returned.
      */
     @Test
@@ -111,10 +96,13 @@ class MaxPayloadSizeTest {
                 .header(HeaderValues.CONTENT_TYPE_OCTET_STREAM)
                 .header(HeaderValues.TRANSFER_ENCODING_CHUNKED)
                 .outputStream(it -> {
-                    it.write(PAYLOAD_BYTES);
-                    it.write(PAYLOAD_BYTES);
-                    it.write(PAYLOAD_BYTES);
-                    it.close();
+                    try (it) {
+                        it.write(PAYLOAD_BYTES);
+                        it.write(PAYLOAD_BYTES);
+                        it.write(PAYLOAD_BYTES);
+                    } catch (IOException | UncheckedIOException e) {
+                        // ignored -- possible connection reset
+                    }
                 })) {
             assertThat(response.status(), is(Status.REQUEST_ENTITY_TOO_LARGE_413));
             assertThat(response.headers(), hasHeader(HeaderValues.CONNECTION_CLOSE));

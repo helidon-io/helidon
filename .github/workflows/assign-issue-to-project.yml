@@ -12,5 +12,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - run: etc/scripts/actions/assign-issue-to-project.sh $GITHUB_REPOSITORY ${{ github.event.issue.number }} Backlog Triage

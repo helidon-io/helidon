@@ -20,16 +20,39 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiConsumer;
+
+import io.helidon.tracing.WritableBaggage;
 
 import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.baggage.BaggageBuilder;
 import io.opentelemetry.api.baggage.BaggageEntry;
 import io.opentelemetry.api.baggage.BaggageEntryMetadata;
+import io.opentelemetry.context.Context;
 
-class MutableOpenTelemetryBaggage implements Baggage {
+/**
+ * Implementation of the Helidon {@link io.helidon.tracing.WritableBaggage} interface as well as the OpenTelemetry
+ * {@link io.opentelemetry.api.baggage.Baggage} interface so a single instance can be used in both roles.
+ * <p>
+ *     The various inner classes are for compliance with the OpenTelemetry API for baggage since this class implements that
+ *     interface. The Helidon code elsewhere in this module does not use any of them.
+ * <p>
+ *     Further, this one class implements both the Helidon {@link io.helidon.tracing.WritableBaggage} interface and by necessity
+ *     its read-only superinterface {@link io.helidon.tracing.Baggage}. The {@code set} method is hidden in read-only situations
+ *     (e.g., as returned from {@link OpenTelemetrySpanContext#baggage()}) because the return type there is {@code Baggage}.
+ * </p>
+ */
+class MutableOpenTelemetryBaggage implements Baggage, WritableBaggage {
 
     private final Map<String, BaggageEntry> values = new LinkedHashMap<>();
+
+    static MutableOpenTelemetryBaggage fromContext(Context context) {
+        MutableOpenTelemetryBaggage result = new MutableOpenTelemetryBaggage();
+        result.values.putAll(Baggage.fromContext(context).asMap());
+        return result;
+    }
 
     MutableOpenTelemetryBaggage() {
     }
@@ -55,6 +78,7 @@ class MutableOpenTelemetryBaggage implements Baggage {
 
     @Override
     public String getEntryValue(String entryKey) {
+        Objects.requireNonNull(entryKey, "baggage key cannot be null");
         BaggageEntry entry = values.get(entryKey);
         return entry != null ? entry.getValue() : null;
     }
@@ -65,7 +89,34 @@ class MutableOpenTelemetryBaggage implements Baggage {
     }
 
     void baggage(String key, String value) {
+        Objects.requireNonNull(key, "baggage key cannot be null");
+        Objects.requireNonNull(value, "baggage value cannot be null");
         values.put(key, new HBaggageEntry(value, new HBaggageEntryMetadata("")));
+    }
+
+    @Override
+    public Optional<String> get(String key) {
+        BaggageEntry baggageEntry = values.get(key);
+        return baggageEntry == null
+                ? Optional.empty()
+                : Optional.ofNullable(baggageEntry.getValue());
+    }
+
+    @Override
+    public Set<String> keys() {
+        return Collections.unmodifiableSet(values.keySet());
+    }
+
+    @Override
+    public boolean containsKey(String key) {
+        Objects.requireNonNull(key, "baggage key cannot be null");
+        return values.containsKey(key);
+    }
+
+    @Override
+    public WritableBaggage set(String key, String value) {
+        baggage(key, value);
+        return this;
     }
 
     static class HBaggageEntry implements BaggageEntry {
@@ -115,12 +166,15 @@ class MutableOpenTelemetryBaggage implements Baggage {
 
         @Override
         public BaggageBuilder put(String key, String value, BaggageEntryMetadata entryMetadata) {
+            Objects.requireNonNull(key, "baggage key cannot be null");
+            Objects.requireNonNull(value, "baggage value cannot be null");
             values.put(key, new HBaggageEntry(value, entryMetadata));
             return this;
         }
 
         @Override
         public BaggageBuilder remove(String key) {
+            Objects.requireNonNull(key, "baggage key cannot be null");
             values.remove(key);
             return this;
         }

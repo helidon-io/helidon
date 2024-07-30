@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io.helidon.integrations.oci.metrics.cdi;
 
 import io.helidon.config.Config;
 import io.helidon.integrations.oci.metrics.OciMetricsSupport;
+import io.helidon.integrations.oci.metrics.OciMetricsSupportFactory;
 import io.helidon.microprofile.server.RoutingBuilders;
 
 import com.oracle.bmc.monitoring.Monitoring;
@@ -29,28 +30,47 @@ import jakarta.inject.Singleton;
 import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 
 /**
- * OCI metrics integration CDI extension.
- */
+ * CDI bean for preparing OCI metrics integration.
+ * <p>
+ * This bean relies on the OCI SDK integration to manufacture a {@link com.oracle.bmc.monitoring.Monitoring} instance.
+ * It is also extensible in case an upstream library needs to fine-tune the way the OCI metrics integration is set up.
+ * </p>
+ * */
 
 // This bean is added to handle injection on the ObserverMethod as it does not work on an Extension class.
 @Singleton
-public class OciMetricsBean {
+public class OciMetricsBean extends OciMetricsSupportFactory {
+
+    private OciMetricsSupport ociMetricsSupport;
+
+    /**
+     * For CDI use only.
+     */
+    @Deprecated
+    public OciMetricsBean() {
+    }
+
+    @Override
+    protected String configKey() {
+        return "ocimetrics";
+    }
+
+    @Override
+    protected void activateOciMetricsSupport(Config rootConfig, Config ociMetricsConfig, OciMetricsSupport.Builder builder) {
+        this.ociMetricsSupport = builder.build();
+        RoutingBuilders.create(ociMetricsConfig)
+                .routingBuilder()
+                .register(ociMetricsSupport);
+    }
 
     // Make Priority higher than MetricsCdiExtension so this will only start after MetricsCdiExtension has completed.
     void registerOciMetrics(@Observes @Priority(LIBRARY_BEFORE + 20) @Initialized(ApplicationScoped.class) Object ignore,
-                            Config config, Monitoring monitoringClient) {
-        Config ocimetrics = config.get("ocimetrics");
-        OciMetricsSupport.Builder builder = OciMetricsSupport.builder()
-                .config(ocimetrics)
-                .monitoringClient(monitoringClient);
-        if (builder.enabled()) {
-            activateOciMetricsSupport(ocimetrics, builder);
-        }
+                            Config rootConfig, Monitoring monitoringClient) {
+        registerOciMetrics(rootConfig, monitoringClient);
     }
 
-    void activateOciMetricsSupport(Config ocimetrics, OciMetricsSupport.Builder builder) {
-        RoutingBuilders.create(ocimetrics)
-                .routingBuilder()
-                .register(builder.build());
+    // For testing
+    OciMetricsSupport ociMetricsSupport() {
+        return ociMetricsSupport;
     }
 }

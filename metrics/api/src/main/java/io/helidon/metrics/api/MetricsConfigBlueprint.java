@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,6 @@ import java.util.regex.Matcher;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.config.Config;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Configuration settings for metrics.
@@ -42,7 +40,7 @@ import io.helidon.config.metadata.ConfiguredOption;
  *     </li>
  * </ul>
  */
-@Configured(root = true, prefix = MetricsConfigBlueprint.METRICS_CONFIG_KEY)
+@Prototype.Configured(MetricsConfigBlueprint.METRICS_CONFIG_KEY)
 @Prototype.Blueprint(decorator = MetricsConfigSupport.BuilderDecorator.class)
 @Prototype.CustomMethods(MetricsConfigSupport.class)
 interface MetricsConfigBlueprint {
@@ -127,7 +125,8 @@ interface MetricsConfigBlueprint {
      *
      * @return if metrics are configured to be enabled
      */
-    @ConfiguredOption("true")
+    @Option.Configured
+    @Option.DefaultBoolean(true)
     boolean enabled();
 
     /**
@@ -136,7 +135,7 @@ interface MetricsConfigBlueprint {
      * @return whether to permit access to metrics endpoint to anybody, defaults to {@code true}
      * @see #roles()
      */
-    @ConfiguredOption
+    @Option.Configured
     @Option.DefaultBoolean(true)
     boolean permitAll();
 
@@ -145,7 +144,7 @@ interface MetricsConfigBlueprint {
      *
      * @return list of hints
      */
-    @ConfiguredOption
+    @Option.Configured
     @Option.Default("observe")
     List<String> roles();
 
@@ -154,7 +153,7 @@ interface MetricsConfigBlueprint {
      *
      * @return key performance indicator metrics settings
      */
-    @ConfiguredOption(key = KEY_PERFORMANCE_INDICATORS_CONFIG_KEY)
+    @Option.Configured(KEY_PERFORMANCE_INDICATORS_CONFIG_KEY)
     KeyPerformanceIndicatorMetricsConfig keyPerformanceIndicatorMetricsConfig();
 
     /**
@@ -162,7 +161,8 @@ interface MetricsConfigBlueprint {
      *
      * @return name/value pairs for global tags
      */
-    @ConfiguredOption // for compatibility with MP metrics and earlier Helidon releases
+    @Option.Configured
+    // for compatibility with MP metrics and earlier Helidon releases
     List<Tag> tags();
 
     /**
@@ -170,7 +170,7 @@ interface MetricsConfigBlueprint {
      *
      * @return application tag value
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<String> appName();
 
     /**
@@ -178,7 +178,7 @@ interface MetricsConfigBlueprint {
      *
      * @return application tag name
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<String> appTagName();
 
     /**
@@ -186,7 +186,7 @@ interface MetricsConfigBlueprint {
      *
      * @return scoping settings
      */
-    @ConfiguredOption
+    @Option.Configured
     ScopingConfig scoping();
 
     /**
@@ -194,7 +194,8 @@ interface MetricsConfigBlueprint {
      *
      * @return true/false
      */
-    @ConfiguredOption
+    @Option.Configured
+    @Option.DefaultBoolean(false)
     boolean restRequestEnabled();
 
     /**
@@ -202,6 +203,7 @@ interface MetricsConfigBlueprint {
      *
      * @return metrics configuration
      */
+    @Option.Redundant
     Config config();
 
     /**

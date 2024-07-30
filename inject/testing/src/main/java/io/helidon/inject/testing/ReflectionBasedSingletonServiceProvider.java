@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,9 @@ import io.helidon.inject.runtime.AbstractServiceProvider;
  * Creates a simple reflection based service provider - for testing purposes only!
  *
  * @param <T> the service type
+ * @deprecated Helidon inject is deprecated and will be replaced in a future version
  */
+@Deprecated(forRemoval = true, since = "4.0.8")
 public class ReflectionBasedSingletonServiceProvider<T> extends AbstractServiceProvider<T> {
     private final Class<T> serviceType;
 

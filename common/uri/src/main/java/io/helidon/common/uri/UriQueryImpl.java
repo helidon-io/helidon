@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,14 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.common.mapper.OptionalValue;
+import io.helidon.common.mapper.Value;
 
-import static io.helidon.common.uri.UriEncoding.decodeUri;
+import static io.helidon.common.uri.UriEncoding.decodeQuery;
 
 // must be lazily populated to prevent perf overhead when queries are ignored
 final class UriQueryImpl implements UriQuery {
@@ -121,6 +123,18 @@ final class UriQueryImpl implements UriQuery {
     }
 
     @Override
+    public List<Value<String>> allValues(String name) throws NoSuchElementException {
+        ensureDecoded();
+        List<String> values = decodedQueryParams.get(name);
+        if (values == null) {
+            throw new NoSuchElementException("Query parameter \"" + name + "\" is not available");
+        }
+        return values.stream()
+                .map(it -> Value.create(MapperManager.global(), name, it, GenericType.STRING, "uri", "query"))
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public String get(String name) throws NoSuchElementException {
         ensureDecoded();
         List<String> values = decodedQueryParams.get(name);
@@ -134,11 +148,11 @@ final class UriQueryImpl implements UriQuery {
     public OptionalValue<String> first(String name) {
         ensureDecoded();
         List<String> values = decodedQueryParams.get(name);
-        if (values == null) {
+        if (values == null || values.isEmpty()) {
             return OptionalValue.create(MapperManager.global(), name, GenericType.STRING, "uri", "query");
         }
-        String value = values.isEmpty() ? "" : values.iterator().next();
-        return OptionalValue.create(MapperManager.global(), name, value, GenericType.STRING, "uri", "query");
+        return OptionalValue.create(MapperManager.global(), name, values.iterator().next(),
+                GenericType.STRING, "uri", "query");
     }
 
     @Override
@@ -201,11 +215,11 @@ final class UriQueryImpl implements UriQuery {
     private void addDecoded(Map<String, List<String>> newQueryParams, String next) {
         int eq = next.indexOf('=');
         if (eq == -1) {
-            newQueryParams.putIfAbsent(decodeUri(next), new LinkedList<>());
+            newQueryParams.putIfAbsent(decodeQuery(next), new LinkedList<>());
         } else {
             String name = next.substring(0, eq);
             String value = next.substring(eq + 1);
-            newQueryParams.computeIfAbsent(decodeUri(name), it -> new LinkedList<>()).add(decodeUri(value));
+            newQueryParams.computeIfAbsent(decodeQuery(name), it -> new LinkedList<>()).add(decodeQuery(value));
         }
     }
 

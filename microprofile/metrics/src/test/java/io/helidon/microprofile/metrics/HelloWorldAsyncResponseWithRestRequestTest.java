@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,14 +15,8 @@
  */
 package io.helidon.microprofile.metrics;
 
-import java.io.IOException;
-import java.io.LineNumberReader;
-import java.io.StringReader;
 import java.util.Map;
-import java.util.StringJoiner;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import io.helidon.microprofile.testing.junit5.AddConfig;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
@@ -146,60 +140,6 @@ class HelloWorldAsyncResponseWithRestRequestTest {
                    is(JsonValue.ValueType.OBJECT));
 
         return restRequestValue.asJsonObject();
-    }
-
-    private String getRESTRequestProm() throws IOException {
-        Response metricsResponse = webTarget.path("/metrics/base")
-                .request(MediaType.TEXT_PLAIN)
-                .get();
-
-        assertThat("Status retrieving REST request metrics", metricsResponse.getStatus(), is(200));
-
-        String metrics = metricsResponse.readEntity(String.class);
-        StringJoiner sj = new StringJoiner(System.lineSeparator());
-        LineNumberReader reader = new LineNumberReader(new StringReader(metrics));
-        String line;
-        boolean proceed = true;
-        while (proceed) {
-            line = reader.readLine();
-            proceed = (line != null);
-            if (proceed) {
-                if (line.startsWith("REST_request_seconds_count")) {
-                    sj.add(line);
-                }
-            }
-        }
-        return sj.toString();
-    }
-
-    private double getRESTRequestValueForGetAsyncMethod(String prometheusOutput,
-                                                        String valueName,
-                                                        boolean nullOK) throws NoSuchMethodException {
-        Pattern pattern = Pattern.compile(".*?^" + valueName + "\\{([^}]+)}\\s+(\\S+).*?",
-                                          Pattern.MULTILINE | Pattern.DOTALL);
-        Matcher matcher = pattern.matcher(prometheusOutput);
-
-        assertThat("Match for REST request count", matcher.matches(), is(true));
-        // Digest the tags to make sure the class and method tags are correct.
-        String[] tags = matcher.group(1).split(",");
-        boolean foundCorrectClass = false;
-        boolean foundCorrectMethod = false;
-
-        String expectedMethodName = HelloWorldResource.class.getMethod("getAsync", AsyncResponse.class).getName()
-                + "_" + AsyncResponse.class.getName();
-
-        for (String tag : tags) {
-            if (tag.isBlank()) {
-                continue;
-            }
-            String[] parts = tag.split("=");
-            foundCorrectClass |= (parts[0].equals("class") && parts[1].equals(HelloWorldResource.class.getName()));
-            foundCorrectMethod |= (parts[0].equals("method") && parts[1].equals(expectedMethodName));
-        }
-        assertThat("Class tag correct", foundCorrectClass, is(true));
-        assertThat("Method tag correct", foundCorrectMethod, is(true));
-
-        return Double.parseDouble(matcher.group(2));
     }
 
     private JsonValue getRESTRequestValueForGetAsyncMethod(JsonObject restRequestJson,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,10 @@
 package io.helidon.config.metadata.processor;
 
 import java.util.List;
+import java.util.Optional;
 
 import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.TypeElement;
 
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
@@ -97,7 +99,16 @@ class TypeHandlerBuilderApi extends TypeHandlerBase implements TypeHandler {
         OptionType type = BlueprintUtil.typeForBlueprintFromSignature(aptMessager(), aptElements(), elementInfo, data);
         boolean optional = defaultValue != null || data.optional();
         boolean deprecated = data.deprecated();
-        List<ConfiguredOptionData.AllowedValue> allowedValues = allowedValues(data, type.elementType());
+
+        List<ConfiguredOptionData.AllowedValue> allowedValues;
+        Optional<TypeElement> anEnum = toEnum(type.elementType());
+        if (anEnum.isPresent() && defaultValue != null) {
+            // prefix the default value with the enum name to make it more readable
+            defaultValue = type.elementType().className() + "." + defaultValue;
+            allowedValues = allowedValuesEnum(data, anEnum.get());
+        } else {
+            allowedValues = allowedValues(data, type.elementType());
+        }
 
         List<TypeName> paramTypes = List.of(elementInfo.typeName());
 

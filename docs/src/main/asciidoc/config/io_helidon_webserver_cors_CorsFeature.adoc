@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -44,6 +44,17 @@ This type provides the following service implementations:
 
 == Configuration options
 
+.Required configuration options
+[cols="3,3a,2,5a"]
+|===
+|key |type |default value |description
+
+|`enabled` |boolean |{nbsp} |This feature can be disabled.
+
+ Whether the feature is enabled
+
+|===
+
 
 
 .Optional configuration options
@@ -52,16 +63,13 @@ This type provides the following service implementations:
 |===
 |key |type |default value |description
 
-|`enabled` |boolean |`true` |This feature can be disabled.
-
- @return whether the feature is enabled
 |`sockets` |string[&#93; |{nbsp} |List of sockets to register this feature on. If empty, it would get registered on all sockets.
 
- @return socket names to register on, defaults to empty (all available sockets)
-|`weight` |double |`950.0` |Weight of the CORS feature. As it is used by other features, the default is quite high:
- `CorsFeature#WEIGHT`.
+ Socket names to register on, defaults to empty (all available sockets)
+|`weight` |double |`850.0` |Weight of the CORS feature. As it is used by other features, the default is quite high:
+ CorsFeature.WEIGHT.
 
- @return weight of the feature
+ Weight of the feature
 
 |===
 

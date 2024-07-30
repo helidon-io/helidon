@@ -50,8 +50,8 @@ include::{rootdir}/includes/dependencies.adoc[]
 [source, xml]
 ----
 <dependency>
-  <groupId>org.glassfish.jersey.ext</groupId>
-  <artifactId>jersey-bean-validation</artifactId>
+    <groupId>org.glassfish.jersey.ext</groupId>
+    <artifactId>jersey-bean-validation</artifactId>
 </dependency>
 ----
 
@@ -60,8 +60,8 @@ For general validation, please add to your `pom.xml`:
 [source, xml]
 ----
 <dependency>
-  <groupId>io.helidon.microprofile.bean-validation</groupId>
-  <artifactId>helidon-microprofile-bean-validation</artifactId>
+    <groupId>io.helidon.microprofile.bean-validation</groupId>
+    <artifactId>helidon-microprofile-bean-validation</artifactId>
 </dependency>
 ----
 
@@ -104,7 +104,7 @@ Note that `double` and `float` are not supported due to rounding errors (some pr
 
 
 |`@Max`
-a|The annotated element must be a number whose value must be higher or equal to the specified minimum.
+a|The annotated element must be a number whose value must be lower or equal to the specified maximum.
 
 Supported types are:
 
@@ -117,12 +117,13 @@ Note that `double` and `float` are not supported due to rounding errors (some pr
 `Null` elements are considered valid.
 
 |`@DecimalMin`
-a|The annotated element must be a number whose value must be lower or equal to the specified maximum.
+a|The annotated element must be a number whose value must be higher or equal to the specified minimum.
 
 Supported types are:
 
 * `BigDecimal`
 * `BigInteger`
+* `CharSequence`
 * `byte`, `short`, `int`, `long`, and their respective wrappers
 
 Note that `double` and `float` are not supported due to rounding errors (some providers might provide some approximative support).
@@ -137,6 +138,7 @@ Supported types are:
 
 * `BigDecimal`
 * `BigInteger`
+* `CharSequence`
 * `byte`, `short`, `int`, `long`, and their respective wrappers
 
 Note that `double` and `float` are not supported due to rounding errors (some providers might provide some approximative support).
@@ -212,7 +214,7 @@ Supported types are:
 
 
 |`@Past`
-a|The annotated element must be an instant, date or time in the past or in the present.
+a|The annotated element must be an instant, date or time in the past.
 `Now` is defined by the `ClockProvider` attached to the `Validator` or `ValidatorFactory`. The default `clockProvider` defines the current time
 according to the virtual machine, applying the current default time zone if needed.
 
@@ -242,6 +244,10 @@ a|The annotated element must be an instant, date or time in the past or in the p
 `Now` is defined by the `ClockProvider` attached to the `Validator` or `ValidatorFactory`. The default `clockProvider` defines the current time
 according to the virtual machine, applying the current default time zone if needed.
 
+The notion of present is defined relatively to the type on which the constraint is
+used. For instance, if the constraint is on a `Year`, present would mean the whole
+current year.
+
 Supported types are:
 
 *     `java.util.Date`
@@ -263,7 +269,7 @@ Supported types are:
 
 `Null` elements are considered valid.
 
-|`@PastOrPresent`
+|`@Future`
 a|The annotated element must be an instant, date or time in the future.
 `Now` is defined by the `ClockProvider` attached to the `Validator` or `ValidatorFactory`. The default `clockProvider` defines the current time
 according to the virtual machine, applying the current default time zone if needed.
@@ -294,6 +300,10 @@ a|The annotated element must be an instant, date or time in the present or in th
 `Now` is defined by the `ClockProvider` attached to the `Validator` or `ValidatorFactory`. The default `clockProvider` defines the current time
 according to the virtual machine, applying the current default time zone if needed.
 
+The notion of present here is defined relatively to the type on which the constraint is
+used. For instance, if the constraint is on a `Year`, present would mean the whole
+current year.
+
 Supported types are:
 
 *     `java.util.Date`
@@ -315,7 +325,7 @@ Supported types are:
 
 `Null` elements are considered valid.
 
-|`@FutureOrPresent`
+|`@Pattern`
 a|The annotated `CharSequence` must match the specified regular expression.
 The regular expression follows the Java regular expression conventions see `java.util.regex.Pattern`.
 Accepts `CharSequence`.
@@ -358,40 +368,21 @@ The resource method shall never be called if the validation fails, with a 400
 +
 [source,java]
 ----
-@Path("helloworld")
-public class HelloWorld {
-
-    @POST
-    @Consumes(MediaType.APPLICATION_JSON)
-    public void post(@NotNull @Valid Greeting greeting) {
-        // ...
-    }
-}
+include::{sourcedir}/mp/BeanvalidationSnippets.java[tag=snippet_1, indent=0]
 ----
 
 2. The following example shows a simple application with one field declared as _not null_ using `@NotNull` annotation:
 +
 [source,java]
 ----
-public class GreetingHolder {
-    @NotNull
-    private String greeting;
-    //...
-}
+include::{sourcedir}/mp/BeanvalidationSnippets.java[tag=snippet_2, indent=0]
 ----
 +
 If the bean contains a method parameter annotated with @Valid, and GreetingHolder with _null_greeting is passed, then a _ValidationException_ will be thrown:
 +
 [source,java]
 ----
-@ApplicationScoped
-public class GreetingProvider {
-    private GreetingHolder greetingHolder;
-    //..
-    void setGreeting(@Valid GreetingHolder greetingHolder) {
-        this.greetingHolder = greetingHolder;
-    }
-}
+include::{sourcedir}/mp/BeanvalidationSnippets.java[tag=snippet_3, indent=0]
 ----
 +
 NOTE: `beans.xml` is required to identify beans and for bean validation to work properly.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,6 @@ package io.helidon.microprofile.messaging;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.reactive.BufferedEmittingPublisher;
 
@@ -33,7 +31,7 @@ import org.reactivestreams.Publisher;
  */
 class LatestEmitter extends OutgoingEmitter {
 
-    private static final Logger LOGGER = Logger.getLogger(LatestEmitter.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(LatestEmitter.class.getName());
 
     private final ConcurrentLinkedDeque<Object> buffer = new ConcurrentLinkedDeque<>();
     private final BufferedEmittingPublisher<Object> bep = BufferedEmittingPublisher.builder()
@@ -121,8 +119,8 @@ class LatestEmitter extends OutgoingEmitter {
         long bufferLimit = getBufferLimit();
         if (bufferLimit > 0 && bufferSize >= bufferLimit) {
             Object dropped = dropFirst();
-            if (LOGGER.isLoggable(Level.FINE)) {
-                LOGGER.log(Level.FINE, "Dropped first item: " + MessageUtils.unwrap(dropped));
+            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                LOGGER.log(System.Logger.Level.TRACE, "Dropped first item: " + MessageUtils.unwrap(dropped));
             }
         }
     }

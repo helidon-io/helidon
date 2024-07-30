@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.tracing;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 class NoOpTracer implements Tracer {
     private static final NoOpTracer INSTANCE = new NoOpTracer();
@@ -26,6 +27,28 @@ class NoOpTracer implements Tracer {
     private static final Span SPAN = new Span();
 
     private static final Scope SCOPE = new Scope();
+
+    private static final WritableBaggage EMPTY_BAGGAGE = new WritableBaggage() {
+        @Override
+        public Optional<String> get(String key) {
+            return Optional.empty();
+        }
+
+        @Override
+        public Set<String> keys() {
+            return Set.of();
+        }
+
+        @Override
+        public boolean containsKey(String key) {
+            return false;
+        }
+
+        @Override
+        public WritableBaggage set(String key, String value) {
+            return this;
+        }
+    };
 
     private NoOpTracer() {
     }
@@ -54,6 +77,20 @@ class NoOpTracer implements Tracer {
                        HeaderProvider inboundHeadersProvider,
                        HeaderConsumer outboundHeadersConsumer) {
 
+    }
+
+    @Override
+    public <T> T unwrap(Class<T> tracerClass) {
+        if (tracerClass.isInstance(this)) {
+            return tracerClass.cast(this);
+        }
+        throw new IllegalArgumentException("Cannot provide an instance of " + tracerClass.getName()
+                                                   + ",  tracer is: " + getClass().getName());
+    }
+
+    @Override
+    public Tracer register(SpanListener listener) {
+        return this;
     }
 
     private static class Builder implements Span.Builder<Builder> {
@@ -90,6 +127,11 @@ class NoOpTracer implements Tracer {
         @Override
         public Span start(Instant instant) {
             return SPAN;
+        }
+
+        @Override
+        public <T> T unwrap(Class<T> type) {
+            return type.cast(this);
         }
     }
 
@@ -146,6 +188,16 @@ class NoOpTracer implements Tracer {
         public Optional<String> baggage(String key) {
             return Optional.empty();
         }
+
+        @Override
+        public <T> T unwrap(Class<T> spanClass) {
+            return spanClass.cast(this);
+        }
+
+        @Override
+        public WritableBaggage baggage() {
+            return EMPTY_BAGGAGE;
+        }
     }
 
     private static class SpanContext implements io.helidon.tracing.SpanContext {
@@ -161,6 +213,11 @@ class NoOpTracer implements Tracer {
 
         @Override
         public void asParent(io.helidon.tracing.Span.Builder<?> spanBuilder) {
+        }
+
+        @Override
+        public Baggage baggage() {
+            return EMPTY_BAGGAGE;
         }
     }
 

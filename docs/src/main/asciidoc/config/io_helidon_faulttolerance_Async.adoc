@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -44,8 +44,8 @@ Type: link:{javadoc-base-url}/io.helidon.faulttolerance/io/helidon/faulttoleranc
 
 |`executor-name` |string |{nbsp} |Name of an executor service. This is only honored when service registry is used.
 
- @return name fo the java.util.concurrent.ExecutorService to lookup
- @see #executor()
+ Name fo the java.util.concurrent.ExecutorService to lookup
+ See executor()
 
 |===
 

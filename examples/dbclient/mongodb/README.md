@@ -24,7 +24,7 @@ java -jar target/helidon-examples-dbclient-mongodb.jar
 ```
 
  
-## Exercise
+## Exercise
 
 The application has the following endpoints:
 
