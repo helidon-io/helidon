@@ -37,7 +37,11 @@ and you’re ready to go.
 
 == Prerequisites
 
-include::{rootdir}/about/introduction.adoc[tag=prereqs]
+.Prerequisite product versions for Helidon {helidon-version}
+[%autowidth]
+|=======
+include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites-table-rows-core]
+|=======
 
 You should make sure `java` and `mvn` are in your path.
 
@@ -77,6 +81,12 @@ PowerShell -Command Invoke-WebRequest -Uri "https://helidon.io/cli/latest/window
 
 For Windows you will also need the Visual C++ Redistributable Runtime. See xref:windows.adoc[Helidon on Windows]
 for more information.
+
+[source,bash]
+.Verify CLI installation
+----
+helidon version
+----
 
 == Create a New Project
 
