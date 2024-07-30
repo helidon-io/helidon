@@ -234,7 +234,7 @@ You must specify the following options:
 |===
 
 === Recommended Settings for the OpenAPI Generator
-Your project might have different needs, but in general we advise developers to use the following settings when using the OpenAPI generator.
+Your project might have different needs, but in general we advise developers to use the following settings when using the OpenAPI generator, both from the command line and using the Maven plug-in.
 
 
 .Recommended OpenAPI Generator Additional Properties
@@ -269,6 +269,10 @@ Your project might have different needs, but in general we advise developers to 
 | `artifactVersion`
 | Artifact version in the generated `pom.xml`
 | `1.0.0`
+
+| `useAbstractClass`
+| Generate server abstract classes instead of interfaces. Setting to `true` generates significantly more helpful code.
+| `false`
 |===
 
 [NOTE]
@@ -313,6 +317,7 @@ a|Affects:
 * Helidon version for the `<parent>`
 * Dependencies (`javax` vs. `jakarta`)
 * `java import` statements in generated code (`javax` vs. `jakarta`)
+* Which Helidon APIs are used (3.x vs. 4.x, for example)
 
 |`fullProject`
 |Whether to generate all the normal files or only API files
@@ -551,7 +556,7 @@ The Helidon generators go a long way in helping you write your client or server.
 Recall from earlier how the OpenAPI generator gathers operations into one or more APIs or services and generates either an abstract class or an interface--your choice--for each API.
 You need to extend each generated API class or implement each generated API interface by writing your own classes.
 
-Any input parameters to the endpoints are expressed as POJO model objects or Java types, as declared in the OpenAPI document. Your server code uses each of the input parameters to accomplish whatever business purpose that endpoint is responsible for, possibly returning a result as a POJO or Java type as indicated for that operation in the OpenAPI document.
+Any input parameters to the operations are expressed as POJO model objects or Java types as declared in the OpenAPI document. You write server code to use each of the input parameters to accomplish whatever business purpose that operation is responsible for, possibly returning a result as a POJO or Java type as indicated for that operation in the OpenAPI document.
 // end::using-generated-code-server-intro[]
 
 In some cases, you might need more control over the response sent to the client. In that case, specify the additional property `returnResponse=true` when you run the Helidon server generator. The return type for the generated methods is
