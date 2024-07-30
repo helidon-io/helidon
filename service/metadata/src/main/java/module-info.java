@@ -14,21 +14,14 @@
  * limitations under the License.
  */
 
-import io.helidon.service.codegen.ServiceRegistryCodegenProvider;
-
 /**
- * Code generation for Helidon Service Registry.
+ * Metadata for service registry.
+ *
+ * @see io.helidon.service.metadata
  */
-module io.helidon.service.codegen {
-    requires transitive io.helidon.builder.api;
-    requires transitive io.helidon.codegen.classmodel;
-    requires transitive io.helidon.codegen;
-
+module io.helidon.service.metadata {
     requires io.helidon.metadata.hson;
-    requires io.helidon.service.metadata;
+    requires io.helidon.common.types;
 
-    exports io.helidon.service.codegen;
-
-    provides io.helidon.codegen.spi.CodegenExtensionProvider
-            with ServiceRegistryCodegenProvider;
+    exports io.helidon.service.metadata;
 }

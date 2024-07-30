@@ -41,6 +41,7 @@
     </properties>
 
     <modules>
+        <module>metadata</module>
         <module>codegen</module>
         <module>registry</module>
         <module>tests</module>

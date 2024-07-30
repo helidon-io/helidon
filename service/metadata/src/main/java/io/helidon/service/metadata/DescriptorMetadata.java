@@ -14,21 +14,34 @@
  * limitations under the License.
  */
 
-package io.helidon.service.registry;
+package io.helidon.service.metadata;
 
 import java.util.Set;
 
 import io.helidon.common.types.TypeName;
+import io.helidon.metadata.hson.Hson;
 
 /**
- * Metadata of a single service descriptor.
- * This information is stored within the Helidon specific {code META-INF} services file.
+ * Metadata of a service descriptor, as stored in Helidon specific file {@value Descriptors#SERVICE_REGISTRY_LOCATION}.
  */
 public interface DescriptorMetadata {
     /**
      * {@link #registryType()} for core services.
      */
     String REGISTRY_TYPE_CORE = "core";
+
+    /**
+     * Create a new instance from descriptor information, i.e. when code generating the descriptor metadata.
+     *
+     * @param registryType type of registry, such as {@link #REGISTRY_TYPE_CORE}
+     * @param descriptor   type of the service descriptor (the generated file from {@code helidon-service-codegen})
+     * @param weight       weight of the service descriptor
+     * @param contracts    contracts the service implements
+     * @return a new descriptor metadata instance
+     */
+    static DescriptorMetadata create(String registryType, TypeName descriptor, double weight, Set<TypeName> contracts) {
+        return new DescriptorMetadataImpl(registryType, weight, descriptor, contracts);
+    }
 
     /**
      * Type of registry, such as {@code core}.
@@ -60,9 +73,10 @@ public interface DescriptorMetadata {
     double weight();
 
     /**
-     * Descriptor instance.
+     * Create the metadata in Helidon metadata format. This is used by components that store
+     * the metadata.
      *
-     * @return the descriptor
+     * @return HSON object (similar to JSON)
      */
-    GeneratedService.Descriptor<?> descriptor();
+    Hson.Object toHson();
 }
