@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,6 +82,7 @@ class WebClientConfiguration {
     private final boolean validateHeaders;
     private final boolean relativeUris;
     private final DnsResolverType dnsResolverType;
+    private final boolean mediaTypeParserRelaxed;
 
     /**
      * Creates a new instance of client configuration.
@@ -113,6 +114,7 @@ class WebClientConfiguration {
         this.validateHeaders = builder.validateHeaders;
         this.relativeUris = builder.relativeUris;
         this.dnsResolverType = builder.dnsResolverType;
+        this.mediaTypeParserRelaxed = builder.mediaTypeParserRelaxed;
     }
 
     /**
@@ -289,6 +291,10 @@ class WebClientConfiguration {
         return dnsResolverType;
     }
 
+    boolean mediaTypeParserRelaxed() {
+        return mediaTypeParserRelaxed;
+    }
+
     /**
      * A fluent API builder for {@link WebClientConfiguration}.
      */
@@ -320,6 +326,7 @@ class WebClientConfiguration {
         private boolean validateHeaders;
         private boolean relativeUris;
         private DnsResolverType dnsResolverType;
+        private boolean mediaTypeParserRelaxed;
         @SuppressWarnings("unchecked")
         private B me = (B) this;
 
@@ -609,6 +616,11 @@ class WebClientConfiguration {
             return me;
         }
 
+        B mediaTypeParserRelaxed(boolean relaxedMode) {
+            this.mediaTypeParserRelaxed = relaxedMode;
+            return me;
+        }
+
         B keepAlive(boolean keepAlive) {
             this.keepAlive = keepAlive;
             return me;
@@ -666,6 +678,10 @@ class WebClientConfiguration {
          *     <td>proxy</td>
          *     <td>Proxy configuration. See {@link Proxy.Builder#config(Config)}</td>
          * </tr>
+         * <tr>
+         *     <td>media-type-parser-relaxed</td>
+         *     <td>Whether relaxed media type parsing mode should be used.</td>
+         * </tr>
          * </table>
          *
          * @param config config
@@ -696,6 +712,7 @@ class WebClientConfiguration {
             config.get("dns-resolver-type").asString()
                     .map(s -> DnsResolverType.valueOf(s.toUpperCase()))
                     .ifPresent(this::dnsResolverType);
+            config.get("media-type-parser-relaxed").asBoolean().ifPresent(this::mediaTypeParserRelaxed);
             return me;
         }
 
@@ -724,6 +741,7 @@ class WebClientConfiguration {
             keepAlive(configuration.keepAlive);
             validateHeaders(configuration.validateHeaders);
             dnsResolverType(configuration.dnsResolverType);
+            mediaTypeParserRelaxed(configuration.mediaTypeParserRelaxed);
             configuration.cookieManager.defaultCookies().forEach(this::defaultCookie);
             config = configuration.config;
 
