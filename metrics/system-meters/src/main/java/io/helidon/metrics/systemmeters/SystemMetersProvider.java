@@ -240,7 +240,8 @@ public class SystemMetersProvider implements MetersProvider {
                           GarbageCollectorMXBean::getCollectionCount,
                           Tag.create("name", poolName));
             // Express the GC time in seconds.
-            // TODO - Starting in Helidon 5 always register a gauge.
+            // @Deprecated(forRemoval = true) - Starting in Helidon 5 always register a gauge instead of checking which
+            // type of meter to register.
             if (isGcTimeGauge()) {
                 registerGauge(result,
                               GC_TIME,

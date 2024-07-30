@@ -37,7 +37,7 @@ endif::[]
 
 Metrics is one of the Helidon observability features.
 
-// TODO - Remove the following note starting in Helidon 5.
+// @Deprecated(forRemoval = true) Remove the following note starting in Helidon 5.
 [NOTE]
 .Recommended Configuration Setting
 ====
