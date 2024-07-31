@@ -39,7 +39,7 @@ Java 21 is required to use Helidon 4
 
 ## [4.0.10]
 
-This release contains important bugfixes and ehancements and is recommended for all users of Helidon 4. 
+This release contains important bugfixes and enhancements and is recommended for all users of Helidon 4. 
 
 Java 21 is required to use Helidon 4.0.10.
 
