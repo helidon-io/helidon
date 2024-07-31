@@ -88,7 +88,7 @@ oci.monitoring.namespace=<your monitoring namespace e.g. helidon_oci>
 oci.logging.id=<your oci custom log id>
 
 # OCI Authentication strategy
-oci.auth-strategy=config_file,instance_principals,resource_principal
+oci.auth-strategy=config-file,instance-principals,resource-principal
                     ]]></value>
                 </list>
                 <list key="yaml-config-entries">
@@ -342,7 +342,7 @@ principal when running it in an oci compute instance.
 
 ### Run the application
 
-1. Default with no profile will use `config_file,instance_principals,resource_principal` authentication strategy
+1. Default with no profile will use `config-file,instance-principals,resource-principal` authentication strategy
      ```bash
      java -jar server/target/{{artifactId}}.jar
      ```
