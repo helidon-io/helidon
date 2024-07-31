@@ -22,9 +22,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import io.helidon.grpc.api.Grpc;
-import io.helidon.microprofile.grpc.client.GrpcClientCdiExtension;
-import io.helidon.microprofile.grpc.server.GrpcMpCdiExtension;
-import io.helidon.microprofile.testing.junit5.AddExtension;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import io.grpc.stub.StreamObserver;
@@ -37,8 +34,6 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
 
 @HelidonTest
-@AddExtension(GrpcMpCdiExtension.class)
-@AddExtension(GrpcClientCdiExtension.class)
 class StringServiceTest {
 
     @Inject

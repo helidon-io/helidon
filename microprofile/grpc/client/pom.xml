@@ -112,7 +112,6 @@
             -->
             <groupId>javax.annotation</groupId>
             <artifactId>javax.annotation-api</artifactId>
-            <scope>provided</scope>
             <optional>true</optional>
         </dependency>
         <dependency>
@@ -137,12 +136,39 @@
                 <configuration>
                     <annotationProcessorPaths>
                         <path>
+                            <groupId>io.helidon.codegen</groupId>
+                            <artifactId>helidon-codegen-apt</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
                             <groupId>io.helidon.builder</groupId>
-                            <artifactId>helidon-builder-processor</artifactId>
+                            <artifactId>helidon-builder-codegen</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.codegen</groupId>
+                            <artifactId>helidon-codegen-helidon-copyright</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-apt</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.builder</groupId>
+                        <artifactId>helidon-builder-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-helidon-copyright</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
             <plugin>
                 <groupId>org.xolstice.maven.plugins</groupId>
