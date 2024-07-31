@@ -67,7 +67,7 @@
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
         <version.lib.hibernate.family>6.1</version.lib.hibernate.family>
         <version.lib.hibernate>${version.lib.hibernate.family}.7.Final</version.lib.hibernate>
-        <version.lib.hibernate-validator>7.0.2.Final</version.lib.hibernate-validator>
+        <version.lib.hibernate-validator>7.0.5.Final</version.lib.hibernate-validator>
         <version.lib.hikaricp>5.0.1</version.lib.hikaricp>
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
         <version.lib.jackson>2.15.2</version.lib.jackson>
@@ -83,7 +83,7 @@
         <version.lib.jakarta.jsonp-api>2.0.2</version.lib.jakarta.jsonp-api>
         <version.lib.jakarta.persistence-api>3.0.0</version.lib.jakarta.persistence-api>
         <version.lib.jakarta.transaction-api>2.0.0</version.lib.jakarta.transaction-api>
-        <version.lib.jakarta.validation-api>3.0.0</version.lib.jakarta.validation-api>
+        <version.lib.jakarta.validation-api>3.0.2</version.lib.jakarta.validation-api>
         <version.lib.jakarta.websockets-api>2.1.1</version.lib.jakarta.websockets-api>
         <!-- Check Hibernate when upgrading to ensure its supplied jaxb-runtime is compatible. -->
         <version.lib.jakarta.xml.bind-api>3.0.1</version.lib.jakarta.xml.bind-api>
