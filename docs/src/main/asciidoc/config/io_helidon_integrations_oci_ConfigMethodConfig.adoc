@@ -44,39 +44,38 @@ Type: link:{javadoc-base-url}/io.helidon.integrations.oci/io/helidon/integration
 
 |`fingerprint` |string |{nbsp} |The OCI authentication fingerprint.
 
- This configuration property must be provided in order to set the <a
- href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm">API signing key's fingerprint</a>.
- See com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.getFingerprint() for more details.
+This configuration property must be provided in order to set the https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm[API signing key's fingerprint].
+See com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.getFingerprint() for more details.
 
- The OCI authentication fingerprint
+The OCI authentication fingerprint
 |`passphrase` |char[] |{nbsp} |The OCI authentication passphrase.
 
- This property must be provided in order to set the
- com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.getPassphraseCharacters().
+This property must be provided in order to set the
+com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.getPassphraseCharacters().
 
- The OCI authentication passphrase
+The OCI authentication passphrase
 |`private-key` |xref:{rootdir}/config/io_helidon_common_configurable_Resource.adoc[Resource] |{nbsp} |The OCI authentication private key resource.
- A resource can be defined as a resource on classpath, file on the file system,
- base64 encoded text value in config, or plain-text value in config.
+A resource can be defined as a resource on classpath, file on the file system,
+base64 encoded text value in config, or plain-text value in config.
 
- If not defined, we will use `.oci/oic_api_key.pem` file in user home directory.
+If not defined, we will use `.oci/oic_api_key.pem` file in user home directory.
 
- The OCI authentication key file
+The OCI authentication key file
 |`region` |string |{nbsp} |The OCI region.
 
- The OCI region
+The OCI region
 |`tenant-id` |string |{nbsp} |The OCI tenant id.
 
- This property must be provided in order to set the
- com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.getTenantId().
+This property must be provided in order to set the
+com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.getTenantId().
 
- The OCI tenant id
+The OCI tenant id
 |`user-id` |string |{nbsp} |The OCI user id.
 
- This property must be provided in order to set the
- com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.getUserId().
+This property must be provided in order to set the
+com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.getUserId().
 
- The OCI user id
+The OCI user id
 
 |===
 

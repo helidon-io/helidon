@@ -45,20 +45,20 @@ Type: link:{javadoc-base-url}/io.helidon.webserver.observe.log/io/helidon/webser
 |`content-type` |HttpMediaType |`@io.helidon.http.HttpMediaTypes@.PLAINTEXT_UTF_8` |
 |`enabled` |boolean |`true` |Whether stream is enabled.
 
- Whether to allow streaming of log statements
+Whether to allow streaming of log statements
 |`idle-message-timeout` |Duration |`PT5S` |How long to wait before we send the idle message, to make sure we keep the stream alive.
 
- If no messages appear within this duration, and idle message will be sent
- See idleString()
+If no messages appear within this duration, and idle message will be sent
+See idleString()
 |`idle-string` |string |`%
 ` |String sent when there are no log messages within the idleMessageTimeout().
 
- String to write over the network when no log messages are received
+String to write over the network when no log messages are received
 |`queue-size` |int |`100` |Length of the in-memory queue that buffers log messages from loggers before sending them over the network.
- If the messages are produced faster than we can send them to client, excess messages are DISCARDED, and will not
- be sent.
+If the messages are produced faster than we can send them to client, excess messages are DISCARDED, and will not
+be sent.
 
- Size of the in-memory queue for log messages
+Size of the in-memory queue for log messages
 
 |===
 

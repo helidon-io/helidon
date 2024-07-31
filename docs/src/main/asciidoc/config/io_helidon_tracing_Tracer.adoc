@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -52,12 +52,33 @@ This is a standalone configuration type, prefix from configuration root: `tracin
 |`max-queue-size` |int |`2048` |Maximum Queue Size of exporter requests.
 |`private-key-pem` |xref:{rootdir}/config/io_helidon_common_configurable_Resource.adoc[Resource] |{nbsp} |Private key in PEM format.
 |`propagation` |PropagationFormat[&#93; (B3, B3_SINGLE, JAEGER, W3C) |`JAEGER` |Add propagation format to use.
+
+Allowed values:
+
+- `B3`: The Zipkin B3 trace context propagation format using multiple headers.
+- `B3_SINGLE`: B3 trace context propagation using a single header.
+- `JAEGER`: The Jaeger trace context propagation format.
+- `W3C`: The W3C trace context propagation format.
+
 |`sampler-param` |Number |`1` |The sampler parameter (number).
 |`sampler-type` |SamplerType (CONSTANT, RATIO) |`CONSTANT` |Sampler type.
 
- See <a href="https://www.jaegertracing.io/docs/latest/sampling/#client-sampling-configuration">Sampler types</a>.
+See https://www.jaegertracing.io/docs/latest/sampling/#client-sampling-configuration[Sampler types].
+
+Allowed values:
+
+- `CONSTANT`: Constant sampler always makes the same decision for all traces.
+It either samples all traces `1` or none of them `0`.
+- `RATIO`: Ratio of the requests to sample, double value.
+
 |`schedule-delay` |Duration |`PT5S` |Schedule Delay of exporter requests.
 |`span-processor-type` |SpanProcessorType (SIMPLE, BATCH) |`batch` |Span Processor type used.
+
+Allowed values:
+
+- `SIMPLE`: Simple Span Processor.
+- `BATCH`: Batch Span Processor.
+
 |`trusted-cert-pem` |xref:{rootdir}/config/io_helidon_common_configurable_Resource.adoc[Resource] |{nbsp} |Trusted certificates in PEM format.
 
 |===

@@ -49,41 +49,41 @@ parameters
 |key |type |default value |description
 
 |`set-object-for-java-time` |boolean |`true` |Set all `java.time` Date/Time values directly using java.sql.PreparedStatement.setObject(int, Object).
- This option shall work fine for recent JDBC drivers.
- Default value is `true`.
+This option shall work fine for recent JDBC drivers.
+Default value is `true`.
 
- Whether to use java.sql.PreparedStatement.setObject(int, Object) for `java.time` Date/Time values
+Whether to use java.sql.PreparedStatement.setObject(int, Object) for `java.time` Date/Time values
 |`string-binding-size` |int |`1024` |String values with length above this limit will be bound
- using java.sql.PreparedStatement.setCharacterStream(int, java.io.Reader, int)
- if useStringBinding() is set to `true`.
- Default value is `1024`.
+using java.sql.PreparedStatement.setCharacterStream(int, java.io.Reader, int)
+if useStringBinding() is set to `true`.
+Default value is `1024`.
 
- String values length limit for java.io.CharArrayReader binding
+String values length limit for java.io.CharArrayReader binding
 |`timestamp-for-local-time` |boolean |`true` |Use java.sql.PreparedStatement.setTimestamp(int, java.sql.Timestamp)
- to set java.time.LocalTime values when `true`
- or use java.sql.PreparedStatement.setTime(int, java.sql.Time) when `false`.
- Default value is `true`.
+to set java.time.LocalTime values when `true`
+or use java.sql.PreparedStatement.setTime(int, java.sql.Time) when `false`.
+Default value is `true`.
 This option is vendor specific. Most of the databases are fine with java.sql.Timestamp,
- but for example SQL Server requires java.sql.Time.
- This option does not apply when setObjectForJavaTime() is set to `true`.
+but for example SQL Server requires java.sql.Time.
+This option does not apply when setObjectForJavaTime() is set to `true`.
 
- Whether to use java.sql.Timestamp instead of java.sql.Time
-         for java.time.LocalTime values
+Whether to use java.sql.Timestamp instead of java.sql.Time
+        for java.time.LocalTime values
 |`use-byte-array-binding` |boolean |`true` |Use java.sql.PreparedStatement.setBinaryStream(int, java.io.InputStream, int) binding
- for `byte[]` values.
- Default value is `true`.
+for `byte[]` values.
+Default value is `true`.
 
- Whether to use java.io.ByteArrayInputStream binding
+Whether to use java.io.ByteArrayInputStream binding
 |`use-n-string` |boolean |`false` |Use SQL `NCHAR`, `NVARCHAR` or `LONGNVARCHAR` value conversion
- for String values.
- Default value is `false`.
+for String values.
+Default value is `false`.
 
- Whether NString conversion is used
+Whether NString conversion is used
 |`use-string-binding` |boolean |`true` |Use java.sql.PreparedStatement.setCharacterStream(int, java.io.Reader, int) binding
- for String values with length above stringBindingSize() limit.
- Default value is `true`.
+for String values with length above stringBindingSize() limit.
+Default value is `true`.
 
- Whether to use java.io.CharArrayReader binding
+Whether to use java.io.CharArrayReader binding
 
 |===
 

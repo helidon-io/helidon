@@ -41,7 +41,7 @@ Type: link:{javadoc-base-url}/io.helidon.scheduling/io/helidon/scheduling/Cron.h
 
 |`expression` |string |{nbsp} |Cron expression for specifying period of execution.
 
- <b>Examples:</b>
+*Examples:*
 
 - `0/2 * * * * ? *` - Every 2 seconds
 - `0 45 9 ? * *` - Every day at 9:45
@@ -60,9 +60,9 @@ Cron expression
 |key |type |default value |description
 
 |`concurrent` |boolean |`true` |Allow concurrent execution if previous task didn't finish before next execution.
- Default value is `true`.
+Default value is `true`.
 
- True for allow concurrent execution.
+True for allow concurrent execution.
 
 |===
 

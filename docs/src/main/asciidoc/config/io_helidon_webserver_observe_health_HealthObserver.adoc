@@ -49,19 +49,19 @@ This type provides the following service implementations:
 |key |type |default value |description
 
 |`details` |boolean |`false` |Whether details should be printed.
- By default, health only returns a io.helidon.http.Status.NO_CONTENT_204 for success,
- io.helidon.http.Status.SERVICE_UNAVAILABLE_503 for health down,
- and io.helidon.http.Status.INTERNAL_SERVER_ERROR_500 in case of error with no entity.
- When details are enabled, health returns io.helidon.http.Status.OK_200 for success, same codes
- otherwise
- and a JSON entity with detailed information about each health check executed.
+By default, health only returns a io.helidon.http.Status.NO_CONTENT_204 for success,
+io.helidon.http.Status.SERVICE_UNAVAILABLE_503 for health down,
+and io.helidon.http.Status.INTERNAL_SERVER_ERROR_500 in case of error with no entity.
+When details are enabled, health returns io.helidon.http.Status.OK_200 for success, same codes
+otherwise
+and a JSON entity with detailed information about each health check executed.
 
- Set to `true` to enable details
+Set to `true` to enable details
 |`endpoint` |string |`health` |
 |`use-system-services` |boolean |`true` |Whether to use services discovered by java.util.ServiceLoader.
- By default, all io.helidon.health.spi.HealthCheckProvider based health checks are added.
+By default, all io.helidon.health.spi.HealthCheckProvider based health checks are added.
 
- Set to `false` to disable discovery
+Set to `false` to disable discovery
 
 |===
 

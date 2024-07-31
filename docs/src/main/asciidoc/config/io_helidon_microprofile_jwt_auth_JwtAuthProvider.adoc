@@ -1,0 +1,90 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+ifndef::rootdir[:rootdir: {docdir}/..]
+:description: Configuration of io.helidon.microprofile.jwt.auth.JwtAuthProvider
+:keywords: helidon, config, io.helidon.microprofile.jwt.auth.JwtAuthProvider
+:basic-table-intro: The table below lists the configuration keys that configure io.helidon.microprofile.jwt.auth.JwtAuthProvider
+include::{rootdir}/includes/attributes.adoc[]
+
+= JwtAuthProvider (microprofile.jwt.auth) Configuration
+
+// tag::config[]
+
+MP-JWT Auth configuration is defined by the spec (options prefixed with &#x60;mp.jwt.&#x60;), and we add a few configuration options for the security provider (options prefixed with &#x60;security.providers.mp-jwt-auth.&#x60;)
+
+
+Type: link:{javadoc-base-url}/io.helidon.microprofile.jwt.auth/io/helidon/microprofile/jwt/auth/JwtAuthProvider.html[io.helidon.microprofile.jwt.auth.JwtAuthProvider]
+
+
+
+
+== Configuration options
+
+
+
+.Optional configuration options
+[cols="3,3a,2,5a"]
+
+|===
+|key |type |default value |description
+
+|`mp.jwt.decrypt.key.algorithm` |string (RSA-OAEP, RSA-OAEP-256) |{nbsp} |Expected key management algorithm supported by the MP JWT endpoint.
+Supported algorithms are either `RSA-OAEP` or `RSA-OAEP-256`.
+If no algorithm is set, both algorithms must be accepted.
+
+Allowed values:
+
+- `RSA-OAEP`: RSA-OAEP Algorithm
+- `RSA-OAEP-256`: RSA-OAEP-256 Algorithm
+
+|`mp.jwt.decrypt.key.location` |string |{nbsp} |Private key for decryption of encrypted claims.
+The value may be a relative path or a URL.
+|`mp.jwt.token.cookie` |string |`Bearer` |Specific cookie property name where we should search for JWT property.
+|`mp.jwt.token.header` |string |`Authorization` |Name of the header expected to contain the token.
+|`mp.jwt.verify.audiences` |string[&#93; |{nbsp} |Expected audiences of incoming tokens.
+|`mp.jwt.verify.clock.skew` |int |`5` |Clock skew to be accounted for in token expiration and max age validations in seconds.
+|`mp.jwt.verify.issuer` |string |{nbsp} |Expected issuer in incoming requests.
+|`mp.jwt.verify.publickey` |string |{nbsp} |String representation of the public key.
+|`mp.jwt.verify.publickey.location` |string |{nbsp} |Path to public key.
+The value may be a relative path or a URL.
+|`mp.jwt.verify.token.age` |int |{nbsp} |Maximal expected token age in seconds. If this value is set, `iat` claim needs to be present in the JWT.
+|`security.providers.mp-jwt-auth.allow-impersonation` |boolean |`false` |Whether to allow impersonation by explicitly overriding
+username from outbound requests using io.helidon.security.EndpointConfig.PROPERTY_OUTBOUND_ID
+property.
+By default this is not allowed and identity can only be propagated.
+|`security.providers.mp-jwt-auth.atn-token.default-key-id` |string |{nbsp} |Default JWT key ID which should be used.
+|`security.providers.mp-jwt-auth.atn-token.handler` |xref:{rootdir}/config/io_helidon_security_util_TokenHandler.adoc[TokenHandler] |{nbsp} |Token handler to extract username from request.
+Uses `Authorization` header with `bearer ` prefix by default.
+|`security.providers.mp-jwt-auth.atn-token.jwk.resource` |xref:{rootdir}/config/io_helidon_common_configurable_Resource.adoc[Resource] |{nbsp} |JWK resource for authenticating the request
+|`security.providers.mp-jwt-auth.atn-token.jwt-audience` |string |{nbsp} |Audience expected in inbound JWTs.
+|`security.providers.mp-jwt-auth.atn-token.verify-key` |string |{nbsp} |Path to public key.
+The value may be a relative path or a URL.
+|`security.providers.mp-jwt-auth.authenticate` |boolean |`true` |Whether to authenticate requests.
+|`security.providers.mp-jwt-auth.load-on-startup` |boolean |`false` |Whether to load JWK verification keys on server startup
+Default value is `false`.
+|`security.providers.mp-jwt-auth.optional` |boolean |`false` |Whether authentication is required.
+By default, request will fail if the username cannot be extracted.
+If set to false, request will process and this provider will abstain.
+|`security.providers.mp-jwt-auth.principal-type` |SubjectType (USER, SERVICE) |`USER` |Principal type this provider extracts (and also propagates).
+|`security.providers.mp-jwt-auth.propagate` |boolean |`true` |Whether to propagate identity.
+|`security.providers.mp-jwt-auth.sign-token` |xref:{rootdir}/config/io_helidon_security_providers_common_OutboundConfig.adoc[OutboundConfig] |{nbsp} |Configuration of outbound rules.
+
+|===
+
+// end::config[]

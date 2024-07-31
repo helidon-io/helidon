@@ -46,24 +46,24 @@ This is a standalone configuration type, prefix from configuration root: `fault-
 
 |`delay` |Duration |`PT5S` |How long to wait before transitioning from open to half-open state.
 
- Delay
+Delay
 |`error-ratio` |int |`60` |How many failures out of 100 will trigger the circuit to open.
- This is adapted to the volume() used to handle the window of requests.
+This is adapted to the volume() used to handle the window of requests.
 If errorRatio is 40, and volume is 10, 4 failed requests will open the circuit.
- Default is DEFAULT_ERROR_RATIO.
+Default is DEFAULT_ERROR_RATIO.
 
- Percent of failure that trigger the circuit to open
- See volume()
+Percent of failure that trigger the circuit to open
+See volume()
 |`success-threshold` |int |`1` |How many successful calls will close a half-open circuit.
- Nevertheless, the first failed call will open the circuit again.
- Default is DEFAULT_SUCCESS_THRESHOLD.
+Nevertheless, the first failed call will open the circuit again.
+Default is DEFAULT_SUCCESS_THRESHOLD.
 
- Number of calls
+Number of calls
 |`volume` |int |`10` |Rolling window size used to calculate ratio of failed requests.
- Default is DEFAULT_VOLUME.
+Default is DEFAULT_VOLUME.
 
- How big a window is used to calculate error errorRatio
- See errorRatio()
+How big a window is used to calculate error errorRatio
+See errorRatio()
 
 |===
 

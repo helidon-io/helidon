@@ -43,15 +43,15 @@ Type: link:{javadoc-base-url}/io.helidon.metrics.api/io/helidon/metrics/api/Scop
 |key |type |default value |description
 
 |`default` |string |`application` |Default scope value to associate with meters that are registered without an explicit setting; no setting means meters
- are assigned scope io.helidon.metrics.api.Meter.Scope.DEFAULT.
+are assigned scope io.helidon.metrics.api.Meter.Scope.DEFAULT.
 
- Default scope value
+Default scope value
 |`scopes` |xref:{rootdir}/config/io_helidon_metrics_api_ScopeConfig.adoc[Map&lt;string, ScopeConfig&gt;] |{nbsp} |Settings for individual scopes.
 
- Scope settings
+Scope settings
 |`tag-name` |string |`scope` |Tag name for storing meter scope values in the underlying implementation meter registry.
 
- Tag name for storing scope values
+Tag name for storing scope values
 
 |===
 

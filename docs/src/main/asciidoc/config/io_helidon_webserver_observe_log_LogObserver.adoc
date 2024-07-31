@@ -55,10 +55,10 @@ This type provides the following service implementations:
 |`endpoint` |string |`log` |
 |`permit-all` |boolean |{nbsp} |Permit all access, even when not authorized.
 
- Whether to permit access for anybody
+Whether to permit access for anybody
 |`stream` |xref:{rootdir}/config/io_helidon_webserver_observe_log_LogStreamConfig.adoc[LogStreamConfig] |`@io.helidon.webserver.observe.log.LogStreamConfig@.create()` |Configuration of log stream.
 
- Log stream configuration
+Log stream configuration
 
 |===
 

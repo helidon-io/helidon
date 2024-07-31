@@ -54,6 +54,13 @@ Type: link:{javadoc-base-url}/io.helidon.integrations.neo4j/io/helidon/integrati
 |`metrics-enabled` |boolean |{nbsp} |Enable metrics.
 |`password` |string |{nbsp} |Create password.
 |`trust-strategy` |TrustStrategy (TRUST_ALL_CERTIFICATES, TRUST_CUSTOM_CA_SIGNED_CERTIFICATES, TRUST_SYSTEM_CA_SIGNED_CERTIFICATES) |{nbsp} |Set trust strategy.
+
+Allowed values:
+
+- `TRUST_ALL_CERTIFICATES`: Trust all.
+- `TRUST_CUSTOM_CA_SIGNED_CERTIFICATES`: Trust custom certificates.
+- `TRUST_SYSTEM_CA_SIGNED_CERTIFICATES`: Trust system CA.
+
 |`uri` |string |{nbsp} |Create uri.
 |`username` |string |{nbsp} |Create username.
 

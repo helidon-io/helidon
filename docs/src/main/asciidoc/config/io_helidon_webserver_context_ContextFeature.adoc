@@ -54,11 +54,11 @@ This type provides the following service implementations:
 
 |`sockets` |string[&#93; |{nbsp} |List of sockets to register this feature on. If empty, it would get registered on all sockets.
 
- Socket names to register on, defaults to empty (all available sockets)
+Socket names to register on, defaults to empty (all available sockets)
 |`weight` |double |`1100.0` |Weight of the context feature. As it is used by other features, the default is quite high:
- io.helidon.webserver.context.ContextFeature.WEIGHT.
+io.helidon.webserver.context.ContextFeature.WEIGHT.
 
- Weight of the feature
+Weight of the feature
 
 |===
 

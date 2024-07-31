@@ -44,7 +44,7 @@ Type: link:{javadoc-base-url}/io.helidon.common.configurable/io/helidon/common/c
 
 |`capacity` |int |`10000` |Configure capacity of the cache. Defaults to LruCache.DEFAULT_CAPACITY.
 
- Maximal number of records in the cache before the oldest one is removed
+Maximal number of records in the cache before the oldest one is removed
 
 |===
 

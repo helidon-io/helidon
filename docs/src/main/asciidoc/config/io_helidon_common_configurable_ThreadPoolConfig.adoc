@@ -43,58 +43,58 @@ Type: link:{javadoc-base-url}/io.helidon.common.configurable/io/helidon/common/c
 |key |type |default value |description
 
 |`core-pool-size` |int |`10` |Core pool size of the thread pool executor.
- Defaults to DEFAULT_CORE_POOL_SIZE.
+Defaults to DEFAULT_CORE_POOL_SIZE.
 
- CorePoolSize see java.util.concurrent.ThreadPoolExecutor.getCorePoolSize()
+CorePoolSize see java.util.concurrent.ThreadPoolExecutor.getCorePoolSize()
 |`growth-rate` |int |`0` |The percentage of task submissions that should result in adding threads, expressed as a value from 1 to 100. The
- rate applies only when all of the following are true:
+rate applies only when all of the following are true:
 
 - the pool size is below the maximum, and
 - there are no idle threads, and
 - the number of tasks in the queue exceeds the `growthThreshold`
 
 For example, a rate of 20 means that while these conditions are met one thread will be added for every 5 submitted
- tasks.
+tasks.
 
- Defaults to DEFAULT_GROWTH_RATE
+Defaults to DEFAULT_GROWTH_RATE
 
- The growth rate
+The growth rate
 |`growth-threshold` |int |`1000` |The queue size above which pool growth will be considered if the pool is not fixed size.
- Defaults to DEFAULT_GROWTH_THRESHOLD.
+Defaults to DEFAULT_GROWTH_THRESHOLD.
 
- The growth threshold
+The growth threshold
 |`is-daemon` |boolean |`true` |Is daemon of the thread pool executor.
- Defaults to DEFAULT_IS_DAEMON.
+Defaults to DEFAULT_IS_DAEMON.
 
- Whether the threads are daemon threads
+Whether the threads are daemon threads
 |`keep-alive` |Duration |`PT3M` |Keep alive of the thread pool executor.
- Defaults to DEFAULT_KEEP_ALIVE.
+Defaults to DEFAULT_KEEP_ALIVE.
 
- Keep alive see java.util.concurrent.ThreadPoolExecutor.getKeepAliveTime(java.util.concurrent.TimeUnit)
+Keep alive see java.util.concurrent.ThreadPoolExecutor.getKeepAliveTime(java.util.concurrent.TimeUnit)
 |`max-pool-size` |int |`50` |Max pool size of the thread pool executor.
- Defaults to DEFAULT_MAX_POOL_SIZE.
+Defaults to DEFAULT_MAX_POOL_SIZE.
 
- MaxPoolSize see java.util.concurrent.ThreadPoolExecutor.getMaximumPoolSize()
+MaxPoolSize see java.util.concurrent.ThreadPoolExecutor.getMaximumPoolSize()
 |`name` |string |{nbsp} |Name of this thread pool executor.
 
- The pool name
+The pool name
 |`queue-capacity` |int |`10000` |Queue capacity of the thread pool executor.
- Defaults to DEFAULT_QUEUE_CAPACITY.
+Defaults to DEFAULT_QUEUE_CAPACITY.
 
- Capacity of the queue backing the executor
+Capacity of the queue backing the executor
 |`should-prestart` |boolean |`true` |Whether to prestart core threads in this thread pool executor.
- Defaults to DEFAULT_PRESTART.
+Defaults to DEFAULT_PRESTART.
 
- Whether to prestart the threads
+Whether to prestart the threads
 |`thread-name-prefix` |string |{nbsp} |Name prefix for threads in this thread pool executor.
- Defaults to DEFAULT_THREAD_NAME_PREFIX.
+Defaults to DEFAULT_THREAD_NAME_PREFIX.
 
- Prefix of a thread name
+Prefix of a thread name
 |`virtual-threads` |boolean |{nbsp} |When configured to `true`, an unbounded virtual executor service (project Loom) will be used.
 
- If enabled, all other configuration options of this executor service are ignored!
+If enabled, all other configuration options of this executor service are ignored!
 
- Whether to use virtual threads or not, defaults to `false`
+Whether to use virtual threads or not, defaults to `false`
 
 |===
 

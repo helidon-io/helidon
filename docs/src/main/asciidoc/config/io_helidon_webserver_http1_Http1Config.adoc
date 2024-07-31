@@ -53,49 +53,49 @@ This type provides the following service implementations:
 |key |type |default value |description
 
 |`continue-immediately` |boolean |`false` |When true WebServer answers to expect continue with 100 continue immediately,
- not waiting for user to actually request the data.
+not waiting for user to actually request the data.
 
- If `true` answer with 100 continue immediately after expect continue
+If `true` answer with 100 continue immediately after expect continue
 |`max-headers-size` |int |`16384` |Maximal size of received headers in bytes.
 
- Maximal header size
-|`max-prologue-length` |int |`2048` |Maximal size of received HTTP prologue (GET /path HTTP/1.1).
+Maximal header size
+|`max-prologue-length` |int |`4096` |Maximal size of received HTTP prologue (GET /path HTTP/1.1).
 
- Maximal size in bytes
+Maximal size in bytes
 |`recv-log` |boolean |`true` |Logging of received packets. Uses trace and debug levels on logger of
- Http1LoggingConnectionListener with suffix of `.recv``.
+Http1LoggingConnectionListener with suffix of `.recv``.
 
- `true` if logging should be enabled for received packets, `false` if no logging should be done
+`true` if logging should be enabled for received packets, `false` if no logging should be done
 |`requested-uri-discovery` |xref:{rootdir}/config/io_helidon_http_RequestedUriDiscoveryContext.adoc[RequestedUriDiscoveryContext] |{nbsp} |Requested URI discovery settings.
 
- Settings for computing the requested URI
+Settings for computing the requested URI
 |`send-log` |boolean |`true` |Logging of sent packets. Uses trace and debug levels on logger of
- Http1LoggingConnectionListener with suffix of `.send``.
+Http1LoggingConnectionListener with suffix of `.send``.
 
- `true` if logging should be enabled for sent packets, `false` if no logging should be done
+`true` if logging should be enabled for sent packets, `false` if no logging should be done
 |`validate-path` |boolean |`true` |If set to false, any path is accepted (even containing illegal characters).
 
- Whether to validate path
+Whether to validate path
 |`validate-request-headers` |boolean |`true` |Whether to validate headers.
- If set to false, any value is accepted, otherwise validates headers + known headers
- are validated by format
- (content length is always validated as it is part of protocol processing (other headers may be validated if
- features use them)).
+If set to false, any value is accepted, otherwise validates headers + known headers
+are validated by format
+(content length is always validated as it is part of protocol processing (other headers may be validated if
+features use them)).
 
-     Defaults to `true`.
- 
+    Defaults to `true`.
 
- Whether to validate headers
+
+Whether to validate headers
 |`validate-response-headers` |boolean |`false` |Whether to validate headers.
- If set to false, any value is accepted, otherwise validates headers + known headers
- are validated by format
- (content length is always validated as it is part of protocol processing (other headers may be validated if
- features use them)).
+If set to false, any value is accepted, otherwise validates headers + known headers
+are validated by format
+(content length is always validated as it is part of protocol processing (other headers may be validated if
+features use them)).
 
-     Defaults to `false` as user has control on the header creation.
- 
+    Defaults to `false` as user has control on the header creation.
 
- Whether to validate headers
+
+Whether to validate headers
 
 |===
 

@@ -44,20 +44,20 @@ Type: link:{javadoc-base-url}/io.helidon.common.pki/io/helidon/common/pki/PemKey
 
 |`cert-chain.resource` |xref:{rootdir}/config/io_helidon_common_configurable_Resource.adoc[Resource] |{nbsp} |Load certificate chain from PEM resource.
 
- Resource (e.g. classpath, file path, URL etc.)
+Resource (e.g. classpath, file path, URL etc.)
 |`certificates.resource` |xref:{rootdir}/config/io_helidon_common_configurable_Resource.adoc[Resource] |{nbsp} |Read one or more certificates in PEM format from a resource definition. Used eg: in a trust store.
 
- Key resource (file, classpath, URL etc.)
+Key resource (file, classpath, URL etc.)
 |`key.passphrase` |char[] |{nbsp} |Passphrase for private key. If the key is encrypted (and in PEM PKCS#8 format), this passphrase will be used to
- decrypt it.
+decrypt it.
 
- Passphrase used to encrypt the private key
+Passphrase used to encrypt the private key
 |`key.resource` |xref:{rootdir}/config/io_helidon_common_configurable_Resource.adoc[Resource] |{nbsp} |Read a private key from PEM format from a resource definition.
 
- Key resource (file, classpath, URL etc.)
+Key resource (file, classpath, URL etc.)
 |`public-key.resource` |xref:{rootdir}/config/io_helidon_common_configurable_Resource.adoc[Resource] |{nbsp} |Read a public key from PEM format from a resource definition.
 
- Public key resource (file, classpath, URL etc.)
+Public key resource (file, classpath, URL etc.)
 
 |===
 

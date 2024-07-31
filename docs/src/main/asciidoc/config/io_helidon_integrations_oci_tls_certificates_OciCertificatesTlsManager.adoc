@@ -44,32 +44,32 @@ Type: link:{javadoc-base-url}/io.helidon.integrations.oci.tls.certificates/io/he
 
 |`ca-ocid` |string |{nbsp} |The Certificate Authority OCID.
 
- Certificate authority OCID
+Certificate authority OCID
 |`cert-ocid` |string |{nbsp} |The Certificate OCID.
 
- Certificate OCID
+Certificate OCID
 |`compartment-ocid` |string |{nbsp} |The OCID of the compartment the services are in.
 
- The compartment OCID
+The compartment OCID
 |`key-ocid` |string |{nbsp} |The Key OCID.
 
- Key OCID
+Key OCID
 |`key-password` |Supplier |{nbsp} |The Key password.
 
- Key password
+Key password
 |`schedule` |string |{nbsp} |The schedule for trigger a reload check, testing whether there is a new io.helidon.common.tls.Tls instance
- available.
+available.
 
- The schedule for reload
+The schedule for reload
 |`vault-crypto-endpoint` |URI |{nbsp} |The address to use for the OCI Key Management Service / Vault crypto usage.
- Each OCI Vault has public crypto and management endpoints. We need to specify the crypto endpoint of the vault we are
- rotating the private keys in. The implementation expects both client and server to store the private key in the same vault.
+Each OCI Vault has public crypto and management endpoints. We need to specify the crypto endpoint of the vault we are
+rotating the private keys in. The implementation expects both client and server to store the private key in the same vault.
 
- The address for the key management service / vault crypto usage
+The address for the key management service / vault crypto usage
 |`vault-management-endpoint` |URI |{nbsp} |The address to use for the OCI Key Management Service / Vault management usage.
- The crypto endpoint of the vault we are rotating the private keys in.
+The crypto endpoint of the vault we are rotating the private keys in.
 
- The address for the key management service / vault management usage
+The address for the key management service / vault management usage
 
 |===
 

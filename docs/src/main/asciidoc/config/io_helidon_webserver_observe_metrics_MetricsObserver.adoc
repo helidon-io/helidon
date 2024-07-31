@@ -50,33 +50,47 @@ This type provides the following service implementations:
 
 |`app-name` |string |{nbsp} |Value for the application tag to be added to each meter ID.
 
- Application tag value
+Application tag value
 |`app-tag-name` |string |{nbsp} |Name for the application tag to be added to each meter ID.
 
- Application tag name
+Application tag name
 |`enabled` |boolean |`true` |Whether metrics functionality is enabled.
 
- If metrics are configured to be enabled
+If metrics are configured to be enabled
 |`endpoint` |string |`metrics` |
+|[.line-through]#`gc-time-type`# |GcTimeType (GAUGE, COUNTER) |`GcTimeType.COUNTER` |*Deprecated* Whether the `gc.time` meter should be registered as a gauge (vs. a counter).
+The `gc.time` meter is inspired by the MicroProfile Metrics spec, in which the meter was originally checked to
+be a counter but starting in 5.1 was checked be a gauge. For the duration of Helidon 4.x users can choose which
+type of meter Helidon registers for `gc.time`.
+The type of meter to use for registering `gc.time`
+@deprecated Provided for backward compatibility only; no replacement
+
+Allowed values:
+
+- `GAUGE`: Implement the meter as a gauge. This is backward-incompatible with Helidon 4.0.x releases but complies with
+MicroProfile 5.1.
+- `COUNTER`: Implement the meter as a counter. This is backward-compatible with Helidon 4.0.x releases but does not comply with
+MicroProfile 5.1.
+
 |`key-performance-indicators` |xref:{rootdir}/config/io_helidon_metrics_api_KeyPerformanceIndicatorMetricsConfig.adoc[KeyPerformanceIndicatorMetricsConfig] |{nbsp} |Key performance indicator metrics settings.
 
- Key performance indicator metrics settings
+Key performance indicator metrics settings
 |`permit-all` |boolean |`true` |Whether to allow anybody to access the endpoint.
 
- Whether to permit access to metrics endpoint to anybody, defaults to `true`
- See roles()
-|`rest-request-enabled` |boolean |{nbsp} |Whether automatic REST request metrics should be measured.
+Whether to permit access to metrics endpoint to anybody, defaults to `true`
+See roles()
+|`rest-request-enabled` |boolean |`false` |Whether automatic REST request metrics should be measured.
 
- True/false
+True/false
 |`roles` |string[&#93; |`observe` |Hints for role names the user is expected to be in.
 
- List of hints
+List of hints
 |`scoping` |xref:{rootdir}/config/io_helidon_metrics_api_ScopingConfig.adoc[ScopingConfig] |{nbsp} |Settings related to scoping management.
 
- Scoping settings
+Scoping settings
 |`tags` |xref:{rootdir}/config/io_helidon_metrics_api_Tag.adoc[Tag[&#93;] |{nbsp} |Global tags.
 
- Name/value pairs for global tags
+Name/value pairs for global tags
 
 |===
 

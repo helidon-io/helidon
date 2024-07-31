@@ -53,15 +53,15 @@ This type provides the following service implementations:
 |key |type |default value |description
 
 |`max-frame-length` |int |`1048576` |Max WebSocket frame size supported by the server on a read operation.
- Default is 1 MB.
+Default is 1 MB.
 
- Max frame size to read
+Max frame size to read
 |`name` |string |`websocket` |Name of this configuration.
 
- Configuration name
+Configuration name
 |`origins` |string[&#93; |{nbsp} |WebSocket origins.
 
- Origins
+Origins
 
 |===
 

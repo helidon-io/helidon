@@ -44,7 +44,7 @@ Type: link:{javadoc-base-url}/io.helidon.webserver.observe/io/helidon/webserver/
 
 |`enabled` |boolean |`true` |Whether this observer is enabled.
 
- `false` to disable observer
+`false` to disable observer
 
 |===
 
