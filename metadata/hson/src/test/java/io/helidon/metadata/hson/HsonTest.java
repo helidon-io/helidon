@@ -212,7 +212,7 @@ class HsonTest {
         String string = sw.toString();
         String expected = "[{\"string\":\"value\","
                 + "\"long\":4,"
-                + "\"double\":4,"
+                + "\"double\":4.0,"
                 + "\"boolean\":true,"
                 + "\"strings\":[\"a\",\"b\"],"
                 + "\"longs\":[1,2],"
@@ -233,6 +233,7 @@ class HsonTest {
         assertThat(readSecond, is(second));
     }
 
+    @Test
     void testSetObjects() {
         Hson.Object first = Hson.objectBuilder()
                 .set("key", "value1")
@@ -266,6 +267,22 @@ class HsonTest {
                 .build();
 
         assertThat(object.value("null-key"), optionalEmpty());
+    }
+
+    @Test
+    void testFunnyDoubles() {
+        StringWriter stringWriter = new StringWriter();
+        try (PrintWriter pw = new PrintWriter(stringWriter)) {
+            Hson.objectBuilder()
+                    .set("first", 1.1d)
+                    .set("second", 1.2f)
+                    .set("third", 1.3)
+                    .set("fourth", 4)
+                    .set("fifth", 5L)
+                    .build()
+                    .write(pw);
+        }
+        assertThat(stringWriter.toString(), is("{\"first\":1.1,\"second\":1.2,\"third\":1.3,\"fourth\":4,\"fifth\":5}"));
     }
 
     @Test

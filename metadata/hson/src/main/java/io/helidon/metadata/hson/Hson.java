@@ -340,6 +340,15 @@ public final class Hson {
             Builder set(String key, double value);
 
             /**
+             * Set a float value.
+             *
+             * @param key   key to set
+             * @param value value to assign to the key
+             * @return updated instance (this instance)
+             */
+            Builder set(String key, float value);
+
+            /**
              * Set an int value.
              *
              * @param key   key to set
