@@ -183,7 +183,7 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
     @Override
     protected void additionalHeaders() {
         super.additionalHeaders();
-        if (proxy() != null && proxy().type() != ProxyType.NONE) {
+        if (proxy().type() != ProxyType.NONE) {
             header(PROXY_CONNECTION);
         }
     }
