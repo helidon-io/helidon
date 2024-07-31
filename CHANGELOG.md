@@ -11,6 +11,50 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+
+## [4.0.11]
+
+This release contains important bugfixes and is recommended for all users of Helidon 4. 
+
+Java 21 is required to use Helidon 4
+
+### CHANGES
+
+- Common: Update UriEncoding.decode to expose a decodeQuery method [9009](https://github.com/helidon-io/helidon/pull/9009)
+- JTA: Removes usage of ConcurrentHashMap in LocalXAResource.java  [8988](https://github.com/helidon-io/helidon/pull/8988)
+- Metrics: Add RW locking to better manage concurrency [8999](https://github.com/helidon-io/helidon/pull/8999)
+- Metrics: Properly handle disabled metrics in MP [8976](https://github.com/helidon-io/helidon/pull/8976)
+- Observability: Convert `ConcurrentHashMap` which does service loading to `HashMap` with reentrant lock [8991](https://github.com/helidon-io/helidon/pull/8991)
+- Tracing: After retrieval check baggage entry for null before dereferencing it [8975](https://github.com/helidon-io/helidon/pull/8975)
+- WebClient: Attempt to read an unconsumed response entity to allow connection caching [8996](https://github.com/helidon-io/helidon/pull/8996)
+- WebClient: Moves client protocol ID caching from HttpClientRequest to WebClient [8987](https://github.com/helidon-io/helidon/pull/8987)
+- WebServer: Fix problem where throwing an Error would close connection but send keep-alive [9016](https://github.com/helidon-io/helidon/pull/9016)
+- WebServer: Skips content encoding of empty entities.  [9008](https://github.com/helidon-io/helidon/pull/9008)
+- WebServer: Update max-prologue-length from 2048 to 4096 to align with 3.x [9010](https://github.com/helidon-io/helidon/pull/9010)
+- Dependencies: Update eclipselink to 4.0.4 [9017](https://github.com/helidon-io/helidon/pull/9017)
+- Dependencies: Upgrade oci-sdk to 3.43.2 [8961](https://github.com/helidon-io/helidon/pull/8961)
+- Examples: Archetype: Remove unused config property from generated code [8990](https://github.com/helidon-io/helidon/pull/8990)
+- Examples: Archetype: fix database app-type typo (#8963) [8989](https://github.com/helidon-io/helidon/pull/8989)
+- Testing: Skip test if InstancePrincipal UT if Imds is available [8992](https://github.com/helidon-io/helidon/pull/8992)
+
+## [4.0.10]
+
+This release contains important bugfixes and ehancements and is recommended for all users of Helidon 4. 
+
+Java 21 is required to use Helidon 4.0.10.
+
+### CHANGES
+
+- Fault Tolerance: implement a new method caching strategy in fault tolerance. [8842](https://github.com/helidon-io/helidon/pull/8842)
+- Tracing: Reorder checking of delegate vs. wrapper in OTel tracer unwrap ( [8859](https://github.com/helidon-io/helidon/pull/8859)
+- Tracing: tracer information propagation across threads using Helidon context [8847](https://github.com/helidon-io/helidon/pull/8847)
+- WebServer: HTTP2-Settings needs to be encoded/decoded to Base64 with url dialect [8853](https://github.com/helidon-io/helidon/pull/8853)
+- WebServer: Fix handling of invalid end of line in HTTP header parsing. Added tests [8843](https://github.com/helidon-io/helidon/pull/8843)
+- WebServer: Retrieve the correct requested URI info path value, indpt of the routing path used to locate the handler [8844](https://github.com/helidon-io/helidon/pull/8844)
+- WebServer: register routing in weighted order of Server and HTTP Features [8840](https://github.com/helidon-io/helidon/pull/8840)
+- Native Image: Updates to support latest dev release of GraalVM native image [8838](https://github.com/helidon-io/helidon/pull/8838)
+- Security: JWT improvements [8865](https://github.com/helidon-io/helidon/pull/8865)
+
 ## [4.0.9]
 
 This release contains important bugfixes and ehancements and is recommended for all users of Helidon 4. 
@@ -1217,6 +1261,8 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/oracle/helidon/pull/4737)
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
+[4.0.11]: https://github.com/oracle/helidon/compare/4.0.10...4.0.11
+[4.0.10]: https://github.com/oracle/helidon/compare/4.0.9...4.0.10
 [4.0.9]: https://github.com/oracle/helidon/compare/4.0.8...4.0.9
 [4.0.8]: https://github.com/oracle/helidon/compare/4.0.7...4.0.8
 [4.0.7]: https://github.com/oracle/helidon/compare/4.0.6...4.0.7
