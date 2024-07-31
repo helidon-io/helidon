@@ -40,9 +40,9 @@ class SecurityOidcSnippets {
         // end::snippet_1[]
     }
 
-    void snippet_2(WebClient webClient) {
+    void snippet_2(WebClient client) {
         // tag::snippet_2[]
-        try (HttpClientResponse response = webClient.get()
+        try (HttpClientResponse response = client.get()
                 .path("/greet")
                 .request()) {
             assertThat(response.status(), is(Status.UNAUTHORIZED_401));
@@ -50,10 +50,10 @@ class SecurityOidcSnippets {
         // end::snippet_2[]
     }
 
-    void snippet_3(WebClient webClient) {
+    void snippet_3(WebClient client) {
         // tag::snippet_3[]
-        String auth = "Basic " + Base64.getEncoder().encodeToString("jack:jackIsGreat".getBytes());
-        JsonObject jsonObject = webClient.get()
+        String auth = "Basic " + Base64.getEncoder().encodeToString("jack:changeit".getBytes());
+        JsonObject jsonObject = client.get()
                 .path("/greet")
                 .header(HeaderNames.AUTHORIZATION, auth)
                 .requestEntity(JsonObject.class);
@@ -62,10 +62,10 @@ class SecurityOidcSnippets {
         // end::snippet_3[]
     }
 
-    void snippet_4(WebClient webClient) {
+    void snippet_4(WebClient client) {
         // tag::snippet_4[]
-        String auth = "Basic " + Base64.getEncoder().encodeToString("john:johnPassword".getBytes());
-        try (HttpClientResponse response = webClient.get()
+        String auth = "Basic " + Base64.getEncoder().encodeToString("john:changeit".getBytes());
+        try (HttpClientResponse response = client.get()
                 .path("/greet")
                 .header(HeaderNames.AUTHORIZATION, auth)
                 .request()) {
