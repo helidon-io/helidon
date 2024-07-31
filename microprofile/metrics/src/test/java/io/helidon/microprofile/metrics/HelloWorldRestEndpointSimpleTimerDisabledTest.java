@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.annotation.RegistryType;
+import org.eclipse.microprofile.metrics.annotation.RegistryScope;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -41,9 +41,8 @@ public class HelloWorldRestEndpointSimpleTimerDisabledTest {
         MetricsMpServiceTest.cleanUpSyntheticSimpleTimerRegistry();
     }
 
-    // TODO change to RegistryScope once MP makes it a qualifier
     @Inject
-    @RegistryType(type = MetricRegistry.Type.BASE)
+    @RegistryScope(scope = MetricRegistry.BASE_SCOPE)
     MetricRegistry syntheticTimerRegistry;
 
     boolean isSyntheticSimpleTimerPresent() {

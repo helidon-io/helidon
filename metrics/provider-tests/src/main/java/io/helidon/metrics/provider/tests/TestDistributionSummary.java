@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,10 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.ValueAtPercentile;
 
+import org.hamcrest.Description;
+import org.hamcrest.Matcher;
+import org.hamcrest.Matchers;
+import org.hamcrest.TypeSafeMatcher;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -73,13 +77,15 @@ class TestDistributionSummary {
 
         List<ValueAtPercentile> vaps = list(snapshot.percentileValues());
 
+        // Micrometer allows developers to set the precision with which percentiles are maintained which can give rise to
+        // some variance in the values reported for the percentiles.
         assertThat("Values at percentile",
                    vaps,
                    contains(
-                           equalTo(Vap.create(0.50D, 3.0625D)),
-                           equalTo(Vap.create(0.90D, 7.1875D)),
-                           equalTo(Vap.create(0.99D, 7.1875D)),
-                           equalTo(Vap.create(0.999D, 7.1875D))));
+                           ValueAtPercentileMatcher.matchesWithinTolerance(Vap.create(0.50D, 3.0D), 0.2d),
+                           ValueAtPercentileMatcher.matchesWithinTolerance(Vap.create(0.90D, 7.0D), 0.2d),
+                           ValueAtPercentileMatcher.matchesWithinTolerance(Vap.create(0.99D, 7.0), 0.2d),
+                           ValueAtPercentileMatcher.matchesWithinTolerance(Vap.create(0.999D, 7.0), 0.2d)));
     }
 
     @Test
@@ -140,6 +146,37 @@ class TestDistributionSummary {
 
         private static ValueAtPercentile create(double percentile, double value) {
             return new Vap(percentile, value);
+        }
+    }
+
+    /**
+     * Hamcrest matcher for a ValueAtPercentile that checks the percentile setting and the value recorded for that percentile.
+     */
+    private static class ValueAtPercentileMatcher extends TypeSafeMatcher<ValueAtPercentile> {
+
+        static ValueAtPercentileMatcher matchesWithinTolerance(ValueAtPercentile expected, double variance) {
+            return new ValueAtPercentileMatcher(expected, variance);
+        }
+
+        private final ValueAtPercentile expected;
+        private final Matcher<Double> valueWithinToleranceMatcher;
+
+        private ValueAtPercentileMatcher(ValueAtPercentile expected, double variance) {
+            valueWithinToleranceMatcher = Matchers.closeTo(expected.value(), variance);
+            this.expected = expected;
+        }
+
+        @Override
+        protected boolean matchesSafely(ValueAtPercentile item) {
+            return item.percentile() == expected.percentile()
+                    && valueWithinToleranceMatcher.matches(item.value());
+        }
+
+        @Override
+        public void describeTo(Description description) {
+            description.appendText("percentile expected to be " + expected.percentile()
+                                           + " and ");
+            valueWithinToleranceMatcher.describeTo(description);
         }
     }
 

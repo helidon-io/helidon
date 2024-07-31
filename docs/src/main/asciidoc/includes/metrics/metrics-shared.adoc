@@ -37,6 +37,21 @@ endif::[]
 
 Metrics is one of the Helidon observability features.
 
+// @Deprecated(forRemoval = true) Remove the following note starting in Helidon 5.
+[NOTE]
+.Recommended Configuration Setting
+====
+Beginning with Helidon 4.1, strongly consider assigning the config setting
+[source,properties]
+----
+metrics.gc-time-type = gauge
+----
+ifdef::mp-flavor[]
+so your service complies with the MicroProfile Metrics 5.1 specification.
+endif::mp-flavor[]
+See the <<controlling-gc-time,longer discussion below>> in the  Configuration section.
+====
+
 // end::overview[]
 
 // tag::usage-body[]

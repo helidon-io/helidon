@@ -42,11 +42,12 @@ final class HelidonHistogram extends MetricImpl<DistributionSummary> implements 
     static HelidonHistogram create(MeterRegistry meterRegistry, String scope, Metadata metadata, Tag... tags) {
         return create(scope,
                       metadata,
-                      meterRegistry.getOrCreate(DistributionSummary.builder(metadata.getName())
-                                                        .scope(scope)
-                                                        .description(metadata.getDescription())
-                                                        .baseUnit(sanitizeUnit(metadata.getUnit()))
-                                                        .tags(allTags(scope, tags))));
+                      meterRegistry.getOrCreate(DistributionCustomizations
+                                                        .apply(DistributionSummary.builder(metadata.getName())
+                                                                       .scope(scope)
+                                                                       .description(metadata.getDescription())
+                                                                       .baseUnit(sanitizeUnit(metadata.getUnit()))
+                                                                       .tags(allTags(scope, tags)))));
     }
 
     static HelidonHistogram create(String scope,

@@ -114,6 +114,14 @@ public interface DistributionSummary extends Meter {
         Builder distributionStatisticsConfig(DistributionStatisticsConfig.Builder distributionStatisticsConfigBuilder);
 
         /**
+         * Sets whether to publish a percentile histogram.
+         *
+         * @param value true/false
+         * @return updated builder
+         */
+        Builder publishPercentileHistogram(boolean value);
+
+        /**
          * Returns the scale set on the builder.
          *
          * @return the scale
@@ -126,5 +134,12 @@ public interface DistributionSummary extends Meter {
          * @return distribution statistics config, if set; empty otherwise
          */
         Optional<DistributionStatisticsConfig.Builder> distributionStatisticsConfig();
+
+        /**
+         * Returns whether to publsh percentile histogram.
+         *
+         * @return true/false
+         */
+        Optional<Boolean> publishPercentileHistogram();
     }
 }
