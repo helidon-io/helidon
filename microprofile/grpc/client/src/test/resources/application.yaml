@@ -30,18 +30,19 @@ server:
           resource-path: "server.p12"
 
 grpc:
-  channels:
-    echo-channel:
-      port: 0
-      tls:
-        trust:
-          keystore:
-            passphrase: "password"
-            trust-store: true
-            resource:
-              resource-path: "client.p12"
-        private-key:
-          keystore:
-            passphrase: "password"
-            resource:
-              resource-path: "client.p12"
+  client:
+    channels:
+      - name: "echo-channel"
+        port: 0
+        tls:
+          trust:
+            keystore:
+              passphrase: "password"
+              trust-store: true
+              resource:
+                resource-path: "client.p12"
+          private-key:
+            keystore:
+              passphrase: "password"
+              resource:
+                resource-path: "client.p12"

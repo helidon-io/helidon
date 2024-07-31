@@ -47,7 +47,7 @@ public class ChannelProducer {
      */
     @Inject
     ChannelProducer(Config config) {
-        provider = GrpcChannelsProvider.create(config.get("grpc"));
+        provider = GrpcChannelsProvider.create(config.get("grpc.client"));
     }
 
     /**

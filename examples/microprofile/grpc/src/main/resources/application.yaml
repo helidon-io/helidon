@@ -30,18 +30,19 @@ server:
           resource-path: "server.p12"
 
 grpc:
-  channels:
-    string-channel:
-      port: 0
-      tls:
-        trust:
-          keystore:
-            passphrase: "password"
-            trust-store: true
-            resource:
-              resource-path: "client.p12"
-        private-key:
-          keystore:
-            passphrase: "password"
-            resource:
-              resource-path: "client.p12"
+  client:
+    channels:
+      - name: "string-channel"
+        port: 0
+        tls:
+          trust:
+            keystore:
+              passphrase: "password"
+              trust-store: true
+              resource:
+                resource-path: "client.p12"
+          private-key:
+            keystore:
+              passphrase: "password"
+              resource:
+                resource-path: "client.p12"

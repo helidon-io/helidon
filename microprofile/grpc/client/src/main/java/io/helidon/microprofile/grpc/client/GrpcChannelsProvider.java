@@ -119,7 +119,7 @@ public class GrpcChannelsProvider {
             throw new IllegalArgumentException("name cannot be empty or blank.");
         }
         GrpcChannelDescriptor chCfg = channelConfigs.computeIfAbsent(name, hostName ->
-                GrpcChannelDescriptor.builder().host(name).build());
+                GrpcChannelDescriptor.builder().name(name).host(name).build());
         return createChannel(name, chCfg);
     }
 
@@ -176,20 +176,14 @@ public class GrpcChannelsProvider {
 
         private Builder(Config config) {
             // Add the default channel (which can be overridden in the config)
-            channel(DEFAULT_CHANNEL_NAME, GrpcChannelDescriptor.builder().build());
+            channel(DEFAULT_CHANNEL_NAME, GrpcChannelDescriptor.builder().name(DEFAULT_CHANNEL_NAME).build());
 
             if (config == null) {
                 return;
             }
 
-            Config channelsConfig = config.get(CFG_KEY_CHANNELS);
-            if (channelsConfig.exists()) {
-                for (Config channelConfig : channelsConfig.asNodeList().get()) {
-                    String key = channelConfig.key().name();
-                    GrpcChannelDescriptor cfg = GrpcChannelDescriptor.builder().config(channelConfig).build();
-                    channelConfigs.put(key, cfg);
-                }
-            }
+            GrpcChannelsDescriptor channelsDescriptor = GrpcChannelsDescriptor.builder().config(config).build();
+            channelsDescriptor.channels().forEach(ch -> channelConfigs.put(ch.name(), ch));
         }
 
         /**

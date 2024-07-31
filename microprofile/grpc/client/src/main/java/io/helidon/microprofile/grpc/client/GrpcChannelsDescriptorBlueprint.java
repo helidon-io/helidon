@@ -16,55 +16,20 @@
 
 package io.helidon.microprofile.grpc.client;
 
-import java.util.Optional;
+import java.util.List;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.tls.Tls;
 
 @Prototype.Blueprint
 @Prototype.Configured
-interface GrpcChannelDescriptorBlueprint {
+interface GrpcChannelsDescriptorBlueprint {
 
     /**
-     * The name of this channel.
+     * List of channel descriptors.
      *
-     * @return channel name
+     * @return channel descriptors
      */
     @Option.Configured
-    String name();
-
-    /**
-     * The host to connect to.
-     *
-     * @return the host
-     */
-    @Option.Configured
-    @Option.Default(GrpcChannelsProvider.DEFAULT_HOST)
-    String host();
-
-    /**
-     * The port to connect to.
-     *
-     * @return the port
-     */
-    @Option.Configured
-    @Option.DefaultInt(GrpcChannelsProvider.DEFAULT_PORT)
-    int port();
-
-    /**
-     * The target URI.
-     *
-     * @return the URI
-     */
-    @Option.Configured
-    Optional<String> target();
-
-    /**
-     * TLS configuration for the connection.
-     *
-     * @return the TLS config
-     */
-    @Option.Configured
-    Optional<Tls> tls();
+    List<GrpcChannelDescriptor> channels();
 }
