@@ -79,6 +79,7 @@
         <version.lib.junit-platform>1.9.3</version.lib.junit-platform>
         <version.lib.kafka-junit5>3.2.3</version.lib.kafka-junit5>
         <version.lib.mockito>2.23.4</version.lib.mockito>
+        <version.lib.mockserver>5.15.0</version.lib.mockserver>
         <version.lib.restito>0.9.1</version.lib.restito>
         <version.lib.rxjava2-jdk9-interop>0.1.0</version.lib.rxjava2-jdk9-interop>
         <version.lib.rxjava>2.2.10</version.lib.rxjava>
@@ -1034,6 +1035,11 @@
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
                 <version>${version.lib.mockito}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mock-server</groupId>
+                <artifactId>mockserver-netty-no-dependencies</artifactId>
+                <version>${version.lib.mockserver}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jgit</groupId>
