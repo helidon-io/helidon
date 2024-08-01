@@ -89,7 +89,7 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
         this.helidonTracer = helidonTracer;
         isAgentPresent = HelidonOpenTelemetry.AgentDetector.isAgentPresent(MpConfig.toHelidonConfig(mpConfig));
 
-        // TODO In 5.x remove the following.
+        // @Deprecated(forRemoval = true) In 5.x remove the following.
         mpConfig.getOptionalValue(SPAN_NAME_FULL_URL, Boolean.class).ifPresent(e -> spanNameFullUrl = e);
         Optional<Boolean> includeMethodConfig = mpConfig.getOptionalValue(SPAN_NAME_INCLUDES_METHOD, Boolean.class);
         restSpanNameIncludesMethod = includeMethodConfig.orElse(false);
@@ -104,6 +104,7 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
                                migrate to the current conventions.""",
                                SPAN_NAME_INCLUDES_METHOD));
         }
+        // end of code to remove in 5.x.
     }
 
     @Override
@@ -178,7 +179,13 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
     }
 
     private String spanName(ContainerRequestContext requestContext, String route) {
-        // TODO IN 5.x remove the option of excluding the HTTP method from the REST span name.
+        // @Deprecated(forRemoval = true) In 5.x remove the option of excluding the HTTP method from the REST span name.
+        // Starting in 5.x this method should be:
+        // return requestContext.getMethod() + " " + (
+        //          spanNameFullUrl
+        //              ? requestContext.getUriInfo().getAbsolutePath().toString()
+        //              : route);
+        //
         // According to recent OpenTelemetry semantic conventions for spans, the span name for a REST endpoint should be
         //
         // http-method-name low-cardinality-path

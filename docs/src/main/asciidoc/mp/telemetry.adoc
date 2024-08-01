@@ -54,7 +54,7 @@ link:https://opentelemetry.io/[OpenTelemetry] comprises a collection of APIs, SD
 
 MicroProfile Telemetry {mp-telemetry-version} allows for the exportation of the data it collects to Jaeger or Zipkin and to other systems using a variety of exporters.
 
-// TODO In 5.x remove the following note.
+// @Deprecated(forRemoval = true) In 5.x remove the following note.
 [NOTE]
 .Span Names for REST Requests
 ====
@@ -78,6 +78,7 @@ Therefore, Helidon {helidon-version} by default conforms to the _older_ semantic
 
 The ability to use the older format is deprecated, and you should plan for its removal in a future major release of Helidon. For that reason Helidon logs a warning message if you use the older REST span naming convention.
 ====
+// end of text to be removed in 5.x
 
 In a distributed tracing system, *traces* are used to capture a series of requests and are composed of multiple *spans* that represent individual operations within those requests. Each *span* includes a name, timestamps, and metadata that provide insights into the corresponding operation.
 
