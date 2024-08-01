@@ -75,10 +75,11 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
     /*
      MP Telemetry 1.1 adopts OpenTelemetry 1.29 semantic conventions which require the route to be in the REST span name.
      Because Helidon adopts MP Telemetry 1.1 in a dot release (4.1), this would be a backward-incompatible change. This setting,
-     controllable via config, allows users to preserve the earlier behavior. The default is to adopt the new behavior.
+     controllable via config, defaults to the older behavior that is backward-compatible with Helidon 4.0.x but allows users to
+     select the newer, spec-compliant behavior that is backward-incompatible with Helidon 4.0.x. The default is to use the
+     old behavior.
      */
     private final boolean restSpanNameIncludesMethod;
-
 
     @jakarta.ws.rs.core.Context
     private ResourceInfo resourceInfo;
@@ -97,11 +98,11 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
             spanNameWarningLogged.set(true);
             LOGGER.log(System.Logger.Level.WARNING,
                        String.format("""
-                               Current OpenTelemetry semantic conventions require the HTTP method to be part of REST span
+                               Current OpenTelemetry semantic conventions include the HTTP method as part of REST span
                                names. Your configuration does not set mp.%s to true, so your service uses the legacy span name
                                format which excludes the HTTP method. This feature is deprecated and marked for removal in a
-                               future major release of Helidon. Consider adding this setting to your configuration to
-                               migrate to the current conventions.""",
+                               future major release of Helidon. Consider adding a setting of mp.%1$s to 'true' in your
+                               configuration to migrate to the current conventions.""",
                                SPAN_NAME_INCLUDES_METHOD));
         }
         // end of code to remove in 5.x.
