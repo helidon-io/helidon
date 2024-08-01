@@ -207,11 +207,11 @@
                                 <exclude>**/generated-test-sources</exclude>
                                 <exclude>**/extracted-sources/**</exclude>
                             </sourceExcludes>
-                            <fileNameExcludes>
+                            <fileExcludes>
                                 <!-- exclude generated files that are not public API -->
                                 <exclude>*__*.java</exclude>
                                 <exclude>*_.java</exclude>
-                            </fileNameExcludes>
+                            </fileExcludes>
                             <moduleIncludes>
                                 <include>io.helidon*</include>
                                 <!-- See https://github.com/helidon-io/helidon/issues/8163 -->
