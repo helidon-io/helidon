@@ -260,11 +260,17 @@ final class HsonObject implements Hson.Object {
         }
 
         @Override
+        public Builder set(String key, float value) {
+            Objects.requireNonNull(key, "key cannot be null");
+
+            return set(key, new BigDecimal(String.valueOf(value)));
+        }
+
+        @Override
         public Builder set(String key, double value) {
             Objects.requireNonNull(key, "key cannot be null");
 
-            values.put(key, HsonValues.NumberValue.create(new BigDecimal(value)));
-            return this;
+            return set(key, new BigDecimal(String.valueOf(value)));
         }
 
         @Override
