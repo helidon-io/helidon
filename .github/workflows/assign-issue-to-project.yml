@@ -13,4 +13,4 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
-      - run: etc/scripts/actions/assign-issue-to-project.sh $GITHUB_REPOSITORY ${{ github.event.issue.number }} Backlog Triage
+      - run: etc/scripts/assign-issue-to-project.sh $GITHUB_REPOSITORY ${{ github.event.issue.number }} Backlog Triage

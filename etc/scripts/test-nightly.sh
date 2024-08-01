@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# Copyright (c) 2022 Oracle and/or its affiliates.
+# Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,20 +15,36 @@
 # limitations under the License.
 #
 
+set -o pipefail || true  # trace ERR through pipes
+set -o errtrace || true # trace ERR through commands and functions
+set -o errexit || true  # exit the script if any statement returns a non-true return value
+
+on_error(){
+    CODE="${?}" && \
+    set +x && \
+    printf "[ERROR] Error(code=%s) occurred at %s:%s command: %s\n" \
+        "${CODE}" "${BASH_SOURCE[0]}" "${LINENO}" "${BASH_COMMAND}"
+}
+trap on_error ERR
+
 # Path to this script
-[ -h "${0}" ] && readonly SCRIPT_PATH="$(readlink "${0}")" || readonly SCRIPT_PATH="${0}"
+if [ -h "${0}" ] ; then
+    SCRIPT_PATH="$(readlink "${0}")"
+else
+    SCRIPT_PATH="${0}"
+fi
+readonly SCRIPT_PATH
 
-# Load pipeline environment setup and define WS_DIR
-. $(dirname -- "${SCRIPT_PATH}")/includes/pipeline-env.sh "${SCRIPT_PATH}" '../..'
-
-# Setup error handling using default settings (defined in includes/error_handlers.sh)
-error_trap_setup
+# Path to the root of the workspace
+# shellcheck disable=SC2046
+WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
+readonly WS_DIR
 
 readonly MODULES_TO_BUILD="\
  microprofile/tests/tck/tck-fault-tolerance\
 "
 
-cd ${WS_DIR}
+cd "${WS_DIR}"
 
 # Do priming build
 mvn clean install -DskipTests

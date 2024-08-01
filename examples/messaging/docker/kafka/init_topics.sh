@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+# Copyright (c) 2020, 2024 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,44 +21,44 @@
 #
 
 ZOOKEEPER_URL=localhost:2181
-KAFKA_TOPICS="/opt/kafka/bin/kafka-topics.sh --if-not-exists --zookeeper $ZOOKEEPER_URL"
+KAFKA_TOPICS="/opt/kafka/bin/kafka-topics.sh --if-not-exists --zookeeper ${ZOOKEEPER_URL}"
 
 while sleep 2; do
-  brokers=$(echo dump | nc localhost 2181 | grep brokers | wc -l)
+  brokers=$(echo dump | nc localhost 2181 | grep -c brokers)
   echo "Checking if Kafka is up: ${brokers}"
   if [[ "$brokers" -gt "0" ]]; then
     echo "KAFKA IS UP !!!"
 
     echo "Creating test topics"
-    bash $KAFKA_TOPICS \
+    bash "${KAFKA_TOPICS}" \
       --create \
       --replication-factor 1 \
       --partitions 10 \
       --topic messaging-test-topic-1
-    bash $KAFKA_TOPICS \
+    bash "${KAFKA_TOPICS}" \
       --create \
       --replication-factor 1 \
       --partitions 10 \
       --topic messaging-test-topic-2
-    bash $KAFKA_TOPICS \
+    bash "${KAFKA_TOPICS}" \
       --create \
       --replication-factor 1 \
       --partitions 10 \
       --config compression.type=snappy \
       --topic messaging-test-topic-snappy-compressed
-    bash $KAFKA_TOPICS \
+    bash "${KAFKA_TOPICS}" \
       --create \
       --replication-factor 1 \
       --partitions 10 \
       --config compression.type=lz4 \
       --topic messaging-test-topic-lz4-compressed
-    bash $KAFKA_TOPICS \
+    bash "${KAFKA_TOPICS}" \
       --create \
       --replication-factor 1 \
       --partitions 10 \
       --config compression.type=zstd \
       --topic messaging-test-topic-zstd-compressed
-    bash $KAFKA_TOPICS \
+    bash "${KAFKA_TOPICS}" \
       --create \
       --replication-factor 1 \
       --partitions 10 \
