@@ -91,6 +91,7 @@
                     <configuration>
                         <useModulePath>false</useModulePath>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                        <classesDirectory>${project.build.outputDirectory}</classesDirectory>
                     </configuration>
                 </plugin>
                 <plugin>
