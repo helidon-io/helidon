@@ -26,7 +26,7 @@ import io.grpc.MethodDescriptor;
 /**
  * Helidon's implementation of a gRPC {@link Channel}.
  */
-class GrpcChannel extends Channel {
+public class GrpcChannel extends Channel {
 
     private final GrpcClientImpl grpcClient;
 
@@ -37,6 +37,15 @@ class GrpcChannel extends Channel {
      */
     GrpcChannel(GrpcClient grpcClient) {
         this.grpcClient = (GrpcClientImpl) grpcClient;
+    }
+
+    /**
+     * Underlying gRPC Client for this channel.
+     *
+     * @return the gRPC client
+     */
+    public GrpcClient grpcClient() {
+        return grpcClient;
     }
 
     @Override

@@ -68,7 +68,7 @@ public class GrpcProxyBuilder<T> implements Builder<GrpcProxyBuilder<T>, T> {
      */
     @Override
     public T build() {
-        return client.proxy(type);
+        return client.proxy(type, GrpcConfigurablePort.class);
     }
 
     private static ClientServiceDescriptor createDescriptor(Class<?> type) {

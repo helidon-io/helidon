@@ -22,10 +22,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import io.helidon.grpc.api.Grpc;
+import io.helidon.microprofile.grpc.client.GrpcConfigurablePort;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import io.grpc.stub.StreamObserver;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.client.WebTarget;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -37,8 +40,18 @@ import static org.hamcrest.Matchers.hasSize;
 class StringServiceTest {
 
     @Inject
+    private WebTarget webTarget;
+
+    @Inject
     @Grpc.GrpcProxy
     private StringServiceClient client;
+
+    @BeforeEach
+    void updatePort() {
+        if (client instanceof GrpcConfigurablePort c) {
+            c.channelPort(webTarget.getUri().getPort());
+        }
+    }
 
     @Test
     void testUnaryUpper() {

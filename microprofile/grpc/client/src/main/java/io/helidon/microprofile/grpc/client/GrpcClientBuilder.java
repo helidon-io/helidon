@@ -32,7 +32,7 @@ import io.helidon.microprofile.grpc.core.ModelHelper;
 import static java.lang.System.Logger.Level;
 
 /**
- * A builder for constructing a {@link io.helidon.microprofile.grpc.client.ClientServiceDescriptor.Builder} instances
+ * A builder for constructing a {@link io.helidon.microprofile.grpc.client.ClientServiceDescriptor} instances
  * from an annotated POJO.
  */
 class GrpcClientBuilder extends AbstractServiceBuilder

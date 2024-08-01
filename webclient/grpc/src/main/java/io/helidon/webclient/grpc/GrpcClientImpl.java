@@ -61,4 +61,9 @@ class GrpcClientImpl implements GrpcClient {
     public Channel channel(ClientInterceptor... interceptors) {
         return ClientInterceptors.intercept(channel(), interceptors);
     }
+
+    @Override
+    public GrpcClientConfig clientConfig() {
+        return clientConfig;
+    }
 }

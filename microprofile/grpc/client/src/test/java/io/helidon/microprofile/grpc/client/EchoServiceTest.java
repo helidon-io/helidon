@@ -33,6 +33,7 @@ import io.helidon.webclient.grpc.GrpcClient;
 import io.grpc.stub.StreamObserver;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.WebTarget;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.grpc.core.ResponseHelper.complete;
@@ -52,6 +53,13 @@ class EchoServiceTest {
     @Inject
     @Grpc.GrpcProxy
     private EchoServiceClient proxyClient;
+
+    @BeforeEach
+    void updatePort() {
+        if (proxyClient instanceof GrpcConfigurablePort client) {
+            client.channelPort(webTarget.getUri().getPort());
+        }
+    }
 
     @Test
     void testEcho() throws InterruptedException, ExecutionException, TimeoutException {

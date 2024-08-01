@@ -16,7 +16,6 @@
 
 package io.helidon.microprofile.grpc.client;
 
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,8 +24,6 @@ import io.helidon.config.Config;
 import io.helidon.webclient.grpc.GrpcClient;
 
 import io.grpc.Channel;
-import jakarta.enterprise.inject.spi.CDI;
-import jakarta.enterprise.inject.spi.Extension;
 
 /**
  * GrpcChannelsProvider is a factory for pre-configured gRPC Channel instances.
@@ -42,11 +39,6 @@ public class GrpcChannelsProvider {
      * A constant for holding the default host name (which is "localhost").
      */
     public static final String DEFAULT_HOST = "localhost";
-
-    /**
-     * The configuration key for the channels' configuration.
-     */
-    public static final String CFG_KEY_CHANNELS = "channels";
 
     /**
      * A constant for holding the default port (which is "1408").
@@ -136,35 +128,11 @@ public class GrpcChannelsProvider {
             throw new IllegalArgumentException("Client TLS must be configured for gRPC proxy client");
         }
         int port = descriptor.port();
-        if (port <= 0) {
-            port = discoverServerPort(name);
-        }
         GrpcClient grpcClient = GrpcClient.builder()
                 .tls(clientTls)
                 .baseUri("https://" + descriptor.host() + ":" + port)
                 .build();
         return grpcClient.channel();
-    }
-
-    /**
-     * Used for unit testing: if port not set, try to obtain port from server CDI
-     * extension via reflection, without introducing a static dependency.
-     *
-     * @param name the channel name
-     * @return server port
-     * @throws java.lang.IllegalArgumentException if unable to discover port
-     */
-    @SuppressWarnings("unchecked")
-    private static int discoverServerPort(String name) {
-        try {
-            Class<? extends Extension> extClass = (Class<? extends Extension>) Class
-                    .forName("io.helidon.microprofile.server.ServerCdiExtension");
-            Extension extension = CDI.current().getBeanManager().getExtension(extClass);
-            Method m = extension.getClass().getMethod("port", String.class);
-            return (int) m.invoke(extension, new Object[] {"@default"});
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalArgumentException("Unable to determine server port for channel " + name);
-        }
     }
 
     /**

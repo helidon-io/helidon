@@ -30,6 +30,7 @@ import java.util.stream.StreamSupport;
 import io.helidon.grpc.core.InterceptorWeights;
 import io.helidon.grpc.core.MethodHandler;
 import io.helidon.grpc.core.WeightedBag;
+import io.helidon.webclient.api.ClientUri;
 
 import io.grpc.CallOptions;
 import io.grpc.Channel;
@@ -44,6 +45,8 @@ import io.grpc.stub.StreamObserver;
  * A gRPC Client for a specific gRPC service.
  */
 public class GrpcServiceClient {
+
+    private final Channel channel;
 
     private final HashMap<String, GrpcMethodStub<?, ?>> methodStubs;
 
@@ -76,6 +79,7 @@ public class GrpcServiceClient {
     private GrpcServiceClient(Channel channel,
                               CallOptions callOptions,
                               ClientServiceDescriptor clientServiceDescriptor) {
+        this.channel = channel;
         this.clientServiceDescriptor = clientServiceDescriptor;
         this.methodStubs = new HashMap<>();
 
@@ -137,6 +141,13 @@ public class GrpcServiceClient {
     Object invoke(String name, Object[] args) {
         GrpcMethodStub<?, ?> stub = methodStubs.get(name);
         if (stub == null) {
+            // may be used during testing to override a channel's port
+            if (name.equals(GrpcConfigurablePort.CHANNEL_PORT)) {
+                io.helidon.webclient.grpc.GrpcChannel grpcChannel = (io.helidon.webclient.grpc.GrpcChannel) channel;
+                ClientUri uri = grpcChannel.grpcClient().clientConfig().baseUri().orElseThrow();
+                uri.port((int) args[0]);
+                return null;
+            }
             throw Status.INTERNAL.withDescription("gRPC method '" + name + "' does not exist").asRuntimeException();
         }
         ClientMethodDescriptor descriptor = stub.descriptor();
@@ -164,6 +175,7 @@ public class GrpcServiceClient {
     @SuppressWarnings("unchecked")
     public <T> T proxy(Class<T> type, Class<?>... extraTypes) {
         Map<String, String> names = new HashMap<>();
+        names.put(GrpcConfigurablePort.CHANNEL_PORT, GrpcConfigurablePort.CHANNEL_PORT);    // for testing
         for (ClientMethodDescriptor methodDescriptor : clientServiceDescriptor.methods()) {
             MethodHandler<?, ?> methodHandler = methodDescriptor.methodHandler();
             if (methodHandler != null) {
