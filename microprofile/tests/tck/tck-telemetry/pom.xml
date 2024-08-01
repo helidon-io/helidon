@@ -83,6 +83,10 @@
                         --add-opens=java.base/java.lang=ALL-UNNAMED
                         --add-opens=java.base/java.lang.invoke=ALL-UNNAMED
                     </argLine>
+                    <!--
+                       @Deprecated(forRemoval = true) Remove the  systemPropertyVariable setting for name-includes-method
+                       in 5.x. The property will no longer be supported.
+                    -->
                     <systemPropertyVariables>
                         <!--
                             The TCK expects the current REST span names (which include the HTTP method name). But for backward
