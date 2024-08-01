@@ -113,7 +113,7 @@ exec 6>&1 1>&2
 current_version() {
     # shellcheck disable=SC2086
     mvn ${MAVEN_ARGS} -q \
-        -f "${WS_DIR}"/file.xml \
+        -f "${WS_DIR}"/pom.xml \
         -Dexec.executable="echo" \
         -Dexec.args="\${project.version}" \
         --non-recursive \
@@ -151,7 +151,7 @@ update_version(){
 
     # shellcheck disable=SC2086
     mvn ${MAVEN_ARGS} "${ARGS[@]}" \
-        -f ${WS_DIR}/parent/file.xml versions:set versions:set-property \
+        -f ${WS_DIR}/parent/pom.xml versions:set versions:set-property \
         -DgenerateBackupPoms="false" \
         -DnewVersion="${version}" \
         -Dproperty="helidon.version" \
@@ -270,7 +270,8 @@ deploy_snapshot() {
     # property. The deployAtEnd option requires version 3.0.0 of maven-deploy-plugin
     # or newer to work correctly on multi-module systems
     set -x
-    mvn "${MAVEN_ARGS}" -e clean deploy \
+    # shellcheck disable=SC2086
+    mvn ${MAVEN_ARGS} -e clean deploy \
       -Parchetypes \
       -DskipTests \
       -DaltDeploymentRepository="ossrh::${NEXUS_SNAPSHOT_URL}" \
