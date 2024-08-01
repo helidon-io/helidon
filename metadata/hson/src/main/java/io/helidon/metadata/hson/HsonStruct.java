@@ -27,15 +27,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-final class HsonObject implements Hson.Object {
+final class HsonStruct implements Hson.Struct {
     private final Map<String, Hson.Value<?>> values;
 
-    private HsonObject(Map<String, Hson.Value<?>> values) {
+    private HsonStruct(Map<String, Hson.Value<?>> values) {
         this.values = values;
     }
 
     @Override
-    public Hson.Object value() {
+    public Hson.Struct value() {
         return this;
     }
 
@@ -55,8 +55,8 @@ final class HsonObject implements Hson.Object {
     }
 
     @Override
-    public Optional<Hson.Object> objectValue(String key) {
-        return getValue(key, Hson.Type.OBJECT);
+    public Optional<Hson.Struct> structValue(String key) {
+        return getValue(key, Hson.Type.STRUCT);
     }
 
     @Override
@@ -105,8 +105,8 @@ final class HsonObject implements Hson.Object {
     }
 
     @Override
-    public Optional<List<Hson.Object>> objectArray(String key) {
-        return getTypedList(key, Hson.Array::getObjects);
+    public Optional<List<Hson.Struct>> structArray(String key) {
+        return getTypedList(key, Hson.Array::getStructs);
     }
 
     @Override
@@ -152,7 +152,7 @@ final class HsonObject implements Hson.Object {
 
     @Override
     public Hson.Type type() {
-        return Hson.Type.OBJECT;
+        return Hson.Type.STRUCT;
     }
 
     @Override
@@ -160,10 +160,10 @@ final class HsonObject implements Hson.Object {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof HsonObject object)) {
+        if (!(o instanceof HsonStruct struct)) {
             return false;
         }
-        return Objects.equals(values, object.values);
+        return Objects.equals(values, struct.values);
     }
 
     @Override
@@ -200,7 +200,7 @@ final class HsonObject implements Hson.Object {
     }
 
     private String exceptionMessage(String key, String message) {
-        return "Object key \"" + key + "\": " + message;
+        return "Struct key \"" + key + "\": " + message;
     }
 
     private void writeNext(PrintWriter metaWriter, AtomicBoolean first) {
@@ -211,15 +211,15 @@ final class HsonObject implements Hson.Object {
         metaWriter.write(',');
     }
 
-    static class Builder implements Hson.Object.Builder {
+    static class Builder implements Hson.Struct.Builder {
         private final Map<String, Hson.Value<?>> values = new LinkedHashMap<>();
 
         Builder() {
         }
 
         @Override
-        public Hson.Object build() {
-            return new HsonObject(new LinkedHashMap<>(values));
+        public Hson.Struct build() {
+            return new HsonStruct(new LinkedHashMap<>(values));
         }
 
         @Override
@@ -231,7 +231,7 @@ final class HsonObject implements Hson.Object {
         }
 
         @Override
-        public Hson.Object.Builder setNull(String key) {
+        public Hson.Struct.Builder setNull(String key) {
             values.put(key, HsonValues.NullValue.INSTANCE);
             return this;
         }
@@ -308,7 +308,7 @@ final class HsonObject implements Hson.Object {
         }
 
         @Override
-        public Builder setObjects(String key, List<Hson.Object> value) {
+        public Builder setStructs(String key, List<Hson.Struct> value) {
             Objects.requireNonNull(key, "key cannot be null");
             Objects.requireNonNull(value, "value cannot be null");
 

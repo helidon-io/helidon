@@ -132,8 +132,8 @@ final class HsonArray implements Hson.Array {
     }
 
     @Override
-    public List<Hson.Object> getObjects() {
-        return getTypedList(Hson.Type.OBJECT);
+    public List<Hson.Struct> getStructs() {
+        return getTypedList(Hson.Type.STRUCT);
     }
 
     @Override

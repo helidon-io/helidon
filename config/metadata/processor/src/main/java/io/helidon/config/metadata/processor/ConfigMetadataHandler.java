@@ -187,16 +187,16 @@ class ConfigMetadataHandler {
              This is to allow merging of files - such as when we would want to create on-the-fly
              JSON for a project with only its dependencies.
              */
-            List<Hson.Object> moduleArray = new ArrayList<>();
+            List<Hson.Struct> moduleArray = new ArrayList<>();
 
             for (var module : moduleTypes.entrySet()) {
                 String moduleName = module.getKey();
                 var types = module.getValue();
-                List<Hson.Object>  typeArray = new ArrayList<>();
+                List<Hson.Struct>  typeArray = new ArrayList<>();
                 types.forEach(it -> newOptions.get(it).write(typeArray));
-                moduleArray.add(Hson.Object.builder()
+                moduleArray.add(Hson.Struct.builder()
                                         .set("module", moduleName)
-                                        .setObjects("types", typeArray)
+                                        .setStructs("types", typeArray)
                                         .build());
             }
 

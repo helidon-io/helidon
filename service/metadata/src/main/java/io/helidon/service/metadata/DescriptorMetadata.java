@@ -78,5 +78,5 @@ public interface DescriptorMetadata {
      *
      * @return HSON object (similar to JSON)
      */
-    Hson.Object toHson();
+    Hson.Struct toHson();
 }

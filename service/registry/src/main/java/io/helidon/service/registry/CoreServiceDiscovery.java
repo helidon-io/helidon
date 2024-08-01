@@ -228,7 +228,7 @@ class CoreServiceDiscovery implements ServiceDiscovery {
         }
 
         @Override
-        public Hson.Object toHson() {
+        public Hson.Struct toHson() {
             return metadata.toHson();
         }
 

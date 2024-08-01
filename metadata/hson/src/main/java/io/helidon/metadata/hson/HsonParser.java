@@ -35,8 +35,8 @@ class HsonParser {
     private static final byte QUOTES = (byte) '"';
     private static final byte ARRAY_START = (byte) '[';
     private static final byte ARRAY_END = (byte) ']';
-    private static final byte OBJECT_START = (byte) '{';
-    private static final byte OBJECT_END = (byte) '}';
+    private static final byte STRUCT_START = (byte) '{';
+    private static final byte STRUCT_END = (byte) '}';
     private static final byte BACKSLASH = (byte) '\\';
 
     private final DataReader reader;
@@ -67,16 +67,16 @@ class HsonParser {
         byte next = skipWhitespace();
         if (next == ARRAY_START) {
             return readArray();
-        } else if (next == OBJECT_START) {
-            return readObject();
+        } else if (next == STRUCT_START) {
+            return readStruct();
         }
         if (topLevel) {
             throw new HsonException("Index: " + position
-                                            + ": failed to parse HSON, invalid object/array opening character: \n"
+                                            + ": failed to parse HSON, invalid struct/array opening character: \n"
                                             + BufferData.create(new byte[] {next}).debugDataHex());
         }
         if (next == QUOTES) {
-            return readString("Object");
+            return readString("Struct");
         }
         return readValue();
     }
@@ -95,7 +95,7 @@ class HsonParser {
             }
 
             Hson.Value<?> value = switch (next) {
-                case OBJECT_START -> readObject();
+                case STRUCT_START -> readStruct();
                 case ARRAY_START -> readArray();
                 case QUOTES -> readString("Array");
                 default -> readValue();
@@ -119,18 +119,18 @@ class HsonParser {
         }
     }
 
-    private Hson.Value<Hson.Object> readObject() {
+    private Hson.Value<Hson.Struct> readStruct() {
         skip(); // skip {
 
-        var object = Hson.Object.builder();
+        var struct = Hson.Struct.builder();
 
         while (true) {
             byte next = skipWhitespace();
-            if (next == OBJECT_END) {
+            if (next == STRUCT_END) {
                 skip(); // skip }
-                return object.build();
+                return struct.build();
             }
-            // now we have "key": value (may be an object, value, string)
+            // now we have "key": value (may be a struct, value, string)
             String key = readKey();
             skipWhitespace();
             next = read();
@@ -140,21 +140,21 @@ class HsonParser {
                         .debugDataHex());
             }
             skipWhitespace();
-            // the value may be object, array, value
+            // the value may be struct, array, value
             Hson.Value<?> value = read(false);
-            object.set(key, value);
+            struct.set(key, value);
             next = skipWhitespace();
             if (next == COMMA) {
                 skip(); // ,
             } else {
-                // this must be object end
+                // this must be struct end
                 next = skipWhitespace();
-                if (next == OBJECT_END) {
+                if (next == STRUCT_END) {
                     skip(); // skip }
-                    return object.build();
+                    return struct.build();
                 } else {
                     throw new HsonException("Index: " + position
-                                                    + ": value not followed by a comma, and object does not end. Found: \n"
+                                                    + ": value not followed by a comma, and struct does not end. Found: \n"
                                                     + BufferData.create(new byte[] {next}).debugDataHex() + ", for key: \n"
                                                     + BufferData.create(key).debugDataHex());
                 }
@@ -249,7 +249,7 @@ class HsonParser {
             if (whitespace(next)) {
                 break;
             }
-            if (next == COMMA || next == ARRAY_END || next == OBJECT_END) {
+            if (next == COMMA || next == ARRAY_END || next == STRUCT_END) {
                 break;
             }
             skip();

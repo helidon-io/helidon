@@ -21,7 +21,7 @@
  * To write HSON (compatible with JSON), start with either of the following types:
  * <ul>
  *     <li>{@link io.helidon.metadata.hson.Hson.Array}</li>
- *     <li>{@link io.helidon.metadata.hson.Hson.Object}</li>
+ *     <li>{@link io.helidon.metadata.hson.Hson.Struct}</li>
  * </ul>
  * To read HSON, start with {@link io.helidon.metadata.hson.Hson#parse(java.io.InputStream)}.
  * <p>
@@ -29,8 +29,8 @@
  * <ul>
  *     <li>Only UTF-8 is supported</li>
  *     <li>Arrays</li>
- *     <li>Objects</li>
- *     <li>Nesting of objects and arrays</li>
+ *     <li>Structs (Same as JsonObject from JSON-P in semantics)</li>
+ *     <li>Nesting of structs and arrays</li>
  *     <li>String, BigDecimal, boolean, null</li>
  *     <li>No pretty print (always writes as small as possible)</li>
  *     <li>Keeps order of insertion on write</li>
@@ -51,6 +51,6 @@
  * above. This module is not Helidon JSON solution - please use one of the supported JSON libraries,
  * such as JSON-P, JSON-B, or Jackson.</b>
  * <p>
- * <b>WARNING:</b> The HSON object is always fully read into memory
+ * <b>WARNING:</b> The HSON value is always fully read into memory
  */
 package io.helidon.metadata.hson;

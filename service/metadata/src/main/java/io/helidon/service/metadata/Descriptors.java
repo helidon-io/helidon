@@ -46,7 +46,7 @@ public class Descriptors {
     public static List<DescriptorMetadata> descriptors(String location, Hson.Array moduleRegistries) {
         List<DescriptorMetadata> descriptors = new ArrayList<>();
 
-        for (Hson.Object moduleRegistry : moduleRegistries.getObjects()) {
+        for (Hson.Struct moduleRegistry : moduleRegistries.getStructs()) {
             String moduleName = moduleRegistry.stringValue("module", "unknown");
             int version = moduleRegistry.intValue("version", DEFAULT_REGISTRY_VERSION);
             if (version != CURRENT_REGISTRY_VERSION) {
@@ -56,7 +56,7 @@ public class Descriptors {
                                                         + "expected version: \"" + CURRENT_REGISTRY_VERSION + "\"");
             }
 
-            moduleRegistry.objectArray("services")
+            moduleRegistry.structArray("services")
                     .orElseGet(List::of)
                     .stream()
                     .map(it -> DescriptorMetadataImpl.create(moduleName, location, it))
