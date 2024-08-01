@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -437,6 +437,21 @@ public interface WebClient {
          */
         public Builder enableAutomaticCookieStore(boolean enableAutomaticCookieStore) {
             configuration.enableAutomaticCookieStore(enableAutomaticCookieStore);
+            return this;
+        }
+
+        /**
+         * Configure media type parsing mode for HTTP {@code Content-Type} header.
+         * Media type parsing in relaxed mode accepts incomplete Content-Type values like
+         * {@code "text"}, which are accepted as corresponding complete value, e.g. {@code "text/plain"}.
+         * Parsing in strict mode (default) expect exact {@code Content-Type} matching.
+         *
+         * @param relaxedMode value of {@code true} sets relaxed media type parsing mode,
+         *                    value of {@code false} sets strict media type parsing mode
+         * @return updated builder instance
+         */
+        public Builder mediaTypeParserRelaxed(boolean relaxedMode) {
+            configuration.mediaTypeParserRelaxed(relaxedMode);
             return this;
         }
 

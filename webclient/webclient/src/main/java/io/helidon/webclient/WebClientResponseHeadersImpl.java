@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,8 +33,22 @@ import io.helidon.common.http.SetCookie;
  */
 class WebClientResponseHeadersImpl extends ReadOnlyParameters implements WebClientResponseHeaders {
 
-    private WebClientResponseHeadersImpl(Map<String, List<String>> headers) {
+    private final boolean mediaTypeParserRelaxed;
+
+    private WebClientResponseHeadersImpl(Map<String, List<String>> headers, boolean mediaTypeParserRelaxed) {
         super(headers);
+        this.mediaTypeParserRelaxed = mediaTypeParserRelaxed;
+    }
+
+    /**
+     * Creates {@link WebClientResponseHeaders} instance which contains data from {@link Map}.
+     *
+     * @param headers response headers in map
+     * @param mediaTypeParserRelaxed whether relaxed media type parsing mode should be used
+     * @return response headers instance
+     */
+    static WebClientResponseHeadersImpl create(Map<String, List<String>> headers, boolean mediaTypeParserRelaxed) {
+        return new WebClientResponseHeadersImpl(headers, mediaTypeParserRelaxed);
     }
 
     /**
@@ -44,7 +58,7 @@ class WebClientResponseHeadersImpl extends ReadOnlyParameters implements WebClie
      * @return response headers instance
      */
     static WebClientResponseHeaders create(Parameters parameters) {
-        return create(parameters.toMap());
+        return create(parameters.toMap(), false);
     }
 
     /**
@@ -54,7 +68,7 @@ class WebClientResponseHeadersImpl extends ReadOnlyParameters implements WebClie
      * @return response headers instance
      */
     static WebClientResponseHeadersImpl create(Map<String, List<String>> headers) {
-        return new WebClientResponseHeadersImpl(headers);
+        return new WebClientResponseHeadersImpl(headers, false);
     }
 
     @Override
@@ -87,7 +101,10 @@ class WebClientResponseHeadersImpl extends ReadOnlyParameters implements WebClie
 
     @Override
     public Optional<MediaType> contentType() {
-        return first(Http.Header.CONTENT_TYPE).map(MediaType::parse);
+        return first(Http.Header.CONTENT_TYPE)
+                .map(mediaTypeParserRelaxed
+                             ? MediaType::parseRelaxed
+                             : MediaType::parse);
     }
 
     @Override

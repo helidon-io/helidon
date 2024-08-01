@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -123,7 +123,8 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
                     .status(helidonStatus(response.status()))
                     .httpVersion(Http.Version.create(response.protocolVersion().toString()))
                     .responseCloser(responseCloser)
-                    .lastEndpointURI(requestConfiguration.requestURI());
+                    .lastEndpointURI(requestConfiguration.requestURI())
+                    .mediaTypeParserRelaxed(requestConfiguration.mediaTypeParserRelaxed());
 
             HttpHeaders nettyHeaders = response.headers();
             for (String name : nettyHeaders.names()) {
