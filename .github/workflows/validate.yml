@@ -6,6 +6,8 @@ name: "Validate"
 
 on:
   pull_request:
+  push:
+    branches-ignore: [ 'main', 'helidon-*.x' ]
   workflow_call:
 
 env:
