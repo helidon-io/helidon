@@ -437,6 +437,7 @@
                         <sourceFileExcludes>
                             <sourceFileExclude>**/target/**/*.java</sourceFileExclude>
                             <sourceFileExclude>**/*_.java</sourceFileExclude>
+                            <sourceFileExclude>**/*__*.java</sourceFileExclude>
                         </sourceFileExcludes>
                         <dependencySourceExcludes/>
                     </configuration>

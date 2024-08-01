@@ -207,6 +207,11 @@
                                 <exclude>**/generated-test-sources</exclude>
                                 <exclude>**/extracted-sources/**</exclude>
                             </sourceExcludes>
+                            <fileNameExcludes>
+                                <!-- exclude generated files that are not public API -->
+                                <exclude>*__*.java</exclude>
+                                <exclude>*_.java</exclude>
+                            </fileNameExcludes>
                             <moduleIncludes>
                                 <include>io.helidon*</include>
                                 <!-- See https://github.com/helidon-io/helidon/issues/8163 -->
@@ -216,6 +221,9 @@
                                 <!-- Unsupported modules -->
                                 <exclude>io.helidon.inject*</exclude>
                                 <exclude>*.processor*</exclude>
+                                <exclude> io.helidon.integrations.oci.authentication.instance</exclude>
+                                <exclude> io.helidon.integrations.oci.authentication.resource</exclude>
+                                <exclude> io.helidon.integrations.oci.authentication.okeworkload</exclude>
                             </moduleExcludes>
                             <packageIncludes>
                                 <include>io.helidon*</include>
