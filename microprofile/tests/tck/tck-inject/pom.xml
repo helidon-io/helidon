@@ -31,6 +31,14 @@
     <artifactId>helidon-microprofile-tests-tck-inject</artifactId>
     <name>Helidon Microprofile Tests TCK Inject</name>
 
+    <properties>
+        <version.lib.jakarta-inject-tck>2.0.2</version.lib.jakarta-inject-tck>
+        <tck.filename>jakarta.inject-tck-${version.lib.jakarta-inject-tck}</tck.filename>
+        <tck.url>https://download.eclipse.org/jakartaee/dependency-injection/2.0/${tck.filename}-bin.zip</tck.url>
+        <tck.artifact>${tck.filename}</tck.artifact>
+        <stage.dir>${project.build.directory}/tck</stage.dir>
+    </properties>
+
     <modules>
         <module>tck-inject-test</module>
     </modules>
@@ -38,7 +46,9 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
+                <inherited>false</inherited>
                 <executions>
                     <execution>
                         <phase>validate</phase>
@@ -48,13 +58,45 @@
                         <configuration>
                             <target>
                                 <!-- If you use proxy you need to set it as a system properties -->
-                                <get skipexisting="true" src="https://download.eclipse.org/jakartaee/dependency-injection/2.0/jakarta.inject-tck-2.0.2-bin.zip" dest="jakarta.inject-tck-2.0.2-bin.zip"/>
-                                <unzip src="jakarta.inject-tck-2.0.2-bin.zip" dest="./target"/>
-                                <chmod file="artifact-install.sh" perm="+x"/>
-                                <exec executable="sh">
-                                    <arg line="artifact-install.sh 2.0.2"/>
-                                </exec>
+                                <get skipexisting="true" src="${tck.url}" dest="${project.build.directory}/${tck.filename}-bin.zip"/>
+                                <unzip src="${project.build.directory}/${tck.filename}-bin.zip" dest="${stage.dir}">
+                                    <patternset>
+                                        <include name="**/${tck.artifact}*.*"/>
+                                    </patternset>
+                                    <mapper type="flatten"/>
+                                </unzip>
+                                <unzip src="${project.build.directory}/${tck.filename}-bin.zip" dest="${stage.dir}-sources">
+                                    <patternset>
+                                        <include name="**/*.java"/>
+                                    </patternset>
+                                    <mapper type="regexp" from=".*/src/test/java/(.*)" to="\1"/>
+                                </unzip>
+                                <unzip src="${stage.dir}/${tck.artifact}.jar" dest="${stage.dir}">
+                                    <patternset>
+                                        <include name="META-INF/maven/**/pom.xml"/>
+                                        <include name="**/*.pom"/>
+                                    </patternset>
+                                    <mapper type="regexp" from=".*/pom.xml" to="${tck.artifact}.pom"/>
+                                </unzip>
                             </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-install-plugin</artifactId>
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>install-file</goal>
+                        </goals>
+                        <configuration>
+                            <file>${stage.dir}/${tck.filename}.jar</file>
+                            <pomFile>${stage.dir}/${tck.filename}.pom</pomFile>
+                            <sources>${stage.dir}/${tck.filename}-sources.jar</sources>
                         </configuration>
                     </execution>
                 </executions>
