@@ -39,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class HsonTest {
     @Test
     void testWrongTypes() {
-        Hson.Object object = Hson.objectBuilder()
+        Hson.Struct object = Hson.structBuilder()
                 .set("number", 1)
                 .set("string", "hi")
                 .setLongs("numbers", List.of(1L, 2L, 3L))
@@ -53,11 +53,11 @@ class HsonTest {
         assertThrows(HsonException.class,
                      () -> object.doubleValue("string"));
         assertThrows(HsonException.class,
-                     () -> object.objectValue("string"));
+                     () -> object.structValue("string"));
         assertThrows(HsonException.class,
                      () -> object.stringArray("string"));
         assertThrows(HsonException.class,
-                     () -> object.objectArray("string"));
+                     () -> object.structArray("string"));
         assertThrows(HsonException.class,
                      () -> object.booleanArray("string"));
         assertThrows(HsonException.class,
@@ -70,11 +70,11 @@ class HsonTest {
         assertThrows(HsonException.class,
                      () -> object.doubleValue("strings"));
         assertThrows(HsonException.class,
-                     () -> object.objectValue("strings"));
+                     () -> object.structValue("strings"));
         assertThrows(HsonException.class,
                      () -> object.stringArray("numbers"));
         assertThrows(HsonException.class,
-                     () -> object.objectArray("strings"));
+                     () -> object.structArray("strings"));
         assertThrows(HsonException.class,
                      () -> object.booleanArray("strings"));
         assertThrows(HsonException.class,
@@ -83,7 +83,7 @@ class HsonTest {
 
     @Test
     void testReads() {
-        Hson.Object empty = Hson.Object.create();
+        Hson.Struct empty = Hson.Struct.create();
 
         assertThat(empty.booleanValue("anyKey"), optionalEmpty());
         assertThat(empty.booleanValue("anyKey", true), is(true));
@@ -102,7 +102,7 @@ class HsonTest {
         assertThat(empty.numberValue("anyKey", bd), sameInstance(bd));
 
         assertThat(empty.stringArray("anyKey"), optionalEmpty());
-        assertThat(empty.objectArray("anyKey"), optionalEmpty());
+        assertThat(empty.structArray("anyKey"), optionalEmpty());
         assertThat(empty.numberArray("anyKey"), optionalEmpty());
     }
 
@@ -112,7 +112,7 @@ class HsonTest {
         BigDecimal one = new BigDecimal(14);
         BigDecimal two = new BigDecimal(15);
 
-        Hson.Object jObject = Hson.objectBuilder()
+        Hson.Struct jObject = Hson.structBuilder()
                 .setNumbers("numbers", List.of(one, two))
                 .build();
 
@@ -124,7 +124,7 @@ class HsonTest {
 
     @Test
     void testSetBooleans() {
-        Hson.Object jObject = Hson.objectBuilder()
+        Hson.Struct jObject = Hson.structBuilder()
                 .setBooleans("booleans", List.of(true, false, true))
                 .build();
 
@@ -188,7 +188,7 @@ class HsonTest {
 
     @Test
     void testWriteObjectArray() {
-        Hson.Object first = Hson.objectBuilder()
+        Hson.Struct first = Hson.structBuilder()
                 .set("string", "value")
                 .set("long", 4L)
                 .set("double", 4d)
@@ -198,7 +198,7 @@ class HsonTest {
                 .setDoubles("doubles", List.of(1.5d, 2.5d))
                 .setBooleans("booleans", List.of(true, false))
                 .build();
-        Hson.Object second = Hson.objectBuilder()
+        Hson.Struct second = Hson.structBuilder()
                 .set("string", "value2")
                 .build();
 
@@ -225,33 +225,33 @@ class HsonTest {
         assertThat(read.type(), is(Hson.Type.ARRAY));
 
         Hson.Array objects = read.asArray();
-        List<Hson.Object> value = objects.getObjects();
+        List<Hson.Struct> value = objects.getStructs();
         assertThat(value, hasSize(2));
-        Hson.Object readFirst = value.get(0);
+        Hson.Struct readFirst = value.get(0);
         assertThat(readFirst, is(first));
-        Hson.Object readSecond = value.get(1);
+        Hson.Struct readSecond = value.get(1);
         assertThat(readSecond, is(second));
     }
 
     @Test
-    void testSetObjects() {
-        Hson.Object first = Hson.objectBuilder()
+    void testSetStructs() {
+        Hson.Struct first = Hson.structBuilder()
                 .set("key", "value1")
                 .build();
-        Hson.Object second = Hson.objectBuilder()
+        Hson.Struct second = Hson.structBuilder()
                 .set("key", "value2")
                 .build();
-        Hson.Object withArray = Hson.objectBuilder()
-                .setObjects("objects", List.of(first, second))
+        Hson.Struct withArray = Hson.structBuilder()
+                .setStructs("objects", List.of(first, second))
                 .build();
 
-        List<Hson.Object> objects = withArray.objectArray("objects").get();
+        List<Hson.Struct> objects = withArray.structArray("objects").get();
         assertThat(objects, hasItems(first, second));
     }
 
     @Test
     void testNull() {
-        Hson.Object object = Hson.objectBuilder()
+        Hson.Struct object = Hson.structBuilder()
                 .setNull("null-key")
                 .build();
 
@@ -261,7 +261,7 @@ class HsonTest {
 
     @Test
     void testUnset() {
-        Hson.Object object = Hson.objectBuilder()
+        Hson.Struct object = Hson.structBuilder()
                 .setNull("null-key")
                 .unset("null-key")
                 .build();
@@ -273,7 +273,7 @@ class HsonTest {
     void testFunnyDoubles() {
         StringWriter stringWriter = new StringWriter();
         try (PrintWriter pw = new PrintWriter(stringWriter)) {
-            Hson.objectBuilder()
+            Hson.structBuilder()
                     .set("first", 1.1d)
                     .set("second", 1.2f)
                     .set("third", 1.3)
@@ -288,8 +288,8 @@ class HsonTest {
     @Test
     void testFeatures() {
         Hson.Value<?> parsedValue = Hson.parse(HsonTest.class.getResourceAsStream("/json-features.json"));
-        assertThat(parsedValue.type(), is(Hson.Type.OBJECT));
-        Hson.Object object = parsedValue.asObject();
+        assertThat(parsedValue.type(), is(Hson.Type.STRUCT));
+        Hson.Struct object = parsedValue.asStruct();
 
         testFeaturesNull(object);
         testFeaturesArray(object);
@@ -297,10 +297,10 @@ class HsonTest {
         testFeaturesNumbers(object);
     }
 
-    private void testFeaturesNumbers(Hson.Object object) {
-        Optional<Hson.Object> maybeObject = object.objectValue("numbers");
+    private void testFeaturesNumbers(Hson.Struct object) {
+        Optional<Hson.Struct> maybeObject = object.structValue("numbers");
         assertThat(maybeObject, optionalPresent());
-        Hson.Object numbers = maybeObject.get();
+        Hson.Struct numbers = maybeObject.get();
 
         assertThat(numbers.numberValue("number1"), optionalValue(is(new BigDecimal(1))));
         assertThat(numbers.numberValue("number2"), optionalValue(is(new BigDecimal("1.5"))));
@@ -309,10 +309,10 @@ class HsonTest {
         assertThat(numbers.numberValue("number5"), optionalValue(is(new BigDecimal("1.5e2"))));
     }
 
-    private void testFeaturesEscapes(Hson.Object object) {
-        Optional<Hson.Object> maybeObject = object.objectValue("escapes");
+    private void testFeaturesEscapes(Hson.Struct object) {
+        Optional<Hson.Struct> maybeObject = object.structValue("escapes");
         assertThat(maybeObject, optionalPresent());
-        Hson.Object escapes = maybeObject.get();
+        Hson.Struct escapes = maybeObject.get();
 
         assertThat(escapes.stringValue("newline"), optionalValue(is("a\nb")));
         assertThat(escapes.stringValue("quotes"), optionalValue(is("a\"b")));
@@ -326,7 +326,7 @@ class HsonTest {
 
     }
 
-    private void testFeaturesArray(Hson.Object object) {
+    private void testFeaturesArray(Hson.Struct object) {
         Optional<Hson.Array> maybeArray = object.arrayValue("array");
         assertThat(maybeArray, optionalPresent());
         List<Hson.Value<?>> value = maybeArray.get().value();
@@ -335,12 +335,12 @@ class HsonTest {
         assertThat(value.get(1).type(), is(Hson.Type.NULL));
         assertThat(value.get(2).type(), is(Hson.Type.STRING));
         assertThat(value.get(3).type(), is(Hson.Type.NUMBER));
-        assertThat(value.get(4).type(), is(Hson.Type.OBJECT));
+        assertThat(value.get(4).type(), is(Hson.Type.STRUCT));
         assertThat(value.get(5).type(), is(Hson.Type.ARRAY));
     }
 
-    private void testFeaturesNull(Hson.Object object) {
-        Optional<Hson.Value<?>> maybeValue = object.objectValue("nulls")
+    private void testFeaturesNull(Hson.Struct object) {
+        Optional<Hson.Value<?>> maybeValue = object.structValue("nulls")
                 .flatMap(it -> it.value("field"));
         assertThat(maybeValue, optionalPresent());
         Hson.Value<?> value = maybeValue.get();

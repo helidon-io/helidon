@@ -92,16 +92,16 @@ class ConfigMetadataCodegenExtension implements CodegenExtension {
     }
 
     private void storeMetadata() {
-        List<Hson.Object> root = new ArrayList<>();
+        List<Hson.Struct> root = new ArrayList<>();
 
         for (var module : moduleTypes.entrySet()) {
             String moduleName = module.getKey();
             var types = module.getValue();
-            List<Hson.Object> typeArray = new ArrayList<>();
+            List<Hson.Struct> typeArray = new ArrayList<>();
             types.forEach(it -> newOptions.get(it).write(typeArray));
-            root.add(Hson.objectBuilder()
+            root.add(Hson.structBuilder()
                              .set("module", moduleName)
-                             .setObjects("types", typeArray)
+                             .setStructs("types", typeArray)
                              .build());
         }
 

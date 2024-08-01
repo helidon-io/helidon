@@ -32,7 +32,7 @@ record DescriptorMetadataImpl(String registryType,
     private static final int CURRENT_DESCRIPTOR_VERSION = 1;
     private static final int DEFAULT_DESCRIPTOR_VERSION = 1;
 
-    static DescriptorMetadata create(String moduleName, String location, Hson.Object service) {
+    static DescriptorMetadata create(String moduleName, String location, Hson.Struct service) {
         int version = service.intValue("version", DEFAULT_DESCRIPTOR_VERSION);
         if (version != CURRENT_DESCRIPTOR_VERSION) {
             throw new IllegalStateException("Invalid descriptor version: " + version
@@ -61,8 +61,8 @@ record DescriptorMetadataImpl(String registryType,
     }
 
     @Override
-    public Hson.Object toHson() {
-        var builder = Hson.objectBuilder();
+    public Hson.Struct toHson() {
+        var builder = Hson.structBuilder();
 
         if (!registryType.equals(REGISTRY_TYPE_CORE)) {
             builder.set("type", registryType);

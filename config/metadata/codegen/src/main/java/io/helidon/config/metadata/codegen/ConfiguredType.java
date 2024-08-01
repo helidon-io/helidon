@@ -81,8 +81,8 @@ final class ConfiguredType {
         return configured.prefix().orElse(null);
     }
 
-    void write(List<Hson.Object> typeArray) {
-        var typeObject = Hson.Object.builder();
+    void write(List<Hson.Struct> typeArray) {
+        var typeObject = Hson.Struct.builder();
 
         typeObject.set("type", targetClass());
         typeObject.set("annotatedType", annotatedClass());
@@ -108,11 +108,11 @@ final class ConfiguredType {
                     .collect(Collectors.toList()));
         }
 
-        List<Hson.Object> options = new ArrayList<>();
+        List<Hson.Struct> options = new ArrayList<>();
         for (ConfiguredProperty property : allProperties) {
             writeProperty(options, "", property);
         }
-        typeObject.setObjects("options", options);
+        typeObject.setStructs("options", options);
 
         typeArray.add(typeObject.build());
     }
@@ -132,11 +132,11 @@ final class ConfiguredType {
                 .collect(Collectors.joining(", "));
     }
 
-    private void writeProperty(List<Hson.Object> optionsBuilder,
+    private void writeProperty(List<Hson.Struct> optionsBuilder,
                                String prefix,
                                ConfiguredProperty property) {
 
-        var optionBuilder = Hson.Object.builder();
+        var optionBuilder = Hson.Struct.builder();
         if (property.key() != null && !property.key.isBlank()) {
             optionBuilder.set("key", prefix(prefix, property.key()));
         }
@@ -181,10 +181,10 @@ final class ConfiguredType {
                     .forEach(it -> writeProperty(optionsBuilder, finalPrefix, it));
         }
         if (!property.allowedValues.isEmpty()) {
-            List<Hson.Object> allowedValues = new ArrayList<>();
+            List<Hson.Struct> allowedValues = new ArrayList<>();
 
             for (ConfiguredOptionData.AllowedValue allowedValue : property.allowedValues) {
-                var allowedJson = Hson.Object.builder()
+                var allowedJson = Hson.Struct.builder()
                         .set("value", allowedValue.value());
                 if (!allowedValue.description().isBlank()) {
                     allowedJson.set("description", allowedValue.description().trim());
@@ -192,7 +192,7 @@ final class ConfiguredType {
                 allowedValues.add(allowedJson.build());
             }
 
-            optionBuilder.setObjects("allowedValues", allowedValues);
+            optionBuilder.setStructs("allowedValues", allowedValues);
         }
 
         optionsBuilder.add(optionBuilder.build());

@@ -37,7 +37,7 @@ public final class Hson {
      * @param inputStream stream to parse
      * @return a value
      * @see io.helidon.metadata.hson.Hson.Value#type()
-     * @see io.helidon.metadata.hson.Hson.Value#asObject()
+     * @see io.helidon.metadata.hson.Hson.Value#asStruct()
      * @see io.helidon.metadata.hson.Hson.Value#asArray()
      */
     public static Value<?> parse(InputStream inputStream) {
@@ -45,12 +45,12 @@ public final class Hson {
     }
 
     /**
-     * A new fluent API builder to construct an HSON Object.
+     * A new fluent API builder to construct na HSON Struct.
      *
      * @return a new builder
      */
-    public static Object.Builder objectBuilder() {
-        return Object.builder();
+    public static Struct.Builder structBuilder() {
+        return Struct.builder();
     }
 
     /**
@@ -74,9 +74,9 @@ public final class Hson {
          */
         NULL,
         /**
-         * Nested object value.
+         * Nested struct value.
          */
-        OBJECT,
+        STRUCT,
         /**
          * Array value.
          */
@@ -84,34 +84,34 @@ public final class Hson {
     }
 
     /**
-     * HSON Object.
+     * HSON Struct.
      * <p>
-     * A representation of an object, with possible child values.
+     * A representation of a struct, with possible child values. This is similar to {@code JsonObject} in JSON-P.
      */
-    public sealed interface Object extends Value<Hson.Object> permits HsonObject {
+    public sealed interface Struct extends Value<Struct> permits HsonStruct {
 
         /**
-         * A new fluent API builder to construct a HSON Object.
+         * A new fluent API builder to construct a HSON Struct.
          *
          * @return a new builder
          */
         static Builder builder() {
-            return new HsonObject.Builder();
+            return new HsonStruct.Builder();
         }
 
         /**
-         * Create an empty object.
+         * Create an empty struct.
          *
          * @return new empty instance
          */
-        static Object create() {
+        static Struct create() {
             return builder().build();
         }
 
         /**
          * Get a value.
          *
-         * @param key key under this object
+         * @param key key under this struct
          * @return value of that key, or empty if not present; may return value that represents null
          * @see io.helidon.metadata.hson.Hson.Type
          */
@@ -120,7 +120,7 @@ public final class Hson {
         /**
          * Get a boolean value.
          *
-         * @param key key under this object
+         * @param key key under this struct
          * @return boolean value if present
          * @throws HsonException in case the key exists, but is not a {@code boolean}
          */
@@ -129,7 +129,7 @@ public final class Hson {
         /**
          * Get a boolean value with default if not defined.
          *
-         * @param key          key under this object
+         * @param key          key under this struct
          * @param defaultValue default value to use if the key does not exist
          * @return boolean value, or default value if the key does not exist
          * @throws HsonException in case the key exists, but is not a
@@ -138,19 +138,19 @@ public final class Hson {
         boolean booleanValue(String key, boolean defaultValue);
 
         /**
-         * Get object value. If the value represents {@code null}, returns empty optional.
+         * Get struct value. If the value represents {@code null}, returns empty optional.
          *
-         * @param key key under this object
-         * @return object value if present
+         * @param key key under this struct
+         * @return struct value if present
          * @throws HsonException in case the key exists, but is not a
-         *                       {@link io.helidon.metadata.hson.Hson.Type#OBJECT}
+         *                       {@link io.helidon.metadata.hson.Hson.Type#STRUCT}
          */
-        Optional<Object> objectValue(String key);
+        Optional<Struct> structValue(String key);
 
         /**
          * Get string value.
          *
-         * @param key key under this object
+         * @param key key under this struct
          * @return string value if present
          * @throws HsonException in case the key exists, but is not a
          *                       {@link io.helidon.metadata.hson.Hson.Type#STRING}
@@ -160,7 +160,7 @@ public final class Hson {
         /**
          * Get a string value with default if not defined.
          *
-         * @param key          key under this object
+         * @param key          key under this struct
          * @param defaultValue default value to use if the key does not exist
          * @return string value, or default value if the key does not exist
          * @throws HsonException in case the key exists, but is not a
@@ -171,7 +171,7 @@ public final class Hson {
         /**
          * Get int value.
          *
-         * @param key key under this object
+         * @param key key under this struct
          * @return int value if present, from {@link java.math.BigDecimal#intValue()}
          * @throws HsonException in case the key exists, but is not a
          *                       {@link io.helidon.metadata.hson.Hson.Type#NUMBER}
@@ -181,7 +181,7 @@ public final class Hson {
         /**
          * Get an int value with default if not defined.
          *
-         * @param key          key under this object
+         * @param key          key under this struct
          * @param defaultValue default value to use if the key does not exist
          * @return int value, or default value if the key does not exist
          * @throws HsonException in case the key exists, but is not a
@@ -193,7 +193,7 @@ public final class Hson {
         /**
          * Get double value.
          *
-         * @param key key under this object
+         * @param key key under this struct
          * @return double value if present, from {@link java.math.BigDecimal#doubleValue()}
          * @throws HsonException in case the key exists, but is not a
          *                       {@link io.helidon.metadata.hson.Hson.Type#NUMBER}
@@ -203,7 +203,7 @@ public final class Hson {
         /**
          * Get a double value with default if not defined (or null).
          *
-         * @param key          key under this object
+         * @param key          key under this struct
          * @param defaultValue default value to use if the key does not exist
          * @return double value, or default value if the key does not exist
          * @throws HsonException in case the key exists, but is not a
@@ -215,7 +215,7 @@ public final class Hson {
         /**
          * Get number value.
          *
-         * @param key key under this object
+         * @param key key under this struct
          * @return big decimal value if present
          * @throws HsonException in case the key exists, but is not a
          *                       {@link io.helidon.metadata.hson.Hson.Type#NUMBER}
@@ -225,7 +225,7 @@ public final class Hson {
         /**
          * Get number value with default if not defined (or null).
          *
-         * @param key          key under this object
+         * @param key          key under this struct
          * @param defaultValue default value to use if not present or null
          * @return big decimal value
          */
@@ -234,7 +234,7 @@ public final class Hson {
         /**
          * Get string array value.
          *
-         * @param key key under this object
+         * @param key key under this struct
          * @return string array value, if the key exists
          * @throws HsonException in case the key exists, is an array, but elements are not strings
          * @throws HsonException in case the key exists, but is not an array
@@ -242,19 +242,19 @@ public final class Hson {
         Optional<List<String>> stringArray(String key);
 
         /**
-         * Get object array value.
+         * Get struct array value.
          *
-         * @param key key under this object
-         * @return object array value, if the key exists
-         * @throws HsonException in case the key exists, is an array, but elements are not objects
+         * @param key key under this struct
+         * @return struct array value, if the key exists
+         * @throws HsonException in case the key exists, is an array, but elements are not structs
          * @throws HsonException in case the key exists, but is not an array
          */
-        Optional<List<Object>> objectArray(String key);
+        Optional<List<Struct>> structArray(String key);
 
         /**
          * Get number array value.
          *
-         * @param key key under this object
+         * @param key key under this struct
          * @return number array value, if the key exists
          * @throws HsonException in case the key exists, is an array, but elements are not numbers
          * @throws HsonException in case the key exists, but is not an array
@@ -264,7 +264,7 @@ public final class Hson {
         /**
          * Get boolean array value.
          *
-         * @param key key under this object
+         * @param key key under this struct
          * @return boolean array value, if the key exists
          * @throws HsonException in case the key exists, is an array, but elements are not booleans
          * @throws HsonException in case the key exists, but is not an array
@@ -274,18 +274,18 @@ public final class Hson {
         /**
          * Get array value.
          *
-         * @param key key under this object
+         * @param key key under this struct
          * @return array value, if the key exists
          * @throws HsonException in case the key exists, but is not an array
          */
         Optional<Array> arrayValue(String key);
 
         /**
-         * Fluent API builder for {@link io.helidon.metadata.hson.Hson.Object}.
+         * Fluent API builder for {@link io.helidon.metadata.hson.Hson.Struct}.
          *
          * @see #build()
          */
-        interface Builder extends io.helidon.common.Builder<Builder, Object> {
+        interface Builder extends io.helidon.common.Builder<Builder, Struct> {
             /**
              * Unset an existing value assigned to the key.
              * This method does not care if the key is mapped or not.
@@ -385,13 +385,13 @@ public final class Hson {
             Builder set(String key, Array value);
 
             /**
-             * Set an array of objects.
+             * Set an array of structs.
              *
              * @param key   key to set
              * @param value value to assign to the key
              * @return updated instance (this instance)
              */
-            Builder setObjects(String key, List<Hson.Object> value);
+            Builder setStructs(String key, List<Struct> value);
 
             /**
              * Set an array of strings.
@@ -449,7 +449,7 @@ public final class Hson {
                                              HsonValues.NumberValue,
                                              HsonValues.BooleanValue,
                                              HsonValues.NullValue,
-                                             Hson.Object,
+                                             Struct,
                                              Hson.Array {
         /**
          * Write the HSON value.
@@ -473,33 +473,33 @@ public final class Hson {
         Type type();
 
         /**
-         * Get an object array from this parsed value.
+         * Get this parsed value as an array.
          *
-         * @return object array, or this object as an array
-         * @throws HsonException in case this object is not of type
-         *                       {@link io.helidon.metadata.hson.Hson.Type#OBJECT}
+         * @return this value as an array
+         * @throws HsonException in case this value is not of type
+         *                       {@link io.helidon.metadata.hson.Hson.Type#ARRAY}
          */
         default Array asArray() {
             if (type() != Type.ARRAY) {
-                throw new HsonException("Attempting to read object of type " + type() + " as an array");
+                throw new HsonException("Attempting to read value of type " + type() + " as an array");
             }
 
             return (Array) this;
         }
 
         /**
-         * Get an object from this parsed value.
+         * Get this parsed value as a struct.
          *
-         * @return this value as an object
-         * @throws HsonException in case this object is not of type
-         *                       {@link io.helidon.metadata.hson.Hson.Type#OBJECT}
+         * @return this value as a struct
+         * @throws HsonException in case this value is not of type
+         *                       {@link io.helidon.metadata.hson.Hson.Type#STRUCT}
          */
-        default Hson.Object asObject() {
-            if (type() != Type.OBJECT) {
-                throw new HsonException("Attempting to get object of type " + type() + " as an Object");
+        default Struct asStruct() {
+            if (type() != Type.STRUCT) {
+                throw new HsonException("Attempting to get value of type " + type() + " as a Struct");
             }
 
-            return (Hson.Object) this;
+            return (Struct) this;
         }
     }
 
@@ -622,11 +622,11 @@ public final class Hson {
         List<BigDecimal> getNumbers();
 
         /**
-         * Assume this is an array of objects, and return the list.
+         * Assume this is an array of structs, and return the list.
          *
-         * @return all object values of this array, except for nulls
-         * @throws HsonException in case not all elements of this array are objects (or nulls)
+         * @return all struct values of this array, except for nulls
+         * @throws HsonException in case not all elements of this array are structs (or nulls)
          */
-        List<Object> getObjects();
+        List<Struct> getStructs();
     }
 }

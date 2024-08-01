@@ -108,15 +108,15 @@ class HelidonMetaInfServices {
      * Write the file to output.
      */
     void write() {
-        var root = Hson.objectBuilder()
+        var root = Hson.structBuilder()
                 .set("module", moduleName);
-        List<Hson.Object> servicesHson = new ArrayList<>();
+        List<Hson.Struct> servicesHson = new ArrayList<>();
 
         descriptors.stream()
                 .map(DescriptorMetadata::toHson)
                 .forEach(servicesHson::add);
 
-        root.setObjects("services", servicesHson);
+        root.setStructs("services", servicesHson);
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (var pw = new PrintWriter(new OutputStreamWriter(baos, StandardCharsets.UTF_8))) {
