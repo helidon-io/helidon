@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@
 <beans xmlns="https://jakarta.ee/xml/ns/jakartaee"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee
-                           https://jakarta.ee/xml/ns/jakartaee/beans_3_0.xsd"
-       version="3.0"
+                           https://jakarta.ee/xml/ns/jakartaee/beans_4_0.xsd"
+       version="4.0"
        bean-discovery-mode="annotated">
     <scan>
         <exclude name="io.helidon.integrations.cdi.datasource.hikaricp.cdi.MicroProfileMetricsTrackerFactory">
