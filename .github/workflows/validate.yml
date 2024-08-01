@@ -6,13 +6,17 @@ name: "Validate"
 
 on:
   pull_request:
+  push:
+    branches-ignore: [ 'main', 'helidon-*.x' ]
   workflow_call:
 
 env:
   JAVA_VERSION: '21'
   JAVA_DISTRO: 'oracle'
   HELIDON_PIPELINES: 'true'
-  MAVEN_HTTP_ARGS: '-Dmaven.wagon.httpconnectionManager.ttlSeconds=60 -Dmaven.wagon.http.retryHandler.count=3'
+  MAVEN_ARGS: |
+    -Dmaven.wagon.httpconnectionManager.ttlSeconds=60
+    -Dmaven.wagon.http.retryHandler.count=3
 
 concurrency:
   group: Validate-${{ github.ref }}
@@ -47,6 +51,13 @@ jobs:
           cache: maven
       - name: Checkstyle
         run: etc/scripts/checkstyle.sh
+  shellcheck:
+    timeout-minutes: 5
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: ShellCheck
+        run: etc/scripts/shellcheck.sh
   spotbugs:
     timeout-minutes: 45
     runs-on: ubuntu-20.04
@@ -59,7 +70,12 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           cache: maven
       - name: Spotbugs
-        run: etc/scripts/spotbugs.sh
+        run: |
+          mvn ${MAVEN_ARGS} -e \
+            -DskipTests \
+            -Dmaven.test.skip=true \
+            -Pspotbugs,pipeline \
+            install
   docs:
     timeout-minutes: 30
     runs-on: ubuntu-20.04
@@ -72,7 +88,16 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           cache: maven
       - name: Docs
-        run: etc/scripts/docs.sh
+        run: |
+          mvn ${MAVEN_ARGS} -e \
+            -Dmaven.test.skip=true \
+            -DskipTests \
+            -Ppipeline \
+            install
+          mvn ${MAVEN_ARGS} -e \
+            -f docs/pom.xml \
+            -Pjavadoc \
+             install
   build:
     timeout-minutes: 60
     strategy:
@@ -88,7 +113,11 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           cache: maven
       - name: Maven build
-        run: etc/scripts/github-build.sh
+        run: |
+          mvn ${MAVEN_ARGS} -e \
+            -Dmaven.test.failure.ignore=false \
+            -Pjavadoc,sources,tests,pipeline \
+            install
   examples:
     timeout-minutes: 40
     strategy:
@@ -112,9 +141,15 @@ jobs:
           cache: maven
       - name: Maven build
         run: |
-          mvn -B -e "-Dmaven.test.skip=true" $MAVEN_HTTP_ARGS -DskipTests -Ppipeline install 
-          cd examples
-          mvn -B verify
+          # prime build
+          mvn ${MAVEN_ARGS} -e \
+            -Dmaven.test.skip=true \
+            -DskipTests \
+            -Ppipeline \
+            install
+          mvn ${MAVEN_ARGS} -e \
+            -f examples/pom.xml \
+            verify
       - name: Test quickstarts native image
         run: etc/scripts/test-quickstarts.sh
   mp-tck:
@@ -133,7 +168,17 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           cache: maven
       - name: Maven build
-        run: etc/scripts/mp-tck.sh
+        run: |
+          # prime build
+          mvn ${MAVEN_ARGS} -e \
+            -Dmaven.test.skip=true \
+            -DskipTests \
+            -Ppipeline \
+            install
+          mvn ${MAVEN_ARGS} -e \
+            -f microprofile/tests/tck/pom.xml \
+            -Ptck-ft \
+            verify
   archetypes:
     timeout-minutes: 45
     strategy:
@@ -149,7 +194,16 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           cache: maven
       - name: Test archetypes
-        run: etc/scripts/test-archetypes.sh
+        run: |
+          # prime build
+          mvn ${MAVEN_ARGS} -e \
+            -Dmaven.test.skip=true \
+            -DskipTests \
+            -Ppipeline \
+            install
+          mvn ${MAVEN_ARGS} -e \
+            -f archetypes/pom.xml \
+            install
   packaging:
     timeout-minutes: 60
     strategy:
@@ -166,7 +220,13 @@ jobs:
           native-image-job-reports: true
           cache: maven
       - name: Build Helidon
-        run: etc/scripts/github-compile.sh
+        run: |
+          # prime build
+          mvn ${MAVEN_ARGS} -e \
+            -Dmaven.test.skip=true \
+            -DskipTests \
+            -Ppipeline \
+            install
       - name: JAR packaging
         run: etc/scripts/test-packaging-jar.sh
       - name: JLink packaging

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Copyright (c) 2023 Oracle and/or its affiliates.
+# Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,7 +18,9 @@
 
 set -e
 
+# shellcheck disable=SC1091
 source ./config.sh
+# shellcheck disable=SC1091
 source ./utils.sh
 
 # Cleanup
@@ -28,32 +30,33 @@ mkdir -p server client
 CDIR=$(pwd)
 
 # Rotate server cert and key
-cd ${CDIR}/server
+cd "${CDIR}/server"
 genCertAndCSR server
-NEW_SERVER_CERT_OCID=$(uploadNewCert server $DISPLAY_NAME_PREFIX)
+NEW_SERVER_CERT_OCID=$(uploadNewCert server "${DISPLAY_NAME_PREFIX}")
 prepareKeyToUpload server
-NEW_SERVER_KEY_OCID=$(createKeyInVault server $DISPLAY_NAME_PREFIX)
+# shellcheck disable=SC2086
+NEW_SERVER_KEY_OCID=$(createKeyInVault server ${DISPLAY_NAME_PREFIX})
 
 # Rotate client cert and key
-cd ${CDIR}/client
+cd "${CDIR}/client"
 genCertAndCSR client
-NEW_CLIENT_CERT_OCID=$(uploadNewCert client $DISPLAY_NAME_PREFIX)
+NEW_CLIENT_CERT_OCID=$(uploadNewCert client "${DISPLAY_NAME_PREFIX}")
 prepareKeyToUpload client
-NEW_CLIENT_KEY_OCID=$(createKeyInVault client $DISPLAY_NAME_PREFIX)
+NEW_CLIENT_KEY_OCID=$(createKeyInVault client "${DISPLAY_NAME_PREFIX}")
 
 echo "======= ALL done! ======="
 echo "Newly created OCI resources:"
-echo "Server certificate OCID: $NEW_SERVER_CERT_OCID"
-echo "Server private key OCID: $NEW_SERVER_KEY_OCID"
-echo "Client certificate OCID: $NEW_CLIENT_CERT_OCID"
-echo "Client private key OCID: $NEW_CLIENT_KEY_OCID"
+echo "Server certificate OCID: ${NEW_SERVER_CERT_OCID}"
+echo "Server private key OCID: ${NEW_SERVER_KEY_OCID}"
+echo "Client certificate OCID: ${NEW_CLIENT_CERT_OCID}"
+echo "Client private key OCID: ${NEW_CLIENT_KEY_OCID}"
 echo "Saving to gen-config.sh"
-tee ${CDIR}/generated-config.sh << EOF
+tee "${CDIR}/generated-config.sh" << EOF
 #!/bin/bash
 ## Content of this file gets rewritten by create-keys.sh
-export SERVER_CERT_OCID=$NEW_SERVER_CERT_OCID
-export SERVER_KEY_OCID=$NEW_SERVER_KEY_OCID
+export SERVER_CERT_OCID=${NEW_SERVER_CERT_OCID}
+export SERVER_KEY_OCID=${NEW_SERVER_KEY_OCID}
 
-export CLIENT_CERT_OCID=$NEW_CLIENT_CERT_OCID
-export CLIENT_KEY_OCID=$NEW_CLIENT_KEY_OCID
+export CLIENT_CERT_OCID=${NEW_CLIENT_CERT_OCID}
+export CLIENT_KEY_OCID=${NEW_CLIENT_KEY_OCID}
 EOF

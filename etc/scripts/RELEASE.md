@@ -1,12 +1,11 @@
-
 # Releasing Helidon
 
 These are the steps for doing a release of Helidon. These steps 
-will use release 0.7.0 in examples. Of course you are not releasing
+will use release 0.7.0 in examples. Of course, you are not releasing
 0.7.0, so make sure to change that release number to your release
 number when copy/pasting.
 
-# Overview
+## Overview
 
 The Helidon release pipeline is triggered when a change is pushed to
 a branch that starts with `release-`. The release pipeline performs
@@ -21,16 +20,15 @@ is the overall flow:
 5. Create GitHub release
 6. Increment version in master and update changelog
 
-# Steps in detail
+## Steps in detail
 
-```
+```shell
 # Set this to the version you are releasing
 export VERSION="0.7.0"
 ```
 
-
 1. Create local release branch
-    ```
+    ```shell
     git clone git@github.com:oracle/helidon.git
     git checkout -b release-${VERSION}
     ```
@@ -66,7 +64,7 @@ export VERSION="0.7.0"
     1. Do quick smoke test by trying an archetype that is in the staging
        repo (see staging repository profile at end of this document)
     
-        ```
+        ```shell
         mvn -U archetype:generate -DinteractiveMode=false \
             -DarchetypeGroupId=io.helidon.archetypes \
             -DarchetypeArtifactId=helidon-quickstart-se \
@@ -81,87 +79,85 @@ export VERSION="0.7.0"
         mvn package -Possrh-staging
         ```
         
-    2. Do full smoke test using test script (this requires staging profile to
-       be configured):
-       ```
+    2. Do full smoke test using test script (this requires staging profile to be configured):
+       ```shell
        smoketest.sh --giturl=https://github.com/oracle/helidon.git --version=${VERSION} --clean --staged full
        ```
     3. The smoketest script will leave its work in `/var/tmp/helidon-smoke.XXXX`.
-       Go there, into the quickstarts and test the native builds and Docker
-       builds (for Docker builds you'll need to update the pom to include
-       the staging repositories.
+       Go there, into the quickstarts and test the native builds and Docker builds.
+       For Docker builds you'll need to update the pom to include the staging repositories.
        
-6. Release repository: Select repository then click Release (up at the top)
-   1. In description you can put something like "Helidon 0.7.0 Release"
+7. Release repository: Select repository then click Release (up at the top)
+   1. In the description you can put something like "Helidon 0.7.0 Release"
    2. It might take a while (possibly hours) before the release appears in Maven Central
    3. To check on progress look at https://repo1.maven.org/maven2/io/helidon/helidon-bom/
        
-6. Create GitHub release
+8. Create GitHub release
    1. Create a fragment of the change log that you want used for the release
       description on the GitHub Releases page. Assume it is in `/tmp/change-frag.md`
    2. Set your API key (you generate this on your GitHub Settings):
-      ```
+      ```shell
       export GITHUB_API_KEY=<longhexnumberhere.....>
       ```
    3. Run script to create release in GitHub:
-      ```
+      ```shell
       etc/scripts/github-release.sh --changelog=/tmp/change-frag.md --version=${VERSION}
       ```
    4. Go to https://github.com/oracle/helidon/releases and verify release looks like
       you expect. You can edit it if you need to.
 
-7. Update version and CHANGELOG in master
+9. Update version and CHANGELOG in master
    1. Create post release branch: `git checkout -b post-release-${VERSION}`
    2. Copy CHANGELOG from your release branch. Add empty Unrelease section.
    3. Update SNAPSHOT version number. Remember to use your version number!
-      ```
+      ```shell
       etc/scripts/release.sh --version=0.7.1-SNAPSHOT update_version
       ```
       If you perfromed a Milestone release you will likely leave the 
       SNAPSHOT version in master alone.
    4. Add and commit changes then push
-      ```
+      ```shell
       git push origin post-release-${VERSION}
       ```
    5. Create PR and merge into master
 
-8. Now go to helidon-site and look at the RELEASE.md there to release the website with updated docs
+10. Now go to helidon-site and look at the RELEASE.md there to release the website with updated docs
 
 # Staging Repository Profile
 
 To pull artifacts from the sonatype staging repository add this profile to your `settings.xml`:
 
-```
-      <profile>
-           <id>ossrh-staging</id>
-           <activation>
-               <activeByDefault>false</activeByDefault>
-           </activation>
-           <repositories>
-               <repository>
-                   <id>ossrh-staging</id>
-                   <name>OSS Sonatype Staging</name>
-                   <url>https://oss.sonatype.org/content/groups/staging/</url>
-                   <snapshots>
-                       <enabled>false</enabled>
-                   </snapshots>
-                   <releases>
-                       <enabled>true</enabled>
-                   </releases>
-               </repository>
-           </repositories>
-           <pluginRepositories>
-               <pluginRepository>
-                   <id>ossrh-staging</id>
-                   <name>OSS Sonatype Staging</name>
-                   <url>https://oss.sonatype.org/content/groups/staging/</url>
-                   <snapshots>
-                       <enabled>false</enabled>
-                   </snapshots>
-                   <releases>
-                       <enabled>true</enabled>
-                   </releases>
-               </pluginRepository>
-           </pluginRepositories>
-       </profile>
+```xml
+<profile>
+     <id>ossrh-staging</id>
+     <activation>
+         <activeByDefault>false</activeByDefault>
+     </activation>
+     <repositories>
+         <repository>
+             <id>ossrh-staging</id>
+             <name>OSS Sonatype Staging</name>
+             <url>https://oss.sonatype.org/content/groups/staging/</url>
+             <snapshots>
+                 <enabled>false</enabled>
+             </snapshots>
+             <releases>
+                 <enabled>true</enabled>
+             </releases>
+         </repository>
+     </repositories>
+     <pluginRepositories>
+         <pluginRepository>
+             <id>ossrh-staging</id>
+             <name>OSS Sonatype Staging</name>
+             <url>https://oss.sonatype.org/content/groups/staging/</url>
+             <snapshots>
+                 <enabled>false</enabled>
+             </snapshots>
+             <releases>
+                 <enabled>true</enabled>
+             </releases>
+         </pluginRepository>
+     </pluginRepositories>
+ </profile>
 ```

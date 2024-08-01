@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+# Copyright (c) 2019, 2024 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,16 +22,34 @@
 #    https://oss.sonatype.org/content/groups/staging/ as a repository
 #    See bottom of RELEASE.md for details
 
-# Path to this script
-[ -h "${0}" ] && readonly SCRIPT_PATH="$(readlink "${0}")" || readonly SCRIPT_PATH="${0}"
+set -o pipefail || true  # trace ERR through pipes
+set -o errtrace || true # trace ERR through commands and functions
+set -o errexit || true  # exit the script if any statement returns a non-true return value
 
-# Load error handling functions and define error handling
-. $(dirname -- "${SCRIPT_PATH}")/includes/error_handlers.sh
+on_error(){
+    CODE="${?}" && \
+    set +x && \
+    printf "[ERROR] Error(code=%s) occurred at %s:%s command: %s\n" \
+        "${CODE}" "${BASH_SOURCE[0]}" "${LINENO}" "${BASH_COMMAND}"
+}
+trap on_error ERR
+
+# Path to this script
+if [ -h "${0}" ] ; then
+    SCRIPT_PATH="$(readlink "${0}")"
+else
+    SCRIPT_PATH="${0}"
+fi
+readonly SCRIPT_PATH
+
+
+SCRIPT_DIR=$(dirname "${SCRIPT_PATH}")
+readonly SCRIPT_DIR
 
 # Local error handler
 smoketest_on_error(){
     on_error
-    echo "===== Log file: ${OUTPUTFILE} ====="
+    echo "===== Log file: ${OUTPUT_FILE} ====="
     # In case there is a process left running
 }
 
@@ -45,7 +63,7 @@ DESCRIPTION: Helidon Smoke Test Script
 
 USAGE:
 
-$(basename ${0}) [ --staged ] [ --giturl=URL ] [ --clean ] [--help ] --version=V  CMD
+$(basename "${0}") [ --staged ] [ --giturl=URL ] [ --clean ] [--help ] --version=V  CMD
 
   --staged
         Use the OSS Sonatype Staging repository at
@@ -131,16 +149,18 @@ if [ -z "${VERSION}" ] ; then
     exit 1
 fi
 
-readonly MAVEN_ARGS=""
+MAVEN_ARGS=""
+readonly MAVEN_ARGS
 
-readonly SCRIPT_DIR=$(dirname ${SCRIPT_PATH})
+DATESTAMP=$(date +%Y-%m-%d-%H-%M-%S)
+readonly DATESTAMP
 
-readonly DATESTAMP=$(date +%Y-%m-%d-%H-%M-%S)
 mkdir -p /var/tmp/helidon-smoke
-readonly SCRATCH=$(mktemp -d /var/tmp/helidon-smoke/${VERSION}-${DATESTAMP}.XXXX)
+SCRATCH=$(mktemp -d "/var/tmp/helidon-smoke/${VERSION}-${DATESTAMP}.XXXX")
+readonly SCRATCH
 
 if [ -z "${GIT_URL}" ] ; then
-    cd ${SCRIPT_DIR}
+    cd "${SCRIPT_DIR}"
     GIT_URL=$(git remote get-url origin)
 fi
 
@@ -153,41 +173,41 @@ set -u
 
 full(){
     echo "===== Full Test ====="
-    cd ${SCRATCH}
+    cd "${SCRATCH}"
     quick
-    cd ${SCRATCH}
+    cd "${SCRATCH}"
 
     if [[ "${VERSION}" =~ .*SNAPSHOT ]]; then
         echo "WARNING! SNAPSHOT version. Skipping tag checkout"
     else
         echo "===== Cloning Workspace ${GIT_URL} ====="
-        git clone ${GIT_URL}
-        cd ${SCRATCH}/helidon
+        git clone "${GIT_URL}"
+        cd "${SCRATCH}/helidon"
         echo "===== Checking out tags/${VERSION} ====="
-        git checkout tags/${VERSION}
+        git checkout "tags/${VERSION}"
     fi
 
     echo "===== Building examples ====="
-    cd ${SCRATCH}/helidon/examples
+    cd "${SCRATCH}/helidon/examples"
     # XXX we exclude todo-app frontend due to the issues with npm behind firewall
-    mvn ${MAVEN_ARGS} clean install -pl '!todo-app/frontend' ${STAGED_PROFILE}
-    cd ${SCRATCH}
+    mvn "${MAVEN_ARGS}" clean install -pl '!todo-app/frontend' ${STAGED_PROFILE}
+    cd "${SCRATCH}"
 
     echo "===== Building test support ====="
-    cd ${SCRATCH}/helidon/microprofile/tests/
-    mvn -N ${MAVEN_ARGS} clean install ${STAGED_PROFILE}
-    cd ${SCRATCH}/helidon/microprofile/tests/junit5
-    mvn ${MAVEN_ARGS} clean install ${STAGED_PROFILE}
-    cd ${SCRATCH}/helidon/microprofile/tests/junit5-tests
-    mvn ${MAVEN_ARGS} clean install ${STAGED_PROFILE}
+    cd "${SCRATCH}/helidon/microprofile/tests/"
+    mvn -N "${MAVEN_ARGS}" clean install ${STAGED_PROFILE}
+    cd "${SCRATCH}/helidon/microprofile/tests/junit5"
+    mvn "${MAVEN_ARGS}" clean install ${STAGED_PROFILE}
+    cd "${SCRATCH}/helidon/microprofile/tests/junit5-tests"
+    mvn "${MAVEN_ARGS}" clean install ${STAGED_PROFILE}
 
     echo "===== Running tests ====="
-    cd ${SCRATCH}/helidon/tests
-    mvn ${MAVEN_ARGS} clean install ${STAGED_PROFILE}
+    cd "${SCRATCH}/helidon/tests"
+    mvn "${MAVEN_ARGS}" clean install ${STAGED_PROFILE}
 
     # Primes dependencies for native-image builds
-    cd ${SCRATCH}/helidon/tests/integration/native-image
-    mvn ${MAVEN_ARGS} clean install ${STAGED_PROFILE}
+    cd "${SCRATCH}/helidon/tests/integration/native-image"
+    mvn "${MAVEN_ARGS}" clean install ${STAGED_PROFILE}
 
     echo "===== Running native image tests ====="
     if [ -z "${GRAALVM_HOME}" ]; then
@@ -196,12 +216,12 @@ full(){
         echo "GRAALVM_HOME=${GRAALVM_HOME}"
         readonly native_image_tests="mp-1 mp-2 mp-3"
         for native_test in ${native_image_tests}; do
-            cd ${SCRATCH}/helidon/tests/integration/native-image/${native_test}
-            mvn ${MAVEN_ARGS} clean package -Pnative-image ${STAGED_PROFILE}
+            cd "${SCRATCH}/helidon/tests/integration/native-image/${native_test}"
+            mvn "${MAVEN_ARGS}" clean package -Pnative-image ${STAGED_PROFILE}
         done
 
         # Run this one because it has no pre-reqs and self-tests
-        cd ${SCRATCH}/helidon/tests/integration/native-image/mp-1
+        cd "${SCRATCH}/helidon/tests/integration/native-image/mp-1"
         target/helidon-tests-native-image-mp-1
     fi
 
@@ -218,10 +238,10 @@ waituntilready() {
 
 testGET() {
     echo "GET $1"
-    http_code=`curl -s -o /dev/null -w "%{http_code}" -X GET $1`
-    if [ ${http_code} -ne "200" ]; then
-        echo "ERROR: Bad HTTP code. Expected 200 got ${http_code}. GET $1"
-        kill ${PID}
+    http_code=$(curl -s -o /dev/null -w "%{http_code}" -X GET "${1}")
+    if [ "${http_code}" -ne "200" ]; then
+        echo "ERROR: Bad HTTP code. Expected 200 got ${http_code}. GET ${1}"
+        kill "${PID}"
         return 1
     fi
     return 0
@@ -230,37 +250,37 @@ testGET() {
 #
 # $1 = archetype name: "quickstart-se"
 buildAndTestArchetype(){
-    archetype_name=$1
-    archetype_pkg=`echo ${archetype_name} | tr "\-" "\."`
+    archetype_name=${1}
+    archetype_pkg=$(echo "${archetype_name}" | tr "\-" "\.")
 
     echo "===== Testing Archetype ${archetype_name} ====="
 
-    mvn ${MAVEN_ARGS} -U archetype:generate -DinteractiveMode=false \
+    mvn "${MAVEN_ARGS}" -U archetype:generate -DinteractiveMode=false \
         -DarchetypeGroupId=io.helidon.archetypes \
-        -DarchetypeArtifactId=helidon-${archetype_name} \
-        -DarchetypeVersion=${VERSION} \
+        -DarchetypeArtifactId="helidon-${archetype_name}" \
+        -DarchetypeVersion="${VERSION}" \
         -DgroupId=io.helidon.examples \
-        -DartifactId=helidon-${archetype_name} \
-        -Dpackage=io.helidon.examples.${archetype_pkg} \
+        -DartifactId=helidon-"${archetype_name}" \
+        -Dpackage=io.helidon.examples."${archetype_pkg}" \
         ${STAGED_PROFILE}
 
 
     echo "===== ${archetype_name}: building jar ====="
-    mvn ${MAVEN_ARGS} -f helidon-${archetype_name}/pom.xml ${STAGED_PROFILE} clean package
+    mvn "${MAVEN_ARGS}" -f helidon-"${archetype_name}"/pom.xml ${STAGED_PROFILE} clean package
 
     echo "===== Running and pinging ${archetype_name} app using jar ====="
-    java -jar helidon-${archetype_name}/target/helidon-${archetype_name}.jar &
+    java -jar "helidon-${archetype_name}/target/helidon-${archetype_name}.jar" &
     PID=$!
-    testApp ${archetype_name}
+    testApp "${archetype_name}"
     kill ${PID}
 
     echo "===== ${archetype_name}: building jlink image ====="
-    mvn ${MAVEN_ARGS} -f helidon-${archetype_name}/pom.xml ${STAGED_PROFILE} -Pjlink-image package -DskipTests
+    mvn "${MAVEN_ARGS}" -f "helidon-${archetype_name}/pom.xml" ${STAGED_PROFILE} -Pjlink-image package -DskipTests
 
     echo "===== Running and pinging ${archetype_name} app using jlink image ====="
-    helidon-${archetype_name}/target/helidon-${archetype_name}-jri/bin/start &
+    "helidon-${archetype_name}/target/helidon-${archetype_name}-jri/bin/start" &
     PID=$!
-    testApp ${archetype_name}
+    testApp "${archetype_name}"
     kill ${PID}
     sleep 1
 }
@@ -270,7 +290,7 @@ testApp(){
     waituntilready
 
     # Hit some endpoints
-    if [ "${archetype_name}" = "quickstart-se" -o  "${archetype_name}" = "quickstart-mp" ]; then
+    if [ "${archetype_name}" = "quickstart-se" ] || [ "${archetype_name}" = "quickstart-mp" ]; then
         testGET http://localhost:8080/greet
         testGET http://localhost:8080/greet/Joe
     fi
@@ -289,29 +309,30 @@ quick(){
       "
 
     echo "===== Quick Test ====="
-    cd ${SCRATCH}
+    cd "${SCRATCH}"
 
     echo "===== Testing Archetypes ====="
 
     for a in ${archetypes}; do
-        buildAndTestArchetype $a
+        buildAndTestArchetype "${a}"
     done
 }
 
-cd ${SCRATCH}
+cd "${SCRATCH}"
 
-readonly OUTPUTFILE=${SCRATCH}/helidon-smoketest-log.txt
-readonly LOCAL_MVN_REPO=$(mvn ${MAVEN_ARGS} help:evaluate -Dexpression=settings.localRepository | grep -v '\[INFO\]')
+OUTPUT_FILE=${SCRATCH}/helidon-smoketest-log.txt
+LOCAL_MVN_REPO=$(mvn "${MAVEN_ARGS}" help:evaluate -Dexpression=settings.localRepository | grep -v '\[INFO\]')
+readonly OUTPUT_FILE LOCAL_MVN_REPO
 
 echo "===== Running in ${SCRATCH} ====="
-echo "===== Log file: ${OUTPUTFILE} ====="
+echo "===== Log file: ${OUTPUT_FILE} ====="
 
-if [ ! -z "${CLEAN_MVN_REPO}" -a -d "${LOCAL_MVN_REPO}" ]; then
+if [ -n "${CLEAN_MVN_REPO}" ] && [ -d "${LOCAL_MVN_REPO}" ]; then
     echo "===== Cleaning release from local maven repository ${LOCAL_MVN_REPO}  ====="
-    find ${LOCAL_MVN_REPO}/io/helidon -depth  -name ${VERSION} -type d -exec rm -rf {} \;
+    find "${LOCAL_MVN_REPO}/io/helidon" -depth  -name "${VERSION}" -type d -exec rm -rf {} \;
 fi
 
 # Invoke command
-${COMMAND} | tee $OUTPUTFILE
+${COMMAND} | tee "${OUTPUT_FILE}"
 
-echo "===== Log file: ${OUTPUTFILE} ====="
+echo "===== Log file: ${OUTPUT_FILE} ====="

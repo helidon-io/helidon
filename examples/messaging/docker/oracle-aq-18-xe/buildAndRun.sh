@@ -39,7 +39,7 @@ if [[ "$(docker images -q ${BASE_IMAGE_NAME} 2>/dev/null)" == "" ]]; then
   rm -f ${TEMP_DIR}/ora-images.zip
 
   # download official oracle docker images
-  curl -LJ -o ${TEMP_DIR}/ora-images.zip ${IMAGES_ZIP_URL}
+  curl -LJ -o ${TEMP_DIR}/ora-images.zip "${IMAGES_ZIP_URL}"
   # unzip only image for Oracle database 18.4.0
   unzip -qq ${TEMP_DIR}/ora-images.zip "${IMAGES_ZIP_DIR}/*" -d ${IMAGES_DIR}
   mv ${IMAGES_DIR}/${IMAGES_ZIP_DIR}/${ORA_DB_VERSION} ${IMAGES_DIR}/
@@ -53,7 +53,7 @@ if [[ "$(docker images -q ${BASE_IMAGE_NAME} 2>/dev/null)" == "" ]]; then
   # can take long(15 minutes or so)
   cd ${IMAGES_DIR} || exit
   bash ./buildContainerImage.sh -v ${ORA_DB_VERSION} -x || exit
-  cd ${CURR_DIR} || exit
+  cd "${CURR_DIR}" || exit
 else
   printf "OK\n"
 fi

@@ -52,16 +52,16 @@ createCertificatesAndStores() {
   openssl pkcs12 -export -in server-signed.cer -inkey server-private.key -out server-signed.p12 -name server -passout pass:changeit
   keytool -delete -alias server -keystore server.jks -storepass changeit
   keytool -importkeystore -srckeystore server-signed.p12 -srcstoretype PKCS12 -destkeystore server.jks -srcstorepass changeit -deststorepass changeit
-	
+
 	echo "Importing CA cert to the client and server stores..."
-	if [ "$SINGLE" = true ] ; then
+	if [ "${SINGLE}" = true ] ; then
 		keytool -v -trustcacerts -keystore client.jks -importcert -file ca.pem -alias root-ca -storepass changeit -noprompt
 		keytool -v -trustcacerts -keystore server.jks -importcert -file ca.pem -alias root-ca -storepass changeit -noprompt
-	else 
+	else
 		keytool -v -trustcacerts -keystore client-truststore.jks -importcert -file ca.pem -alias root-ca -storepass changeit -noprompt
 		keytool -v -trustcacerts -keystore server-truststore.jks -importcert -file ca.pem -alias root-ca -storepass changeit -noprompt
 	fi
-	
+
 	echo "Changing aliases to 1..."
 	keytool -changealias -alias server -destalias 1 -keypass changeit -keystore server.jks -storepass changeit
 	keytool -changealias -alias client -destalias 1 -keypass changeit -keystore client.jks -storepass changeit
@@ -70,14 +70,14 @@ createCertificatesAndStores() {
 	if [ "$TYPE" = PKCS12 ] || [ "$TYPE" = P12 ] ; then
 		keytool -importkeystore -srckeystore client.jks -destkeystore out/client.p12 -srcstoretype JKS -deststoretype PKCS12 -srcstorepass changeit -deststorepass changeit
 		keytool -importkeystore -srckeystore server.jks -destkeystore out/server.p12 -srcstoretype JKS -deststoretype PKCS12 -srcstorepass changeit -deststorepass changeit
-		if [ "$SINGLE" = false ] ; then
+		if [ "${SINGLE}" = false ] ; then
 			keytool -importkeystore -srckeystore server-truststore.jks -destkeystore out/server-truststore.p12 -srcstoretype JKS -deststoretype PKCS12 -srcstorepass changeit -deststorepass changeit
 			keytool -importkeystore -srckeystore client-truststore.jks -destkeystore out/client-truststore.p12 -srcstoretype JKS -deststoretype PKCS12 -srcstorepass changeit -deststorepass changeit
 		fi
-	else 
+	else
 		mv client.jks out/client.jks
 		mv server.jks out/server.jks
-		if [ "$SINGLE" = false ] ; then
+		if [ "${SINGLE}" = false ] ; then
 			mv client-truststore.jks out/client-truststore.jks
 			mv server-truststore.jks out/server-truststore.jks
 		fi
@@ -85,7 +85,7 @@ createCertificatesAndStores() {
 }
 
 removeAllPreviouslyCreatedStores() {
-    echo 'Removing all of previously created items...'
+    echo "Removing all of previously created items..."
 
     rm -fv ca.key
     rm -fv ca.jks
@@ -110,53 +110,58 @@ removeAllPreviouslyCreatedStores() {
     rm -fv client-truststore.jks
 	  rm -rf out
 
-    echo 'Clean up finished'
+    echo "Clean up finished"
 }
 
 while [ "$1" != "" ]; do
     case $1 in
-        -n | --name )           shift
-                                NAME=$1
-                                ;;
-        -t | --type )           shift
-                                TYPE=$1
-                                ;;
-        -s | --single )    		shift
-								SINGLE=$1
-                                ;;
-        -h | --help )           echo "Some cool help"
-                                exit
-                                ;;
-        * )                     echo "ERROR: Invalid parameter" $1
-                                exit 1
+      -n | --name)
+        shift
+        NAME=$1
+        ;;
+      -t | --type )
+        shift
+        TYPE="${1}"
+        ;;
+      -s | --single )
+        shift
+        SINGLE="${1}"
+        ;;
+      -h | --help )
+        echo "Some cool help"
+        exit
+        ;;
+      * )
+        echo "ERROR: Invalid parameter ${1}"
+        exit 1
     esac
-    shift
+  shift
 done
-if [ -z "$NAME" ]; then
+if [ -z "${NAME}" ]; then
     echo "ERROR: Please specify the name of Organization/Application by parameter -n | --name"
 	exit 1
 else
-	echo "Generating certs for Organization/Application "$NAME
+	echo "Generating certs for Organization/Application ${NAME}"
 fi
-case $TYPE in
-        JKS | P12 | PKCS12 )
-			echo "Output file will be of type" $TYPE
-            ;;
-        *)
-			echo 'ERROR: Invalid output type' $TYPE 
-			echo 'Only JKS | P12 | PKCS12 supported'
-			return 1
+case ${TYPE} in
+  JKS | P12 | PKCS12 )
+    echo "Output file will be of type ${TYPE}"
+      ;;
+  *)
+    echo "ERROR: Invalid output type ${TYPE}"
+    echo "Only JKS | P12 | PKCS12 supported"
+    return 1
 esac
-case $SINGLE in
-        true )
-			echo "Truststore and private key will be in single file"
-            ;;
-		false ) 
-			echo "Truststore and private key will be in separate files"
-			;;
-        *)
-			echo "ERROR: Only value true/false valid in single parameter! Current " $SINGLE
-			exit 1
+case ${SINGLE} in
+  true)
+    echo "Truststore and private key will be in single file"
+    ;;
+  false)
+    echo "Truststore and private key will be in separate files"
+    ;;
+  *)
+    echo "ERROR: Only value true/false valid in single parameter! Current ${SINGLE}"
+    exit 1
 esac
 
 removeAllPreviouslyCreatedStores

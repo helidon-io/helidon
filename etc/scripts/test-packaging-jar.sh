@@ -1,6 +1,6 @@
-#!/bin/bash -e
+#!/bin/bash
 #
-# Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+# Copyright (c) 2021, 2024 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,19 +15,37 @@
 # limitations under the License.
 #
 
+set -o pipefail || true  # trace ERR through pipes
+set -o errtrace || true # trace ERR through commands and functions
+set -o errexit || true  # exit the script if any statement returns a non-true return value
+
+on_error(){
+    CODE="${?}" && \
+    set +x && \
+    printf "[ERROR] Error(code=%s) occurred at %s:%s command: %s\n" \
+        "${CODE}" "${BASH_SOURCE[0]}" "${LINENO}" "${BASH_COMMAND}"
+}
+trap on_error ERR
+
 # Path to this script
-[ -h "${0}" ] && readonly SCRIPT_PATH="$(readlink "${0}")" || readonly SCRIPT_PATH="${0}"
+if [ -h "${0}" ] ; then
+    SCRIPT_PATH="$(readlink "${0}")"
+else
+    # shellcheck disable=SC155
+    SCRIPT_PATH="${0}"
+fi
+readonly SCRIPT_PATH
 
-# Load pipeline environment setup and define WS_DIR
-. $(dirname -- "${SCRIPT_PATH}")/includes/pipeline-env.sh "${SCRIPT_PATH}" '../..'
-
-# Setup error handling using default settings (defined in includes/error_handlers.sh)
-error_trap_setup
+# Path to the root of the workspace
+# shellcheck disable=SC2046
+WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
+readonly WS_DIR
 
 # Run native image tests
-cd ${WS_DIR}/tests/integration/native-image
+cd "${WS_DIR}/tests/integration/native-image"
 
 # Prime build all native-image tests
+# shellcheck disable=SC2086
 mvn ${MAVEN_ARGS} -e clean install
 
 # Run tests with classpath and then module path
@@ -35,7 +53,7 @@ mvn ${MAVEN_ARGS} -e clean install
 #
 # Run MP-1
 #
-cd ${WS_DIR}/tests/integration/native-image/mp-1
+cd "${WS_DIR}/tests/integration/native-image/mp-1"
 # Classpath
 java -jar target/helidon-tests-native-image-mp-1.jar
 
@@ -46,7 +64,7 @@ java --module-path target/helidon-tests-native-image-mp-1.jar:target/libs \
 #
 # Run MP-3 (just start and stop)
 #
-cd ${WS_DIR}/tests/integration/native-image/mp-3
+cd "${WS_DIR}/tests/integration/native-image/mp-3"
 # Classpath
 java -Dexit.on.started=! -jar target/helidon-tests-native-image-mp-3.jar
 
