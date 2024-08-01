@@ -42,7 +42,9 @@ import io.micrometer.core.instrument.MeterRegistry;
  * {@code MicrometerSupport} object, developers can invoke the {@link #registry()} method and use the returned {@code
  * MeterRegistry} to create or locate meters.
  * </p>
+ * @deprecated Use the normal Helidon {@code /metrics} endpoint and configuration instead of {@code /micrometer}.
  */
+@Deprecated(forRemoval = true, since = "4.1")
 public class MicrometerFeature extends HelidonFeatureSupport {
 
     static final String DEFAULT_CONTEXT = "/micrometer";

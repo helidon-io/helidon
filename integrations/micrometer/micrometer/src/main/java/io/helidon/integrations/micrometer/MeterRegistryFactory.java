@@ -84,7 +84,9 @@ import io.micrometer.core.instrument.config.MeterRegistryConfig;
  *     order of enrollment. The first function that returns a non-empty {@code Optional} wins and must populate and return the
  *     {@link ServerResponse}.
  * </p>
+ * @deprecated Use the Helidon neutral metrics API and {@code unwrap} its types to their Micrometer counterparts
  */
+@Deprecated(forRemoval = true, since = "4.1")
 public final class MeterRegistryFactory {
 
     /**
