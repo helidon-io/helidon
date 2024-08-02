@@ -33,7 +33,7 @@
     <properties>
         <version.lib.jbatch-api>2.1.0</version.lib.jbatch-api>
         <version.lib.jbatch.container>2.1.0</version.lib.jbatch.container>
-        <version.lib.derby>10.14.2.0</version.lib.derby>
+        <version.lib.derby>10.17.1.0</version.lib.derby>
         <version.lib.jaxb-api>3.0.1</version.lib.jaxb-api>
     </properties>
 
@@ -87,6 +87,12 @@
         <dependency>
             <groupId>org.apache.derby</groupId>
             <artifactId>derby</artifactId>
+            <version>${version.lib.derby}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.derby</groupId>
+            <artifactId>derbytools</artifactId>
             <version>${version.lib.derby}</version>
             <scope>runtime</scope>
         </dependency>
