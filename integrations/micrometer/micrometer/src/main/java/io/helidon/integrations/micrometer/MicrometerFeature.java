@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,9 @@ import io.micrometer.core.instrument.MeterRegistry;
  * {@code MicrometerSupport} object, developers can invoke the {@link #registry()} method and use the returned {@code
  * MeterRegistry} to create or locate meters.
  * </p>
+ * @deprecated Use the normal Helidon {@code /metrics} endpoint and configuration instead of {@code /micrometer}.
  */
+@Deprecated(forRemoval = true, since = "4.1")
 public class MicrometerFeature extends HelidonFeatureSupport {
 
     static final String DEFAULT_CONTEXT = "/micrometer";
