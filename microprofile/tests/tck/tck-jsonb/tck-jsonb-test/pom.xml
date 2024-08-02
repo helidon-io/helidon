@@ -39,7 +39,7 @@
         <dependency>
             <groupId>jakarta.json.bind</groupId>
             <artifactId>jakarta.json.bind-tck</artifactId>
-            <version>${version.lib.jakarta.jsonb-api}</version>
+            <version>${version.lib.jakarta.jsonb-tck}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
