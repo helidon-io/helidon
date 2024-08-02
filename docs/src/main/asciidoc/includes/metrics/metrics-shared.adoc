@@ -215,11 +215,11 @@ Once it has a reference to a `MetricRegistry` your code can use the reference to
 // tag::example-apps[]
 Helidon {flavor-uc} includes several pre-written example applications illustrating aspects of metrics:
 
-* link:{helidon-github-tree-url}/examples/metrics/filtering/{flavor-lc}[Enabling/disabling {metrics}] using
+* link:{helidon-github-examples-url}/metrics/filtering/{flavor-lc}[Enabling/disabling {metrics}] using
 ifdef::se-flavor[`MetricsObserver` and `MetricsConfig`]
 ifdef::mp-flavor[configuration]
 ifdef::se-flavor[]
-* link:{helidon-github-tree-url}/examples/metrics/kpi[Controlling key performance indicator metrics] using configuration and `KeyPerformanceIndicatorMetricsSettings`.
+* link:{helidon-github-examples-url}/metrics/kpi[Controlling key performance indicator metrics] using configuration and `KeyPerformanceIndicatorMetricsSettings`.
 endif::[]
 
 // end::example-apps[]

@@ -278,4 +278,4 @@ but it can be easily used with the examples below.
 
 == References
 
-* link:{helidon-github-tree-url}/examples/integrations/vault[Hashicorp Vault Usage Examples]
+* link:{helidon-github-examples-url}/integrations/vault[Hashicorp Vault Usage Examples]

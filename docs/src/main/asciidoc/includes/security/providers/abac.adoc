@@ -44,7 +44,7 @@ include::{rootdir}/config/io_helidon_security_providers_abac_AbacProvider.adoc[l
 
 ==== Example code
 
-See the link:{helidon-github-tree-url}/examples/security/attribute-based-access-control[example] on GitHub.
+See the link:{helidon-github-examples-url}/security/attribute-based-access-control[example] on GitHub.
 
 [source,yaml]
 .Configuration example

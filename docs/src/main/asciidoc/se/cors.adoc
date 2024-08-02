@@ -135,7 +135,7 @@ include::{rootdir}/includes/cors.adoc[tag=cors-config-table]
 [[se-api-routing-example]]
 === Sample Routing Setup Using the `CrossOriginConfig` API
 
-The link:{helidon-github-tree-url}/examples/quickstarts/helidon-quickstart-se[Helidon SE Quickstart application]
+The link:{helidon-github-examples-url}/quickstarts/helidon-quickstart-se[Helidon SE Quickstart application]
  lets you change the greeting by sending a `PUT` request to the `/greet/greeting` resource.
 
 This example, based on the QuickStart greeting app, uses the low-level `CrossOriginConfig` API and
@@ -245,7 +245,7 @@ rebuild and restart your application for any changes to take effect.
 
 == Examples
 
-For a complete example, see {helidon-github-tree-url}/examples/cors[Helidon SE CORS Example].
+For a complete example, see {helidon-github-examples-url}/cors[Helidon SE CORS Example].
 
 == Additional Information
 

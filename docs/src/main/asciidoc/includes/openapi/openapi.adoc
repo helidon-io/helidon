@@ -98,7 +98,7 @@ You can also define any request parameters the endpoint expects, although this
 endpoint uses none.
 
 This excerpt shows only a few annotations for illustration. The
-link:{helidon-github-tree-url}/examples/microprofile/openapi-basic[Helidon MP OpenAPI example] illustrates more,
+link:{helidon-github-examples-url}/microprofile/openapi[Helidon MP OpenAPI example] illustrates more,
 and the link:{microprofile-open-api-spec-url}[MicroProfile OpenAPI spec] describes them all.
 
 ===== A static OpenAPI file
