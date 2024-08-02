@@ -38,4 +38,11 @@ public class Pet {
     public List<Tag> getTags() {
         return List.of();
     }
+
+    public static class Tag {
+
+        public String getName() {
+            return null;
+        }
+    }
 }
