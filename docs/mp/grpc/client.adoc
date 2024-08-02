@@ -283,8 +283,8 @@ public interface StringService {
 ----
 
 == Examples
-link:{helidon-github-tree-url}/examples/grpc/microprofile/basic-client[Basic gRPC Client] example demonstrates  a
+link:{helidon-github-examples-url}/grpc/microprofile/basic-client[Basic gRPC Client] example demonstrates  a
 simple gRPC client that invokes services from deployed gRPC server applications provided in the
-link:{helidon-github-tree-url}/examples/grpc/microprofile/basic-server-implicit[Basic gRPC Server] and
-link:{helidon-github-tree-url}/examples/grpc/microprofile/metrics[gRPC Server metrics] examples.
+link:{helidon-github-examples-url}/grpc/microprofile/basic-server-implicit[Basic gRPC Server] and
+link:{helidon-github-examples-url}/grpc/microprofile/metrics[gRPC Server metrics] examples.
 

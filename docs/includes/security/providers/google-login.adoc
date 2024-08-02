@@ -47,7 +47,7 @@ include::{rootdir}/config/io_helidon_security_providers_google_login_GoogleToken
 
 === Example Code [[Google-Provider-Example]]
 
-See the link:{helidon-github-tree-url}/examples/security/google-login[example] on GitHub.
+See the link:{helidon-github-examples-url}/security/google-login[example] on GitHub.
 
 [source,yaml]
 .Configuration example

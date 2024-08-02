@@ -98,7 +98,7 @@ include::{rootdir}/config/io_helidon_openapi_SEOpenAPISupport.adoc[leveloffset=+
 
 == Examples
 
-Helidon SE provides a link:{helidon-github-tree-url}/examples/openapi[complete OpenAPI example]
+Helidon SE provides a link:{helidon-github-examples-url}/openapi[complete OpenAPI example]
 based on the SE QuickStart sample app which includes a model reader and a filter.
 
 Most Helidon {flavor-uc} applications need only to create and register `OpenAPISupport`.

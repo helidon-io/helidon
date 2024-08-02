@@ -948,10 +948,10 @@ static class HelloService implements GrpcService { // <5>
 === Additional gRPC Server Examples
 A set of gRPC server examples for Helidon SE can be found in the following links:
 
-* link:{helidon-github-tree-url}/examples/grpc/basics[Basic gRPC Server]
-* link:{helidon-github-tree-url}/examples/grpc/metrics[gRPC Server Metrics]
-* link:{helidon-github-tree-url}/examples/grpc/opentracing[OpenTracing on a gRPC Server]
-* link:{helidon-github-tree-url}/examples/grpc/security[Basic Auth Security on a gRPC Server]
-* link:{helidon-github-tree-url}/examples/grpc/security-abac[Attribute-Based Access Control (ABAC) security on a gRPC Server]
-* link:{helidon-github-tree-url}/examples/grpc/security-outbound[Outbound Security on a gRPC Server]
+* link:{helidon-github-examples-url}/grpc/basics[Basic gRPC Server]
+* link:{helidon-github-examples-url}/grpc/metrics[gRPC Server Metrics]
+* link:{helidon-github-examples-url}/grpc/opentracing[OpenTracing on a gRPC Server]
+* link:{helidon-github-examples-url}/grpc/security[Basic Auth Security on a gRPC Server]
+* link:{helidon-github-examples-url}/grpc/security-abac[Attribute-Based Access Control (ABAC) security on a gRPC Server]
+* link:{helidon-github-examples-url}/grpc/security-outbound[Outbound Security on a gRPC Server]
 

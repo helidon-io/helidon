@@ -161,11 +161,11 @@ The `MetricRegistry` allows your code to register new metrics, look up previousl
 // tag::example-apps[]
 Helidon {flavor-uc} includes several prewritten example applications illustrating aspects of metrics:
 
-* link:{helidon-github-tree-url}/examples/metrics/filtering/{flavor-lc}[Enabling/disabling metrics] using
+* link:{helidon-github-examples-url}/metrics/filtering/{flavor-lc}[Enabling/disabling metrics] using
 ifdef::se-flavor[`MetricsSettings`]
 ifdef::mp-flavor[configuration]
 ifdef::se-flavor[]
-* link:{helidon-github-tree-url}/examples/metrics/kpi[Controlling key performance indicator metrics] using configuration and `KeyPerformanceIndicatorMetricsSettings`.
+* link:{helidon-github-examples-url}/metrics/kpi[Controlling key performance indicator metrics] using configuration and `KeyPerformanceIndicatorMetricsSettings`.
 endif::[]
 
 // end::example-apps[]

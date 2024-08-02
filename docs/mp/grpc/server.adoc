@@ -362,9 +362,9 @@ grpc:
 == Examples
 Helidon MP includes some examples that demonstrate the gRPC server usage:
 
-* link:{helidon-github-tree-url}/examples/grpc/microprofile/basic-server-implicit[Basic gRPC Server example] provides
+* link:{helidon-github-examples-url}/grpc/microprofile/basic-server-implicit[Basic gRPC Server example] provides
 a simple gRPC application that deploys a gRPC service that will be discovered by CDI. Two additional services are
 included that are not normally CDI managed beans, but are manually added as CDI managed beans so that they can also be
 discovered by Helidon MP.
-* link:{helidon-github-tree-url}/examples/grpc/microprofile/metrics[gRPC Server Metrics example] demonstrates a
+* link:{helidon-github-examples-url}/grpc/microprofile/metrics[gRPC Server Metrics example] demonstrates a
 Helidon MP application that enables `metrics` and `tracing` on a gRPC Service.

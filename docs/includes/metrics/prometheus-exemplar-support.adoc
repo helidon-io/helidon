@@ -151,7 +151,7 @@ endif::[]
 == Examples
 
 ifdef::se-flavor[]
-Helidon includes an link:{helidon-github-tree-url}/examples/metrics/exemplar[example application], based on the QuickStart application, which illustrates exemplar support.
+Helidon includes an link:{helidon-github-examples-url}/metrics/exemplar[example application], based on the QuickStart application, which illustrates exemplar support.
 endif::[]
 
 Once you enable exemplar support you can see the exemplars in the metrics output.

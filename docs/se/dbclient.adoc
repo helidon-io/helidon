@@ -305,7 +305,7 @@ Execution of a query statement will always return `Multi<DbRow>>`. `Multi` has s
 == Additional Information
 
 Now that you understand how to build and execute statements, try it for yourself.
-link:{helidon-github-tree-url}/examples/dbclient[DB Client Examples].
+link:{helidon-github-examples-url}/dbclient[DB Client Examples].
 
 
 

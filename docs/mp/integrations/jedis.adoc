@@ -176,7 +176,7 @@ with `redis.clients.jedis.JedisPoolConfig.default` and `redis.clients.jedis.Jedi
 
 == References
 
-* link:{helidon-github-tree-url}/examples/integrations/cdi/jedis[Helidon Jedis Example]
+* link:{helidon-github-examples-url}/integrations/cdi/jedis[Helidon Jedis Example]
 * link:{jedis-base-url}/jedis/package-summary.html[Jedis Javadoc]
 * link:https://github.com/xetorthio/jedis[Jedis]
 * link:https://github.com/redis/redis[Redis]

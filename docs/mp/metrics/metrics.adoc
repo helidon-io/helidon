@@ -136,7 +136,7 @@ include::{rootdir}/includes/metrics/metrics-config.adoc[tag=config-intro]
 == Examples
 
 Helidon MP includes a prewritten example application illustrating
-link:{helidon-github-tree-url}/examples/metrics/filtering/mp[enabling/disabling metrics] using configuration.
+link:{helidon-github-examples-url}/metrics/filtering/mp[enabling/disabling metrics] using configuration.
 
 The rest of this section contains other examples of working with metrics:
 

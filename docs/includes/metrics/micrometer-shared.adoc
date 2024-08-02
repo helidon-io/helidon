@@ -187,7 +187,7 @@ can create, look up, and update metrics programmatically using the Micrometer `M
 // end::use-micrometer-api[]
 
 // tag::example-apps[]
-Helidon {flavor-uc} includes an link:{helidon-github-tree-url}/examples/integrations/micrometer/{flavor-lc}[example application] which uses Micrometer support.
+Helidon {flavor-uc} includes an link:{helidon-github-examples-url}/integrations/micrometer/{flavor-lc}[example application] which uses Micrometer support.
 // end::example-apps[]
 
 // end::all-micrometer[]
