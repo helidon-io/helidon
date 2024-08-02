@@ -20,7 +20,7 @@ import java.util.List;
 
 import io.helidon.docs.se.openapi.gen.client.api.PetApi;
 import io.helidon.docs.se.openapi.gen.client.api.PetApiImpl;
-import io.helidon.docs.se.openapi.gen.client.model.Pet;
+import io.helidon.docs.se.openapi.gen.model.Pet;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.api.WebClientConfig;

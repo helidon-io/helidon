@@ -22,12 +22,15 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 
-import io.helidon.docs.openapi.gen.mp.model.Pet;
-import io.helidon.docs.openapi.gen.mp.client.api.ApiException;
-import io.helidon.docs.openapi.gen.mp.client.api.PetApi;
-
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
+interface Pet {
+}
+interface PetApi {
+    Pet getPetById(long petId);
+}
+class ApiException extends Exception {
+}
 
 // tag::class-declaration[]
 @Path("/exampleServiceCallingService") // <1>
