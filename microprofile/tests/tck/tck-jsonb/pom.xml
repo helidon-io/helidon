@@ -32,7 +32,7 @@
     <name>Helidon Microprofile Tests TCK JSONB</name>
 
     <properties>
-        <tck.filename>jakarta-jsonb-tck-${version.lib.jakarta.jsonb-api}</tck.filename>
+        <tck.filename>jakarta-jsonb-tck-${version.lib.jakarta.jsonb-tck}</tck.filename>
         <tck.url>https://download.eclipse.org/ee4j/jakartaee-tck/jakartaee10/promoted/eftl/${tck.filename}.zip</tck.url>
         <tck.artifact>jakarta.json.bind-tck-${version.lib.jakarta.jsonb-api}</tck.artifact>
         <stage.dir>${project.build.directory}/tck</stage.dir>
