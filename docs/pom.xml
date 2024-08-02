@@ -34,7 +34,6 @@
         <helidon.sitegen.skip>false</helidon.sitegen.skip>
         <version.lib.jbatch-api>2.1.0</version.lib.jbatch-api>
         <version.lib.jbatch.container>2.1.0</version.lib.jbatch.container>
-        <version.plugin.openapi-generator>7.7.0</version.plugin.openapi-generator>
     </properties>
 
     <dependencies>
@@ -157,22 +156,6 @@
                     <siteGenerateSkip>${helidon.sitegen.skip}</siteGenerateSkip>
                     <siteArchiveSkip>${helidon.sitegen.skip}</siteArchiveSkip>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>build-helper-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>compute-major-version</id>
-                        <goals>
-                            <goal>parse-version</goal>
-                        </goals>
-                        <phase>initialize</phase>
-                        <configuration>
-                            <propertyPrefix>parsedHelidonVersion</propertyPrefix>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

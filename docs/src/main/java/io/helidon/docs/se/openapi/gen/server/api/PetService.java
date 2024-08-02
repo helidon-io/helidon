@@ -28,47 +28,12 @@ public class PetService {
     protected void handleAddPet(ServerRequest request, ServerResponse response, Pet pet) {
     }
 
-    protected void handleDeletePet(ServerRequest request, ServerResponse response,
-                                   Long petId,
-                                   Optional<String> apiKey) {
-    }
-
-    protected void handleFindPetsByStatus(ServerRequest request, ServerResponse response,
-                                          List<String> status) {
-    }
-
     protected void handleFindPetsByTags(ServerRequest request, ServerResponse response,
                                         List<String> tags) {
     }
 
     protected AddPetOp createAddPetOp() {
         return null;
-    }
-
-    protected void handleGetPetById(ServerRequest request, ServerResponse response,
-                                    Long petId) {
-    }
-
-    protected void handlePetInfoWithCookies(ServerRequest request, ServerResponse response,
-                                            Long petId,
-                                            Long transactionId,
-                                            String label) {
-    }
-
-    protected void handleUpdatePet(ServerRequest request, ServerResponse response,
-                                   Pet pet) {
-    }
-
-    protected void handleUpdatePetWithForm(ServerRequest request, ServerResponse response,
-                                           Long petId,
-                                           Optional<String> name,
-                                           Optional<String> status) {
-    }
-
-    protected void handleUploadFile(ServerRequest request, ServerResponse response,
-                                    Long petId,
-                                    Optional<ReadablePart> additionalMetadata,
-                                    Optional<ReadablePart> _file) {
     }
 
 
