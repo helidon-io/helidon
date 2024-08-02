@@ -48,7 +48,7 @@ provider-config-key
 ----
 
 ==== Example code
-See the link:{helidon-github-tree-url}/examples/security/[example] on GitHub.
+See the link:{helidon-github-examples-url}/security/[example] on GitHub.
 
 [source,yaml]
 .Configuration example

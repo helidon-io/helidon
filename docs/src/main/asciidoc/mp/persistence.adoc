@@ -1349,7 +1349,7 @@ relational database tables, and how to perform other related tasks.
 
 === Examples [[JPA-Examples]]
 
-* link:{helidon-github-tree-url}/examples/integrations/cdi/pokemons[JPA
+* link:{helidon-github-examples-url}/integrations/cdi/pokemons[JPA
   Pokemons Example]
 
 == References [[References]]

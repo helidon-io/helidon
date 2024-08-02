@@ -26,7 +26,7 @@ with a Gradle project. Gradle 8.4+ is required to build Helidon 4 projects.
 == Gradle Example
 
 The Helidon
-link:{helidon-github-tree-url}/examples/quickstarts/helidon-quickstart-{flavor-lc}[Quickstart Example]
+link:{helidon-github-examples-url}/quickstarts/helidon-quickstart-{flavor-lc}[Quickstart Example]
 contains a `build.gradle` file that you can use as an example for building
 your Helidon application using Gradle.
 

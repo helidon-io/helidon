@@ -158,7 +158,7 @@ Now build and run with JDK17+
 [source,bash]
 ----
 mvn package
-java -jar target/helidon-examples-integration-neo4j-mp.jar
+java -jar target/helidon-examples-integration-neo4j.jar
 ----
 
 Exercise the application:
@@ -177,7 +177,7 @@ curl -s -X GET http://localhost:8080/metrics
 curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
 ----
 
-Full example code is available in link:{helidon-github-tree-url}/examples/integrations/neo4j/neo4j-mp[Helidon GitHub Repository].
+Full example code is available in link:{helidon-github-examples-url}/integrations/neo4j[Helidon Examples Repository].
 
 
 == Additional Information

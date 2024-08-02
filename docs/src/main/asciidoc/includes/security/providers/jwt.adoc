@@ -42,7 +42,7 @@ include::{rootdir}/config/io_helidon_security_providers_jwt_JwtProvider.adoc[lev
 
 ==== Example code
 
-See the link:{helidon-github-tree-url}/examples/security/outbound-override[example] on GitHub.
+See the link:{helidon-github-examples-url}/security/outbound-override[example] on GitHub.
 
 [source,yaml]
 .Configuration example

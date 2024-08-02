@@ -43,7 +43,7 @@ include::{rootdir}/config/io_helidon_security_providers_httpsign_HttpSignProvide
 
 ==== Example code
 
-See the link:{helidon-github-tree-url}/examples/security/webserver-signatures[example] on GitHub.
+See the link:{helidon-github-examples-url}/security/webserver-signatures[example] on GitHub.
 
 [source,yaml]
 .Configuration example

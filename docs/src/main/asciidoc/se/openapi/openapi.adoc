@@ -91,7 +91,7 @@ include::{rootdir}/config/io_helidon_openapi_OpenApiFeature.adoc[leveloffset=+1,
 
 == Examples
 
-Helidon SE provides a link:{helidon-github-tree-url}/examples/openapi[complete OpenAPI example]
+Helidon SE provides a link:{helidon-github-examples-url}/openapi[complete OpenAPI example]
 based on the SE QuickStart sample app.
 
 Most Helidon {flavor-uc} applications need only add the dependency as explained above; Helidon discovers and registers OpenAPI

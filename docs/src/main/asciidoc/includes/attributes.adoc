@@ -24,16 +24,18 @@ ifndef::attributes-included[]
 :imagesdir: {rootdir}/images
 
 :helidon-version: 4.1.0-SNAPSHOT
-:helidon-version-is-release: true
+:helidon-version-is-release: false
 
 :sourcedir: {rootdir}/../java/io/helidon/docs
 
 ifeval::["{helidon-version-is-release}" != "true"]
 :helidon-github-tree-url: https://github.com/oracle/helidon/tree/main
+:helidon-github-examples-url: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples
 endif::[]
 
 ifeval::["{helidon-version-is-release}" == "true"]
 :helidon-github-tree-url: https://github.com/oracle/helidon/tree/{helidon-version}
+:helidon-github-examples-url: https://github.com/helidon-io/helidon-examples/tree/{helidon-version}/examples
 endif::[]
 
 // versions
