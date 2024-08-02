@@ -154,7 +154,7 @@ include::{sourcedir}/se/integrations/Neo4jSnippets.java[tag=snippet_4, indent=0]
 <3> Use of `Neo4jHealthCheck` to add _Neo4j_ health support.
 <4> Register  `MovieService`  in _Routing_.
 
-Now build and run with JDK17+
+Now build and run.
 [source,bash]
 ----
 mvn package
