@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash
 #
 # Copyright (c) 2024 Oracle and/or its affiliates.
 #
@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+# Build helidon examples, cloning the examples repository if needed
 
 set -o pipefail || true  # trace ERR through pipes
 set -o errtrace || true # trace ERR through commands and functions
@@ -31,6 +33,7 @@ trap on_error ERR
 if [ -h "${0}" ] ; then
     SCRIPT_PATH="$(readlink "${0}")"
 else
+    # shellcheck disable=SC155
     SCRIPT_PATH="${0}"
 fi
 readonly SCRIPT_PATH
@@ -40,32 +43,33 @@ readonly SCRIPT_PATH
 WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 readonly WS_DIR
 
-if [ -z "${GRAALVM_HOME}" ]; then
-    echo "ERROR: GRAALVM_HOME is not set";
-    exit 1
-fi
-
-if [ ! -x "${GRAALVM_HOME}/bin/native-image" ]; then
-    echo "ERROR: ${GRAALVM_HOME}/bin/native-image does not exist or is not executable";
-    exit 1
-fi
-
-# shellcheck disable=SC2086
-mvn ${MAVEN_ARGS} --version
-
-"${GRAALVM_HOME}"/bin/native-image --version;
-
 # If needed we clone the helidon-examples repo into a subdirectory of the helidon repository
+readonly HELIDON_EXAMPLES_PATH=${WS_DIR}/helidon-examples
 if [ ! -d "${WS_DIR}/helidon-examples" ]; then
-  echo "Cloning examples repository into ${HELIDON_EXAMPLES_PATH}"
+  echo "Cloning examples repository into ${WS_DIR}/helidon-examples"
   git clone --branch dev-4.x --single-branch git@github.com:helidon-io/helidon-examples.git "${WS_DIR}/helidon-examples"
 fi
 
-# Build quickstart native-image executable and run jar file
-readonly quickstarts="helidon-quickstart-mp helidon-quickstart-se"
-for quickstart in ${quickstarts}; do
-  cd "${WS_DIR}/helidon-examples/examples/quickstarts/${quickstart}"
-  # shellcheck disable=SC2086
-  mvn ${MAVEN_ARGS} -e clean install -Pnative-image -DskipTests
-  ./target/"${quickstart}" -Dexit.on.started=!
-done
+version() {
+    mvn -B -N -f "${1}" -Dexpression=helidon.version help:evaluate | grep -v '\[INFO\]'
+}
+
+# Make sure the helidon version from the example repo aligns with this repository
+HELIDON_VERSION_IN_THIS_REPO=$(version "${WS_DIR}/pom.xml")
+readonly HELIDON_VERSION_IN_THIS_REPO
+
+HELIDON_VERSION_IN_EXAMPLES=$(version "${WS_DIR}/helidon-examples/pom.xml")
+readonly HELIDON_VERSION_IN_EXAMPLES
+
+if [ "${HELIDON_VERSION_IN_THIS_REPO}" != "${HELIDON_VERSION_IN_EXAMPLES}" ]; then
+  printf "The Helidon version in this repository (%s) does not match the Helidon version in %s (%s)\n" \
+    "${HELIDON_VERSION_IN_THIS_REPO}" \
+    "${HELIDON_EXAMPLES_PATH}" \
+    "${HELIDON_VERSION_IN_EXAMPLES}"
+  exit 78
+fi
+
+# shellcheck disable=SC2086
+mvn ${MAVEN_ARGS} \
+    -f "${WS_DIR}/helidon-examples/pom.xml" \
+    clean install

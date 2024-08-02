@@ -143,13 +143,19 @@ jobs:
         run: |
           # prime build
           mvn ${MAVEN_ARGS} -e \
-            -Dmaven.test.skip=true \
-            -DskipTests \
-            -Ppipeline \
-            install
-          mvn ${MAVEN_ARGS} -e \
-            -f examples/pom.xml \
-            verify
+          -Dmaven.test.skip=true \
+          -DskipTests \
+          -Ppipeline \
+          install
+      - name: Examples checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+          repository: helidon-io/helidon-examples.git
+          ref: dev-4.x
+          path: helidon-examples
+      - name: Examples build
+        run: etc/scripts/build-examples.sh
       - name: Test quickstarts native image
         run: etc/scripts/test-quickstarts.sh
   mp-tck:
