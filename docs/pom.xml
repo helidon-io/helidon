@@ -52,6 +52,7 @@
             <artifactId>mockito-core</artifactId>
         </dependency>
         <!-- snippets dependencies -->
+        <!--suppress VulnerableLibrariesLocal -->
         <dependency>
             <groupId>org.apache.activemq</groupId>
             <artifactId>activemq-client</artifactId>
@@ -78,6 +79,11 @@
             <groupId>com.ibm.jbatch</groupId>
             <artifactId>com.ibm.jbatch.spi</artifactId>
             <version>${version.lib.jbatch.container}</version>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
             <optional>true</optional>
         </dependency>
     </dependencies>
