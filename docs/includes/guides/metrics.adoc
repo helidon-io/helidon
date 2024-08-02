@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -193,7 +193,7 @@ The `vendor` metrics shown above appear in two groups:
 
 - Helidon thread pools +
 +
-Helidon uses these thread pools for its own internal work, and your application can also use Helidon-managed thread pools if it needs to do work asynchronously. (See link:{helidon-github-tree-url}/examples/webserver/threadpool[this example].)
+Helidon uses these thread pools for its own internal work, and your application can also use Helidon-managed thread pools if it needs to do work asynchronously. (See link:{helidon-github-examples-url}/webserver/threadpool[this example].)
 The metrics in this group show information about the thread pools which can help you assess how efficiently they are utilized.
 Helidon uses tags to distinguish the metrics which describe different thread pools.
 In some cases the specific metrics exposed depend on the particular type of thread pool.

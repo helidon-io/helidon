@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -90,7 +90,7 @@ You can also define any request parameters the endpoint expects, although this
 endpoint uses none.
 
 This excerpt shows only a few annotations for illustration. The
-link:{helidon-github-tree-url}/examples/microprofile/openapi-basic[Helidon MP OpenAPI example] illustrates more,
+link:{helidon-github-examples-url}/microprofile/openapi-basic[Helidon MP OpenAPI example] illustrates more,
 and the link:{microprofile-open-api-spec-url}[MicroProfile OpenAPI spec] describes them all.
 
 ===== Provide a static OpenAPI file

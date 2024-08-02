@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -109,6 +109,6 @@ Once you have created an ObjectStorage client you can use it as described in:
 
 == References
 
-* link:{helidon-github-tree-url}/examples/integrations/oci[OCI SDK Usage Examples]
+* link:{helidon-github-examples-url}/integrations/oci[OCI SDK Usage Examples]
 * link:https://docs.oracle.com/en-us/iaas/Content/home.htm[OCI Documentation]
 ]

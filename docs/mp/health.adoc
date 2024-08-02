@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -288,7 +288,7 @@ curl http://localhost:8080/health/live
 }
 ----
 
-Full example code is available link:{helidon-github-tree-url}/examples/microprofile[here].
+Full example code is available link:{helidon-github-examples-url}/microprofile[here].
 
 
 === Custom Readiness Health Checks
@@ -387,7 +387,7 @@ curl -v http://localhost:8080/health/ready
 }
 ----
 
-Full example code is available link:{helidon-github-tree-url}/examples/microprofile[here].
+Full example code is available link:{helidon-github-examples-url}/microprofile[here].
 
 === Custom Startup Health Checks
 
@@ -517,7 +517,7 @@ curl http://localhost:8080/health
 }
 ----
 
-Full example code is available link:{helidon-github-tree-url}/examples/microprofile[here].
+Full example code is available link:{helidon-github-examples-url}/microprofile[here].
 
 == Reference
 

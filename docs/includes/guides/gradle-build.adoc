@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ with a Gradle project. We recommend Gradle 6+.
 == Gradle Example
 
 The Helidon
-link:{helidon-github-tree-url}/examples/quickstarts/helidon-quickstart-{flavor-lc}[Quickstart Example]
+link:{helidon-github-examples-url}/quickstarts/helidon-quickstart-{flavor-lc}[Quickstart Example]
 contains a `build.gradle` file that you can use as an example for building
 your Helidon application using Gradle.
 

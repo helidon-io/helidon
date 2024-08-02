@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ include::{rootdir}/config/io_helidon_security_providers_idcs_mapper_IdcsMtRoleMa
 
 ==== Example code
 
-See the link:{helidon-github-tree-url}/examples/security/idcs-login/[example] on GitHub.
+See the link:{helidon-github-examples-url}/security/idcs-login/[example] on GitHub.
 
 [source,yaml]
 .Configuration example

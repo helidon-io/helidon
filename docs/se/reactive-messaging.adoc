@@ -694,4 +694,4 @@ Messaging.builder()<5>
 
 * link:{microprofile-reactive-messaging-spec-url}[MicroProfile Reactive Messaging Specification]
 * link:https://github.com/eclipse/microprofile-reactive-messaging[MicroProfile Reactive Messaging on GitHub]
-* link:{helidon-github-tree-url}/examples/messaging[Helidon Messaging Examples]
+* link:{helidon-github-examples-url}/messaging[Helidon Messaging Examples]

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ ifndef::rootdir[:rootdir: {docdir}/../../..]
 include::{rootdir}/config/io_helidon_security_providers_oidc_OidcProvider.adoc[leveloffset=+2,tag=config]
 
 === Example Code [[OIDC-Provider-Example]]
-See the link:{helidon-github-tree-url}/examples/security/idcs-login[example] on GitHub.
+See the link:{helidon-github-examples-url}/security/idcs-login[example] on GitHub.
 
 [source,yaml]
 .Configuration example

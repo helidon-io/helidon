@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -151,7 +151,7 @@ endif::[]
 == Examples
 
 ifdef::se-flavor[]
-Helidon includes an link:{helidon-github-tree-url}/examples/metrics/exemplar[example application], based on the QuickStart application, which illustrates exemplar support.
+Helidon includes an link:{helidon-github-examples-url}/metrics/exemplar[example application], based on the QuickStart application, which illustrates exemplar support.
 endif::[]
 
 Once you enable exemplar support you can see the exemplars in the metrics output.

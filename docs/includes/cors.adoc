@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -315,7 +315,7 @@ application's configuration file, the configuration for each service appears und
 | xref:{openapi-page}[OpenAPI] | `openapi`
 |====
 
-The link:{helidon-github-tree-url}/examples/quickstarts/helidon-quickstart-{flavor-lc}[Helidon {flavor-uc} QuickStart example]
+The link:{helidon-github-examples-url}/quickstarts/helidon-quickstart-{flavor-lc}[Helidon {flavor-uc} QuickStart example]
 uses these services, so you can use that as a template for your
 own application, or use the example project itself to experiment with customizing the CORS
 behavior in the built-in services.

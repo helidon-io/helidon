@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -136,7 +136,7 @@ include::{rootdir}/includes/metrics/metrics-config.adoc[tag=config-intro]
 == Examples
 
 Helidon MP includes a prewritten example application illustrating
-link:{helidon-github-tree-url}/examples/metrics/filtering/mp[enabling/disabling metrics] using configuration.
+link:{helidon-github-examples-url}/metrics/filtering/mp[enabling/disabling metrics] using configuration.
 
 The rest of this section contains other examples of working with metrics:
 

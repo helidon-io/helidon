@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -132,12 +132,12 @@ include::{rootdir}/includes/cors.adoc[tag=cors-config-table]
 
 == Examples
 
-The link:{helidon-github-tree-url}/examples/quickstarts/helidon-quickstart-mp[Helidon MP Quickstart application] allows users to:
+The link:{helidon-github-examples-url}/quickstarts/helidon-quickstart-mp[Helidon MP Quickstart application] allows users to:
 
 * obtain greetings by sending `GET` requests to the `/greet` resource, and
 * change the greeting message by sending a `PUT` request to the `/greet/greeting` resource.
 
-The link:{helidon-github-tree-url}/examples/microprofile/cors[Helidon MP CORS Example] shows the basic quickstart example enhanced for CORS.
+The link:{helidon-github-examples-url}/microprofile/cors[Helidon MP CORS Example] shows the basic quickstart example enhanced for CORS.
 
 The discussion below describes the changes in the application which:
 
