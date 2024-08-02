@@ -51,7 +51,7 @@ if [ ! -d "${WS_DIR}/helidon-examples" ]; then
 fi
 
 version() {
-    mvn -N -f "${1}" -Dexpression=helidon.version help:evaluate | grep -v '\[INFO\]'
+    mvn -B -N -f "${1}" -Dexpression=helidon.version help:evaluate | grep -v '\[INFO\]'
 }
 
 # Make sure the helidon version from the example repo aligns with this repository
