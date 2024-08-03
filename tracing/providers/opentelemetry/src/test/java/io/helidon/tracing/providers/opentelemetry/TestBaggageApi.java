@@ -41,7 +41,7 @@ class TestBaggageApi {
     void testWritableBaggageFromSpan() {
         Span span = Tracer.global().spanBuilder("otel-span").start();
         WritableBaggage baggage = span.baggage();
-        span.baggage("keyA", "valA");
+        span.baggage().set("keyA", "valA");
         assertThat("Assigned baggage via span is present", baggage.containsKey("keyA"), is(true));
         assertThat("Assigned baggage via span value from baggage",
                    baggage.get("keyA"),

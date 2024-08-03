@@ -83,7 +83,7 @@ class TestSpanAndBaggage {
                        currentJustAfterActivation.get().context().spanId(),
                        is(outerSpan.context().spanId()));
 
-            outerSpan.baggage("myItem", "myValue");
+            outerSpan.baggage().set("myItem", "myValue");
             outerSpan.end();
         } catch (Exception e) {
             outerSpan.end(e);

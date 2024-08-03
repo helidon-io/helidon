@@ -39,8 +39,8 @@ class JaegerBaggageTest {
     @Test
     void testBaggage(){
         Span span = tracer.spanBuilder("test-span").start();
-        Span spanWithBaggage = span.baggage("key", "value");
-        Optional<String> result = spanWithBaggage.baggage().get("key");
+        span.baggage().set("key", "value");
+        Optional<String> result = span.baggage().get("key");
         assertThat(result.isPresent(), is(true));
         assertThat(result.get(), equalTo("value"));
 
@@ -49,8 +49,8 @@ class JaegerBaggageTest {
     @Test
     void testBadBaggage(){
         Span span = tracer.spanBuilder("test-bad-span").start();
-        assertThrows(NullPointerException.class, () -> span.baggage(null, "value"));
-        assertThrows(NullPointerException.class, () -> span.baggage("key", null));
-        assertThrows(NullPointerException.class, () -> span.baggage(null, null));
+        assertThrows(NullPointerException.class, () -> span.baggage().set(null, "value"));
+        assertThrows(NullPointerException.class, () -> span.baggage().set("key", null));
+        assertThrows(NullPointerException.class, () -> span.baggage().set(null, null));
     }
 }
