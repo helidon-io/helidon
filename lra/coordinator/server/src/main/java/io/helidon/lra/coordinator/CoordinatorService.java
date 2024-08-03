@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,7 +97,7 @@ public class CoordinatorService implements HttpService {
 
     private void init() {
         lraPersistentRegistry.load(this);
-        recoveryTask = Scheduling.fixedRateBuilder()
+        recoveryTask = Scheduling.fixedRate()
                 .delay(config.get("recovery-interval").asLong().orElse(200L))
                 .initialDelay(200)
                 .timeUnit(TimeUnit.MILLISECONDS)
@@ -105,7 +105,7 @@ public class CoordinatorService implements HttpService {
                 .build();
 
         if (config.get("periodical-persist").asBoolean().orElse(false)) {
-            persistTask = Scheduling.fixedRateBuilder()
+            persistTask = Scheduling.fixedRate()
                     .delay(config.get("persist-interval").asLong().orElse(5000L))
                     .initialDelay(200)
                     .timeUnit(TimeUnit.MILLISECONDS)
