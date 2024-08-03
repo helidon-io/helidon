@@ -42,7 +42,7 @@ In the following example, `ExampleResource` (itself running in a server) invokes
 [source,java]
 .Using the generated `PetApi` returned from a separate service
 ----
-include::{sourcedir}/mp/openapi/ExampleOpenApiGenClientResource.java[tag=class-declaration, indent=0]
+include::{sourcedir}/mp/openapi/OpenApiGeneratorSnippets.java[tag=class-declaration, indent=0]
 
 ----
 <1> Uses a bean-defining annotation so CDI can inject into this class.
