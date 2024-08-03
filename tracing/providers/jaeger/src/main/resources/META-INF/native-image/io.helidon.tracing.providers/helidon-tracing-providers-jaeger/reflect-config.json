@@ -7,5 +7,11 @@
                 "parameterTypes": []
             }
         ]
+    },
+    {
+        "condition": {
+            "typeReachable": "io.opentelemetry.sdk.OpenTelemetrySdk"
+        },
+        "name": "io.opentelemetry.sdk.common.export.RetryPolicy"
     }
 ]

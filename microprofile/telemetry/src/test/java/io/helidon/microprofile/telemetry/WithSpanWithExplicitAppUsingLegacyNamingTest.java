@@ -25,16 +25,16 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 @AddBean(App.class)
 @AddBean(AppTracedResource.class)
-class WithSpanWithExplicitAppTest extends WithSpanTestBase {
+class WithSpanWithExplicitAppUsingLegacyNamingTest extends WithSpanTestBase {
 
-    @ParameterizedTest()
-    @MethodSource()
-    void testExplicitAppSpanNameFromPath(SpanPathTestInfo spanPathTestInfo) {
-        testSpanNameFromPath(spanPathTestInfo);
-    }
+        @ParameterizedTest()
+        @MethodSource()
+        void testExplicitAppSpanNameFromPath(SpanPathTestInfo spanPathTestInfo) {
+            testSpanNameFromPath(spanPathTestInfo);
+        }
 
-    static Stream<SpanPathTestInfo> testExplicitAppSpanNameFromPath() {
-        return Stream.of(new SpanPathTestInfo("topapp/apptraced", "/topapp/apptraced"),
-                         new SpanPathTestInfo("topapp/apptraced/sub/data", "/topapp/apptraced/sub/{name}"));
-    }
+        static Stream<SpanPathTestInfo> testExplicitAppSpanNameFromPath() {
+            return Stream.of(new SpanPathTestInfo("topapp/apptraced", "/topapp/apptraced"),
+                             new SpanPathTestInfo("topapp/apptraced/sub/data", "/topapp/apptraced/sub/{name}"));
+        }
 }

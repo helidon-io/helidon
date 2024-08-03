@@ -35,6 +35,7 @@
     <properties>
         <!-- The default for the following is 5000 ms. Reducing it speeds up tests significantly. -->
         <otel.bsp.schedule.delay>100</otel.bsp.schedule.delay>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
     </properties>
 
     <dependencies>

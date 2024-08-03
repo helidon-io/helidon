@@ -17,24 +17,29 @@ package io.helidon.microprofile.telemetry;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import io.helidon.tracing.HeaderConsumer;
 import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 
+import io.opentelemetry.api.baggage.Baggage;
+import io.opentelemetry.context.Context;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.ClientRequestContext;
 import jakarta.ws.rs.client.ClientRequestFilter;
 import jakarta.ws.rs.client.ClientResponseContext;
 import jakarta.ws.rs.client.ClientResponseFilter;
 import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 
 import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_METHOD;
 import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_SCHEME;
 import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_STATUS_CODE;
-
+import static io.opentelemetry.semconv.trace.attributes.SemanticAttributes.NET_PEER_NAME;
+import static io.opentelemetry.semconv.trace.attributes.SemanticAttributes.NET_PEER_PORT;
 
 /**
  * Filter to process Client request and Client response. Starts a new {@link io.opentelemetry.api.trace.Span} on request and
@@ -46,6 +51,9 @@ class HelidonTelemetryClientFilter implements ClientRequestFilter, ClientRespons
     private static final String HTTP_URL = "http.url";
     private static final String SPAN_SCOPE = Scope.class.getName();
     private static final String SPAN = Span.class.getName();
+    private static final Set<Response.Status.Family> ERROR_STATUS_FAMILIES = Set.of(
+            Response.Status.Family.CLIENT_ERROR,
+            Response.Status.Family.SERVER_ERROR);
 
     private final io.helidon.tracing.Tracer helidonTracer;
 
@@ -69,11 +77,18 @@ class HelidonTelemetryClientFilter implements ClientRequestFilter, ClientRespons
                 .tag(HTTP_METHOD, clientRequestContext.getMethod())
                 .tag(HTTP_SCHEME, clientRequestContext.getUri().getScheme())
                 .tag(HTTP_URL, clientRequestContext.getUri().toString())
+                .tag(NET_PEER_NAME.getKey(), clientRequestContext.getUri().getHost())
+                .tag(NET_PEER_PORT.getKey(), clientRequestContext.getUri().getPort())
                 .update(builder -> Span.current()
                         .map(Span::context)
                         .ifPresent(builder::parent))
                 .start();
 
+        Baggage.fromContext(Context.current())
+                .forEach((key, baggageEntry) ->
+                                 helidonSpan.baggage().set(key,
+                                                           baggageEntry.getValue(),
+                                                           baggageEntry.getMetadata().getValue()));
         Scope helidonScope = helidonSpan.activate();
 
         clientRequestContext.setProperty(SPAN_SCOPE, helidonScope);
@@ -100,6 +115,13 @@ class HelidonTelemetryClientFilter implements ClientRequestFilter, ClientRespons
         scope.close();
 
         span.tag(HTTP_STATUS_CODE, clientResponseContext.getStatus());
+
+        // OpenTelemetry semantic conventions dictate what the span status should be.
+        // https://opentelemetry.io/docs/specs/semconv/http/http-spans/#status
+        if (ERROR_STATUS_FAMILIES.contains(clientResponseContext.getStatusInfo().getFamily())) {
+            span.status(Span.Status.ERROR);
+        }
+
         span.end();
 
         clientRequestContext.removeProperty(SPAN);
