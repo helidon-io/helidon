@@ -33,6 +33,7 @@ import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigParser.Content;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.ParsableSource;
+import io.helidon.metadata.compile.Spotbugs;
 
 /**
  * {@link io.helidon.config.spi.ConfigSource} implementation that loads configuration content from a resource on a classpath.
@@ -161,6 +162,8 @@ public class ClasspathConfigSource extends AbstractConfigSource implements Confi
     }
 
     @Override
+    @Spotbugs.Exclude(pattern = "URLCONNECTION_SSRF_FD",
+                      reason = "Path from config/code, not openly from user")
     public Optional<Content> load() throws ConfigException {
         if (resourceUrl == null) {
             return Optional.empty();

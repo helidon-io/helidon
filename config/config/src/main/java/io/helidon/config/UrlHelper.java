@@ -23,9 +23,13 @@ import java.net.URLConnection;
 import java.time.Instant;
 import java.util.Optional;
 
+import io.helidon.metadata.compile.Spotbugs;
+
 /**
  * Utility for URL sources.
  */
+@Spotbugs.Exclude(pattern = "URLCONNECTION_SSRF_FD",
+                  reason = "This type is intended for reading URL, and the location is provided through meta-config")
 final class UrlHelper {
     static final int STATUS_NOT_FOUND = 404;
     private static final System.Logger LOGGER = System.getLogger(UrlHelper.class.getName());

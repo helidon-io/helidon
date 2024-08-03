@@ -20,41 +20,15 @@
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon</groupId>
-        <artifactId>helidon-project</artifactId>
+        <groupId>io.helidon.metadata</groupId>
+        <artifactId>helidon-metadata-project</artifactId>
         <version>4.1.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
-    <packaging>pom</packaging>
 
-    <groupId>io.helidon.metadata</groupId>
-    <artifactId>helidon-metadata-project</artifactId>
-    <name>Helidon Metadata Project</name>
+    <artifactId>helidon-metadata-compile</artifactId>
+    <name>Helidon Metadata Compile</name>
     <description>
-        Tools for metadata handling in Helidon.
+        Helidon compile time metadata annotations.
     </description>
-
-    <properties>
-        <javadoc.fail-on-warnings>true</javadoc.fail-on-warnings>
-    </properties>
-
-    <modules>
-        <module>compile</module>
-        <module>hson</module>
-        <module>codegen</module>
-    </modules>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>check-dependencies</id>
-                        <phase>verify</phase>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
 </project>

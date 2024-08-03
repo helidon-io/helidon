@@ -38,12 +38,15 @@ import io.helidon.config.spi.ParsableSource;
 import io.helidon.config.spi.PollableSource;
 import io.helidon.config.spi.PollingStrategy;
 import io.helidon.config.spi.WatchableSource;
+import io.helidon.metadata.compile.Spotbugs;
 
 /**
  * {@link ConfigSource} implementation that loads configuration content from specified endpoint URL.
  *
  * @see AbstractConfigSourceBuilder
  */
+@Spotbugs.Exclude(pattern = "URLCONNECTION_SSRF_FD",
+                  reason = "This type is intended for reading URL, and the location is provided through meta-config")
 public final class UrlConfigSource extends AbstractConfigSource
         implements WatchableSource<URL>, ParsableSource, PollableSource<Instant> {
 

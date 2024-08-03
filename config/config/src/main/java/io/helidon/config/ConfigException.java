@@ -16,9 +16,12 @@
 
 package io.helidon.config;
 
+import io.helidon.metadata.compile.Spotbugs;
+
 /**
  * Exception is thrown by {@link Config} implementations.
  */
+@Spotbugs.Exclude(pattern = "NM_SAME_SIMPLE_NAME_AS_SUPERCLASS", reason = "Same interface name for backward compatibility")
 public class ConfigException extends io.helidon.common.config.ConfigException {
 
     private static final long serialVersionUID = 1L;

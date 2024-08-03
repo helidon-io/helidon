@@ -20,6 +20,8 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import io.helidon.metadata.compile.Spotbugs;
+
 /**
  * A typed value of a {@link Config} node.
  * <p>
@@ -32,6 +34,8 @@ import java.util.function.Supplier;
  * @see Config#as(Function)
  * @see Config#as(io.helidon.common.GenericType)
  */
+@Spotbugs.Exclude(pattern = "NM_SAME_SIMPLE_NAME_AS_INTERFACE",
+                  reason = "Same interface name for backward compatibility")
 public interface ConfigValue<T> extends io.helidon.common.config.ConfigValue<T> {
     /**
      * Returns the fully-qualified key of the originating {@code Config} node.

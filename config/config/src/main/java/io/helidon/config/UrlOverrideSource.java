@@ -32,6 +32,7 @@ import io.helidon.config.spi.OverrideSource;
 import io.helidon.config.spi.PollableSource;
 import io.helidon.config.spi.PollingStrategy;
 import io.helidon.config.spi.WatchableSource;
+import io.helidon.metadata.compile.Spotbugs;
 
 /**
  * {@link io.helidon.config.spi.OverrideSource} implementation that loads configuration override content from specified
@@ -76,6 +77,8 @@ public class UrlOverrideSource extends AbstractSource
     }
 
     @Override
+    @Spotbugs.Exclude(pattern = "URLCONNECTION_SSRF_FD",
+                      reason = "This type is intended for reading URL, and the location is provided through meta-config")
     public boolean isModified(Instant stamp) {
         return UrlHelper.isModified(url, stamp);
     }
@@ -101,6 +104,8 @@ public class UrlOverrideSource extends AbstractSource
     }
 
     @Override
+    @Spotbugs.Exclude(pattern = "URLCONNECTION_SSRF_FD",
+                      reason = "This type is intended for reading URL, and the location is provided through meta-config")
     public Optional<OverrideContent> load() throws ConfigException {
         try {
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();

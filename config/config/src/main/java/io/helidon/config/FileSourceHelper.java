@@ -35,6 +35,8 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import io.helidon.metadata.compile.Spotbugs;
+
 /**
  * Utilities for file-related source classes.
  *
@@ -42,6 +44,8 @@ import java.util.stream.Collectors;
  * @see FileOverrideSource
  * @see io.helidon.config.DirectoryConfigSource
  */
+@Spotbugs.Exclude(pattern = "WEAK_MESSAGE_DIGEST_MD5",
+                  reason = "MD5 is only used to compare if a file has changed")
 public final class FileSourceHelper {
 
     private static final System.Logger LOGGER = System.getLogger(FileSourceHelper.class.getName());
@@ -142,7 +146,7 @@ public final class FileSourceHelper {
      */
     public static boolean isModified(Path filePath, byte[] digest) {
         return !digest(filePath)
-                .map(newDigest -> Arrays.equals(digest, newDigest))
+                .map(newDigest -> MessageDigest.isEqual(digest, newDigest))
                 // if new stamp is not present, it means the file was deleted
                 .orElse(false);
     }

@@ -61,6 +61,8 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import io.helidon.metadata.compile.Spotbugs;
+
 /**
  * Utility methods for converting configuration to Java types.
  * <p>
@@ -325,6 +327,8 @@ public final class ConfigMappers {
      * @param stringValue source value as a {@code String}
      * @return mapped {@code stringValue} to {@code File}
      */
+    @Spotbugs.Exclude(pattern = "PATH_TRAVERSAL_IN",
+                      reason = "The value is read from configuration, not from user input")
     public static File toFile(String stringValue) {
         return new File(stringValue);
     }
@@ -335,6 +339,8 @@ public final class ConfigMappers {
      * @param stringValue source value as a {@code String}
      * @return mapped {@code stringValue} to {@code Path}
      */
+    @Spotbugs.Exclude(pattern = "PATH_TRAVERSAL_IN",
+                      reason = "The value is read from configuration, not from user input")
     public static Path toPath(String stringValue) {
         return Paths.get(stringValue);
     }

@@ -23,6 +23,7 @@ import java.util.Optional;
 
 import io.helidon.config.spi.ConfigContent;
 import io.helidon.config.spi.OverrideSource;
+import io.helidon.metadata.compile.Spotbugs;
 
 /**
  * Class provides access to built-in {@link io.helidon.config.spi.OverrideSource} implementations.
@@ -79,6 +80,8 @@ public final class OverrideSources {
      * @param file a file with an override value map
      * @return an instance of builder
      */
+    @Spotbugs.Exclude(pattern = "PATH_TRAVERSAL_IN",
+                      reason = "The value is read from configuration, not from user input")
     public static FileOverrideSource.Builder file(String file) {
         return FileOverrideSource.builder().path(Paths.get(file));
     }

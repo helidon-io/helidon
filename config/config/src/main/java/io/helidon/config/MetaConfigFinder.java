@@ -32,10 +32,13 @@ import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigSource;
+import io.helidon.metadata.compile.Spotbugs;
 
 /**
  * Utility class that locates the meta configuration source.
  */
+@Spotbugs.Exclude(pattern = "PATH_TRAVERSAL_IN",
+                  reason = "The value is read from configuration, not from user input")
 final class MetaConfigFinder {
     /**
      * System property used to set a file with meta configuration.

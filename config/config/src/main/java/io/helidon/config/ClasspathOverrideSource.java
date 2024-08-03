@@ -25,6 +25,7 @@ import java.util.Optional;
 
 import io.helidon.config.spi.ConfigContent.OverrideContent;
 import io.helidon.config.spi.OverrideSource;
+import io.helidon.metadata.compile.Spotbugs;
 
 /**
  * {@link OverrideSource} implementation that loads override definitions from a resource on a classpath.
@@ -47,6 +48,8 @@ public class ClasspathOverrideSource extends AbstractSource implements OverrideS
         return ClasspathSourceHelper.uid(resource);
     }
 
+    @Spotbugs.Exclude(pattern = "URLCONNECTION_SSRF_FD",
+                      reason = "Path from config/code, not openly from user")
     @Override
     public Optional<OverrideContent> load() throws ConfigException {
         if (null == resourceUrl) {

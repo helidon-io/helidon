@@ -38,6 +38,7 @@ import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.MergingStrategy;
 import io.helidon.config.spi.OverrideSource;
+import io.helidon.metadata.compile.Spotbugs;
 import io.helidon.service.registry.Service;
 
 /**
@@ -240,6 +241,8 @@ import io.helidon.service.registry.Service;
  * config system merges these together so that values from config sources with higher {@link io.helidon.common.Weight weight}
  * have priority over values from config sources with lower weight.
  */
+@Spotbugs.Exclude(pattern = "NM_SAME_SIMPLE_NAME_AS_INTERFACE",
+                  reason = "Same interface name for backward compatibility")
 @Service.Contract
 public interface Config extends io.helidon.common.config.Config {
     /**
@@ -954,6 +957,8 @@ public interface Config extends io.helidon.common.config.Config {
      *
      * @see Config#key()
      */
+    @Spotbugs.Exclude(pattern = "NM_SAME_SIMPLE_NAME_AS_INTERFACE",
+                      reason = "Same interface name for backward compatibility")
     interface Key extends io.helidon.common.config.Config.Key {
         /**
          * Returns instance of Key that represents key of parent config node.

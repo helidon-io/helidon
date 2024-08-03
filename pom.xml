@@ -48,6 +48,7 @@
 
         <spotbugs.skip>false</spotbugs.skip>
         <spotbugs.threshold>Medium</spotbugs.threshold>
+        <spotbugs.exclude>${project.basedir}/target/classes/META-INF/ignored/spotbugs-exclude.xml</spotbugs.exclude>
 
         <!-- owasp dependency check -->
         <dependency-check.skip>false</dependency-check.skip>
@@ -528,6 +529,9 @@
                                 <Scm-Revision>${buildNumber}</Scm-Revision>
                             </manifestEntries>
                         </archive>
+                        <excludes>
+                            <exclude>**/META-INF/ignored/**</exclude>
+                        </excludes>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -614,7 +618,6 @@
                         <omitVisitors>FindReturnRef</omitVisitors>
                         <skip>${spotbugs.skip}</skip>
                         <threshold>${spotbugs.threshold}</threshold>
-                        <!--suppress UnresolvedMavenProperty -->
                         <excludeFilterFile>${spotbugs.exclude}</excludeFilterFile>
                         <xmlOutput>true</xmlOutput>
                         <plugins>

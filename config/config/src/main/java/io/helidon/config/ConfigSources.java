@@ -38,6 +38,7 @@ import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.NodeConfigSource;
+import io.helidon.metadata.compile.Spotbugs;
 
 /**
  * Provides access to built-in {@link ConfigSource} implementations.
@@ -256,6 +257,8 @@ public final class ConfigSources {
      * @param path a file path
      * @return builder for the file-based {@code ConfigSource}
      */
+    @Spotbugs.Exclude(pattern = "PATH_TRAVERSAL_IN",
+                      reason = "The value is read from configuration, not from user input")
     public static FileConfigSource.Builder file(String path) {
         return FileConfigSource.builder().path(Paths.get(path));
     }
@@ -278,6 +281,8 @@ public final class ConfigSources {
      * @param path a directory path
      * @return new Builder instance
      */
+    @Spotbugs.Exclude(pattern = "PATH_TRAVERSAL_IN",
+                      reason = "The value is read from configuration, not from user input")
     public static DirectoryConfigSource.Builder directory(String path) {
         return DirectoryConfigSource.builder().path(Paths.get(path));
     }
