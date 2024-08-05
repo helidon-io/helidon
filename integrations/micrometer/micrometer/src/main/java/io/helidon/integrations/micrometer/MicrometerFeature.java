@@ -49,6 +49,7 @@ public class MicrometerFeature extends HelidonFeatureSupport {
 
     static final String DEFAULT_CONTEXT = "/micrometer";
     private static final String SERVICE_NAME = "Micrometer";
+    private static final System.Logger LOGGER = System.getLogger(MicrometerFeature.class.getName());
 
     private final MeterRegistryFactory meterRegistryFactory;
 
@@ -105,6 +106,8 @@ public class MicrometerFeature extends HelidonFeatureSupport {
     @Override
     public void beforeStart() {
         Contexts.globalContext().register(registry());
+        LOGGER.log(System.Logger.Level.WARNING,
+                   "Micrometer integration is deprecated and will be removed in a future major release.");
     }
 
     private void getOrOptions(ServerRequest serverRequest, ServerResponse serverResponse) throws Exception {
