@@ -29,6 +29,14 @@ endif::[]
 :keywords: helidon, java, micrometer, integration, se, mp
 
 == Overview
+
+[NOTE]
+====
+Micrometer integration is deprecated beginning in Helidon 4.1 and is planned for removal in a future major release. Please use
+ifdef::se-flavor[the link:{rootdir}/se/metrics/metrics.adoc[Helidon neutral metrics API].]
+ifdef::mp-flavor[the link:{rootdir}/mp/metrics/metrics.adoc[Helidon MicroProfile Metrics API implementation and annotations].]
+====
+
 Helidon {h1-prefix} simplifies how you can use Micrometer for application-specific metrics:
 
 * The endpoint `/micrometer`: A configurable endpoint that exposes metrics according to which Micrometer meter registry
