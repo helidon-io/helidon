@@ -377,11 +377,10 @@ public class OpenApiGeneratorSnippets {
             return new AddPetOpCustom();
         }
 // end::PetServiceImplCustomcreateAddPetOp[]
+// tag::PetServiceImplCustomclass-end[]
     }
+    // end::PetServiceImplCustomclass-end[]
 // end::PetServiceImplCustomclass-declaration[]
-
-
-
 }
 
 

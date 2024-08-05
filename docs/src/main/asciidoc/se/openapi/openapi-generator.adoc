@@ -23,15 +23,13 @@
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/se.adoc[]
-:incdir: {rootdir}/includes/openapi
-:gen-inc: {incdir}/openapi-generator.adoc
 :snippets: {sourcedir}/se/openapi/OpenApiGeneratorSnippets.java
 
 :helidon-client-xref: {webclient-page}
 
-include::{gen-inc}[tag=preamble]
+include::{rootdir}/includes/openapi/openapi-generator.adoc[tag=preamble]
 
-include::{gen-inc}[tags=intro;coords;config;usage-basics;usage-grouping-intro;usage-grouping-server]
+include::{rootdir}/includes/openapi/openapi-generator.adoc[tags=intro;coords;config;usage-basics;usage-grouping-intro;usage-grouping-server]
 
 The generator creates Helidon routing logic based on the longest common path prefix shared among the operations that are grouped into each API.
 
@@ -43,7 +41,7 @@ The generator logs a warning and includes a `TODO` comment in the generated rout
 Review the paths and the `tags` settings in your OpenAPI document and consider revising one or the other so all operations in each API share a common path prefix. If you do not have control over the OpenAPI document or do not want to change it, consider specifying the generator option `x-helidon-groupBy first-path-segment` which groups operations into APIs not by `tags` value but by the first segment of each operation's path.
 ====
 
-include::{gen-inc}[tags=usage-grouping-client;usage-after-grouping;using-generated-code-intro;using-generated-code-server-intro]
+include::{rootdir}/includes/openapi/openapi-generator.adoc[tags=usage-grouping-client;usage-after-grouping;using-generated-code-intro;using-generated-code-server-intro]
 
 If you choose to generate interfaces for the APIs, the generator creates routing rules for the API services it generates but you write virtually all of the logic to process incoming requests by implementing the very short methods generated in the implementation class.
 
@@ -55,16 +53,15 @@ The implementation class contains a `handle` method for each API operation with 
 [source,java]
 .The generated `handleAddPet` method in the `PetApiImpl` class
 ----
-include::{snippets}/[tags=PetServiceImplCustomclass-header;PetServiceImplCustomhandleAddPetDecl;PetServiceImplCustomhandleAddPetGenerated;PetServiceImplCustomhandleAddPetEnd, indent=0]
-}
+include::{snippets}/[tags=PetServiceImplCustomclass-header;PetServiceImplCustomhandleAddPetDecl;PetServiceImplCustomhandleAddPetGenerated;PetServiceImplCustomhandleAddPetEnd;PetServiceImplCustomclass-end, indent=0]
+
 ----
 
 Customize the class to manage the pets and revise the method to save the new pet and send the correct response, as shown next.
 [source,java]
 .The customized `handleAddPet` method in the `PetApiImpl` class
 ----
-include::{snippets}/[tags=PetServiceImplCustomclass-header;PetServiceImplCustomhandleAddPetDecl;PetServiceImplCustomaddedFields;PetServiceImplCustomhandleAddPetCustom;PetServiceImplCustomhandleAddPetEnd, indent=0]
-}
+include::{snippets}/[tags=PetServiceImplCustomclass-header;PetServiceImplCustomhandleAddPetDecl;PetServiceImplCustomaddedFields;PetServiceImplCustomhandleAddPetCustom;PetServiceImplCustomhandleAddPetEnd;PetServiceImplCustomclass-end, indent=0]
 ----
 <1> Business logic: create a very simple data store - a real app would use a database.
 <2> Business logic: make sure the pet being added does not already exist. Send the invalid request status code if it does.
@@ -139,7 +136,7 @@ The generated code in these methods invokes the code to extract each incoming pa
 
 To completely change this behavior, override the `addPet` method in the `PetServiceImpl` class to do what you need.
 
-include::{gen-inc}[tag=using-generated-code-client-intro, indent=0]
+include::{rootdir}/includes/openapi/openapi-generator.adoc[tag=using-generated-code-client-intro, indent=0]
 
 The generated Helidon SE client includes the class `ApiClient`. This class corresponds to
 the Helidon link:{webclient-javadoc-base-url}.api/io/helidon/webclient/api/WebClient.html[`WebClient`] and represents the
@@ -297,6 +294,6 @@ include::{snippets}[tags=ExampleClientFindAvailableDecl;ExampleClientFindAvailab
 
 This code also blocks the current thread, first to wait for the initial response and then to wait for the result content.
 
-include::{gen-inc}[tag=common-references]
+include::{rootdir}/includes/openapi/openapi-generator.adoc[tag=common-references]
 
 * xref:{helidon-client-xref}[Helidon WebClient documentation]
