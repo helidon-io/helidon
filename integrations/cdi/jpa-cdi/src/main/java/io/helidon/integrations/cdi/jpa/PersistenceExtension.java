@@ -107,7 +107,6 @@ import jakarta.persistence.spi.PersistenceUnitInfo;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Unmarshaller;
-
 import org.eclipse.microprofile.config.ConfigProvider;
 
 import static jakarta.interceptor.Interceptor.Priority.LIBRARY_AFTER;
