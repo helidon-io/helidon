@@ -186,6 +186,18 @@ final class MySQLTransactionRemoteTestIT extends MySQLRemoteTest implements Tran
 
     @Test
     @Override
+    public void testInsertNamedArgsReturnedKeys() {
+        remoteTest();
+    }
+
+    @Test
+    @Override
+    public void testInsertNamedArgsReturnedColumns() {
+        remoteTest();
+    }
+
+    @Test
+    @Override
     public void testCreateNamedQueryStrStrOrderArgs() {
         remoteTest();
     }

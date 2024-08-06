@@ -282,6 +282,18 @@ final class H2SimpleRemoteTestIT extends H2RemoteTest implements SimpleTest {
 
     @Test
     @Override
+    public void testInsertNamedArgsReturnedKeys() {
+        remoteTest();
+    }
+
+    @Test
+    @Override
+    public void testInsertNamedArgsReturnedColumns() {
+        remoteTest();
+    }
+
+    @Test
+    @Override
     public void testCreateNamedQueryStrStrOrderArgs() {
         remoteTest();
     }
