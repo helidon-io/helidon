@@ -635,6 +635,7 @@
                         <skipTestScope>true</skipTestScope>
                         <failBuildOnCVSS>0</failBuildOnCVSS>
                         <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
+                        <!--suppress MavenModelInspection -->
                         <nvdApiKey>${nvd-api-key}</nvdApiKey>
                         <excludes>
                             <!-- Exclude stuff we do not deploy -->
@@ -1319,6 +1320,7 @@
         <profile>
             <id>examples</id>
             <modules>
+                <!--suppress MavenModelInspection -->
                 <module>helidon-examples</module>
             </modules>
         </profile>
