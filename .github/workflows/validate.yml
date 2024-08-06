@@ -134,7 +134,7 @@ jobs:
           cache: maven
       - uses: graalvm/setup-graalvm@v1
         with:
-          java-version: 21
+          java-version: '21'
           distribution: graalvm-community
           github-token: ${{ secrets.GITHUB_TOKEN }}
           native-image-job-reports: true
@@ -211,31 +211,92 @@ jobs:
             -f archetypes/pom.xml \
             install
   packaging:
-    timeout-minutes: 60
+    timeout-minutes: 30
     strategy:
       matrix:
-        os: [ ubuntu-20.04, macos-14]
+        os: [ ubuntu-20.04, macos-14 ]
+        packaging: [ jar, jlink ]
+        include:
+          - { os: ubuntu-20.04, platform: linux }
+          - { os: macos-14, platform: macos }
     runs-on: ${{ matrix.os }}
+    name: tests/packaging-${{ matrix.packaging }}-${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
-      - uses: graalvm/setup-graalvm@v1
         with:
-          java-version: 21
-          distribution: graalvm-community
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          native-image-job-reports: true
+          ref: ${{ inputs.ref }}
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4.1.0
+        with:
+          distribution: ${{ env.JAVA_DISTRO }}
+          java-version: ${{ env.JAVA_VERSION }}
           cache: maven
+      - name: Free Space
+        shell: bash
+        run: |
+          # See https://github.com/actions/runner-images/issues/2840
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/share/powershell
       - name: Build Helidon
         run: |
           # prime build
           mvn ${MAVEN_ARGS} -e \
-            -Dmaven.test.skip=true \
             -DskipTests \
-            -Ppipeline \
+            -Ptests \
             install
-      - name: JAR packaging
-        run: etc/scripts/test-packaging-jar.sh
-      - name: JLink packaging
-        run: etc/scripts/test-packaging-jlink.sh
-      - name: Native-Image packaging
-        run: etc/scripts/test-packaging-native.sh
+      - name: Run Test
+        run: |
+            mvn ${MAVEN_ARGS} \
+              -f tests/integration/packaging/pom.xml \
+              -P${{ matrix.packaging }}-image \
+              verify
+  native-image:
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        os: [ ubuntu-20.04, macos-14 ]
+        module: [ mp-1, mp-2, mp-3, se-1 ]
+        include:
+          - { os: ubuntu-20.04, platform: linux }
+          - { os: macos-14, platform: macos }
+    runs-on: ${{ matrix.os }}
+    name: tests/native-image-${{ matrix.module }}-${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: graalvm-community
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          native-image-job-reports: true
+          cache: maven
+      - name: Free Space
+        shell: bash
+        run: |
+          # See https://github.com/actions/runner-images/issues/2840
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/share/powershell
+      - name: Build Helidon
+        run: |
+          # prime build
+          mvn ${MAVEN_ARGS} -e \
+            -DskipTests \
+            -Ptests \
+            install
+      - name: Run Test
+        run: |
+          mvn ${MAVEN_ARGS} -e \
+            -f tests/integration/packaging/pom.xml \
+            -pl ${{ matrix.module }} \
+            -Pnative-image \
+            -am \
+            verify
+  gate:
+    runs-on: ubuntu-20.04
+    needs: [ copyright, checkstyle, shellcheck, build, docs, spotbugs, packaging, native-image, archetypes, mp-tck ]
+    steps:
+      - shell: bash
+        run: |
+          echo OK
