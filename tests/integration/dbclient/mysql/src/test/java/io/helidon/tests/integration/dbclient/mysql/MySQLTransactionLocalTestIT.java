@@ -192,6 +192,18 @@ final class MySQLTransactionLocalTestIT extends MySQLLocalTest implements Transa
 
     @Test
     @Override
+    public void testInsertNamedArgsReturnedKeys() throws Exception {
+        ctx.delegate().testInsertNamedArgsReturnedKeys();
+    }
+
+    @Test
+    @Override
+    public void testInsertNamedArgsReturnedColumns() throws Exception {
+        ctx.delegate().testInsertNamedArgsReturnedColumns();
+    }
+
+    @Test
+    @Override
     public void testCreateNamedQueryStrStrOrderArgs() {
         ctx.delegate().testCreateNamedQueryStrStrOrderArgs();
     }

@@ -41,6 +41,10 @@ public class DBHelper {
             exec.namedDml("create-types");
             exec.namedDml("create-pokemons");
             exec.namedDml("create-poketypes");
+            exec.namedDml("create-matches");
+            if (db.dbType().equals("jdbc:oracle")) {
+                exec.namedDml("create-matches-seq");
+            }
         } catch (DbClientException ex) {
             ex.printStackTrace(System.err);
         }

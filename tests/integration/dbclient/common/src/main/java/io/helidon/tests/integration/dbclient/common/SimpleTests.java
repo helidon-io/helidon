@@ -256,6 +256,17 @@ public interface SimpleTests {
          * Verify {@code insert(String)} API method with ordered parameters passed directly to the {@code insert} method.
          */
         void testInsertOrderArgs();
+
+        /**
+         * Verify {@code namedInsert(String)} API method with named parameters and returned generated keys.
+         */
+        void testInsertNamedArgsReturnedKeys() throws Exception;
+
+        /**
+         * Verify {@code namedInsert(String)} API method with named parameters and returned insert columns.
+         */
+        void testInsertNamedArgsReturnedColumns() throws Exception;
+
     }
 
     /**
