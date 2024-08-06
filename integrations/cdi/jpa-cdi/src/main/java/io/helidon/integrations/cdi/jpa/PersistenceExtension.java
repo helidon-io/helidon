@@ -108,6 +108,8 @@ import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Unmarshaller;
 
+import org.eclipse.microprofile.config.ConfigProvider;
+
 import static jakarta.interceptor.Interceptor.Priority.LIBRARY_AFTER;
 import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 import static jakarta.persistence.PersistenceContextType.EXTENDED;
@@ -270,7 +272,10 @@ public final class PersistenceExtension implements Extension {
     @Deprecated // For invocation by CDI only.
     public PersistenceExtension() {
         super();
-        this.enabled = Boolean.parseBoolean(System.getProperty(this.getClass().getName() + ".enabled", "true"));
+        this.enabled =
+            Boolean.parseBoolean(ConfigProvider.getConfig()
+                                 .getOptionalValue(this.getClass().getName() + ".enabled", String.class)
+                                 .orElse("true"));
         this.containerManagedEntityManagerQualifiers = new HashSet<>();
         this.containerManagedEntityManagerFactoryQualifiers = new HashSet<>();
         this.entityManagerFactoryQualifiers = new HashSet<>();
@@ -587,10 +592,13 @@ public final class PersistenceExtension implements Extension {
         // Next, and most commonly, load all META-INF/persistence.xml resources with JAXB, and turn them into
         // PersistenceUnitInfo instances, and add beans for all of them as well as their associated PersistenceProviders
         // (if applicable).
+        String persistenceXmlResourceName = ConfigProvider.getConfig()
+            .getOptionalValue("jakarta.persistence.descriptor.resource.name", String.class)
+            .orElse("META-INF/persistence.xml");
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         Enumeration<URL> urls;
         try {
-            urls = classLoader.getResources("META-INF/persistence.xml");
+            urls = classLoader.getResources(persistenceXmlResourceName);
         } catch (IOException e) {
             event.addDefinitionError(e);
             processImplicits = false;
