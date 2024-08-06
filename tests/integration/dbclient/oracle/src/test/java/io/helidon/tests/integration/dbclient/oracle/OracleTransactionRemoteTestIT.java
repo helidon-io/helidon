@@ -186,6 +186,18 @@ final class OracleTransactionRemoteTestIT extends OracleRemoteTest implements Tr
 
     @Test
     @Override
+    public void testInsertNamedArgsReturnedKeys() {
+        remoteTest();
+    }
+
+    @Test
+    @Override
+    public void testInsertNamedArgsReturnedColumns() {
+        remoteTest();
+    }
+
+    @Test
+    @Override
     public void testCreateNamedQueryStrStrOrderArgs() {
         remoteTest();
     }
