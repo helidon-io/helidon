@@ -52,6 +52,7 @@
             <artifactId>mockito-core</artifactId>
         </dependency>
         <!-- snippets dependencies -->
+        <!--suppress VulnerableLibrariesLocal -->
         <dependency>
             <groupId>org.apache.activemq</groupId>
             <artifactId>activemq-client</artifactId>
@@ -99,6 +100,46 @@
         <finalName>${project.artifactId}</finalName>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-clean</id>
+                        <configuration>
+                            <filesets>
+                                <fileset>
+                                    <directory>src/main/asciidoc/config</directory>
+                                    <includes>
+                                        <include>**/*</include>
+                                    </includes>
+                                </fileset>
+                            </filesets>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>config-docs</id>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <phase>generate-sources</phase>
+                        <configuration>
+                            <commandlineArgs>${project.basedir}/src/main/asciidoc/config</commandlineArgs>
+                            <mainClass>io.helidon.config.metadata.docs.Main</mainClass>
+                            <classpathFilenameExclusions>
+                                <exclusion>helidon-logging-slf4j-${helidon.version}.jar</exclusion>
+                                <exclusion>helidon-logging-log4j-${helidon.version}.jar</exclusion>
+                            </classpathFilenameExclusions>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>io.helidon.build-tools</groupId>
                 <artifactId>sitegen-maven-plugin</artifactId>
                 <extensions>true</extensions>
@@ -114,6 +155,9 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <proc>none</proc>
+                    <compilerArgs>
+                        <arg>-Xlint:-removal</arg>
+                    </compilerArgs>
                 </configuration>
                 <executions>
                     <execution>
@@ -129,34 +173,6 @@
     </build>
 
     <profiles>
-        <profile>
-            <id>configdoc</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>exec-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>regenerate-config-docs</id>
-                                <goals>
-                                    <goal>java</goal>
-                                </goals>
-                                <phase>generate-sources</phase>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <commandlineArgs>${project.basedir}/src/main/asciidoc/config</commandlineArgs>
-                            <mainClass>io.helidon.config.metadata.docs.Main</mainClass>
-                            <classpathFilenameExclusions>
-                                <exclusion>helidon-logging-slf4j-${helidon.version}.jar</exclusion>
-                                <exclusion>helidon-logging-log4j-${helidon.version}.jar</exclusion>
-                            </classpathFilenameExclusions>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
         <profile>
             <id>javadoc</id>
             <build>
@@ -221,9 +237,9 @@
                                 <!-- Unsupported modules -->
                                 <exclude>io.helidon.inject*</exclude>
                                 <exclude>*.processor*</exclude>
-                                <exclude> io.helidon.integrations.oci.authentication.instance</exclude>
-                                <exclude> io.helidon.integrations.oci.authentication.resource</exclude>
-                                <exclude> io.helidon.integrations.oci.authentication.okeworkload</exclude>
+                                <exclude>io.helidon.integrations.oci.authentication.instance</exclude>
+                                <exclude>io.helidon.integrations.oci.authentication.resource</exclude>
+                                <exclude>io.helidon.integrations.oci.authentication.okeworkload</exclude>
                             </moduleExcludes>
                             <packageIncludes>
                                 <include>io.helidon*</include>

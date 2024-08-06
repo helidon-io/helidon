@@ -294,7 +294,26 @@ include::{sourcedir}/mp/LraSnippets.java[tag=snippet_12, indent=0]
 
 == Configuration
 
-include::{rootdir}/config/io_helidon_microprofile_lra_Coordinator.adoc[leveloffset=+1,tag=config]
+[source,text]
+.Type
+----
+io.helidon.microprofile.lra
+----
+
+.Optional configuration options
+[cols="3,3,2,5a"]
+
+|===
+|Key |Type |Default value |Description
+
+|`mp.lra.coordinator.url` |string |`\http://localhost:8070/lra-coordinator` |Url of coordinator.
+|`mp.lra.coordinator.propagation.active` |boolean |{nbsp} |Propagate LRA headers `LRA_HTTP_CONTEXT_HEADER` and `LRA_HTTP_PARENT_CONTEXT_HEADER` through non-LRA endpoints.
+|`mp.lara.participant.url` |string |{nbsp} |Url of the LRA enabled service overrides standard base uri, so coordinator can call load-balancer instead of the service.
+|`mp.lra.coordinator.timeout` |string |{nbsp} |Timeout for synchronous communication with coordinator.
+|`mp.lra.coordinator.timeout-unit` |string |{nbsp} |Timeout unit for synchronous communication with coordinator.
+
+|===
+
 
 [source,yaml]
 .Example of LRA configuration
@@ -302,7 +321,7 @@ include::{rootdir}/config/io_helidon_microprofile_lra_Coordinator.adoc[leveloffs
 mp.lra:
   coordinator.url: http://localhost:8070/lra-coordinator <1>
   propagation.active: true <2>
-  participant.url: http://coordinator.visible.host:80/awesomeapp <3>
+  participant.url: https://coordinator.visible.host:443/awesomeapp <3>
 ----
 <1> Url of coordinator
 <2> Propagate LRA headers LRA_HTTP_CONTEXT_HEADER and LRA_HTTP_PARENT_CONTEXT_HEADER through non-LRA endpoints

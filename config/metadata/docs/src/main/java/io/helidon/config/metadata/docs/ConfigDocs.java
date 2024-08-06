@@ -595,27 +595,31 @@ public class ConfigDocs {
                 + " (" + values.stream().map(CmAllowedValue::getValue).collect(Collectors.joining(", ")) + ")";
     }
 
-    // the target path must either contain zero files, or the config reference
-    // and it must exist
+    // if the target path exists, it must either contain zero files, or the config reference
     private void checkTargetPath(Path configReference) throws IOException {
-        if (Files.exists(path) && Files.isDirectory(path)) {
-            // either empty, or contains config reference
-            if (Files.exists(configReference) && Files.isRegularFile(configReference)) {
-                return;
-            }
+        // contains config reference
+        if (Files.exists(configReference) && Files.isRegularFile(configReference)) {
+            return;
+        }
+        if (!Files.exists(path)) {
+            Files.createDirectories(path);
+            return;
+        }
+        if (Files.isDirectory(path)) {
             // must be empty
             try (Stream<Path> stream = Files.list(path)) {
                 if (stream.findAny()
                         .isPresent()) {
 
-                    throw new ConfigDocsException("Cannot generate config reference documentation, unless target path contains "
-                                                          + CONFIG_REFERENCE_ADOC + " file or it is empty. "
-                                                          + "Target path: " + path.toAbsolutePath() + " contains files");
+                    throw new ConfigDocsException(
+                            "Cannot generate config reference documentation, unless target path contains "
+                            + CONFIG_REFERENCE_ADOC + " file or it is empty. "
+                            + "Target path: " + path.toAbsolutePath() + " contains files");
                 }
             }
         } else {
-            throw new IllegalArgumentException("Target path must be a directory and must exist: "
-                                                       + path.toAbsolutePath().normalize());
+            throw new IllegalArgumentException("Target path must be a directory: "
+                                               + path.toAbsolutePath().normalize());
         }
     }
 
@@ -624,8 +628,6 @@ public class ConfigDocs {
         if (resource == null) {
             throw new ConfigDocsException("Failed to locate required handlebars template on classpath: " + template);
         }
-        Template typeTemplate;
-        Template configReferenceTemplate;
         try {
             return handlebars.compile(new URLTemplateSource(template, resource));
         } catch (IOException e) {
