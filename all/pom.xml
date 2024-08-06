@@ -596,6 +596,10 @@
             <artifactId>helidon-integrations-db-mysql</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.integrations.db</groupId>
+            <artifactId>helidon-integrations-db-pgsql</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.integrations.cdi</groupId>
             <artifactId>helidon-integrations-cdi-configurable</artifactId>
         </dependency>
