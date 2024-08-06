@@ -39,7 +39,6 @@ module io.helidon.microprofile.grpc.server {
     requires io.helidon.webserver.grpc;
 
     requires io.grpc;
-    requires io.grpc.protobuf.lite;
     requires com.google.protobuf;
 
     requires microprofile.health.api;
