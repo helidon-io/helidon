@@ -186,6 +186,18 @@ final class H2TransactionRemoteTestIT extends H2RemoteTest implements Transactio
 
     @Test
     @Override
+    public void testInsertNamedArgsReturnedKeys() {
+        remoteTest();
+    }
+
+    @Test
+    @Override
+    public void testInsertNamedArgsReturnedColumns() {
+        remoteTest();
+    }
+
+    @Test
+    @Override
     public void testCreateNamedQueryStrStrOrderArgs() {
         remoteTest();
     }
