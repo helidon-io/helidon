@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,9 @@ import io.helidon.common.buffers.DataWriter;
 class SocketWriterAsync extends SocketWriter implements DataWriter {
     private static final System.Logger LOGGER = System.getLogger(SocketWriterAsync.class.getName());
     private static final BufferData CLOSING_TOKEN = BufferData.empty();
+    private static final int QUEUE_SIZE_THRESHOLD = 2;
+    private static final int SMART_QUEUE_TIMER_MILLIS = 2000;
+
     private final ExecutorService executor;
     private final ArrayBlockingQueue<BufferData> writeQueue;
     private final CountDownLatch cdl = new CountDownLatch(1);
@@ -40,6 +43,8 @@ class SocketWriterAsync extends SocketWriter implements DataWriter {
     private volatile Throwable caught;
     private volatile boolean run = true;
     private Thread thread;
+    private double avgQueueSize;
+    private final AtomicBoolean suspendedQueue = new AtomicBoolean(false);
 
     /**
      * A new socket writer.
@@ -64,6 +69,14 @@ class SocketWriterAsync extends SocketWriter implements DataWriter {
 
     @Override
     public void write(BufferData buffer) {
+        // if queue suspended, switch to sync writes
+        if (suspendedQueue.get()) {
+            drainQueueMaybe();
+            writeNow(buffer);
+            return;
+        }
+
+        // proceed with async writes
         checkRunning();
         try {
             if (!writeQueue.offer(buffer, 10, TimeUnit.SECONDS)) {
@@ -80,10 +93,19 @@ class SocketWriterAsync extends SocketWriter implements DataWriter {
      */
     public void close() {
         run = false;
+
+        // if queue suspended, drain and return
+        if (suspendedQueue.get()) {
+            drainQueueMaybe();
+            return;
+        }
+
+        // if not started return
         if (!started.get()) {
             // thread never started
             return;
         }
+
         try {
             writeQueue.put(CLOSING_TOKEN); // wake up blocked take() operation
             if (cdl.await(1000, TimeUnit.MILLISECONDS)) {
@@ -112,11 +134,13 @@ class SocketWriterAsync extends SocketWriter implements DataWriter {
         this.thread = Thread.currentThread();
         this.thread.setName("[" + socket().socketId() + " " + socket().childSocketId() + "]");
         try {
+            long startTimeMillis = System.currentTimeMillis();
             while (run) {
                 CompositeBufferData toWrite = BufferData.createComposite(writeQueue.take());  // wait if the queue is empty
                 // we only want to read a certain amount of data, if somebody writes huge amounts
                 // we could spin here forever and run out of memory
-                for (int i = 0; i < 1000; i++) {
+                int queueSize = 1;
+                for (; queueSize <= 1000; queueSize++) {
                     BufferData newBuf = writeQueue.poll(); // drain ~all elements from the queue, don't wait.
                     if (newBuf == null) {
                         break;
@@ -124,6 +148,14 @@ class SocketWriterAsync extends SocketWriter implements DataWriter {
                     toWrite.add(newBuf);
                 }
                 writeNow(toWrite);
+
+                avgQueueSize = (avgQueueSize + queueSize) / 2.0;
+                if (System.currentTimeMillis() - startTimeMillis > SMART_QUEUE_TIMER_MILLIS) {
+                    if (avgQueueSize < QUEUE_SIZE_THRESHOLD) {
+                        suspendedQueue.set(true);
+                        break;
+                    }
+                }
             }
             cdl.countDown();
         } catch (Throwable e) {
@@ -139,6 +171,13 @@ class SocketWriterAsync extends SocketWriter implements DataWriter {
         }
         if (!run) {
             throw new SocketWriterException(caught);
+        }
+    }
+
+    private void drainQueueMaybe() {
+        BufferData buffer;
+        while ((buffer = writeQueue.poll()) != null) {
+            writeNow(buffer);
         }
     }
 }
