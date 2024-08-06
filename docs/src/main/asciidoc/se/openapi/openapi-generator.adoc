@@ -75,7 +75,6 @@ The following example illustrates this for the `findPetsByTags` operation and it
 .The customized `findPetsByTags` method in the `PetApiImpl` class
 ----
 include::{snippets}/[tags=PetServiceImplCustomclass-header;PetServiceImplCustomaddedFields;PetServiceImplCustomhandleFindPetsByTagsDecl;PetServiceImplCustomhandleFindPetsByTagsCustom;PetServiceImplCustomhandleFindPetsByTagsEnd, indent=0]
-}
 ----
 <1> Uses the same data store as in the earlier example.
 <2> The `tags` parameter conveys the tag values to be matched in selecting pets to report. Other generated code extracts the runtime argument's value from the request and then automatically passes it to the method.
@@ -106,6 +105,7 @@ For each operation in an API the generator creates an inner class and, for each 
 Override how a parameter is extracted by following these steps, using the `AddPetOp` as an example.
 
 . Write a class which extends the inner class for the operation.
+. In that subclass override the relevant method.
 +
 .Customized `AddPetOp` class
 [source,java]

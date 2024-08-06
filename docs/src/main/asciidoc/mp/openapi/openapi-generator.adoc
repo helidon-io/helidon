@@ -24,8 +24,6 @@
 
 include::{rootdir}/includes/mp.adoc[]
 
-:incdir: {rootdir}/includes/openapi
-:gen-inc: {incdir}/openapi-generator.adoc
 :helidon-client-xref: {restclient-page}
 
 include::{rootdir}/includes/openapi/openapi-generator.adoc[tag=preamble]
