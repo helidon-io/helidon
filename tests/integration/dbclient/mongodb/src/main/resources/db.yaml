@@ -76,6 +76,14 @@ db:
             "id_type": ?
         }
       }
+    insert-match: |
+      {
+        "collection": "matches",
+        "value": {
+            "red": $red,
+            "blue": $blue
+        }
+      }
     select-types: |
       {
         "collection": "types",

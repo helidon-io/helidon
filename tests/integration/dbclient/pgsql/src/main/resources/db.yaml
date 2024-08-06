@@ -26,3 +26,10 @@ db:
   health-check:
     type: query
     statement: "SELECT 0"
+  statements:
+    create-matches: |
+      CREATE TABLE Matches (
+        id SERIAL NOT NULL PRIMARY KEY,
+        red INTEGER NOT NULL REFERENCES Pokemons(id),
+        blue INTEGER NOT NULL REFERENCES Pokemons(id)
+      )
