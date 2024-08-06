@@ -60,7 +60,6 @@
         <module>mp-graphql</module>
         <module>mp-security-client</module>
         <module>mp-ws-services</module>
-        <module>native-image</module>
         <module>oidc</module>
         <module>restclient</module>
         <module>restclient-connector</module>
@@ -88,4 +87,12 @@
         </dependencies>
     </dependencyManagement>
 
+    <profiles>
+        <profile>
+            <id>packaging</id>
+            <modules>
+                <module>packaging</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>
