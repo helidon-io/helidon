@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.function.Supplier;
+
+import graphql.schema.GraphQLFieldDefinition;
 
 import io.helidon.graphql.server.ExecutionContext;
 
@@ -192,7 +195,7 @@ class DataFetcherUtils {
 
             // retrieve the map and return the collection of V
             Map<?, V> map = (Map<?, V>) PropertyDataFetcherHelper
-                    .getPropertyValue(propertyName, source, environment.getFieldType(), environment);
+                    .getPropertyValue(propertyName, source, environment.getFieldType(), () -> environment);
             return map.values();
         };
     }
@@ -452,7 +455,7 @@ class DataFetcherUtils {
      * An implementation of a {@link PropertyDataFetcher} which returns a formatted number.
      */
     @SuppressWarnings("rawtypes")
-    static class NumberFormattingDataFetcher extends PropertyDataFetcher {
+    static class NumberFormattingDataFetcher extends PropertyDataFetcher<Object> {
 
         /**
          * {@link NumberFormat} to format with.
@@ -483,6 +486,12 @@ class DataFetcherUtils {
         }
 
         @Override
+        public Object get(GraphQLFieldDefinition fieldDefinition, Object source,
+                          Supplier<DataFetchingEnvironment> environmentSupplier) throws Exception {
+            return formatNumber(super.get(environmentSupplier.get()), isScalar, numberFormat);
+        }
+
+        @Override
         public Object get(DataFetchingEnvironment environment) {
             return formatNumber(super.get(environment), isScalar, numberFormat);
         }
@@ -492,7 +501,7 @@ class DataFetcherUtils {
      * An implementation of a {@link PropertyDataFetcher} which returns a formatted date.
      */
     @SuppressWarnings({ "rawtypes" })
-    static class DateFormattingDataFetcher extends PropertyDataFetcher {
+    static class DateFormattingDataFetcher extends PropertyDataFetcher<Object> {
 
         /**
          * {@link DateTimeFormatter} to format with.
@@ -519,11 +528,14 @@ class DataFetcherUtils {
                 // must be java.util.Date
                 simpleDateFormat = new SimpleDateFormat(valueFormat);
             }
-            System.err.println("DateFormattingDataFetcher: propertyName=" + propertyName
-                                        + ", type=" + type
-                                        + ", valueFormat=" + valueFormat
-                                        + ", dateTimeFormatter=" + dateTimeFormatter
-                                        + ", simpleDateFormat=" + simpleDateFormat);
+        }
+
+        @Override
+        public Object get(GraphQLFieldDefinition fieldDefinition, Object source,
+                          Supplier<DataFetchingEnvironment> environmentSupplier) throws Exception {
+                return dateTimeFormatter != null
+                    ? formatDate(super.get(environmentSupplier.get()), dateTimeFormatter)
+                    : formatDate(super.get(environmentSupplier.get()), simpleDateFormat);
         }
 
         @Override
