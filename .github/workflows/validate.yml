@@ -134,7 +134,7 @@ jobs:
           cache: maven
       - uses: graalvm/setup-graalvm@v1
         with:
-          java-version: '21'
+          java-version: ${{ env.JAVA_VERSION }}
           distribution: graalvm-community
           github-token: ${{ secrets.GITHUB_TOKEN }}
           native-image-job-reports: true
@@ -293,9 +293,39 @@ jobs:
             -Pnative-image \
             -am \
             verify
+  dbclient:
+    timeout-minutes: 60
+    strategy:
+      matrix:
+        group: [ oracle, others ]
+        include:
+          - { group: others, modules: '!oracle' }
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4.1.0
+        with:
+          distribution: ${{ env.JAVA_DISTRO }}
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+      - name: Build Helidon
+        run: |
+          # prime build
+          mvn ${MAVEN_ARGS} -e \
+            -DskipTests \
+            -Ptests \
+            install
+      - name: Run Tests
+        run: |
+          mvn ${MAVEN_ARGS} -e \
+            -f tests/integration/dbclient/pom.xml \
+            -pl ${{ matrix.modules || matrix.group }} \
+            -am \
+            verify
   gate:
     runs-on: ubuntu-20.04
-    needs: [ copyright, checkstyle, shellcheck, build, docs, spotbugs, packaging, native-image, archetypes, mp-tck ]
+    needs: [ copyright, checkstyle, shellcheck, build, docs, spotbugs, packaging, native-image, dbclient, archetypes, mp-tck ]
     steps:
       - shell: bash
         run: |

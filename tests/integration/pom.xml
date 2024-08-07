@@ -38,7 +38,6 @@
 
     <modules>
         <module>config</module>
-        <module>dbclient</module>
         <module>harness</module>
         <module>health</module>
         <module>jep290</module>
@@ -88,6 +87,12 @@
     </dependencyManagement>
 
     <profiles>
+        <profile>
+            <id>dbclient</id>
+            <modules>
+                <module>dbclient</module>
+            </modules>
+        </profile>
         <profile>
             <id>packaging</id>
             <modules>
