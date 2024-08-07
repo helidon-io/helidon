@@ -44,13 +44,12 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.function.Supplier;
 
-import graphql.schema.GraphQLFieldDefinition;
-
 import io.helidon.graphql.server.ExecutionContext;
 
 import graphql.GraphQLException;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.PropertyDataFetcher;
 import graphql.schema.PropertyDataFetcherHelper;
 import jakarta.enterprise.inject.spi.CDI;
