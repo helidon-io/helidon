@@ -58,7 +58,7 @@ mvn ${MAVEN_ARGS} --version
 # If needed we clone the helidon-examples repo into a subdirectory of the helidon repository
 if [ ! -d "${WS_DIR}/helidon-examples" ]; then
   echo "Cloning examples repository into ${HELIDON_EXAMPLES_PATH}"
-  git clone --branch dev-4.x --single-branch git@github.com:helidon-io/helidon-examples.git "${WS_DIR}/helidon-examples"
+  git clone --branch dev-4.x --single-branch https://github.com/helidon-io/helidon-examples.git "${WS_DIR}/helidon-examples"
 fi
 
 # Build quickstart native-image executable and run jar file
