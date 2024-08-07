@@ -7,14 +7,15 @@ name: "Validate"
 on:
   pull_request:
   push:
-    branches-ignore: [ 'main', 'helidon-*.x' ]
+    branches-ignore: [ 'main', 'helidon-*.x', 'release-*' ]
+    tags-ignore: [ '**' ]
   workflow_call:
 
 env:
   JAVA_VERSION: '21'
   JAVA_DISTRO: 'oracle'
-  HELIDON_PIPELINES: 'true'
   MAVEN_ARGS: |
+    -B -fae -e
     -Dmaven.wagon.httpconnectionManager.ttlSeconds=60
     -Dmaven.wagon.http.retryHandler.count=3
 
@@ -74,7 +75,7 @@ jobs:
           mvn ${MAVEN_ARGS} -e \
             -DskipTests \
             -Dmaven.test.skip=true \
-            -Pspotbugs,pipeline \
+            -Pspotbugs \
             install
   docs:
     timeout-minutes: 30
@@ -89,12 +90,10 @@ jobs:
           cache: maven
       - name: Docs
         run: |
-          mvn ${MAVEN_ARGS} -e \
-            -Dmaven.test.skip=true \
+          mvn ${MAVEN_ARGS} \
             -DskipTests \
-            -Ppipeline \
             install
-          mvn ${MAVEN_ARGS} -e \
+          mvn ${MAVEN_ARGS} \
             -f docs/pom.xml \
             -Pjavadoc \
              install
@@ -114,9 +113,9 @@ jobs:
           cache: maven
       - name: Maven build
         run: |
-          mvn ${MAVEN_ARGS} -e \
+          mvn ${MAVEN_ARGS} \
             -Dmaven.test.failure.ignore=false \
-            -Pjavadoc,sources,tests,pipeline \
+            -Pjavadoc,sources,tests \
             install
   examples:
     timeout-minutes: 40
@@ -142,29 +141,22 @@ jobs:
       - name: Maven build
         run: |
           # prime build
-          mvn ${MAVEN_ARGS} -e \
-          -Dmaven.test.skip=true \
+          mvn ${MAVEN_ARGS} -T8 \
           -DskipTests \
-          -Ppipeline \
           install
-      - name: Examples checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: '0'
-          repository: helidon-io/helidon-examples.git
-          ref: dev-4.x
-          path: helidon-examples
       - name: Examples build
         run: etc/scripts/build-examples.sh
       - name: Test quickstarts native image
         run: etc/scripts/test-quickstarts.sh
   mp-tck:
     timeout-minutes: 60
-    name: "MicroProfile TCKs"
     strategy:
       matrix:
         os: [ ubuntu-20.04 ]
+        include:
+          - { os: ubuntu-20.04, platform: linux }
     runs-on: ${{ matrix.os }}
+    name: tests/tck-${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK ${{ env.JAVA_VERSION }}
@@ -176,12 +168,10 @@ jobs:
       - name: Maven build
         run: |
           # prime build
-          mvn ${MAVEN_ARGS} -e \
-            -Dmaven.test.skip=true \
+          mvn ${MAVEN_ARGS} -T8 \
             -DskipTests \
-            -Ppipeline \
             install
-          mvn ${MAVEN_ARGS} -e \
+          mvn ${MAVEN_ARGS} \
             -f microprofile/tests/tck/pom.xml \
             -Ptck-ft \
             verify
@@ -202,10 +192,8 @@ jobs:
       - name: Test archetypes
         run: |
           # prime build
-          mvn ${MAVEN_ARGS} -e \
-            -Dmaven.test.skip=true \
+          mvn ${MAVEN_ARGS} -T8 \
             -DskipTests \
-            -Ppipeline \
             install
           mvn ${MAVEN_ARGS} -e \
             -f archetypes/pom.xml \
@@ -240,7 +228,7 @@ jobs:
       - name: Build Helidon
         run: |
           # prime build
-          mvn ${MAVEN_ARGS} -e \
+          mvn ${MAVEN_ARGS} -T8 \
             -DskipTests \
             -Ptests \
             install
@@ -281,7 +269,7 @@ jobs:
       - name: Build Helidon
         run: |
           # prime build
-          mvn ${MAVEN_ARGS} -e \
+          mvn ${MAVEN_ARGS} -T8 \
             -DskipTests \
             -Ptests \
             install
@@ -297,10 +285,13 @@ jobs:
     timeout-minutes: 60
     strategy:
       matrix:
+        os: [ ubuntu-20.04 ]
         group: [ oracle, others ]
         include:
           - { group: others, modules: '!oracle' }
-    runs-on: ubuntu-20.04
+          - { os: ubuntu-20.04, platform: linux }
+    runs-on: ${{ matrix.os }}
+    name: tests/dbclient-${{ matrix.group }}-${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK ${{ env.JAVA_VERSION }}
@@ -309,16 +300,22 @@ jobs:
           distribution: ${{ env.JAVA_DISTRO }}
           java-version: ${{ env.JAVA_VERSION }}
           cache: maven
+      - name: Free Space
+        shell: bash
+        run: |
+          # See https://github.com/actions/runner-images/issues/2840
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/share/powershell
       - name: Build Helidon
         run: |
           # prime build
-          mvn ${MAVEN_ARGS} -e \
+          mvn ${MAVEN_ARGS} -T8 \
             -DskipTests \
             -Ptests \
             install
       - name: Run Tests
         run: |
-          mvn ${MAVEN_ARGS} -e \
+          mvn ${MAVEN_ARGS} \
             -f tests/integration/dbclient/pom.xml \
             -pl ${{ matrix.modules || matrix.group }} \
             -am \

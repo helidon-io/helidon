@@ -47,11 +47,12 @@ readonly WS_DIR
 readonly HELIDON_EXAMPLES_PATH=${WS_DIR}/helidon-examples
 if [ ! -d "${WS_DIR}/helidon-examples" ]; then
   echo "Cloning examples repository into ${WS_DIR}/helidon-examples"
-  git clone --branch dev-4.x --single-branch git@github.com:helidon-io/helidon-examples.git "${WS_DIR}/helidon-examples"
+  git clone --branch dev-4.x --single-branch https://github.com/helidon-io/helidon-examples.git "${WS_DIR}/helidon-examples"
 fi
 
 version() {
-    mvn -B -N -f "${1}" -Dexpression=helidon.version help:evaluate | grep -v '\[INFO\]'
+    # shellcheck disable=SC2086
+    mvn ${MAVEN_ARGS} -B -N -f "${1}" -Dexpression=helidon.version help:evaluate | grep -v '\[INFO\]'
 }
 
 # Make sure the helidon version from the example repo aligns with this repository
