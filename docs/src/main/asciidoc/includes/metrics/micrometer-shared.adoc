@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -29,6 +29,14 @@ endif::[]
 :keywords: helidon, java, micrometer, integration, se, mp
 
 == Overview
+
+[NOTE]
+====
+Micrometer integration is deprecated beginning in Helidon 4.1 and is planned for removal in a future major release. Please use
+ifdef::se-flavor[the link:{rootdir}/se/metrics/metrics.adoc[Helidon neutral metrics API].]
+ifdef::mp-flavor[the link:{rootdir}/mp/metrics/metrics.adoc[Helidon MicroProfile Metrics API implementation and annotations].]
+====
+
 Helidon {h1-prefix} simplifies how you can use Micrometer for application-specific metrics:
 
 * The endpoint `/micrometer`: A configurable endpoint that exposes metrics according to which Micrometer meter registry
@@ -187,7 +195,7 @@ can create, look up, and update metrics programmatically using the Micrometer `M
 // end::use-micrometer-api[]
 
 // tag::example-apps[]
-Helidon {flavor-uc} includes an link:{helidon-github-tree-url}/examples/integrations/micrometer/{flavor-lc}[example application] which uses Micrometer support.
+Helidon {flavor-uc} includes an link:{helidon-github-examples-url}/integrations/micrometer/{flavor-lc}[example application] which uses Micrometer support.
 // end::example-apps[]
 
 // end::all-micrometer[]

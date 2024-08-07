@@ -23,17 +23,10 @@ import java.util.List;
  */
 public interface ServiceDiscovery {
     /**
-     * A file that contains all services within a module. Each service has an identifier of the registry that
-     * created it (such as {@code core}), the class of the service descriptor,
-     * weight of the service, and a list of contracts it implements.
-     * <p>
-     * This file is used by {@link io.helidon.service.registry.ServiceDiscovery} to find services.
-     */
-    String SERVICES_RESOURCE = "META-INF/helidon/service.registry";
-    /**
      * A file that contains all service provider interfaces that expose a service for
      * Java {@link java.util.ServiceLoader} that is used to tell Helidon Service Registry to add implementations to
-     * the registry to be discoverable in addition to services defined in {@link #SERVICES_RESOURCE}.
+     * the registry to be discoverable in addition to services defined in
+     * {@link io.helidon.service.metadata.Descriptors#SERVICE_REGISTRY_LOCATION}.
      */
     String SERVICES_LOADER_RESOURCE = "META-INF/helidon/service.loader";
 
@@ -70,5 +63,5 @@ public interface ServiceDiscovery {
      *
      * @return all discovered metadata
      */
-    List<DescriptorMetadata> allMetadata();
+    List<DescriptorHandler> allMetadata();
 }

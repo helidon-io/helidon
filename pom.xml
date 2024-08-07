@@ -79,6 +79,7 @@
         <version.lib.junit-platform>1.9.3</version.lib.junit-platform>
         <version.lib.kafka-junit5>3.2.3</version.lib.kafka-junit5>
         <version.lib.mockito>2.23.4</version.lib.mockito>
+        <version.lib.mockserver>5.15.0</version.lib.mockserver>
         <version.lib.restito>0.9.1</version.lib.restito>
         <version.lib.rxjava2-jdk9-interop>0.1.0</version.lib.rxjava2-jdk9-interop>
         <version.lib.rxjava>2.2.10</version.lib.rxjava>
@@ -116,7 +117,7 @@
         <version.plugin.exec>3.1.0</version.plugin.exec>
         <version.plugin.failsafe>3.1.2</version.plugin.failsafe>
         <version.plugin.glassfish-copyright>2.3</version.plugin.glassfish-copyright>
-        <version.plugin.helidon-build-tools>4.0.6</version.plugin.helidon-build-tools>
+        <version.plugin.helidon-build-tools>4.0.9</version.plugin.helidon-build-tools>
         <version.plugin.hibernate-enhance>${version.lib.hibernate}</version.plugin.hibernate-enhance>
         <version.plugin.jacoco>0.8.5</version.plugin.jacoco>
         <version.plugin.jandex>3.1.2</version.plugin.jandex>
@@ -436,6 +437,7 @@
                         <sourceFileExcludes>
                             <sourceFileExclude>**/target/**/*.java</sourceFileExclude>
                             <sourceFileExclude>**/*_.java</sourceFileExclude>
+                            <sourceFileExclude>**/*__*.java</sourceFileExclude>
                         </sourceFileExcludes>
                         <dependencySourceExcludes/>
                     </configuration>
@@ -633,6 +635,7 @@
                         <skipTestScope>true</skipTestScope>
                         <failBuildOnCVSS>0</failBuildOnCVSS>
                         <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
+                        <!--suppress MavenModelInspection -->
                         <nvdApiKey>${nvd-api-key}</nvdApiKey>
                         <excludes>
                             <!-- Exclude stuff we do not deploy -->
@@ -1036,6 +1039,11 @@
                 <version>${version.lib.mockito}</version>
             </dependency>
             <dependency>
+                <groupId>org.mock-server</groupId>
+                <artifactId>mockserver-netty-no-dependencies</artifactId>
+                <version>${version.lib.mockserver}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.eclipse.jgit</groupId>
                 <artifactId>org.eclipse.jgit.junit</artifactId>
                 <version>${version.lib.jgit}</version>
@@ -1312,7 +1320,8 @@
         <profile>
             <id>examples</id>
             <modules>
-                <module>examples</module>
+                <!--suppress MavenModelInspection -->
+                <module>helidon-examples</module>
             </modules>
         </profile>
         <profile>

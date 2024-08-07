@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package io.helidon.microprofile.telemetry;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 
 import io.helidon.config.Config;
 import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
@@ -26,7 +28,13 @@ import io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracerProvider;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.baggage.Baggage;
+import io.opentelemetry.api.baggage.BaggageBuilder;
+import io.opentelemetry.api.baggage.BaggageEntry;
+import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanContext;
+import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.sdk.autoconfigure.AutoConfiguredOpenTelemetrySdk;
 import io.opentelemetry.sdk.autoconfigure.spi.ConfigProperties;
@@ -93,8 +101,7 @@ class OpenTelemetryProducer {
                         .addPropertiesCustomizer(x -> telemetryProperties)
                         .addResourceCustomizer(this::customizeResource)
                         .setServiceClassLoader(Thread.currentThread().getContextClassLoader())
-                        .setResultAsGlobal(false)
-                        .registerShutdownHook(false)
+                        .disableShutdownHook()
                         .build()
                         .getOpenTelemetrySdk();
 
@@ -159,7 +166,57 @@ class OpenTelemetryProducer {
      */
     @Produces
     Span span() {
-        return Span.current();
+        return new Span() {
+            @Override
+            public <T> Span setAttribute(AttributeKey<T> key, T value) {
+                return Span.current().setAttribute(key, value);
+            }
+
+            @Override
+            public Span addEvent(String name, Attributes attributes) {
+                return Span.current().addEvent(name, attributes);
+            }
+
+            @Override
+            public Span addEvent(String name, Attributes attributes, long timestamp, TimeUnit unit) {
+                return Span.current().addEvent(name, attributes, timestamp, unit);
+            }
+
+            @Override
+            public Span setStatus(StatusCode statusCode, String description) {
+                return Span.current().setStatus(statusCode, description);
+            }
+
+            @Override
+            public Span recordException(Throwable exception, Attributes additionalAttributes) {
+                return Span.current().recordException(exception, additionalAttributes);
+            }
+
+            @Override
+            public Span updateName(String name) {
+                return Span.current().updateName(name);
+            }
+
+            @Override
+            public void end() {
+                Span.current().end();
+            }
+
+            @Override
+            public void end(long timestamp, TimeUnit unit) {
+                Span.current().end(timestamp, unit);
+            }
+
+            @Override
+            public SpanContext getSpanContext() {
+                return Span.current().getSpanContext();
+            }
+
+            @Override
+            public boolean isRecording() {
+                return Span.current().isRecording();
+            }
+        };
     }
 
     /**
@@ -170,7 +227,32 @@ class OpenTelemetryProducer {
     @Produces
     @ApplicationScoped
     Baggage baggage() {
-        return Baggage.current();
+        return new Baggage() {
+            @Override
+            public int size() {
+                return Baggage.current().size();
+            }
+
+            @Override
+            public void forEach(BiConsumer<? super String, ? super BaggageEntry> consumer) {
+                Baggage.current().forEach(consumer);
+            }
+
+            @Override
+            public Map<String, BaggageEntry> asMap() {
+                return Baggage.current().asMap();
+            }
+
+            @Override
+            public String getEntryValue(String entryKey) {
+                return Baggage.current().getEntryValue(entryKey);
+            }
+
+            @Override
+            public BaggageBuilder toBuilder() {
+                return Baggage.current().toBuilder();
+            }
+        };
     }
 
 

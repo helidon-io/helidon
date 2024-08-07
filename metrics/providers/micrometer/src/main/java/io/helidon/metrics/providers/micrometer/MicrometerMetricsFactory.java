@@ -248,7 +248,7 @@ class MicrometerMetricsFactory implements MetricsFactory {
 
     @Override
     public DistributionStatisticsConfig.Builder distributionStatisticsConfigBuilder() {
-        return MDistributionStatisticsConfig.builder();
+        return MDistributionStatisticsConfig.Unconnected.builder();
     }
 
     @Override

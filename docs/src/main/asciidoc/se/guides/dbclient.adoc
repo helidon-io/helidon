@@ -555,4 +555,4 @@ The select-book statement was invoked four times.
 === Summary
 
 This guide provided an introduction to the Helidon DB Client's key features. If you want to learn more, see the
-Helidon DB Client samples in link:{helidon-github-tree-url}/examples/dbclient[GitHub].
+Helidon DB Client samples in link:{helidon-github-examples-url}/dbclient[GitHub].

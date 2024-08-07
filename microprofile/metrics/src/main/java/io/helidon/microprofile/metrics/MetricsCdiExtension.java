@@ -317,7 +317,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
             throw new DeploymentException("Metrics module found issues with deployment: " + problems);
         }
 
-        // this needs to be done early on, so the registry is configured before accessed
+         // this needs to be done early on, so the registry is configured before accessed
         MetricsObserver observer = configure();
 
         registerMetricsForAnnotatedSites();
@@ -424,15 +424,25 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
     protected Config componentConfig() {
         // Combine the Helidon-specific "metrics.xxx" settings with the MP
         // "mp.metrics.xxx" settings into a single metrics config object.
-        Config rootConfig = rootConfig();
+        org.eclipse.microprofile.config.Config mpConfig = ConfigProvider.getConfig();
 
+        DistributionCustomizations.init(mpConfig);
+
+        /*
+         Some MP config refers to "mp.metrics.xxx" whereas te neutral SE metrics implementation uses "metrics.yyy" (where
+         sometimes xxx and yyy are different). In particular, there's "mp.metrics.appName" -> "metrics.app-name"
+
+         The next section maps MP config settings (if present) to the corresponding SE config settings, possibly adjusting the
+         key name in the process.
+         */
+        Map<String, String> mpToSeKeyNameMap = Map.of("appName", "app-name");
         Map<String, String> mpConfigSettings = new HashMap<>();
-        Stream.of("tags", "appName")
-                .forEach(key -> {
-                    rootConfig.get("mp.metrics." + key)
-                            .asString()
-                            .ifPresent(value -> mpConfigSettings.put(key, value));
-                });
+        Stream.of("tags",
+                  "appName")
+                .forEach(key ->
+                                 mpConfig.getOptionalValue("mp.metrics." + key, String.class)
+                                         .ifPresent(value -> mpConfigSettings.put(mpToSeKeyNameMap.getOrDefault(key, key),
+                                                                                  value)));
 
         Config metricsConfig = super.componentConfig().detach();
 

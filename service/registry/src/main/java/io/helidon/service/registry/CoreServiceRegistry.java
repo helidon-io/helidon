@@ -82,8 +82,8 @@ class CoreServiceRegistry implements ServiceRegistry {
         boolean logUnsupported = LOGGER.isLoggable(Level.TRACE);
 
         // and finally add discovered instances
-        for (DescriptorMetadata descriptorMeta : serviceDiscovery.allMetadata()) {
-            if (!descriptorMeta.registryType().equals(DescriptorMetadata.REGISTRY_TYPE_CORE)) {
+        for (DescriptorHandler descriptorMeta : serviceDiscovery.allMetadata()) {
+            if (!descriptorMeta.registryType().equals(DescriptorHandler.REGISTRY_TYPE_CORE)) {
                 // we can only support core services, others should be handled by other registry implementations
                 if (logUnsupported) {
                     LOGGER.log(Level.TRACE,
@@ -173,7 +173,7 @@ class CoreServiceRegistry implements ServiceRegistry {
         }
     }
 
-    private Supplier<Optional<Object>> instanceSupplier(DescriptorMetadata descriptorMeta) {
+    private Supplier<Optional<Object>> instanceSupplier(DescriptorHandler descriptorMeta) {
         LazyValue<Optional<Object>> serviceInstance = LazyValue.create(() -> instance(descriptorMeta.descriptor()));
 
         if (descriptorMeta.contracts().contains(TypeNames.SUPPLIER)) {
@@ -319,12 +319,12 @@ class CoreServiceRegistry implements ServiceRegistry {
     }
 
     private record DiscoveredDescriptor(CoreServiceRegistry registry,
-                                        DescriptorMetadata metadata,
+                                        DescriptorHandler metadata,
                                         Supplier<Optional<Object>> instanceSupplier,
                                         ReentrantLock lock) implements ServiceProvider {
 
         private DiscoveredDescriptor(CoreServiceRegistry registry,
-                                     DescriptorMetadata metadata,
+                                     DescriptorHandler metadata,
                                      Supplier<Optional<Object>> instanceSupplier) {
             this(registry, metadata, instanceSupplier, new ReentrantLock());
         }

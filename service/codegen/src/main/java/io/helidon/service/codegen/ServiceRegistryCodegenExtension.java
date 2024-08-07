@@ -40,7 +40,7 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.service.codegen.HelidonMetaInfServices.DescriptorMeta;
+import io.helidon.service.metadata.DescriptorMetadata;
 
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_DESCRIPTOR;
 
@@ -48,19 +48,15 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_
  * Handles processing of all extensions, creates context and writes types.
  */
 class ServiceRegistryCodegenExtension implements CodegenExtension {
-    private static final TypeName TYPE = TypeName.create(ServiceRegistryCodegenExtension.class);
-
     private final Map<TypeName, List<RegistryCodegenExtension>> typeToExtensions = new HashMap<>();
     private final Map<RegistryCodegenExtension, Predicate<TypeName>> extensionPredicates = new IdentityHashMap<>();
-    private final Set<DescriptorMeta> generatedServiceDescriptors = new HashSet<>();
-    private final TypeName generator;
+    private final Set<DescriptorMetadata> generatedServiceDescriptors = new HashSet<>();
     private final RegistryCodegenContext ctx;
     private final List<RegistryCodegenExtension> extensions;
     private final String module;
 
     private ServiceRegistryCodegenExtension(CodegenContext ctx, TypeName generator) {
         this.ctx = RegistryCodegenContext.create(ctx);
-        this.generator = generator;
         this.module = ctx.moduleName().orElse(null);
 
         ServiceExtension serviceExtension = new ServiceExtension(this.ctx);
@@ -105,10 +101,10 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
             String registryType = descriptorAnnot.stringValue("registryType").orElse("core");
 
             // predefined service descriptor
-            generatedServiceDescriptors.add(new DescriptorMeta(registryType,
-                                                               typeInfo.typeName(),
-                                                               weight,
-                                                               contracts));
+            generatedServiceDescriptors.add(DescriptorMetadata.create(registryType,
+                                                                      typeInfo.typeName(),
+                                                                      weight,
+                                                                      contracts));
         }
 
         if (roundContext.availableAnnotations().size() == 1 && roundContext.availableAnnotations()
@@ -152,8 +148,6 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
             moduleName = "unnamed/" + packageName + (ctx.scope().isProduction() ? "" : "/" + ctx.scope().name());
         }
         HelidonMetaInfServices services = HelidonMetaInfServices.create(ctx.filer(),
-                                                                        TYPE,
-                                                                        TYPE,
                                                                         moduleName);
 
         services.addAll(generatedServiceDescriptors);
@@ -169,10 +163,10 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
         for (var descriptor : descriptors) {
             ClassCode classCode = descriptor.classCode();
             ClassModel classModel = classCode.classModel().build();
-            generatedServiceDescriptors.add(new DescriptorMeta(descriptor.registryType(),
-                                                               classCode.newType(),
-                                                               descriptor.weight(),
-                                                               descriptor.contracts()));
+            generatedServiceDescriptors.add(DescriptorMetadata.create(descriptor.registryType(),
+                                                                      classCode.newType(),
+                                                                      descriptor.weight(),
+                                                                      descriptor.contracts()));
             filer.writeSourceFile(classModel, classCode.originatingElements());
         }
         descriptors.clear();
@@ -263,11 +257,11 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
         return result;
     }
 
-    private String topLevelPackage(Set<DescriptorMeta> typeNames) {
-        String thePackage = typeNames.iterator().next().descriptor().packageName();
+    private String topLevelPackage(Set<DescriptorMetadata> typeNames) {
+        String thePackage = typeNames.iterator().next().descriptorType().packageName();
 
-        for (DescriptorMeta typeName : typeNames) {
-            String nextPackage = typeName.descriptor().packageName();
+        for (DescriptorMetadata typeName : typeNames) {
+            String nextPackage = typeName.descriptorType().packageName();
             if (nextPackage.length() < thePackage.length()) {
                 thePackage = nextPackage;
             }

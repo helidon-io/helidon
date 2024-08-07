@@ -22,6 +22,8 @@
 :keywords: helidon, telemetry, microprofile, micro-profile
 :microprofile-bundle: true
 :rootdir: {docdir}/..
+:mp-telemetry-version: 1.1
+:otel-version: 1.29.0
 
 include::{rootdir}/includes/mp.adoc[]
 
@@ -50,7 +52,33 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 link:https://opentelemetry.io/[OpenTelemetry] comprises a collection of APIs, SDKs, integration tools, and other software components intended to facilitate the generation and control of telemetry data, including traces, metrics, and logs. In an environment where distributed tracing is enabled via OpenTelemetry (which combines OpenTracing and OpenCensus), this specification establishes the necessary behaviors for MicroProfile applications to participate seamlessly.
 
-MicroProfile Telemetry 1.0 allows for the exportation of the data it collects to Jaeger or Zipkin and to other systems using a variety of exporters.
+MicroProfile Telemetry {mp-telemetry-version} allows for the exportation of the data it collects to Jaeger or Zipkin and to other systems using a variety of exporters.
+
+// @Deprecated(forRemoval = true) In 5.x remove the following note.
+[NOTE]
+.Span Names for REST Requests
+====
+If possible, assign the following config setting in your application's `META-INF/microprofile-config.properties` file:
+[source,properties]
+----
+mp.telemetry.span.name-includes-method = true
+----
+Earlier releases of Helidon 4 implemented MicroProfile Telemetry 1.0 which was based on OpenTelemetry semantic conventions 1.22.0-alpha.
+
+MicroProfile Telemetry {mp-telemetry-version} is based on OpenTelemetry {otel-version}, and in that release the semantic convention for the REST span name now includes the HTTPmethod name, as shown in the format below.
+[source]
+----
+{http-method-name} {http-request-route}
+----
+(see https://opentelemetry.io/docs/specs/semconv/http/http-spans/#name)
+
+Although span names are often used only for display in monitoring tools, this is a backward-incompatible change.
+
+Therefore, Helidon {helidon-version} by default conforms to the _older_ semantic convention to preserve backward compatibility with earlier 4.x releases. Only if you set the property as shown above will Helidon {helidon-version} use the new span naming format.
+
+The ability to use the older format is deprecated, and you should plan for its removal in a future major release of Helidon. For that reason Helidon logs a warning message if you use the older REST span naming convention.
+====
+// end of text to be removed in 5.x
 
 In a distributed tracing system, *traces* are used to capture a series of requests and are composed of multiple *spans* that represent individual operations within those requests. Each *span* includes a name, timestamps, and metadata that provide insights into the corresponding operation.
 
@@ -331,9 +359,9 @@ Launch the Jaeger UI at link:http://localhost:16686/[] to see the expected outpu
 
 image::telemetry/telemetry-outbound-jaeger.png[Secondary service outbound call,role="fit"]
 
-This example is available at the link:{helidon-github-tree-url}/examples/microprofile/telemetry[Helidon official GitHub repository].
+This example is available at the link:{helidon-github-examples-url}/microprofile/telemetry[Helidon official GitHub repository].
 
 == Reference
 
-* link:https://download.eclipse.org/microprofile/microprofile-telemetry-1.0/tracing/microprofile-telemetry-tracing-spec-1.0.pdf[MicroProfile Telemetry Specification]
+* link:https://download.eclipse.org/microprofile/microprofile-telemetry-{mp-telemetry-version}/tracing/microprofile-telemetry-tracing-spec-{mp-telemetry-version}.pdf[MicroProfile Telemetry Specification]
 * link:https://opentelemetry.io/docs/[OpenTelemetry Documentation]

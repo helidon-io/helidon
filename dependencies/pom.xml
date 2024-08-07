@@ -53,23 +53,23 @@
         <version.lib.google-api-client>1.34.1</version.lib.google-api-client>
         <version.lib.google-oauth-client>1.33.3</version.lib.google-oauth-client>
         <version.lib.google-error-prone>2.3.3</version.lib.google-error-prone>
-        <version.lib.google-protobuf>3.21.7</version.lib.google-protobuf>
+        <version.lib.google-protobuf>4.27.3</version.lib.google-protobuf>
         <version.lib.graalvm>23.1.0</version.lib.graalvm>
         <version.lib.graphql-java>18.6</version.lib.graphql-java>
         <version.lib.graphql-java.extended.scalars>18.3</version.lib.graphql-java.extended.scalars>
         <version.lib.gson>2.9.0</version.lib.gson>
-        <version.lib.grpc>1.60.0</version.lib.grpc>
+        <version.lib.grpc>1.65.1</version.lib.grpc>
         <version.lib.guava>32.0.1-jre</version.lib.guava>
         <version.lib.h2>2.2.220</version.lib.h2>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
         <version.lib.handlebars>4.3.1</version.lib.handlebars>
         <version.lib.hibernate.family>6.3</version.lib.hibernate.family>
         <version.lib.hibernate>${version.lib.hibernate.family}.1.Final</version.lib.hibernate>
-        <version.lib.hibernate-validator>7.0.2.Final</version.lib.hibernate-validator>
+        <version.lib.hibernate-validator>7.0.5.Final</version.lib.hibernate-validator>
         <version.lib.hikaricp>5.0.1</version.lib.hikaricp>
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
         <version.lib.jackson>2.15.2</version.lib.jackson>
-        <version.lib.jakarta.activation-api>2.1.1</version.lib.jakarta.activation-api>
+        <version.lib.jakarta.activation-api>2.1.3</version.lib.jakarta.activation-api>
         <version.lib.jakarta.annotation-api>2.1.1</version.lib.jakarta.annotation-api>
         <version.lib.jakarta.cdi-api>4.0.1</version.lib.jakarta.cdi-api>
         <version.lib.jakarta.el-api>5.0.1</version.lib.jakarta.el-api>
@@ -77,14 +77,15 @@
         <version.lib.jakarta.interceptor-api>2.1.0</version.lib.jakarta.interceptor-api>
         <version.lib.jakarta.jaxrs-api>3.1.0</version.lib.jakarta.jaxrs-api>
         <version.lib.jakarta.jms-api>3.1.0</version.lib.jakarta.jms-api>
-        <version.lib.jakarta.jsonb-api>3.0.0</version.lib.jakarta.jsonb-api>
+        <version.lib.jakarta.jsonb-api>3.0.1</version.lib.jakarta.jsonb-api>
+        <version.lib.jakarta.jsonb-tck>3.0.0</version.lib.jakarta.jsonb-tck>
         <version.lib.jakarta.jsonp-api>2.1.3</version.lib.jakarta.jsonp-api>
         <version.lib.jakarta.persistence-api>3.1.0</version.lib.jakarta.persistence-api>
-        <version.lib.jakarta.transaction-api>2.0.0</version.lib.jakarta.transaction-api>
-        <version.lib.jakarta.validation-api>3.0.0</version.lib.jakarta.validation-api>
+        <version.lib.jakarta.transaction-api>2.0.1</version.lib.jakarta.transaction-api>
+        <version.lib.jakarta.validation-api>3.0.2</version.lib.jakarta.validation-api>
         <version.lib.jakarta.websockets-api>2.1.1</version.lib.jakarta.websockets-api>
         <!-- Check Hibernate when upgrading to ensure its supplied jaxb-runtime is compatible. -->
-        <version.lib.jakarta.xml.bind-api>4.0.0</version.lib.jakarta.xml.bind-api>
+        <version.lib.jakarta.xml.bind-api>4.0.2</version.lib.jakarta.xml.bind-api>
         <version.lib.jandex>3.1.2</version.lib.jandex>
         <version.lib.jaxb-core>4.0.3</version.lib.jaxb-core>
         <version.lib.jaxb-impl>4.0.3</version.lib.jaxb-impl>
@@ -111,13 +112,13 @@
         <version.lib.microprofile-graphql>2.0</version.lib.microprofile-graphql>
         <version.lib.microprofile-health>4.0.1</version.lib.microprofile-health>
         <version.lib.microprofile-jwt>2.1</version.lib.microprofile-jwt>
-        <version.lib.microprofile-metrics-api>5.0.1</version.lib.microprofile-metrics-api>
+        <version.lib.microprofile-metrics-api>5.1.1</version.lib.microprofile-metrics-api>
         <version.lib.microprofile-openapi-api>3.1.1</version.lib.microprofile-openapi-api>
         <version.lib.microprofile-reactive-messaging-api>3.0</version.lib.microprofile-reactive-messaging-api>
         <version.lib.microprofile-reactive-streams-operators-api>3.0</version.lib.microprofile-reactive-streams-operators-api>
         <version.lib.microprofile-reactive-streams-operators-core>3.0</version.lib.microprofile-reactive-streams-operators-core>
         <version.lib.microprofile-rest-client>3.0.1</version.lib.microprofile-rest-client>
-        <version.lib.microprofile-telemetry-tck>1.0</version.lib.microprofile-telemetry-tck>
+        <version.lib.microprofile-telemetry-tck>1.1</version.lib.microprofile-telemetry-tck>
         <version.lib.microprofile-tracing>3.0</version.lib.microprofile-tracing>
         <version.lib.microprofile-lra-api>2.0</version.lib.microprofile-lra-api>
         <version.lib.microstream>08.01.01-MS-GA</version.lib.microstream>
@@ -127,7 +128,7 @@
         <version.lib.narayana>7.0.0.Final</version.lib.narayana>
         <version.lib.neo4j>5.12.0</version.lib.neo4j>
         <version.lib.netty>4.1.108.Final</version.lib.netty>
-        <version.lib.oci>3.43.2</version.lib.oci>
+        <version.lib.oci>3.45.0</version.lib.oci>
         <version.lib.ojdbc.family>21</version.lib.ojdbc.family>
         <!--
             UCP versions 21.10.0.0 and up throw NPEs. There is a test to catch them.
@@ -139,21 +140,21 @@
         <version.lib.okio>3.4.0</version.lib.okio>
         <!-- Force upgrade okhttp3 for CVE-2023-0833 -->
         <version.lib.okhttp3>4.11.0</version.lib.okhttp3>
-        <version.lib.opentelemetry.semconv>1.22.0-alpha</version.lib.opentelemetry.semconv>
-        <version.lib.opentelemetry-sdk-extension-autoconfigure>1.22.0-alpha</version.lib.opentelemetry-sdk-extension-autoconfigure>
-        <version.lib.opentelemetry.opentracing.shim>1.22.0-alpha</version.lib.opentelemetry.opentracing.shim>
-        <version.lib.opentelemetry>1.22.0</version.lib.opentelemetry>
+        <version.lib.opentelemetry.semconv>1.29.0-alpha</version.lib.opentelemetry.semconv>
+        <version.lib.opentelemetry-sdk-extension-autoconfigure>1.29.0</version.lib.opentelemetry-sdk-extension-autoconfigure>
+        <version.lib.opentelemetry.opentracing.shim>1.29.0</version.lib.opentelemetry.opentracing.shim>
+        <version.lib.opentelemetry>1.29.0</version.lib.opentelemetry>
         <version.lib.opentracing>0.33.0</version.lib.opentracing>
         <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>
         <version.lib.opentracing.tracerresolver>0.1.8</version.lib.opentracing.tracerresolver>
         <version.lib.perfmark-api>0.25.0</version.lib.perfmark-api>
-        <version.lib.parsson>1.1.5</version.lib.parsson>
+        <version.lib.parsson>1.1.6</version.lib.parsson>
         <version.lib.postgresql>42.7.2</version.lib.postgresql>
         <version.lib.prometheus>0.16.0</version.lib.prometheus>
         <version.lib.reactivestreams>1.0.4</version.lib.reactivestreams>
         <version.lib.slf4j>2.0.9</version.lib.slf4j>
         <version.lib.smallrye-openapi>3.3.4</version.lib.smallrye-openapi>
-        <version.lib.snakeyaml>2.0</version.lib.snakeyaml>
+        <version.lib.snakeyaml>2.2</version.lib.snakeyaml>
         <version.lib.testcontainers>1.19.3</version.lib.testcontainers>
         <version.lib.typesafe-config>1.4.2</version.lib.typesafe-config>
         <version.lib.tyrus>2.1.5</version.lib.tyrus>
@@ -1278,6 +1279,11 @@
             <dependency>
                 <groupId>org.testcontainers</groupId>
                 <artifactId>mysql</artifactId>
+                <version>${version.lib.testcontainers}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>jdbc</artifactId>
                 <version>${version.lib.testcontainers}</version>
             </dependency>
             <dependency>

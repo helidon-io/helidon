@@ -99,7 +99,8 @@ class OpenTelemetrySpanBuilder implements Span.Builder<OpenTelemetrySpanBuilder>
         io.opentelemetry.api.trace.Span span = spanBuilder.startSpan();
         OpenTelemetrySpan result = new OpenTelemetrySpan(span, spanListeners);
         if (parentBaggage != null) {
-            parentBaggage.forEach((key, baggageEntry) -> result.baggage().set(key, baggageEntry.getValue()));
+            parentBaggage.forEach((key, baggageEntry) -> result.baggage()
+                    .set(key, baggageEntry.getValue(), baggageEntry.getMetadata().getValue()));
         }
         HelidonOpenTelemetry.invokeListeners(spanListeners, LOGGER, listener -> listener.started(result.limited()));
 

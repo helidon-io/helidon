@@ -24,6 +24,9 @@ module io.helidon.service.codegen {
     requires transitive io.helidon.codegen.classmodel;
     requires transitive io.helidon.codegen;
 
+    requires io.helidon.metadata.hson;
+    requires io.helidon.service.metadata;
+
     exports io.helidon.service.codegen;
 
     provides io.helidon.codegen.spi.CodegenExtensionProvider

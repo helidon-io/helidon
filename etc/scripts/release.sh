@@ -15,14 +15,31 @@
 # limitations under the License.
 #
 
+set -o pipefail || true  # trace ERR through pipes
+set -o errtrace || true # trace ERR through commands and functions
+set -o errexit || true  # exit the script if any statement returns a non-true return value
+
+on_error(){
+    CODE="${?}" && \
+    set +x && \
+    printf "[ERROR] Error(code=%s) occurred at %s:%s command: %s\n" \
+        "${CODE}" "${BASH_SOURCE[0]}" "${LINENO}" "${BASH_COMMAND}"
+}
+trap on_error ERR
+
 # Path to this script
-[ -h "${0}" ] && readonly SCRIPT_PATH="$(readlink "${0}")" || readonly SCRIPT_PATH="${0}"
+if [ -h "${0}" ] ; then
+    SCRIPT_PATH="$(readlink "${0}")"
+else
+    # shellcheck disable=SC155
+    SCRIPT_PATH="${0}"
+fi
+readonly SCRIPT_PATH
 
-# Load pipeline environment setup and define WS_DIR
-. $(dirname -- "${SCRIPT_PATH}")/includes/pipeline-env.sh "${SCRIPT_PATH}" '../..'
-
-# Setup error handling using default settings (defined in includes/error_handlers.sh)
-error_trap_setup
+# Path to the root of the workspace
+# shellcheck disable=SC2046
+WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
+readonly WS_DIR
 
 usage(){
     cat <<EOF
@@ -31,7 +48,7 @@ DESCRIPTION: Helidon Release Script
 
 USAGE:
 
-$(basename ${0}) [ --build-number=N ] CMD
+$(basename "${0}") [ --build-number=N ] CMD
 
   --version=V
         Override the version to use.
@@ -45,9 +62,14 @@ $(basename ${0}) [ --build-number=N ] CMD
     update_version
         Update the version in the workspace
 
+    release_version
+        Print the release version
+
+    create_tag
+        Create and and push a release tag
+
     release_build
         Perform a release build
-        This will create a local branch, deploy artifacts and push a tag
 
     deploy_snapshot
         Perform a snapshot build and deploy to snapshot repository
@@ -55,213 +77,192 @@ EOF
 }
 
 # parse command line args
-ARGS=( "${@}" )
-for ((i=0;i<${#ARGS[@]};i++))
-{
-    ARG=${ARGS[${i}]}
-    case ${ARG} in
+ARGS=( )
+while (( ${#} > 0 )); do
+    case ${1} in
     "--version="*)
-        VERSION=${ARG#*=}
+        VERSION=${1#*=}
+        shift
         ;;
     "--help")
         usage
         exit 0
         ;;
+    "update_version"|"release_version"|"create_tag"|"release_build"|"deploy_snapshot")
+        COMMAND="${1}"
+        shift
+        ;;
     *)
-        if [ "${ARG}" = "update_version" ] || [ "${ARG}" = "release_build" ] || [ "${ARG}" = "deploy_snapshot" ] ; then
-            readonly COMMAND="${ARG}"
-        else
-            echo "ERROR: unknown argument: ${ARG}"
-            exit 1
-        fi
+        ARGS+=( "${1}" )
+        shift
         ;;
     esac
-}
+done
+readonly ARGS
+readonly COMMAND
 
-if [ -z "${COMMAND}" ] ; then
-    echo "ERROR: no command provided"
-    usage
-    exit 1
+if [ -z "${COMMAND+x}" ] ; then
+  echo "ERROR: no command provided"
+  exit 1
 fi
 
-# Hooks for version substitution work
-readonly PREPARE_HOOKS=( )
+# copy stdout as fd 6 and redirect stdout to stderr
+# this allows us to use fd 6 for returning data
+exec 6>&1 1>&2
 
-# Hooks for deployment work
-readonly PERFORM_HOOKS=( )
-
-# Resolve FULL_VERSION
-if [ -z "${VERSION+x}" ]; then
-
-    # get maven version
-    MVN_VERSION=$(mvn ${MAVEN_ARGS} \
-        -q \
-        -f ${WS_DIR}/pom.xml \
+current_version() {
+    # shellcheck disable=SC2086
+    mvn ${MAVEN_ARGS} -q \
+        -f "${WS_DIR}"/pom.xml \
         -Dexec.executable="echo" \
         -Dexec.args="\${project.version}" \
         --non-recursive \
-        org.codehaus.mojo:exec-maven-plugin:1.3.1:exec)
+        org.codehaus.mojo:exec-maven-plugin:1.3.1:exec
+}
 
-    # strip qualifier
-    readonly VERSION="${MVN_VERSION%-*}"
-    readonly FULL_VERSION="${VERSION}"
-else
-    readonly FULL_VERSION="${VERSION}"
-fi
+release_version() {
+    local current_version
+    current_version=$(current_version)
+    echo "${current_version%-*}"
+}
 
-export FULL_VERSION
-printf "\n%s: FULL_VERSION=%s\n\n" "$(basename ${0})" "${FULL_VERSION}"
+replace() {
+    local pattern value include
+    pattern="${1}"
+    value="${2}"
+    include="${3}"
+    for file in $(grep "${pattern}" -Er . --include "${include}" | cut -d ':' -f 1 | sort | uniq); do
+       echo "Updating ${file}"
+       sed -e s@"${pattern}"@"${pattern/\.\*/${value}}"@g \
+           < "${file}" \
+           > "${file}.tmp"
+       mv "${file}.tmp" "${file}"
+    done
+}
 
 update_version(){
-    # Update version
-    mvn ${MAVEN_ARGS} -f ${WS_DIR}/parent/pom.xml versions:set versions:set-property \
-        -DgenerateBackupPoms=false \
-        -DnewVersion="${FULL_VERSION}" \
-        -Dproperty=helidon.version \
-        -DprocessAllModules=true
+    local version
+    version=${1-${VERSION}}
+    if [ -z "${version+x}" ] ; then
+        echo "ERROR: version required"
+        usage
+        exit 1
+    fi
+
+    # shellcheck disable=SC2086
+    mvn ${MAVEN_ARGS} "${ARGS[@]}" \
+        -f ${WS_DIR}/parent/pom.xml versions:set versions:set-property \
+        -DgenerateBackupPoms="false" \
+        -DnewVersion="${version}" \
+        -Dproperty="helidon.version" \
+        -DprocessFromLocalAggregationRoot="false" \
+        -DupdateMatchingVersions="false"
 
     # Hack to update helidon.version
-    for pom in `egrep "<helidon.version>.*</helidon.version>" -r . --include pom.xml | cut -d ':' -f 1 | sort | uniq `
-    do
-        echo "Updating helidon.version property in ${pom} to ${FULL_VERSION}"
-        cat ${pom} | \
-            sed -e s@'<helidon.version>.*</helidon.version>'@"<helidon.version>${FULL_VERSION}</helidon.version>"@g \
-            > ${pom}.tmp
-        mv ${pom}.tmp ${pom}
-    done
+    replace "<helidon.version>.*</helidon.version>" "${version}" "pom.xml"
 
     # Hack to update helidon.version in build.gradle files
-    for bfile in `egrep "helidonversion = .*" -r . --include build.gradle | cut -d ':' -f 1 | sort | uniq `
-    do
-        echo "Updating helidonversion property in ${bfile} to ${FULL_VERSION}"
-        cat ${bfile} | \
-            sed -e s@'helidonversion = .*'@"helidonversion = \'${FULL_VERSION}\'"@g \
-            > ${bfile}.tmp
-        mv ${bfile}.tmp ${bfile}
-    done
+    replace "helidonversion = .*" "${version}" "build.gradle"
 
     # Hack to update helidon-version in doc files
-    for dfile in `egrep ":helidon-version: .*" -r . --include attributes.adoc | cut -d ':' -f 1 | sort | uniq `
-    do
-        echo "Updating helidon-version property in ${dfile} to ${FULL_VERSION}"
-        cat ${dfile} | \
-            sed -e s@':helidon-version: .*'@":helidon-version: ${FULL_VERSION}"@g \
-            > ${dfile}.tmp
-        mv ${dfile}.tmp ${dfile}
-    done
+    replace ":helidon-version: .*" "${version}" "attributes.adoc"
 
     # Hack to update helidon-version-is-release in doc files
     # We are a released version if we are not a SNAPSHOT version
-    if [[ ${HELIDON_VERSION} == *-SNAPSHOT ]]; then
-        readonly IS_RELEASED="false"
+    local is_released
+    if [[ ${1} == *-SNAPSHOT ]]; then
+        is_released="false"
     else
-        readonly IS_RELEASED="true"
+        is_released="true"
     fi
-    for dfile in `egrep ":helidon-version-is-release: .*" -r . --include attributes.adoc | cut -d ':' -f 1 | sort | uniq `
-    do
-        echo "Updating helidon-version-is-release property in ${dfile} to ${IS_RELEASED}"
-        cat ${dfile} | \
-            sed -e s@':helidon-version-is-release: .*'@":helidon-version-is-release: ${IS_RELEASED}"@g \
-            > ${dfile}.tmp
-        mv ${dfile}.tmp ${dfile}
-    done
-
-    # Invoke prepare hook
-    if [ -n "${PREPARE_HOOKS}" ]; then
-        for prepare_hook in ${PREPARE_HOOKS} ; do
-            bash "${prepare_hook}"
-        done
-    fi
+    replace ":helidon-version-is-release: .*" "${is_released}" "attributes.adoc"
 }
 
-release_build(){
+create_tag() {
+    local git_branch version
 
-    VERSION_FROM_BRANCH_NAME=$(git branch --show-current | cut -d- -f2)
-    if [ "${FULL_VERSION}" != "${VERSION_FROM_BRANCH_NAME}" ]; then
-      echo "ERROR: version derived from pom files (${FULL_VERSION}) does not match version used in branch name (${VERSION_FROM_BRANCH_NAME})."
-      echo "Failing release build"
-      exit 1
-    fi
+    version=$(release_version)
+    git_branch="release/${version}"
 
-    # Do the release work in a branch
-    local GIT_BRANCH="release/${FULL_VERSION}"
-    git branch -D "${GIT_BRANCH}" > /dev/null 2>&1 || true
-    git checkout -b "${GIT_BRANCH}"
+    # Use a separate branch
+    git branch -D "${git_branch}" > /dev/null 2>&1 || true
+    git checkout -b "${git_branch}"
 
     # Invoke update_version
-    update_version
-
-    # Update scm/tag entry in the parent pom
-    cat parent/pom.xml | \
-        sed -e s@'<tag>HEAD</tag>'@"<tag>${FULL_VERSION}</tag>"@g \
-        > parent/pom.xml.tmp
-    mv parent/pom.xml.tmp parent/pom.xml
+    update_version "${version}"
 
     # Git user info
     git config user.email || git config --global user.email "info@helidon.io"
     git config user.name || git config --global user.name "Helidon Robot"
 
     # Commit version changes
-    git commit -a -m "Release ${FULL_VERSION} [ci skip]"
-
-    # Create the nexus staging repository
-    local STAGING_DESC="Helidon v${FULL_VERSION}"
-    mvn ${MAVEN_ARGS} nexus-staging:rc-open \
-        -DstagingProfileId="6026dab46eed94" \
-        -DstagingDescription="${STAGING_DESC}"
-
-    export STAGING_REPO_ID=$(mvn ${MAVEN_ARGS} nexus-staging:rc-list | \
-        egrep "^[0-9:,]*[ ]?\[INFO\] iohelidon\-[0-9]+[ ]+OPEN[ ]+${STAGING_DESC}" | \
-        awk '{print $2" "$3}' | \
-        sed -e s@'\[INFO\] '@@g -e s@'OPEN'@@g | \
-        head -1)
-    echo "Nexus staging repository ID: ${STAGING_REPO_ID}"
-
-    # Perform deployment
-    mvn ${MAVEN_ARGS} clean deploy \
-      -Prelease,archetypes,javadoc,docs \
-      -DskipTests \
-      -DstagingRepositoryId="${STAGING_REPO_ID}" \
-      -DretryFailedDeploymentCount="10"
-
-    # Invoke perform hooks
-    if [ -n "${PERFORM_HOOKS}" ]; then
-      for perform_hook in ${PERFORM_HOOKS} ; do
-        bash "${perform_hook}"
-      done
-    fi
-
-    # Close the nexus staging repository
-    mvn ${MAVEN_ARGS} nexus-staging:rc-close \
-      -DstagingRepositoryId="${STAGING_REPO_ID}" \
-      -DstagingDescription="${STAGING_DESC}"
+    git commit -a -m "Release ${version}"
 
     # Create and push a git tag
-    git tag -f "${FULL_VERSION}"
-    if [ -n "${JENKINS_HOME}" ] ; then
-        # In Jenkins use SSH to access remote
-        local GIT_REMOTE=$(git config --get remote.origin.url | \
-            sed "s,https://\([^/]*\)/,git@\1:,")
+    git tag -f "${version}"
+    git push --force origin refs/tags/"${version}":refs/tags/"${version}"
 
-        git remote add release "${GIT_REMOTE}" > /dev/null 2>&1 || \
-        git remote set-url release "${GIT_REMOTE}"
+    echo "tag=refs/tags/${version}" >&6
+}
 
-        git push --force release refs/tags/"${FULL_VERSION}":refs/tags/"${FULL_VERSION}"
-    else
-        git push --force origin refs/tags/"${FULL_VERSION}":refs/tags/"${FULL_VERSION}"
+credentials() {
+    local tmpfile
+
+    # Bootstrap credentials from environment
+    if [ -n "${MAVEN_SETTINGS}" ] ; then
+        tmpfile=$(mktemp XXXXXXsettings.xml)
+        echo "${MAVEN_SETTINGS}" > "${tmpfile}"
+        MAVEN_ARGS="${MAVEN_ARGS} -s ${tmpfile}"
+    fi
+    if [ -n "${GPG_PRIVATE_KEY}" ] ; then
+        tmpfile=$(mktemp XXXXXX.key)
+        echo "${GPG_PRIVATE_KEY}" > "${tmpfile}"
+        gpg --allow-secret-key-import --import --no-tty --batch "${tmpfile}"
+        rm "${tmpfile}"
+    fi
+    if [ -n "${GPG_PASSPHRASE}" ] ; then
+        echo "allow-preset-passphrase" >> ~/.gnupg/gpg-agent.conf
+        gpg-connect-agent reloadagent /bye
+        GPG_KEYGRIP=$(gpg --with-keygrip -K | grep "Keygrip" | head -1 | awk '{print $3}')
+        /usr/lib/gnupg/gpg-preset-passphrase --preset "${GPG_KEYGRIP}" <<< "${GPG_PASSPHRASE}"
     fi
 }
 
-deploy_snapshot(){
+release_build(){
+    local tmpfile version
+
+    credentials
+
+    # Perform local deployment
+    # shellcheck disable=SC2086
+    mvn ${MAVEN_ARGS} "${ARGS[@]}" \
+        deploy \
+        -Prelease \
+        -DskipTests \
+        -DskipRemoteStaging=true
+
+    # Upload all artifacts to nexus
+    version=$(release_version)
+    # shellcheck disable=SC2086
+    mvn ${MAVEN_ARGS} -N nexus-staging:deploy-staged \
+        -DstagingDescription="Helidon v${version}"
+}
+
+readonly NEXUS_SNAPSHOT_URL="https://oss.sonatype.org/content/repositories/snapshots/"
+
+deploy_snapshot() {
+    local version
+    version=$(current_version)
 
     # Make sure version ends in -SNAPSHOT
-    if [[ ${MVN_VERSION} != *-SNAPSHOT ]]; then
-        echo "Helidon version ${MVN_VERSION} is not a SNAPSHOT version. Failing snapshot release."
+    if [[ ${version} != *-SNAPSHOT ]]; then
+        echo "Helidon version ${version} is not a SNAPSHOT version. Failing snapshot release."
         exit 1
     fi
 
-    readonly NEXUS_SNAPSHOT_URL="https://oss.sonatype.org/content/repositories/snapshots/"
-    echo "Deploying snapshot build ${MVN_VERSION} to ${NEXUS_SNAPSHOT_URL}"
+    echo "Deploying snapshot build ${version} to ${NEXUS_SNAPSHOT_URL}"
+
+    credentials
 
     # The nexus-staging-maven-plugin had issues deploying the module
     # helidon-applications because the distributionManagement section is empty.
@@ -269,6 +270,7 @@ deploy_snapshot(){
     # property. The deployAtEnd option requires version 3.0.0 of maven-deploy-plugin
     # or newer to work correctly on multi-module systems
     set -x
+    # shellcheck disable=SC2086
     mvn ${MAVEN_ARGS} -e clean deploy \
       -Parchetypes \
       -DskipTests \

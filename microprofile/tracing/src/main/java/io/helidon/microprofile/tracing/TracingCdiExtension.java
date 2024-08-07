@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import io.helidon.tracing.TracerBuilder;
 import io.helidon.tracing.config.TracingConfig;
 import io.helidon.webserver.observe.tracing.TracingObserver;
 
+import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.opentracingshim.OpenTracingShim;
 import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
@@ -91,8 +92,7 @@ public class TracingCdiExtension implements Extension {
             registeredTracer = tracer.unwrap(Tracer.class);
         } catch (Exception e) {
             try {
-                io.opentelemetry.api.trace.Tracer otelTracer = tracer.unwrap(io.opentelemetry.api.trace.Tracer.class);
-                registeredTracer = OpenTracingShim.createTracerShim(otelTracer);
+                registeredTracer = OpenTracingShim.createTracerShim(GlobalOpenTelemetry.get());
             } catch (Exception ex) {
                 throw new DeploymentException("MicroProfile tracing requires an OpenTracing or OpenTelemetry based tracer", ex);
             }

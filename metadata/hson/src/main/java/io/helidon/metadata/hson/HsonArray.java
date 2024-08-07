@@ -77,7 +77,8 @@ final class HsonArray implements Hson.Array {
 
     static Hson.Array create(double... values) {
         List<BigDecimal> collect = DoubleStream.of(values)
-                .mapToObj(BigDecimal::new)
+                .mapToObj(String::valueOf)
+                .map(BigDecimal::new)
                 .collect(Collectors.toUnmodifiableList());
         return Hson.Array.createNumbers(collect);
     }
@@ -85,7 +86,7 @@ final class HsonArray implements Hson.Array {
     static Hson.Array create(float... values) {
         List<BigDecimal> list = new ArrayList<>(values.length);
         for (float value : values) {
-            list.add(new BigDecimal(value));
+            list.add(new BigDecimal(String.valueOf(value)));
         }
 
         return Hson.Array.createNumbers(list);
@@ -131,8 +132,8 @@ final class HsonArray implements Hson.Array {
     }
 
     @Override
-    public List<Hson.Object> getObjects() {
-        return getTypedList(Hson.Type.OBJECT);
+    public List<Hson.Struct> getStructs() {
+        return getTypedList(Hson.Type.STRUCT);
     }
 
     @Override

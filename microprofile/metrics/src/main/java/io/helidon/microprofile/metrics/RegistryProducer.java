@@ -22,7 +22,6 @@ import jakarta.enterprise.inject.Produces;
 import jakarta.enterprise.inject.spi.Annotated;
 import jakarta.enterprise.inject.spi.InjectionPoint;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricRegistry.Type;
 import org.eclipse.microprofile.metrics.annotation.RegistryScope;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
 
@@ -40,6 +39,7 @@ final class RegistryProducer {
 
     @Produces
     @Default
+    @RegistryScope
     public static org.eclipse.microprofile.metrics.MetricRegistry getScopedRegistry(InjectionPoint injectionPoint) {
         Annotated annotated = (injectionPoint == null) ? null : injectionPoint.getAnnotated();
         RegistryScope scope = (annotated == null) ? null : annotated.getAnnotation(RegistryScope.class);
@@ -52,23 +52,23 @@ final class RegistryProducer {
         return getApplicationRegistry();
     }
 
-    // TODO Once RegistryScope becomes a qualifier, use it instead of RegistryType.
+    // TODO Remove if MP Metrics ever removes @RegistryType.
     @Produces
-    @RegistryType(type = Type.APPLICATION)
+    @RegistryType(type = MetricRegistry.Type.APPLICATION)
     public static org.eclipse.microprofile.metrics.MetricRegistry getApplicationRegistry() {
         return RegistryFactory.getInstance().getRegistry(MetricRegistry.APPLICATION_SCOPE);
     }
 
+    // TODO Remove if MP Metrics ever removes @RegistryType.
     @Produces
-    // TODO Once RegistryScope becomes a qualifier, use it instead of RegistryType.
-    @RegistryType(type = Type.BASE)
+    @RegistryType(type = MetricRegistry.Type.BASE)
     public static org.eclipse.microprofile.metrics.MetricRegistry getBaseRegistry() {
         return RegistryFactory.getInstance().getRegistry(MetricRegistry.BASE_SCOPE);
     }
 
-    // TODO Once RegistryScope becomes a qualifier, use it instead of RegistryType.
+    // TODO Remove if MP Metrics ever removes @RegistryType.
     @Produces
-    @RegistryType(type = Type.VENDOR)
+    @RegistryType(type = MetricRegistry.Type.VENDOR)
     public static org.eclipse.microprofile.metrics.MetricRegistry getVendorRegistry() {
         return RegistryFactory.getInstance().getRegistry(MetricRegistry.VENDOR_SCOPE);
     }

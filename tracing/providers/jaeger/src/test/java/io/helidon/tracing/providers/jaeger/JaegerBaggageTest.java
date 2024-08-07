@@ -40,7 +40,7 @@ class JaegerBaggageTest {
     void testBaggage(){
         Span span = tracer.spanBuilder("test-span").start();
         Span spanWithBaggage = span.baggage("key", "value");
-        Optional<String> result = spanWithBaggage.baggage("key");
+        Optional<String> result = spanWithBaggage.baggage().get("key");
         assertThat(result.isPresent(), is(true));
         assertThat(result.get(), equalTo("value"));
 

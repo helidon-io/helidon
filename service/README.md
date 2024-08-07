@@ -98,14 +98,39 @@ reflection (the class, and the field).
 
 ### Registry file format
 
-The service registry uses a `service.registry` in `META-INF/helidon` directory to store the main metadata of
+The service registry uses a `service-registry.json` file in `META-INF/helidon` directory to store the main metadata of
 the service. This is to allow proper ordering of services (Service weight is one of the information stored) and
 lazy loading of services (which is the approach chosen in the core service registry).
 
-The format is as follows:
+The format is as follows (using `//` to comment sections, not part of the format):
 
-```
-registry-type:service-descriptor-type:weight(double):contracts(comma separated)
+```json
+// root is an array of modules (we always generate a single module, but this allows a combined array, i.e. when using shading
+[
+  {
+    // version of the metadata file, defaults to 1 (and will always default to 1)
+    "version": 1,
+    // name of the module
+    "module": "io.helidon.example",
+    // all services in this module
+    "services": [
+      {
+        // version of the service descriptor, defaults to 1 (and will always default to 1)
+        "version": 1,
+        // core (Service registry) or inject (Service Injection), defaults to core
+        "type": "inject",
+        // weight, defaults to 100
+        "weight": 91.4,
+        // class of the service descriptor - generated type that contains public constant INSTANCE
+        "descriptor": "io.helidon.example.ServiceImpl__ServiceDescriptor",
+        // all contracts this service implements
+        "contracts": [
+          "io.helidon.example.ServiceApi"
+        ]
+      }
+    ]
+  }
+]
 ```
 
 Example:

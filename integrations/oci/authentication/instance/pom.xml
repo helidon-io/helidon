@@ -30,6 +30,10 @@
         Authentication based on Instance's principal
     </description>
 
+    <properties>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.integrations.oci</groupId>

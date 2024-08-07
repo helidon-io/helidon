@@ -69,7 +69,7 @@ one at a time, over a connection.
 The example will show how REST and WebSocket connections can
 be seamlessly combined into a Helidon application.
 
-The complete Helidon SE example is available {helidon-github-tree-url}/examples/webserver/websocket[here]. Let us start by
+The complete Helidon SE example is available {helidon-github-examples-url}/webserver/websocket[here]. Let us start by
 looking at `MessageQueueService`:
 
 [source,java]

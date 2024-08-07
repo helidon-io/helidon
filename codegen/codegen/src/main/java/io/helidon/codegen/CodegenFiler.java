@@ -65,6 +65,18 @@ public interface CodegenFiler {
     }
 
     /**
+     * A text resource that can be updated in the output.
+     * Note that the resource can only be written once per processing round.
+     *
+     * @param location            location to read/write to in the classes output directory
+     * @param originatingElements elements that caused this file to be generated
+     * @return the resource that can be used to update the file
+     */
+    default FilerResource resource(String location, Object... originatingElements) {
+        throw new UnsupportedOperationException("Method resource not implemented yet on " + getClass().getName());
+    }
+
+    /**
      * Write a {@code META-INF/services} file for a specific provider interface and implementation(s).
      *
      * @param generator type of the generator (to mention in the generated code)

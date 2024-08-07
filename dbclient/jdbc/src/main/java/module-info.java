@@ -34,8 +34,9 @@ module io.helidon.dbclient.jdbc {
 
     requires transitive io.helidon.builder.api;
     requires transitive io.helidon.common;
-    requires transitive io.helidon.config.metadata;
     requires transitive io.helidon.dbclient;
+
+    requires static io.helidon.config.metadata;
 
     exports io.helidon.dbclient.jdbc;
     exports io.helidon.dbclient.jdbc.spi;

@@ -35,15 +35,15 @@ import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 class ExistingTypesTest {
     @Test
     void testServiceRegistry() throws IOException {
-        Hson.Object object;
+        Hson.Struct object;
         try (InputStream inputStream = resource("/service-registry.json")) {
             assertThat(inputStream, notNullValue());
             object = Hson.parse(inputStream)
-                    .asObject()
+                    .asStruct()
                     .value();
         }
 
-        Hson.Object generated = object.objectValue("generated")
+        Hson.Struct generated = object.structValue("generated")
                 .orElseThrow(() -> new IllegalStateException("Cannot find 'generated' object under root"));
 
         assertThat(generated.stringValue("trigger"),
@@ -55,12 +55,12 @@ class ExistingTypesTest {
         assertThat(generated.stringValue("comments"),
                    optionalValue(is("Service descriptors in module unnamed/io.helidon.examples.quickstart.se")));
 
-        List<Hson.Object> services = object.objectArray("services")
+        List<Hson.Struct> services = object.structArray("services")
                 .orElseThrow(() -> new IllegalStateException("Cannot find 'services' object under root"));
 
         assertThat(services, hasSize(2));
 
-        Hson.Object service = services.get(0);
+        Hson.Struct service = services.get(0);
 
         assertThat(service.doubleValue("version"), optionalValue(is(1d)));
         assertThat(service.stringValue("type"),
@@ -89,25 +89,25 @@ class ExistingTypesTest {
 
     @Test
     void testConfigMetadata() throws IOException {
-        List<Hson.Object> objects;
+        List<Hson.Struct> objects;
         try (InputStream inputStream = resource("/config-metadata.json")) {
             assertThat(inputStream, notNullValue());
             objects = Hson.parse(inputStream)
                     .asArray()
-                    .getObjects();
+                    .getStructs();
         }
 
         assertThat(objects, hasSize(1));
 
-        Hson.Object module = objects.getFirst();
+        Hson.Struct module = objects.getFirst();
 
         assertThat(module.stringValue("module"), optionalValue(is("io.helidon.common.configurable")));
-        Optional<List<Hson.Object>> types = module.objectArray("types");
+        Optional<List<Hson.Struct>> types = module.structArray("types");
         assertThat(types, optionalPresent());
-        List<Hson.Object> typesList = types.get();
+        List<Hson.Struct> typesList = types.get();
         assertThat(typesList, hasSize(5));
 
-        Hson.Object first = typesList.getFirst();
+        Hson.Struct first = typesList.getFirst();
         assertThat(first.stringValue("annotatedType"),
                    optionalValue(is("io.helidon.common.configurable.ResourceConfig")));
         assertThat(first.stringValue("type"),
@@ -117,10 +117,10 @@ class ExistingTypesTest {
         assertThat(first.intValue("number"),
                    optionalValue(is(49)));
 
-        List<Hson.Object> optionsList = first.objectArray("options")
+        List<Hson.Struct> optionsList = first.structArray("options")
                 .orElse(List.of());
         assertThat(optionsList, hasSize(9));
-        Hson.Object firstOption = optionsList.getFirst();
+        Hson.Struct firstOption = optionsList.getFirst();
         assertThat(firstOption.stringValue("description"),
                    optionalValue(is("Resource is located on filesystem.\n\n Path of the resource")));
         assertThat(firstOption.stringValue("key"),
