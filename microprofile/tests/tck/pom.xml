@@ -52,6 +52,7 @@
         <module>tck-jsonp</module>
         <module>tck-inject</module>
         <module>tck-annotations</module>
+        <module>tck-fault-tolerance</module>
     </modules>
 
     <properties>
