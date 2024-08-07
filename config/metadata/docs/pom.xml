@@ -103,21 +103,6 @@
         </dependency>
     </dependencies>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <!--
-                    Work-around for https://github.com/helidon-io/helidon/issues/8172
-                    dependency convergence of antlr, where graphql uses an older version
-                    and fails when we upgrade antlr
-                 -->
-                <groupId>org.antlr</groupId>
-                <artifactId>antlr4-runtime</artifactId>
-                <version>4.10.1</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
     <build>
         <plugins>
             <plugin>
