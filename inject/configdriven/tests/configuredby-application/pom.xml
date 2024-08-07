@@ -18,17 +18,18 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon.inject.configdriven.tests</groupId>
         <artifactId>helidon-inject-configdriven-tests-project</artifactId>
         <version>4.1.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
-
     <artifactId>helidon-inject-configdriven-tests-configuredby-application</artifactId>
-    <name>Helidon Injection Config-Driven ConfiguredBy Appl Tests</name>
-    <description>the same tests as test-configuredby, but instead using the maven application generation in order to calc di plan at compile-time</description>
+    <name>Helidon Injection ConfigDriven Tests CfgedBy App</name>
+    <description>
+        The same tests as test-configuredby, but instead using the maven application generation
+        in order to compute di plan at compile-time
+    </description>
 
     <properties>
         <maven.deploy.skip>true</maven.deploy.skip>

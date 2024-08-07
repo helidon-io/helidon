@@ -25,7 +25,6 @@
         <groupId>io.helidon.microprofile.tests.tck</groupId>
         <artifactId>helidon-microprofile-tests-tck-project</artifactId>
         <version>4.1.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>tck-fault-tolerance</artifactId>
     <name>Helidon Microprofile Tests TCK Fault Tolerance</name>

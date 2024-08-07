@@ -27,7 +27,7 @@
     </parent>
     <groupId>io.helidon.tests.integration</groupId>
     <artifactId>helidon-tests-integration-mp-security-client</artifactId>
-    <name>Helidon Tests Integration MP Security with client</name>
+    <name>Helidon Tests Integration MP Security Client</name>
 
     <dependencies>
         <dependency>

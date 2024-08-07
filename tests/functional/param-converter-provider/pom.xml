@@ -26,7 +26,7 @@
     </parent>
 
     <artifactId>helidon-tests-param-converter-provider</artifactId>
-    <name>Helidon Tests Functional ParamConverterProviders and injection managers</name>
+    <name>Helidon Tests Functional ParamConverterProviders</name>
 
     <dependencies>
         <dependency>

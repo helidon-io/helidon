@@ -24,7 +24,6 @@
         <groupId>io.helidon.common.features</groupId>
         <artifactId>helidon-common-features-project</artifactId>
         <version>4.1.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>helidon-common-features</artifactId>

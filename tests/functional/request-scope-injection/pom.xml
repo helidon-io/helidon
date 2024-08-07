@@ -26,7 +26,7 @@
     </parent>
 
     <artifactId>helidon-tests-functional-request-scope-injection</artifactId>
-    <name>Helidon Tests Functional Helidon Request Scope Injection</name>
+    <name>Helidon Tests Functional Request Scope Injection</name>
 
     <dependencies>
         <dependency>

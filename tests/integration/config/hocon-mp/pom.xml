@@ -28,7 +28,7 @@
     </parent>
 
     <artifactId>helidon-tests-integration-config-hocon-mp</artifactId>
-    <name>Helidon Tests Integration for HOCON/JSON Config on MP</name>
+    <name>Helidon Tests Integration Config HOCON MP</name>
     <description>Validation for HOCON/JSON Config on MP</description>
 
     <dependencies>

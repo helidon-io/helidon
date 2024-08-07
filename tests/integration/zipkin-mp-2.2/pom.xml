@@ -27,7 +27,7 @@
     </parent>
     <groupId>io.helidon.tests.integration</groupId>
     <artifactId>helidon-tests-integration-zipkin-mp-2-2</artifactId>
-    <name>Helidon Tests Integration: Zipkin with MP</name>
+    <name>Helidon Tests Integration Zipkin with MP</name>
 
     <dependencies>
         <dependency>
