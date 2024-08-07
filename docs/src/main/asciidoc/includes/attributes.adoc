@@ -281,7 +281,7 @@ endif::[]
 :micrometer-javadoc-registry-prometheus-base-url: {micrometer-javadoc-base-url}/micrometer-registry-prometheus/{version-lib-micrometer}/io/micrometer/prometheus
 
 // OpenAPI generator
-:openapi-generator-version: 6.2.1
+:openapi-generator-version: 7.6.0
 :openapi-generator-tool-base-url: https://github.com/OpenAPITools/openapi-generator
 :openapi-generator-site-version: v{openapi-generator-version}
 
