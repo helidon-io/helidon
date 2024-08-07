@@ -19,8 +19,6 @@
 :description: Helidon {flavor-uc} OpenAPI Generator
 :keywords: helidon, {flavor-lc}, openapi, generator
 :feature-name: Helidon {flavor-uc} OpenAPI Generator
-// DO NOT CHANGE THE FOLLOWING - it's used as a minimum release that will not normally change with new releases of the OpenAPI generator
-// Update the following when it is convenient to keep pace with the latest releases of the OpenAPITools generator
 // end::preamble[]
 
 // tag::intro[]
@@ -225,9 +223,9 @@ You must specify the following options:
 | `java-helidon-server` +
 `java-helidon-client`
 
-|`--library` +
-`<library>`
+|`--library`
 | {nbsp}
+| `<library>`
 |Library you want to use
 |`mp` +
 `se`

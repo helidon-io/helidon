@@ -32,32 +32,44 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class OpenApiGeneratorSnippets {
 
     /*
-    To generate a project containing the types which need to be mocked--in case of changes in the upstream generator.
-    Here {downloadLocation} is where you downloaded the generator JAR to, and {helidonRoot} is your root directory
-    for the Helidon source.
 
-    1. Download the generator: see [these instructions](https://github.com/OpenAPITools/openapi-generator?tab=readme-ov-file#13---download-jar).
-    2. `mkdir seServer`
-    3. `cd seServer`
-    4. ```java
-       java -jar {downloadLocation}/openapi-generator-cli.jar generate \
-       -g java-helidon-server \
-       --library se \
-       -i {helidonRoot}/docs/src/main/resources/petstorex.yaml \
-       -p useAbstractClass=true \
-       --helidonVersion x.y.z
-       ```
-       where `x.y.z` is the version of Helidon you are working with.
-    5. `mkdir ../seClient`
-    6. `cd ../seClient`
-    7. ```java
-       java -jar {downloadLocation}/openapi-generator-cli.jar generate \
-       -g java-helidon-client \
-       --library se \
-       -i {helidonRoot}/docs/src/main/resources/petstorex.yaml \
-          --helidonVersion x.y.z
-       ```
-       where `x.y.z` is the version of Helidon you are working with.
+    # The following commands download the generator and run it to generate projects containing the types which need to be
+    # mocked in the snippets in case of changes in the upstream generators.
+    #
+    # See these instructions https://github.com/OpenAPITools/openapi-generator?tab=readme-ov-file#13---download-jar for full
+    # instructions to download the generator and
+    # https://github.com/OpenAPITools/openapi-generator?tab=readme-ov-file#11---compatibility to see the latest stable version
+    # of the generator.
+    #
+    # As of this writing use at least 7.8.0.
+    #
+    # Revise the generatorVersion and helidonVersion settings below accordingly.
+
+    generatorVersion=7.8.0
+    helidonVersion=4 # Uses the latest publicly released version of 4. Specify x.y.z if you want to specify an exact release.
+
+    curl -O \
+        --output-dir /tmp \
+        https://repo1.maven.org/maven2/org/openapitools/openapi-generator-cli/$generatorVersion/openapi-generator-cli-${generatorVersion}.jar
+
+    # Generate the server project.
+    rm -rf /tmp/petapi-server
+    java -jar /tmp/openapi-generator-cli-$generatorVersion.jar generate \
+           -o /tmp/petapi-server \
+           -g java-helidon-server \
+           --library se \
+           -i etc/petstorex.yaml \
+           -p useAbstractClass=true \
+           -p helidonVersion=${helidonVersion}
+
+    # Generate the client project.
+    rm -rf /tmp/petapi-client
+    java -jar /tmp/openapi-generator-cli-$generatorVersion.jar generate \
+           -o /tmp/petapi-client \
+           -g java-helidon-client \
+           --library se \
+           -i etc/petstorex.yaml \
+           -p helidonVersion=${helidonVersion}
 
      */
     public static class Pet {
