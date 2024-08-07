@@ -26,7 +26,13 @@ include::{rootdir}/includes/mp.adoc[]
 
 :helidon-client-xref: {restclient-page}
 
-include::{rootdir}/includes/openapi/openapi-generator.adoc[tag=preamble]
+== Contents
+
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Configuration, Configuration>>
+- <<Usage, Usage>>
+- <<References, References>>
 
 include::{rootdir}/includes/openapi/openapi-generator.adoc[tags=intro;coords;config;usage;using-generated-code-intro;using-generated-code-server;using-generated-code-client-intro]
 
@@ -40,8 +46,7 @@ In the following example, `ExampleResource` (itself running in a server) invokes
 [source,java]
 .Using the generated `PetApi` returned from a separate service
 ----
-include::{sourcedir}/mp/openapi/OpenApiGeneratorSnippets.java[tag=class-declaration, indent=0]
-
+include::{sourcedir}/mp/openapi/OpenApiGeneratorSnippets.java[tag=snippet_1, indent=0]
 ----
 <1> Uses a bean-defining annotation so CDI can inject into this class.
 <2> Requests that CDI inject the following field.

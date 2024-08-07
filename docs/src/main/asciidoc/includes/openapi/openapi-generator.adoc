@@ -22,14 +22,6 @@
 // end::preamble[]
 
 // tag::intro[]
-== Contents
-
-- <<Overview, Overview>>
-- <<Maven Coordinates, Maven Coordinates>>
-- <<Configuration, Configuration>>
-- <<Usage, Usage>>
-- <<References, References>>
-
 == Overview
 The link:{openapi-spec-url}[OpenAPI specification] provides a standard way to express RESTful APIs.
 

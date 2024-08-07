@@ -24,8 +24,15 @@
 
 include::{rootdir}/includes/se.adoc[]
 
-:snippets: {sourcedir}/se/openapi/OpenApiGeneratorSnippets.java
 :helidon-client-xref: {webclient-page}
+
+== Contents
+
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Configuration, Configuration>>
+- <<Usage, Usage>>
+- <<References, References>>
 
 include::{rootdir}/includes/openapi/openapi-generator.adoc[tags=intro;coords;config;usage-basics;usage-grouping-intro;usage-grouping-server]
 

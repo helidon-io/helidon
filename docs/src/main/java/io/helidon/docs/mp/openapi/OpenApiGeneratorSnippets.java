@@ -24,7 +24,8 @@ import jakarta.ws.rs.core.MediaType;
 
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
-public class OpenApiGeneratorSnippets {
+@SuppressWarnings("ALL")
+class OpenApiGeneratorSnippets {
 
    /*
 
@@ -55,7 +56,7 @@ public class OpenApiGeneratorSnippets {
            -i etc/petstorex.yaml \
            -p helidonVersion=${helidonVersion}
 
-     */
+    */
 
     interface Pet {
     }
@@ -67,21 +68,23 @@ public class OpenApiGeneratorSnippets {
     class ApiException extends Exception {
     }
 
-// tag::class-declaration[]
-    @Path("/exampleServiceCallingService") // <1>
-    public class ExampleOpenApiGenClientResource {
-        @Inject // <2>
-        @RestClient // <3>
-        private PetApi petApi; // <4>
+    class Snippet1 {
 
-        @GET
-        @Path("/getPet/{petId}")
-        @Produces(MediaType.APPLICATION_JSON)
-        public Pet getPetUsingId(@PathParam("petId") Long petId) throws ApiException {
-            Pet pet = petApi.getPetById(petId); // <5>
-            return pet;
+        // tag::snippet_1[]
+        @Path("/exampleServiceCallingService") // <1>
+        public class ExampleOpenApiGenClientResource {
+            @Inject // <2>
+            @RestClient // <3>
+            private PetApi petApi; // <4>
+
+            @GET
+            @Path("/getPet/{petId}")
+            @Produces(MediaType.APPLICATION_JSON)
+            public Pet getPetUsingId(@PathParam("petId") Long petId) throws ApiException {
+                Pet pet = petApi.getPetById(petId); // <5>
+                return pet;
+            }
         }
+        // end::snippet_1[]
     }
-// end::class-declaration[]
-
 }
