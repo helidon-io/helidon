@@ -26,7 +26,7 @@
     </parent>
 
     <artifactId>helidon-tests-functional-request-scope-cdi</artifactId>
-    <name>Helidon Tests Functional CDI Request Scopes and Fault Tolerance</name>
+    <name>Helidon Tests Functional Request Scope CDI</name>
 
     <dependencies>
         <dependency>

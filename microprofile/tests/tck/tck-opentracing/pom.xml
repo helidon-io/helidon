@@ -23,7 +23,6 @@
         <groupId>io.helidon.microprofile.tests.tck</groupId>
         <artifactId>helidon-microprofile-tests-tck-project</artifactId>
         <version>4.1.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>tck-opentracing</artifactId>
     <name>Helidon Microprofile Tests TCK Opentracing</name>

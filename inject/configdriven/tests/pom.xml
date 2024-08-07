@@ -20,13 +20,16 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon.inject.configdriven</groupId>
         <artifactId>helidon-inject-configdriven-project</artifactId>
         <version>4.1.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
+    <groupId>io.helidon.inject.configdriven.tests</groupId>
+    <artifactId>helidon-inject-configdriven-tests-project</artifactId>
+    <name>Helidon Injection ConfigDriven Tests Project</name>
+    <packaging>pom</packaging>
 
     <properties>
         <maven.deploy.skip>true</maven.deploy.skip>
@@ -36,11 +39,6 @@
         <dependency-check.skip>true</dependency-check.skip>
         <helidon.services.skip>true</helidon.services.skip>
     </properties>
-
-    <groupId>io.helidon.inject.configdriven.tests</groupId>
-    <artifactId>helidon-inject-configdriven-tests-project</artifactId>
-    <name>Helidon Injection Config-Driven Tests Project</name>
-    <packaging>pom</packaging>
 
     <modules>
         <module>config</module>

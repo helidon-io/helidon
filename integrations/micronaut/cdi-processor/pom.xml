@@ -26,7 +26,7 @@
     </parent>
 
     <artifactId>helidon-integrations-micronaut-cdi-processor</artifactId>
-    <name>Helidon Integrations Micronaut CDI Annotation Processor</name>
+    <name>Helidon Integrations Micronaut CDI Processor</name>
 
     <description>Integration with Micronaut to be used in CDI environment.</description>
 

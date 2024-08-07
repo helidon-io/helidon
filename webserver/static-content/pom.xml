@@ -25,7 +25,7 @@
     </parent>
 
     <artifactId>helidon-webserver-static-content</artifactId>
-    <name>Helidon Server Static Content</name>
+    <name>Helidon WebServer Static Content</name>
 
     <properties>
         <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>

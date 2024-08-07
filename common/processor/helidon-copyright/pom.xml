@@ -24,7 +24,6 @@
         <groupId>io.helidon.common.processor</groupId>
         <artifactId>helidon-common-processor-project</artifactId>
         <version>4.1.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>helidon-common-processor-helidon-copyright</artifactId>
