@@ -192,6 +192,11 @@
                     <artifactId>versions-maven-plugin</artifactId>
                     <version>${version.plugin.versions}</version>
                 </plugin>
+                <plugin>
+                    <groupId>io.helidon.build-tools</groupId>
+                    <artifactId>helidon-build-cache-maven-plugin</artifactId>
+                    <version>4.0.9</version>
+                </plugin>
             </plugins>
         </pluginManagement>
     </build>

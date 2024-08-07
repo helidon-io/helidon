@@ -1,6 +1,17 @@
-# Notes
-# - cannot run on Windows, as we use shell scripts
-# - removed macos from most jobs to speed up the process
+#
+# Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 name: "Validate"
 
@@ -10,195 +21,282 @@ on:
     branches-ignore: [ 'main', 'helidon-*.x', 'release-*' ]
     tags-ignore: [ '**' ]
   workflow_call:
+    inputs:
+      ref:
+        description: The branch, tag or SHA to checkout
+        required: false
+        type: string
+        default: ''
 
 env:
-  JAVA_VERSION: '21'
-  JAVA_DISTRO: 'oracle'
+  JAVA_VERSION: 21
+  JAVA_DISTRO: oracle
   MAVEN_ARGS: |
     -B -fae -e
     -Dmaven.wagon.httpconnectionManager.ttlSeconds=60
     -Dmaven.wagon.http.retryHandler.count=3
+    -Djdk.toolchain.version=${JAVA_VERSION}
+    -Dcache.enabled=true
 
 concurrency:
-  group: Validate-${{ github.ref }}
+  group: validate-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   copyright:
-    timeout-minutes: 10
-    runs-on: ubuntu-20.04
-    steps:
-     - uses: actions/checkout@v4
-       with:
-         fetch-depth: 0
-     - name: Set up JDK ${{ env.JAVA_VERSION }}
-       uses: actions/setup-java@v4.1.0
-       with:
-         distribution: ${{ env.JAVA_DISTRO }}
-         java-version: ${{ env.JAVA_VERSION }}
-         cache: maven
-     - name: Copyright
-       run: etc/scripts/copyright.sh
-  checkstyle:
-    timeout-minutes: 10
+    timeout-minutes: 5
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4.1.0
         with:
-          distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_VERSION }}
-          cache: maven
-      - name: Checkstyle
-        run: etc/scripts/checkstyle.sh
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+      - uses: ./.github/actions/common
+        with:
+          run: etc/scripts/copyright.sh
+  checkstyle:
+    timeout-minutes: 5
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: ./.github/actions/common
+        with:
+          run: etc/scripts/checkstyle.sh
   shellcheck:
     timeout-minutes: 5
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
-      - name: ShellCheck
-        run: etc/scripts/shellcheck.sh
-  spotbugs:
-    timeout-minutes: 45
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4.1.0
         with:
-          distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_VERSION }}
-          cache: maven
-      - name: Spotbugs
-        run: |
-          mvn ${MAVEN_ARGS} -e \
-            -DskipTests \
-            -Dmaven.test.skip=true \
-            -Pspotbugs \
-            install
-  docs:
-    timeout-minutes: 30
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4.1.0
+          ref: ${{ inputs.ref }}
+      - uses: ./.github/actions/common
         with:
-          distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_VERSION }}
-          cache: maven
-      - name: Docs
-        run: |
-          mvn ${MAVEN_ARGS} \
-            -DskipTests \
-            install
-          mvn ${MAVEN_ARGS} \
-            -f docs/pom.xml \
-            -Pjavadoc \
-             install
+          maven-cache: none
+          run: etc/scripts/shellcheck.sh
   build:
-    timeout-minutes: 60
+    timeout-minutes: 15
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: ./.github/actions/common
+        with:
+          build-cache: read-write
+          maven-cache: read-write
+          run: |
+            mvn ${MAVEN_ARGS} build-cache:go-offline
+            mvn ${MAVEN_ARGS} -T8 \
+              -Dorg.slf4j.simpleLogger.showThreadName=true \
+              -DskipTests \
+              -Ptests \
+              install
+  _tests:
+    needs: build
+    timeout-minutes: 30
     strategy:
       matrix:
         os: [ ubuntu-20.04 ]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4.1.0
-        with:
-          distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_VERSION }}
-          cache: maven
-      - name: Maven build
-        run: |
-          mvn ${MAVEN_ARGS} \
-            -Dmaven.test.failure.ignore=false \
-            -Pjavadoc,sources,tests \
-            install
-  examples:
-    timeout-minutes: 40
-    strategy:
-      matrix:
-        os: [ ubuntu-20.04, macos-14 ]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4.1.0
-        with:
-          distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_VERSION }}
-          cache: maven
-      - uses: graalvm/setup-graalvm@v1
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: graalvm-community
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          native-image-job-reports: true
-          cache: maven
-      - name: Maven build
-        run: |
-          # prime build
-          mvn ${MAVEN_ARGS} -T8 \
-          -DskipTests \
-          install
-      - name: Examples build
-        run: etc/scripts/build-examples.sh
-      - name: Test quickstarts native image
-        run: etc/scripts/test-quickstarts.sh
-  mp-tck:
-    timeout-minutes: 60
-    strategy:
-      matrix:
-        os: [ ubuntu-20.04 ]
+        moduleSet: [ core, it, dbclient, dbclient-oracle, others ]
         include:
           - { os: ubuntu-20.04, platform: linux }
     runs-on: ${{ matrix.os }}
-    name: tests/tck-${{ matrix.platform }}
+    name: tests/${{ matrix.moduleSet }}
     steps:
       - uses: actions/checkout@v4
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4.1.0
         with:
-          distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_VERSION }}
-          cache: maven
-      - name: Maven build
-        run: |
-          # prime build
-          mvn ${MAVEN_ARGS} -T8 \
-            -DskipTests \
-            install
-          mvn ${MAVEN_ARGS} \
-            -f microprofile/tests/tck/pom.xml \
-            -Ptck-ft \
-            verify
-  archetypes:
-    timeout-minutes: 45
+          ref: ${{ inputs.ref }}
+      - uses: ./.github/actions/common
+        with:
+          build-cache: read-only
+          test-artifact-name: tests-${{ matrix.moduleSet }}
+          run: |
+            mvn ${MAVEN_ARGS} \
+              -DreactorRule=tests \
+              -DmoduleSet=${{ matrix.moduleSet }} \
+              -Dsurefire.reportNameSuffix=${{ matrix.platform }} \
+              verify
+  _tck:
+    needs: build
+    timeout-minutes: 30
     strategy:
       matrix:
-        os: [ ubuntu-20.04 ]
-    runs-on: ${{ matrix.os }}
+        moduleSet: [ cdi, rest, others ]
+    runs-on: ubuntu-20.04
+    name: tests/tck-${{ matrix.moduleSet }}
     steps:
       - uses: actions/checkout@v4
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4.1.0
         with:
-          distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_VERSION }}
-          cache: maven
-      - name: Test archetypes
-        run: |
-          # prime build
-          mvn ${MAVEN_ARGS} -T8 \
-            -DskipTests \
-            install
-          mvn ${MAVEN_ARGS} -e \
-            -f archetypes/pom.xml \
-            install
+          ref: ${{ inputs.ref }}
+      - uses: ./.github/actions/common
+        with:
+          build-cache: read-only
+          test-artifact-name: tests-tck-${{ matrix.moduleSet }}
+          run: |
+            mvn ${MAVEN_ARGS} \
+              -DreactorRule=tck \
+              -DmoduleSet=${{ matrix.moduleSet }} \
+              verify
+  _spotbugs:
+    needs: build
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        moduleSet: [ core, integrations, others ]
+    runs-on: ubuntu-20.04
+    name: spotbugs/${{ matrix.moduleSet }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: ./.github/actions/common
+        with:
+          build-cache: read-only
+          run: |
+            mvn ${MAVEN_ARGS} -T8 \
+              -Dorg.slf4j.simpleLogger.showThreadName=true \
+              -DreactorRule=default \
+              -DmoduleSet=${{ matrix.moduleSet }} \
+              -DskipTests \
+              -Pspotbugs \
+              verify
+  javadoc:
+    needs: build
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        moduleSet: [ core, integrations, others ]
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: ./.github/actions/common
+        with:
+          build-cache: read-only
+          run: |
+            mvn ${MAVEN_ARGS} -T8 \
+              -Dorg.slf4j.simpleLogger.showThreadName=true \
+              -DreactorRule=default \
+              -DmoduleSet=${{ matrix.moduleSet }} \
+              -DskipTests \
+              -Pjavadoc \
+              package
+  docs:
+    needs: build
+    timeout-minutes: 15
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: ./.github/actions/common
+        with:
+          build-cache: read-only
+          run: |
+            mvn ${MAVEN_ARGS} \
+              -f docs/pom.xml \
+              -Pjavadoc \
+              install
+  quickstarts:
+    needs: build
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        os: [ ubuntu-20.04, macos-14 ]
+        include:
+          - { os: ubuntu-20.04, platform: linux }
+          - { os: macos-14, platform: macos }
+    runs-on: ${{ matrix.os }}
+    name: quickstarts/${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: ./.github/actions/common
+        with:
+          free-space: true
+          build-cache: read-only
+          native-image: true
+          test-artifact-name: tests-quickstarts-${{ matrix.platform }}
+          run: |
+            etc/scripts/test-quickstarts.sh
+  examples:
+    needs: build
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        os: [ ubuntu-20.04, macos-14 ]
+        include:
+          - { os: ubuntu-20.04, platform: linux }
+          - { os: macos-14, platform: macos }
+    runs-on: ${{ matrix.os }}
+    name: examples/${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: ./.github/actions/common
+        with:
+          free-space: true
+          build-cache: read-only
+          test-artifact-name: tests-examples-${{ matrix.platform }}
+          run: etc/scripts/build-examples.sh
+  archetypes:
+    needs: build
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        group: [ r1, r2, r3, r4, r5 ]
+        packaging: [ jar ]
+        include:
+          - { group: r1, start: 1, end: 25 }
+          - { group: r2, start: 26, end: 50 }
+          - { group: r3, start: 51, end: 75 }
+          - { group: r4, start: 75, end: 100 }
+          - { group: r5, start: 101, end: -1 }
+          - { packaging: jar }
+    runs-on: ubuntu-20.04
+    name: archetypes/${{ matrix.group }}-${{ matrix.packaging }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: ./.github/actions/common
+        with:
+          build-cache: read-only
+          native-image: ${{ matrix.packaging == 'native' }}
+          test-artifact-name: tests-archetypes-${{ matrix.group }}-${{ matrix.packaging }}
+          run: |
+            mvn ${MAVEN_ARGS} \
+              -f archetypes/archetypes/pom.xml \
+              -Darchetype.test.permutationStartIndex=${{ matrix.start }} \
+              -Darchetype.test.permutationEndIndex=${{ matrix.end }} \
+              -Darchetype.test.testGoal=verify \
+              -Darchetype.test.testProfiles=${{ matrix.profile }} \
+              verify
+  legacy-archetypes:
+    needs: build
+    timeout-minutes: 30
+    runs-on: ubuntu-20.04
+    name: archetypes/legacy
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: ./.github/actions/common
+        with:
+          build-cache: read-only
+          test-artifact-name: tests-legacy-archetypes
+          run: |
+            mvn ${MAVEN_ARGS} \
+              -f archetypes/pom.xml \
+              -Darchetype.test.generatePermutations=false \
+              install
   packaging:
+    needs: build
     timeout-minutes: 30
     strategy:
       matrix:
@@ -213,32 +311,18 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4.1.0
+      - uses: ./.github/actions/common
         with:
-          distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_VERSION }}
-          cache: maven
-      - name: Free Space
-        shell: bash
-        run: |
-          # See https://github.com/actions/runner-images/issues/2840
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /usr/local/share/powershell
-      - name: Build Helidon
-        run: |
-          # prime build
-          mvn ${MAVEN_ARGS} -T4 \
-            -DskipTests \
-            -Ptests \
-            install
-      - name: Run Test
-        run: |
+          free-space: true
+          build-cache: read-only
+          test-artifact-name: tests-packaging-${{ matrix.packaging }}-${{ matrix.platform }}
+          run: |
             mvn ${MAVEN_ARGS} \
               -f tests/integration/packaging/pom.xml \
               -P${{ matrix.packaging }}-image \
               verify
-  native-image:
+  _native-image:
+    needs: build
     timeout-minutes: 30
     strategy:
       matrix:
@@ -253,76 +337,31 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
-      - uses: graalvm/setup-graalvm@v1
+      - uses: ./.github/actions/common
         with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: graalvm-community
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          native-image-job-reports: true
-          cache: maven
-      - name: Free Space
-        shell: bash
-        run: |
-          # See https://github.com/actions/runner-images/issues/2840
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /usr/local/share/powershell
-      - name: Build Helidon
-        run: |
-          # prime build
-          mvn ${MAVEN_ARGS} -T4 \
-            -DskipTests \
-            -Ptests \
-            install
-      - name: Run Test
-        run: |
-          mvn ${MAVEN_ARGS} -e \
-            -f tests/integration/packaging/pom.xml \
-            -pl ${{ matrix.module }} \
-            -Pnative-image \
-            -am \
-            verify
-  dbclient:
-    timeout-minutes: 60
-    strategy:
-      matrix:
-        os: [ ubuntu-20.04 ]
-        group: [ oracle, others ]
-        include:
-          - { group: others, modules: '!oracle' }
-          - { os: ubuntu-20.04, platform: linux }
-    runs-on: ${{ matrix.os }}
-    name: tests/dbclient-${{ matrix.group }}-${{ matrix.platform }}
+          free-space: true
+          build-cache: read-only
+          native-image: true
+          test-artifact-name: tests-native-image-${{ matrix.module }}-${{ matrix.platform }}
+          run: |
+            mvn ${MAVEN_ARGS} \
+              -f tests/integration/packaging/pom.xml \
+              -pl ${{ matrix.module }} \
+              -Pnative-image \
+              -am \
+              verify
+  test-results:
+    runs-on: ubuntu-20.04
+    needs: [ _tests, archetypes, legacy-archetypes, _tck, packaging, _native-image ]
+    name: tests/results
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4.1.0
+      - uses: actions/upload-artifact/merge@v4
         with:
-          distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_VERSION }}
-          cache: maven
-      - name: Free Space
-        shell: bash
-        run: |
-          # See https://github.com/actions/runner-images/issues/2840
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /usr/local/share/powershell
-      - name: Build Helidon
-        run: |
-          # prime build
-          mvn ${MAVEN_ARGS} -T4 \
-            -DskipTests \
-            -Ptests \
-            install
-      - name: Run Tests
-        run: |
-          mvn ${MAVEN_ARGS} \
-            -f tests/integration/dbclient/pom.xml \
-            -pl ${{ matrix.modules || matrix.group }} \
-            -am \
-            verify
+          name: test-results
+          pattern: "tests-*"
   gate:
     runs-on: ubuntu-20.04
-    needs: [ copyright, checkstyle, shellcheck, build, docs, spotbugs, packaging, native-image, dbclient, archetypes, mp-tck ]
+    needs: [ copyright, checkstyle, shellcheck, docs, javadoc, _spotbugs, test-results ]
     steps:
       - shell: bash
         run: |

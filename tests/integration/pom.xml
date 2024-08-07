@@ -38,6 +38,7 @@
 
     <modules>
         <module>config</module>
+        <module>dbclient</module>
         <module>harness</module>
         <module>health</module>
         <module>jep290</module>
@@ -59,6 +60,7 @@
         <module>mp-graphql</module>
         <module>mp-security-client</module>
         <module>mp-ws-services</module>
+        <module>packaging</module>
         <module>oidc</module>
         <module>restclient</module>
         <module>restclient-connector</module>
@@ -85,19 +87,4 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-
-    <profiles>
-        <profile>
-            <id>dbclient</id>
-            <modules>
-                <module>dbclient</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>packaging</id>
-            <modules>
-                <module>packaging</module>
-            </modules>
-        </profile>
-    </profiles>
 </project>
