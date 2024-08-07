@@ -23,11 +23,9 @@
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/se.adoc[]
+
 :snippets: {sourcedir}/se/openapi/OpenApiGeneratorSnippets.java
-
 :helidon-client-xref: {webclient-page}
-
-include::{rootdir}/includes/openapi/openapi-generator.adoc[tag=preamble]
 
 include::{rootdir}/includes/openapi/openapi-generator.adoc[tags=intro;coords;config;usage-basics;usage-grouping-intro;usage-grouping-server]
 
@@ -53,15 +51,14 @@ The implementation class contains a `handle` method for each API operation with 
 [source,java]
 .The generated `handleAddPet` method in the `PetApiImpl` class
 ----
-include::{snippets}/[tags=PetServiceImplCustomclass-header;PetServiceImplCustomhandleAddPetDecl;PetServiceImplCustomhandleAddPetGenerated;PetServiceImplCustomhandleAddPetEnd;PetServiceImplCustomclass-end, indent=0]
-
+include::{sourcedir}/se/openapi/OpenApiGeneratorSnippets.java/[tags=snippet_1, indent=0]
 ----
 
 Customize the class to manage the pets and revise the method to save the new pet and send the correct response, as shown next.
 [source,java]
 .The customized `handleAddPet` method in the `PetApiImpl` class
 ----
-include::{snippets}/[tags=PetServiceImplCustomclass-header;PetServiceImplCustomhandleAddPetDecl;PetServiceImplCustomaddedFields;PetServiceImplCustomhandleAddPetCustom;PetServiceImplCustomhandleAddPetEnd;PetServiceImplCustomclass-end, indent=0]
+include::{sourcedir}/se/openapi/OpenApiGeneratorSnippets.java/[tags=snippet_2, indent=0]
 ----
 <1> Business logic: create a very simple data store - a real app would use a database.
 <2> Business logic: make sure the pet being added does not already exist. Send the invalid request status code if it does.
@@ -74,7 +71,7 @@ The following example illustrates this for the `findPetsByTags` operation and it
 [source,java]
 .The customized `findPetsByTags` method in the `PetApiImpl` class
 ----
-include::{snippets}/[tags=PetServiceImplCustomclass-header;PetServiceImplCustomaddedFields;PetServiceImplCustomhandleFindPetsByTagsDecl;PetServiceImplCustomhandleFindPetsByTagsCustom;PetServiceImplCustomhandleFindPetsByTagsEnd, indent=0]
+include::{sourcedir}/se/openapi/OpenApiGeneratorSnippets.java/[tags=snippet_3, indent=0]
 ----
 <1> Uses the same data store as in the earlier example.
 <2> The `tags` parameter conveys the tag values to be matched in selecting pets to report. Other generated code extracts the runtime argument's value from the request and then automatically passes it to the method.
@@ -110,14 +107,7 @@ Override how a parameter is extracted by following these steps, using the `AddPe
 .Customized `AddPetOp` class
 [source,java]
 ----
-include::{snippets}[tag=AddPetOpCustomClassDecl, indent=0]
-----
-. In that subclass override the relevant method.
-+
-.Customized `pet` method for extracting and validating the `pet` parameter
-[source,java]
-----
-include::{snippets}[tag=AddPetOpCustompetMethod, indent=0]
+include::{sourcedir}/se/openapi/OpenApiGeneratorSnippets.java/[tags=snippet_4, indent=0]
 ----
 <1> Extracts the parameter from the request. This happens to use the same logic as in the generated method but you can customize that as well if you need to.
 <2> Apply any relevant validations. This silly but illustrative example rejects any pet name that starts with a lower-case letter.
@@ -127,7 +117,7 @@ include::{snippets}[tag=AddPetOpCustompetMethod, indent=0]
 [source,java]
 .Providing your custom implementation of `AddPet`
 ----
-include::{snippets}[tag=PetServiceImplCustomcreateAddPetOp, indent=0]
+include::{sourcedir}/se/openapi/OpenApiGeneratorSnippets.java/[tags=snippet_5, indent=0]
 ----
 
 ===== Override how an operation is prepared from a request
@@ -167,7 +157,7 @@ In the simplest case, your code can get an `ApiClient` instance directly.
 [source,java]
 .Creating an `ApiClient` instance - simple case
 ----
-include::{snippets}[tags=ExampleClientclassDecl;ExampleClientinitDecl;ExampleClientDefaultApiClient;ExampleClientinitEnd;ExampleClientclassEnd, indent=0]
+include::{sourcedir}/se/openapi/OpenApiGeneratorSnippets.java/[tags=snippet_6, indent=0]
 ----
 <1> The same `ApiClient` instance can be reused to invoke multiple APIs handled by the same server.
 <2> Creates an `ApiClient` instance using default settings from the OpenAPI document.
@@ -184,7 +174,7 @@ Your code does not need to know how the object mapper setting is conveyed to the
 [source,java]
 .Creating an `ApiClient` instance - influencing the `ApiClient.Builder`
 ----
-include::{snippets}[tags=ExampleClientclassDecl;ExampleClientinitDecl;ExampleClientApiClientWithObjMapper;ExampleClientinitEnd;ExampleClientclassEnd, indent=0]
+include::{sourcedir}/se/openapi/OpenApiGeneratorSnippets.java/[tags=snippet_7, indent=0]
 ----
 <1> Stores a reusable `ApiClient`.
 <2> A real app would fully set up the `ObjectMapper`.
@@ -196,7 +186,7 @@ In more complicated situations, your code can adjust the settings of the `WebCli
 [source,java]
 .Creating an `ApiClient` instance - adjusting the `WebClientConfig.Builder`
 ----
-include::{snippets}[tags=ExampleClientclassDecl;ExampleClientinitDecl;ExampleClientApiClientWithAdjustedBuilder;ExampleClientinitEnd;ExampleClientclassEnd, indent=0]
+include::{sourcedir}/se/openapi/OpenApiGeneratorSnippets.java/[tags=snippet_8, indent=0]
 ----
 <1> Stores a reusable `AppClient`.
 <2> Creates a new `AppClient` builder.
@@ -212,7 +202,7 @@ Lastly, you can construct the `WebClientConfig.Builder` entirely yourself and ha
 [source,java]
 .Creating an `ApiClient` instance - using a custom `WebClientConfig.Builder`
 ----
-include::{snippets}[tags=ExampleClientclassDecl;ExampleClientinitDecl;ExampleClientApiClientWithCustomWebClientBuilder;ExampleClientinitEnd;ExampleClientclassEnd, indent=0]
+include::{sourcedir}/se/openapi/OpenApiGeneratorSnippets.java/[tags=snippet_9, indent=0]
 ----
 <1> Stores a reusable `AppClient`.
 <2> Creates a new `WebClientConfig.Builder`.
@@ -236,7 +226,7 @@ To invoke an operation defined on the `PetApi` interface, your code instantiates
 [source,java]
 .Preparing the PetStore Client API
 ----
-include::{snippets}[tags=ExampleClientclassDeclFull;ExampleClientPrepPetApi;ExampleClientclassEnd, indent=0]
+include::{sourcedir}/se/openapi/OpenApiGeneratorSnippets.java/[tags=snippet_10, indent=0]
 ----
 <1> Stores a reusable `AppClient`.
 <2> Stores a reusable `PetApi` for invoking pet-related operations.
@@ -272,7 +262,7 @@ You can adopt different styles of retrieving the results, depending on the speci
 [source,java]
 .Access with only result access
 ----
-include::{snippets}[tags=ExampleClientFindAvailableDecl;ExampleClientFindAvailableSimple;ExampleClientFindAvailableUseResult;ExampleClientFindAvailableEnd, indent=0]
+include::{sourcedir}/se/openapi/OpenApiGeneratorSnippets.java/[tags=snippet_11, indent=0]
 ----
 <1> Use the previously-prepared `petApi` to find pets that have the `available` status.
 <2> Retrieve the typed result from the `ApiResponse`.
@@ -285,7 +275,7 @@ The next example shows how your code can use the `HTTPClientResponse`.
 [source,java]
 .Access with status checking
 ----
-include::{snippets}[tags=ExampleClientFindAvailableDecl;ExampleClientFindAvailableSimple;ExampleClientFindAvailableResponseCheck;ExampleClientFindAvailableEnd, indent=0]
+include::{sourcedir}/se/openapi/OpenApiGeneratorSnippets.java/[tags=snippet_12, indent=0]
 ----
 <1> Start the remote service invocation.
 <2> Wait for the HTTP response status and headers to arrive.
