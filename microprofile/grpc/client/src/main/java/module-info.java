@@ -21,7 +21,6 @@ module io.helidon.microprofile.grpc.client {
 
     requires io.helidon.common;
     requires io.helidon.common.tls;
-    requires io.helidon.tracing;
     requires io.helidon.config;
     requires io.helidon.webclient.grpc;
     requires io.helidon.grpc.api;
