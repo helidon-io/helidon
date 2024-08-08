@@ -23,6 +23,8 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
+import io.helidon.common.config.Config;
+import io.helidon.common.config.GlobalConfig;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanListener;
 import io.helidon.tracing.Tracer;
@@ -35,12 +37,27 @@ import io.opentracing.util.GlobalTracer;
 /**
  * {@link java.util.ServiceLoader} service implementation of {@link io.helidon.tracing.spi.TracerProvider} for Open Tracing
  * tracers.
+ * <p>
+ *     When dealing with the global tracer, manage both the Helidon one and also the OpenTracing one in concert, whether
+ *     defaulting them or assigning them via {@link #global(io.helidon.tracing.Tracer)}.
+ * </p>
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 50) // low weight, so it is easy to override
 public class OpenTracingTracerProvider implements TracerProvider {
 
     private static final LazyValue<List<SpanListener>> SPAN_LISTENERS =
             LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(SpanListener.class)).asList());
+
+    private LazyValue<Tracer> globalHelidonTracer = LazyValue.create(() -> {
+        Config tracingConfig = GlobalConfig.config().get("tracing");
+
+        // The service name is required, so assign a default one that might be overridden by config.
+        io.opentracing.Tracer openTracingTracer = OpenTracingTracerBuilder.create("helidon-open-tracing-service")
+                .config(tracingConfig)
+                .build();
+        GlobalTracer.registerIfAbsent(openTracingTracer);
+        return OpenTracingTracer.create(GlobalTracer.get());
+    });
 
     @Override
     public TracerBuilder<?> createBuilder() {
@@ -49,13 +66,17 @@ public class OpenTracingTracerProvider implements TracerProvider {
 
     @Override
     public Tracer global() {
-        return OpenTracingTracer.create(GlobalTracer.get());
+        return globalHelidonTracer.get();
     }
 
     @Override
     public void global(Tracer tracer) {
         if (tracer instanceof OpenTracingTracer opt) {
-            GlobalTracer.registerIfAbsent(opt.openTracing());
+            GlobalTracer.registerIfAbsent(() -> {
+                io.opentracing.Tracer openTracingTracer = opt.openTracing();
+                globalHelidonTracer = LazyValue.create(OpenTracingTracer.create(openTracingTracer));
+                return openTracingTracer;
+            });
         }
     }
 
