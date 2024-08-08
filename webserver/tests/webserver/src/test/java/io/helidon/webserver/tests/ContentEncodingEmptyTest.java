@@ -44,12 +44,25 @@ class ContentEncodingEmptyTest {
         rules.post("/hello", (req, res) -> {
             res.status(Status.NO_CONTENT_204);
             res.send();     // empty entity
+        }).post("/hello_filter", (req, res) -> {
+            res.streamFilter(os -> os);     // forces filter codepath
+            res.status(Status.NO_CONTENT_204);
+            res.send();
         });
     }
 
     @Test
     void gzipEncodeEmptyEntity() {
         Http1ClientResponse res = client.post("hello")
+                .header(HeaderNames.CONTENT_TYPE, "application/json")
+                .header(HeaderNames.ACCEPT_ENCODING, "gzip")
+                .request();
+        assertThat(res.status().code(), is(204));
+    }
+
+    @Test
+    void gzipEncodeEmptyEntityFilter() {
+        Http1ClientResponse res = client.post("hello_filter")
                 .header(HeaderNames.CONTENT_TYPE, "application/json")
                 .header(HeaderNames.ACCEPT_ENCODING, "gzip")
                 .request();

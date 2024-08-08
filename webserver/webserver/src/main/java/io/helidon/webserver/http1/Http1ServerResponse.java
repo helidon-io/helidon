@@ -181,7 +181,9 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             dataWriter.write(bufferData);
             afterSend();
         } else {
-            try (OutputStream os = outputStream()) {
+            // we should skip encoders if no data is written (e.g. for GZIP)
+            boolean skipEncoders = (bytes.length == 0);
+            try (OutputStream os = outputStream(skipEncoders)) {
                 os.write(bytes);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
@@ -196,41 +198,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
     @Override
     public OutputStream outputStream() {
-        if (isSent) {
-            throw new IllegalStateException("Response already sent");
-        }
-        if (streamingEntity) {
-            throw new IllegalStateException("OutputStream already obtained");
-        }
-        streamingEntity = true;
-
-        BlockingOutputStream bos = new BlockingOutputStream(headers,
-                                                     trailers,
-                                                     this::status,
-                                                     () -> streamResult,
-                                                     dataWriter,
-                                                     () -> {
-                                                         this.isSent = true;
-                                                         afterSend();
-                                                         request.reset();
-                                                     },
-                                                     ctx,
-                                                     sendListener,
-                                                     request,
-                                                     keepAlive,
-                                                     validateHeaders);
-
-        int writeBufferSize = ctx.listenerContext().config().writeBufferSize();
-        outputStream = new ClosingBufferedOutputStream(bos, writeBufferSize);
-
-        OutputStream encodedOutputStream = contentEncode(outputStream);
-        // Headers can be augmented by encoders
-        bos.checkResponseHeaders();
-        if (outputStreamFilter == null) {
-            return encodedOutputStream;
-        } else {
-            return outputStreamFilter.apply(encodedOutputStream);
-        }
+        return outputStream(false);
     }
 
     @Override
@@ -399,6 +367,42 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         sendListener.data(ctx, responseBuffer);
 
         return responseBuffer;
+    }
+
+    private OutputStream outputStream(boolean skipEncoders) {
+        if (isSent) {
+            throw new IllegalStateException("Response already sent");
+        }
+        if (streamingEntity) {
+            throw new IllegalStateException("OutputStream already obtained");
+        }
+        streamingEntity = true;
+
+        BlockingOutputStream bos = new BlockingOutputStream(headers,
+                                                            trailers,
+                                                            this::status,
+                                                            () -> streamResult,
+                                                            dataWriter,
+                                                            () -> {
+                                                                this.isSent = true;
+                                                                afterSend();
+                                                                request.reset();
+                                                            },
+                                                            ctx,
+                                                            sendListener,
+                                                            request,
+                                                            keepAlive,
+                                                            validateHeaders);
+
+        int writeBufferSize = ctx.listenerContext().config().writeBufferSize();
+        outputStream = new ClosingBufferedOutputStream(bos, writeBufferSize);
+
+        OutputStream encodedOutputStream = outputStream;
+        if (!skipEncoders) {
+            encodedOutputStream = contentEncode(outputStream);
+            bos.checkResponseHeaders();     // headers can be augmented by encoders
+        }
+        return outputStreamFilter == null ? encodedOutputStream : outputStreamFilter.apply(encodedOutputStream);
     }
 
     static class BlockingOutputStream extends OutputStream {
