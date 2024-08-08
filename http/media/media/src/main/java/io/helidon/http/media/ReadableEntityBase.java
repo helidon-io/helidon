@@ -228,6 +228,13 @@ public abstract class ReadableEntityBase implements ReadableEntity {
         }
 
         @Override
+        public void close() throws IOException {
+            if (!finished) {
+                ensureBuffer(1);
+            }
+        }
+
+        @Override
         public int read(byte[] b, int off, int len) {
             if (finished) {
                 return -1;
