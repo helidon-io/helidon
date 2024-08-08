@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.config.Config;
@@ -80,7 +81,11 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
      * sharing among them, the caching for security definitions is first keyed on the
      * application class.
      */
-    private final Map<Class<?>, CacheEntry> applicationClassCache = new ConcurrentHashMap<>();
+    private final Map<Class<?>, CacheEntry> applicationClassCache = new HashMap<>();
+    private final ReentrantLock applicationClassCacheLock = new ReentrantLock();
+    private final ReentrantLock resourceClassSecurityLock = new ReentrantLock();
+    private final ReentrantLock resourceMethodSecurityLock = new ReentrantLock();
+    private final ReentrantLock subResourceMethodSecurityLock = new ReentrantLock();
 
     private final SecurityContext securityContext;
     private final List<AnnotationAnalyzer> analyzers = new LinkedList<>();
@@ -409,8 +414,13 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
 
             String fullPath = fullPathBuilder.toString();
             // now full path can be used as a cache
-            if (subResourceMethodSecurity(appRealClass).containsKey(fullPath)) {
-                return subResourceMethodSecurity(appRealClass).get(fullPath);
+            try {
+                subResourceMethodSecurityLock.lock();
+                if (subResourceMethodSecurity(appRealClass).containsKey(fullPath)) {
+                    return subResourceMethodSecurity(appRealClass).get(fullPath);
+                }
+            } finally {
+                subResourceMethodSecurityLock.unlock();
             }
 
             // now process each definition method and class
@@ -438,16 +448,25 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
                 current = methodDef;
             }
 
-            subResourceMethodSecurity(appRealClass).put(fullPath, current);
+            try {
+                subResourceMethodSecurityLock.lock();
+                subResourceMethodSecurity(appRealClass).put(fullPath, current);
+            } finally {
+                subResourceMethodSecurityLock.unlock();
+            }
             return current;
         }
 
-        if (resourceMethodSecurity(appRealClass).containsKey(definitionMethod)) {
-            return resourceMethodSecurity(appRealClass).get(definitionMethod);
+        try {
+            resourceMethodSecurityLock.lock();
+            if (resourceMethodSecurity(appRealClass).containsKey(definitionMethod)) {
+                return resourceMethodSecurity(appRealClass).get(definitionMethod);
+            }
+        } finally {
+            resourceMethodSecurityLock.unlock();
         }
 
-        SecurityDefinition resClassSecurity = resourceClassSecurity(appRealClass)
-                .computeIfAbsent(definitionClass, aClass -> securityForClass(definitionClass, appClassSecurity));
+        SecurityDefinition resClassSecurity = obtainClassSecurityDefinition(appRealClass, appClassSecurity, definitionClass);
 
 
         SecurityDefinition methodDef = processMethod(resClassSecurity, definitionMethod);
@@ -461,8 +480,12 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
                                                               .withMethodName(definitionMethod.getName())
                                                               .withMethodAnnotations(methodLevelAnnotations)
                                                               .build());
-
-        resourceMethodSecurity(appRealClass).put(definitionMethod, methodDef);
+        try {
+            resourceMethodSecurityLock.lock();
+            resourceMethodSecurity(appRealClass).put(definitionMethod, methodDef);
+        } finally {
+            resourceMethodSecurityLock.unlock();
+        }
 
         for (AnnotationAnalyzer analyzer : analyzers) {
             AnnotationAnalyzer.AnalyzerResponse analyzerResponse = analyzer.analyze(definitionMethod,
@@ -472,6 +495,18 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         }
 
         return methodDef;
+    }
+
+    private SecurityDefinition obtainClassSecurityDefinition(Class<?> appRealClass, SecurityDefinition appClassSecurity,
+                                                             Class<?> definitionClass) {
+        Map<Class<?>, SecurityDefinition> classSecurityDefinitionMap = resourceClassSecurity(appRealClass);
+        try {
+            resourceClassSecurityLock.lock();
+            return classSecurityDefinitionMap.computeIfAbsent(definitionClass,
+                                                              aClass -> securityForClass(definitionClass, appClassSecurity));
+        } finally {
+            resourceClassSecurityLock.unlock();
+        }
     }
 
     private void addCustomAnnotations(Map<Class<? extends Annotation>, List<Annotation>> customAnnotsMap, Class<?> theClass) {
@@ -516,18 +551,23 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
      */
     private static class CacheEntry {
         private SecurityDefinition appClassSecurity;
-        private final Map<Class<?>, SecurityDefinition> resourceClassSecurity = new ConcurrentHashMap<>();
-        private final Map<Method, SecurityDefinition> resourceMethodSecurity = new ConcurrentHashMap<>();
-        private final Map<String, SecurityDefinition> subResourceMethodSecurity = new ConcurrentHashMap<>();
+        private final Map<Class<?>, SecurityDefinition> resourceClassSecurity = new HashMap<>();
+        private final Map<Method, SecurityDefinition> resourceMethodSecurity = new HashMap<>();
+        private final Map<String, SecurityDefinition> subResourceMethodSecurity = new HashMap<>();
     }
 
     private CacheEntry appClassCacheEntry(Class<?> appClass) {
-        return applicationClassCache.computeIfAbsent(appClass, c -> {
-            SecurityDefinition appClassSecurity = securityForClass(c, null);
-            CacheEntry entry = new CacheEntry();
-            entry.appClassSecurity = appClassSecurity;
-            return entry;
-        });
+        try {
+            applicationClassCacheLock.lock();
+            return applicationClassCache.computeIfAbsent(appClass, c -> {
+                SecurityDefinition appClassSecurity = securityForClass(c, null);
+                CacheEntry entry = new CacheEntry();
+                entry.appClassSecurity = appClassSecurity;
+                return entry;
+            });
+        } finally {
+            applicationClassCacheLock.unlock();
+        }
     }
 
     private SecurityDefinition appClassSecurity(Class<?> appClass) {
