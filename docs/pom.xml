@@ -86,6 +86,21 @@
             <artifactId>postgresql</artifactId>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.lra</groupId>
+            <artifactId>helidon-microprofile-lra-testing</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.testing</groupId>
+            <artifactId>helidon-microprofile-testing-junit5</artifactId>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 
     <build>
