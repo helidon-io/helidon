@@ -43,7 +43,7 @@
         <version.lib.bytebuddy>1.14.18</version.lib.bytebuddy>
         <version.lib.commons-codec>1.16.0</version.lib.commons-codec>
         <version.lib.commons-logging>1.2</version.lib.commons-logging>
-        <version.lib.cron-utils>9.1.6</version.lib.cron-utils>
+        <version.lib.cron-utils>9.2.1</version.lib.cron-utils>
         <version.lib.database.messaging>19.3.0.0</version.lib.database.messaging>
         <version.lib.dropwizard.metrics>4.1.36</version.lib.dropwizard.metrics>
         <version.lib.eclipselink>4.0.4</version.lib.eclipselink>
@@ -1085,16 +1085,6 @@
                 <groupId>com.cronutils</groupId>
                 <artifactId>cron-utils</artifactId>
                 <version>${version.lib.cron-utils}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.glassfish</groupId>
-                        <artifactId>javax.el</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.javassist</groupId>
-                        <artifactId>javassist</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.reactivestreams</groupId>
