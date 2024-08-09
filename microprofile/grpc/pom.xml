@@ -34,6 +34,7 @@
     <modules>
         <module>core</module>
         <module>server</module>
+        <module>client</module>
         <module>tracing</module>
         <module>tests</module>
     </modules>

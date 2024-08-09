@@ -14,7 +14,22 @@
  * limitations under the License.
  */
 
-/**
- * Core classes used by both the gRPC server and gRPC client.
- */
-package io.helidon.grpc.core;
+package io.helidon.microprofile.grpc.client;
+
+import java.util.List;
+
+import io.helidon.builder.api.Option;
+import io.helidon.builder.api.Prototype;
+
+@Prototype.Blueprint
+@Prototype.Configured
+interface GrpcChannelsDescriptorBlueprint {
+
+    /**
+     * List of channel descriptors.
+     *
+     * @return channel descriptors
+     */
+    @Option.Configured
+    List<GrpcChannelDescriptor> channels();
+}

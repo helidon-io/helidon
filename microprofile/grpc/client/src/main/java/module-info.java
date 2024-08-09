@@ -15,6 +15,26 @@
  */
 
 /**
- * Core classes used by both the gRPC server and gRPC client.
+ * gRPC microprofile client module.
  */
-package io.helidon.grpc.core;
+module io.helidon.microprofile.grpc.client {
+
+    requires io.helidon.common;
+    requires io.helidon.common.tls;
+    requires io.helidon.config;
+    requires io.helidon.webclient.grpc;
+    requires io.helidon.grpc.api;
+    requires io.helidon.microprofile.grpc.core;
+
+    requires io.grpc;
+    requires jakarta.cdi;
+    requires jakarta.inject;
+
+    requires transitive io.helidon.grpc.core;
+
+    exports io.helidon.microprofile.grpc.client;
+
+    provides jakarta.enterprise.inject.spi.Extension with
+            io.helidon.microprofile.grpc.client.GrpcClientCdiExtension;
+
+}

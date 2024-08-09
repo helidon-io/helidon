@@ -13,8 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.microprofile.grpc.client;
 
 /**
- * Core classes used by both the gRPC server and gRPC client.
+ * Interface implemented by all gRPC client proxies. The method {@link #channelPort} can be
+ * called at runtime to override the client URI port from config. Typically used for testing.
  */
-package io.helidon.grpc.core;
+public interface GrpcConfigurablePort {
+
+    /**
+     * Name of single setter method on this interface.
+     */
+    String CHANNEL_PORT = "channelPort";
+
+    /**
+     * Overrides client URI port.
+     *
+     * @param value the new port value
+     */
+    void channelPort(int value);
+}
