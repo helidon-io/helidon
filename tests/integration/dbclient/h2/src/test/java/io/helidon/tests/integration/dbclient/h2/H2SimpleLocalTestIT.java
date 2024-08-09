@@ -294,6 +294,18 @@ final class H2SimpleLocalTestIT extends H2LocalTest implements SimpleTest {
 
     @Test
     @Override
+    public void testInsertNamedArgsReturnedKeys() throws Exception {
+        ctx.delegate().testInsertNamedArgsReturnedKeys();
+    }
+
+    @Test
+    @Override
+    public void testInsertNamedArgsReturnedColumns() throws Exception {
+        ctx.delegate().testInsertNamedArgsReturnedColumns();
+    }
+
+    @Test
+    @Override
     public void testCreateNamedQueryStrStrOrderArgs() {
         ctx.delegate().testCreateNamedQueryStrStrOrderArgs();
     }
