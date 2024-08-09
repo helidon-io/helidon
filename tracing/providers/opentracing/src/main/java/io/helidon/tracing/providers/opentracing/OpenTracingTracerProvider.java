@@ -51,11 +51,13 @@ public class OpenTracingTracerProvider implements TracerProvider {
     private LazyValue<Tracer> globalHelidonTracer = LazyValue.create(() -> {
         Config tracingConfig = GlobalConfig.config().get("tracing");
 
-        // The service name is required, so assign a default one that might be overridden by config.
-        io.opentracing.Tracer openTracingTracer = OpenTracingTracerBuilder.create("helidon-open-tracing-service")
-                .config(tracingConfig)
-                .build();
-        GlobalTracer.registerIfAbsent(openTracingTracer);
+        // Set up to create an explicit OpenTracing tracer only if we have config for tracing, indicating that the user wants
+        // something other than the no-op implementation.
+        if (tracingConfig.exists()) {
+            io.opentracing.Tracer openTracingTracer = OpenTracingTracerBuilder.create(tracingConfig)
+                    .build();
+            GlobalTracer.registerIfAbsent(openTracingTracer);
+        }
         return OpenTracingTracer.create(GlobalTracer.get());
     });
 
