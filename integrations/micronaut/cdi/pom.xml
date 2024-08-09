@@ -37,10 +37,6 @@
         </dependency>
         <dependency>
             <groupId>io.micronaut</groupId>
-            <artifactId>micronaut-inject-java</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.micronaut</groupId>
             <artifactId>micronaut-inject</artifactId>
         </dependency>
         <dependency>
@@ -116,8 +112,13 @@
                                 </path>
                                 <path>
                                     <groupId>io.micronaut</groupId>
-                                    <artifactId>micronaut-validation</artifactId>
+                                    <artifactId>micronaut-core-processor</artifactId>
                                     <version>${version.lib.micronaut}</version>
+                                </path>
+                                <path>
+                                    <groupId>io.micronaut.validation</groupId>
+                                    <artifactId>micronaut-validation-processor</artifactId>
+                                    <version>${version.lib.micronaut.validation}</version>
                                 </path>
                                 <path>
                                     <groupId>io.micronaut.data</groupId>
@@ -140,9 +141,9 @@
                         <version>${version.lib.micronaut}</version>
                     </dependency>
                     <dependency>
-                        <groupId>io.micronaut</groupId>
-                        <artifactId>micronaut-validation</artifactId>
-                        <version>${version.lib.micronaut}</version>
+                        <groupId>io.micronaut.validation</groupId>
+                        <artifactId>micronaut-validation-processor</artifactId>
+                        <version>${version.lib.micronaut.validation}</version>
                     </dependency>
                     <dependency>
                         <groupId>io.micronaut.data</groupId>
