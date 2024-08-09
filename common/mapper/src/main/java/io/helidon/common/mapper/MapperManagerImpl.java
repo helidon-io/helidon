@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,6 +76,14 @@ final class MapperManagerImpl implements MapperManager {
         return Optional.of(mapper);
     }
 
+    int classCacheSize() {
+        return classCache.size();
+    }
+
+    int typeCacheSize() {
+        return typeCache.size();
+    }
+
     @SuppressWarnings("unchecked")
     private static <SOURCE, TARGET> Mapper<SOURCE, TARGET> notFoundMapper(GenericType<SOURCE> sourceType,
                                                                           GenericType<TARGET> targetType,
@@ -99,7 +107,7 @@ final class MapperManagerImpl implements MapperManager {
                                                                Class<TARGET> targetType,
                                                                boolean fromTypes,
                                                                String... qualifiers) {
-        Mapper<?, ?> mapper = classCache.computeIfAbsent(new ClassCacheKey(sourceType, targetType, qualifiers), key -> {
+        Mapper<?, ?> mapper = classCache.computeIfAbsent(new ClassCacheKey(sourceType, targetType, List.of(qualifiers)), key -> {
             // first attempt to find by classes
             return fromProviders(sourceType, targetType, qualifiers)
                     .orElseGet(() -> {
@@ -119,7 +127,7 @@ final class MapperManagerImpl implements MapperManager {
                                                                GenericType<TARGET> targetType,
                                                                boolean fromClasses,
                                                                String... qualifiers) {
-        Mapper<?, ?> mapper = typeCache.computeIfAbsent(new GenericCacheKey(sourceType, targetType, qualifiers), key -> {
+        Mapper<?, ?> mapper = typeCache.computeIfAbsent(new GenericCacheKey(sourceType, targetType, List.of(qualifiers)), key -> {
             // first attempt to find by types
             return fromProviders(sourceType, targetType, qualifiers)
                     .orElseGet(() -> {
@@ -199,10 +207,10 @@ final class MapperManagerImpl implements MapperManager {
                              qualifiers);
     }
 
-    private record GenericCacheKey(GenericType<?> sourceType, GenericType<?> targetType, String... qualifiers) {
+    private record GenericCacheKey(GenericType<?> sourceType, GenericType<?> targetType, List<String> qualifiers) {
     }
 
-    private record ClassCacheKey(Class<?> sourceType, Class<?> targetType, String... qualifiers) {
+    private record ClassCacheKey(Class<?> sourceType, Class<?> targetType, List<String> qualifiers) {
     }
 
     @SuppressWarnings("rawtypes")
