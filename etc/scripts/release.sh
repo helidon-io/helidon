@@ -23,7 +23,7 @@ on_error(){
     CODE="${?}" && \
     set +x && \
     printf "[ERROR] Error(code=%s) occurred at %s:%s command: %s\n" \
-        "${CODE}" "${BASH_SOURCE[0]}" "${LINENO}" "${BASH_COMMAND}"
+        "${CODE}" "${BASH_SOURCE[0]}" "${LINENO}" "${BASH_COMMAND}" > /dev/stderr
 }
 trap on_error ERR
 
@@ -131,7 +131,7 @@ replace() {
     pattern="${1}"
     value="${2}"
     include="${3}"
-    for file in $(grep "${pattern}" -Er . --include "${include}" | cut -d ':' -f 1 | sort | uniq); do
+    for file in $(set +o pipefail ; grep "${pattern}" -Er . --include "${include}" | cut -d ':' -f 1 | sort | uniq); do
        echo "Updating ${file}"
        sed -e s@"${pattern}"@"${pattern/\.\*/${value}}"@g \
            < "${file}" \
@@ -150,19 +150,15 @@ update_version(){
     fi
 
     # shellcheck disable=SC2086
-    mvn ${MAVEN_ARGS} "${ARGS[@]}" \
+    mvn ${MAVEN_ARGS} -B "${ARGS[@]}" \
         -f ${WS_DIR}/parent/pom.xml versions:set versions:set-property \
         -DgenerateBackupPoms="false" \
         -DnewVersion="${version}" \
         -Dproperty="helidon.version" \
-        -DprocessFromLocalAggregationRoot="false" \
-        -DupdateMatchingVersions="false"
+        -DprocessAllModules=true
 
     # Hack to update helidon.version
     replace "<helidon.version>.*</helidon.version>" "${version}" "pom.xml"
-
-    # Hack to update helidon.version in build.gradle files
-    replace "helidonversion = .*" "${version}" "build.gradle"
 
     # Hack to update helidon-version in doc files
     replace ":helidon-version: .*" "${version}" "attributes.adoc"
@@ -229,23 +225,76 @@ credentials() {
 }
 
 release_build(){
-    local tmpfile version
+    local version branch_version git_branch tmpfile gpg_keygrip
 
-    credentials
-
-    # Perform local deployment
-    # shellcheck disable=SC2086
-    mvn ${MAVEN_ARGS} "${ARGS[@]}" \
-        deploy \
-        -Prelease \
-        -DskipTests \
-        -DskipRemoteStaging=true
-
-    # Upload all artifacts to nexus
     version=$(release_version)
+    branch_version=$(git branch --show-current | cut -d- -f2)
+    git_branch="release/${version}"
+
+    if [ "${version}" != "${branch_version}" ]; then
+      echo "ERROR: version derived from pom files (${version}) does not match version used in branch name (${branch_version})."
+      echo "Failing release build"
+      exit 1
+    fi
+
+    # Do the release work in a branch
+    git branch -D "${git_branch}" > /dev/null 2>&1 || true
+    git checkout -b "${git_branch}"
+
+    # Invoke update_version
+    update_version "${version}"
+
+    # Update scm/tag entry in the parent pom
+    sed -e s@'<tag>HEAD</tag>'@"<tag>${version}</tag>"@g \
+        parent/pom.xml > parent/pom.xml.tmp
+    mv parent/pom.xml.tmp parent/pom.xml
+
+    # Git user info
+    git config user.email || git config --global user.email "info@helidon.io"
+    git config user.name || git config --global user.name "Helidon Robot"
+
+    # Commit version changes
+    git commit -a -m "Release ${version} [ci skip]"
+
+    # Bootstrap credentials from environment
+    if [ -n "${MAVEN_SETTINGS}" ] ; then
+        tmpfile=$(mktemp XXXXXXsettings.xml)
+        echo "${MAVEN_SETTINGS}" > "${tmpfile}"
+        MAVEN_ARGS="${MAVEN_ARGS} -s ${tmpfile}"
+    fi
+    if [ -n "${GPG_PUBLIC_KEY}" ] ; then
+        tmpfile=$(mktemp /tmp/pub.XXXXXX.key)
+        echo "${GPG_PUBLIC_KEY}" > "${tmpfile}"
+        gpg --import --no-tty --batch "${tmpfile}"
+        rm "$tmpfile"
+    fi
+    if [ -n "${GPG_PRIVATE_KEY}" ] ; then
+        tmpfile=$(mktemp XXXXXX.key)
+        echo "${GPG_PRIVATE_KEY}" > "${tmpfile}"
+        gpg --allow-secret-key-import --import --no-tty --batch "${tmpfile}"
+        rm "${tmpfile}"
+    fi
+    if [ -n "${GPG_PASSPHRASE}" ] ; then
+        echo "allow-preset-passphrase" >> ~/.gnupg/gpg-agent.conf
+        gpg-connect-agent reloadagent /bye
+        gpg_keygrip=$(gpg --with-keygrip -K | grep "Keygrip" | head -1 | awk '{print $3}')
+        /usr/lib/gnupg/gpg-preset-passphrase --preset "${gpg_keygrip}" <<< "${GPG_PASSPHRASE}"
+    fi
+
+    # Perform deployment
+    # shellcheck disable=SC2086
+    mvn ${MAVEN_ARGS} clean deploy \
+      -Prelease,archetypes,javadoc,docs \
+      -DskipTests \
+      -DretryFailedDeploymentCount="10"
+
     # shellcheck disable=SC2086
     mvn ${MAVEN_ARGS} -N nexus-staging:deploy-staged \
         -DstagingDescription="Helidon v${version}"
+
+    # Create and push a git tag
+    git tag -f "${version}"
+    git push --force origin refs/tags/"${version}":refs/tags/"${version}"
 }
 
 readonly NEXUS_SNAPSHOT_URL="https://oss.sonatype.org/content/repositories/snapshots/"
@@ -278,7 +327,7 @@ deploy_snapshot() {
       -DdeployAtEnd=true \
       -DretryFailedDeploymentCount="10"
 
-    echo "Done. ${MVN_VERSION} deployed to ${NEXUS_SNAPSHOT_URL}"
+    echo "Done. ${version} deployed to ${NEXUS_SNAPSHOT_URL}"
 }
 
 # Invoke command
