@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.tests.functional</groupId>
         <artifactId>helidon-tests-functional-project</artifactId>
-        <version>4.1.0-SNAPSHOT</version>
+        <version>4.1.0</version>
     </parent>
     <groupId>io.helidon.tests.functional.configprofile</groupId>
     <artifactId>helidon-tests-functional-configprofile</artifactId>
