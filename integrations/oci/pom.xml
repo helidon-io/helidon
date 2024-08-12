@@ -40,6 +40,14 @@
         <module>secrets-mp-config-source</module>
         <module>sdk</module>
         <module>tls-certificates</module>
-        <module>tests</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>tests</id>
+            <modules>
+                <module>tests</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

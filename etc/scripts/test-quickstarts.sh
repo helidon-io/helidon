@@ -40,6 +40,10 @@ readonly SCRIPT_PATH
 WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 readonly WS_DIR
 
+version() {
+  awk 'BEGIN {FS="[<>]"} ; /<helidon.version>/ {print $3; exit 0}' "${1}"
+}
+
 if [ -z "${GRAALVM_HOME}" ]; then
     echo "ERROR: GRAALVM_HOME is not set";
     exit 1
@@ -55,10 +59,18 @@ mvn ${MAVEN_ARGS} --version
 
 "${GRAALVM_HOME}"/bin/native-image --version;
 
-# If needed we clone the helidon-examples repo into a subdirectory of the helidon repository
+HELIDON_VERSION=$(version "${WS_DIR}/bom/pom.xml")
+readonly HELIDON_VERSION
+
+# If needed we clone the helidon-examples repo
 if [ ! -d "${WS_DIR}/helidon-examples" ]; then
-  echo "Cloning examples repository into ${HELIDON_EXAMPLES_PATH}"
+  echo "Cloning examples repository into ${WS_DIR}/helidon-examples"
   git clone --branch dev-4.x --single-branch https://github.com/helidon-io/helidon-examples.git "${WS_DIR}/helidon-examples"
+
+  # If in a tag, update the version on the fly
+  if [ -n "$(git tag --points-at HEAD)" ] ; then
+    "${WS_DIR}/helidon-examples"/etc/scripts/update-version.sh "${HELIDON_VERSION}"
+  fi
 fi
 
 # Build quickstart native-image executable and run jar file

@@ -15,8 +15,6 @@
 # limitations under the License.
 #
 
-# Build helidon examples, cloning the examples repository if needed
-
 set -o pipefail || true  # trace ERR through pipes
 set -o errtrace || true # trace ERR through commands and functions
 set -o errexit || true  # exit the script if any statement returns a non-true return value
@@ -43,31 +41,34 @@ readonly SCRIPT_PATH
 WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 readonly WS_DIR
 
-# If needed we clone the helidon-examples repo into a subdirectory of the helidon repository
-readonly HELIDON_EXAMPLES_PATH=${WS_DIR}/helidon-examples
+version() {
+  awk 'BEGIN {FS="[<>]"} ; /<helidon.version>/ {print $3; exit 0}' "${1}"
+}
+
+HELIDON_VERSION=$(version "${WS_DIR}/bom/pom.xml")
+readonly HELIDON_VERSION
+
+# If needed we clone the helidon-examples repo
 if [ ! -d "${WS_DIR}/helidon-examples" ]; then
   echo "Cloning examples repository into ${WS_DIR}/helidon-examples"
   git clone --branch dev-4.x --single-branch https://github.com/helidon-io/helidon-examples.git "${WS_DIR}/helidon-examples"
+
+  # If in a tag, update the version on the fly
+  if [ -n "$(git tag --points-at HEAD)" ] ; then
+    "${WS_DIR}/helidon-examples"/etc/scripts/update-version.sh "${HELIDON_VERSION}"
+  fi
 fi
-
-version() {
-    # shellcheck disable=SC2086
-    mvn ${MAVEN_ARGS} -B -N -f "${1}" -Dexpression=helidon.version help:evaluate | grep -v '\[INFO\]'
-}
-
-# Make sure the helidon version from the example repo aligns with this repository
-HELIDON_VERSION_IN_THIS_REPO=$(version "${WS_DIR}/pom.xml")
-readonly HELIDON_VERSION_IN_THIS_REPO
 
 HELIDON_VERSION_IN_EXAMPLES=$(version "${WS_DIR}/helidon-examples/pom.xml")
 readonly HELIDON_VERSION_IN_EXAMPLES
 
-if [ "${HELIDON_VERSION_IN_THIS_REPO}" != "${HELIDON_VERSION_IN_EXAMPLES}" ]; then
+# Make sure the helidon version from the example repo aligns with this repository
+if [ "${HELIDON_VERSION}" != "${HELIDON_VERSION_IN_EXAMPLES}" ]; then
   printf "The Helidon version in this repository (%s) does not match the Helidon version in %s (%s)\n" \
-    "${HELIDON_VERSION_IN_THIS_REPO}" \
-    "${HELIDON_EXAMPLES_PATH}" \
+    "${HELIDON_VERSION}" \
+    "${WS_DIR}/helidon-examples" \
     "${HELIDON_VERSION_IN_EXAMPLES}"
-  exit 78
+  exit 1
 fi
 
 # shellcheck disable=SC2086

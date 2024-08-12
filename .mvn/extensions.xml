@@ -22,6 +22,6 @@
     <extension>
         <groupId>io.helidon.build-tools</groupId>
         <artifactId>helidon-build-cache-maven-extension</artifactId>
-        <version>4.0.9</version>
+        <version>4.0.11</version>
     </extension>
 </extensions>

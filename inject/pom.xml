@@ -26,7 +26,6 @@
         <artifactId>helidon-project</artifactId>
         <version>4.1.0-SNAPSHOT</version>
     </parent>
-
     <groupId>io.helidon.inject</groupId>
     <artifactId>helidon-inject-project</artifactId>
     <name>Helidon Injection Project</name>
@@ -38,7 +37,6 @@
         <inject.debug>true</inject.debug>
     </properties>
 
-    <!-- this will show the progression of what has come over, and what is left to come over -->
     <modules>
         <module>api</module>
         <module>configdriven</module>
@@ -47,7 +45,14 @@
         <module>maven-plugin</module>
         <module>testing</module>
         <module>runtime</module>
-        <module>tests</module>
     </modules>
 
+    <profiles>
+        <profile>
+            <id>tests</id>
+            <modules>
+                <module>tests</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>
