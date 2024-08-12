@@ -153,8 +153,8 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-mp</artifactId>
+            <groupId>io.helidon.microprofile.config</groupId>
+            <artifactId>helidon-microprofile-config</artifactId>
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
