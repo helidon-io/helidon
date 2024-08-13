@@ -25,10 +25,6 @@ import java.lang.annotation.Target;
 
 import io.grpc.MethodDescriptor;
 
-import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
-import static java.lang.annotation.ElementType.TYPE;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
-
 /**
  * The Helidon gRPC API.
  */
@@ -163,8 +159,8 @@ public interface Grpc {
      * It is required when a {@linkplain io.helidon.grpc.api.Grpc.GrpcInterceptorBinding interceptor binding}
      * is used.</p>
      */
-    @Retention(RUNTIME)
-    @Target(TYPE)
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.TYPE)
     @Documented
     @interface GrpcInterceptor {
     }
@@ -173,8 +169,8 @@ public interface Grpc {
      * Specifies that an annotation type is a gRPC interceptor binding type. A gRPC Interceptor binding is
      * used to specify the binding of a gRPC client or server interceptor to target gRPC service and methods.
      */
-    @Target(ANNOTATION_TYPE)
-    @Retention(RUNTIME)
+    @Target(ElementType.ANNOTATION_TYPE)
+    @Retention(RetentionPolicy.RUNTIME)
     @Documented
     @interface GrpcInterceptorBinding {
     }
@@ -198,8 +194,8 @@ public interface Grpc {
      * public void updateOrder(Order order) { ... }
      * </pre>
      */
-    @Target({TYPE, ElementType.METHOD})
-    @Retention(RUNTIME)
+    @Target({ElementType.TYPE, ElementType.METHOD})
+    @Retention(RetentionPolicy.RUNTIME)
     @interface GrpcInterceptors {
         /**
          * An ordered list of interceptors.
@@ -213,8 +209,8 @@ public interface Grpc {
      * An annotation used to annotate a type or method to specify the
      * named marshaller supplier to use for rpc method calls.
      */
-    @Target({TYPE, ElementType.METHOD})
-    @Retention(RUNTIME)
+    @Target({ElementType.TYPE, ElementType.METHOD})
+    @Retention(RetentionPolicy.RUNTIME)
     @Documented
     @Inherited
     @interface GrpcMarshaller {
@@ -240,8 +236,8 @@ public interface Grpc {
      * An annotation to mark a class as representing a gRPC service
      * or a method as a gRPC service method.
      */
-    @Target({ElementType.METHOD, ANNOTATION_TYPE})
-    @Retention(RUNTIME)
+    @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
+    @Retention(RetentionPolicy.RUNTIME)
     @Documented
     @Inherited
     @interface GrpcMethod {
@@ -265,8 +261,8 @@ public interface Grpc {
     /**
      * An annotation to indicate the request type of gRPC method.
      */
-    @Target({ElementType.METHOD})
-    @Retention(RUNTIME)
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
     @Documented
     @Inherited
     @interface RequestType {
@@ -281,8 +277,8 @@ public interface Grpc {
     /**
      * An annotation to indicate the response type of a gRPC method.
      */
-    @Target({ElementType.METHOD})
-    @Retention(RUNTIME)
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
     @Documented
     @Inherited
     @interface ResponseType {
@@ -292,5 +288,28 @@ public interface Grpc {
          * @return the gRPC response type
          */
         Class<?> value();
+    }
+
+    /**
+     * An annotation that can be used to specify the name of a configured gRPC channel.
+     */
+    @Target({ElementType.TYPE, ElementType.METHOD})
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface GrpcChannel {
+
+        /**
+         * The name of the configured channel.
+         *
+         * @return name of the channel
+         */
+        String value();
+    }
+
+    /**
+     * An annotation used to mark an injection point for a gRPC service client proxy.
+     */
+    @Target({ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER})
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface GrpcProxy {
     }
 }

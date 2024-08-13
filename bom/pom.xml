@@ -117,6 +117,11 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.microprofile.grpc</groupId>
+                <artifactId>helidon-microprofile-grpc-client</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.grpc</groupId>
                 <artifactId>helidon-microprofile-grpc-tracing</artifactId>
                 <version>${helidon.version}</version>
             </dependency>

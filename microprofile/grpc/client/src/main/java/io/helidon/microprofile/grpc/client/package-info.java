@@ -15,6 +15,6 @@
  */
 
 /**
- * Core classes used by both the gRPC server and gRPC client.
+ * Client gRPC microprofile classes.
  */
-package io.helidon.grpc.core;
+package io.helidon.microprofile.grpc.client;
