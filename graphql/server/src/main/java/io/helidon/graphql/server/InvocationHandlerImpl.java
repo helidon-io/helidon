@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.graphql.server;
 
+import java.lang.System.Logger.Level;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -25,8 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import graphql.ExceptionWhileDataFetching;
 import graphql.ExecutionInput;
@@ -49,7 +50,12 @@ import static io.helidon.graphql.server.GraphQlConstants.MESSAGE;
 import static io.helidon.graphql.server.GraphQlConstants.PATH;
 
 class InvocationHandlerImpl implements InvocationHandler {
-    private static final Logger LOGGER = Logger.getLogger(InvocationHandlerImpl.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(InvocationHandlerImpl.class.getName());
+    private static final Pattern VALIDATION_ERROR_PATTERN = Pattern.compile("Validation error \\((\\w+)@\\[(.*)]\\) : (.*$)");
+    private static final Pattern ERROR_ENUM_REPLACE_PATTERN =
+            Pattern.compile("Literal value not in allowable values for enum '.*?' - ('.*\\{.*}')");
+    private static final Pattern INVALID_TYPE_REPLACE_PATTERN =
+            Pattern.compile("- Expected an AST type of ('.*?') but it was a ('.*?') (@.*?)$");
 
     private final String defaultErrorMessage;
     private final Set<String> exceptionDenySet = new HashSet<>();
@@ -76,7 +82,7 @@ class InvocationHandlerImpl implements InvocationHandler {
         try {
             return doExecute(query, operationName, variables);
         } catch (RuntimeException e) {
-            LOGGER.log(Level.FINE, "Failed to execute query " + query, e);
+            LOGGER.log(Level.DEBUG, "Failed to execute query " + query, e);
             Map<String, Object> result = new HashMap<>();
             addError(result, e, e.getMessage());
             return result;
@@ -202,7 +208,71 @@ class InvocationHandlerImpl implements InvocationHandler {
             path = listPath.get(0).toString();
         }
 
-        addErrorPayload(resultMap, error.getMessage(), path, line, column, error.getExtensions());
+        addErrorPayload(resultMap, fixMessage(error.getMessage()), path, line, column, error.getExtensions());
+    }
+
+    // this works around https://github.com/eclipse/microprofile-graphql/issues/520
+    // once the TCK is fixed, we can remove this work-around
+    // this is depending on version of GraphQL (heavily), and any change in error message format
+    // will result in wrong responses
+    private String fixMessage(String message) {
+        if (!message.startsWith("Validation error")) {
+            return message;
+        }
+        /*
+        What we get (first) and what we want (second)
+        Validation error (FieldUndefined@[allHeroes/weaknesses]) : Field 'weaknesses' in type 'SuperHero' is undefined
+        Validation error of type FieldUndefined: Field 'weaknesses' in type 'SuperHero' is undefined @ 'allHeroes/weaknesses'
+         */
+        /*
+        1: type of error (FieldUndefined)
+        2: path (allHeroes/weaknesses)
+        3: Message (Field 'weaknesses' in type 'SuperHero' is undefined)
+         */
+        Matcher matcher = VALIDATION_ERROR_PATTERN.matcher(message);
+        if (matcher.matches()) {
+            String fixedMessage = "Validation error of type " + matcher.group(1)
+                    + ": " + matcher.group(3)
+                    + " @ '" + matcher.group(2) + "'";
+
+            if (fixedMessage.contains("Literal value not in allowable values for enum")) {
+             /*
+             What we get (first) and what we want (second)
+             Validation error (WrongType@[createNewHero]) : argument 'hero.tshirtSize' with value 'EnumValue{name='XLTall'}'
+                is not a valid 'ShirtSize' - Literal value not in allowable values for enum 'ShirtSize'
+                - 'EnumValue{name='XLTall'}'
+             Validation error of type WrongType: argument 'hero.tshirtSize' with value 'EnumValue{name='XLTall'}' is not a valid
+                'ShirtSize' - Expected enum literal value not in allowable values
+                -  'EnumValue{name='XLTall'}'. @ 'createNewHero'
+             */
+                // enum failures
+                return ERROR_ENUM_REPLACE_PATTERN.matcher(fixedMessage)
+                        .replaceAll("Expected enum literal value not in allowable values -  $1.");
+            }
+
+            /*
+            actual graphql message
+            fixed graphql message
+            expected graphql message
+            Validation error (WrongType@[updateItemPowerLevel]) : argument 'powerLevel' with value
+                    'StringValue{value='Unlimited'}' is not a valid 'Int' -
+                    Expected an AST type of 'IntValue' but it was a 'StringValue'
+            Validation error of type WrongType: argument 'powerLevel' with value 'StringValue{value='Unlimited'}'
+                    is not a valid 'Int' - Expected an AST type of 'IntValue' but it
+                    was a 'StringValue' @ 'updateItemPowerLevel'
+            Validation error of type WrongType: argument 'powerLevel' with value 'StringValue{value='Unlimited'}'
+                    is not a valid 'Int' - Expected AST type 'IntValue' but
+                    was 'StringValue'. @ 'updateItemPowerLevel
+             */
+            if (fixedMessage.contains("type WrongType")) {
+                return INVALID_TYPE_REPLACE_PATTERN.matcher(fixedMessage)
+                        .replaceAll("- Expected AST type $1 but was $2. $3");
+            }
+
+            return fixedMessage;
+        } else {
+            return message;
+        }
     }
 
     @SuppressWarnings("unchecked")
