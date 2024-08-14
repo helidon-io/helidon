@@ -85,6 +85,7 @@ class SecurityDefinition {
     SecurityDefinition copyMe() {
         SecurityDefinition result = new SecurityDefinition();
         result.requiresAuthentication = this.requiresAuthentication;
+        result.requiresAuthorization = this.requiresAuthorization;
         result.failOnFailureIfOptional = this.failOnFailureIfOptional;
         result.authnOptional = this.authnOptional;
         result.authenticator = this.authenticator;

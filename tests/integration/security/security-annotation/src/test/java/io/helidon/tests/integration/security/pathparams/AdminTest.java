@@ -33,13 +33,32 @@ class AdminTest {
 
     @Test
     void testProtectedAdminEndpoint(WebTarget target) {
-        try (Response response = target.path("/admin")
+        testProtectedAdmin(target, "/admin");
+    }
+
+    @Test
+    void testProtectedAdmin2Endpoint(WebTarget target) {
+        testProtectedAdmin(target, "/admin2");
+    }
+
+    @Test
+    void testUnauthorizedAdminEndpoint(WebTarget target) {
+        testUnprotectedAdmin(target, "/admin/unauthorized");
+    }
+
+    @Test
+    void testUnauthorizedAdmin2Endpoint(WebTarget target) {
+        testUnprotectedAdmin(target, "/admin2/unauthorized");
+    }
+
+    private void testProtectedAdmin(WebTarget target, String endpoint) {
+        try (Response response = target.path(endpoint)
                 .request()
                 .header("Authorization", basic("fail"))
                 .get()) {
             assertThat(response.getStatus(), is(Status.FORBIDDEN_403.code()));
         }
-        try (Response response = target.path("/admin")
+        try (Response response = target.path(endpoint)
                 .request()
                 .header("Authorization", basic("success"))
                 .get()) {
@@ -48,16 +67,15 @@ class AdminTest {
         }
     }
 
-    @Test
-    void testUnauthorizedAdminEndpoint(WebTarget target) {
-        try (Response response = target.path("/admin/unauthorized")
+    private void testUnprotectedAdmin(WebTarget target, String endpoint) {
+        try (Response response = target.path(endpoint)
                 .request()
                 .header("Authorization", basic("fail"))
                 .get()) {
             assertThat(response.getStatus(), is(Status.OK_200.code()));
             assertThat(response.readEntity(String.class), is("unauthorized admin"));
         }
-        try (Response response = target.path("/admin/unauthorized")
+        try (Response response = target.path(endpoint)
                 .request()
                 .header("Authorization", basic("success"))
                 .get()) {
