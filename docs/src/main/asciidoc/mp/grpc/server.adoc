@@ -16,7 +16,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= gRPC MicroProfile Server
+= gRPC MP Server
 :description: Helidon gRPC MicroProfile Server-Side Services
 :keywords: helidon, java, grpc, microprofile, micro-profile, mp
 :feature-name: gRPC MicroProfile Server
@@ -186,4 +186,4 @@ protocol.
 
 == Examples
 
-Please refer to the link:{helidon-github-examples-url}[Helidon Examples] repository.
+Please refer to the link:{helidon-github-examples-url}/microprofile/grpc[Helidon gRPC MP Example].

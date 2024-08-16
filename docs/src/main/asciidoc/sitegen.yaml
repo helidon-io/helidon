@@ -141,6 +141,7 @@ backend:
                   value: "swap_horiz"
                 sources:
                   - "server.adoc"
+                  - "client.adoc"
               - type: "PAGE"
                 title: "Health Checks"
                 source: "health.adoc"

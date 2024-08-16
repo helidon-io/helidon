@@ -16,6 +16,10 @@
 package io.helidon.docs.mp.grpc;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+
+import io.grpc.Channel;
+import io.grpc.stub.StreamObserver;
 
 import io.helidon.grpc.api.Grpc;
 import io.helidon.webserver.grpc.GrpcService;
@@ -87,5 +91,49 @@ class GrpcSnippets {
             }
         }
         // end::snippet_4[]
+    }
+
+    class Snippet5 {
+
+        // tag::snippet_5[]
+        @ApplicationScoped
+        @Grpc.GrpcService("StringService")  // <1>
+        @Grpc.GrpcChannel("string-channel")  // <2>
+        interface StringServiceClient {
+
+            @Grpc.Unary
+            String upper(String s);
+        }
+        // end::snippet_5[]
+    }
+
+    class Snippet6 {
+
+        // tag::snippet_6[]
+        @ApplicationScoped
+        @Grpc.GrpcService("StringService")
+        @Grpc.GrpcChannel("string-channel")
+        interface StringServiceClient {
+
+            @Grpc.Unary
+            void upper(String s, StreamObserver<String> response);
+        }
+        // end::snippet_6[]
+    }
+
+    class Snippet7 {
+
+        interface StringServiceClient {
+        }
+
+        // tag::snippet_7[]
+        @ApplicationScoped
+        public class MyAppBean {
+
+            @Inject  // <1>
+            @Grpc.GrpcProxy  // <2>
+            private StringServiceClient stringServiceClient;
+        }
+        // end::snippet_7[]
     }
 }
