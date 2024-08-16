@@ -1,11 +1,12 @@
 name: Assign Issue to Project
 
 on:
-  issues:
-    types: [opened, reopened]
-env:
-  GITHUB_API_KEY: ${{ secrets.GITHUB_TOKEN }}
-
+  workflow_dispatch:
+#  issues:
+#    types: [opened, reopened]
+#env:
+#  GITHUB_API_KEY: ${{ secrets.GITHUB_TOKEN }}
+#
 
 jobs:
   Assign-Issue-To-Backlog:
