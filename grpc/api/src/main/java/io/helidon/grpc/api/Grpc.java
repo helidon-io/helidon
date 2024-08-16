@@ -275,7 +275,7 @@ public interface Grpc {
     }
 
     /**
-     * An annotation to indicate the response type of a gRPC method.
+     * An annotation to indicate the response type of gRPC method.
      */
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
@@ -293,7 +293,7 @@ public interface Grpc {
     /**
      * An annotation that can be used to specify the name of a configured gRPC channel.
      */
-    @Target({ElementType.TYPE, ElementType.METHOD})
+    @Target({ElementType.TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.FIELD, ElementType.PARAMETER})
     @Retention(RetentionPolicy.RUNTIME)
     @interface GrpcChannel {
 

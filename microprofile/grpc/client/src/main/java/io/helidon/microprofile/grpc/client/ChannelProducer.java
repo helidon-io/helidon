@@ -57,9 +57,8 @@ public class ChannelProducer {
      * @return a gRPC {@link io.grpc.Channel}
      */
     @Produces
-    @Grpc.GrpcChannel(GrpcChannelsProvider.DEFAULT_CHANNEL_NAME)
     public Channel get(InjectionPoint injectionPoint) {
-        Grpc.GrpcChannel qualifier = injectionPoint.getQualifiers()
+        Grpc.GrpcChannel qualifier = injectionPoint.getAnnotated().getAnnotations()
                 .stream()
                 .filter(q -> q.annotationType().equals(Grpc.GrpcChannel.class))
                 .map(q -> (Grpc.GrpcChannel) q)
@@ -68,16 +67,6 @@ public class ChannelProducer {
 
         String name = (qualifier == null) ? GrpcChannelsProvider.DEFAULT_CHANNEL_NAME : qualifier.value();
         return findChannel(name);
-    }
-
-    /**
-     * Produces the default gRPC {@link io.grpc.Channel}.
-     *
-     * @return the default gRPC {@link io.grpc.Channel}
-     */
-    @Produces
-    public Channel getDefaultChannel() {
-        return findChannel(GrpcChannelsProvider.DEFAULT_CHANNEL_NAME);
     }
 
     /**
