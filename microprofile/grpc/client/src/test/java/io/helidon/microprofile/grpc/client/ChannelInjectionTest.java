@@ -22,9 +22,9 @@ import io.grpc.Channel;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @HelidonTest
 class ChannelInjectionTest {
@@ -44,7 +44,7 @@ class ChannelInjectionTest {
     void testInjection() {
         assertThat(echoChannel1, notNullValue());
         assertThat(echoChannel2, notNullValue());
-        assertEquals(echoChannel1.getClass(), echoChannel2.getClass());
-        assertEquals(echoChannel1.authority(), echoChannel2.authority());
+        assertThat(echoChannel1.getClass(), equalTo(echoChannel2.getClass()));
+        assertThat(echoChannel1.authority(), equalTo(echoChannel2.authority()));
     }
 }
