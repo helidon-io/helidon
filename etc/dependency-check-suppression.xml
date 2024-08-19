@@ -34,52 +34,7 @@
    <vulnerabilityName>CVE-2022-21700</vulnerabilityName>
 </suppress>
 
-<!-- okhttp is a transitive fourth party dependency of Jaeger client. This CVE is considered
-     by the okhttp team as not exploitable unless the class in question is used
-     directly by an application (highly unlikely). See https://github.com/square/okhttp/issues/6724
-     They have only fixed this in 4.9.3 and newer. We can't force upgrade due to a tangle of
-     dependencies, compatibility, and issues with dependency convergence.
--->
-<suppress>
-   <notes><![CDATA[
-   file name: okhttp-3.14.9.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/com\.squareup\.okhttp3/okhttp@.*$</packageUrl>
-   <vulnerabilityName>CVE-2021-0341</vulnerabilityName>
-</suppress>
-
-<!-- False Positive. This CVE is against graphql-java, not the microprofile-graphql-api
--->
-<suppress>
-   <notes><![CDATA[
-   file name: microprofile-graphql-api-1.1.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.eclipse\.microprofile\.graphql/microprofile\-graphql\-api@.*$</packageUrl>
-   <cve>CVE-2022-37734</cve>
-</suppress>
-
-<!-- This is a low priority CVE against a deprecated method in Guava. We don't use guava directly.
--->
-<suppress>
-   <notes><![CDATA[
-   file name: graphql-java-17.4.jar (shaded: com.google.guava:guava:30.0-jre)
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/com\.google\.guava/guava@.*$</packageUrl>
-   <vulnerabilityName>CVE-2020-8908</vulnerabilityName>
-</suppress>
-
-<!-- False Positive. This CVE is against graphql-java, not graphql-java-dataloader
-     See https://github.com/jeremylong/DependencyCheck/issues/5641
--->
-<suppress>
-   <notes><![CDATA[
-   file name: java-dataloader-3.1.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/com\.graphql\-java/java\-dataloader@.*$</packageUrl>
-   <cve>CVE-2023-28867</cve>
-</suppress>
-
-   <!-- False Positive. This does not apply to server Java deployment and certainly not to our use of graalvm SDK.
+<!-- False Positive. This does not apply to server Java deployment and certainly not to our use of graalvm SDK.
     This vulnerability applies to Java deployments, typically in clients running sandboxed
     Java Web Start applications or sandboxed Java applets, that load and run untrusted code
     (e.g., code that comes from the internet) and rely on the Java sandbox for security. This
@@ -106,19 +61,6 @@
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson\-databind@.*$</packageUrl>
    <cve>CVE-2023-35116</cve>
-</suppress>
-
-<!--
-    This CVE is is concerning proper use of Netty's hostname verification. Helidon enables hostname
-    verification by default and therefore this CVE does not apply. Some more info on the CVE here:
-    https://github.com/jeremylong/DependencyCheck/issues/5912
--->
-<suppress>
-   <notes><![CDATA[
-   file name: netty-handler-4.1.94.Final.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/io\.netty/netty\-.*@.*$</packageUrl>
-   <vulnerabilityName>CVE-2023-4586</vulnerabilityName>
 </suppress>
 
 <!--
@@ -178,6 +120,23 @@
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/io\.opentracing\.brave/brave\-opentracing@.*$</packageUrl>
    <cve>CVE-2023-28360</cve>
+</suppress>
+
+<!-- This low priority CVE does not apply to our use of the graalvm sdk.
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: graal-sdk-22.3.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\.sdk/graal-sdk@.*$</packageUrl>
+   <vulnerabilityName>CVE-2024-21138</vulnerabilityName>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: compiler-21.3.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\.compiler/compiler@.*$</packageUrl>
+   <vulnerabilityName>CVE-2024-21138</vulnerabilityName>
 </suppress>
 
 </suppressions>
