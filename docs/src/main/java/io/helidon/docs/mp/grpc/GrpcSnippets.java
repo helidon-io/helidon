@@ -136,4 +136,13 @@ class GrpcSnippets {
         }
         // end::snippet_7[]
     }
+
+    class Snippet8 {
+
+        // tag::snippet_8[]
+        @Inject  // <1>
+        @Grpc.GrpcChannel("string-channel")  // <2>
+        private Channel channel;
+        // end::snippet_8[]
+    }
 }
