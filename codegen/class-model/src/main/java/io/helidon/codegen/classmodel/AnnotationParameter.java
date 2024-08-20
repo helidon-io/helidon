@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.Objects;
 import java.util.Set;
 
+import io.helidon.common.types.EnumValue;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -27,10 +28,12 @@ import io.helidon.common.types.TypeName;
 public final class AnnotationParameter extends CommonComponent {
 
     private final String value;
+    private final TypeName importedType;
 
     private AnnotationParameter(Builder builder) {
         super(builder);
         this.value = resolveValueToString(builder.type(), builder.value);
+        this.importedType = resolveImport(builder.value);
     }
 
     /**
@@ -48,6 +51,26 @@ public final class AnnotationParameter extends CommonComponent {
         writer.write(name() + " = " + value);
     }
 
+    @Override
+    void addImports(ImportOrganizer.Builder imports) {
+        if (importedType != null) {
+            imports.addImport(importedType);
+        }
+    }
+
+    private static TypeName resolveImport(Object value) {
+        if (value.getClass().isEnum()) {
+            return TypeName.create(value.getClass());
+        }
+        if (value instanceof TypeName tn) {
+            return tn;
+        }
+        if (value instanceof EnumValue ev) {
+            return ev.type();
+        }
+        return null;
+    }
+
     private static String resolveValueToString(Type type, Object value) {
         Class<?> valueClass = value.getClass();
         if (valueClass.isEnum()) {
@@ -58,7 +81,9 @@ public final class AnnotationParameter extends CommonComponent {
                 return "\"" + stringValue + "\"";
             }
         } else if (value instanceof TypeName typeName) {
-            return typeName.fqName() + ".class";
+            return typeName.classNameWithEnclosingNames() + ".class";
+        } else if (value instanceof EnumValue enumValue) {
+            return enumValue.type().classNameWithEnclosingNames() + "." + enumValue.name();
         }
         return value.toString();
     }

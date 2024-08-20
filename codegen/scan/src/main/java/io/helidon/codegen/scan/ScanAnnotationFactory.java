@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.EnumValue;
 import io.helidon.common.types.TypeName;
 
 import io.github.classgraph.AnnotationClassRef;
@@ -85,15 +86,12 @@ final class ScanAnnotationFactory {
             return result;
         }
 
-        if (scanAnnotationValue instanceof AnnotationEnumValue anEnum) {
-            return anEnum.getValueName();
-        } else if (scanAnnotationValue instanceof AnnotationClassRef aClass) {
-            return TypeName.create(aClass.getName());
-        } else if (scanAnnotationValue instanceof AnnotationInfo annotation) {
-            return createAnnotation(ctx, annotation);
-        }
+        return switch (scanAnnotationValue) {
+            case AnnotationEnumValue anEnum -> EnumValue.create(TypeName.create(anEnum.getClassName()), anEnum.getValueName());
+            case AnnotationClassRef aClass -> TypeName.create(aClass.getName());
+            case AnnotationInfo annotation -> createAnnotation(ctx, annotation);
+            default -> scanAnnotationValue;
+        };
 
-        // supported type
-        return scanAnnotationValue;
     }
 }
