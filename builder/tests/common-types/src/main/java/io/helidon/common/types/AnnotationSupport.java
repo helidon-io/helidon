@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -663,6 +663,15 @@ final class AnnotationSupport {
         }
         if (value instanceof String str) {
             return Enum.valueOf(type, str);
+        }
+        if (value instanceof EnumValue enumValue) {
+            if (enumValue.type().equals(TypeName.create(type))) {
+                return Enum.valueOf(type, enumValue.name());
+            }
+
+            throw new IllegalStateException("Property " + property + " is of enum type for enum "
+                                                    + enumValue.type().fqName() + ", yet you requested "
+                                                    + type.getName());
         }
 
         throw new IllegalArgumentException(typeName.fqName() + " property " + property
