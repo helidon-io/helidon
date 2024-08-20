@@ -16,6 +16,7 @@
 package io.helidon.microprofile.cors;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -154,7 +155,7 @@ class CorsSupportMp extends CorsSupportBase<ContainerRequestContext, Response, C
         private Map<String, List<String>> filteredHeaders() {
             MultivaluedMap<String, String> result = new MultivaluedHashMap<>();
             for (Map.Entry<String, List<String>> header : requestContext.getHeaders().entrySet()) {
-                if (HEADERS_FOR_CORS_DIAGNOSTICS.contains(header.getKey())) {
+                if (HEADERS_FOR_CORS_DIAGNOSTICS.contains(header.getKey().toLowerCase(Locale.getDefault()))) {
                     result.put(header.getKey(), header.getValue());
                 }
             }

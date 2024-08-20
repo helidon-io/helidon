@@ -17,6 +17,7 @@ package io.helidon.webserver.cors;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -76,7 +77,7 @@ class RequestAdapterSe implements CorsSupportBase.RequestAdapter<ServerRequest> 
     private Map<String, List<String>> headersDisplay() {
         Map<String, List<String>> result = new HashMap<>();
         for (Map.Entry<String, List<String>> header : request.headers().toMap().entrySet()) {
-            if (HEADERS_FOR_CORS_DIAGNOSTICS.contains(header.getKey())) {
+            if (HEADERS_FOR_CORS_DIAGNOSTICS.contains(header.getKey().toLowerCase(Locale.getDefault()))) {
                 result.put(header.getKey(), header.getValue());
             }
         }

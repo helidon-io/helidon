@@ -275,9 +275,9 @@ public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B
         /**
          * Header names useful for CORS diagnostic logging messages.
          */
-        Set<String> HEADERS_FOR_CORS_DIAGNOSTICS = Set.of("Origin",
-                                                          "Host",
-                                                          "Access-Control-Request-Method");
+        Set<String> HEADERS_FOR_CORS_DIAGNOSTICS = Set.of("origin",
+                                                          "host",
+                                                          "access-control-request-method");
 
         /**
          *
