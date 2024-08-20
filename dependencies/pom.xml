@@ -53,7 +53,7 @@
         <version.lib.google-api-client>1.34.1</version.lib.google-api-client>
         <version.lib.google-oauth-client>1.33.3</version.lib.google-oauth-client>
         <version.lib.google-error-prone>2.3.3</version.lib.google-error-prone>
-        <version.lib.google-protobuf>4.27.3</version.lib.google-protobuf>
+        <version.lib.google-protobuf>3.25.4</version.lib.google-protobuf>
         <version.lib.graalvm>23.1.0</version.lib.graalvm>
         <version.lib.graphql-java>22.1</version.lib.graphql-java>
         <version.lib.graphql-java.extended.scalars>22.0</version.lib.graphql-java.extended.scalars>
