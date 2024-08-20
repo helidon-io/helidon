@@ -25,7 +25,7 @@ module io.helidon.integrations.oci.metrics.cdi {
 
     requires oci.java.sdk.monitoring;
 
-    requires jakarta.interceptor.api;
+    requires jakarta.interceptor;
     provides jakarta.enterprise.inject.spi.Extension with io.helidon.integrations.oci.metrics.cdi.OciMetricsCdiExtension;
 
     opens io.helidon.integrations.oci.metrics.cdi to weld.core.impl, io.helidon.microprofile.cdi;

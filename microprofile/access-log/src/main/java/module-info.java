@@ -22,7 +22,7 @@ module io.helidon.microprofile.accesslog {
 
     requires io.helidon.microprofile.server;
     requires io.helidon.webserver.accesslog;
-    requires jakarta.interceptor.api;
+    requires jakarta.interceptor;
 
     exports io.helidon.microprofile.accesslog;
 

@@ -23,7 +23,7 @@ module io.helidon.microprofile.faulttolerance {
     requires java.logging;
     requires jakarta.annotation;
     requires jakarta.inject;
-    requires jakarta.interceptor.api;
+    requires jakarta.interceptor;
 
     requires io.helidon.common.context;
     requires io.helidon.common.configurable;

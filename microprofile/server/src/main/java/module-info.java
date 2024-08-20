@@ -30,7 +30,7 @@ module io.helidon.microprofile.server {
     requires io.helidon.microprofile.config;
     requires transitive jakarta.cdi;
     requires transitive jakarta.ws.rs;
-    requires jakarta.interceptor.api;
+    requires jakarta.interceptor;
     requires jakarta.validation;
     requires transitive jakarta.json;
     requires io.helidon.jersey.media.jsonp;

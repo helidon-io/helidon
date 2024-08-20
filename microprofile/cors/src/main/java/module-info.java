@@ -34,7 +34,7 @@ module io.helidon.microprofile.cors {
     requires jersey.common;
     requires microprofile.config.api;
 
-    requires jakarta.interceptor.api;
+    requires jakarta.interceptor;
     requires jakarta.cdi;
 
     exports io.helidon.microprofile.cors;

@@ -34,7 +34,7 @@ module io.helidon.integrations.cdi.jpa {
     requires jakarta.xml.bind;
 
     requires jakarta.inject; // automatic module
-    requires jakarta.interceptor.api; // automatic module
+    requires jakarta.interceptor;
 
     requires io.helidon.integrations.cdi.delegates;
     requires io.helidon.integrations.cdi.referencecountedcontext;

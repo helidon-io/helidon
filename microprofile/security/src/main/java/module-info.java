@@ -26,7 +26,7 @@ module io.helidon.microprofile.security {
     requires transitive io.helidon.security.integration.webserver;
     requires io.helidon.microprofile.server;
     requires io.helidon.microprofile.cdi;
-    requires jakarta.interceptor.api;
+    requires jakarta.interceptor;
 
     exports io.helidon.microprofile.security;
 

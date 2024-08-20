@@ -20,7 +20,7 @@
 module io.helidon.microprofile.tyrus {
     requires java.logging;
     requires jakarta.inject;
-    requires jakarta.interceptor.api;
+    requires jakarta.interceptor;
 
     requires jakarta.cdi;
     requires transitive jakarta.websocket;

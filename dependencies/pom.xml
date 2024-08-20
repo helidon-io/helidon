@@ -75,14 +75,14 @@
         <version.lib.jakarta.annotation-api>2.0.0</version.lib.jakarta.annotation-api>
         <version.lib.jakarta.cdi-api>3.0.0</version.lib.jakarta.cdi-api>
         <version.lib.jakarta.el-api>4.0.0</version.lib.jakarta.el-api>
-        <version.lib.jakarta.inject>2.0.0</version.lib.jakarta.inject>
-        <version.lib.jakarta.interceptor-api>2.0.0</version.lib.jakarta.interceptor-api>
+        <version.lib.jakarta.inject>2.0.1</version.lib.jakarta.inject>
+        <version.lib.jakarta.interceptor-api>2.0.1</version.lib.jakarta.interceptor-api>
         <version.lib.jakarta.jaxrs-api>3.0.0</version.lib.jakarta.jaxrs-api>
         <version.lib.jakarta.jms-api>3.0.0</version.lib.jakarta.jms-api>
         <version.lib.jakarta.jsonb-api>2.0.0</version.lib.jakarta.jsonb-api>
         <version.lib.jakarta.jsonp-api>2.0.2</version.lib.jakarta.jsonp-api>
         <version.lib.jakarta.persistence-api>3.0.0</version.lib.jakarta.persistence-api>
-        <version.lib.jakarta.transaction-api>2.0.0</version.lib.jakarta.transaction-api>
+        <version.lib.jakarta.transaction-api>2.0.1</version.lib.jakarta.transaction-api>
         <version.lib.jakarta.validation-api>3.0.2</version.lib.jakarta.validation-api>
         <version.lib.jakarta.websockets-api>2.1.1</version.lib.jakarta.websockets-api>
         <!-- Check Hibernate when upgrading to ensure its supplied jaxb-runtime is compatible. -->

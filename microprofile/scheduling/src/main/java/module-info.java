@@ -23,7 +23,7 @@ module io.helidon.microprofile.scheduling {
     requires java.logging;
     requires static jakarta.cdi;
     requires static jakarta.inject;
-    requires jakarta.interceptor.api;
+    requires jakarta.interceptor;
     requires io.helidon.common.configurable;
     requires io.helidon.config;
     requires io.helidon.config.mp;

@@ -29,7 +29,7 @@ module io.helidon.integrations.oci.sdk.cdi {
     requires java.logging;
     requires transitive jakarta.cdi;
     requires jakarta.inject;
-    requires jakarta.interceptor.api;
+    requires jakarta.interceptor;
     requires jakarta.ws.rs;
     requires microprofile.config.api;
     requires oci.java.sdk.common;

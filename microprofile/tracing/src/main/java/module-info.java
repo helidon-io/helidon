@@ -29,7 +29,7 @@ module io.helidon.microprofile.tracing {
 
     requires static jakarta.cdi;
     requires static jakarta.inject;
-    requires static jakarta.interceptor.api;
+    requires static jakarta.interceptor;
 
     requires io.helidon.microprofile.server;
     requires transitive io.helidon.microprofile.config;

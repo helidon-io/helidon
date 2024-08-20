@@ -27,7 +27,7 @@ module io.helidon.integrations.jta.cdi {
     requires jakarta.annotation;
     requires java.sql;
     requires java.rmi;
-    requires jakarta.interceptor.api;
+    requires jakarta.interceptor;
     requires jakarta.inject;
     requires jakarta.cdi;
     requires narayana.jta.jakarta;

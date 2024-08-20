@@ -22,7 +22,7 @@ module io.helidon.integrations.neo4j {
 
     requires static jakarta.cdi;
     requires static jakarta.inject;
-    requires static jakarta.interceptor.api;
+    requires static jakarta.interceptor;
     requires static io.helidon.config;
     requires static io.helidon.config.mp;
 

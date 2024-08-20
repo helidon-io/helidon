@@ -27,7 +27,7 @@ module io.helidon.integrations.micronaut.cdi {
 
     requires jakarta.cdi;
     requires jakarta.inject;
-    requires jakarta.interceptor.api;
+    requires jakarta.interceptor;
 
     requires microprofile.config.api;
 

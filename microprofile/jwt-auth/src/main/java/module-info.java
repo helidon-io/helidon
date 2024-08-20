@@ -25,6 +25,7 @@ module io.helidon.microprofile.jwt.auth {
 
     requires jakarta.cdi;
     requires jakarta.inject;
+    requires jakarta.interceptor;
     requires jakarta.ws.rs;
     requires microprofile.config.api;
     requires transitive microprofile.jwt.auth.api;

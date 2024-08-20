@@ -27,7 +27,7 @@ module io.helidon.integrations.microstream.cdi {
     requires io.helidon.integrations.microstream.cache;
     requires transitive jakarta.cdi;
     requires transitive jakarta.inject;
-    requires jakarta.interceptor.api;
+    requires jakarta.interceptor;
     requires jakarta.annotation;
     requires microstream.base;
     requires microstream.cache;

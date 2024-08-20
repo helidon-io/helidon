@@ -29,7 +29,7 @@ module io.helidon.microprofile.openapi {
     requires microprofile.config.api;
     requires io.helidon.microprofile.server;
     requires io.helidon.openapi;
-    requires jakarta.interceptor.api;
+    requires jakarta.interceptor;
     requires transitive microprofile.openapi.api;
 
     requires org.jboss.jandex;

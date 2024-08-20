@@ -25,7 +25,7 @@ module io.helidon.microprofile.messaging {
     requires static jakarta.cdi;
     requires static jakarta.inject;
     requires static jakarta.activation;
-    requires jakarta.interceptor.api;
+    requires jakarta.interceptor;
     requires io.helidon.config;
     requires io.helidon.config.mp;
     requires io.helidon.microprofile.config;
