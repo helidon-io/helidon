@@ -50,6 +50,7 @@ import io.helidon.codegen.classmodel.Javadoc;
 import io.helidon.codegen.classmodel.Method;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
+import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.builder.codegen.Types.COMMON_CONFIG;
 import static io.helidon.codegen.CodegenUtil.capitalize;
@@ -94,14 +95,16 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
     private final String collector;
     private final Optional<String> configMapper;
 
-    TypeHandlerCollection(String name,
+    TypeHandlerCollection(TypeName blueprintType,
+                          TypedElementInfo annotatedMethod,
+                          String name,
                           String getterName,
                           String setterName,
                           TypeName declaredType,
                           TypeName collectionType,
                           String collector,
                           Optional<String> configMapper) {
-        super(name, getterName, setterName, declaredType);
+        super(blueprintType, annotatedMethod, name, getterName, setterName, declaredType);
         this.collectionType = collectionType;
         this.collectionImplType = collectionImplType(collectionType);
         this.collector = collector;
