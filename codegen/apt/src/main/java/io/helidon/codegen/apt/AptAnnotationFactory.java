@@ -17,15 +17,10 @@
 package io.helidon.codegen.apt;
 
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
-import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.util.Elements;
 
@@ -35,32 +30,9 @@ import io.helidon.common.types.TypeName;
 /**
  * Factory for annotations.
  */
+@SuppressWarnings("removal")
 final class AptAnnotationFactory {
     private AptAnnotationFactory() {
-    }
-
-    /**
-     * Creates a set of annotations using annotation processor.
-     *
-     * @param annoMirrors the annotation type mirrors
-     * @param elements annotation processing element utils
-     * @return the annotation value set
-     */
-    public static Set<Annotation> createAnnotations(List<? extends AnnotationMirror> annoMirrors, Elements elements) {
-        return annoMirrors.stream()
-                .map(it -> createAnnotation(it, elements))
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-    }
-
-    /**
-     * Creates a set of annotations based using annotation processor.
-     *
-     * @param type the enclosing/owing type element
-     * @param elements annotation processing element utils
-     * @return the annotation value set
-     */
-    public static Set<Annotation> createAnnotations(Element type, Elements elements) {
-        return createAnnotations(type.getAnnotationMirrors(), elements);
     }
 
     /**

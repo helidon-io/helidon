@@ -85,11 +85,10 @@ public interface Annotated {
      * @see #findAnnotation(TypeName)
      */
     default Annotation annotation(TypeName annotationType) {
-        return findAnnotation(annotationType).orElseThrow(() -> new NoSuchElementException("Annotation " + annotationType + " "
-                                                                                                   + "is not present. Guard "
-                                                                                                   + "with hasAnnotation(), or "
-                                                                                                   + "use findAnnotation() "
-                                                                                                   + "instead"));
+        return findAnnotation(annotationType)
+                .orElseThrow(() -> new NoSuchElementException("Annotation " + annotationType + " is not present. "
+                                                                      + "Guard with hasAnnotation(), "
+                                                                      + "or use findAnnotation() instead"));
     }
 
     /**
