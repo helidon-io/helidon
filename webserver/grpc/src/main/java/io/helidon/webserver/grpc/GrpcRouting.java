@@ -109,11 +109,11 @@ public class GrpcRouting implements Routing {
         return services;
     }
 
-    Grpc<?, ?> findRoute(HttpPrologue prologue) {
+    GrpcRouteHandler<?, ?> findRoute(HttpPrologue prologue) {
         for (GrpcRoute route : routes) {
             PathMatchers.MatchResult accepts = route.accepts(prologue);
             if (accepts.accepted()) {
-                return route.toGrpc(prologue);
+                return route.handler(prologue);
             }
         }
 
@@ -219,7 +219,7 @@ public class GrpcRouting implements Routing {
                                           String serviceName,
                                           String methodName,
                                           ServerCalls.UnaryMethod<ReqT, ResT> method) {
-            return route(Grpc.unary(proto, serviceName, methodName, method));
+            return route(GrpcRouteHandler.unary(proto, serviceName, methodName, method));
         }
 
         /**
@@ -237,7 +237,7 @@ public class GrpcRouting implements Routing {
                                          String serviceName,
                                          String methodName,
                                          ServerCalls.BidiStreamingMethod<ReqT, ResT> method) {
-            return route(Grpc.bidi(proto, serviceName, methodName, method));
+            return route(GrpcRouteHandler.bidi(proto, serviceName, methodName, method));
         }
 
         /**
@@ -255,7 +255,7 @@ public class GrpcRouting implements Routing {
                                                  String serviceName,
                                                  String methodName,
                                                  ServerCalls.ServerStreamingMethod<ReqT, ResT> method) {
-            return route(Grpc.serverStream(proto, serviceName, methodName, method));
+            return route(GrpcRouteHandler.serverStream(proto, serviceName, methodName, method));
         }
 
         /**
@@ -273,7 +273,7 @@ public class GrpcRouting implements Routing {
                                                  String serviceName,
                                                  String methodName,
                                                  ServerCalls.ClientStreamingMethod<ReqT, ResT> method) {
-            return route(Grpc.clientStream(proto, serviceName, methodName, method));
+            return route(GrpcRouteHandler.clientStream(proto, serviceName, methodName, method));
         }
 
         /**
@@ -285,7 +285,7 @@ public class GrpcRouting implements Routing {
          */
         public Builder service(Descriptors.FileDescriptor proto, BindableService service) {
             for (ServerMethodDefinition<?, ?> method : service.bindService().getMethods()) {
-                route(Grpc.methodDefinition(method, proto));
+                route(GrpcRouteHandler.methodDefinition(method, proto));
             }
             return this;
         }
@@ -298,7 +298,7 @@ public class GrpcRouting implements Routing {
          */
         public Builder service(ServerServiceDefinition service) {
             for (ServerMethodDefinition<?, ?> method : service.getMethods()) {
-                route(Grpc.methodDefinition(method, null));
+                route(GrpcRouteHandler.methodDefinition(method, null));
             }
             return this;
         }

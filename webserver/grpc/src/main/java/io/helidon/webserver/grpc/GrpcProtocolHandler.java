@@ -80,7 +80,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private final int streamId;
     private final Http2Settings serverSettings;
     private final Http2Settings clientSettings;
-    private final Grpc<REQ, RES> route;
+    private final GrpcRouteHandler<REQ, RES> route;
     private final AtomicInteger numMessages = new AtomicInteger();
     private final LinkedBlockingQueue<REQ> listenerQueue = new LinkedBlockingQueue<>();
     private final StreamFlowControl flowControl;
@@ -99,7 +99,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                         Http2Settings clientSettings,
                         StreamFlowControl flowControl,
                         Http2StreamState currentStreamState,
-                        Grpc<REQ, RES> route) {
+                        GrpcRouteHandler<REQ, RES> route) {
         this.prologue = prologue;
         this.headers = headers;
         this.streamWriter = streamWriter;
