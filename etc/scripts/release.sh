@@ -127,15 +127,6 @@ update_version(){
         mv ${pom}.tmp ${pom}
     done
 
-    # Hack to update helidon.version in build.gradle files
-    for bfile in `egrep "helidonversion = .*" -r . --include build.gradle | cut -d ':' -f 1 | sort | uniq `
-    do
-        cat ${bfile} | \
-            sed -e s@'helidonversion = .*'@"helidonversion = \'${FULL_VERSION}\'"@g \
-            > ${bfile}.tmp
-        mv ${bfile}.tmp ${bfile}
-    done
-
     # Invoke prepare hook
     if [ -n "${PREPARE_HOOKS}" ]; then
         for prepare_hook in ${PREPARE_HOOKS} ; do
