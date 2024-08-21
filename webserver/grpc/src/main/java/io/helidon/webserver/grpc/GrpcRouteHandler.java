@@ -29,77 +29,77 @@ import io.grpc.ServerMethodDefinition;
 import io.grpc.ServerServiceDefinition;
 import io.grpc.stub.ServerCalls;
 
-class Grpc<ReqT, ResT> extends GrpcRoute {
+class GrpcRouteHandler<ReqT, ResT> extends GrpcRoute {
 
     private final MethodDescriptor<ReqT, ResT> method;
     private final PathMatcher pathMatcher;
     private final ServerCallHandler<ReqT, ResT> callHandler;
 
-    private Grpc(MethodDescriptor<ReqT, ResT> method,
-                 PathMatcher pathMatcher,
-                 ServerCallHandler<ReqT, ResT> callHandler) {
+    private GrpcRouteHandler(MethodDescriptor<ReqT, ResT> method,
+                             PathMatcher pathMatcher,
+                             ServerCallHandler<ReqT, ResT> callHandler) {
         this.method = method;
         this.pathMatcher = pathMatcher;
         this.callHandler = callHandler;
     }
 
-    static <ReqT, ResT> Grpc<ReqT, ResT> unary(Descriptors.FileDescriptor proto,
-                                               String serviceName,
-                                               String methodName,
-                                               ServerCalls.UnaryMethod<ReqT, ResT> method) {
+    static <ReqT, ResT> GrpcRouteHandler<ReqT, ResT> unary(Descriptors.FileDescriptor proto,
+                                                           String serviceName,
+                                                           String methodName,
+                                                           ServerCalls.UnaryMethod<ReqT, ResT> method) {
         return grpc(proto, serviceName, methodName, ServerCalls.asyncUnaryCall(method));
     }
 
-    static <ReqT, ResT> Grpc<ReqT, ResT> bidi(Descriptors.FileDescriptor proto,
-                                              String serviceName,
-                                              String methodName,
-                                              ServerCalls.BidiStreamingMethod<ReqT, ResT> method) {
+    static <ReqT, ResT> GrpcRouteHandler<ReqT, ResT> bidi(Descriptors.FileDescriptor proto,
+                                                          String serviceName,
+                                                          String methodName,
+                                                          ServerCalls.BidiStreamingMethod<ReqT, ResT> method) {
         return grpc(proto, serviceName, methodName, ServerCalls.asyncBidiStreamingCall(method));
     }
 
-    static <ReqT, ResT> Grpc<ReqT, ResT> serverStream(Descriptors.FileDescriptor proto,
-                                                      String serviceName,
-                                                      String methodName,
-                                                      ServerCalls.ServerStreamingMethod<ReqT, ResT> method) {
+    static <ReqT, ResT> GrpcRouteHandler<ReqT, ResT> serverStream(Descriptors.FileDescriptor proto,
+                                                                  String serviceName,
+                                                                  String methodName,
+                                                                  ServerCalls.ServerStreamingMethod<ReqT, ResT> method) {
         return grpc(proto, serviceName, methodName, ServerCalls.asyncServerStreamingCall(method));
     }
 
-    static <ReqT, ResT> Grpc<ReqT, ResT> clientStream(Descriptors.FileDescriptor proto,
-                                                      String serviceName,
-                                                      String methodName,
-                                                      ServerCalls.ClientStreamingMethod<ReqT, ResT> method) {
+    static <ReqT, ResT> GrpcRouteHandler<ReqT, ResT> clientStream(Descriptors.FileDescriptor proto,
+                                                                  String serviceName,
+                                                                  String methodName,
+                                                                  ServerCalls.ClientStreamingMethod<ReqT, ResT> method) {
         return grpc(proto, serviceName, methodName, ServerCalls.asyncClientStreamingCall(method));
     }
 
     /**
-     * Create a {@link io.helidon.webserver.grpc.Grpc gRPC route} from a {@link ServerMethodDefinition}.
+     * Create a {@link GrpcRouteHandler gRPC route} from a {@link ServerMethodDefinition}.
      *
      * @param definition the {@link ServerMethodDefinition} representing the method to execute
      * @param proto an optional protocol buffer {@link com.google.protobuf.Descriptors.FileDescriptor}
      * containing the service definition
      * @param <ReqT> the request type
      * @param <ResT> the response type
-     * @return a {@link io.helidon.webserver.grpc.Grpc gRPC route} created
+     * @return a {@link GrpcRouteHandler gRPC route} created
      * from the {@link ServerMethodDefinition}
      */
-    static <ReqT, ResT> Grpc<ReqT, ResT> methodDefinition(ServerMethodDefinition<ReqT, ResT> definition,
-                                                          Descriptors.FileDescriptor proto) {
+    static <ReqT, ResT> GrpcRouteHandler<ReqT, ResT> methodDefinition(ServerMethodDefinition<ReqT, ResT> definition,
+                                                                      Descriptors.FileDescriptor proto) {
         return grpc(definition.getMethodDescriptor(), definition.getServerCallHandler(), proto);
     }
 
     @SuppressWarnings("unchecked")
-    public static <ReqT, ResT> Grpc<ReqT, ResT> bindableMethod(BindableService service,
-                                                               ServerMethodDefinition<?, ?> method) {
+    public static <ReqT, ResT> GrpcRouteHandler<ReqT, ResT> bindableMethod(BindableService service,
+                                                                           ServerMethodDefinition<?, ?> method) {
         ServerServiceDefinition definition = service.bindService();
         String path = definition.getServiceDescriptor().getName() + "/"
                 + method.getMethodDescriptor().getBareMethodName();
-        return new Grpc<>((MethodDescriptor<ReqT, ResT>) method.getMethodDescriptor(),
-                PathMatchers.exact(path),
-                (ServerCallHandler<ReqT, ResT>) method.getServerCallHandler());
+        return new GrpcRouteHandler<>((MethodDescriptor<ReqT, ResT>) method.getMethodDescriptor(),
+                                      PathMatchers.exact(path),
+                                      (ServerCallHandler<ReqT, ResT>) method.getServerCallHandler());
     }
 
     @Override
-    Grpc<?, ?> toGrpc(HttpPrologue grpcPrologue) {
+    GrpcRouteHandler<?, ?> handler(HttpPrologue grpcPrologue) {
         return this;
     }
 
@@ -115,10 +115,10 @@ class Grpc<ReqT, ResT> extends GrpcRoute {
         return callHandler;
     }
 
-    private static <ResT, ReqT> Grpc<ReqT, ResT> grpc(Descriptors.FileDescriptor proto,
-                                                      String serviceName,
-                                                      String methodName,
-                                                      ServerCallHandler<ReqT, ResT> callHandler) {
+    private static <ResT, ReqT> GrpcRouteHandler<ReqT, ResT> grpc(Descriptors.FileDescriptor proto,
+                                                                  String serviceName,
+                                                                  String methodName,
+                                                                  ServerCallHandler<ReqT, ResT> callHandler) {
         Descriptors.ServiceDescriptor svc = proto.findServiceByName(serviceName);
         Descriptors.MethodDescriptor mtd = svc.findMethodByName(methodName);
 
@@ -140,12 +140,12 @@ class Grpc<ReqT, ResT> extends GrpcRoute {
                 .setType(getMethodType(mtd)).setFullMethodName(path).setRequestMarshaller(reqMarshaller)
                 .setResponseMarshaller(resMarshaller).setSampledToLocalTracing(true);
 
-        return new Grpc<>(grpcDesc.build(), PathMatchers.exact(path), callHandler);
+        return new GrpcRouteHandler<>(grpcDesc.build(), PathMatchers.exact(path), callHandler);
     }
 
 
     /**
-     * Create a {@link io.helidon.webserver.grpc.Grpc gRPC route} from a {@link MethodDescriptor}.
+     * Create a {@link GrpcRouteHandler gRPC route} from a {@link MethodDescriptor}.
      *
      * @param grpcDesc the {@link MethodDescriptor} describing the method to execute
      * @param callHandler the {@link io.grpc.ServerCallHandler} that will execute the method
@@ -153,13 +153,13 @@ class Grpc<ReqT, ResT> extends GrpcRoute {
      * the service definition
      * @param <ReqT> the request type
      * @param <ResT> the response type
-     * @return a {@link io.helidon.webserver.grpc.Grpc gRPC route} created
+     * @return a {@link GrpcRouteHandler gRPC route} created
      * from the {@link io.grpc.ServerMethodDefinition}
      */
-    private static <ResT, ReqT> Grpc<ReqT, ResT> grpc(MethodDescriptor<ReqT, ResT> grpcDesc,
-                                                      ServerCallHandler<ReqT, ResT> callHandler,
-                                                      Descriptors.FileDescriptor proto) {
-        return new Grpc<>(grpcDesc, PathMatchers.exact(grpcDesc.getFullMethodName()), callHandler);
+    private static <ResT, ReqT> GrpcRouteHandler<ReqT, ResT> grpc(MethodDescriptor<ReqT, ResT> grpcDesc,
+                                                                  ServerCallHandler<ReqT, ResT> callHandler,
+                                                                  Descriptors.FileDescriptor proto) {
+        return new GrpcRouteHandler<>(grpcDesc, PathMatchers.exact(grpcDesc.getFullMethodName()), callHandler);
     }
 
     private static String getClassName(Descriptors.Descriptor descriptor) {
@@ -173,7 +173,7 @@ class Grpc<ReqT, ResT> extends GrpcRoute {
     @SuppressWarnings("unchecked")
     private static <T> Class<T> load(String className) {
         try {
-            return (Class<T>) Grpc.class.getClassLoader().loadClass(className);
+            return (Class<T>) GrpcRouteHandler.class.getClassLoader().loadClass(className);
         } catch (ClassNotFoundException e) {
             throw new IllegalArgumentException("Failed to load class \"" + className + "\" for grpc", e);
         }
