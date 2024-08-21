@@ -92,6 +92,10 @@ class ConfigMetadataCodegenExtension implements CodegenExtension {
     }
 
     private void storeMetadata() {
+        if (moduleTypes.isEmpty()) {
+            // only store if anything is available
+            return;
+        }
         List<Hson.Struct> root = new ArrayList<>();
 
         for (var module : moduleTypes.entrySet()) {

@@ -84,7 +84,7 @@ final class ContentSupport {
 
         Set<Modifier> modifiers = element.elementModifiers();
         for (Modifier modifier : modifiers) {
-            contentBuilder.addContent(".addModifier(")
+            contentBuilder.addContent(".addElementModifier(")
                     .addContent(MODIFIER)
                     .addContent(".")
                     .addContent(modifier.name())

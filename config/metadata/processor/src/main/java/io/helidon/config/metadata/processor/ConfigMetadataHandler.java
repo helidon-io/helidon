@@ -49,7 +49,7 @@ import static io.helidon.config.metadata.processor.UsedTypes.META_CONFIGURED;
 /*
  * This class is separated so javac correctly reports possible errors.
  */
-class ConfigMetadataHandler {
+class  ConfigMetadataHandler {
     /*
      * Configuration metadata file location.
      */
@@ -177,6 +177,9 @@ class ConfigMetadataHandler {
     }
 
     private void storeMetadata() {
+        if (moduleTypes.isEmpty()) {
+            return;
+        }
         try (PrintWriter metaWriter = new PrintWriter(filer.createResource(StandardLocation.CLASS_OUTPUT,
                                                                            "",
                                                                            META_FILE)
