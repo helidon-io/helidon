@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 package io.helidon.microprofile.cors;
 
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -147,7 +149,17 @@ class CorsSupportMp extends CorsSupportBase<ContainerRequestContext, Response, C
         @Override
         public String toString() {
             return String.format("RequestAdapterMp{path=%s, method=%s, headers=%s}", path(), method(),
-                    requestContext.getHeaders());
+                    filteredHeaders());
+        }
+
+        private Map<String, List<String>> filteredHeaders() {
+            MultivaluedMap<String, String> result = new MultivaluedHashMap<>();
+            for (Map.Entry<String, List<String>> header : requestContext.getHeaders().entrySet()) {
+                if (HEADERS_FOR_CORS_DIAGNOSTICS.contains(header.getKey().toLowerCase(Locale.getDefault()))) {
+                    result.put(header.getKey(), header.getValue());
+                }
+            }
+            return result;
         }
     }
 

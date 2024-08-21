@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.webserver.cors;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -270,6 +271,13 @@ public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B
      * @param <T> type of the request wrapped by the adapter
      */
     protected interface RequestAdapter<T> {
+
+        /**
+         * Header names useful for CORS diagnostic logging messages.
+         */
+        Set<String> HEADERS_FOR_CORS_DIAGNOSTICS = Set.of("origin",
+                                                          "host",
+                                                          "access-control-request-method");
 
         /**
          *

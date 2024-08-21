@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,10 @@
  */
 package io.helidon.webserver.cors;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.webserver.ServerRequest;
@@ -68,6 +71,16 @@ class RequestAdapterSe implements CorsSupportBase.RequestAdapter<ServerRequest> 
 
     @Override
     public String toString() {
-        return String.format("RequestAdapterSe{path=%s, method=%s, headers=%s}", path(), method(), request.headers().toMap());
+        return String.format("RequestAdapterSe{path=%s, method=%s, headers=%s}", path(), method(), headersDisplay());
+    }
+
+    private Map<String, List<String>> headersDisplay() {
+        Map<String, List<String>> result = new HashMap<>();
+        for (Map.Entry<String, List<String>> header : request.headers().toMap().entrySet()) {
+            if (HEADERS_FOR_CORS_DIAGNOSTICS.contains(header.getKey().toLowerCase(Locale.getDefault()))) {
+                result.put(header.getKey(), header.getValue());
+            }
+        }
+        return result;
     }
 }
