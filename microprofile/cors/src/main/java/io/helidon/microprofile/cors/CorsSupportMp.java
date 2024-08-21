@@ -17,7 +17,10 @@
 package io.helidon.microprofile.cors;
 
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
@@ -103,6 +106,10 @@ class CorsSupportMp extends CorsSupportBase<ContainerRequestContext, Response, C
 
     static class RequestAdapterMp implements CorsRequestAdapter<ContainerRequestContext> {
 
+        private static final Set<String> HEADERS_FOR_CORS_DIAGNOSTICS = Set.of("origin",
+                                                                               "host",
+                                                                               "access-control-request-method");
+
         private final ContainerRequestContext requestContext;
         private final LazyValue<UriInfo> uriInfo;
 
@@ -155,7 +162,17 @@ class CorsSupportMp extends CorsSupportBase<ContainerRequestContext, Response, C
         @Override
         public String toString() {
             return String.format("RequestAdapterMp{path=%s, method=%s, headers=%s}", path(), method(),
-                    requestContext.getHeaders());
+                    filteredHeaders());
+        }
+
+        private Map<String, List<String>> filteredHeaders() {
+            MultivaluedMap<String, String> result = new MultivaluedHashMap<>();
+            for (Map.Entry<String, List<String>> header : requestContext.getHeaders().entrySet()) {
+                if (HEADERS_FOR_CORS_DIAGNOSTICS.contains(header.getKey().toLowerCase(Locale.getDefault()))) {
+                    result.put(header.getKey(), header.getValue());
+                }
+            }
+            return result;
         }
     }
 
