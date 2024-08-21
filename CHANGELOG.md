@@ -9,6 +9,30 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 
 For Helidon 3.x releases please see [Helidon 3.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-3.x/CHANGELOG.md)
 
+## [2.6.8]
+
+This is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
+
+### CHANGES
+
+- Config: fix getOrdinal for system property and environment variable config sources [8753](https://github.com/helidon-io/helidon/pull/8753)
+- Cors: Remove headers from request adapter logging output that do not affect CORS decision-making [9175](https://github.com/helidon-io/helidon/pull/9175)
+- OpenAPI: Fix bug with empty Accept header (#7536) [8696](https://github.com/helidon-io/helidon/pull/8696)
+- Security: Oidc feature is not failing if not configured. [8626](https://github.com/helidon-io/helidon/pull/8626)
+- WebClient: WebClient should have a mode that is resilient to bad media/content types [9060](https://github.com/helidon-io/helidon/pull/9060)
+- WebServer: Improves handling of invalid Accept types  [8688](https://github.com/helidon-io/helidon/pull/8688)
+- native-image: resolve native-image warnings after Netty upgrade [7087](https://github.com/helidon-io/helidon/pull/7087)
+- Dependencies: Address additional issues related to Weld upgrade [7288](https://github.com/helidon-io/helidon/pull/7288)
+- Dependencies: Further removal of dependencies on jakarta.activation-api [8657](https://github.com/helidon-io/helidon/pull/8657)
+- Dependencies: Upgrade GraphQL Java to 22.x [9134](https://github.com/helidon-io/helidon/pull/9134)
+- Dependencies: Upgrade OCI SDK [9169](https://github.com/helidon-io/helidon/pull/9169)
+- Dependencies: Upgrade classgraph to 4.8.165 [8905](https://github.com/helidon-io/helidon/pull/8905)
+- Dependencies: Upgrade kafka-clients to 3.6.2 [8664](https://github.com/helidon-io/helidon/pull/8664)
+- Examples: Fix wrong example for Config.onChange (#8596) [8597](https://github.com/helidon-io/helidon/pull/8597)
+- Examples: examples removal (moved to helidon.io/helidon-examples) [8676](https://github.com/helidon-io/helidon/pull/8676)
+- Tests: Add classesDirectory to failsafe plugin configuration [9067](https://github.com/helidon-io/helidon/pull/9067)
+- Tests: Helidon Arquillian module should only depend on MP core #7613 [8179](https://github.com/helidon-io/helidon/pull/8179)
+
 ## [2.6.7]
 
 This is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
@@ -2234,6 +2258,7 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
+[2.6.8]: https://github.com/oracle/helidon/compare/2.6.7...2.6.8
 [2.6.7]: https://github.com/oracle/helidon/compare/2.6.6...2.6.7
 [2.6.6]: https://github.com/oracle/helidon/compare/2.6.5...2.6.6
 [2.6.5]: https://github.com/oracle/helidon/compare/2.6.4...2.6.5
