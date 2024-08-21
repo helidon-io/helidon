@@ -86,7 +86,10 @@ import static java.util.function.Predicate.not;
  *     comma-delimited, and each token will be treated as a fully qualified type name to signal that the type should be
  *     not be processed.</li>
  * </ul>
+ *
+ * @deprecated replaced with {@code helidon-integrations-oci} module
  */
+@Deprecated(forRemoval = true, since = "4.1.0")
 public class OciInjectionProcessorObserver implements InjectionAnnotationProcessorObserver {
     static final String OCI_ROOT_PACKAGE_NAME_PREFIX = "com.oracle.bmc.";
 
