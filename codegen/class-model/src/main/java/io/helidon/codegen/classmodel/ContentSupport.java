@@ -23,6 +23,7 @@ import java.util.Set;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
+import io.helidon.common.types.EnumValue;
 import io.helidon.common.types.Modifier;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -164,7 +165,9 @@ final class ContentSupport {
         case Class<?> value -> contentBuilder.addContentCreate(TypeName.create(value));
         case TypeName value -> contentBuilder.addContentCreate(value);
         case Annotation value -> contentBuilder.addContentCreate(value);
-        case Enum<?> value -> toEnumValue(contentBuilder, value);
+        case Enum<?> value -> toEnumValue(contentBuilder,
+                                          EnumValue.create(TypeName.create(value.getDeclaringClass()), value.name()));
+        case EnumValue value -> toEnumValue(contentBuilder, value);
         case List<?> values -> toListValues(contentBuilder, values);
         default -> throw new IllegalStateException("Unexpected annotation value type " + objectValue.getClass()
                 .getName() + ": " + objectValue);
@@ -185,9 +188,17 @@ final class ContentSupport {
         contentBuilder.addContent(")");
     }
 
-    private static void toEnumValue(ContentBuilder<?> contentBuilder, Enum<?> enumValue) {
-        contentBuilder.addContent(enumValue.getDeclaringClass())
-                .addContent(".")
-                .addContent(enumValue.name());
+    private static void toEnumValue(ContentBuilder<?> contentBuilder, EnumValue enumValue) {
+        // it would be easier to just use Enum.VALUE, but annotations and their dependencies
+        // may not be on runtime classpath, so we have to work around it
+
+        // EnumValue.create(TypeName.create(...), "VALUE")
+        contentBuilder.addContent(EnumValue.class)
+                .addContent(".create(")
+                .addContentCreate(enumValue.type())
+                .addContent(",")
+                .addContent("\"")
+                .addContent(enumValue.name())
+                .addContent("\")");
     }
 }

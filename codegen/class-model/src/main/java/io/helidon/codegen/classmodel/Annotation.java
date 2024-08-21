@@ -97,7 +97,7 @@ public final class Annotation extends CommonComponent {
             if (parameters.size() == 1) {
                 AnnotationParameter parameter = parameters.get(0);
                 if (parameter.name().equals("value")) {
-                    writer.write(parameter.value());
+                    parameter.writeValue(writer, imports);
                 } else {
                     parameter.writeComponent(writer, declaredTokens, imports, classType);
                 }
