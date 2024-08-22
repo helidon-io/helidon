@@ -9,6 +9,30 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [3.2.9]
+
+This is a bugfix release of Helidon and is recommended for all users of Helidon 3.  Helidon 3 requires Java 17 or newer.
+
+### CHANGES
+
+- CORS: Remove headers that do not affect CORS decision-making from request adapter logging output [9176](https://github.com/helidon-io/helidon/pull/9176)
+- Config: fix getOrdinal for system property and environment variable config sources [8752](https://github.com/helidon-io/helidon/pull/8752)
+- Native-image: Fixed native image build for webserver and GraalVM 17.0.12+8.1 [9027](https://github.com/helidon-io/helidon/pull/9027)
+- WebClient: WebClient should have a mode that is resilient to bad media/content types [9040](https://github.com/helidon-io/helidon/pull/9040)
+- Dependencies: Bump up cron-utils #9124 [9153](https://github.com/helidon-io/helidon/pull/9153)
+- Dependencies: Upgrade GraphQL Java to 22.x [9135](https://github.com/helidon-io/helidon/pull/9135)
+- Dependencies: Upgrade Jersey to 3.0.14 [9003](https://github.com/helidon-io/helidon/pull/9003)
+- Dependencies: Upgrade glassgraph to 4.8.165 [8904](https://github.com/helidon-io/helidon/pull/8904)
+- Dependencies: Upgrade hibernate-validator to 7.0.5 and Jakarta EE validation-api to 3.0.2 [9070](https://github.com/helidon-io/helidon/pull/9070)
+- Dependencies: Upgrade oci sdk to 3.46.1 [9177](https://github.com/helidon-io/helidon/pull/9177)
+- Dependencies: Upgrade snakeyaml to 2.2 [9071](https://github.com/helidon-io/helidon/pull/9071)
+- Docs: Clarify description of config profiles [9187](https://github.com/helidon-io/helidon/pull/9187)
+- Docs: Fix wrong description for bean validation annotations (#8667) [8681](https://github.com/helidon-io/helidon/pull/8681)
+- Docs: Fixes links in documentation to point to `helidon-examples` repository. [9093](https://github.com/helidon-io/helidon/pull/9093)
+- Test: Add classesDirectory to failsafe plugin configuration [9066](https://github.com/helidon-io/helidon/pull/9066)
+- Test: Helidon Arquillian module should only depend on MP core #7614 [8178](https://github.com/helidon-io/helidon/pull/8178)
+- Test: Messaging TCK runs tests twice #7584 [8668](https://github.com/helidon-io/helidon/pull/8668)
+
 ## [3.2.8]
 
 This is a bugfix release of Helidon and is recommended for all users of Helidon 3.  Helidon 3 requires Java 17 or newer.
@@ -907,6 +931,7 @@ Notable changes:
 - Examples: Update bare-mp archetype to use microprofile-core [3795](https://github.com/oracle/helidon/pull/3795)
 
 
+[3.2.9]: https://github.com/helidon-io/helidon/compare/3.2.8...3.2.9
 [3.2.8]: https://github.com/helidon-io/helidon/compare/3.2.7...3.2.8
 [3.2.7]: https://github.com/helidon-io/helidon/compare/3.2.6...3.2.7
 [3.2.6]: https://github.com/helidon-io/helidon/compare/3.2.5...3.2.6
