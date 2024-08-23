@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -297,6 +297,16 @@ public interface SocketConfiguration {
     }
 
     /**
+     * Timeout millis after which any idle connection will be automatically closed
+     * by the server.
+     *
+     * @return idle connection timeout in seconds
+     */
+    default int connectionIdleTimeout() {
+        return 0;
+    }
+
+    /**
      * Types of discovery of frontend uri. Defaults to {@link #HOST} when frontend uri discovery is disabled (uses only Host
      * header and information about current request to determine scheme, host, port, and path).
      * Defaults to {@link #FORWARDED} when discovery is enabled. Can be explicitly configured on socket configuration builder.
@@ -588,6 +598,15 @@ public interface SocketConfiguration {
         B trustedProxies(AllowList trustedProxies);
 
         /**
+         * Sets the number of millis after which an idle connection will be automatically
+         * closed by the server.
+         *
+         * @param seconds time in seconds
+         * @return updated builder
+         */
+        B connectionIdleTimeout(int seconds);
+
+        /**
          * Update this socket configuration from a {@link io.helidon.config.Config}.
          *
          * @param config configuration on the node of a socket
@@ -639,6 +658,9 @@ public interface SocketConfiguration {
             config.get("requested-uri-discovery.trusted-proxies").as(AllowList::create)
                     .ifPresent(this::trustedProxies);
 
+            // idle connections
+            config.get("connection-idle-timeout").asInt().ifPresent(this::connectionIdleTimeout);
+
             return (B) this;
         }
     }
@@ -683,6 +705,7 @@ public interface SocketConfiguration {
         private final List<RequestedUriDiscoveryType> requestedUriDiscoveryTypes = new ArrayList<>();
         private Boolean requestedUriDiscoveryEnabled;
         private AllowList trustedProxies;
+        private int connectionIdleTimeout;
 
         private Builder() {
         }
@@ -977,6 +1000,7 @@ public interface SocketConfiguration {
             config.get("enable-compression").asBoolean().ifPresent(this::enableCompression);
             config.get("backpressure-buffer-size").asLong().ifPresent(this::backpressureBufferSize);
             config.get("backpressure-strategy").as(BackpressureStrategy.class).ifPresent(this::backpressureStrategy);
+            config.get("connection-idle-timeout").asInt().ifPresent(this::connectionIdleTimeout);
 
             return this;
         }
@@ -997,6 +1021,12 @@ public interface SocketConfiguration {
         @Override
         public Builder requestedUriDiscoveryEnabled(boolean enabled) {
             this.requestedUriDiscoveryEnabled = enabled;
+            return this;
+        }
+
+        @Override
+        public Builder connectionIdleTimeout(int seconds) {
+            this.connectionIdleTimeout = seconds;
             return this;
         }
 
@@ -1089,6 +1119,10 @@ public interface SocketConfiguration {
 
         boolean requestedUriDiscoveryEnabled() {
             return requestedUriDiscoveryEnabled;
+        }
+
+        int connectionIdleTimeout() {
+            return connectionIdleTimeout;
         }
 
         /**

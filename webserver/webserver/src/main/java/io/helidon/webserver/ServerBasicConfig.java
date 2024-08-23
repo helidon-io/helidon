@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -208,6 +208,11 @@ class ServerBasicConfig implements ServerConfiguration {
         return isRequestedUriDiscoveryEnabled;
     }
 
+    @Override
+    public int connectionIdleTimeout() {
+        return socketConfig.connectionIdleTimeout();
+    }
+
     static class SocketConfig implements SocketConfiguration {
 
         private final int port;
@@ -232,6 +237,7 @@ class ServerBasicConfig implements ServerConfiguration {
         private final List<RequestedUriDiscoveryType> requestedUriDiscoveryTypes;
         private final AllowList trustedProxies;
         private final boolean isRequestedUriDiscoveryEnabled;
+        private final int connectionIdleTimeout;
 
         /**
          * Creates new instance.
@@ -260,6 +266,7 @@ class ServerBasicConfig implements ServerConfiguration {
             this.requestedUriDiscoveryTypes = builder.requestedUriDiscoveryTypes();
             this.trustedProxies = builder.trustedProxies();
             this.isRequestedUriDiscoveryEnabled = builder.requestedUriDiscoveryEnabled();
+            this.connectionIdleTimeout = builder.connectionIdleTimeout();
         }
 
         @Override
@@ -394,6 +401,11 @@ class ServerBasicConfig implements ServerConfiguration {
         @Override
         public boolean requestedUriDiscoveryEnabled() {
             return isRequestedUriDiscoveryEnabled;
+        }
+
+        @Override
+        public int connectionIdleTimeout() {
+            return connectionIdleTimeout;
         }
     }
 }
