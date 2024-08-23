@@ -297,7 +297,7 @@ public interface SocketConfiguration {
     }
 
     /**
-     * Timeout millis after which any idle connection will be automatically closed
+     * Timeout seconds after which any idle connection will be automatically closed
      * by the server.
      *
      * @return idle connection timeout in seconds
@@ -598,7 +598,7 @@ public interface SocketConfiguration {
         B trustedProxies(AllowList trustedProxies);
 
         /**
-         * Sets the number of millis after which an idle connection will be automatically
+         * Sets the number of seconds after which an idle connection will be automatically
          * closed by the server.
          *
          * @param seconds time in seconds

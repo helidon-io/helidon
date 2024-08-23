@@ -19,7 +19,6 @@ package io.helidon.webserver;
 import java.net.SocketException;
 import java.time.Duration;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
@@ -28,9 +27,9 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests support for idle connection timeouts.
@@ -84,33 +83,26 @@ public class ConnectionIdleTest {
             String res = client.receive();
             assertThat(res, containsString("Hello World!"));
 
+            // second request while connection is active
+            client.request(Http.Method.GET,
+                           "/hello",
+                           null);
+            res = client.receive();
+            assertThat(res, containsString("Hello World!"));
+
             // wait for connection to time out due to inactivity
             Thread.sleep(2 * IDLE_TIMEOUT);
 
-            // now fail attempting to use connection again
-            assertEventuallyThrows(SocketException.class, () -> {
-                client.request(Http.Method.GET,
-                        "/hello",
-                        null);
-                client.receive();
-                return null;
-            }, 5 * IDLE_TIMEOUT);
-        }
-    }
-
-    private static void assertEventuallyThrows(Class<?> exc, Callable<?> runnable, long millis)
-            throws InterruptedException {
-        long start = System.currentTimeMillis();
-        do {
+            // try again and either get nothing or an exception
             try {
-                runnable.call();
-            } catch (Throwable t) {
-                if (t.getClass().equals(exc)) {
-                    return;
-                }
+                client.request(Http.Method.GET,
+                               "/hello",
+                               null);
+                res = client.receive();
+                assertThat(res, is(""));
+            } catch (SocketException e) {
+                // falls through as possible outcome
             }
-            Thread.sleep(millis / 3);
-        } while (System.currentTimeMillis() - start <= millis);
-        fail("Predicate failed after " + millis + " milliseconds");
+        }
     }
 }
