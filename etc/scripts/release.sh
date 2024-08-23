@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2024 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -125,15 +125,6 @@ update_version(){
             sed -e s@'<helidon.version>.*</helidon.version>'@"<helidon.version>${FULL_VERSION}</helidon.version>"@g \
             > ${pom}.tmp
         mv ${pom}.tmp ${pom}
-    done
-
-    # Hack to update helidon.version in build.gradle files
-    for bfile in `egrep "helidonversion = .*" -r . --include build.gradle | cut -d ':' -f 1 | sort | uniq `
-    do
-        cat ${bfile} | \
-            sed -e s@'helidonversion = .*'@"helidonversion = \'${FULL_VERSION}\'"@g \
-            > ${bfile}.tmp
-        mv ${bfile}.tmp ${bfile}
     done
 
     # Invoke prepare hook
