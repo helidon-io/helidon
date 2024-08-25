@@ -43,7 +43,7 @@ import org.junit.jupiter.api.extension.ParameterResolver;
  * <p>
  * This extension has the following features:
  * <ul>
- *     <li>Run constructor and every test class method within a custom {@link io.helidon.common.context.Context}</li>
+ *     <li>Resets {@code io.helidon.common.GlobalInstances} when the test is over</li>
  *     <li>Support configuration annotations to set up configuration before running the tests</li>
  *     <li>Support for injection service registry (if on classpath) to discover configuration</li>
  * </ul>
