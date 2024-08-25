@@ -54,7 +54,10 @@ class ConfigProvider implements Config {
                     .disableFilterServices()
                     .update(it -> configFilters.get()
                             .forEach(it::addFilter))
-                    .disableMapperServices()
+                    //.disableMapperServices()
+                    // cannot do this for now, removed ConfigMapperProvider from service loaded services, config does it on its
+                    // own
+                    // ObjectConfigMapper is before EnumMapper, and both are before essential and built-in
                     .update(it -> configMappers.get()
                             .forEach(it::addMapper))
                     .build();
