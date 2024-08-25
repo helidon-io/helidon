@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,37 @@ package io.helidon.metrics.providers.micrometer;
 
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.testing.junit5.TestJunitExtension;
 
+import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.Extension;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-public class MicrometerMetricsTestsJunitExtension implements Extension,
-                                                             BeforeAllCallback {
+public class MicrometerMetricsTestsJunitExtension extends TestJunitExtension implements Extension,
+                                                                                        BeforeAllCallback,
+                                                                                        AfterAllCallback {
 
-    static void clear() {
+    public MicrometerMetricsTestsJunitExtension() {
+    }
+
+    @Override
+    public void beforeAll(ExtensionContext extensionContext) {
+        super.beforeAll(extensionContext);
+        clear();
+    }
+
+    @Override
+    public void afterAll(ExtensionContext context) {
+        clear();
+        super.afterAll(context);
+    }
+
+    void clear() {
+        System.out.println("clear(): " + Contexts.context().map(Context::id).orElse("Unknown"));
 
         MetricsFactory.closeAll();
 
@@ -46,10 +67,5 @@ public class MicrometerMetricsTestsJunitExtension implements Extension,
                 throw new RuntimeException("Error awaiting clear-out of meter registries to finish", e);
             }
         }
-    }
-
-    @Override
-    public void beforeAll(ExtensionContext extensionContext) throws Exception {
-        clear();
     }
 }

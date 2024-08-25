@@ -20,7 +20,6 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
-import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.Timer;
 
 import org.junit.jupiter.api.BeforeAll;

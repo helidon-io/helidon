@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,18 +33,19 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.config.GlobalConfig;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
-import io.helidon.logging.common.LogConfig;
+import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.testing.TestConfig;
 import io.helidon.webserver.ListenerConfig;
 import io.helidon.webserver.Router;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.WebServerRegistryService;
 import io.helidon.webserver.testing.junit5.spi.ServerJunitExtension;
 
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.InvocationInterceptor;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
@@ -59,7 +60,6 @@ class HelidonServerJunitExtension extends JunitExtensionBase
         implements BeforeAllCallback,
                    AfterAllCallback,
                    AfterEachCallback,
-                   InvocationInterceptor,
                    ParameterResolver {
 
     private final Map<String, URI> uris = new ConcurrentHashMap<>();
@@ -73,7 +73,12 @@ class HelidonServerJunitExtension extends JunitExtensionBase
 
     @Override
     public void beforeAll(ExtensionContext context) {
-        LogConfig.configureRuntime();
+        super.beforeAll(context);
+
+        if (System.getProperty("helidon.config.profile") == null
+                && System.getProperty("config.profile") == null) {
+            System.setProperty("helidon.config.profile", "test");
+        }
 
         Class<?> testClass = context.getRequiredTestClass();
         super.testClass(testClass);
@@ -82,9 +87,12 @@ class HelidonServerJunitExtension extends JunitExtensionBase
             throw new IllegalStateException("Invalid test class for this extension: " + testClass);
         }
 
-        WebServerConfig.Builder builder = WebServer.builder()
-                .config(GlobalConfig.config().get("server"))
+        WebServerConfig.Builder builder = WebServer.builder();
+
+        builder.config(GlobalConfig.config().get("server"))
                 .host("localhost");
+
+        registrySetup(builder);
 
         extensions.forEach(it -> it.beforeAll(context));
         extensions.forEach(it -> it.updateServerBuilder(builder));
@@ -96,12 +104,16 @@ class HelidonServerJunitExtension extends JunitExtensionBase
         setupServer(builder);
         addRouting(builder);
 
-        server = builder.build().start();
+        server = builder
+                .build()
+                .start();
         if (server.hasTls()) {
             uris.put(DEFAULT_SOCKET_NAME, URI.create("https://localhost:" + server.port() + "/"));
         } else {
             uris.put(DEFAULT_SOCKET_NAME, URI.create("http://localhost:" + server.port() + "/"));
         }
+
+        TestConfig.set("test.server.port", String.valueOf(server.port()));
     }
 
     @Override
@@ -144,7 +156,10 @@ class HelidonServerJunitExtension extends JunitExtensionBase
         } else {
             context = server.context();
         }
-        return context.get(paramType).isPresent();
+        if (context.get(paramType).isPresent()) {
+            return true;
+        }
+        return super.supportsParameter(parameterContext, extensionContext);
     }
 
     @Override
@@ -172,9 +187,20 @@ class HelidonServerJunitExtension extends JunitExtensionBase
             context = server.context();
         }
 
-        return context.get(paramType)
-                .orElseThrow(() -> new ParameterResolutionException("Failed to resolve parameter of type "
-                                                                            + paramType.getName()));
+        var fromContext = context.get(paramType);
+
+        if (fromContext.isPresent()) {
+            return fromContext;
+        }
+
+        return super.resolveParameter(parameterContext, extensionContext);
+    }
+
+    private void registrySetup(WebServerConfig.Builder builder) {
+        // there is a core service that is noop, there will be an injection service that will be op
+        GlobalServiceRegistry.registry()
+                .get(WebServerRegistryService.class)
+                .updateBuilder(builder);
     }
 
     private URI uri(Executable declaringExecutable, String socketName) {
@@ -262,6 +288,7 @@ class HelidonServerJunitExtension extends JunitExtensionBase
         });
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private SetUpRouteHandler createRoutingMethodCall(Method method) {
         // @SetUpRoute may have parameters handled by different extensions
         List<ServerJunitExtension.ParamHandler> handlers = new ArrayList<>();

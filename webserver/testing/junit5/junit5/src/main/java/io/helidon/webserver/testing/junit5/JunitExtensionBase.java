@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,18 +21,24 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.helidon.testing.junit5.TestJunitExtension;
+
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-abstract class JunitExtensionBase implements AfterAllCallback {
+abstract class JunitExtensionBase extends TestJunitExtension implements AfterAllCallback {
     private Class<?> testClass;
+
+    JunitExtensionBase() {
+    }
 
     @Override
     public void afterAll(ExtensionContext extensionContext) {
         callAfterStop();
+        super.afterAll(extensionContext);
     }
 
-    void testClass(Class<?> testClass) {
+     void testClass(Class<?> testClass) {
         this.testClass = testClass;
     }
 
