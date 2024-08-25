@@ -32,6 +32,7 @@ module io.helidon.webserver {
     requires io.helidon.common.task;
     requires io.helidon.common.uri;
     requires io.helidon.logging.common;
+    requires io.helidon.service.registry;
     requires java.management;
     requires io.helidon;
 
