@@ -1214,6 +1214,16 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.testing</groupId>
+                <artifactId>helidon-testing</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.testing</groupId>
+                <artifactId>helidon-testing-junit5</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.webserver</groupId>
                 <artifactId>helidon-webserver</artifactId>
                 <version>${helidon.version}</version>
