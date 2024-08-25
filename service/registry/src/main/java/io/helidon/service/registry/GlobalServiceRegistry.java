@@ -16,9 +16,6 @@
 
 package io.helidon.service.registry;
 
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
 
 import io.helidon.common.config.GlobalConfig;
@@ -27,12 +24,10 @@ import io.helidon.common.config.GlobalConfig;
  * A global singleton manager for a service registry.
  * <p>
  * Note that when using this registry, testing is a bit more complicated, as the registry is shared
- * statically.
+ * statically. You need to re-set it after tests (this is done automatically when using Helidon testing annotations).
  */
+@SuppressWarnings("removal")
 public final class GlobalServiceRegistry {
-    private static final AtomicReference<ServiceRegistry> INSTANCE = new AtomicReference<>();
-    private static final ReadWriteLock RW_LOCK = new ReentrantReadWriteLock();
-
     private GlobalServiceRegistry() {
     }
 
@@ -42,7 +37,8 @@ public final class GlobalServiceRegistry {
      * @return {@code true} if a registry instance was already created
      */
     public static boolean configured() {
-        return INSTANCE.get() != null;
+        return io.helidon.common.GlobalInstances.current(ServiceRegistryHolder.class)
+                .isPresent();
     }
 
     /**
@@ -51,29 +47,18 @@ public final class GlobalServiceRegistry {
      * @return global service registry
      */
     public static ServiceRegistry registry() {
-        try {
-            RW_LOCK.readLock().lock();
-            ServiceRegistry currentInstance = INSTANCE.get();
-            if (currentInstance != null) {
-                return currentInstance;
-            }
-        } finally {
-            RW_LOCK.readLock().unlock();
-        }
-        try {
-            RW_LOCK.writeLock().lock();
-            ServiceRegistryConfig config;
-            if (GlobalConfig.configured()) {
-                config = ServiceRegistryConfig.create(GlobalConfig.config().get("registry"));
-            } else {
-                config = ServiceRegistryConfig.create();
-            }
-            ServiceRegistry newInstance = ServiceRegistryManager.create(config).registry();
-            INSTANCE.set(newInstance);
-            return newInstance;
-        } finally {
-            RW_LOCK.writeLock().unlock();
-        }
+        return io.helidon.common.GlobalInstances.get(ServiceRegistryHolder.class, () -> {
+                    ServiceRegistryConfig config;
+                    if (GlobalConfig.configured()) {
+                        config = ServiceRegistryConfig.create(GlobalConfig.config().get("registry"));
+                    } else {
+                        config = ServiceRegistryConfig.create();
+                    }
+                    ServiceRegistryManager serviceRegistryManager = ServiceRegistryManager.create(config);
+                    ServiceRegistry newInstance = serviceRegistryManager.registry();
+                    return new ServiceRegistryHolder(serviceRegistryManager, newInstance);
+                })
+                .registry();
     }
 
     /**
@@ -84,23 +69,9 @@ public final class GlobalServiceRegistry {
      * @return global service registry
      */
     public static ServiceRegistry registry(Supplier<ServiceRegistry> registrySupplier) {
-        try {
-            RW_LOCK.readLock().lock();
-            ServiceRegistry currentInstance = INSTANCE.get();
-            if (currentInstance != null) {
-                return currentInstance;
-            }
-        } finally {
-            RW_LOCK.readLock().unlock();
-        }
-        try {
-            RW_LOCK.writeLock().lock();
-            ServiceRegistry newInstance = registrySupplier.get();
-            INSTANCE.set(newInstance);
-            return newInstance;
-        } finally {
-            RW_LOCK.writeLock().unlock();
-        }
+        return io.helidon.common.GlobalInstances.get(ServiceRegistryHolder.class,
+                                                     () -> new ServiceRegistryHolder(registrySupplier.get()))
+                .registry();
     }
 
     /**
@@ -112,7 +83,21 @@ public final class GlobalServiceRegistry {
      * @return the same instance
      */
     public static ServiceRegistry registry(ServiceRegistry newGlobalRegistry) {
-        INSTANCE.set(newGlobalRegistry);
+        io.helidon.common.GlobalInstances.set(ServiceRegistryHolder.class, new ServiceRegistryHolder(newGlobalRegistry));
         return newGlobalRegistry;
+    }
+
+    private record ServiceRegistryHolder(ServiceRegistryManager manager, ServiceRegistry registry)
+            implements io.helidon.common.GlobalInstances.GlobalInstance {
+        ServiceRegistryHolder(ServiceRegistry registry) {
+            this(null, registry);
+        }
+
+        @Override
+        public void close() {
+            if (manager != null) {
+                manager.shutdown();
+            }
+        }
     }
 }

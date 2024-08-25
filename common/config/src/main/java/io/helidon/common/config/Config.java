@@ -36,6 +36,17 @@ public interface Config {
     }
 
     /**
+     * Create a new instance of configuration from the default configuration sources.
+     * In case there is no {@link io.helidon.common.config.spi.ConfigProvider} available, returns
+     * {@link #empty()}.
+     *
+     * @return a new configuration
+     */
+    static Config create() {
+        return GlobalConfig.create();
+    }
+
+    /**
      * Returns the fully-qualified key of the {@code Config} node.
      * <p>
      * The fully-qualified key is a sequence of tokens derived from the name of
