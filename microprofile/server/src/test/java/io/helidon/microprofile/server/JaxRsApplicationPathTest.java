@@ -16,9 +16,6 @@
 
 package io.helidon.microprofile.server;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-
 import java.util.HashSet;
 import java.util.Set;
 
@@ -39,8 +36,10 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.UriInfo;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 class JaxRsApplicationPathTest {
 
@@ -87,7 +86,8 @@ class JaxRsApplicationPathTest {
     public void testEncoded() {
         String getResponse = client.target("http://localhost:" + port)
                 .path("/ApplicationPath!/Resource/encoded").queryParam("query", "%dummy23+a")
-                .request().get(String.class);
+                .request()
+                .get(String.class);
         assertThat(getResponse, is("true:%25dummy23%2Ba"));
     }
 

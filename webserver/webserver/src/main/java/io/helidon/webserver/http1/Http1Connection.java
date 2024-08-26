@@ -16,7 +16,6 @@
 
 package io.helidon.webserver.http1;
 
-import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.ZonedDateTime;
@@ -207,7 +206,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                 }
 
             }
-        } catch (CloseConnectionException | UncheckedIOException e) {
+        } catch (CloseConnectionException e) {
             throw e;
         } catch (BadRequestException e) {
             handleRequestException(RequestException.builder()
