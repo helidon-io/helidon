@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.http1;
 
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.ZonedDateTime;
@@ -49,6 +50,7 @@ import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ProxyProtocolData;
+import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.http.DirectTransportRequest;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http1.spi.Http1Upgrader;
@@ -362,7 +364,11 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         // Expect: 100-continue
         if (headers.contains(HeaderValues.EXPECT_100)) {
             if (this.http1Config.continueImmediately()) {
-                writer.writeNow(BufferData.create(CONTINUE_100));
+                try {
+                    writer.writeNow(BufferData.create(CONTINUE_100));
+                } catch (UncheckedIOException e) {
+                    throw new ServerConnectionException("Failed tow rite continue", e);
+                }
             }
             expectContinue = true;
         }
@@ -479,7 +485,11 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         sendListener.status(ctx, response.status());
         sendListener.headers(ctx, headers);
         sendListener.data(ctx, buffer);
-        writer.write(buffer);
+        try {
+            writer.write(buffer);
+        } catch (UncheckedIOException uioe) {
+            throw new ServerConnectionException("Failed to write request exception", uioe);
+        }
 
         if (response.status() == Status.INTERNAL_SERVER_ERROR_500) {
             LOGGER.log(WARNING, "Internal server error", e);

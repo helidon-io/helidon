@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,6 +57,7 @@ import io.helidon.http.http2.WindowSize;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.Router;
+import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
 import io.helidon.webserver.http2.spi.SubProtocolResult;
@@ -195,23 +196,27 @@ class Http2ServerStream implements Runnable, Http2Stream {
 
     @Override
     public void windowUpdate(Http2WindowUpdate windowUpdate) {
-        //5.1/3
-        if (state == Http2StreamState.IDLE) {
-            String msg = "Received WINDOW_UPDATE for stream " + streamId + " in state IDLE";
-            Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.PROTOCOL, msg);
-            writer.write(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
-            throw new Http2Exception(Http2ErrorCode.PROTOCOL, msg);
-        }
-        //6.9/2
-        if (windowUpdate.windowSizeIncrement() == 0) {
-            Http2RstStream frame = new Http2RstStream(Http2ErrorCode.PROTOCOL);
-            writer.write(frame.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
-        }
-        //6.9.1/3
-        long size = flowControl.outbound().incrementStreamWindowSize(windowUpdate.windowSizeIncrement());
-        if (size > WindowSize.MAX_WIN_SIZE || size < 0L) {
-            Http2RstStream frame = new Http2RstStream(Http2ErrorCode.FLOW_CONTROL);
-            writer.write(frame.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
+        try {
+            //5.1/3
+            if (state == Http2StreamState.IDLE) {
+                String msg = "Received WINDOW_UPDATE for stream " + streamId + " in state IDLE";
+                Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.PROTOCOL, msg);
+                writer.write(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL, msg);
+            }
+            //6.9/2
+            if (windowUpdate.windowSizeIncrement() == 0) {
+                Http2RstStream frame = new Http2RstStream(Http2ErrorCode.PROTOCOL);
+                writer.write(frame.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
+            }
+            //6.9.1/3
+            long size = flowControl.outbound().incrementStreamWindowSize(windowUpdate.windowSizeIncrement());
+            if (size > WindowSize.MAX_WIN_SIZE || size < 0L) {
+                Http2RstStream frame = new Http2RstStream(Http2ErrorCode.FLOW_CONTROL);
+                writer.write(frame.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
+            }
+        } catch (UncheckedIOException e) {
+            throw new ServerConnectionException("Failed to write window update", e);
         }
     }
 
@@ -336,7 +341,11 @@ class Http2ServerStream implements Runnable, Http2Stream {
             flags = Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS);
         }
 
-        return writer.writeHeaders(http2Headers, streamId, flags, flowControl.outbound());
+        try {
+            return writer.writeHeaders(http2Headers, streamId, flags, flowControl.outbound());
+        } catch (UncheckedIOException e) {
+            throw new ServerConnectionException("Failed to write headers", e);
+        }
     }
 
     int writeHeadersWithData(Http2Headers http2Headers, int contentLength, BufferData bufferData, boolean endOfStream) {
@@ -353,10 +362,14 @@ class Http2ServerStream implements Runnable, Http2Stream {
                                                            Http2Flag.DataFlags.create(endOfStream ? Http2Flag.END_OF_STREAM : 0),
                                                            streamId),
                                    bufferData);
-        return writer.writeHeaders(http2Headers, streamId,
-                                   Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
-                                   frameData,
-                                   flowControl.outbound());
+        try {
+            return writer.writeHeaders(http2Headers, streamId,
+                                       Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                       frameData,
+                                       flowControl.outbound());
+        } catch (UncheckedIOException e) {
+            throw new ServerConnectionException("Failed to write headers", e);
+        }
     }
 
     int writeData(BufferData bufferData, boolean endOfStream) {
@@ -373,7 +386,11 @@ class Http2ServerStream implements Runnable, Http2Stream {
                                                            streamId),
                                    bufferData);
 
-        writer.writeData(frameData, flowControl.outbound());
+        try {
+            writer.writeData(frameData, flowControl.outbound());
+        } catch (UncheckedIOException e) {
+            throw new ServerConnectionException("Failed to write frame data", e);
+        }
         return frameData.header().length() + Http2FrameHeader.LENGTH;
     }
 
@@ -381,10 +398,14 @@ class Http2ServerStream implements Runnable, Http2Stream {
         writeState = writeState.checkAndMove(WriteState.TRAILERS_SENT);
         streams.remove(this.streamId);
 
+        try {
         return writer.writeHeaders(http2trailers,
                                           streamId,
                                           Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
                                           flowControl.outbound());
+        } catch (UncheckedIOException e) {
+            throw new ServerConnectionException("Failed to write trailers", e);
+        }
     }
 
     void write100Continue() {
@@ -393,10 +414,14 @@ class Http2ServerStream implements Runnable, Http2Stream {
 
             Header status = HeaderValues.createCached(Http2Headers.STATUS_NAME, 100);
             Http2Headers http2Headers = Http2Headers.create(WritableHeaders.create().add(status));
-            writer.writeHeaders(http2Headers,
+            try {
+                writer.writeHeaders(http2Headers,
                                 streamId,
                                 Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
                                 flowControl.outbound());
+            } catch (UncheckedIOException e) {
+                throw new ServerConnectionException("Failed to write 100-Continue", e);
+            }
         }
     }
 
