@@ -194,6 +194,8 @@ class GenerateServiceDescriptor {
         dependenciesMethod(classModel, params, superType);
         isAbstractMethod(classModel, superType, isAbstractClass);
         instantiateMethod(classModel, serviceType, params, isAbstractClass);
+        postConstructMethod(typeInfo, classModel, serviceType);
+        preDestroyMethod(typeInfo, classModel, serviceType);
         weightMethod(typeInfo, classModel, superType);
 
         // service type is an implicit contract
@@ -757,6 +759,62 @@ class GenerateServiceDescriptor {
                 .addParameter(ctxParam -> ctxParam.type(ServiceCodegenTypes.SERVICE_DEPENDENCY_CONTEXT)
                         .name("ctx__helidonRegistry"))
                 .update(it -> createInstantiateBody(serviceType, it, params)));
+    }
+
+    private void postConstructMethod(TypeInfo typeInfo, ClassModel.Builder classModel, TypeName serviceType) {
+        // postConstruct()
+        lifecycleMethod(typeInfo, ServiceCodegenTypes.SERVICE_ANNOTATION_POST_CONSTRUCT).ifPresent(method -> {
+            classModel.addMethod(postConstruct -> postConstruct.name("postConstruct")
+                    .addAnnotation(Annotations.OVERRIDE)
+                    .addParameter(instance -> instance.type(serviceType)
+                            .name("instance"))
+                    .addContentLine("instance." + method.elementName() + "();"));
+        });
+    }
+
+    private void preDestroyMethod(TypeInfo typeInfo, ClassModel.Builder classModel, TypeName serviceType) {
+        // preDestroy
+        lifecycleMethod(typeInfo, ServiceCodegenTypes.SERVICE_ANNOTATION_PRE_DESTROY).ifPresent(method -> {
+            classModel.addMethod(preDestroy -> preDestroy.name("preDestroy")
+                    .addAnnotation(Annotations.OVERRIDE)
+                    .addParameter(instance -> instance.type(serviceType)
+                            .name("instance"))
+                    .addContentLine("instance." + method.elementName() + "();"));
+        });
+    }
+
+    private Optional<TypedElementInfo> lifecycleMethod(TypeInfo typeInfo, TypeName annotationType) {
+        List<TypedElementInfo> list = typeInfo.elementInfo()
+                .stream()
+                .filter(ElementInfoPredicates.hasAnnotation(annotationType))
+                .toList();
+        if (list.isEmpty()) {
+            return Optional.empty();
+        }
+        if (list.size() > 1) {
+            throw new IllegalStateException("There is more than one method annotated with " + annotationType.fqName()
+                                                    + ", which is not allowed on type " + typeInfo.typeName().fqName());
+        }
+        TypedElementInfo method = list.getFirst();
+        if (method.accessModifier() == AccessModifier.PRIVATE) {
+            throw new CodegenException("Method annotated with " + annotationType.fqName()
+                                                    + ", is private, which is not supported: " + typeInfo.typeName().fqName()
+                                                    + "#" + method.elementName(),
+                                       method.originatingElement().orElseGet(method::elementName));
+        }
+        if (!method.parameterArguments().isEmpty()) {
+            throw new CodegenException("Method annotated with " + annotationType.fqName()
+                                                    + ", has parameters, which is not supported: " + typeInfo.typeName().fqName()
+                                                    + "#" + method.elementName(),
+                                       method.originatingElement().orElseGet(method::elementName));
+        }
+        if (!method.typeName().equals(TypeNames.PRIMITIVE_VOID)) {
+            throw new CodegenException("Method annotated with " + annotationType.fqName()
+                                                    + ", is not void, which is not supported: " + typeInfo.typeName().fqName()
+                                                    + "#" + method.elementName(),
+                                       method.originatingElement().orElseGet(method::elementName));
+        }
+        return Optional.of(method);
     }
 
     private void createInstantiateBody(TypeName serviceType,

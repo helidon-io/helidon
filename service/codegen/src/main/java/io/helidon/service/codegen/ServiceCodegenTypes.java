@@ -27,6 +27,16 @@ public final class ServiceCodegenTypes {
      */
     public static final TypeName SERVICE_ANNOTATION_PROVIDER = TypeName.create("io.helidon.service.registry.Service.Provider");
     /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Service.PreDestroy}.
+     */
+    public static final TypeName SERVICE_ANNOTATION_PRE_DESTROY =
+            TypeName.create("io.helidon.service.registry.Service.PreDestroy");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Service.PostConstruct}.
+     */
+    public static final TypeName SERVICE_ANNOTATION_POST_CONSTRUCT =
+            TypeName.create("io.helidon.service.registry.Service.PostConstruct");
+    /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Service.Contract}.
      */
     public static final TypeName SERVICE_ANNOTATION_CONTRACT = TypeName.create("io.helidon.service.registry.Service.Contract");
