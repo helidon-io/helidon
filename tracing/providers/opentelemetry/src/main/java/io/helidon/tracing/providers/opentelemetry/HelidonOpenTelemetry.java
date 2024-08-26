@@ -51,7 +51,7 @@ public final class HelidonOpenTelemetry {
     public static final String IO_OPENTELEMETRY_JAVAAGENT = "io.opentelemetry.javaagent";
 
     static final String UNSUPPORTED_OPERATION_MESSAGE = "Span listener attempted to invoke an illegal operation";
-    static final String USE_EXISTING_OTEL = "io.helidon.tracing.otel.use-existing";
+    static final String USE_EXISTING_OTEL = "io.helidon.tracing.otel.use-existing-instance";
 
     private static final System.Logger LOGGER = System.getLogger(HelidonOpenTelemetry.class.getName());
     private static final LazyValue<List<SpanListener>> SPAN_LISTENERS =
