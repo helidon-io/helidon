@@ -467,6 +467,9 @@ public final class ScanTypeInfoFactory extends TypeInfoFactoryBase {
         }
 
         if (memberInfo instanceof FieldInfo fi) {
+            if (java.lang.reflect.Modifier.isVolatile(fi.getModifiers())) {
+                result.add(Modifier.VOLATILE);
+            }
             if (fi.isTransient()) {
                 result.add(Modifier.TRANSIENT);
             }
