@@ -20,6 +20,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.RoundContext;
@@ -27,8 +28,11 @@ import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.spi.CodegenExtension;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.ElementKind;
+import io.helidon.common.types.Modifier;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
 
 class TestCodegenExtension implements CodegenExtension {
     private static final TypeName CRAZY = TypeName.create("io.helidon.codegen.test.codegen.use.CrazyAnnotation");
@@ -72,7 +76,42 @@ class TestCodegenExtension implements CodegenExtension {
                 .addConstructor(ctr -> ctr.addAnnotation(annotation()))
                 .addMethod(method -> method
                         .name("method")
-                        .addAnnotation(annotation()));
+                        .addAnnotation(annotation()))
+                .addMethod(classMods -> classMods
+                        .name("classModifiers")
+                        .returnType(TypeNames.STRING)
+                        .addContent("return \"")
+                        .addContent(typeInfo.elementModifiers()
+                                            .stream()
+                                            .map(Modifier::modifierName)
+                                            .collect(Collectors.joining(",")))
+                        .addContentLine("\";"));
+
+        typeInfo.elementInfo()
+                .forEach(it -> {
+                    if (it.kind() == ElementKind.METHOD) {
+                        classModel.addMethod(methodMods -> methodMods
+                                .name("methodModifiers")
+                                .returnType(TypeNames.STRING)
+                                .addContent("return \"")
+                                .addContent(it.elementModifiers()
+                                                    .stream()
+                                                    .map(Modifier::modifierName)
+                                                    .collect(Collectors.joining(",")))
+                                .addContentLine("\";"));
+                    }
+                    if (it.kind() == ElementKind.FIELD) {
+                        classModel.addMethod(fieldMods -> fieldMods
+                                .name("fieldModifiers")
+                                .returnType(TypeNames.STRING)
+                                .addContent("return \"")
+                                .addContent(it.elementModifiers()
+                                                    .stream()
+                                                    .map(Modifier::modifierName)
+                                                    .collect(Collectors.joining(",")))
+                                .addContentLine("\";"));
+                    }
+                });
 
         ctx.filer().writeSourceFile(classModel.build());
     }

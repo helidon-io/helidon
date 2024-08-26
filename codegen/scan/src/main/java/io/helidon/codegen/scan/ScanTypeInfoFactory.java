@@ -458,6 +458,18 @@ public final class ScanTypeInfoFactory extends TypeInfoFactoryBase {
             if (mi.isAbstract()) {
                 result.add(Modifier.ABSTRACT);
             }
+            if (mi.isSynchronized()) {
+                result.add(Modifier.SYNCHRONIZED);
+            }
+            if (mi.isNative()) {
+                result.add(Modifier.NATIVE);
+            }
+        }
+
+        if (memberInfo instanceof FieldInfo fi) {
+            if (fi.isTransient()) {
+                result.add(Modifier.TRANSIENT);
+            }
         }
 
         return result;
