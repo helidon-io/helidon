@@ -19,5 +19,10 @@ package io.helidon.codegen.test.codegen.use;
 import io.helidon.common.Weight;
 
 @Weight(48)
-public class TriggerType {
+public final class TriggerType {
+    private transient volatile String field = "value";
+
+    public synchronized final String getField() {
+        return field;
+    }
 }
