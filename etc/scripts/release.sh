@@ -49,6 +49,9 @@ $(basename ${0}) [ --build-number=N ] CMD
         Perform a release build
         This will create a local branch, deploy artifacts and push a tag
 
+    deploy_snapshot
+        Perform a snapshot build and deploy to snapshot repository
+
 EOF
 }
 
@@ -66,7 +69,7 @@ for ((i=0;i<${#ARGS[@]};i++))
         exit 0
         ;;
     *)
-        if [ "${ARG}" = "update_version" ] || [ "${ARG}" = "release_build" ] ; then
+        if [ "${ARG}" = "update_version" ] || [ "${ARG}" = "release_build" ] || [ "${ARG}" = "deploy_snapshot" ] ; then
             readonly COMMAND="${ARG}"
         else
             echo "ERROR: unknown argument: ${ARG}"
@@ -221,20 +224,35 @@ release_build(){
       -DstagingRepositoryId="${STAGING_REPO_ID}" \
       -DstagingDescription="${STAGING_DESC}"
 
-    # Create and push a git tag
     git tag -f "${FULL_VERSION}"
-    if [ -n "${JENKINS_HOME}" ] ; then
-        # In Jenkins use SSH to access remote
-        local GIT_REMOTE=$(git config --get remote.origin.url | \
-            sed "s,https://\([^/]*\)/,git@\1:,")
+    git push --force origin refs/tags/"${FULL_VERSION}":refs/tags/"${FULL_VERSION}"
+}
 
-        git remote add release "${GIT_REMOTE}" > /dev/null 2>&1 || \
-        git remote set-url release "${GIT_REMOTE}"
+deploy_snapshot(){
 
-        git push --force release refs/tags/"${FULL_VERSION}":refs/tags/"${FULL_VERSION}"
-    else
-        git push --force origin refs/tags/"${FULL_VERSION}":refs/tags/"${FULL_VERSION}"
+    # Make sure version ends in -SNAPSHOT
+    if [[ ${MVN_VERSION} != *-SNAPSHOT ]]; then
+        echo "Helidon version ${MVN_VERSION} is not a SNAPSHOT version. Failing snapshot release."
+        exit 1
     fi
+
+    readonly NEXUS_SNAPSHOT_URL="https://oss.sonatype.org/content/repositories/snapshots/"
+    echo "Deploying snapshot build ${MVN_VERSION} to ${NEXUS_SNAPSHOT_URL}"
+
+    # The nexus-staging-maven-plugin had issues deploying the module
+    # helidon-applications because the distributionManagement section is empty.
+    # So we deploy using the apache maven-deploy-plugin and altDeploymentRepository
+    # property. The deployAtEnd option requires version 3.0.0 of maven-deploy-plugin
+    # or newer to work correctly on multi-module systems
+    set -x
+    mvn ${MAVEN_ARGS} -e clean deploy \
+      -Parchetypes \
+      -DskipTests \
+      -DaltDeploymentRepository="ossrh::${NEXUS_SNAPSHOT_URL}" \
+      -DdeployAtEnd=true \
+      -DretryFailedDeploymentCount="10"
+
+    echo "Done. ${MVN_VERSION} deployed to ${NEXUS_SNAPSHOT_URL}"
 }
 
 # Invoke command
