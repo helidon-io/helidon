@@ -412,7 +412,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         if (frameHeader.length() == 0) {
             frameInProgress = BufferData.empty();
         } else {
-                frameInProgress = reader.readBuffer(frameHeader.length());
+            frameInProgress = reader.readBuffer(frameHeader.length());
         }
 
         receiveFrameListener.frame(ctx, streamId, frameInProgress);

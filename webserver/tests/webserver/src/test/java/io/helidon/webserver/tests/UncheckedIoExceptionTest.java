@@ -31,16 +31,16 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
-public class UncheckedIoExceptionTest {
+class UncheckedIoExceptionTest {
     @SetUpRoute
-    public static void routing(HttpRules rules) {
+    static void routing(HttpRules rules) {
         rules.get("/fail", ((req, res) -> {
             throw new UncheckedIOException("My Exception", new IOException("Outbound client failure"));
         }));
     }
 
     @Test
-    public void testUncheckedIoTreatedAsAnyOther(Http1Client client) {
+    void testUncheckedIoTreatedAsAnyOther(Http1Client client) {
         var response = client.get("/fail")
                 .request(String.class);
 
