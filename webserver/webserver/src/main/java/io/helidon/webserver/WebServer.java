@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -636,6 +636,12 @@ public interface WebServer {
         @Override
         public Builder trustedProxies(AllowList trustedProxies) {
             defaultSocket(it -> it.trustedProxies(trustedProxies));
+            return this;
+        }
+
+        @Override
+        public Builder connectionIdleTimeout(int seconds) {
+            defaultSocket(it -> it.connectionIdleTimeout(seconds));
             return this;
         }
 

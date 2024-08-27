@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,8 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import io.helidon.webserver.ReferenceHoldingQueue.IndirectReference;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelDuplexHandler;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
@@ -42,6 +44,8 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.Future;
 
@@ -191,6 +195,20 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
                     this::clearQueues,
                     soConfig,
                     directHandlers));
+        }
+
+        // Set up idle handler to close inactive connections based on config
+        int idleTimeout = serverConfig.connectionIdleTimeout();
+        if (idleTimeout > 0) {
+            p.addLast(new IdleStateHandler(idleTimeout, idleTimeout, idleTimeout));
+            p.addLast(new ChannelDuplexHandler() {
+                @Override
+                public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
+                    if (evt instanceof IdleStateEvent) {
+                        ctx.close();        // async close of idle connection
+                    }
+                }
+            });
         }
 
         // Cleanup queues as part of event loop
