@@ -19,6 +19,11 @@
 <cacheConfig>
     <enabled>false</enabled>
     <lifecycleConfig>
+        <project path="docs/pom.xml">
+            <projectFilesExcludes>
+                <exclude>src/main/asciidoc/config/*</exclude>
+            </projectFilesExcludes>
+        </project>
         <project glob="**/*">
             <projectFilesExcludes>
                 <exclude>.*/**</exclude>
@@ -70,11 +75,6 @@
                         <include>tests/integration/packaging/**</include>
                     </includes>
                 </moduleSet>
-                <moduleSet name="jpa">
-                    <includes>
-                        <include>tests/integration/packaging/**</include>
-                    </includes>
-                </moduleSet>
                 <moduleSet name="it">
                     <includes>
                         <include>tests/integration/**</include>
@@ -92,6 +92,7 @@
         </reactorRule>
         <reactorRule name="tck">
             <profiles>
+                <profile>tests</profile>
                 <profile>tck</profile>
             </profiles>
             <moduleSets>

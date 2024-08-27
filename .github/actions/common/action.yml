@@ -33,18 +33,6 @@ inputs:
     description:  Build cache id
     required: false
     default: 'default'
-  GPG_PASSPHRASE:
-    description: Value of the GPG_PASSPHRASE environment variable
-    required: false
-    default: ''
-  GPG_PRIVATE_KEY:
-    description: Value of the GPG_PRIVATE_KEY environment variable
-    required: false
-    default: ''
-  MAVEN_SETTINGS:
-    description: Value of the MAVEN_SETTINGS environment variable
-    required: false
-    default: ''
   run:
     description: The bash command to run
     required: true
@@ -147,13 +135,9 @@ runs:
           build-cache-${{ github.run_id }}-
     - name: Exec
       env:
-        GPG_PASSPHRASE: ${{ inputs.GPG_PASSPHRASE }}
-        GPG_PRIVATE_KEY: ${{ inputs.GPG_PRIVATE_KEY }}
-        MAVEN_SETTINGS: ${{ inputs.MAVEN_SETTINGS }}
         MAVEN_ARGS: |
           ${{ env.MAVEN_ARGS }}
           -Dmaven.repo.local=${{ github.workspace }}/.m2/repository
-          -Dcache.record=${{ inputs.build-cache == 'read-write' }}
       run: ${{ inputs.run }}
       shell: bash
     - name: Archive test results
@@ -164,8 +148,8 @@ runs:
         if-no-files-found: 'ignore'
         name: ${{ inputs.test-artifact-name }}
         path: |
-          **/target/surefire-reports/*.txt
-          **/target/failsafe-reports/*.txt
+          **/target/surefire-reports/**
+          **/target/failsafe-reports/**
           **/target/it/**/*.log
     - name: Archive artifacts
       if: ${{ inputs.artifact-name != '' && inputs.artifact-path != ''  && always() }}

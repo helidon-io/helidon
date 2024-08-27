@@ -36,7 +36,6 @@
         <module>server</module>
         <module>client</module>
         <module>tracing</module>
-        <module>tests</module>
     </modules>
 
     <build>
@@ -71,4 +70,13 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>tests</id>
+            <modules>
+                <module>tests</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

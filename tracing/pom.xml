@@ -33,10 +33,18 @@
         <module>tracing</module>
         <module>jersey-client</module>
         <module>jersey</module>
-        <module>tests</module>
         <module>config</module>
         <module>tracer-resolver</module>
         <module>providers</module>
         <module>provider-tests</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>tests</id>
+            <modules>
+                <module>tests</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

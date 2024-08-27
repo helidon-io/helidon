@@ -176,11 +176,16 @@ jobs:
       - uses: ./.github/actions/common
         with:
           build-cache: read-only
+          artifact-name: javadoc-jars-${{ matrix.moduleSet }}
+          artifact-path: |
+            **/target/state-javadoc.xml
+            **/target/*-javadoc.jar
           run: |
             mvn ${MAVEN_ARGS} -T8 \
               -Dorg.slf4j.simpleLogger.showThreadName=true \
               -DreactorRule=default \
               -DmoduleSet=${{ matrix.moduleSet }} \
+              -Dcache.recordSuffix=javadoc \
               -DskipTests \
               -Pjavadoc \
               package
@@ -195,8 +200,13 @@ jobs:
       - uses: ./.github/actions/common
         with:
           build-cache: read-only
+          artifact-name: docs
+          artifact-path: |
+            */target/state-docs.xml
+            */target/*-docs.jar
           run: |
             mvn ${MAVEN_ARGS} \
+              -Dcache.recordSuffix=docs \
               -f docs/pom.xml \
               -Pjavadoc \
               install
