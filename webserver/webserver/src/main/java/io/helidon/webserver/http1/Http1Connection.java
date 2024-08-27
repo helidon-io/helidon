@@ -367,7 +367,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                 try {
                     writer.writeNow(BufferData.create(CONTINUE_100));
                 } catch (UncheckedIOException e) {
-                    throw new ServerConnectionException("Failed tow rite continue", e);
+                    throw new ServerConnectionException("Failed to write continue", e);
                 }
             }
             expectContinue = true;
