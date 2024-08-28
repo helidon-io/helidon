@@ -164,12 +164,12 @@ interface ListenerConfigBlueprint {
 
     /**
      * Initial buffer size in bytes of {@link java.io.BufferedOutputStream} created internally to
-     * write data to a socket connection. Default is {@code 512}.
+     * write data to a socket connection. Default is {@code 4096}.
      *
      * @return initial buffer size used for writing
      */
     @Option.Configured
-    @Option.DefaultInt(512)
+    @Option.DefaultInt(4096)
     int writeBufferSize();
 
     /**
