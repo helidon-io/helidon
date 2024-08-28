@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,7 +94,7 @@ public class SseSink implements Sink<SseEvent> {
                 outputStream.write(SSE_NL);
             }
             Object data = sseEvent.data();
-            if (data != null) {
+            if (data != SseEvent.NO_DATA) {
                 outputStream.write(SSE_DATA);
                 eventConsumer.accept(data, sseEvent.mediaType().orElse(MediaTypes.TEXT_PLAIN));
                 outputStream.write(SSE_NL);
