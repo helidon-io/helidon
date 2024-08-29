@@ -1,775 +1,1953 @@
 [
-    {
-        "name": "io.helidon.integrations.cdi.hibernate.CDISEJtaPlatform",
-        "allDeclaredFields": true,
-        "allDeclaredMethods": true,
-        "allPublicMethods": true,
-        "allDeclaredConstructors": true
-    },
-    {
-        "name": "org.hibernate.annotations.common.util.impl.Log_$logger",
-        "methods": [
-            {
-                "name": "<init>",
-                "parameterTypes": [
-                    "org.jboss.logging.Logger"
-                ]
-            }
+  {
+    "name": "io.helidon.integrations.cdi.hibernate.CDISEJtaPlatform",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allPublicMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.hibernate.annotations.common.util.impl.Log_$logger",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.jboss.logging.Logger"
         ]
-    },
-    {
-        "name": "org.hibernate.boot.beanvalidation.TypeSafeActivator",
-        "methods": [
-            {
-                "name" : "activate",
-                "parameterTypes" : [
-                    "org.hibernate.boot.beanvalidation.ActivationContext"
-                ]
-            },
-            {
-                "name" : "validateSuppliedFactory",
-                "parameterTypes" : [
-                    "java.lang.Object"
-                ]
-            }
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.boot.beanvalidation.TypeSafeActivator",
+    "methods": [
+      {
+        "name": "activate",
+        "parameterTypes": [
+          "org.hibernate.boot.beanvalidation.ActivationContext"
         ]
-    },
-    {
-        "name": "org.hibernate.boot.cfgxml.internal.CfgXmlAccessServiceImpl",
-        "allPublicMethods": true
-    },
-    {
-        "name": "org.hibernate.boot.model.naming.ImplicitNamingStrategyJpaCompliantImpl",
-        "methods": [
-            {
-                "name": "<init>",
-                "parameterTypes": []
-            }
+      },
+      {
+        "name": "validateSuppliedFactory",
+        "parameterTypes": [
+          "java.lang.Object"
         ]
-    },
-    {
-        "name": "org.hibernate.boot.model.relational.ColumnOrderingStrategy",
-        "allDeclaredMethods": true
-    },
-    {
-        "name": "org.hibernate.boot.model.relational.ColumnOrderingStrategyLegacy",
-        "methods": [
-            {
-                "name" : "<init>"
-            }
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.boot.cfgxml.internal.CfgXmlAccessServiceImpl",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.hibernate.boot.model.naming.ImplicitNamingStrategyJpaCompliantImpl",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.boot.model.relational.ColumnOrderingStrategy",
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.hibernate.boot.model.relational.ColumnOrderingStrategyLegacy",
+    "methods": [
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.boot.model.relational.ColumnOrderingStrategyStandard",
+    "methods": [
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.cache.internal.DisabledCaching",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.hibernate.cache.internal.NoCachingRegionFactory",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.hibernate.cfg.beanvalidation.TypeSafeActivator",
+    "methods": [
+      {
+        "name": "activate",
+        "parameterTypes": [
+          "org.hibernate.cfg.beanvalidation.ActivationContext"
         ]
-    },
-    {
-        "name": "org.hibernate.boot.model.relational.ColumnOrderingStrategyStandard",
-        "methods": [
-            {
-                "name" : "<init>"
-            }
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.engine.config.internal.ConfigurationServiceImpl",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.hibernate.engine.jdbc.connections.internal.DatasourceConnectionProviderImpl",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.hibernate.engine.jdbc.dialect.internal.DialectFactoryImpl",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.hibernate.engine.jdbc.dialect.internal.DialectResolverSet",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.hibernate.engine.jdbc.env.internal.JdbcEnvironmentImpl",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.hibernate.engine.jdbc.internal.JdbcServicesImpl",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.hibernate.engine.jndi.internal.JndiServiceImpl",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.hibernate.engine.query.internal.NativeQueryInterpreterStandardImpl",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.hibernate.engine.spi.Managed",
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.hibernate.engine.spi.ManagedEntity",
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.hibernate.engine.transaction.jta.platform.internal.AbstractJtaPlatform",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true,
+    "methods": [
+      {
+        "name": "canRegisterSynchronization",
+        "parameterTypes": []
+      },
+      {
+        "name": "configure",
+        "parameterTypes": [
+          "java.util.Map"
         ]
-    },
-    {
-        "name": "org.hibernate.cache.internal.DisabledCaching",
-        "allPublicMethods": true
-    },
-    {
-        "name": "org.hibernate.cache.internal.NoCachingRegionFactory",
-        "allPublicMethods": true
-    },
-    {
-        "name": "org.hibernate.cfg.beanvalidation.TypeSafeActivator",
-        "methods": [
-            {
-                "name": "activate",
-                "parameterTypes": [
-                    "org.hibernate.cfg.beanvalidation.ActivationContext"
-                ]
-            }
+      },
+      {
+        "name": "getCurrentStatus",
+        "parameterTypes": []
+      },
+      {
+        "name": "getTransactionIdentifier",
+        "parameterTypes": [
+          "jakarta.transaction.Transaction"
         ]
-    },
-    {
-        "name": "org.hibernate.engine.config.internal.ConfigurationServiceImpl",
-        "allPublicMethods": true
-    },
-    {
-        "name": "org.hibernate.engine.jdbc.connections.internal.DatasourceConnectionProviderImpl",
-        "allPublicMethods": true
-    },
-    {
-        "name": "org.hibernate.engine.jdbc.dialect.internal.DialectFactoryImpl",
-        "allPublicMethods": true
-    },
-    {
-        "name": "org.hibernate.engine.jdbc.dialect.internal.DialectResolverSet",
-        "allPublicMethods": true
-    },
-    {
-        "name": "org.hibernate.engine.jdbc.env.internal.JdbcEnvironmentImpl",
-        "allPublicMethods": true
-    },
-    {
-        "name": "org.hibernate.engine.jdbc.internal.JdbcServicesImpl",
-        "allPublicMethods": true
-    },
-    {
-        "name": "org.hibernate.engine.jndi.internal.JndiServiceImpl",
-        "allPublicMethods": true
-    },
-    {
-        "name": "org.hibernate.engine.query.internal.NativeQueryInterpreterStandardImpl",
-        "allPublicMethods": true
-    },
-    {
-        "name": "org.hibernate.engine.spi.Managed",
-        "allDeclaredMethods": true
-    },
-    {
-        "name": "org.hibernate.engine.spi.ManagedEntity",
-        "allDeclaredMethods": true
-    },
-    {
-        "name": "org.hibernate.engine.spi.PersistentAttributeInterceptable",
-        "allDeclaredMethods": true
-    },
-    {
-        "name": "org.hibernate.engine.spi.SelfDirtinessTracker",
-        "allDeclaredMethods": true
-    },
-    {
-        "name": "org.hibernate.engine.transaction.jta.platform.internal.AbstractJtaPlatform",
-        "allDeclaredFields": true,
-        "allDeclaredMethods": true,
-        "allDeclaredConstructors": true,
-        "allPublicConstructors": true,
-        "methods": [
-            {
-                "name": "canRegisterSynchronization",
-                "parameterTypes": []
-            },
-            {
-                "name": "configure",
-                "parameterTypes": [
-                    "java.util.Map"
-                ]
-            },
-            {
-                "name": "getCurrentStatus",
-                "parameterTypes": []
-            },
-            {
-                "name": "getTransactionIdentifier",
-                "parameterTypes": [
-                    "jakarta.transaction.Transaction"
-                ]
-            },
-            {
-                "name": "getTransactionManager",
-                "parameterTypes": []
-            },
-            {
-                "name": "injectServices",
-                "parameterTypes": [
-                    "org.hibernate.service.spi.ServiceRegistryImplementor"
-                ]
-            },
-            {
-                "name": "registerSynchronization",
-                "parameterTypes": [
-                    "jakarta.transaction.Synchronization"
-                ]
-            },
-            {
-                "name": "retrieveTransactionManager",
-                "parameterTypes": []
-            },
-            {
-                "name": "retrieveUserTransaction",
-                "parameterTypes": []
-            }
+      },
+      {
+        "name": "getTransactionManager",
+        "parameterTypes": []
+      },
+      {
+        "name": "injectServices",
+        "parameterTypes": [
+          "org.hibernate.service.spi.ServiceRegistryImplementor"
         ]
-    },
-    {
-        "name": "org.hibernate.engine.transaction.jta.platform.internal.StandardJtaPlatformResolver",
-        "allPublicMethods": true
-    },
-    {
-        "name": "org.hibernate.engine.transaction.jta.platform.internal.TransactionManagerAccess",
-        "allDeclaredFields": true,
-        "allDeclaredMethods": true,
-        "allPublicMethods": true,
-        "allDeclaredConstructors": true
-    },
-    {
-        "name": "org.hibernate.engine.transaction.jta.platform.spi.JtaPlatform",
-        "allDeclaredFields": true,
-        "allDeclaredMethods": true,
-        "allPublicMethods": true,
-        "allDeclaredConstructors": true
-    },
-    {
-        "name": "org.hibernate.event.service.internal.EventListenerRegistryImpl",
-        "allPublicMethods": true
-    },
-    {
-        "name": "org.hibernate.event.spi.EventType",
-        "allDeclaredFields": true
-    },
-    {
-        "name": "org.hibernate.id.Assigned",
-        "methods": [
-            {
-                "name": "<init>",
-                "parameterTypes": []
-            }
+      },
+      {
+        "name": "registerSynchronization",
+        "parameterTypes": [
+          "jakarta.transaction.Synchronization"
         ]
-    },
-    {
-        "name": "org.hibernate.id.factory.internal.DefaultIdentifierGeneratorFactory",
-        "allPublicMethods": true
-    },
-    {
-        "name": "org.hibernate.internal.CoreMessageLogger_$logger",
-        "methods": [
-            {
-                "name": "<init>",
-                "parameterTypes": [
-                    "org.jboss.logging.Logger"
-                ]
-            }
+      },
+      {
+        "name": "retrieveTransactionManager",
+        "parameterTypes": []
+      },
+      {
+        "name": "retrieveUserTransaction",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.engine.transaction.jta.platform.internal.StandardJtaPlatformResolver",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.hibernate.engine.transaction.jta.platform.internal.TransactionManagerAccess",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allPublicMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.hibernate.engine.transaction.jta.platform.spi.JtaPlatform",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allPublicMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.hibernate.event.service.internal.EventListenerRegistryImpl",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.hibernate.event.spi.EventType",
+    "allDeclaredFields": true
+  },
+  {
+    "name": "org.hibernate.id.Assigned",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.id.factory.internal.DefaultIdentifierGeneratorFactory",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.hibernate.internal.CoreMessageLogger_$logger",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.jboss.logging.Logger"
         ]
-    },
-    {
-        "name": "org.hibernate.internal.EntityManagerMessageLogger_$logger",
-        "methods": [
-            {
-                "name": "<init>",
-                "parameterTypes": [
-                    "org.jboss.logging.Logger"
-                ]
-            }
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.internal.EntityManagerMessageLogger_$logger",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.jboss.logging.Logger"
         ]
-    },
-    {
-        "name": "org.hibernate.jmx.internal.DisabledJmxServiceImpl",
-        "allPublicMethods": true
-    },
-    {
-        "name": "org.hibernate.jpa.HibernatePersistenceProvider",
-        "allDeclaredMethods": true,
-        "allDeclaredConstructors": true
-    },
-    {
-        "name": "org.hibernate.persister.entity.SingleTableEntityPersister",
-        "methods": [
-            {
-                "name": "<init>",
-                "parameterTypes": [
-                    "org.hibernate.mapping.PersistentClass",
-                    "org.hibernate.cache.spi.access.EntityDataAccess",
-                    "org.hibernate.cache.spi.access.NaturalIdDataAccess",
-                    "org.hibernate.persister.spi.PersisterCreationContext"
-                ]
-            }
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.jpa.HibernatePersistenceProvider",
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.hibernate.persister.entity.SingleTableEntityPersister",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.mapping.PersistentClass",
+          "org.hibernate.cache.spi.access.EntityDataAccess",
+          "org.hibernate.cache.spi.access.NaturalIdDataAccess",
+          "org.hibernate.persister.spi.PersisterCreationContext"
         ]
-    },
-    {
-        "name": "org.hibernate.persister.internal.PersisterFactoryImpl",
-        "allPublicMethods": true
-    },
-    {
-        "name": "org.hibernate.persister.internal.StandardPersisterClassResolver",
-        "allPublicMethods": true
-    },
-    {
-        "name": "org.hibernate.property.access.internal.PropertyAccessStrategyResolverStandardImpl",
-        "allPublicMethods": true
-    },
-    {
-        "name": "org.hibernate.resource.beans.container.internal.CdiBeanContainerImmediateAccessImpl",
-        "methods": [
-            {
-                "name": "<init>",
-                "parameterTypes": [
-                    "jakarta.enterprise.inject.spi.BeanManager"
-                ]
-            }
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.persister.internal.PersisterFactoryImpl",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.hibernate.persister.internal.StandardPersisterClassResolver",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.hibernate.property.access.internal.PropertyAccessStrategyResolverStandardImpl",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.hibernate.resource.beans.container.internal.CdiBeanContainerImmediateAccessImpl",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "jakarta.enterprise.inject.spi.BeanManager"
         ]
-    },
-    {
-        "name": "org.hibernate.resource.beans.container.spi.ExtendedBeanManager"
-    },
-    {
-        "name": "org.hibernate.resource.beans.internal.ManagedBeanRegistryImpl",
-        "allPublicMethods": true
-    },
-    {
-        "name": "org.hibernate.resource.transaction.backend.jta.internal.JtaTransactionCoordinatorBuilderImpl",
-        "allPublicMethods": true,
-        "methods": [
-            {
-                "name": "<init>",
-                "parameterTypes": []
-            }
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.resource.beans.container.spi.ExtendedBeanManager"
+  },
+  {
+    "name": "org.hibernate.resource.beans.internal.ManagedBeanRegistryImpl",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.hibernate.resource.transaction.backend.jta.internal.JtaTransactionCoordinatorBuilderImpl",
+    "allPublicMethods": true,
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.service.Service",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allPublicMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.hibernate.service.internal.SessionFactoryServiceRegistryFactoryImpl",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.hibernate.service.spi.Configurable",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allPublicMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.hibernate.service.spi.ServiceRegistryAwareService",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allPublicMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.hibernate.stat.internal.StatisticsImpl",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.hibernate.tool.hbm2ddl.SingleLineSqlCommandExtractor",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.hibernate.tool.schema.internal.HibernateSchemaManagementTool",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.hibernate.tuple.entity.PojoEntityTuplizer",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.tuple.entity.EntityMetamodel",
+          "org.hibernate.mapping.PersistentClass"
         ]
-    },
-    {
-        "name": "org.hibernate.service.Service",
-        "allDeclaredFields": true,
-        "allDeclaredMethods": true,
-        "allPublicMethods": true,
-        "allDeclaredConstructors": true
-    },
-    {
-        "name": "org.hibernate.service.internal.SessionFactoryServiceRegistryFactoryImpl",
-        "allPublicMethods": true
-    },
-    {
-        "name": "org.hibernate.service.spi.Configurable",
-        "allDeclaredFields": true,
-        "allDeclaredMethods": true,
-        "allPublicMethods": true,
-        "allDeclaredConstructors": true
-    },
-    {
-        "name": "org.hibernate.service.spi.ServiceRegistryAwareService",
-        "allDeclaredFields": true,
-        "allDeclaredMethods": true,
-        "allPublicMethods": true,
-        "allDeclaredConstructors": true
-    },
-    {
-        "name": "org.hibernate.stat.internal.StatisticsImpl",
-        "allPublicMethods": true
-    },
-    {
-        "name": "org.hibernate.tool.hbm2ddl.SingleLineSqlCommandExtractor",
-        "allPublicMethods": true
-    },
-    {
-        "name": "org.hibernate.tool.schema.internal.HibernateSchemaManagementTool",
-        "allPublicMethods": true
-    },
-    {
-        "name": "org.hibernate.tuple.entity.PojoEntityTuplizer",
-        "methods": [
-            {
-                "name": "<init>",
-                "parameterTypes": [
-                    "org.hibernate.tuple.entity.EntityMetamodel",
-                    "org.hibernate.mapping.PersistentClass"
-                ]
-            }
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.CockroachDialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
         ]
-    },
-    {
-        "name": "org.hibernate.dialect.CockroachDialect",
-        "methods": [
-            {
-                "name": "<init>",
-                "parameterTypes": [
-                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
-                ]
-            }
+      },
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.DB2400Dialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
         ]
-    },
-    {
-        "name": "org.hibernate.dialect.DB2400Dialect",
-        "methods": [
-            {
-                "name": "<init>",
-                "parameterTypes": [
-                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
-                ]
-            }
+      },
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.DB2Dialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
         ]
-    },
-    {
-        "name": "org.hibernate.dialect.DB2Dialect",
-        "methods": [
-            {
-                "name": "<init>",
-                "parameterTypes": [
-                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
-                ]
-            }
+      },
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.DB2iDialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
         ]
-    },
-    {
-        "name": "org.hibernate.dialect.DB2iDialect",
-        "methods": [
-            {
-                "name": "<init>",
-                "parameterTypes": [
-                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
-                ]
-            }
+      },
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.DB2zDialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
         ]
-    },
-    {
-        "name": "org.hibernate.dialect.DB2zDialect",
-        "methods": [
-            {
-                "name": "<init>",
-                "parameterTypes": [
-                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
-                ]
-            }
+      },
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.DerbyDialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
         ]
-    },
-    {
-        "name": "org.hibernate.dialect.DerbyDialect",
-        "methods": [
-            {
-                "name": "<init>",
-                "parameterTypes": [
-                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
-                ]
-            }
+      },
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.H2Dialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
         ]
-    },
-    {
-        "name": "org.hibernate.dialect.H2Dialect",
-        "methods": [
-            {
-                "name": "<init>",
-                "parameterTypes": [
-                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
-                ]
-            }
+      },
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.HANAColumnStoreDialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
         ]
-    },
-    {
-        "name": "org.hibernate.dialect.HANAColumnStoreDialect",
-        "methods": [
-            {
-                "name": "<init>",
-                "parameterTypes": [
-                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
-                ]
-            }
+      },
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.HANARowStoreDialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
         ]
-    },
-    {
-        "name": "org.hibernate.dialect.HANARowStoreDialect",
-        "methods": [
-            {
-                "name": "<init>",
-                "parameterTypes": [
-                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
-                ]
-            }
+      },
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.HSQLDialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
         ]
-    },
-    {
-        "name": "org.hibernate.dialect.HSQLDialect",
-        "methods": [
-            {
-                "name": "<init>",
-                "parameterTypes": [
-                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
-                ]
-            }
+      },
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.MariaDBDialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
         ]
-    },
-    {
-        "name": "org.hibernate.dialect.MariaDBDialect",
-        "methods": [
-            {
-                "name": "<init>",
-                "parameterTypes": [
-                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
-                ]
-            }
+      },
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.MySQLDialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
         ]
-    },
-    {
-        "name": "org.hibernate.dialect.MySQLDialect",
-        "methods": [
-            {
-                "name": "<init>",
-                "parameterTypes": [
-                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
-                ]
-            }
+      },
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.OracleDialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
         ]
-    },
-    {
-        "name": "org.hibernate.dialect.OracleDialect",
-        "methods": [
-            {
-                "name": "<init>",
-                "parameterTypes": [
-                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
-                ]
-            }
+      },
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.PostgresPlusDialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
         ]
-    },
-    {
-        "name": "org.hibernate.dialect.PostgresPlusDialect",
-        "methods": [
-            {
-                "name": "<init>",
-                "parameterTypes": [
-                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
-                ]
-            }
+      },
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.PostgreSQLDialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
         ]
-    },
-    {
-        "name": "org.hibernate.dialect.PostgreSQLDialect",
-        "methods": [
-            {
-                "name": "<init>",
-                "parameterTypes": [
-                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
-                ]
-            }
+      },
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.SpannerDialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
         ]
-    },
-    {
-        "name": "org.hibernate.dialect.SpannerDialect",
-        "methods": [
-            {
-                "name": "<init>",
-                "parameterTypes": [
-                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
-                ]
-            }
+      },
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.SQLServerDialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
         ]
-    },
-    {
-        "name": "org.hibernate.dialect.SQLServerDialect",
-        "methods": [
-            {
-                "name": "<init>",
-                "parameterTypes": [
-                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
-                ]
-            }
+      },
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.SybaseASEDialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
         ]
-    },
-    {
-        "name": "org.hibernate.dialect.SybaseASEDialect",
-        "methods": [
-            {
-                "name": "<init>",
-                "parameterTypes": [
-                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
-                ]
-            }
+      },
+      {
+        "name": "<init>"
+      },
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.SybaseDialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
         ]
-    },
-    {
-        "name": "org.hibernate.dialect.SybaseDialect",
-        "methods": [
-            {
-                "name": "<init>",
-                "parameterTypes": [
-                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
-                ]
-            }
+      },
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.TiDBDialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
         ]
+      },
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.OracleArrayJdbcTypeConstructor",
+    "methods": [
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.OracleNestedTableJdbcTypeConstructor",
+    "methods": [
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.OracleStructJdbcType",
+    "methods": [
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "com.arjuna.ats.internal.arjuna.utils.SocketProcessId",
+    "methods": [
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.event.service.internal.EventListenerGroupImpl"
     },
-    {
-        "name": "org.hibernate.dialect.TiDBDialect",
-        "methods": [
-            {
-                "name": "<init>",
-                "parameterTypes": [
-                    "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
-                ]
-            }
-        ]
+    "name": "org.hibernate.event.spi.AutoFlushEventListener;"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.event.service.internal.EventListenerGroupImpl"
     },
-    {
-        "name": "org.hibernate.dialect.CockroachDialect",
-        "methods": [
-            {
-                "name": "<init>"
-            }
-        ]
+    "name": "org.hibernate.event.spi.DeleteEventListener;"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.event.service.internal.EventListenerGroupImpl"
     },
-    {
-        "name": "org.hibernate.dialect.DB2400Dialect",
-        "methods": [
-            {
-                "name": "<init>"
-            }
-        ]
+    "name": "org.hibernate.event.spi.DirtyCheckEventListener;"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.event.service.internal.EventListenerGroupImpl"
     },
-    {
-        "name": "org.hibernate.dialect.DB2Dialect",
-        "methods": [
-            {
-                "name": "<init>"
-            }
-        ]
+    "name": "org.hibernate.event.spi.EvictEventListener;"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.event.service.internal.EventListenerGroupImpl"
     },
-    {
-        "name": "org.hibernate.dialect.DB2iDialect",
-        "methods": [
-            {
-                "name": "<init>"
-            }
-        ]
+    "name": "org.hibernate.event.spi.FlushEntityEventListener;"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.event.service.internal.EventListenerGroupImpl"
     },
-    {
-        "name": "org.hibernate.dialect.DB2zDialect",
-        "methods": [
-            {
-                "name": "<init>"
-            }
-        ]
+    "name": "org.hibernate.event.spi.FlushEventListener;"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.event.service.internal.EventListenerGroupImpl"
     },
-    {
-        "name": "org.hibernate.dialect.DerbyDialect",
-        "methods": [
-            {
-                "name": "<init>"
-            }
-        ]
+    "name": "org.hibernate.event.spi.InitializeCollectionEventListener;"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.event.service.internal.EventListenerGroupImpl"
     },
-    {
-        "name": "org.hibernate.dialect.H2Dialect",
-        "methods": [
-            {
-                "name": "<init>"
-            }
-        ]
+    "name": "org.hibernate.event.spi.LoadEventListener;"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.event.service.internal.EventListenerGroupImpl"
     },
-    {
-        "name": "org.hibernate.dialect.HANAColumnStoreDialect",
-        "methods": [
-            {
-                "name": "<init>"
-            }
-        ]
+    "name": "org.hibernate.event.spi.LockEventListener;"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.event.service.internal.EventListenerGroupImpl"
     },
-    {
-        "name": "org.hibernate.dialect.HANARowStoreDialect",
-        "methods": [
-            {
-                "name": "<init>"
-            }
-        ]
+    "name": "org.hibernate.event.spi.MergeEventListener;"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.event.service.internal.EventListenerGroupImpl"
     },
-    {
-        "name": "org.hibernate.dialect.HSQLDialect",
-        "methods": [
-            {
-                "name": "<init>"
-            }
-        ]
+    "name": "org.hibernate.event.spi.PersistEventListener;"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.event.service.internal.EventListenerGroupImpl"
     },
-    {
-        "name": "org.hibernate.dialect.MariaDBDialect",
-        "methods": [
-            {
-                "name": "<init>"
-            }
-        ]
+    "name": "org.hibernate.event.spi.PostDeleteEventListener;"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.event.service.internal.EventListenerGroupImpl"
     },
-    {
-        "name": "org.hibernate.dialect.MySQLDialect",
-        "methods": [
-            {
-                "name": "<init>"
-            }
-        ]
+    "name": "org.hibernate.event.spi.PostInsertEventListener;"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.event.service.internal.EventListenerGroupImpl"
     },
-    {
-        "name": "org.hibernate.dialect.OracleDialect",
-        "methods": [
-            {
-                "name": "<init>"
-            }
-        ]
+    "name": "org.hibernate.event.spi.PostLoadEventListener;"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.event.service.internal.EventListenerGroupImpl"
     },
-    {
-        "name": "org.hibernate.dialect.PostgresPlusDialect",
-        "methods": [
-            {
-                "name": "<init>"
-            }
-        ]
+    "name": "org.hibernate.event.spi.PostUpdateEventListener;"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.event.service.internal.EventListenerGroupImpl"
     },
-    {
-        "name": "org.hibernate.dialect.PostgreSQLDialect",
-        "methods": [
-            {
-                "name": "<init>"
-            }
-        ]
+    "name": "org.hibernate.event.spi.PreLoadEventListener;"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.event.service.internal.EventListenerGroupImpl"
     },
-    {
-        "name": "org.hibernate.dialect.SpannerDialect",
-        "methods": [
-            {
-                "name": "<init>"
-            }
-        ]
+    "name": "org.hibernate.event.spi.RefreshEventListener;"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.event.service.internal.EventListenerGroupImpl"
     },
-    {
-        "name": "org.hibernate.dialect.SQLServerDialect",
-        "methods": [
-            {
-                "name": "<init>"
-            }
-        ]
+    "name": "org.hibernate.event.spi.ReplicateEventListener;"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.event.service.internal.EventListenerGroupImpl"
     },
-    {
-        "name": "org.hibernate.dialect.SybaseASEDialect",
-        "methods": [
-            {
-                "name": "<init>"
-            }
-        ]
+    "name": "org.hibernate.event.spi.ResolveNaturalIdEventListener;"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.event.service.internal.EventListenerGroupImpl"
     },
-    {
-        "name": "org.hibernate.dialect.SybaseDialect",
-        "methods": [
-            {
-                "name": "<init>"
-            }
-        ]
+    "name": "org.hibernate.event.spi.SaveOrUpdateEventListener;"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.internal.util.collections.StandardStack"
     },
-    {
-        "name": "org.hibernate.dialect.TiDBDialect",
-        "methods": [
-            {
-                "name": "<init>"
-            }
-        ]
+    "name": "org.hibernate.query.hql.spi.DotIdentifierConsumer;"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.query.hql.internal.SemanticQueryBuilder"
     },
-    {
-        "name": "org.hibernate.dialect.OracleArrayJdbcTypeConstructor",
-        "methods": [
-            {
-                "name": "<init>"
-            }
-        ]
+    "name": "org.hibernate.query.hql.spi.SqmCreationProcessingState;"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.query.hql.internal.SemanticQueryBuilder"
     },
-    {
-        "name": "org.hibernate.dialect.OracleNestedTableJdbcTypeConstructor",
-        "methods": [
-            {
-                "name": "<init>"
-            }
-        ]
+    "name": "org.hibernate.query.sqm.spi.ParameterDeclarationContext;"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.query.sqm.sql.BaseSqmToSqlAstConverter"
     },
-    {
-        "name": "org.hibernate.dialect.OracleStructJdbcType",
-        "methods": [
-            {
-                "name": "<init>"
-            }
-        ]
+    "name": "org.hibernate.query.sqm.sql.FromClauseIndex;"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.query.sqm.sql.BaseSqmToSqlAstConverter"
     },
-    {
-        "name": "com.arjuna.ats.internal.arjuna.utils.SocketProcessId",
-        "methods": [
-            {
-                "name": "<init>"
-            }
+    "name": "org.hibernate.sql.ast.Clause;"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.sql.ast.spi.AbstractSqlAstTranslator"
+    },
+    "name": "org.hibernate.sql.ast.Clause;"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.query.sqm.sql.BaseSqmToSqlAstConverter"
+    },
+    "name": "org.hibernate.sql.ast.spi.SqlAstProcessingState;"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.sql.ast.spi.AbstractSqlAstTranslator"
+    },
+    "name": "org.hibernate.sql.ast.tree.Statement;"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.sql.ast.spi.AbstractSqlAstTranslator"
+    },
+    "name": "org.hibernate.sql.ast.tree.select.QueryPart;"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.sql.results.graph.DomainResultGraphPrinter"
+    },
+    "name": "org.hibernate.sql.results.graph.FetchParent;"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.sql.results.spi.LoadContexts"
+    },
+    "name": "org.hibernate.sql.results.jdbc.spi.JdbcValuesSourceProcessingState;"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.boot.beanvalidation.BeanValidationIntegrator"
+    },
+    "name": "jakarta.validation.ConstraintViolation"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.dialect.OracleJdbcHelper"
+    },
+    "name": "oracle.jdbc.OracleConnection"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.engine.jdbc.connections.internal.DriverManagerConnectionProviderImpl"
+    },
+    "name": "org.h2.Driver",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.boot.internal.MetadataImpl"
+    },
+    "name": "org.hibernate.boot.internal.DefaultSessionFactoryBuilderService",
+    "queryAllPublicMethods": true
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.boot.internal.MetadataBuilderImpl$MetadataBuildingOptionsImpl"
+    },
+    "name": "org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.boot.internal.MetadataBuilderImpl$MetadataBuildingOptionsImpl"
+    },
+    "name": "org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.bytecode.enhance.spi.interceptor.BytecodeInterceptorLogging"
+    },
+    "name": "org.hibernate.bytecode.enhance.spi.interceptor.BytecodeInterceptorLogging_$logger",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.jboss.logging.Logger"
         ]
-    }
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.boot.internal.SessionFactoryBuilderImpl"
+    },
+    "name": "org.hibernate.bytecode.internal.none.BytecodeProviderImpl",
+    "queryAllPublicMethods": true
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.boot.registry.classloading.internal.ClassLoaderServiceImpl"
+    },
+    "name": "org.hibernate.dialect.H2Dialect"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.boot.registry.classloading.internal.ClassLoaderServiceImpl"
+    },
+    "name": "org.hibernate.dialect.MariaDB103Dialect"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.engine.jdbc.dialect.internal.DialectFactoryImpl"
+    },
+    "name": "org.hibernate.dialect.MariaDB103Dialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.boot.registry.classloading.internal.ClassLoaderServiceImpl"
+    },
+    "name": "org.hibernate.dialect.MariaDB106Dialect"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.engine.jdbc.dialect.internal.DialectFactoryImpl"
+    },
+    "name": "org.hibernate.dialect.MariaDB106Dialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.boot.registry.classloading.internal.ClassLoaderServiceImpl"
+    },
+    "name": "org.hibernate.dialect.MariaDBDialect"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.boot.registry.classloading.internal.ClassLoaderServiceImpl"
+    },
+    "name": "org.hibernate.dialect.MySQL57Dialect"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.engine.jdbc.dialect.internal.DialectFactoryImpl"
+    },
+    "name": "org.hibernate.dialect.MySQL57Dialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.boot.registry.classloading.internal.ClassLoaderServiceImpl"
+    },
+    "name": "org.hibernate.dialect.MySQL8Dialect"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.engine.jdbc.dialect.internal.DialectFactoryImpl"
+    },
+    "name": "org.hibernate.dialect.MySQL8Dialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.boot.registry.classloading.internal.ClassLoaderServiceImpl"
+    },
+    "name": "org.hibernate.dialect.MySQLDialect"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.boot.registry.classloading.internal.ClassLoaderServiceImpl"
+    },
+    "name": "org.hibernate.dialect.Oracle12cDialect"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.engine.jdbc.dialect.internal.DialectFactoryImpl"
+    },
+    "name": "org.hibernate.dialect.Oracle12cDialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.dialect.OracleJdbcHelper"
+    },
+    "name": "org.hibernate.dialect.OracleArrayJdbcType",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.boot.registry.classloading.internal.ClassLoaderServiceImpl"
+    },
+    "name": "org.hibernate.dialect.OracleDialect"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.boot.registry.classloading.internal.ClassLoaderServiceImpl"
+    },
+    "name": "org.hibernate.dialect.PostgreSQL10Dialect"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.engine.jdbc.dialect.internal.DialectFactoryImpl"
+    },
+    "name": "org.hibernate.dialect.PostgreSQL10Dialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.boot.registry.classloading.internal.ClassLoaderServiceImpl"
+    },
+    "name": "org.hibernate.dialect.PostgreSQLDialect"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.dialect.PgJdbcHelper"
+    },
+    "name": "org.hibernate.dialect.PostgreSQLInetJdbcType",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.dialect.PgJdbcHelper"
+    },
+    "name": "org.hibernate.dialect.PostgreSQLIntervalSecondJdbcType",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.dialect.PgJdbcHelper"
+    },
+    "name": "org.hibernate.dialect.PostgreSQLJsonPGObjectJsonbType",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.dialect.PgJdbcHelper"
+    },
+    "name": "org.hibernate.dialect.PostgreSQLStructPGObjectJdbcType",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.boot.registry.classloading.internal.ClassLoaderServiceImpl"
+    },
+    "name": "org.hibernate.dialect.PostgresPlusDialect"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.boot.registry.classloading.internal.ClassLoaderServiceImpl"
+    },
+    "name": "org.hibernate.dialect.SQLServer2008Dialect"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.engine.jdbc.dialect.internal.DialectFactoryImpl"
+    },
+    "name": "org.hibernate.dialect.SQLServer2008Dialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.boot.registry.classloading.internal.ClassLoaderServiceImpl"
+    },
+    "name": "org.hibernate.dialect.SQLServer2012Dialect"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.engine.jdbc.dialect.internal.DialectFactoryImpl"
+    },
+    "name": "org.hibernate.dialect.SQLServer2012Dialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.boot.registry.classloading.internal.ClassLoaderServiceImpl"
+    },
+    "name": "org.hibernate.dialect.SQLServer2016Dialect"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.engine.jdbc.dialect.internal.DialectFactoryImpl"
+    },
+    "name": "org.hibernate.dialect.SQLServer2016Dialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.boot.registry.classloading.internal.ClassLoaderServiceImpl"
+    },
+    "name": "org.hibernate.dialect.SQLServerDialect"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.engine.jdbc.batch.JdbcBatchLogging"
+    },
+    "name": "org.hibernate.engine.jdbc.batch.JdbcBatchLogging_$logger",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.jboss.logging.Logger"
+        ]
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.internal.FastSessionServices"
+    },
+    "name": "org.hibernate.engine.jdbc.batch.internal.BatchBuilderImpl",
+    "queryAllPublicMethods": true
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.internal.FastSessionServices"
+    },
+    "name": "org.hibernate.engine.jdbc.connections.internal.DriverManagerConnectionProviderImpl",
+    "queryAllPublicMethods": true
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.persister.entity.mutation.InsertCoordinator"
+    },
+    "name": "org.hibernate.engine.jdbc.mutation.internal.StandardMutationExecutorService",
+    "queryAllPublicMethods": true
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.internal.SessionFactoryImpl"
+    },
+    "name": "org.hibernate.engine.transaction.jta.platform.internal.NoJtaPlatform",
+    "queryAllPublicMethods": true
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.id.factory.internal.StandardIdentifierGeneratorFactory"
+    },
+    "name": "org.hibernate.generator.internal.CurrentTimestampGeneration",
+    "queryAllDeclaredConstructors": true,
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.annotations.CreationTimestamp",
+          "java.lang.reflect.Member",
+          "org.hibernate.generator.GeneratorCreationContext"
+        ]
+      },
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.annotations.CurrentTimestamp",
+          "java.lang.reflect.Member",
+          "org.hibernate.generator.GeneratorCreationContext"
+        ]
+      },
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.annotations.UpdateTimestamp",
+          "java.lang.reflect.Member",
+          "org.hibernate.generator.GeneratorCreationContext"
+        ]
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.id.factory.internal.StandardIdentifierGeneratorFactory"
+    },
+    "name": "org.hibernate.generator.internal.GeneratedAlwaysGeneration",
+    "queryAllDeclaredConstructors": true,
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.id.factory.internal.StandardIdentifierGeneratorFactory"
+    },
+    "name": "org.hibernate.generator.internal.GeneratedGeneration",
+    "queryAllDeclaredConstructors": true,
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.annotations.Generated"
+        ]
+      },
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.annotations.GenerationTime"
+        ]
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.id.factory.internal.StandardIdentifierGeneratorFactory"
+    },
+    "name": "org.hibernate.generator.internal.SourceGeneration",
+    "queryAllDeclaredConstructors": true,
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.annotations.Source",
+          "java.lang.reflect.Member",
+          "org.hibernate.generator.GeneratorCreationContext"
+        ]
+      },
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.annotations.SourceType",
+          "java.lang.Class",
+          "org.hibernate.generator.GeneratorCreationContext"
+        ]
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.id.factory.internal.StandardIdentifierGeneratorFactory"
+    },
+    "name": "org.hibernate.generator.internal.TenantIdGeneration",
+    "queryAllDeclaredConstructors": true,
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.annotations.TenantId",
+          "java.lang.reflect.Member",
+          "org.hibernate.generator.GeneratorCreationContext"
+        ]
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.id.factory.internal.StandardIdentifierGeneratorFactory"
+    },
+    "name": "org.hibernate.id.ForeignGenerator",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.id.factory.internal.StandardIdentifierGeneratorFactory"
+    },
+    "name": "org.hibernate.id.GUIDGenerator",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.id.factory.internal.StandardIdentifierGeneratorFactory"
+    },
+    "name": "org.hibernate.id.IdentityGenerator",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.id.factory.internal.StandardIdentifierGeneratorFactory"
+    },
+    "name": "org.hibernate.id.IncrementGenerator",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.id.factory.internal.StandardIdentifierGeneratorFactory"
+    },
+    "name": "org.hibernate.id.SelectGenerator",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.id.factory.internal.StandardIdentifierGeneratorFactory"
+    },
+    "name": "org.hibernate.id.UUIDGenerator",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.id.factory.internal.StandardIdentifierGeneratorFactory"
+    },
+    "name": "org.hibernate.id.UUIDHexGenerator",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.id.enhanced.OptimizerFactory"
+    },
+    "name": "org.hibernate.id.enhanced.HiLoOptimizer",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "java.lang.Class",
+          "int"
+        ]
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.id.enhanced.OptimizerFactory"
+    },
+    "name": "org.hibernate.id.enhanced.LegacyHiLoAlgorithmOptimizer",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "java.lang.Class",
+          "int"
+        ]
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.id.enhanced.TableGenerator"
+    },
+    "name": "org.hibernate.id.enhanced.LegacyNamingStrategy",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.id.enhanced.OptimizerFactory"
+    },
+    "name": "org.hibernate.id.enhanced.NoopOptimizer",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "java.lang.Class",
+          "int"
+        ]
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.id.enhanced.OptimizerFactory"
+    },
+    "name": "org.hibernate.id.enhanced.PooledLoOptimizer",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "java.lang.Class",
+          "int"
+        ]
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.id.enhanced.OptimizerFactory"
+    },
+    "name": "org.hibernate.id.enhanced.PooledLoThreadLocalOptimizer",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "java.lang.Class",
+          "int"
+        ]
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.id.enhanced.OptimizerFactory"
+    },
+    "name": "org.hibernate.id.enhanced.PooledOptimizer",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "java.lang.Class",
+          "int"
+        ]
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.id.factory.internal.StandardIdentifierGeneratorFactory"
+    },
+    "name": "org.hibernate.id.enhanced.SequenceStyleGenerator",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.id.enhanced.TableGenerator"
+    },
+    "name": "org.hibernate.id.enhanced.SingleNamingStrategy",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.id.enhanced.TableGenerator"
+    },
+    "name": "org.hibernate.id.enhanced.StandardNamingStrategy",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.id.factory.internal.StandardIdentifierGeneratorFactory"
+    },
+    "name": "org.hibernate.id.enhanced.TableGenerator",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.boot.internal.MetadataBuilderImpl$MetadataBuildingOptionsImpl"
+    },
+    "name": "org.hibernate.id.factory.internal.StandardIdentifierGeneratorFactory",
+    "queryAllPublicMethods": true
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.internal.log.ConnectionAccessLogger"
+    },
+    "name": "org.hibernate.internal.log.ConnectionAccessLogger_$logger",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.jboss.logging.Logger"
+        ]
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.internal.log.ConnectionPoolingLogger"
+    },
+    "name": "org.hibernate.internal.log.ConnectionPoolingLogger_$logger",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.jboss.logging.Logger"
+        ]
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.internal.log.DeprecationLogger"
+    },
+    "name": "org.hibernate.internal.log.DeprecationLogger_$logger",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.jboss.logging.Logger"
+        ]
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.internal.log.IncubationLogger"
+    },
+    "name": "org.hibernate.internal.log.IncubationLogger_$logger",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.jboss.logging.Logger"
+        ]
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.internal.log.UrlMessageBundle"
+    },
+    "name": "org.hibernate.internal.log.UrlMessageBundle_$logger",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.jboss.logging.Logger"
+        ]
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.metamodel.mapping.MappingModelCreationLogger"
+    },
+    "name": "org.hibernate.metamodel.mapping.MappingModelCreationLogger_$logger",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.jboss.logging.Logger"
+        ]
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.persister.internal.PersisterFactoryImpl"
+    },
+    "name": "org.hibernate.persister.collection.BasicCollectionPersister",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.mapping.Collection",
+          "org.hibernate.cache.spi.access.CollectionDataAccess",
+          "org.hibernate.metamodel.spi.RuntimeModelCreationContext"
+        ]
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.persister.internal.PersisterFactoryImpl"
+    },
+    "name": "org.hibernate.persister.collection.OneToManyPersister",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.mapping.Collection",
+          "org.hibernate.cache.spi.access.CollectionDataAccess",
+          "org.hibernate.metamodel.spi.RuntimeModelCreationContext"
+        ]
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.query.QueryLogging"
+    },
+    "name": "org.hibernate.query.QueryLogging_$logger",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.jboss.logging.Logger"
+        ]
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.query.hql.HqlLogging"
+    },
+    "name": "org.hibernate.query.hql.HqlLogging_$logger",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.jboss.logging.Logger"
+        ]
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.boot.internal.SessionFactoryOptionsBuilder"
+    },
+    "name": "org.hibernate.resource.transaction.backend.jdbc.internal.JdbcResourceLocalTransactionCoordinatorBuilderImpl",
+    "queryAllPublicMethods": true
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.resource.transaction.internal.TransactionCoordinatorBuilderInitiator"
+    },
+    "name": "org.hibernate.resource.transaction.backend.jdbc.internal.JdbcResourceLocalTransactionCoordinatorBuilderImpl",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.sql.SimpleSelect"
+    },
+    "name": "org.hibernate.sql.ast.internal.ParameterMarkerStrategyStandard",
+    "queryAllPublicMethods": true
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.sql.ast.tree.SqlAstTreeLogger"
+    },
+    "name": "org.hibernate.sql.ast.tree.SqlAstTreeLogger_$logger",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.jboss.logging.Logger"
+        ]
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.sql.exec.SqlExecLogger"
+    },
+    "name": "org.hibernate.sql.exec.SqlExecLogger_$logger",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.jboss.logging.Logger"
+        ]
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.sql.results.LoadingLogger"
+    },
+    "name": "org.hibernate.sql.results.LoadingLogger_$logger",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.jboss.logging.Logger"
+        ]
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.sql.results.ResultsLogger"
+    },
+    "name": "org.hibernate.sql.results.ResultsLogger_$logger",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.jboss.logging.Logger"
+        ]
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.sql.ast.spi.AbstractSqlAstTranslator"
+    },
+    "name": "org.hibernate.sql.results.jdbc.internal.JdbcValuesMappingProducerProviderStandard",
+    "queryAllPublicMethods": true
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.tool.schema.internal.SchemaDropperImpl"
+    },
+    "name": "org.hibernate.tool.schema.internal.script.SingleLineSqlScriptExtractor",
+    "queryAllPublicMethods": true
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.type.descriptor.JdbcTypeNameMapper"
+    },
+    "name": "org.hibernate.type.SqlTypes",
+    "allPublicFields": true
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.dialect.PgJdbcHelper"
+    },
+    "name": "org.postgresql.util.PGobject"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.dialect.DialectLogging"
+    },
+    "name": "org.hibernate.dialect.DialectLogging_$logger",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.jboss.logging.Logger"
+        ]
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.metamodel.mapping.MappingModelCreationLogging"
+    },
+    "name": "org.hibernate.metamodel.mapping.MappingModelCreationLogging_$logger",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.jboss.logging.Logger"
+        ]
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.engine.jdbc.env.internal.LobCreationLogging"
+    },
+    "name": "org.hibernate.engine.jdbc.env.internal.LobCreationLogging_$logger",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.jboss.logging.Logger"
+        ]
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.boot.jaxb.JaxbLogger"
+    },
+    "name": "org.hibernate.boot.jaxb.JaxbLogger_$logger",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.jboss.logging.Logger"
+        ]
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.cache.spi.SecondLevelCacheLogger"
+    },
+    "name": "org.hibernate.cache.spi.SecondLevelCacheLogger_$logger",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.jboss.logging.Logger"
+        ]
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.engine.jdbc.JdbcLogging"
+    },
+    "name": "org.hibernate.engine.jdbc.JdbcLogging_$logger",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.jboss.logging.Logger"
+        ]
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.resource.beans.internal.BeansMessageLogger"
+    },
+    "name": "org.hibernate.resource.beans.internal.BeansMessageLogger_$logger",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.jboss.logging.Logger"
+        ]
+      }
+    ]
+  },
+  {
+    "condition": {
+      "typeReachable": "org.hibernate.sql.results.graph.embeddable.EmbeddableLoadingLogger"
+    },
+    "name": "org.hibernate.sql.results.graph.embeddable.EmbeddableLoadingLogger_$logger",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.jboss.logging.Logger"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "org.jboss.jandex.ClassInfo[]",
+    "unsafeAllocated": true
+  }
 ]
