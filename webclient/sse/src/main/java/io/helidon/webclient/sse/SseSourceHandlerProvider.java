@@ -92,7 +92,6 @@ public class SseSourceHandlerProvider implements SourceHandlerProvider<SseEvent>
                     emit = false;
                 }
             }
-
             source.onClose();
         } catch (IOException e) {
             source.onError(e);

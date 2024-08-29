@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,24 +19,25 @@ package io.helidon.webserver.tests.sse;
 import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
+import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.http.HeaderValues.ACCEPT_EVENT_STREAM;
 import static io.helidon.http.HeaderValues.ACCEPT_JSON;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
 class SseServerTest extends SseBaseTest {
 
-    private final Http1Client client;
+    private final WebServer webServer;
 
-    SseServerTest(Http1Client client) {
-        this.client = client;
+    SseServerTest(WebServer webServer) {
+        this.webServer = webServer;
     }
 
     @SetUpRoute
@@ -50,49 +51,52 @@ class SseServerTest extends SseBaseTest {
     }
 
     @Test
-    void testSseString1() {
-        testSse("/sseString1", "data:hello\n\ndata:world\n\n");
+    void testSseString1() throws Exception {
+        testSse("/sseString1", "data:hello", "data:world");
     }
 
     @Test
-    void testSseString2() {
-        testSse("/sseString2", "data:1\n\ndata:2\n\ndata:3\n\n");
+    void testSseString2() throws Exception {
+        testSse("/sseString2", "data:1", "data:2", "data:3");
     }
 
     @Test
-    void testSseJson1() {
-        testSse("/sseJson1", "data:{\"hello\":\"world\"}\n\n");
+    void testSseJson1() throws Exception {
+        testSse("/sseJson1", "data:{\"hello\":\"world\"}");
     }
 
     @Test
-    void testSseJson2() {
-        testSse("/sseJson2", "data:{\"hello\":\"world\"}\n\n");
+    void testSseJson2() throws Exception {
+        testSse("/sseJson2", "data:{\"hello\":\"world\"}");
     }
 
     @Test
-    void testSseMixed() {
-        testSse("/sseMixed",
-                "data:hello\n\ndata:world\n\n" +
-                        "data:{\"hello\":\"world\"}\n\n" +
-                        "data:{\"hello\":\"world\"}\n\n");
+    void testSseMixed() throws Exception {
+        testSse("/sseMixed", "data:hello", "data:world",
+                "data:{\"hello\":\"world\"}", "data:{\"hello\":\"world\"}");
     }
 
     @Test
-    void testIdComment() {
-        testSse("/sseIdComment", ":This is a comment\nid:1\ndata:hello\n\n");
+    void testIdComment() throws Exception {
+        testSse("/sseIdComment", ":This is a comment\nid:1\ndata:hello");
     }
 
     @Test
     void testWrongAcceptType() {
+        Http1Client client = Http1Client.builder()
+                .baseUri("http://localhost:" + webServer.port())
+                .build();
         try (Http1ClientResponse response = client.get("/sseString1").header(ACCEPT_JSON).request()) {
             assertThat(response.status(), is(Status.NOT_ACCEPTABLE_406));
         }
     }
 
-    private void testSse(String path, String result) {
-        try (Http1ClientResponse response = client.get(path).header(ACCEPT_EVENT_STREAM).request()) {
-            assertThat(response.status(), is(Status.OK_200));
-            assertThat(response.as(String.class), is(result));
+    private void testSse(String path, String... events) throws Exception {
+        try (SimpleSseClient sseClient = SimpleSseClient.create(webServer.port(), path)) {
+            for (String e : events) {
+                assertThat(sseClient.nextEvent(), is(e));
+            }
+            assertThat(sseClient.nextEvent(), is(nullValue()));
         }
     }
 }
