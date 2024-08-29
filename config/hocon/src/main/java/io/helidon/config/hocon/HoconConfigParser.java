@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -159,10 +159,10 @@ public class HoconConfigParser implements ConfigParser {
         ObjectNode.Builder builder = ObjectNode.builder();
         config.forEach((unescapedKey, value) -> {
             String key = io.helidon.config.Config.Key.escapeName(unescapedKey);
-            if (value instanceof ConfigList) {
-                builder.addList(key, fromList((ConfigList) value));
-            } else if (value instanceof ConfigObject) {
-                builder.addObject(key, fromConfig((ConfigObject) value));
+            if (value instanceof ConfigList configList) {
+                builder.addList(key, fromList(configList));
+            } else if (value instanceof ConfigObject configObject) {
+                builder.addObject(key, fromConfig(configObject));
             } else {
                 try {
                     Object unwrapped = value.unwrapped();
@@ -185,10 +185,10 @@ public class HoconConfigParser implements ConfigParser {
     private static ListNode fromList(ConfigList list) {
         ListNode.Builder builder = ListNode.builder();
         list.forEach(value -> {
-            if (value instanceof ConfigList) {
-                builder.addList(fromList((ConfigList) value));
-            } else if (value instanceof ConfigObject) {
-                builder.addObject(fromConfig((ConfigObject) value));
+            if (value instanceof ConfigList configList) {
+                builder.addList(fromList(configList));
+            } else if (value instanceof ConfigObject configObject) {
+                builder.addObject(fromConfig(configObject));
             } else {
                 try {
                     Object unwrapped = value.unwrapped();
