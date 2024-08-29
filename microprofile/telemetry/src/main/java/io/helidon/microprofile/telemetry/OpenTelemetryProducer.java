@@ -90,8 +90,8 @@ class OpenTelemetryProducer {
 
         mpConfig.getOptionalValue(EXPORTER_NAME_PROPERTY, String.class).ifPresent(e -> exporterName = e);
 
-        // If there is an OTEL Agent – delegate everything to it.
-        if (HelidonOpenTelemetry.AgentDetector.isAgentPresent(config)) {
+        // If there is an OTEL Agent – or otherwise we should use a pre-existing global OTel instance - delegate to it.
+        if (HelidonOpenTelemetry.AgentDetector.useExistingGlobalOpenTelemetry(config)) {
             openTelemetry =  GlobalOpenTelemetry.get();
         } else {
 
