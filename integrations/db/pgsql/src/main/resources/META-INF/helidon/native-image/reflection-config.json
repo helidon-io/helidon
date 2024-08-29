@@ -13,6 +13,18 @@
         "org.hibernate.dialect.PostgreSQL95Dialect",
         "org.hibernate.dialect.PostgreSQL9Dialect",
         "org.hibernate.dialect.PostgreSQLDialect",
-        "org.hibernate.dialect.PostgresPlusDialect"
+        "org.hibernate.dialect.PostgresPlusDialect",
+        "org.hibernate.dialect.PostgreSQLCastingInetJdbcType",
+        "org.hibernate.dialect.PostgreSQLCastingIntervalSecondJdbcType",
+        "org.hibernate.dialect.PostgreSQLCastingJsonJdbcType",
+        "org.hibernate.dialect.PostgreSQLDriverKind",
+        "org.hibernate.dialect.PostgreSQLEnumJdbcType",
+        "org.hibernate.dialect.PostgreSQLInetJdbcType",
+        "org.hibernate.dialect.PostgreSQLIntervalSecondJdbcType",
+        "org.hibernate.dialect.PostgreSQLJsonPGObjectJsonbType",
+        "org.hibernate.dialect.PostgreSQLJsonPGObjectJsonType",
+        "org.hibernate.dialect.PostgreSQLSqlAstTranslator",
+        "org.hibernate.dialect.PostgreSQLStructCastingJdbcType",
+        "org.hibernate.dialect.PostgreSQLStructPGObjectJdbcType"
     ]
 }
