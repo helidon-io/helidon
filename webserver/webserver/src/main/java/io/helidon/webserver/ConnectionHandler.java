@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Semaphore;
+import java.util.function.Supplier;
 
 import javax.net.ssl.SSLSocket;
 
@@ -130,7 +131,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
                 helidonSocket = PlainSocket.server(socket, channelId, serverChannelId);
             }
 
-            reader = new DataReader(helidonSocket);
+            reader = new DataReader(new MapExceptionDataSupplier(helidonSocket));
             writer = SocketWriter.create(listenerContext.executor(), helidonSocket,
                     listenerContext.config().writeQueueLength());
         } catch (Exception e) {
@@ -167,12 +168,12 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
             helidonSocket.log(LOGGER, WARNING, "escaped Request exception", e);
         } catch (HttpException e) {
             helidonSocket.log(LOGGER, WARNING, "escaped HTTP exception", e);
+        } catch (ServerConnectionException e) {
+            // socket exception - the socket failed, probably killed by OS, proxy or client
+            helidonSocket.log(LOGGER, TRACE, "server I/O issue", e);
         } catch (CloseConnectionException e) {
             // end of request stream - safe to close the connection, as it was requested by our client
             helidonSocket.log(LOGGER, TRACE, "connection close requested", e);
-        } catch (UncheckedIOException e) {
-            // socket exception - the socket failed, probably killed by OS, proxy or client
-            helidonSocket.log(LOGGER, TRACE, "received I/O exception", e);
         } catch (Exception e) {
             helidonSocket.log(LOGGER, WARNING, "unexpected exception", e);
         } finally {
@@ -321,6 +322,23 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
             helidonSocket.close();
         } catch (Throwable e) {
             helidonSocket.log(LOGGER, TRACE, "Failed to close socket on connection close", e);
+        }
+    }
+
+    private static class MapExceptionDataSupplier implements Supplier<byte[]> {
+        private final HelidonSocket helidonSocket;
+
+        private MapExceptionDataSupplier(HelidonSocket helidonSocket) {
+            this.helidonSocket = helidonSocket;
+        }
+
+        @Override
+        public byte[] get() {
+            try {
+                return helidonSocket.get();
+            } catch (UncheckedIOException e) {
+                throw new ServerConnectionException("Failed to get data from socket", e);
+            }
         }
     }
 }

@@ -19,7 +19,6 @@ package io.helidon.webserver.http1;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
@@ -45,6 +44,7 @@ import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.MediaContext;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.http.ServerResponseBase;
 import io.helidon.webserver.http.spi.Sink;
 import io.helidon.webserver.http.spi.SinkProvider;
@@ -186,7 +186,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             try (OutputStream os = outputStream(skipEncoders)) {
                 os.write(bytes);
             } catch (IOException e) {
-                throw new UncheckedIOException(e);
+                throw new ServerConnectionException("Failed to write response", e);
             }
         }
     }
@@ -307,7 +307,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                 }
             }
         } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            throw new ServerConnectionException("Failed to write sink data", e);
         }
     }
 
@@ -544,7 +544,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             try {
                 super.close();
             } catch (IOException e) {
-                throw new UncheckedIOException(e);
+                throw new ServerConnectionException("Failed to close server response stream.", e);
             }
         }
 
@@ -764,7 +764,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             try {
                 bufferedDelegate.close();
             } catch (IOException e) {
-                throw new UncheckedIOException(e);
+                throw new ServerConnectionException("Failed to close server output stream", e);
             }
         }
 
@@ -777,7 +777,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                 flush();
                 delegate.commit();
             } catch (IOException e) {
-                throw new UncheckedIOException(e);
+                throw new ServerConnectionException("Failed to flush server output stream", e);
             }
         }
     }
