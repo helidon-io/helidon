@@ -18,7 +18,6 @@ package io.helidon.webserver.sse;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
@@ -37,6 +36,7 @@ import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.sse.SseEvent;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.http.spi.Sink;
 import io.helidon.webserver.http.spi.SinkProviderContext;
@@ -174,7 +174,8 @@ public class SseSink implements Sink<SseEvent> {
                 }
                 return baos.toByteArray();
             } catch (IOException e) {
-                throw new UncheckedIOException(e);
+                throw new ServerConnectionException("Failed to write SSE event", e);
+
             }
         }
         throw new IllegalStateException("Unable to serialize SSE event without a media context");
