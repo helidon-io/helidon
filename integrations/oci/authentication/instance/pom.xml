@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.integrations.oci.authentication</groupId>
         <artifactId>helidon-integrations-oci-authentication-project</artifactId>
-        <version>4.1.0-SNAPSHOT</version>
+        <version>4.1.1-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-integrations-oci-authentication-instance</artifactId>
     <name>Helidon Integrations OCI Authentication Instance</name>
