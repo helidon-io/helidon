@@ -21,7 +21,7 @@
     <parent>
         <artifactId>helidon-tests-integration-security</artifactId>
         <groupId>io.helidon.tests.integration</groupId>
-        <version>4.1.1-SNAPSHOT</version>
+        <version>4.1.1</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
