@@ -62,7 +62,6 @@ public class SseSink implements Sink<SseEvent> {
     private static final byte[] SSE_COMMENT = ":".getBytes(StandardCharsets.UTF_8);
     private static final byte[] OK_200 = "HTTP/1.1 200 OK\r\n".getBytes(StandardCharsets.UTF_8);
     private static final byte[] DATE = "Date: ".getBytes(StandardCharsets.UTF_8);
-
     private static final WritableHeaders<?> EMPTY_HEADERS = WritableHeaders.create();
 
     private final ServerResponse response;
@@ -75,7 +74,7 @@ public class SseSink implements Sink<SseEvent> {
         this.ctx = context.connectionContext();
         this.mediaContext = ctx.listenerContext().mediaContext();
         this.closeRunnable = context.closeRunnable();
-        initResponse();
+        writeStatusAndHeaders();
     }
 
     @Override
@@ -120,30 +119,32 @@ public class SseSink implements Sink<SseEvent> {
         ctx.serverSocket().close();
     }
 
-    void initResponse() {
+    void writeStatusAndHeaders() {
         ServerResponseHeaders headers = response.headers();
 
         // verify response has no status or content type
         HttpMediaType ct = headers.contentType().orElse(null);
         if (response.status().code() != Status.OK_200.code()
                 || ct != null && !CONTENT_TYPE_EVENT_STREAM.values().equals(ct.mediaType().text())) {
-            throw new IllegalStateException("ServerResponse instance cannot be used to create SseResponse");
+            throw new IllegalStateException("ServerResponse instance cannot be used to create SseSink");
         }
-        if (ct == null) {
-            headers.add(CONTENT_TYPE_EVENT_STREAM);
-        }
-        headers.add(CACHE_NO_CACHE_ONLY);
 
-        // start writing heading to buffer
+        // start writing status line
         BufferData buffer = BufferData.growing(256);
         buffer.write(OK_200);
 
-        // serialize headers
+        // serialize a date header if not included
         if (!headers.contains(HeaderNames.DATE)) {
             buffer.write(DATE);
             byte[] dateBytes = DateTime.http1Bytes();
             buffer.write(dateBytes);
         }
+
+        // set up and write headers
+        if (ct == null) {
+            headers.add(CONTENT_TYPE_EVENT_STREAM);
+        }
+        headers.add(CACHE_NO_CACHE_ONLY);
         for (Header header : headers) {
             header.writeHttp1Header(buffer);
         }

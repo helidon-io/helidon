@@ -29,8 +29,8 @@ module io.helidon.webserver.sse {
 
     requires static io.helidon.common.features.api;
 
-    requires io.helidon.common.socket;
     requires transitive io.helidon.common;
+    requires transitive io.helidon.common.socket;
     requires transitive io.helidon.http.sse;
     requires transitive io.helidon.webserver;
 
