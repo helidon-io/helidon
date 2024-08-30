@@ -100,7 +100,7 @@
         <version.lib.logback>1.4.14</version.lib.logback>
         <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
         <version.lib.maven-wagon>2.10</version.lib.maven-wagon>
-        <version.lib.micrometer>1.13.3</version.lib.micrometer>
+        <version.lib.micrometer>1.11.3</version.lib.micrometer>
         <version.lib.micrometer-prometheus>1.11.3</version.lib.micrometer-prometheus>
         <version.lib.micronaut>3.8.7</version.lib.micronaut>
         <version.lib.micronaut.data>3.4.3</version.lib.micronaut.data>
