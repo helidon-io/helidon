@@ -99,7 +99,7 @@ public final class TestConfig {
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.TYPE)
-    @Repeatable(ConfigValues.class)
+    @Repeatable(Values.class)
     public @interface Value {
         /**
          * Key of the added configuration option.
@@ -128,7 +128,7 @@ public final class TestConfig {
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.TYPE)
-    public @interface ConfigValues {
+    public @interface Values {
         /**
          * Config values.
          *
@@ -138,24 +138,25 @@ public final class TestConfig {
     }
 
     /**
-     * Custom configuration key/value pairs.
+     * Defines the configuration as a String in {@link #value()} for the
+     * given {@link #type()}.
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.TYPE)
-    public @interface Values {
+    public @interface Block {
         /**
-         * Key of the added configuration option.
+         * Text block with configuration data.
          *
-         * @return key
+         * @return configuration data
          */
         String value();
 
         /**
-         * Format of the value (file suffix).
+         * Type of the value (file suffix).
          *
-         * @return format to use, defaults to {@code properties}
+         * @return type to use, defaults to {@code properties}
          */
-        String format() default "properties";
+        String type() default "properties";
 
         /**
          * Weight of this configuration option.
@@ -170,7 +171,7 @@ public final class TestConfig {
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.TYPE)
-    @Repeatable(ConfigFiles.class)
+    @Repeatable(Files.class)
     public @interface File {
         /**
          * File path, relative to the module (either classpath, or file system path).
@@ -192,7 +193,7 @@ public final class TestConfig {
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.TYPE)
-    public @interface ConfigFiles {
+    public @interface Files {
         /**
          * Config values.
          *

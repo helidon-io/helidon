@@ -104,13 +104,13 @@ public final class ConfigRegistrySupport {
     }
 
     private static void values(ServiceRegistryConfig.Builder serviceRegistryConfig, Class<?> testClass) {
-        TestConfig.Values annotation = testClass.getAnnotation(TestConfig.Values.class);
+        TestConfig.Block annotation = testClass.getAnnotation(TestConfig.Block.class);
         if (annotation == null) {
             return;
         }
-        var mediaType = MediaTypes.detectExtensionType(annotation.format());
+        var mediaType = MediaTypes.detectExtensionType(annotation.type());
         if (mediaType.isEmpty()) {
-            throw new TestException("No extension media type found for extension " + annotation.format() + ", for "
+            throw new TestException("No extension media type found for extension " + annotation.type() + ", for "
                                             + "annotation " + annotation.annotationType().getName());
         }
         var source = ConfigSources.create(annotation.value(), mediaType.get());

@@ -37,7 +37,7 @@ It also validates that weight of each annotation is handled correctly
  */
 @TestConfig.Value(key = "test.first", value = "first")
 @TestConfig.Value(key = "test.second", value = "second")
-@TestConfig.Values("""
+@TestConfig.Block("""
         test.first=wrong
         test.third=third
         test.fourth=fourth

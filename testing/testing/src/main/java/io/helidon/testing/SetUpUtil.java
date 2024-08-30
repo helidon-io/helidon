@@ -27,7 +27,7 @@ final class SetUpUtil {
     }
 
     static List<TestConfig.File> file(Class<?> testClass) {
-        TestConfig.ConfigFiles annotation = testClass.getAnnotation(TestConfig.ConfigFiles.class);
+        TestConfig.Files annotation = testClass.getAnnotation(TestConfig.Files.class);
         if (annotation == null) {
             TestConfig.File file = testClass.getAnnotation(TestConfig.File.class);
             if (file == null) {
@@ -39,7 +39,7 @@ final class SetUpUtil {
     }
 
     static List<TestConfig.Value> value(Class<?> testClass) {
-        TestConfig.ConfigValues annotation = testClass.getAnnotation(TestConfig.ConfigValues.class);
+        TestConfig.Values annotation = testClass.getAnnotation(TestConfig.Values.class);
         if (annotation == null) {
             TestConfig.Value value = testClass.getAnnotation(TestConfig.Value.class);
             if (value == null) {
