@@ -37,18 +37,16 @@ public class MicrometerMetricsTestsJunitExtension extends TestJunitExtension imp
     @Override
     public void beforeAll(ExtensionContext extensionContext) {
         super.beforeAll(extensionContext);
-        clear();
+        super.run(extensionContext, this::clear);
     }
 
     @Override
     public void afterAll(ExtensionContext context) {
-        clear();
+        super.run(context, this::clear);
         super.afterAll(context);
     }
 
     void clear() {
-        System.out.println("clear(): " + Contexts.context().map(Context::id).orElse("Unknown"));
-
         MetricsFactory.closeAll();
 
         // And clear out Micrometer's global registry explicitly to be extra sure.

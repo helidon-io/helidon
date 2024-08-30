@@ -16,11 +16,18 @@
 
 package io.helidon.testing.junit5;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.util.Optional;
+import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.config.Config;
 import io.helidon.common.config.GlobalConfig;
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.ServiceRegistry;
@@ -32,23 +39,27 @@ import io.helidon.testing.TestRegistry;
 
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.DynamicTestInvocationContext;
 import org.junit.jupiter.api.extension.Extension;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.InvocationInterceptor;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
+import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
 
 /**
  * Helidon JUnit extension, added through {@link io.helidon.testing.junit5.Testing.Test}.
  * <p>
  * This extension has the following features:
  * <ul>
- *     <li>Resets {@code io.helidon.common.GlobalInstances} when the test is over</li>
+ *     <li>Run constructor and every test class method within a custom {@link io.helidon.common.context.Context}</li>
  *     <li>Support configuration annotations to set up configuration before running the tests</li>
  *     <li>Support for injection service registry (if on classpath) to discover configuration</li>
  * </ul>
  */
 public class TestJunitExtension implements Extension,
+                                           InvocationInterceptor,
                                            BeforeAllCallback,
                                            AfterAllCallback,
                                            ParameterResolver {
@@ -57,37 +68,33 @@ public class TestJunitExtension implements Extension,
         LogConfig.initClass();
     }
 
-    private volatile ServiceRegistryManager manager;
-    private volatile ServiceRegistry registry;
-
     /**
      * Default constructor with no side effects.
      */
     protected TestJunitExtension() {
     }
 
-    @SuppressWarnings("removal")
     @Override
     public void beforeAll(ExtensionContext context) {
-        LogConfig.configureRuntime();
-
-        io.helidon.common.GlobalInstances.clear();
         Class<?> testClass = context.getRequiredTestClass();
+        Context helidonContext = Context.builder()
+                .id("test-" + testClass.getName() + "-" + System.identityHashCode(testClass))
+                .build();
+        // self-register, so this context is used even if the current context is some child of it
+        helidonContext.register("global-instances", helidonContext);
 
-        createRegistry(testClass);
+        ExtensionContext.Store store = extensionStore(context);
+        store.put(Context.class, helidonContext);
+
+        run(context, () -> {
+            LogConfig.configureRuntime();
+            createRegistry(store, testClass);
+        });
     }
 
-    @SuppressWarnings("removal")
     @Override
     public void afterAll(ExtensionContext context) {
-        if (manager != null) {
-            manager.shutdown();
-            manager = null;
-            registry = null;
-            afterShutdownMethods(context.getRequiredTestClass());
-        }
-
-        io.helidon.common.GlobalInstances.clear();
+        afterShutdownMethods(context.getRequiredTestClass());
     }
 
     @Override
@@ -99,7 +106,7 @@ public class TestJunitExtension implements Extension,
             return false;
         }
 
-        return registrySupportedType(paramType);
+        return registrySupportedType(extensionContext, paramType);
     }
 
     @Override
@@ -107,12 +114,227 @@ public class TestJunitExtension implements Extension,
             throws ParameterResolutionException {
         Class<?> paramType = parameterContext.getParameter().getType();
 
-        if (registrySupportedType(paramType)) {
-            return registry.get(paramType);
+        if (registrySupportedType(extensionContext, paramType)) {
+            return registry(extensionContext).get(paramType);
         }
 
         throw new ParameterResolutionException("Failed to resolve parameter of type "
                                                        + paramType.getName());
+    }
+
+    @Override
+    public <T> T interceptTestClassConstructor(Invocation<T> invocation,
+                                               ReflectiveInvocationContext<Constructor<T>> invocationContext,
+                                               ExtensionContext extensionContext) throws Throwable {
+        return invoke(extensionContext, invocation);
+    }
+
+    @Override
+    public void interceptBeforeAllMethod(Invocation<Void> invocation,
+                                         ReflectiveInvocationContext<Method> invocationContext,
+                                         ExtensionContext extensionContext) throws Throwable {
+        invoke(extensionContext, invocation);
+    }
+
+    @Override
+    public void interceptBeforeEachMethod(Invocation<Void> invocation,
+                                          ReflectiveInvocationContext<Method> invocationContext,
+                                          ExtensionContext extensionContext) throws Throwable {
+        invoke(extensionContext, invocation);
+    }
+
+    @Override
+    public void interceptTestMethod(Invocation<Void> invocation,
+                                    ReflectiveInvocationContext<Method> invocationContext,
+                                    ExtensionContext extensionContext) throws Throwable {
+        invoke(extensionContext, invocation);
+    }
+
+    @Override
+    public <T> T interceptTestFactoryMethod(Invocation<T> invocation,
+                                            ReflectiveInvocationContext<Method> invocationContext,
+                                            ExtensionContext extensionContext) throws Throwable {
+        return invoke(extensionContext, invocation);
+    }
+
+    @Override
+    public void interceptTestTemplateMethod(Invocation<Void> invocation,
+                                            ReflectiveInvocationContext<Method> invocationContext,
+                                            ExtensionContext extensionContext) throws Throwable {
+        invoke(extensionContext, invocation);
+    }
+
+    @Override
+    public void interceptDynamicTest(Invocation<Void> invocation,
+                                     DynamicTestInvocationContext invocationContext,
+                                     ExtensionContext extensionContext) throws Throwable {
+        invoke(extensionContext, invocation);
+    }
+
+    @Override
+    public void interceptAfterEachMethod(Invocation<Void> invocation,
+                                         ReflectiveInvocationContext<Method> invocationContext,
+                                         ExtensionContext extensionContext) throws Throwable {
+        invoke(extensionContext, invocation);
+    }
+
+    @Override
+    public void interceptAfterAllMethod(Invocation<Void> invocation,
+                                        ReflectiveInvocationContext<Method> invocationContext,
+                                        ExtensionContext extensionContext) throws Throwable {
+        invoke(extensionContext, invocation);
+    }
+
+    protected ServiceRegistry registry(ExtensionContext extensionContext) {
+        return extensionStore(extensionContext)
+                .get(ServiceRegistry.class, ServiceRegistry.class);
+    }
+
+    protected ExtensionContext.Store extensionStore(ExtensionContext ctx) {
+        Class<?> testClass = ctx.getRequiredTestClass();
+        return ctx.getStore(ExtensionContext.Namespace.create(testClass));
+    }
+
+    /**
+     * Context to be used for all actions this extension invokes.
+     * This extension creates a unit test context by default for each test class.
+     *
+     * @param ctx     JUnit extension context
+     * @param context Helidon context to set
+     */
+    protected void context(ExtensionContext ctx, Context context) {
+        extensionStore(ctx)
+                .put(Context.class, context);
+    }
+
+    /**
+     * The current context (if already available) that the test actions will be executed in.
+     *
+     * @param ctx JUnit extension context
+     * @return context used by this extension
+     */
+    protected Optional<Context> context(ExtensionContext ctx) {
+        return Optional.ofNullable(extensionStore(ctx).get(Context.class, Context.class));
+    }
+
+    /**
+     * Call a callable within context.
+     *
+     * @param ctx      JUnit extension context
+     * @param callable callable to invoke
+     * @param <T>      type of the result
+     * @return result of the callable
+     * @throws Throwable in case the call to callable threw an exception
+     */
+    protected <T> T callInContext(ExtensionContext ctx, Callable<T> callable) throws Throwable {
+        AtomicReference<Throwable> thrown = new AtomicReference<>();
+
+        T response = Contexts.runInContext(context(ctx).orElseThrow(), () -> {
+            try {
+                return callable.call();
+            } catch (Throwable e) {
+                thrown.set(e);
+                return null;
+            }
+        });
+        if (thrown.get() != null) {
+            throw thrown.get();
+        }
+        return response;
+    }
+
+    /**
+     * Invoke a runnable that may throw a checked exception.
+     *
+     * @param ctx      JUnit extension context
+     * @param runnable runnable to run
+     * @throws Throwable in case the runnable threw an exception
+     */
+    protected void runInContext(ExtensionContext ctx, RunWithThrowable runnable) throws Throwable {
+        AtomicReference<Throwable> thrown = new AtomicReference<>();
+
+        Contexts.runInContext(context(ctx).orElseThrow(), () -> {
+            try {
+                runnable.run();
+            } catch (Throwable e) {
+                thrown.set(e);
+            }
+        });
+        if (thrown.get() != null) {
+            throw thrown.get();
+        }
+    }
+
+    /**
+     * Invoke a supplier within the context.
+     *
+     * @param ctx      JUnit extension context
+     * @param supplier supplier to invoke
+     * @param <T>      type of the result
+     * @return result of the supplier
+     */
+    protected <T> T call(ExtensionContext ctx, Supplier<T> supplier) {
+        AtomicReference<RuntimeException> thrown = new AtomicReference<>();
+
+        T response = Contexts.runInContext(context(ctx).orElseThrow(), () -> {
+            try {
+                return supplier.get();
+            } catch (RuntimeException e) {
+                thrown.set(e);
+                return null;
+            }
+        });
+        if (thrown.get() != null) {
+            throw thrown.get();
+        }
+        return response;
+    }
+
+    /**
+     * Run a runnable within context.
+     *
+     * @param ctx      JUnit extension context
+     * @param runnable runnable to run
+     */
+    protected void run(ExtensionContext ctx, Runnable runnable) {
+        AtomicReference<RuntimeException> thrown = new AtomicReference<>();
+
+        Contexts.runInContext(context(ctx).orElseThrow(), () -> {
+            try {
+                runnable.run();
+            } catch (RuntimeException e) {
+                thrown.set(e);
+            }
+        });
+        if (thrown.get() != null) {
+            throw thrown.get();
+        }
+    }
+
+    /**
+     * Invoke a JUnit invocation within context.
+     *
+     * @param ctx        JUnit extension context
+     * @param invocation invocation to invoke
+     * @param <T>        type of the returned value
+     * @return result of the invocation
+     * @throws Throwable in case the invocation threw an exception
+     */
+    protected <T> T invoke(ExtensionContext ctx, Invocation<T> invocation) throws Throwable {
+        AtomicReference<Throwable> thrown = new AtomicReference<>();
+
+        T response = Contexts.runInContext(context(ctx).orElseThrow(), () -> {
+            try {
+                return invocation.proceed();
+            } catch (Throwable e) {
+                thrown.set(e);
+                return null;
+            }
+        });
+        if (thrown.get() != null) {
+            throw thrown.get();
+        }
+        return response;
     }
 
     private void afterShutdownMethods(Class<?> requiredTestClass) {
@@ -131,22 +353,46 @@ public class TestJunitExtension implements Extension,
         }
     }
 
-    private void createRegistry(Class<?> testClass) {
+    private void createRegistry(ExtensionContext.Store store, Class<?> testClass) {
         var registryConfig = ServiceRegistryConfig.builder();
         ConfigRegistrySupport.setUp(registryConfig, testClass);
 
-        manager = ServiceRegistryManager.create(registryConfig.build());
-        registry = manager.registry();
+        var manager = ServiceRegistryManager.create(registryConfig.build());
+        var registry = manager.registry();
         GlobalServiceRegistry.registry(registry);
         GlobalConfig.config(() -> registry.get(Config.class), true);
+        store.put(ServiceRegistry.class, registry);
+        store.put(ServiceRegistryManager.class, new ClosableRegistryManager(manager));
     }
 
-    private boolean registrySupportedType(Class<?> paramType) {
+    private boolean registrySupportedType(ExtensionContext ctx, Class<?> paramType) {
         if (ServiceRegistry.class.isAssignableFrom(paramType)) {
             return true;
         }
         // we do not want to get the instance here (yet)
-        return !registry.allServices(paramType)
+        return !registry(ctx).allServices(paramType)
                 .isEmpty();
+    }
+
+    /**
+     * Runnable that may throw a checked exception.
+     */
+    @FunctionalInterface
+    protected interface RunWithThrowable {
+        /**
+         * Run the task.
+         *
+         * @throws Throwable possible checked exception
+         */
+        void run() throws Throwable;
+    }
+
+    private record ClosableRegistryManager(ServiceRegistryManager manager)
+            implements ExtensionContext.Store.CloseableResource {
+
+        @Override
+        public void close() throws Throwable {
+            manager.shutdown();
+        }
     }
 }

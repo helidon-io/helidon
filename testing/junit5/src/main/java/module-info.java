@@ -22,6 +22,7 @@ module io.helidon.testing.junit5 {
     requires io.helidon.service.registry;
     requires io.helidon.logging.common;
     requires transitive io.helidon.testing;
+    requires transitive io.helidon.common.context;
 
     exports io.helidon.testing.junit5;
 }

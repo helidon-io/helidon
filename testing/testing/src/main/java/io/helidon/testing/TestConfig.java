@@ -27,11 +27,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
+import io.helidon.common.context.ContextValue;
+
 /**
  * Static accessor to {@link io.helidon.testing.TestConfigSource} to be able to set values.
  */
-@SuppressWarnings("removal")
 public final class TestConfig {
+    private static final ContextValue<Sources> SOURCES = ContextValue.create(Sources.class, Sources::new);
+    private static final ContextValue<AccumulatedOptions> ACCUMULATED_OPTIONS = ContextValue.create(AccumulatedOptions.class,
+                                                                                                    AccumulatedOptions::new);
     private static final ReentrantLock LOCK = new ReentrantLock();
 
     private TestConfig() {
@@ -51,13 +55,12 @@ public final class TestConfig {
     public static void set(String key, String value) {
         LOCK.lock();
         try {
-            if (io.helidon.common.GlobalInstances.current(Sources.class).isPresent()) {
-                io.helidon.common.GlobalInstances.get(Sources.class, Sources::new)
+            if (SOURCES.isPresent()) {
+                SOURCES.get()
                         .sources()
                         .forEach(it -> it.set(key, value));
             } else {
-                io.helidon.common.GlobalInstances.get(AccumulatedOptions.class, AccumulatedOptions::new)
-                        .options().put(key, value);
+                ACCUMULATED_OPTIONS.get().options().put(key, value);
             }
         } finally {
             LOCK.unlock();
@@ -67,15 +70,11 @@ public final class TestConfig {
     static void register(TestConfigSource source) {
         LOCK.lock();
         try {
-            if (io.helidon.common.GlobalInstances.current(Sources.class).isEmpty()) {
-                AccumulatedOptions accumulatedOptions = io.helidon.common.GlobalInstances.get(AccumulatedOptions.class,
-                                                                                              AccumulatedOptions::new);
-                accumulatedOptions.options().forEach(source::set);
-                accumulatedOptions.options().clear();
+            if (!SOURCES.isPresent()) {
+                ACCUMULATED_OPTIONS.get().options().forEach(source::set);
+                ACCUMULATED_OPTIONS.get().options.clear();
             }
-            io.helidon.common.GlobalInstances.get(Sources.class, Sources::new)
-                    .sources()
-                    .add(source);
+            SOURCES.get().sources().add(source);
         } finally {
             LOCK.unlock();
         }
@@ -219,25 +218,15 @@ public final class TestConfig {
         double weight() default 951_000;
     }
 
-    private record Sources(List<TestConfigSource> sources) implements io.helidon.common.GlobalInstances.GlobalInstance {
+    private record Sources(List<TestConfigSource> sources) {
         Sources() {
             this(new ArrayList<>());
         }
-
-        @Override
-        public void close() {
-
-        }
     }
 
-    private record AccumulatedOptions(Map<String, String> options) implements io.helidon.common.GlobalInstances.GlobalInstance {
+    private record AccumulatedOptions(Map<String, String> options) {
         private AccumulatedOptions() {
             this(new HashMap<>());
-        }
-
-        @Override
-        public void close() {
-            options.clear();
         }
     }
 }

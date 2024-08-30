@@ -24,6 +24,7 @@ import java.util.function.Supplier;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.config.spi.ConfigProvider;
+import io.helidon.common.context.ContextValue;
 
 /**
  * Global configuration can be set by a user before any Helidon code is invoked, to override default discovery
@@ -34,22 +35,10 @@ import io.helidon.common.config.spi.ConfigProvider;
  * <p>
  * You may still use custom instances of configuration when using configurable APIs directly.
  */
-@SuppressWarnings("removal")
 public final class GlobalConfig {
     private static final Config EMPTY = Config.empty();
-    private static final Supplier<Config> CONFIG_SUPPLIER = () -> {
-        List<ConfigProvider> providers = HelidonServiceLoader.create(ServiceLoader.load(ConfigProvider.class))
-                .asList();
-        // no implementations available, use empty configuration
-        if (providers.isEmpty()) {
-            return EMPTY;
-        }
-        // there is a valid provider, let's use its default configuration
-        return providers.getFirst()
-                .create();
-    };
-
-    private static final LazyValue<Config> DEFAULT_CONFIG = LazyValue.create(CONFIG_SUPPLIER);
+    private static final LazyValue<Config> DEFAULT_CONFIG = LazyValue.create(GlobalConfig::create);
+    private static final ContextValue<Config> CONTEXT_VALUE = ContextValue.create(Config.class);
 
     private GlobalConfig() {
     }
@@ -60,7 +49,7 @@ public final class GlobalConfig {
      * @return {@code true} if there is a global configuration set already, {@code false} otherwise
      */
     public static boolean configured() {
-        return io.helidon.common.GlobalInstances.current(GlobalConfigHolder.class).isPresent();
+        return CONTEXT_VALUE.isPresent();
     }
 
     /**
@@ -71,9 +60,7 @@ public final class GlobalConfig {
      * @see #config(java.util.function.Supplier, boolean)
      */
     public static Config config() {
-        return io.helidon.common.GlobalInstances.current(GlobalConfigHolder.class)
-                .map(GlobalConfigHolder::config)
-                .orElseGet(DEFAULT_CONFIG);
+        return CONTEXT_VALUE.value().orElseGet(DEFAULT_CONFIG);
     }
 
     /**
@@ -99,22 +86,22 @@ public final class GlobalConfig {
         if (overwrite || !configured()) {
             // there is a certain risk we may do this twice, if two components try to set global config in parallel.
             // as the result was already unclear (as order matters), we do not need to be 100% thread safe here
-            Config configInstance = config.get();
-            io.helidon.common.GlobalInstances.set(GlobalConfigHolder.class, new GlobalConfigHolder(configInstance));
-            return configInstance;
+            CONTEXT_VALUE.set(config.get());
+            return config();
+        } else {
+            return CONTEXT_VALUE.get(config);
         }
-        return io.helidon.common.GlobalInstances.get(GlobalConfigHolder.class, () -> new GlobalConfigHolder(config.get()))
-                .config();
     }
 
     static Config create() {
-        return CONFIG_SUPPLIER.get();
+        List<ConfigProvider> providers = HelidonServiceLoader.create(ServiceLoader.load(ConfigProvider.class))
+                .asList();
+        // no implementations available, use empty configuration
+        if (providers.isEmpty()) {
+            return EMPTY;
     }
-
-    @SuppressWarnings("removal")
-    private record GlobalConfigHolder(Config config) implements io.helidon.common.GlobalInstances.GlobalInstance {
-        @Override
-        public void close() {
-        }
+        // there is a valid provider, let's use its default configuration
+        return providers.getFirst()
+                .create();
     }
 }

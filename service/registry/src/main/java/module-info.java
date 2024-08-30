@@ -36,6 +36,7 @@ module io.helidon.service.registry {
     requires transitive io.helidon.common.config;
     requires transitive io.helidon.builder.api;
     requires transitive io.helidon.common.types;
+    requires io.helidon.common.context;
 
     exports io.helidon.service.registry;
     exports io.helidon.service.registry.spi;

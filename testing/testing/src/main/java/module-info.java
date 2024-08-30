@@ -25,6 +25,7 @@ module io.helidon.testing {
     requires static io.helidon.service.registry;
 
     requires io.helidon.common;
+    requires io.helidon.common.context;
     requires io.helidon.config;
 
     exports io.helidon.testing;

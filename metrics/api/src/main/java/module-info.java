@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,12 +27,13 @@ import io.helidon.common.features.api.HelidonFlavor;
 )module io.helidon.metrics.api {
 
     requires static io.helidon.common.features.api;
-
-    requires io.helidon.http;
-    requires transitive io.helidon.common.config;
+    requires static io.helidon.config.metadata;
 
     requires io.helidon.builder.api;
-    requires static io.helidon.config.metadata;
+    requires io.helidon.http;
+
+    requires transitive io.helidon.common.config;
+    requires io.helidon.common.context;
 
     exports io.helidon.metrics.api;
     exports io.helidon.metrics.spi;

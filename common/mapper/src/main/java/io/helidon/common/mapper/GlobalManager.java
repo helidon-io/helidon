@@ -17,29 +17,22 @@
 package io.helidon.common.mapper;
 
 import io.helidon.common.LazyValue;
+import io.helidon.common.context.ContextValue;
 
-@SuppressWarnings("removal")
 final class GlobalManager {
     private static final LazyValue<MapperManager> DEFAULT_MAPPER = LazyValue.create(() -> MapperManager.builder()
             .useBuiltIn(true)
             .build());
+    private static final ContextValue<MapperManager> CONTEXT_VALUE = ContextValue.create(MapperManager.class, DEFAULT_MAPPER);
 
     private GlobalManager() {
     }
 
-    static void mapperManager(MapperManager manager) {
-        io.helidon.common.GlobalInstances.set(MapperManagerHolder.class, new MapperManagerHolder(manager));
+    public static void mapperManager(MapperManager manager) {
+        CONTEXT_VALUE.set(manager);
     }
 
     static MapperManager mapperManager() {
-        return io.helidon.common.GlobalInstances.current(MapperManagerHolder.class)
-                .map(MapperManagerHolder::manager)
-                .orElseGet(DEFAULT_MAPPER);
-    }
-
-    private record MapperManagerHolder(MapperManager manager) implements io.helidon.common.GlobalInstances.GlobalInstance {
-        @Override
-        public void close() {
-        }
+        return CONTEXT_VALUE.get();
     }
 }

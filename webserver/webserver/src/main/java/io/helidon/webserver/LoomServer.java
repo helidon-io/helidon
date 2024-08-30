@@ -38,6 +38,7 @@ import io.helidon.common.SerializationConfig;
 import io.helidon.common.Version;
 import io.helidon.common.Weights;
 import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.features.HelidonFeatures;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.common.tls.Tls;
@@ -69,6 +70,7 @@ class LoomServer implements WebServer {
         this.context = serverConfig.serverContext()
                 .orElseGet(() -> Context.builder()
                         .id("web-" + WEBSERVER_COUNTER.getAndIncrement())
+                        .update(it -> Contexts.context().ifPresent(it::parent))
                         .build());
         this.serverConfig = serverConfig;
         this.executorService = Executors.newVirtualThreadPerTaskExecutor();

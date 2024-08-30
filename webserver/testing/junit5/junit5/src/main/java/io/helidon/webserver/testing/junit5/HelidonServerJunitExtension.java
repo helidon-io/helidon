@@ -75,6 +75,7 @@ class HelidonServerJunitExtension extends JunitExtensionBase
     public void beforeAll(ExtensionContext context) {
         super.beforeAll(context);
 
+        run(context, () -> {
         if (System.getProperty("helidon.config.profile") == null
                 && System.getProperty("config.profile") == null) {
             System.setProperty("helidon.config.profile", "test");
@@ -105,8 +106,8 @@ class HelidonServerJunitExtension extends JunitExtensionBase
         addRouting(builder);
 
         server = builder
-                .build()
-                .start();
+                    .serverContext(super.context(context).orElseThrow()) // created above when we call super.beforeAll
+                    .build().start();
         if (server.hasTls()) {
             uris.put(DEFAULT_SOCKET_NAME, URI.create("https://localhost:" + server.port() + "/"));
         } else {
@@ -114,10 +115,12 @@ class HelidonServerJunitExtension extends JunitExtensionBase
         }
 
         TestConfig.set("test.server.port", String.valueOf(server.port()));
+        });
     }
 
     @Override
     public void afterAll(ExtensionContext extensionContext) {
+        run(extensionContext, () -> {
         extensions.forEach(it -> it.afterAll(extensionContext));
 
         if (server != null) {
@@ -125,75 +128,80 @@ class HelidonServerJunitExtension extends JunitExtensionBase
         }
 
         super.afterAll(extensionContext);
+        });
     }
 
     @Override
     public void afterEach(ExtensionContext extensionContext) {
-        extensions.forEach(it -> it.afterEach(extensionContext));
+        run(extensionContext, () -> extensions.forEach(it -> it.afterEach(extensionContext)));
     }
 
     @Override
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
             throws ParameterResolutionException {
 
-        Class<?> paramType = parameterContext.getParameter().getType();
-        if (paramType.equals(WebServer.class)) {
-            return true;
-        }
-        if (paramType.equals(URI.class)) {
-            return true;
-        }
-
-        for (ServerJunitExtension extension : extensions) {
-            if (extension.supportsParameter(parameterContext, extensionContext)) {
+        return call(extensionContext, () -> {
+            Class<?> paramType = parameterContext.getParameter().getType();
+            if (paramType.equals(WebServer.class)) {
                 return true;
             }
-        }
+            if (paramType.equals(URI.class)) {
+                return true;
+            }
 
-        Context context;
-        if (server == null) {
-            context = Contexts.globalContext();
-        } else {
-            context = server.context();
-        }
-        if (context.get(paramType).isPresent()) {
-            return true;
-        }
-        return super.supportsParameter(parameterContext, extensionContext);
+            for (ServerJunitExtension extension : extensions) {
+                if (extension.supportsParameter(parameterContext, extensionContext)) {
+                    return true;
+                }
+            }
+
+            Context context;
+            if (server == null) {
+                context = Contexts.globalContext();
+            } else {
+                context = server.context();
+            }
+            if (context.get(paramType).isPresent()) {
+                return true;
+            }
+            return super.supportsParameter(parameterContext, extensionContext);
+        });
     }
 
     @Override
     public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
             throws ParameterResolutionException {
 
-        Class<?> paramType = parameterContext.getParameter().getType();
-        if (paramType.equals(WebServer.class)) {
-            return server;
-        }
-        if (paramType.equals(URI.class)) {
-            return uri(parameterContext.getDeclaringExecutable(), Junit5Util.socketName(parameterContext.getParameter()));
-        }
-
-        for (ServerJunitExtension extension : extensions) {
-            if (extension.supportsParameter(parameterContext, extensionContext)) {
-                return extension.resolveParameter(parameterContext, extensionContext, paramType, server);
+        return call(extensionContext, () -> {
+            Class<?> paramType = parameterContext.getParameter().getType();
+            if (paramType.equals(WebServer.class)) {
+                return server;
             }
-        }
+            if (paramType.equals(URI.class)) {
+                return uri(parameterContext.getDeclaringExecutable(), Junit5Util.socketName(parameterContext.getParameter()));
+            }
 
-        Context context;
-        if (server == null) {
-            context = Contexts.globalContext();
-        } else {
-            context = server.context();
-        }
+            for (ServerJunitExtension extension : extensions) {
+                if (extension.supportsParameter(parameterContext, extensionContext)) {
+                    return extension.resolveParameter(parameterContext, extensionContext, paramType, server);
+                }
+            }
 
-        var fromContext = context.get(paramType);
+            Context context;
+            if (server == null) {
+                context = Contexts.globalContext();
+            } else {
+                context = server.context();
+            }
 
-        if (fromContext.isPresent()) {
-            return fromContext;
-        }
+            var fromContext = context.get(paramType);
 
-        return super.resolveParameter(parameterContext, extensionContext);
+            if (fromContext.isPresent()) {
+                return fromContext;
+            }
+
+            return super.resolveParameter(parameterContext, extensionContext);
+        });
     }
 
     private void registrySetup(WebServerConfig.Builder builder) {

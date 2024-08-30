@@ -23,6 +23,7 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.config.Config;
 import io.helidon.common.config.GlobalConfig;
+import io.helidon.common.context.ContextValue;
 import io.helidon.metrics.spi.MetersProvider;
 import io.helidon.metrics.spi.MetricsFactoryProvider;
 import io.helidon.metrics.spi.MetricsProgrammaticConfig;
@@ -41,11 +42,25 @@ import io.helidon.metrics.spi.MetricsProgrammaticConfig;
  * <p>
  * The {@link #create(Config)} method neither reads nor updates the most-recently used config and factory.
  */
-@SuppressWarnings("removal")
 class MetricsFactoryManager {
 
     private static final System.Logger LOGGER = System.getLogger(MetricsFactoryManager.class.getName());
-
+    /**
+     * Instance of the highest-weight implementation of {@link io.helidon.metrics.spi.MetricsFactoryProvider}
+     * for obtaining new {@link io.helidon.metrics.api.MetricsFactory} instances; this module contains a no-op implementation
+     * as a last resort.
+     */
+    private static final ContextValue<MetricsFactoryProvider> METRICS_FACTORY_PROVIDER =
+            ContextValue.create(MetricsFactoryProvider.class, () -> {
+                MetricsFactoryProvider result = HelidonServiceLoader.builder(ServiceLoader.load(MetricsFactoryProvider.class))
+                        .addService(NoOpMetricsFactoryProvider.create(), Double.MIN_VALUE)
+                        .build()
+                        .iterator()
+                        .next();
+                LOGGER.log(Level.DEBUG, "Loaded metrics factory provider: {0}",
+                           result.getClass().getName());
+                return result;
+            });
     /**
      * Config overrides that can change the {@link io.helidon.metrics.api.MetricsConfig} that is read from config sources
      * if there are specific requirements in a given runtime (e.g., MP) for certain settings. For example, the tag name used
@@ -56,6 +71,16 @@ class MetricsFactoryManager {
                                                        HelidonServiceLoader
                                                                .create(ServiceLoader.load(MetricsProgrammaticConfig.class))
                                                                .asList());
+    /**
+     * Providers of meter builders (such as the built-in "base" meters for system performance information). All providers are
+     * furnished to all {@link io.helidon.metrics.api.MeterRegistry} instances that are created by any
+     * {@link io.helidon.metrics.api.MetricsFactory}.
+     */
+    private static final ContextValue<MetersProviders> METER_PROVIDERS =
+            ContextValue.create(MetersProviders.class, () ->
+                    new MetersProviders(HelidonServiceLoader.create(ServiceLoader.load(MetersProvider.class)).asList()));
+    private static final ContextValue<Config> METRICS_CONFIG = ContextValue.create(Config.class);
+    private static final ContextValue<MetricsFactory> METRICS_FACTORY = ContextValue.create(MetricsFactory.class);
 
     private MetricsFactoryManager() {
     }
@@ -69,10 +94,10 @@ class MetricsFactoryManager {
      * @return new metrics factory
      */
     static MetricsFactory getMetricsFactory(Config metricsConfigNode) {
-        io.helidon.common.GlobalInstances.set(MetricsConfigHolder.class, new MetricsConfigHolder(metricsConfigNode));
+        METRICS_CONFIG.set(metricsConfigNode);
 
         MetricsFactory metricsFactory = buildMetricsFactory(metricsConfigNode);
-        io.helidon.common.GlobalInstances.set(MetricsFactoryHolder.class, new MetricsFactoryHolder(metricsFactory));
+        METRICS_FACTORY.set(metricsFactory);
 
         return metricsFactory;
     }
@@ -85,9 +110,10 @@ class MetricsFactoryManager {
      * @return current metrics factory
      */
     static MetricsFactory getMetricsFactory() {
-        return io.helidon.common.GlobalInstances.get(MetricsFactoryHolder.class,
-                                                     () -> new MetricsFactoryHolder(buildMetricsFactory(currentMetricsConfig())))
-                .metricsFactory();
+        return METRICS_FACTORY.get(() -> {
+            Config metricsConfig = METRICS_CONFIG.get(MetricsFactoryManager::externalMetricsConfig);
+            return buildMetricsFactory(metricsConfig);
+        });
     }
 
     /**
@@ -99,65 +125,24 @@ class MetricsFactoryManager {
      * @return new metrics factory
      */
     static MetricsFactory create(Config metricsConfigNode) {
-        return globalMetricsFactoryProvider()
-                .create(metricsConfigNode,
+        return METRICS_FACTORY_PROVIDER.get().create(metricsConfigNode,
                         MetricsConfig.create(
                                 metricsConfigNode.get(MetricsConfig.METRICS_CONFIG_KEY)),
-                        metersProviders());
+                                                     METER_PROVIDERS.get().providers());
     }
 
     static void closeAll() {
-        globalMetricsFactoryProvider().close();
-        io.helidon.common.GlobalInstances.current(MetricsFactoryHolder.class)
-                        .ifPresent(MetricsFactoryHolder::close);
-    }
-
-    /*
-     * Providers of meter builders (such as the built-in "base" meters for system performance information). All providers are
-     * furnished to all {@link io.helidon.metrics.api.MeterRegistry} instances that are created by any
-     * {@link io.helidon.metrics.api.MetricsFactory}.
-     */
-    private static Collection<MetersProvider> metersProviders() {
-        return io.helidon.common.GlobalInstances.get(MetersProviders.class, () ->
-                        new MetersProviders(HelidonServiceLoader.create(ServiceLoader.load(MetersProvider.class)).asList()))
-                .providers();
-    }
-
-    /*
-     * Instance of the highest-weight implementation of {@link io.helidon.metrics.spi.MetricsFactoryProvider}
-     * for obtaining new {@link io.helidon.metrics.api.MetricsFactory} instances; this module contains a no-op implementation
-     * as a last resort.
-     */
-    private static MetricsFactoryProvider metricsFactoryProvider() {
-        MetricsFactoryProvider result = HelidonServiceLoader.builder(ServiceLoader.load(MetricsFactoryProvider.class))
-                .addService(NoOpMetricsFactoryProvider.create(), Double.MIN_VALUE)
-                .build()
-                .iterator()
-                .next();
-        LOGGER.log(Level.DEBUG, "Loaded metrics factory provider: {0}",
-                   result.getClass().getName());
-        return result;
-    }
-
-    private static MetricsFactoryProvider globalMetricsFactoryProvider() {
-        return io.helidon.common.GlobalInstances.get(MetricsFactoryProviderHolder.class, () -> {
-            return new MetricsFactoryProviderHolder(metricsFactoryProvider());
-        }).provider();
-    }
-
-    private static Config currentMetricsConfig() {
-        return io.helidon.common.GlobalInstances.get(MetricsConfigHolder.class,
-                                                     () -> new MetricsConfigHolder(MetricsFactoryManager
-                                                                                           .externalMetricsConfig()))
-                .config();
+        METRICS_FACTORY_PROVIDER.get().close();
+        METRICS_FACTORY.value()
+                .ifPresent(MetricsFactory::close);
     }
 
     private static MetricsFactory buildMetricsFactory(Config metricsConfigNode) {
         MetricsConfig metricsConfig = applyOverrides(MetricsConfig.create(metricsConfigNode));
         SystemTagsManager.instance(metricsConfig);
 
-        return globalMetricsFactoryProvider()
-                .create(metricsConfigNode, metricsConfig, metersProviders());
+        return METRICS_FACTORY_PROVIDER.get()
+                .create(metricsConfigNode, metricsConfig, METER_PROVIDERS.get().providers());
     }
 
     private static Config externalMetricsConfig() {
@@ -174,33 +159,6 @@ class MetricsFactoryManager {
         return metricsConfigBuilder.build();
     }
 
-    private record MetersProviders(Collection<MetersProvider> providers)
-            implements io.helidon.common.GlobalInstances.GlobalInstance {
-        @Override
-        public void close() {
-        }
-    }
-
-    private record MetricsConfigHolder(Config config)
-            implements io.helidon.common.GlobalInstances.GlobalInstance {
-        @Override
-        public void close() {
-        }
-    }
-
-    private record MetricsFactoryHolder(MetricsFactory metricsFactory)
-            implements io.helidon.common.GlobalInstances.GlobalInstance {
-        @Override
-        public void close() {
-            metricsFactory.close();
-        }
-    }
-
-    private record MetricsFactoryProviderHolder(MetricsFactoryProvider provider)
-            implements io.helidon.common.GlobalInstances.GlobalInstance {
-        @Override
-        public void close() {
-            provider.close();
-        }
+    private record MetersProviders(Collection<MetersProvider> providers) {
     }
 }
