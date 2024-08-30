@@ -42,21 +42,6 @@ public interface SinkProvider<T> {
     /**
      * Creates a sink using this provider.
      *
-     * @param response the HTTP response
-     * @param eventConsumer an event consumer
-     * @param closeRunnable a runnable to call on close
-     * @param <X> type of sink
-     * @return newly created sink
-     * @deprecated Replaced by {@link #create(SinkProviderContext)}
-     */
-    @Deprecated(forRemoval = true, since = "4.1.2")
-    <X extends Sink<T>> X create(ServerResponse response,
-                                 BiConsumer<Object, MediaType> eventConsumer,
-                                 Runnable closeRunnable);
-
-    /**
-     * Creates a sink using this provider.
-     *
      * @param context a context for a sync provider
      * @param <X> type of sink
      * @return newly created sink
@@ -64,4 +49,19 @@ public interface SinkProvider<T> {
     default <X extends Sink<T>> X create(SinkProviderContext context) {
         throw new UnsupportedOperationException("Not implemented");
     }
+
+    /**
+     * Creates a sink using this provider.
+     *
+     * @param response the HTTP response
+     * @param eventConsumer an event consumer
+     * @param closeRunnable a runnable to call on close
+     * @param <X> type of sink
+     * @return newly created sink
+     * @deprecated replaced by {@link #create(SinkProviderContext)}
+     */
+    @Deprecated(forRemoval = true, since = "4.1.2")
+    <X extends Sink<T>> X create(ServerResponse response,
+                                 BiConsumer<Object, MediaType> eventConsumer,
+                                 Runnable closeRunnable);
 }

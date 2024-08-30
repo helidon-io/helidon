@@ -30,6 +30,8 @@ import io.helidon.webserver.http.spi.SinkProviderContext;
 
 /**
  * Sink provider for SSE type.
+ *
+ * @see io.helidon.webserver.http.spi.SinkProvider
  */
 public class SseSinkProvider implements SinkProvider<SseEvent> {
 
@@ -38,13 +40,29 @@ public class SseSinkProvider implements SinkProvider<SseEvent> {
         return SseSink.TYPE.equals(type) && request.headers().isAccepted(MediaTypes.TEXT_EVENT_STREAM);
     }
 
-
+    /**
+     * Creates a Sink for SSE events.
+     *
+     * @param context the context
+     * @return newly created sink
+     * @param <X> type of sink
+     */
     @Override
     @SuppressWarnings("unchecked")
     public <X extends Sink<SseEvent>> X create(SinkProviderContext context) {
         return (X) new SseSink(context);
     }
 
+    /**
+     * Creates a Sink for SSE events.
+     *
+     * @param response the HTTP response
+     * @param eventConsumer an event consumer
+     * @param closeRunnable a runnable to call on close
+     * @param <X> type of sink
+     * @return newly created sink
+     * @deprecated replaced by {@link #create(SinkProviderContext)}
+     */
     @Override
     public <X extends Sink<SseEvent>> X create(ServerResponse response,
                                                BiConsumer<Object, MediaType> eventConsumer,
