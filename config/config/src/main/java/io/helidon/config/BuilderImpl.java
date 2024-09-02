@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,6 +61,7 @@ class BuilderImpl implements Config.Builder {
     private MergingStrategy mergingStrategy = MergingStrategy.fallback();
     private boolean hasSystemPropertiesSource;
     private boolean hasEnvVarSource;
+    private boolean sourcesConfigured;
     /*
      * Config mapper providers
      */
@@ -123,6 +124,8 @@ class BuilderImpl implements Config.Builder {
         sourceSuppliers.stream()
                 .map(Supplier::get)
                 .forEach(this::addSource);
+        // this was intentional, even if empty (such as from Config.just())
+        this.sourcesConfigured = true;
 
         return this;
     }
@@ -427,7 +430,8 @@ class BuilderImpl implements Config.Builder {
             envVarAliasGeneratorEnabled = true;
         }
 
-        boolean nothingConfigured = sources.isEmpty();
+//        boolean nothingConfigured = sources.isEmpty() && !sourcesConfigured;
+        boolean nothingConfigured = false;
 
         if (nothingConfigured) {
             // use meta configuration to load all sources
