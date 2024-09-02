@@ -344,6 +344,22 @@ public final class GeneratedService {
             throw new IllegalStateException("Cannot instantiate type " + serviceType().fqName() + ", as it is either abstract,"
                                                     + " or an interface.");
         }
+
+        /**
+         * Invoke {@link io.helidon.service.registry.Service.PostConstruct} annotated method(s).
+         *
+         * @param instance instance to use
+         */
+        default void postConstruct(T instance) {
+        }
+
+        /**
+         * Invoke {@link io.helidon.service.registry.Service.PreDestroy} annotated method(s).
+         *
+         * @param instance instance to use
+         */
+        default void preDestroy(T instance) {
+        }
     }
 
     private record TypeAndName(String type, String name) {
