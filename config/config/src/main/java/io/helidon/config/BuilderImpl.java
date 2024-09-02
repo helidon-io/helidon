@@ -430,15 +430,13 @@ class BuilderImpl implements Config.Builder {
             envVarAliasGeneratorEnabled = true;
         }
 
-//        boolean nothingConfigured = sources.isEmpty() && !sourcesConfigured;
-        boolean nothingConfigured = false;
+        boolean nothingConfigured = sources.isEmpty() && !sourcesConfigured;
 
         if (nothingConfigured) {
             // use meta configuration to load all sources
-            MetaConfig.configSources(mediaType -> context.findParser(mediaType).isPresent(), context.supportedSuffixes())
-                    .stream()
+            MetaConfigFinder.findConfigSource(mediaType -> context.findParser(mediaType).isPresent(), context.supportedSuffixes())
                     .map(context::sourceRuntimeBase)
-                    .forEach(targetSources::add);
+                    .ifPresent(targetSources::add);
         } else {
             // add all configured or discovered sources
 

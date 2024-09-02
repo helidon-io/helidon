@@ -32,6 +32,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.config.GlobalConfig;
 import io.helidon.config.ConfigValue;
 import io.helidon.config.MetaConfig;
 import io.helidon.config.spi.ConfigMapper;
@@ -167,8 +168,8 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
     private ConfigDelegate doRegisterConfig(Config config, ClassLoader classLoader) {
         ConfigDelegate currentConfig = CONFIGS.remove(classLoader);
 
-        if (config instanceof ConfigDelegate) {
-            config = ((ConfigDelegate) config).delegate();
+        if (config instanceof ConfigDelegate delegate) {
+            config = delegate.delegate();
         }
 
         if (null != currentConfig) {
@@ -177,6 +178,11 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
 
         ConfigDelegate newConfig = new ConfigDelegate(config);
         CONFIGS.put(classLoader, newConfig);
+
+        if (classLoader == Thread.currentThread().getContextClassLoader()) {
+            // this should be the default class loader (we do not support classloader magic in Helidon)
+            GlobalConfig.config(() -> newConfig, true);
+        }
 
         return newConfig;
     }
