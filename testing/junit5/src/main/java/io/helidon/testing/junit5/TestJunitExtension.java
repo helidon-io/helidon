@@ -18,6 +18,7 @@ package io.helidon.testing.junit5;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
@@ -115,7 +116,10 @@ public class TestJunitExtension implements Extension,
         Class<?> paramType = parameterContext.getParameter().getType();
 
         if (registrySupportedType(extensionContext, paramType)) {
-            return registry(extensionContext).get(paramType);
+            // at this point in time the registry must be ready
+            return registry(extensionContext)
+                    .orElseThrow()
+                    .get(paramType);
         }
 
         throw new ParameterResolutionException("Failed to resolve parameter of type "
@@ -185,11 +189,24 @@ public class TestJunitExtension implements Extension,
         invoke(extensionContext, invocation);
     }
 
-    protected ServiceRegistry registry(ExtensionContext extensionContext) {
-        return extensionStore(extensionContext)
-                .get(ServiceRegistry.class, ServiceRegistry.class);
+    /**
+     * Service registry associated with the provided extension contexts
+     * (uses {@link #extensionStore(org.junit.jupiter.api.extension.ExtensionContext)})
+     *
+     * @param extensionContext extension context
+     * @return service registry
+     */
+    protected Optional<ServiceRegistry> registry(ExtensionContext extensionContext) {
+        return Optional.ofNullable(extensionStore(extensionContext)
+                .get(ServiceRegistry.class, ServiceRegistry.class));
     }
 
+    /**
+     * Extension store used by this extension to store context, service registry etc.
+     *
+     * @param ctx extension context
+     * @return extension store
+     */
     protected ExtensionContext.Store extensionStore(ExtensionContext ctx) {
         Class<?> testClass = ctx.getRequiredTestClass();
         return ctx.getStore(ExtensionContext.Namespace.create(testClass));
@@ -398,8 +415,10 @@ public class TestJunitExtension implements Extension,
             return true;
         }
         // we do not want to get the instance here (yet)
-        return !registry(ctx).allServices(paramType)
-                .isEmpty();
+        return !registry(ctx)
+                .map(it -> it.allServices(paramType))
+                .map(List::isEmpty)
+                .orElse(true);
     }
 
     /**
@@ -417,12 +436,15 @@ public class TestJunitExtension implements Extension,
 
     /**
      * Runnable that may throw a checked exception.
+     *
+     * @param <T> type of the returned value
      */
     @FunctionalInterface
     protected interface CallWithThrowable<T> {
         /**
          * Run the task.
          *
+         * @return the returned value
          * @throws Throwable possible checked exception
          */
         T call() throws Throwable;

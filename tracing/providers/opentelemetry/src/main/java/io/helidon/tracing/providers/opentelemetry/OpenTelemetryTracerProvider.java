@@ -20,10 +20,8 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.common.context.Context;
 import io.helidon.common.context.ContextValue;
 import io.helidon.common.context.Contexts;
 import io.helidon.tracing.Span;
