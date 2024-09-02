@@ -22,6 +22,6 @@ server:
             scopes:
               - name: vendor
                 filter:
-                  include: requests.l.*
+                  include: requests\.l.*
           key-performance-indicators:
             extended: true

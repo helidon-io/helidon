@@ -79,7 +79,8 @@ class MetricsFactoryManager {
     private static final ContextValue<MetersProviders> METER_PROVIDERS =
             ContextValue.create(MetersProviders.class, () ->
                     new MetersProviders(HelidonServiceLoader.create(ServiceLoader.load(MetersProvider.class)).asList()));
-    private static final ContextValue<Config> METRICS_CONFIG = ContextValue.create(Config.class);
+    // we cannot use Config directly, as that would conflict with GlobalConfig itself
+    private static final ContextValue<MetricsConfigHolder> METRICS_CONFIG = ContextValue.create(MetricsConfigHolder.class);
     private static final ContextValue<MetricsFactory> METRICS_FACTORY = ContextValue.create(MetricsFactory.class);
 
     private MetricsFactoryManager() {
@@ -94,7 +95,7 @@ class MetricsFactoryManager {
      * @return new metrics factory
      */
     static MetricsFactory getMetricsFactory(Config metricsConfigNode) {
-        METRICS_CONFIG.set(metricsConfigNode);
+        METRICS_CONFIG.set(new MetricsConfigHolder(metricsConfigNode));
 
         MetricsFactory metricsFactory = buildMetricsFactory(metricsConfigNode);
         METRICS_FACTORY.set(metricsFactory);
@@ -111,7 +112,9 @@ class MetricsFactoryManager {
      */
     static MetricsFactory getMetricsFactory() {
         return METRICS_FACTORY.get(() -> {
-            Config metricsConfig = METRICS_CONFIG.get(MetricsFactoryManager::externalMetricsConfig);
+            Config metricsConfig = METRICS_CONFIG.get(() -> new MetricsConfigHolder(MetricsFactoryManager
+                                                                                            .externalMetricsConfig()))
+                    .config();
             return buildMetricsFactory(metricsConfig);
         });
     }
@@ -160,5 +163,8 @@ class MetricsFactoryManager {
     }
 
     private record MetersProviders(Collection<MetersProvider> providers) {
+    }
+
+    private record MetricsConfigHolder(Config config) {
     }
 }

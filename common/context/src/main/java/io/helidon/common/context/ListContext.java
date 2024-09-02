@@ -108,6 +108,11 @@ class ListContext implements Context {
         }
     }
 
+    @Override
+    public String toString() {
+        return contextId;
+    }
+
     long nextChildId() {
         return contextCounter.getAndUpdate(operand -> (operand == Long.MAX_VALUE) ? 1 : (operand + 1));
     }

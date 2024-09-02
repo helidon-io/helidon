@@ -27,6 +27,7 @@ import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
@@ -53,6 +54,7 @@ import jakarta.enterprise.inject.spi.ProcessInjectionPoint;
 import jakarta.enterprise.inject.spi.configurator.BeanConfigurator;
 import org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -85,7 +87,6 @@ class OciMetricsCdiExtensionTest {
     private static CountDownLatch countDownLatch = new CountDownLatch(1);
     private static PostMetricDataDetails postMetricDataDetails;
     private static boolean activateOciMetricsSupportIsInvoked;
-    private static MeterRegistry registry = Metrics.globalRegistry();
 
     @AfterEach
     void resetState() {
@@ -112,6 +113,7 @@ class OciMetricsCdiExtensionTest {
     }
 
     private void validateOciMetricsSupport(boolean enabled) throws InterruptedException {
+        MeterRegistry registry = Metrics.globalRegistry();
         Counter c1 = registry.getOrCreate(Counter.builder(Meter.Scope.BASE + METRIC_NAME_SUFFIX)
                                      .scope(Meter.Scope.BASE));
         c1.increment();
@@ -150,6 +152,7 @@ class OciMetricsCdiExtensionTest {
         registry.remove(c1);
         registry.remove(c2);
         registry.remove(c3);
+        clear();
     }
 
     interface MetricDataDetailsOCIParams {
@@ -231,6 +234,27 @@ class OciMetricsCdiExtensionTest {
         protected void activateOciMetricsSupport(Config rootConfig, Config ociMetricsConfig, OciMetricsSupport.Builder builder) {
             activateOciMetricsSupportIsInvoked = true;
             super.activateOciMetricsSupport(rootConfig, ociMetricsConfig, builder);
+        }
+    }
+
+    static void clear() {
+        MetricsFactory.closeAll();
+
+        // And clear out Micrometer's global registry explicitly to be extra sure.
+        io.micrometer.core.instrument.MeterRegistry mmGlobal = io.micrometer.core.instrument.Metrics.globalRegistry;
+        mmGlobal.clear();
+
+        int delayMS = 250;
+        int maxSecondsToWait = 5;
+        int iterationsRemaining = (maxSecondsToWait * 1000) / delayMS;
+
+        while (iterationsRemaining > 0 && !mmGlobal.getMeters().isEmpty()) {
+            iterationsRemaining--;
+            try {
+                TimeUnit.MILLISECONDS.sleep(delayMS);
+            } catch (InterruptedException e) {
+                throw new RuntimeException("Error awaiting clear-out of meter registries to finish", e);
+            }
         }
     }
 }

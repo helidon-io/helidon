@@ -19,6 +19,7 @@ package io.helidon.integrations.micrometer;
 import java.util.function.Supplier;
 
 import io.helidon.common.config.Config;
+import io.helidon.common.context.ContextValue;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.metadata.Configured;
 import io.helidon.webserver.http.HttpRouting;
@@ -46,9 +47,10 @@ import io.micrometer.core.instrument.MeterRegistry;
  */
 @Deprecated(forRemoval = true, since = "4.1")
 public class MicrometerFeature extends HelidonFeatureSupport {
-
     static final String DEFAULT_CONTEXT = "/micrometer";
-    private static final String SERVICE_NAME = "Micrometer";
+
+    private static final ContextValue<MeterRegistry> METER_REGISTRY = ContextValue.create(MeterRegistry.class);
+private static final String SERVICE_NAME = "Micrometer";
     private static final System.Logger LOGGER = System.getLogger(MicrometerFeature.class.getName());
 
     private final MeterRegistryFactory meterRegistryFactory;
@@ -105,7 +107,7 @@ public class MicrometerFeature extends HelidonFeatureSupport {
 
     @Override
     public void beforeStart() {
-        Contexts.globalContext().register(registry());
+        METER_REGISTRY.set(registry());
         LOGGER.log(System.Logger.Level.WARNING,
                    "Micrometer integration is deprecated and will be removed in a future major release.");
     }

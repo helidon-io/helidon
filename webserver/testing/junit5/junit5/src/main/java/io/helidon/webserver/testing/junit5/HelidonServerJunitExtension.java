@@ -157,7 +157,7 @@ class HelidonServerJunitExtension extends JunitExtensionBase
 
             Context context;
             if (server == null) {
-                context = Contexts.globalContext();
+                context = Contexts.context().orElseGet(Contexts::globalContext);
             } else {
                 context = server.context();
             }
@@ -189,7 +189,7 @@ class HelidonServerJunitExtension extends JunitExtensionBase
 
             Context context;
             if (server == null) {
-                context = Contexts.globalContext();
+                context = Contexts.context().orElseGet(Contexts::globalContext);
             } else {
                 context = server.context();
             }

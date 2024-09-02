@@ -47,6 +47,7 @@ server:
         - path: "/auditOnly"
           # method - any
           # audit all methods (by default GET and HEAD are not audited)
+          methods: ["get"]
           audit: true
           audit-event-type: "unit_test"
           audit-message-format: "Unit test message format"

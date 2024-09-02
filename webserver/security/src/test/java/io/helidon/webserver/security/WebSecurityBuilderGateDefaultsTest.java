@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package io.helidon.webserver.security;
 import java.util.Optional;
 import java.util.Set;
 
-import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
@@ -86,8 +85,9 @@ class WebSecurityBuilderGateDefaultsTest {
                 .addAuditProvider(myAuditProvider)
                 .build();
 
-        Context context = Context.create();
-        context.register(myAuditProvider);
+        Contexts.context()
+                .orElseGet(Contexts::globalContext)
+                .register(myAuditProvider);
 
         serverBuilder
                 .featuresDiscoverServices(false)
@@ -96,7 +96,6 @@ class WebSecurityBuilderGateDefaultsTest {
                                     .defaults(SecurityFeature.rolesAllowed("admin"))
                                     .build())
                 .addFeature(ContextFeature.create())
-                .serverContext(context)
                 .routing(builder -> builder
                         // will only accept admin (due to gate defaults)
                         .get("/noRoles", SecurityFeature.authenticate())

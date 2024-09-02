@@ -253,8 +253,10 @@ class LoomServer implements WebServer {
 
         for (ServerListener listener : listeners.values()) {
             futures.add(new ListenerFuture(listener, executorService.submit(() -> {
-                Thread.currentThread().setName(taskName + " " + listener);
-                task.accept(listener);
+                Contexts.runInContext(context, () -> {
+                    Thread.currentThread().setName(taskName + " " + listener);
+                    task.accept(listener);
+                });
             })));
         }
         for (ListenerFuture listenerFuture : futures) {

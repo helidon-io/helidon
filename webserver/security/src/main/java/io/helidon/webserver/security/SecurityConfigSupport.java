@@ -61,7 +61,9 @@ class SecurityConfigSupport {
             if (security.isPresent()) {
                 return;
             }
-            security = Contexts.globalContext().get(Security.class);
+            security = Contexts.context()
+                    .orElseGet(Contexts::globalContext)
+                    .get(Security.class);
             if (security.isPresent()) {
                 target.security(security.get());
                 return;

@@ -115,7 +115,8 @@ class HelidonRoutingJunitExtension extends JunitExtensionBase
         }
 
         Class<?> paramType = parameterContext.getParameter().getType();
-        return Contexts.globalContext()
+        return Contexts.context()
+                .orElseGet(Contexts::globalContext)
                 .get(paramType)
                 .isPresent();
     }
@@ -132,7 +133,8 @@ class HelidonRoutingJunitExtension extends JunitExtensionBase
             }
         }
 
-        return Contexts.globalContext()
+        return Contexts.context()
+                .orElseGet(Contexts::globalContext)
                 .get(paramType)
                 .orElseThrow(() -> new ParameterResolutionException("Failed to resolve parameter of type "
                                                                             + paramType.getName()));

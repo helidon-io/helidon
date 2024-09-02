@@ -94,7 +94,7 @@ public class TestJunitExtension implements Extension,
 
     @Override
     public void afterAll(ExtensionContext context) {
-        afterShutdownMethods(context.getRequiredTestClass());
+        run(context, () -> afterShutdownMethods(context.getRequiredTestClass()));
     }
 
     @Override
@@ -196,13 +196,15 @@ public class TestJunitExtension implements Extension,
     }
 
     /**
-     * Context to be used for all actions this extension invokes.
+     * Context to be used for all actions this extension invokes, and to store the global instances.
      * This extension creates a unit test context by default for each test class.
      *
      * @param ctx     JUnit extension context
      * @param context Helidon context to set
      */
     protected void context(ExtensionContext ctx, Context context) {
+        // self-register, so this context is used even if the current context is some child of it
+        context.register("global-instances", context);
         extensionStore(ctx)
                 .put(Context.class, context);
     }
@@ -227,6 +229,32 @@ public class TestJunitExtension implements Extension,
      * @throws Throwable in case the call to callable threw an exception
      */
     protected <T> T callInContext(ExtensionContext ctx, Callable<T> callable) throws Throwable {
+        AtomicReference<Throwable> thrown = new AtomicReference<>();
+
+        T response = Contexts.runInContext(context(ctx).orElseThrow(), () -> {
+            try {
+                return callable.call();
+            } catch (Throwable e) {
+                thrown.set(e);
+                return null;
+            }
+        });
+        if (thrown.get() != null) {
+            throw thrown.get();
+        }
+        return response;
+    }
+
+    /**
+     * Call a callable that can throw {@link java.lang.Throwable} within context.
+     *
+     * @param ctx      JUnit extension context
+     * @param callable callable to invoke
+     * @param <T>      type of the result
+     * @return result of the callable
+     * @throws Throwable in case the call to callable threw an exception
+     */
+    protected <T> T callWithThrowableInContext(ExtensionContext ctx, CallWithThrowable<T> callable) throws Throwable {
         AtomicReference<Throwable> thrown = new AtomicReference<>();
 
         T response = Contexts.runInContext(context(ctx).orElseThrow(), () -> {
@@ -385,6 +413,19 @@ public class TestJunitExtension implements Extension,
          * @throws Throwable possible checked exception
          */
         void run() throws Throwable;
+    }
+
+    /**
+     * Runnable that may throw a checked exception.
+     */
+    @FunctionalInterface
+    protected interface CallWithThrowable<T> {
+        /**
+         * Run the task.
+         *
+         * @throws Throwable possible checked exception
+         */
+        T call() throws Throwable;
     }
 
     private record ClosableRegistryManager(ServiceRegistryManager manager)
