@@ -191,7 +191,7 @@ public class TestJunitExtension implements Extension,
 
     /**
      * Service registry associated with the provided extension contexts
-     * (uses {@link #extensionStore(org.junit.jupiter.api.extension.ExtensionContext)})
+     * (uses {@link #extensionStore(org.junit.jupiter.api.extension.ExtensionContext)}).
      *
      * @param extensionContext extension context
      * @return service registry
