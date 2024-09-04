@@ -17,8 +17,9 @@
 FROM oraclelinux:9-slim
 
 RUN microdnf install postgresql-server && microdnf clean all
+RUN mkdir -p /var/run/postgresql && \
+    chown postgres:postgres /var/run/postgresql
 ADD entrypoint.sh /usr/local/bin/
-
 ENV PGDATA /var/lib/pgsql/data
 USER postgres
 ENTRYPOINT ["entrypoint.sh"]
