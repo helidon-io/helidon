@@ -434,7 +434,8 @@ class BuilderImpl implements Config.Builder {
 
         if (nothingConfigured) {
             // use meta configuration to load all sources
-            MetaConfigFinder.findConfigSource(mediaType -> context.findParser(mediaType).isPresent(), context.supportedSuffixes())
+            MetaConfigFinder.findConfigSource(mediaType -> context.findParser(mediaType).isPresent(),
+                                                     context.supportedSuffixes())
                     .map(context::sourceRuntimeBase)
                     .ifPresent(targetSources::add);
         } else {

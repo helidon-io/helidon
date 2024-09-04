@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.function.Function;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.media.type.MediaType;
@@ -239,18 +238,6 @@ public final class MetaConfig {
                 .ifPresent(list -> list.forEach(it -> configSources.addAll(MetaConfig.configSource(it))));
 
         return configSources;
-    }
-
-    // only interested in config source
-    static List<ConfigSource> configSources(Function<MediaType, Boolean> supportedMediaType, List<String> supportedSuffixes) {
-        Optional<Config> metaConfigOpt = metaConfig();
-
-        return metaConfigOpt
-                .map(MetaConfig::configSources)
-                .orElseGet(() -> MetaConfigFinder.findConfigSource(supportedMediaType, supportedSuffixes)
-                        .map(List::of)
-                        .orElseGet(List::of));
-
     }
 
     private static Config createDefault() {
