@@ -229,6 +229,7 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
                 @Override
                 public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
                     if (evt instanceof IdleStateEvent) {
+                        LOGGER.finer(() -> log("Closing idle connection on channel", ctx.channel()));
                         ctx.close();        // async close of idle connection
                     }
                 }
