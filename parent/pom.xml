@@ -199,7 +199,7 @@
             </build>
         </profile>
         <profile>
-            <id>staging</id>
+            <id>ossrh-staging</id>
             <repositories>
                 <repository>
                     <id>ossrh-staging</id>
