@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -109,8 +109,8 @@ class ConfigKeyImpl implements Config.Key {
     @Override
     public ConfigKeyImpl child(Config.Key key) {
         final List<String> path;
-        if (key instanceof ConfigKeyImpl) {
-            path = ((ConfigKeyImpl) key).path;
+        if (key instanceof ConfigKeyImpl configKey) {
+            path = configKey.path;
         } else {
             path = new LinkedList<>();
             while (!key.isRoot()) {
