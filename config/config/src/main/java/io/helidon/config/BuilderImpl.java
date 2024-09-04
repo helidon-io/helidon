@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -699,56 +699,6 @@ class BuilderImpl implements Config.Builder {
         @Override
         public String toString() {
             return weight + ": " + delegate;
-        }
-    }
-
-    private static final class WeightedConfigSource implements Weighted {
-        private final HelidonSourceWithPriority source;
-        private final ConfigContext context;
-
-        private WeightedConfigSource(HelidonSourceWithPriority source, ConfigContext context) {
-            this.source = source;
-            this.context = context;
-        }
-
-        @Override
-        public double weight() {
-            return source.weight(context);
-        }
-
-        private ConfigSourceRuntimeImpl runtime(ConfigContextImpl context) {
-            return context.sourceRuntimeBase(source.unwrap());
-        }
-    }
-
-    private static final class HelidonSourceWithPriority {
-        private final ConfigSource configSource;
-        private final Double explicitWeight;
-
-        private HelidonSourceWithPriority(ConfigSource configSource, Double explicitWeight) {
-            this.configSource = configSource;
-            this.explicitWeight = explicitWeight;
-        }
-
-        ConfigSource unwrap() {
-            return configSource;
-        }
-
-        double weight(ConfigContext context) {
-            // first - explicit priority. If configured by user, return it
-            if (null != explicitWeight) {
-                return explicitWeight;
-            }
-
-            // ordinal from data
-            return context.sourceRuntime(configSource)
-                    .node("config_priority")
-                    .flatMap(node -> node.value()
-                            .map(Double::parseDouble))
-                    .orElseGet(() -> {
-                        // the config source does not have an ordinal configured, I need to get it from other places
-                        return Weights.find(configSource, Weighted.DEFAULT_WEIGHT);
-                    });
         }
     }
 
