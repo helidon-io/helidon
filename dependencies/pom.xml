@@ -41,15 +41,15 @@
         <version.lib.annotation-api>1.3.5</version.lib.annotation-api>
         <version.lib.brave-opentracing>1.0.0</version.lib.brave-opentracing>
         <version.lib.reactivestreams>1.0.4</version.lib.reactivestreams>
-        <!-- Force upgrade byte-buddy for Java 21. Remove after upgrading hibernate -->
-        <version.lib.byte-buddy>1.14.6</version.lib.byte-buddy>
+        <!-- Force upgrade byte-buddy for Java 23. Remove after upgrading hibernate -->
+        <version.lib.byte-buddy>1.14.18</version.lib.byte-buddy>
         <version.lib.commons-logging>1.2</version.lib.commons-logging>
         <version.lib.cron-utils>9.2.1</version.lib.cron-utils>
         <version.lib.dropwizard.metrics>4.1.2</version.lib.dropwizard.metrics>
         <version.lib.eclipselink>3.0.3</version.lib.eclipselink>
-        <!-- Force upgrade to ASM 9.5.0. Once eclipselink is upgraded this can be removed -->
-        <!-- Needed to support Java 20 -->
-        <version.lib.eclipselink.asm>9.5.0</version.lib.eclipselink.asm>
+        <!-- Force upgrade to ASM 9.7.0 Once eclipselink is upgraded this can be removed -->
+        <!-- Needed to support Java 23 -->
+        <version.lib.eclipselink.asm>9.7.0</version.lib.eclipselink.asm>
         <version.lib.el-impl>4.0.2</version.lib.el-impl>
         <version.lib.etcd4j>2.18.0</version.lib.etcd4j>
         <version.lib.failsafe>2.3.1</version.lib.failsafe>
@@ -789,7 +789,7 @@
                 <artifactId>org.eclipse.persistence.jpa</artifactId>
                 <version>${version.lib.eclipselink}</version>
             </dependency>
-            <!-- Force upgrade to ASM 9.5.0. Once eclipselink is upgraded this can be removed -->
+            <!-- Force upgrade ASM Once eclipselink is upgraded this can be removed -->
             <!-- Needed to support Java 21 -->
             <dependency>
                 <groupId>org.eclipse.persistence</groupId>
