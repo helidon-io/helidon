@@ -64,5 +64,8 @@
         <module>config-metadata-meta-api</module>
         <module>config-metadata-builder-api</module>
         <module>test-lazy-source</module>
+        <module>test-no-config-sources</module>
+        <module>test-default-config-source</module>
+        <module>test-mp-se-meta</module>
     </modules>
 </project>

@@ -61,6 +61,7 @@ class BuilderImpl implements Config.Builder {
     private MergingStrategy mergingStrategy = MergingStrategy.fallback();
     private boolean hasSystemPropertiesSource;
     private boolean hasEnvVarSource;
+    private boolean sourcesConfigured;
     /*
      * Config mapper providers
      */
@@ -123,6 +124,8 @@ class BuilderImpl implements Config.Builder {
         sourceSuppliers.stream()
                 .map(Supplier::get)
                 .forEach(this::addSource);
+        // this was intentional, even if empty (such as from Config.just())
+        this.sourcesConfigured = true;
 
         return this;
     }
@@ -427,14 +430,14 @@ class BuilderImpl implements Config.Builder {
             envVarAliasGeneratorEnabled = true;
         }
 
-        boolean nothingConfigured = sources.isEmpty();
+        boolean nothingConfigured = sources.isEmpty() && !sourcesConfigured;
 
         if (nothingConfigured) {
             // use meta configuration to load all sources
-            MetaConfig.configSources(mediaType -> context.findParser(mediaType).isPresent(), context.supportedSuffixes())
-                    .stream()
+            MetaConfigFinder.findConfigSource(mediaType -> context.findParser(mediaType).isPresent(),
+                                                     context.supportedSuffixes())
                     .map(context::sourceRuntimeBase)
-                    .forEach(targetSources::add);
+                    .ifPresent(targetSources::add);
         } else {
             // add all configured or discovered sources
 
