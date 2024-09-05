@@ -20,6 +20,8 @@ import io.helidon.service.registry.Service;
 
 /**
  * Contract implemented by Helidon to support setting up webserver when using service registry.
+ * Helidon will look up all instances of this service and invoke them, so it can be used for customization
+ * of webserver configuration.
  */
 @Service.Contract
 public interface WebServerRegistryService {

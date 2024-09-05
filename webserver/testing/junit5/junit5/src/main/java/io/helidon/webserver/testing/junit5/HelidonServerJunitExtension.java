@@ -76,45 +76,45 @@ class HelidonServerJunitExtension extends JunitExtensionBase
         super.beforeAll(context);
 
         run(context, () -> {
-        if (System.getProperty("helidon.config.profile") == null
-                && System.getProperty("config.profile") == null) {
-            System.setProperty("helidon.config.profile", "test");
-        }
+            if (System.getProperty("helidon.config.profile") == null
+                    && System.getProperty("config.profile") == null) {
+                System.setProperty("helidon.config.profile", "test");
+            }
 
-        Class<?> testClass = context.getRequiredTestClass();
-        super.testClass(testClass);
-        ServerTest testAnnot = testClass.getAnnotation(ServerTest.class);
-        if (testAnnot == null) {
-            throw new IllegalStateException("Invalid test class for this extension: " + testClass);
-        }
+            Class<?> testClass = context.getRequiredTestClass();
+            super.testClass(testClass);
+            ServerTest testAnnot = testClass.getAnnotation(ServerTest.class);
+            if (testAnnot == null) {
+                throw new IllegalStateException("Invalid test class for this extension: " + testClass);
+            }
 
-        WebServerConfig.Builder builder = WebServer.builder();
+            WebServerConfig.Builder builder = WebServer.builder();
 
-        builder.config(GlobalConfig.config().get("server"))
-                .host("localhost");
+            builder.config(GlobalConfig.config().get("server"))
+                    .host("localhost");
 
-        registrySetup(builder);
+            registrySetup(builder);
 
-        extensions.forEach(it -> it.beforeAll(context));
-        extensions.forEach(it -> it.updateServerBuilder(builder));
+            extensions.forEach(it -> it.beforeAll(context));
+            extensions.forEach(it -> it.updateServerBuilder(builder));
 
-        // port will be random
-        builder.port(0)
-                .shutdownHook(false);
+            // port will be random
+            builder.port(0)
+                    .shutdownHook(false);
 
-        setupServer(builder);
-        addRouting(builder);
+            setupServer(builder);
+            addRouting(builder);
 
-        server = builder
-                    .serverContext(super.context(context).orElseThrow()) // created above when we call super.beforeAll
-                    .build().start();
-        if (server.hasTls()) {
-            uris.put(DEFAULT_SOCKET_NAME, URI.create("https://localhost:" + server.port() + "/"));
-        } else {
-            uris.put(DEFAULT_SOCKET_NAME, URI.create("http://localhost:" + server.port() + "/"));
-        }
+            server = builder
+                        .serverContext(super.context(context).orElseThrow()) // created above when we call super.beforeAll
+                        .build().start();
+            if (server.hasTls()) {
+                uris.put(DEFAULT_SOCKET_NAME, URI.create("https://localhost:" + server.port() + "/"));
+            } else {
+                uris.put(DEFAULT_SOCKET_NAME, URI.create("http://localhost:" + server.port() + "/"));
+            }
 
-        TestConfig.set("test.server.port", String.valueOf(server.port()));
+            TestConfig.set("test.server.port", String.valueOf(server.port()));
         });
     }
 
@@ -207,8 +207,8 @@ class HelidonServerJunitExtension extends JunitExtensionBase
     private void registrySetup(WebServerConfig.Builder builder) {
         // there is a core service that is noop, there will be an injection service that will be op
         GlobalServiceRegistry.registry()
-                .get(WebServerRegistryService.class)
-                .updateBuilder(builder);
+                .all(WebServerRegistryService.class)
+                .forEach(it -> it.updateBuilder(builder));
     }
 
     private URI uri(Executable declaringExecutable, String socketName) {
