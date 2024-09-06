@@ -17,13 +17,15 @@
 package io.helidon.common.mapper;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.context.ContextValue;
+import io.helidon.common.context.ContextSingleton;
 
 final class GlobalManager {
     private static final LazyValue<MapperManager> DEFAULT_MAPPER = LazyValue.create(() -> MapperManager.builder()
             .useBuiltIn(true)
             .build());
-    private static final ContextValue<MapperManager> CONTEXT_VALUE = ContextValue.create(MapperManager.class, DEFAULT_MAPPER);
+    private static final ContextSingleton<MapperManager> CONTEXT_VALUE = ContextSingleton.create(GlobalManager.class,
+                                                                                                 MapperManager.class,
+                                                                                                 DEFAULT_MAPPER);
 
     private GlobalManager() {
     }

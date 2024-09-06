@@ -19,7 +19,7 @@ package io.helidon.integrations.micrometer;
 import java.util.function.Supplier;
 
 import io.helidon.common.config.Config;
-import io.helidon.common.context.ContextValue;
+import io.helidon.common.context.ContextSingleton;
 import io.helidon.config.metadata.Configured;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.ServerRequest;
@@ -48,7 +48,8 @@ import io.micrometer.core.instrument.MeterRegistry;
 public class MicrometerFeature extends HelidonFeatureSupport {
     static final String DEFAULT_CONTEXT = "/micrometer";
 
-    private static final ContextValue<MeterRegistry> METER_REGISTRY = ContextValue.create(MeterRegistry.class);
+    private static final ContextSingleton<MeterRegistry> METER_REGISTRY = ContextSingleton.create(MicrometerFeature.class,
+                                                                                                  MeterRegistry.class);
 private static final String SERVICE_NAME = "Micrometer";
     private static final System.Logger LOGGER = System.getLogger(MicrometerFeature.class.getName());
 

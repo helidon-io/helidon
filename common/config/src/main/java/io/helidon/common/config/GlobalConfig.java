@@ -24,7 +24,7 @@ import java.util.function.Supplier;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.config.spi.ConfigProvider;
-import io.helidon.common.context.ContextValue;
+import io.helidon.common.context.ContextSingleton;
 
 /**
  * Global configuration can be set by a user before any Helidon code is invoked, to override default discovery
@@ -38,7 +38,8 @@ import io.helidon.common.context.ContextValue;
 public final class GlobalConfig {
     private static final Config EMPTY = Config.empty();
     private static final LazyValue<Config> DEFAULT_CONFIG = LazyValue.create(GlobalConfig::create);
-    private static final ContextValue<Config> CONTEXT_VALUE = ContextValue.create(Config.class);
+    private static final ContextSingleton<Config> CONTEXT_VALUE = ContextSingleton.create(GlobalConfig.class,
+                                                                                          Config.class);
 
     private GlobalConfig() {
     }

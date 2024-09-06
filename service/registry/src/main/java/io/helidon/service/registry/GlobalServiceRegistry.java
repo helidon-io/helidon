@@ -19,21 +19,23 @@ package io.helidon.service.registry;
 import java.util.function.Supplier;
 
 import io.helidon.common.config.GlobalConfig;
-import io.helidon.common.context.ContextValue;
+import io.helidon.common.context.ContextSingleton;
 
 /**
  * A global singleton manager for a service registry.
  */
 public final class GlobalServiceRegistry {
-    private static final ContextValue<ServiceRegistry> CONTEXT_VALUE = ContextValue.create(ServiceRegistry.class, () -> {
-        ServiceRegistryConfig config;
-        if (GlobalConfig.configured()) {
-            config = ServiceRegistryConfig.create(GlobalConfig.config().get("registry"));
-        } else {
-            config = ServiceRegistryConfig.create();
-        }
-        return ServiceRegistryManager.create(config).registry();
-    });
+    private static final ContextSingleton<ServiceRegistry> CONTEXT_VALUE = ContextSingleton.create(
+            GlobalServiceRegistry.class,
+            ServiceRegistry.class, () -> {
+                ServiceRegistryConfig config;
+                if (GlobalConfig.configured()) {
+                    config = ServiceRegistryConfig.create(GlobalConfig.config().get("registry"));
+                } else {
+                    config = ServiceRegistryConfig.create();
+                }
+                return ServiceRegistryManager.create(config).registry();
+            });
 
     private GlobalServiceRegistry() {
     }

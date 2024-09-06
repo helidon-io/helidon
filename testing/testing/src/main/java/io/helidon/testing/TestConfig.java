@@ -27,15 +27,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
 
-import io.helidon.common.context.ContextValue;
+import io.helidon.common.context.ContextSingleton;
 
 /**
  * Static accessor to {@link io.helidon.testing.TestConfigSource} to be able to set values.
  */
 public final class TestConfig {
-    private static final ContextValue<Sources> SOURCES = ContextValue.create(Sources.class, Sources::new);
-    private static final ContextValue<AccumulatedOptions> ACCUMULATED_OPTIONS = ContextValue.create(AccumulatedOptions.class,
-                                                                                                    AccumulatedOptions::new);
+    private static final ContextSingleton<Sources> SOURCES = ContextSingleton.create(TestConfig.class,
+                                                                                     Sources.class,
+                                                                                     Sources::new);
+    private static final ContextSingleton<AccumulatedOptions> ACCUMULATED_OPTIONS = ContextSingleton.create(
+            TestConfig.class,
+            AccumulatedOptions.class,
+            AccumulatedOptions::new);
     private static final ReentrantLock LOCK = new ReentrantLock();
 
     private TestConfig() {

@@ -28,6 +28,7 @@ import io.helidon.common.GenericType;
 import io.helidon.common.config.Config;
 import io.helidon.common.config.GlobalConfig;
 import io.helidon.common.context.Context;
+import io.helidon.common.context.ContextSingleton;
 import io.helidon.common.context.Contexts;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.service.registry.GlobalServiceRegistry;
@@ -82,7 +83,7 @@ public class TestJunitExtension implements Extension,
                 .id("test-" + testClass.getName() + "-" + System.identityHashCode(testClass))
                 .build();
         // self-register, so this context is used even if the current context is some child of it
-        helidonContext.register("global-instances", helidonContext);
+        helidonContext.register(ContextSingleton.STATIC_CONTEXT_CLASSIFIER, helidonContext);
 
         ExtensionContext.Store store = extensionStore(context);
         store.put(Context.class, helidonContext);
@@ -221,7 +222,7 @@ public class TestJunitExtension implements Extension,
      */
     protected void context(ExtensionContext ctx, Context context) {
         // self-register, so this context is used even if the current context is some child of it
-        context.register("global-instances", context);
+        context.register(ContextSingleton.STATIC_CONTEXT_CLASSIFIER, context);
         extensionStore(ctx)
                 .put(Context.class, context);
     }

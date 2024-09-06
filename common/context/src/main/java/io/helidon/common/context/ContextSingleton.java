@@ -23,51 +23,63 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
 
 /**
- * This is similar to {@link java.lang.ThreadLocal}, except it uses context to store a value.
- * <p>
- * When test context is available as a parent of current context
- * (identified as a context that has ID starting with {@code test-}), the instance is registered with that context.
- * Otherwise, it is registered with {@link io.helidon.common.context.Contexts#globalContext()}.
+ * This is similar to {@link java.lang.ThreadLocal}, except it uses {@code static} context to store a value.
+ * Static context is either a context available under special classifier {@value #STATIC_CONTEXT_CLASSIFIER}, or the
+ * {@link io.helidon.common.context.Contexts#globalContext()} (if the qualifier is not registered).
  * <p>
  * The intention of this type is to have singletons for production runtime, while maintaining a separation during
- * testing, where Helidon test extension run each part of the test class in a test context.
+ * testing, where Helidon test extensions run each part of the test class in a test context.
  * <p>
- * Note that the instance is not simply registered in the context, but it uses this class as a classifier.
+ * Note that the instance is not simply registered in the context, but it uses this class, and the "owner type" as a classifier
+ * to avoid conflicts.
  *
  * @param <T> type of the value stored in context
  */
-public final class ContextValue<T> {
+public final class ContextSingleton<T> {
+    /**
+     * Classifier used to register a context that is to serve as the static context.
+     */
+    public static final String STATIC_CONTEXT_CLASSIFIER = "helidon-static-context";
+
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-    private final Class<T> clazz;
+    private final ContextSingletonClassifier<T> classifier;
     private final Supplier<T> supplier;
 
-    private ContextValue(Class<T> clazz, Supplier<T> supplier) {
-        this.clazz = clazz;
+    private ContextSingleton(ContextSingletonClassifier<T> qualifier, Supplier<T> supplier) {
+        this.classifier = qualifier;
         this.supplier = supplier;
     }
 
     /**
      * Create a new context value.
      *
-     * @param clazz type of the value
-     * @param <T>   type of the value
+     * @param ownerClass type owning this context singleton
+     * @param clazz      type of the value
+     * @param <T>        type of the value
      * @return a new context value with nothing set.
      */
-    public static <T> ContextValue<T> create(Class<T> clazz) {
-        return new ContextValue<>(clazz, null);
+    public static <T> ContextSingleton<T> create(Class<?> ownerClass, Class<T> clazz) {
+        Objects.requireNonNull(ownerClass);
+        Objects.requireNonNull(clazz);
+
+        return new ContextSingleton<>(new ContextSingletonClassifier<>(ownerClass, clazz), null);
     }
 
     /**
      * Create a new context value with a supplier of instances for each context.
      *
+     * @param ownerClass type owning this context singleton
      * @param clazz type of the value
      * @param value value supplier
      * @param <T>   type of the value
      * @return a new context value
      */
-    public static <T> ContextValue<T> create(Class<T> clazz, Supplier<T> value) {
+    public static <T> ContextSingleton<T> create(Class<?> ownerClass, Class<T> clazz, Supplier<T> value) {
+        Objects.requireNonNull(ownerClass);
+        Objects.requireNonNull(clazz);
         Objects.requireNonNull(value);
-        return new ContextValue<>(clazz, value);
+
+        return new ContextSingleton<>(new ContextSingletonClassifier<>(ownerClass, clazz), value);
     }
 
     /**
@@ -78,7 +90,7 @@ public final class ContextValue<T> {
     public void set(T value) {
         lock.writeLock().lock();
         try {
-            context().register(ContextValue.class, value);
+            context().register(classifier, value);
         } finally {
             lock.writeLock().unlock();
         }
@@ -122,8 +134,8 @@ public final class ContextValue<T> {
                 return value;
             }
             throw new NoSuchElementException("There is no value available in the current context, "
-                                                     + "and supplier was not provided when creating this instance for type"
-                                                     + " " + clazz.getName());
+                                                     + "and supplier was not provided when creating this instance for: "
+                                                     + " " + classifier);
         } finally {
             lock.writeLock().unlock();
         }
@@ -153,16 +165,25 @@ public final class ContextValue<T> {
         // this is the context we expect to get (and set global instances)
         return Contexts.context()
                 .orElse(globalContext)
-                .get("global-instances", Context.class)
+                .get(STATIC_CONTEXT_CLASSIFIER, Context.class)
                 .orElse(globalContext);
     }
 
     private Optional<T> current() {
         lock.readLock().lock();
         try {
-            return context().get(ContextValue.class, clazz);
+            return context().get(classifier, classifier.valueType());
         } finally {
             lock.readLock().unlock();
+        }
+    }
+
+    @SuppressWarnings("rawtypes")
+    private record ContextSingletonClassifier<T>(Class<ContextSingleton> contextSingleton,
+                                                 Class<?> ownerClass,
+                                                 Class<T> valueType) {
+        private ContextSingletonClassifier(Class<?> ownerClass, Class<T> valueType) {
+            this(ContextSingleton.class, ownerClass, valueType);
         }
     }
 }

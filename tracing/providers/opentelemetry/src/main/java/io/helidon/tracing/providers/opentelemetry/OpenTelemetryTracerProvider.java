@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.common.context.ContextValue;
+import io.helidon.common.context.ContextSingleton;
 import io.helidon.common.context.Contexts;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
@@ -40,16 +40,18 @@ public class OpenTelemetryTracerProvider implements TracerProvider {
     private static final System.Logger LOGGER = System.getLogger(OpenTelemetryTracerProvider.class.getName());
     private static final AtomicReference<Tracer> CONFIGURED_TRACER = new AtomicReference<>();
     private static final AtomicBoolean GLOBAL_SET = new AtomicBoolean();
-    private static final ContextValue<Tracer> GLOBAL_TRACER;
+    private static final ContextSingleton<Tracer> GLOBAL_TRACER;
 
     static {
-        GLOBAL_TRACER = ContextValue.create(Tracer.class, () -> {
+        GLOBAL_TRACER = ContextSingleton.create(OpenTelemetryTracerProvider.class,
+                                                Tracer.class, () -> {
             // try to get from configured global tracer
             Tracer tracer = CONFIGURED_TRACER.get();
             if (tracer != null) {
                 return tracer;
             }
-            ContextValue<OpenTelemetryTracer> otelTracer = ContextValue.create(OpenTelemetryTracer.class);
+            ContextSingleton<OpenTelemetryTracer> otelTracer = ContextSingleton.create(OpenTelemetryTracerProvider.class,
+                                                                                       OpenTelemetryTracer.class);
 
             return otelTracer.value()
                     .map(Tracer.class::cast)

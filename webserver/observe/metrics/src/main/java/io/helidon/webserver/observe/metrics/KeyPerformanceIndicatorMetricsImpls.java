@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.helidon.common.context.ContextValue;
+import io.helidon.common.context.ContextSingleton;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.KeyPerformanceIndicatorMetricsConfig;
@@ -54,7 +54,10 @@ class KeyPerformanceIndicatorMetricsImpls {
     static final String LOAD_NAME = "load";
     static final String KPI_METERS_SCOPE = Meter.Scope.VENDOR;
 
-    private static final ContextValue<KpiMetrics> KPI_METRICS = ContextValue.create(KpiMetrics.class, KpiMetrics::new);
+    private static final ContextSingleton<KpiMetrics> KPI_METRICS =
+            ContextSingleton.create(KeyPerformanceIndicatorMetricsImpls.class,
+                                    KpiMetrics.class,
+                                    KpiMetrics::new);
 
     private KeyPerformanceIndicatorMetricsImpls() {
     }
