@@ -34,7 +34,7 @@ public final class ContextSingleton<T> {
     /**
      * Classifier used to register a context that is to serve as the static context.
      */
-    public static final String STATIC_CONTEXT_CLASSIFIER = "helidon-static-context";
+    public static final String STATIC_CONTEXT_CLASSIFIER = "helidon-singleton-context";
 
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final ContextSingletonClassifier<T> classifier;
