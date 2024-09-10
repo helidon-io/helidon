@@ -23,15 +23,10 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
 
 /**
- * This is similar to {@link java.lang.ThreadLocal}, except it uses {@code static} context to store a value.
- * Static context is either a context available under special classifier {@value #STATIC_CONTEXT_CLASSIFIER}, or the
- * {@link io.helidon.common.context.Contexts#globalContext()} (if the qualifier is not registered).
- * <p>
- * The intention of this type is to have singletons for production runtime, while maintaining a separation during
- * testing, where Helidon test extensions run each part of the test class in a test context.
- * <p>
- * Note that the instance is not simply registered in the context, but it uses this class, and the "owner type" as a classifier
- * to avoid conflicts.
+ * A context based "singleton" value holder that provides an indirection mechanism for static values.
+ * "Singleton" values are stored and resolved from a context classified with {@value #STATIC_CONTEXT_CLASSIFIER}
+ * in the {@link io.helidon.common.context.Contexts#context()} current context},
+ * or the {@link io.helidon.common.context.Contexts#globalContext() global context if none is defined}.
  *
  * @param <T> type of the value stored in context
  */
