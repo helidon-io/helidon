@@ -80,6 +80,15 @@ interface AnnotationBlueprint {
     Map<String, Object> values();
 
     /**
+     * A list of inherited annotations (from the whole hierarchy).
+     *
+     * @return list of all annotations declared on the annotation type, or inherited from them
+     */
+    @Option.Redundant
+    @Option.Singular
+    List<Annotation> metaAnnotations();
+
+    /**
      * The value property.
      *
      * @return the string value of value property
@@ -653,4 +662,19 @@ interface AnnotationBlueprint {
         return AnnotationSupport.asEnums(typeName(), values(), property, type);
     }
 
+    /**
+     * Check if {@link #metaAnnotations()} contains an annotation of the provided type.
+     * <p>
+     * Note: we ignore {@link java.lang.annotation.Target}, {@link java.lang.annotation.Inherited},
+     * {@link java.lang.annotation.Documented}, and {@link java.lang.annotation.Retention}.
+     *
+     * @param annotationType type of annotation
+     * @return {@code true} if the annotation is declared on this annotation, or is inherited from a declared annotation
+     */
+    default boolean hasMetaAnnotation(TypeName annotationType) {
+        return metaAnnotations()
+                .stream()
+                .map(Annotation::typeName)
+                .anyMatch(annotationType::equals);
+    }
 }

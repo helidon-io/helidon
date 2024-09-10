@@ -40,6 +40,7 @@ import io.helidon.codegen.FilerResource;
 import io.helidon.codegen.FilerTextResource;
 import io.helidon.codegen.IndentType;
 import io.helidon.codegen.classmodel.ClassModel;
+import io.helidon.common.types.TypeName;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -70,6 +71,23 @@ class AptFiler implements CodegenFiler {
             throw new CodegenException("Failed to write source file for type: " + classModel.typeName(),
                                        e,
                                        originatingElement(elements, classModel.typeName()));
+        }
+    }
+
+    @Override
+    public Path writeSourceFile(TypeName type, String content, Object... originatingElements) {
+        Element[] elements = toElements(originatingElements);
+
+        try {
+            JavaFileObject sourceFile = filer.createSourceFile(type.fqName(), elements);
+            try (Writer os = sourceFile.openWriter()) {
+                os.write(content);
+            }
+            return Path.of(sourceFile.toUri());
+        } catch (IOException e) {
+            throw new CodegenException("Failed to write source file for type: " + type,
+                                       e,
+                                       originatingElement(elements, type));
         }
     }
 

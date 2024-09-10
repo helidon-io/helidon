@@ -532,6 +532,14 @@ final class AnnotationSupport {
             return str;
         }
 
+        if (value instanceof TypeName tn) {
+            return tn.fqName();
+        }
+
+        if (value instanceof EnumValue ev) {
+            return ev.name();
+        }
+
         if (value instanceof List<?>) {
             throw new IllegalArgumentException(typeName.fqName() + " property " + property
                                                        + " is a list, cannot be converted to String");
@@ -619,22 +627,33 @@ final class AnnotationSupport {
         if (value instanceof Class<?> theClass) {
             return theClass;
         }
-        if (value instanceof String str) {
-            try {
-                return Class.forName(str);
-            } catch (ClassNotFoundException e) {
-                throw new IllegalArgumentException(typeName.fqName() + " property " + property
-                                                           + " of type String and value \"" + str + "\""
-                                                           + " cannot be converted to Class");
-            }
+
+        String className;
+
+        if (value instanceof TypeName tn) {
+            className = tn.fqName();
+        } else if (value instanceof String str) {
+            className = str;
+        } else {
+
+            throw new IllegalArgumentException(typeName.fqName() + " property " + property
+                                                       + " of type " + value.getClass().getName()
+                                                       + " cannot be converted to Class");
         }
 
-        throw new IllegalArgumentException(typeName.fqName() + " property " + property
-                                                   + " of type " + value.getClass().getName()
-                                                   + " cannot be converted to Class");
+        try {
+            return Class.forName(className);
+        } catch (ClassNotFoundException e) {
+            throw new IllegalArgumentException(typeName.fqName() + " property " + property
+                                                       + " of type String and value \"" + className + "\""
+                                                       + " cannot be converted to Class");
+        }
     }
 
     private static TypeName asTypeName(TypeName typeName, String property, Object value) {
+        if (value instanceof TypeName tn) {
+            return tn;
+        }
         if (value instanceof Class<?> theClass) {
             return TypeName.create(theClass);
         }

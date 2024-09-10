@@ -43,6 +43,8 @@ public interface Annotated {
      * <p>
      * The returned list does not contain {@link #annotations()}. If a meta-annotation is present on multiple
      * annotations, it will be returned once for each such declaration.
+     * <p>
+     * This method does not return annotations on super types or interfaces!
      *
      * @return list of all meta annotations of this element
      */

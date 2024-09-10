@@ -106,7 +106,7 @@ final class ContentSupport {
     static void addCreateAnnotation(ContentBuilder<?> contentBuilder, Annotation annotation) {
 
         Map<String, Object> values = annotation.values();
-        if (values.isEmpty()) {
+        if (values.isEmpty() && annotation.metaAnnotations().isEmpty()) {
             // Annotation.create(TypeName.create("my.type.AnnotationType"))
             contentBuilder.addContent(ANNOTATION)
                     .addContent(".create(")
@@ -135,6 +135,16 @@ final class ContentSupport {
                     addAnnotationValue(contentBuilder, annotation.objectValue(propertyName).get());
                     contentBuilder.addContentLine(")");
                 });
+
+        // .addMetaAnnotation(...)
+        annotation.metaAnnotations()
+                        .forEach(it -> contentBuilder.addContent(".addMetaAnnotation(")
+                                .increaseContentPadding()
+                                .increaseContentPadding()
+                                .addContentCreate(it)
+                                .addContentLine(")")
+                                .decreaseContentPadding()
+                                .decreaseContentPadding());
 
         //  .build()
         contentBuilder.addContentLine(".build()")
