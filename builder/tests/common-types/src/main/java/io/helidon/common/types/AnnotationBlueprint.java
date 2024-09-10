@@ -663,7 +663,7 @@ interface AnnotationBlueprint {
     }
 
     /**
-     * Check if {@link #metaAnnotations()} contains an annotation of the provided type.
+     * Check if {@link io.helidon.common.types.Annotation#metaAnnotations()} contains an annotation of the provided type.
      * <p>
      * Note: we ignore {@link java.lang.annotation.Target}, {@link java.lang.annotation.Inherited},
      * {@link java.lang.annotation.Documented}, and {@link java.lang.annotation.Retention}.

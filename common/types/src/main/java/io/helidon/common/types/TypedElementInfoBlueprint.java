@@ -169,7 +169,8 @@ interface TypedElementInfoBlueprint extends Annotated {
     Optional<Object> originatingElement();
 
     /**
-     * The element used to create this instance, or {@link #signature()} if none provided.
+     * The element used to create this instance, or {@link io.helidon.common.types.TypedElementInfo#signature()}
+     * if none provided.
      * The type of the object depends on the environment we are in - it may be an {@code TypeElement} in annotation processing,
      * or a {@code MethodInfo} (and such) when using classpath scanning.
      *

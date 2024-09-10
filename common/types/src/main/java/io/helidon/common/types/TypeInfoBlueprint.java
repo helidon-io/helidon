@@ -232,7 +232,7 @@ interface TypeInfoBlueprint extends Annotated {
     Optional<Object> originatingElement();
 
     /**
-     * The element used to create this instance, or {@link #typeName()} if none provided.
+     * The element used to create this instance, or {@link io.helidon.common.types.TypeInfo#typeName()} if none provided.
      * The type of the object depends on the environment we are in - it may be an {@code TypeElement} in annotation processing,
      * or a {@code ClassInfo} when using classpath scanning.
      *
