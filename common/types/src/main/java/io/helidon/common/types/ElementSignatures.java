@@ -18,6 +18,7 @@ package io.helidon.common.types;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 final class ElementSignatures {
@@ -123,16 +124,10 @@ final class ElementSignatures {
             this.parameters = parameters;
             if (name.equals("<init>")) {
                 this.constructor = true;
-                this.text = "(" + parameters.stream()
-                        .map(TypeName::fqName)
-                        .collect(Collectors.joining(","))
-                        + ")";
+                this.text = parameterTypesSection(parameters, ",", TypeName::fqName);
             } else {
                 this.constructor = false;
-                this.text = name + "(" + parameters.stream()
-                        .map(TypeName::fqName)
-                        .collect(Collectors.joining(","))
-                        + ")";
+                this.text = name + parameterTypesSection(parameters, ",", TypeName::fqName);
             }
 
         }
@@ -162,11 +157,9 @@ final class ElementSignatures {
             if (constructor) {
                 return text;
             } else {
-                return type.resolvedName() + " " + name + "("
-                        + parameters.stream()
-                        .map(TypeName::resolvedName)
-                        .collect(Collectors.joining(", "))
-                        + ")";
+                return type.resolvedName() + " " + name + parameterTypesSection(parameters,
+                                                                                ", ",
+                                                                                TypeName::resolvedName);
             }
         }
 
@@ -263,5 +256,13 @@ final class ElementSignatures {
         public List<TypeName> parameterTypes() {
             return List.of();
         }
+    }
+
+    private static String parameterTypesSection(List<TypeName> parameters,
+                                                String delimiter,
+                                                Function<TypeName, String> typeMapper) {
+        return parameters.stream()
+                .map(typeMapper)
+                .collect(Collectors.joining(delimiter, "(", ")"));
     }
 }
