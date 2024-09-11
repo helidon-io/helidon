@@ -32,7 +32,7 @@ public final class TestRegistry {
      * Mark a static method to be executed after the service registry has been shut-down.
      * <p>
      * This will only be executed after all pre-destroy methods have been called and the registry is no
-     * long available (i.e. you cannot obtain the registry instance that was used during all of your test
+     * longer available (i.e. you cannot obtain the registry instance that was used during all of your test
      * methods).
      */
     @Retention(RetentionPolicy.RUNTIME)
