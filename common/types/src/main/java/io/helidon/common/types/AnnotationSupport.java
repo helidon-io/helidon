@@ -628,18 +628,15 @@ final class AnnotationSupport {
             return theClass;
         }
 
-        String className;
-
-        if (value instanceof TypeName tn) {
-            className = tn.fqName();
-        } else if (value instanceof String str) {
-            className = str;
-        } else {
-
-            throw new IllegalArgumentException(typeName.fqName() + " property " + property
-                                                       + " of type " + value.getClass().getName()
-                                                       + " cannot be converted to Class");
-        }
+        String className = switch(value) {
+            case TypeName tn -> tn.name();
+            case String str -> str;
+            default -> {
+                throw new IllegalArgumentException(typeName.fqName() + " property " + property
+                                                           + " of type " + value.getClass().getName()
+                                                           + " cannot be converted to Class");
+            }
+        };
 
         try {
             return Class.forName(className);
