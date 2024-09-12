@@ -119,9 +119,11 @@ Annotations: `@RolesAllowed`, `@RoleValidator.Roles`
 .Configuration example for `WebServer`
 ----
 security:
-  web-server.paths:
-    - path: "/user[/{*}]"
-      roles-allowed: ["user"]
+  features:
+    security:
+      paths:
+        - path: "/user[/{*}]"
+          roles-allowed: ["user"]
 ----
 
 [source,java]
@@ -160,10 +162,12 @@ Annotations: `@Scope`
 .Configuration example for `WebServer`
 ----
 security:
-  web-server.paths:
-    - path: "/user[/{*}]"
-      abac.scopes:
-        ["calendar_read", "calendar_edit"]
+  features:
+    security:
+      paths:
+        - path: "/user[/{*}]"
+          abac.scopes:
+            ["calendar_read", "calendar_edit"]
 ----
 
 [source,java]
@@ -185,14 +189,28 @@ Example of a policy statement: `${env.time.year >= 2017}`
 .Configuration example for `WebServer`
 ----
 security:
-  web-server.paths:
-    - path: "/user[/{*}]"
-      policy:
-        statement: "hasScopes('calendar_read','calendar_edit') AND timeOfDayBetween('8:15', '17:30')"
+  features:
+    security:
+      paths:
+        - path: "/user[/{*}]"
+          policy:
+            statement: "hasScopes('calendar_read','calendar_edit') AND timeOfDayBetween('8:15', '17:30')"
 ----
 
 [source,java]
 .JAX-RS example
 ----
 include::{sourcedir}/includes/security/providers/AbacSnippets.java[tag=snippet_4, indent=0]
+----
+
+[source,yaml]
+.Configuration example for `JAX-RS` over the configuration
+----
+security:
+  features:
+    security:
+      endpoints:
+        - path: "/somePath"
+          config:
+            abac.policy-validator.statement: "${env.time.year >= 2017}"
 ----

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,9 @@ import org.glassfish.jersey.server.ContainerRequest;
  */
 public class SecurityFilterContext {
     private String resourceName;
+    private String fullResourceName;
+    private String resourceMethod;
+    private String fullResourceMethod;
     private String resourcePath;
     private String method;
     private Map<String, List<String>> headers;
@@ -60,113 +63,137 @@ public class SecurityFilterContext {
                 + '}';
     }
 
-    String getResourceName() {
+    String resourceName() {
         return resourceName;
     }
 
-    void setResourceName(String resourceName) {
+    void resourceName(String resourceName) {
         this.resourceName = resourceName;
     }
 
-    String getResourcePath() {
+    String fullResourceName() {
+        return fullResourceName;
+    }
+
+    void fullResourceName(String fullResourceName) {
+        this.fullResourceName = fullResourceName;
+    }
+
+    String resourceMethod() {
+        return resourceMethod;
+    }
+
+    void resourceMethod(String resourceMethod) {
+        this.resourceMethod = resourceMethod;
+    }
+
+    String fullResourceMethod() {
+        return fullResourceMethod;
+    }
+
+    void fullResourceMethod(String fullResourceMethod) {
+        this.fullResourceMethod = fullResourceMethod;
+    }
+
+    String resourcePath() {
         return resourcePath;
     }
 
-    void setResourcePath(String resourcePath) {
+    void resourcePath(String resourcePath) {
         this.resourcePath = resourcePath;
     }
 
-    String getMethod() {
+    String method() {
         return method;
     }
 
-    void setMethod(String method) {
+    void method(String method) {
         this.method = method;
     }
 
-    Map<String, List<String>> getHeaders() {
+    Map<String, List<String>> headers() {
         return headers;
     }
 
-    void setHeaders(Map<String, List<String>> headers) {
+    void headers(Map<String, List<String>> headers) {
         this.headers = headers;
     }
 
-    URI getTargetUri() {
+    URI targetUri() {
         return targetUri;
     }
 
-    void setTargetUri(URI targetUri) {
+    void targetUri(URI targetUri) {
         this.targetUri = targetUri;
     }
 
-    ContainerRequest getJerseyRequest() {
+    ContainerRequest jerseyRequest() {
         return jerseyRequest;
     }
 
-    void setJerseyRequest(ContainerRequest jerseyRequest) {
+    void jerseyRequest(ContainerRequest jerseyRequest) {
         this.jerseyRequest = jerseyRequest;
     }
 
-    boolean isShouldFinish() {
+    boolean shouldFinish() {
         return shouldFinish;
     }
 
-    void setShouldFinish(boolean shouldFinish) {
+    void shouldFinish(boolean shouldFinish) {
         this.shouldFinish = shouldFinish;
     }
 
-    SecurityDefinition getMethodSecurity() {
+    SecurityDefinition methodSecurity() {
         return methodSecurity;
     }
 
-    void setMethodSecurity(SecurityDefinition methodSecurity) {
+    void methodSecurity(SecurityDefinition methodSecurity) {
         this.methodSecurity = methodSecurity;
     }
 
-    boolean isExplicitAtz() {
+    boolean explicitAtz() {
         return explicitAtz;
     }
 
-    void setExplicitAtz(boolean explicitAtz) {
+    void explicitAtz(boolean explicitAtz) {
         this.explicitAtz = explicitAtz;
     }
 
-    boolean isTraceSuccess() {
+    boolean traceSuccess() {
         return traceSuccess;
     }
 
-    void setTraceSuccess(boolean traceSuccess) {
+    void traceSuccess(boolean traceSuccess) {
         this.traceSuccess = traceSuccess;
     }
 
-    String getTraceDescription() {
+    String traceDescription() {
         return traceDescription;
     }
 
-    void setTraceDescription(String traceDescription) {
+    void traceDescription(String traceDescription) {
         this.traceDescription = traceDescription;
     }
 
-    Throwable getTraceThrowable() {
+    Throwable traceThrowable() {
         return traceThrowable;
     }
 
-    void setTraceThrowable(Throwable traceThrowable) {
+    void traceThrowable(Throwable traceThrowable) {
         this.traceThrowable = traceThrowable;
     }
 
-    UriQuery getQueryParams() {
+    UriQuery queryParams() {
         return queryParams;
     }
 
-    void setQueryParams(UriQuery queryParams) {
+    void queryParams(UriQuery queryParams) {
         this.queryParams = queryParams;
     }
 
     void clearTrace() {
-        setTraceSuccess(true);
-        setTraceDescription(null);
-        setTraceThrowable(null);
+        traceSuccess(true);
+        traceDescription(null);
+        traceThrowable(null);
     }
 }
