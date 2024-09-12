@@ -35,6 +35,7 @@ import io.helidon.service.tests.inject.toolbox.impl.MainToolBox;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalPresent;
@@ -149,6 +150,7 @@ class ToolBoxTest {
      * This assumes the presence of module(s) + application(s) to handle all bindings, with effectively no lookups!
      */
     @Test
+    @Disabled("Disabled, as this required maven plugin, to be added in a later PR")
     void noServiceActivationRequiresLookupWhenApplicationIsPresent() {
         Counter counter = lookupCounter();
         long initialCount = counter.count();
