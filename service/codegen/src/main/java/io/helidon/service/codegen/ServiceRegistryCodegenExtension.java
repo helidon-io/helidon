@@ -32,6 +32,7 @@ import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenFiler;
 import io.helidon.codegen.CodegenOptions;
 import io.helidon.codegen.ModuleInfo;
+import io.helidon.codegen.TypeHierarchy;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.spi.CodegenExtension;
 import io.helidon.common.Weighted;
@@ -39,7 +40,8 @@ import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
-import io.helidon.common.types.TypedElementInfo;
+import io.helidon.service.codegen.spi.RegistryCodegenExtension;
+import io.helidon.service.codegen.spi.RegistryCodegenExtensionProvider;
 import io.helidon.service.metadata.DescriptorMetadata;
 
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_DESCRIPTOR;
@@ -55,17 +57,34 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
     private final List<RegistryCodegenExtension> extensions;
     private final String module;
 
-    private ServiceRegistryCodegenExtension(CodegenContext ctx, TypeName generator) {
+    private ServiceRegistryCodegenExtension(CodegenContext ctx,
+                                            TypeName generator,
+                                            List<RegistryCodegenExtensionProvider> extensions) {
         this.ctx = RegistryCodegenContext.create(ctx);
         this.module = ctx.moduleName().orElse(null);
 
-        ServiceExtension serviceExtension = new ServiceExtension(this.ctx);
-        this.extensions = List.of(serviceExtension);
-        this.typeToExtensions.put(ServiceCodegenTypes.SERVICE_ANNOTATION_PROVIDER, List.of(serviceExtension));
+        this.extensions = extensions.stream()
+                .map(it -> {
+                    RegistryCodegenExtension extension = it.create(this.ctx);
+
+                    for (TypeName typeName : it.supportedAnnotations()) {
+                        typeToExtensions.computeIfAbsent(typeName, key -> new ArrayList<>())
+                                .add(extension);
+                    }
+                    Collection<String> packages = it.supportedAnnotationPackages();
+                    if (!packages.isEmpty()) {
+                        extensionPredicates.put(extension, discoveryPredicate(packages));
+                    }
+
+                    return extension;
+                })
+                .toList();
     }
 
-    static ServiceRegistryCodegenExtension create(CodegenContext ctx, TypeName generator) {
-        return new ServiceRegistryCodegenExtension(ctx, generator);
+    static ServiceRegistryCodegenExtension create(CodegenContext ctx,
+                                                  TypeName generator,
+                                                  List<RegistryCodegenExtensionProvider> extensions) {
+        return new ServiceRegistryCodegenExtension(ctx, generator, extensions);
     }
 
     @Override
@@ -135,6 +154,21 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
         }
     }
 
+    private static Predicate<TypeName> discoveryPredicate(Collection<String> packages) {
+        List<String> prefixes = packages.stream()
+                .map(it -> it.endsWith(".*") ? it.substring(0, it.length() - 2) : it)
+                .toList();
+        return typeName -> {
+            String packageName = typeName.packageName();
+            for (String prefix : prefixes) {
+                if (packageName.startsWith(prefix)) {
+                    return true;
+                }
+            }
+            return false;
+        };
+    }
+
     private void addDescriptorsToServiceMeta() {
         // and write the module component
         Optional<ModuleInfo> currentModule = ctx.module();
@@ -183,7 +217,7 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
         List<TypeInfoAndAnnotations> result = new ArrayList<>();
 
         for (TypeInfo typeInfo : allTypes) {
-            result.add(new TypeInfoAndAnnotations(typeInfo, annotations(typeInfo)));
+            result.add(new TypeInfoAndAnnotations(typeInfo, TypeHierarchy.nestedAnnotations(ctx, typeInfo)));
         }
         return result;
     }
@@ -225,36 +259,6 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
                 Set.copyOf(extAnnots),
                 Map.copyOf(extAnnotToType),
                 List.copyOf(extTypes.values()));
-    }
-
-    private Set<TypeName> annotations(TypeInfo theTypeInfo) {
-        Set<TypeName> result = new HashSet<>();
-
-        // on type
-        theTypeInfo.annotations()
-                .stream()
-                .map(Annotation::typeName)
-                .forEach(result::add);
-
-        // on fields, methods etc.
-        theTypeInfo.elementInfo()
-                .stream()
-                .map(TypedElementInfo::annotations)
-                .flatMap(List::stream)
-                .map(Annotation::typeName)
-                .forEach(result::add);
-
-        // on parameters
-        theTypeInfo.elementInfo()
-                .stream()
-                .map(TypedElementInfo::parameterArguments)
-                .flatMap(List::stream)
-                .map(TypedElementInfo::annotations)
-                .flatMap(List::stream)
-                .map(Annotation::typeName)
-                .forEach(result::add);
-
-        return result;
     }
 
     private String topLevelPackage(Set<DescriptorMetadata> typeNames) {

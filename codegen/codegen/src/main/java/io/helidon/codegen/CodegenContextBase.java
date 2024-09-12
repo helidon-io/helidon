@@ -16,10 +16,13 @@
 
 package io.helidon.codegen;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.helidon.codegen.spi.AnnotationMapper;
 import io.helidon.codegen.spi.AnnotationMapperProvider;
@@ -29,12 +32,17 @@ import io.helidon.codegen.spi.ElementMapperProvider;
 import io.helidon.codegen.spi.TypeMapper;
 import io.helidon.codegen.spi.TypeMapperProvider;
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.types.ElementSignature;
+import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypedElementInfo;
 
 /**
  * Base of codegen context implementation taking care of the common parts of the API.
  */
 public abstract class CodegenContextBase implements CodegenContext {
+    // class -> method name -> element signature
+    private final Map<TypeName, Map<String, ElementSignatures>> uniqueNames = new HashMap<>();
     private final List<ElementMapper> elementMappers;
     private final List<TypeMapper> typeMappers;
     private final List<AnnotationMapper> annotationMappers;
@@ -149,6 +157,13 @@ public abstract class CodegenContextBase implements CodegenContext {
         return options;
     }
 
+    @Override
+    public String uniqueName(TypeInfo type, TypedElementInfo element) {
+        return uniqueNames.computeIfAbsent(type.typeName(), it -> new HashMap<>())
+                .computeIfAbsent(element.elementName(), name -> new ElementSignatures(type, name))
+                .uniqueName(element.signature());
+    }
+
     private static void addSupported(CodegenProvider provider,
                                      Set<Option<?>> supportedOptions,
                                      Set<String> supportedPackages,
@@ -159,5 +174,57 @@ public abstract class CodegenContextBase implements CodegenContext {
                 .stream()
                 .map(it -> it.endsWith(".*") ? it : it + ".*")
                 .forEach(supportedPackages::add);
+    }
+
+    private static class ElementSignatures {
+        private final Map<ElementSignature, String> names = new HashMap<>();
+        private final TypeInfo typeInfo;
+        private final String name;
+        private final List<TypedElementInfo> filteredElements;
+
+        private ElementSignatures(TypeInfo typeInfo, String name) {
+            this.typeInfo = typeInfo;
+            this.name = name;
+            this.filteredElements = typeInfo.elementInfo()
+                    .stream()
+                    .filter(ElementInfoPredicates.elementName(name))
+                    .sorted((first, second) -> {
+                        int compare = Integer.compare(first.parameterArguments().size(), second.parameterArguments().size());
+                        if (compare != 0) {
+                            return compare;
+                        }
+                        for (int i = 0; i < first.parameterArguments().size(); i++) {
+                            compare = first.parameterArguments().get(i).elementName()
+                                    .compareTo(second.parameterArguments().get(i).elementName());
+                            if (compare != 0) {
+                                return compare;
+                            }
+                        }
+                        return 0;
+                    })
+                    .collect(Collectors.toUnmodifiableList());
+            if (filteredElements.isEmpty()) {
+                throw new IllegalArgumentException("There is no element named '" + name + "' in type " + typeInfo.typeName());
+            }
+        }
+
+        public String uniqueName(ElementSignature signature) {
+            return names.computeIfAbsent(signature, it -> {
+                if (filteredElements.size() == 1) {
+                    return name;
+                }
+
+                int index = 0;
+                for (TypedElementInfo element : filteredElements) {
+                    if (element.signature().equals(signature)) {
+                        return index == 0 ? name : name + "_" + index;
+                    }
+                    index++;
+                }
+
+                throw new IllegalArgumentException("The provided signature is not part of the provided type. Type: "
+                                                           + typeInfo.typeName() + ", signature: " + signature);
+            });
+        }
     }
 }

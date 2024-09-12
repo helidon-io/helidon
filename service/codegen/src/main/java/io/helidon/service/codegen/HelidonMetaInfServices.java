@@ -44,9 +44,10 @@ import static io.helidon.service.metadata.Descriptors.SERVICE_REGISTRY_LOCATION;
  * ({@link io.helidon.service.codegen.ServiceCodegenTypes#SERVICE_ANNOTATION_PROVIDER})
  * will have a service descriptor generated at build time.
  * <p>
- * The service descriptor is then discoverable at runtime through our own resource in {@value #SERVICES_RESOURCE}.
+ * The service descriptor is then discoverable at runtime through our own resource in
+ * {@value Descriptors#SERVICE_REGISTRY_LOCATION}.
  */
-class HelidonMetaInfServices {
+public class HelidonMetaInfServices {
     private final FilerResource services;
     private final String moduleName;
     private final Set<DescriptorMetadata> descriptors;
@@ -64,7 +65,7 @@ class HelidonMetaInfServices {
      * @param moduleName module that is being built
      * @return a new instance of the service metadata manager
      */
-    static HelidonMetaInfServices create(CodegenFiler filer, String moduleName) {
+    public static HelidonMetaInfServices create(CodegenFiler filer, String moduleName) {
         FilerResource serviceRegistryMetadata = filer.resource(SERVICE_REGISTRY_LOCATION);
         byte[] bytes = serviceRegistryMetadata.bytes();
 
@@ -86,7 +87,7 @@ class HelidonMetaInfServices {
      *
      * @param services service descriptor metadata to add
      */
-    void addAll(Collection<DescriptorMetadata> services) {
+    public void addAll(Collection<DescriptorMetadata> services) {
         services.forEach(this::add);
     }
 
@@ -96,7 +97,7 @@ class HelidonMetaInfServices {
      *
      * @param service service descriptor metadata to add
      */
-    void add(DescriptorMetadata service) {
+    public void add(DescriptorMetadata service) {
         // if it is the same descriptor class, remove it
         descriptors.removeIf(it -> it.descriptorType().equals(service.descriptorType()));
 
@@ -107,7 +108,7 @@ class HelidonMetaInfServices {
     /**
      * Write the file to output.
      */
-    void write() {
+    public void write() {
         var root = Hson.structBuilder()
                 .set("module", moduleName);
         List<Hson.Struct> servicesHson = new ArrayList<>();

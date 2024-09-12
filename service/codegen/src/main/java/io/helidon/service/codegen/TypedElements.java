@@ -23,7 +23,6 @@ import io.helidon.codegen.ElementInfoPredicates;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeInfo;
-import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 
@@ -57,7 +56,7 @@ final class TypedElements {
                             .filter(ElementInfoPredicates::isMethod)
                             .filter(not(ElementInfoPredicates::isStatic))
                             .filter(not(ElementInfoPredicates::isPrivate))
-                            .filter(it -> signatureMatches(declaredMethod, it))
+                            .filter(it -> declaredMethod.signature().equals(it.signature()))
                             .findFirst()
                             .ifPresent(it -> interfaceMethods.add(new TypedElements.DeclaredElement(info, it)));
                 }
@@ -66,20 +65,6 @@ final class TypedElements {
         }
 
         return result;
-    }
-
-    private static boolean signatureMatches(TypedElementInfo method, TypedElementInfo interfaceMethod) {
-        // if the method has the same name and same parameter types, it is our candidate (return type MUST be the same,
-        // as otherwise this could not be compiled
-        if (!ElementInfoPredicates.elementName(method.elementName()).test(interfaceMethod)) {
-            return false;
-        }
-        List<TypeName> expectedParams = method.parameterArguments()
-                .stream()
-                .map(TypedElementInfo::typeName)
-                .toList();
-
-        return ElementInfoPredicates.hasParams(expectedParams).test(interfaceMethod);
     }
 
     record ElementMeta(TypedElementInfo element,

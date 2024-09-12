@@ -1,0 +1,83 @@
+/*
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.helidon.service.tests.inject.toolbox.impl;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import io.helidon.common.types.TypeName;
+import io.helidon.service.inject.api.Injection;
+import io.helidon.service.inject.api.Injection.InjectionPointProvider;
+import io.helidon.service.inject.api.Injection.QualifiedInstance;
+import io.helidon.service.inject.api.Lookup;
+import io.helidon.service.inject.api.Qualifier;
+import io.helidon.service.tests.inject.toolbox.AbstractBlade;
+
+/**
+ * Provides contextual injection for blades.
+ */
+@Injection.Singleton
+@Injection.Named("*")
+public class BladeProvider implements InjectionPointProvider<AbstractBlade> {
+
+    static final Qualifier QUALIFIER_ALL = Qualifier.WILDCARD_NAMED;
+    static final Qualifier QUALIFIER_COARSE = Qualifier.createNamed("coarse");
+    static final Qualifier QUALIFIER_FINE = Qualifier.createNamed("fine");
+    static final Qualifier QUALIFIER_DULL = Qualifier.createNamed("dull");
+
+    @Override
+    public Optional<QualifiedInstance<AbstractBlade>> first(Lookup query) {
+        assert (query.contracts().size() == 1) : query;
+        assert (query.contracts().contains(TypeName.create(AbstractBlade.class))) : query;
+
+        AbstractBlade blade;
+        Qualifier qualifier;
+        if (query.qualifiers().contains(QUALIFIER_ALL) || query.qualifiers().contains(QUALIFIER_COARSE)) {
+            qualifier = QUALIFIER_COARSE;
+            blade = new CoarseBlade();
+        } else if (query.qualifiers().contains(QUALIFIER_FINE)) {
+            qualifier = QUALIFIER_FINE;
+            blade = new FineBlade();
+        } else {
+            assert (query.qualifiers().isEmpty());
+            qualifier = QUALIFIER_DULL;
+            blade = new DullBlade();
+        }
+
+        return Optional.of(QualifiedInstance.create(blade, qualifier));
+    }
+
+    @Override
+    public List<QualifiedInstance<AbstractBlade>> list(Lookup query) {
+        List<QualifiedInstance<AbstractBlade>> result = new ArrayList<>();
+        if (query.qualifiers().contains(QUALIFIER_ALL) || query.qualifiers().contains(QUALIFIER_COARSE)) {
+            result.add(QualifiedInstance.create(new CoarseBlade(), QUALIFIER_COARSE));
+        }
+
+        if (query.qualifiers().contains(QUALIFIER_ALL) || query.qualifiers().contains(QUALIFIER_FINE)) {
+            result.add(QualifiedInstance.create(new FineBlade(), QUALIFIER_FINE));
+        }
+
+        if (query.qualifiers().contains(QUALIFIER_ALL) || query.qualifiers().isEmpty()) {
+            result.add(QualifiedInstance.create(new DullBlade(), QUALIFIER_DULL));
+        }
+
+        return result;
+    }
+
+}

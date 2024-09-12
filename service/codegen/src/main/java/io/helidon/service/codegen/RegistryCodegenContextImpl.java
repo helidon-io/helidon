@@ -20,20 +20,32 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.Set;
 
 import io.helidon.codegen.ClassCode;
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenContextDelegate;
 import io.helidon.codegen.classmodel.ClassModel;
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.types.TypeName;
+import io.helidon.service.codegen.spi.InjectAssignment;
+import io.helidon.service.codegen.spi.InjectAssignmentProvider;
 
 class RegistryCodegenContextImpl extends CodegenContextDelegate implements RegistryCodegenContext {
     private final List<DescriptorClassCode> descriptors = new ArrayList<>();
     private final List<ClassCode> nonDescriptors = new ArrayList<>();
+    private final List<InjectAssignment> assingments;
 
     RegistryCodegenContextImpl(CodegenContext context) {
         super(context);
+
+        this.assingments = HelidonServiceLoader.create(
+                        ServiceLoader.load(InjectAssignmentProvider.class,
+                                           RegistryCodegenContextImpl.class.getClassLoader()))
+                .stream()
+                .map(it -> it.create(context))
+                .toList();
     }
 
     @Override
@@ -113,6 +125,13 @@ class RegistryCodegenContextImpl extends CodegenContextDelegate implements Regis
 
     @Override
     public Assignment assignment(TypeName typeName, String valueSource) {
+        for (InjectAssignment assignmentProvider : assingments) {
+            Optional<Assignment> assignment = assignmentProvider.assignment(typeName, valueSource);
+            if (assignment.isPresent()) {
+                return assignment.get();
+            }
+        }
+
         return new Assignment(typeName, it -> it.addContent(valueSource));
     }
 

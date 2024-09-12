@@ -16,10 +16,13 @@
 
 package io.helidon.config;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import io.helidon.common.config.Config;
 import io.helidon.common.config.ConfigException;
@@ -48,13 +51,17 @@ class ConfigProvider implements Config {
                     .config(metaConfig.get().metaConfiguration())
                     .update(it -> configSources.get()
                             .forEach(it::addSource))
+                    .update(it -> defaultConfigSources(it, configParsers))
                     .disableParserServices()
                     .update(it -> configParsers.get()
                             .forEach(it::addParser))
                     .disableFilterServices()
                     .update(it -> configFilters.get()
                             .forEach(it::addFilter))
-                    .disableMapperServices()
+                    //.disableMapperServices()
+                    // cannot do this for now, removed ConfigMapperProvider from service loaded services, config does it on its
+                    // own
+                    // ObjectConfigMapper is before EnumMapper, and both are before essential and built-in
                     .update(it -> configMappers.get()
                             .forEach(it::addMapper))
                     .build();
@@ -72,12 +79,12 @@ class ConfigProvider implements Config {
     }
 
     @Override
-    public Config get(String key) throws ConfigException {
+    public Config get(String key) throws io.helidon.common.config.ConfigException {
         return config.get(key);
     }
 
     @Override
-    public Config detach() throws ConfigException {
+    public Config detach() throws io.helidon.common.config.ConfigException {
         return config.detach();
     }
 
@@ -107,32 +114,54 @@ class ConfigProvider implements Config {
     }
 
     @Override
-    public <T> ConfigValue<T> as(Class<T> type) {
+    public <T> io.helidon.common.config.ConfigValue<T> as(Class<T> type) {
         return config.as(type);
     }
 
     @Override
-    public <T> ConfigValue<T> map(Function<Config, T> mapper) {
+    public <T> io.helidon.common.config.ConfigValue<T> map(Function<Config, T> mapper) {
         return config.map(mapper);
     }
 
     @Override
-    public <T> ConfigValue<List<T>> asList(Class<T> type) throws ConfigException {
+    public <T> io.helidon.common.config.ConfigValue<List<T>> asList(Class<T> type) throws
+            io.helidon.common.config.ConfigException {
         return config.asList(type);
     }
 
     @Override
-    public <T> ConfigValue<List<T>> mapList(Function<Config, T> mapper) throws ConfigException {
+    public <T> io.helidon.common.config.ConfigValue<List<T>> mapList(Function<Config, T> mapper) throws
+            io.helidon.common.config.ConfigException {
         return config.mapList(mapper);
     }
 
     @Override
-    public <C extends Config> ConfigValue<List<C>> asNodeList() throws ConfigException {
+    public <C extends Config> io.helidon.common.config.ConfigValue<List<C>> asNodeList() throws
+            io.helidon.common.config.ConfigException {
         return config.asNodeList();
     }
 
     @Override
     public ConfigValue<Map<String, String>> asMap() throws ConfigException {
         return config.asMap();
+    }
+
+    private void defaultConfigSources(io.helidon.config.Config.Builder configBuilder,
+                                      Supplier<List<ConfigParser>> configParsers) {
+
+        Set<String> supportedSuffixes = configParsers.get()
+                .stream()
+                .map(ConfigParser::supportedSuffixes)
+                .flatMap(List::stream)
+                .collect(Collectors.toSet());
+
+        // profile source(s) before defaults
+        MetaConfigFinder.profile()
+                .ifPresent(profile -> MetaConfigFinder.configSources(new ArrayList<>(supportedSuffixes),
+                                                                     profile));
+        // default config source(s)
+        MetaConfigFinder.configSources(new ArrayList<>(supportedSuffixes))
+                .forEach(configBuilder::addSource);
+
     }
 }

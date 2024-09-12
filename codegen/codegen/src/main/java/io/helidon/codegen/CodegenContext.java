@@ -66,7 +66,8 @@ public interface CodegenContext {
     CodegenLogger logger();
 
     /**
-     * Current code generation scope. Usually guessed from the environment, can be overridden using {@link CodegenOptions#CODEGEN_SCOPE}
+     * Current code generation scope. Usually guessed from the environment, can be overridden using
+     * {@link CodegenOptions#CODEGEN_SCOPE}
      *
      * @return scope
      */
@@ -144,4 +145,13 @@ public interface CodegenContext {
      * @return set of supported options
      */
     Set<Option<?>> supportedOptions();
+
+    /**
+     * Get the unique name for the element within the provided type.
+     *
+     * @param type    type that owns the element
+     * @param element the element
+     * @return unique name for the element (will always start with the element name)
+     */
+    String uniqueName(TypeInfo type, TypedElementInfo element);
 }
