@@ -97,7 +97,7 @@ class SecurityDefinition {
 
         return result;
     }
-    
+
     void fromConfig(Config config) {
         config.get("authorize").as(Boolean.class).ifPresent(this::requiresAuthorization);
         config.get("authorizer").as(String.class).ifPresent(this::authorizer);
