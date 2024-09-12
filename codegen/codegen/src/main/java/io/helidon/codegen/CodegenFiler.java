@@ -37,10 +37,20 @@ public interface CodegenFiler {
      *
      * @param classModel          class model to write out
      * @param originatingElements elements that caused this type to be generated
-     *                            (you can use {@link io.helidon.common.types.TypeInfo#originatingElement()} for example
+     *                            (you can use {@link io.helidon.common.types.TypeInfo#originatingElementValue()})
      * @return written path, we expect to always run on local file system
      */
     Path writeSourceFile(ClassModel classModel, Object... originatingElements);
+
+    /**
+     * Write a source file using string content.
+     *
+     * @param type type of the file to generate
+     * @param content source code to write
+     * @param originatingElements elements that caused this type to be generated
+     * @return written path, we expect to always run on local file system
+     */
+    Path writeSourceFile(TypeName type, String content, Object... originatingElements);
 
     /**
      * Write a resource file.
