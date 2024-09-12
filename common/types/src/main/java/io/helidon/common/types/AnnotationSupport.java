@@ -628,7 +628,7 @@ final class AnnotationSupport {
             return theClass;
         }
 
-        String className = switch(value) {
+        String className = switch (value) {
             case TypeName tn -> tn.name();
             case String str -> str;
             default -> {
