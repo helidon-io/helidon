@@ -108,8 +108,8 @@ class SecurityDefinition {
         config.get("audit").as(Boolean.class).ifPresent(this::audited);
         config.get("audit-event-type").as(String.class).ifPresent(this::auditEventType);
         config.get("audit-message-format").as(String.class).ifPresent(this::auditMessageFormat);
-        config.get("audit-ok-severity").as(String.class).ifPresent(this::auditOkSeverity);
-        config.get("audit-error-severity").as(String.class).ifPresent(this::auditErrorSeverity);
+        config.get("audit-ok-severity").as(AuditEvent.AuditSeverity.class).ifPresent(this::auditOkSeverity);
+        config.get("audit-error-severity").as(AuditEvent.AuditSeverity.class).ifPresent(this::auditErrorSeverity);
     }
 
     void add(Authenticated atn) {
@@ -254,21 +254,12 @@ class SecurityDefinition {
         this.auditOkSeverity = auditOkSeverity;
     }
 
-    private void auditOkSeverity(String severity) {
-        auditOkSeverity(AuditEvent.AuditSeverity.valueOf(severity));
-    }
-
     AuditEvent.AuditSeverity auditErrorSeverity() {
         return auditErrorSeverity;
     }
 
-
     void auditErrorSeverity(AuditEvent.AuditSeverity auditOkSeverity) {
         this.auditErrorSeverity = auditOkSeverity;
-    }
-
-    private void auditErrorSeverity(String severity) {
-        auditErrorSeverity(AuditEvent.AuditSeverity.valueOf(severity));
     }
 
     AnnotationAnalyzer.AnalyzerResponse analyzerResponse(AnnotationAnalyzer analyzer) {
