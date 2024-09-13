@@ -188,11 +188,26 @@ public abstract class InjectionMain {
         return registry;
     }
 
+    /**
+     * Maximal run level we should start, this can be used to limit startup operation only to a certain run level.
+     *
+     * @param config injection config
+     * @param registry created registry instance
+     * @return maximal (inclusive) run level to lookup
+     */
     protected double maxRunLevel(InjectConfig config,
                                  InjectRegistry registry) {
         return config.maxRunLevel();
     }
 
+    /**
+     * Run levels to initialize during startup.
+     * The default implementation returns all run levels defined in the registry, ordered from lowest to highest.
+     *
+     * @param config Inject configuration
+     * @param registry created registry instance
+     * @return all run levels to lookup
+     */
     protected double[] runLevels(InjectConfig config,
                                  InjectRegistry registry) {
         // child classes will have this method code generated at build time

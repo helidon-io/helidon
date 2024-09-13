@@ -220,7 +220,7 @@ class ConfigBeanCodegen implements RegistryCodegenExtension {
         // singleton accepting the config builder and producing the config
         TypeName generatedType = cb.generatedType();
         boolean intercepted = interceptionSupport.intercepted(typeInfo);
-        TypeName descriptorType = ctx.descriptorType(generatedType);
+
         TypeName factoryType;
         if (intercepted) {
             interceptionSupport.generateDelegateInterception(typeInfo, cb.configBeanType());
@@ -355,7 +355,7 @@ class ConfigBeanCodegen implements RegistryCodegenExtension {
         if (repeatable) {
             generateServicesMethodRepeatableBuilder(method, cbType, wantDefault);
         } else {
-            generateServicesMethodSingleBuilder(method, builderType, cbType, wantDefault, atLeastOne);
+            generateServicesMethodSingleBuilder(method, cbType, wantDefault, atLeastOne);
         }
 
         // we have all the named instances, now resolve default
@@ -380,22 +380,20 @@ class ConfigBeanCodegen implements RegistryCodegenExtension {
     }
 
     private void generateServicesMethodSingleBuilder(Method.Builder method,
-                                                     TypeName builderType,
                                                      TypeName cbType,
                                                      boolean wantDefault,
                                                      boolean atLeastOne) {
         if (atLeastOne) {
-            createSingleInstanceAndAddToResultBuilder(method, builderType, cbType, wantDefault);
+            createSingleInstanceAndAddToResultBuilder(method, cbType, wantDefault);
 
         } else {
             method.addContentLine("if (config.exists()) {");
-            createSingleInstanceAndAddToResultBuilder(method, builderType, cbType, wantDefault);
+            createSingleInstanceAndAddToResultBuilder(method, cbType, wantDefault);
             method.addContentLine("}");
         }
     }
 
     private void createSingleInstanceAndAddToResultBuilder(Method.Builder method,
-                                                           TypeName builderType,
                                                            TypeName cbType,
                                                            boolean wantDefault) {
         // var instance = AConfig.builder().config(config);
