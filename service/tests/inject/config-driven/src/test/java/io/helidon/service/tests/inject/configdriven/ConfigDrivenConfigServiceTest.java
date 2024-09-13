@@ -16,6 +16,7 @@
 
 package io.helidon.service.tests.inject.configdriven;
 
+import io.helidon.common.config.GlobalConfig;
 import io.helidon.service.inject.InjectRegistryManager;
 import io.helidon.service.inject.api.InjectRegistry;
 import io.helidon.service.inject.api.Lookup;
@@ -35,6 +36,7 @@ public class ConfigDrivenConfigServiceTest {
 
     @BeforeAll
     static void init() {
+        GlobalConfig.config(() -> null, true);
         // config is loaded through its service
         registryManager = InjectRegistryManager.create();
         registry = registryManager.registry();
