@@ -28,6 +28,7 @@ public class Main {
         // makes sure global config is initialized
         Config config = GlobalConfig.config();
         System.out.println("Configured port: " + config.get("server.port").asInt().orElse(-1));
+        GlobalConfig.config(() -> config);
         io.helidon.Main.main(args);
     }
 }

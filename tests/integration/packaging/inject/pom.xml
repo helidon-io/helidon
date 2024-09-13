@@ -31,7 +31,7 @@
 
     <properties>
         <mainClass>io.helidon.tests.integration.packaging.inject.Main</mainClass>
-        <redirectTestOutputToFile>false</redirectTestOutputToFile>
+        <redirectTestOutputToFile>true</redirectTestOutputToFile>
     </properties>
 
     <dependencies>
