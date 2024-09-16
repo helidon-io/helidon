@@ -23,6 +23,7 @@ import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
 import io.helidon.webserver.utils.SocketHttpClient;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -37,6 +38,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class ConnectionIdleTest {
     private static final Logger LOGGER = Logger.getLogger(ConnectionIdleTest.class.getName());
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
+    private static final String SOCKET_NAME = "idle_socket";
 
     private static final int IDLE_TIMEOUT = 1000;
 
@@ -61,25 +63,29 @@ public class ConnectionIdleTest {
      */
     private static void startServer(int port) {
         webServer = WebServer.builder()
-                .host("localhost")
-                .port(port)
-                .connectionIdleTimeout(IDLE_TIMEOUT / 1000)     // in seconds
-                .routing(Routing.builder().get("/hello", (req, res) -> res.send("Hello World!")))
+                .addSocket(SocketConfiguration.builder()
+                                   .name(SOCKET_NAME)
+                                   .connectionIdleTimeout(IDLE_TIMEOUT / 1000)      // in seconds
+                                   .port(port)
+                                   .host("localhost")
+                                   .build(),
+                           Routing.builder().get("/hello",
+                                                 (req, res) -> res.send("Hello World!")).build())
                 .build()
                 .start()
                 .await(TIMEOUT);
 
-        LOGGER.info("Started server at: https://localhost:" + webServer.port());
+        LOGGER.info("Started server at: https://localhost:" + webServer.port(SOCKET_NAME));
     }
 
     @Test
     public void testIdleConnectionClosed() throws Exception {
-        try (SocketHttpClient client = new SocketHttpClient(webServer)) {
+        try (SocketHttpClient client = new SocketHttpClient(webServer.port(SOCKET_NAME))) {
             // initial request with keep-alive to open connection
             client.request(Http.Method.GET,
-                    "/hello",
-                    null,
-                    List.of("Connection: keep-alive"));
+                           "/hello",
+                           null,
+                           List.of("Connection: keep-alive"));
             String res = client.receive();
             assertThat(res, containsString("Hello World!"));
 
