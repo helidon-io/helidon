@@ -52,9 +52,9 @@ class ServiceManager<T> {
     }
 
     public ServiceInstance<T> registryInstance(Lookup lookup, QualifiedInstance<T> instance) {
-        return new ServiceInstanceImpl(provider.descriptor(),
-                                       provider.contracts(lookup),
-                                       instance);
+        return new ServiceInstanceImpl<>(provider.descriptor(),
+                                         provider.contracts(lookup),
+                                         instance);
     }
 
     InjectionPlanBinder.Binder servicePlanBinder() {

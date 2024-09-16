@@ -100,8 +100,7 @@ public final class AptProcessor extends AbstractProcessor {
         // we want everything to execute in the classloader of this type, so service loaders
         // use the classpath of the annotation processor, and not some "random" classloader, such as a maven one
         try {
-            doProcess(annotations, roundEnv);
-            return true;
+            return doProcess(annotations, roundEnv);
         } catch (CodegenException e) {
             Object originatingElement = e.originatingElement()
                     .orElse(null);
@@ -120,12 +119,12 @@ public final class AptProcessor extends AbstractProcessor {
         }
     }
 
-    private void doProcess(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+    private boolean doProcess(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         ctx.logger().log(TRACE, "Process annotations: " + annotations + ", processing over: " + roundEnv.processingOver());
 
         if (roundEnv.processingOver()) {
             codegen.processingOver();
-            return;
+            return annotations.isEmpty();
         }
 
         Set<UsedAnnotation> usedAnnotations = usedAnnotations(annotations);
@@ -133,11 +132,16 @@ public final class AptProcessor extends AbstractProcessor {
         if (usedAnnotations.isEmpty()) {
             // no annotations, no types, still call the codegen, maybe it has something to do
             codegen.process(List.of());
-            return;
+            return annotations.isEmpty();
         }
 
         List<TypeInfo> allTypes = discoverTypes(usedAnnotations, roundEnv);
         codegen.process(allTypes);
+
+        return usedAnnotations.stream()
+                .map(UsedAnnotation::annotationElement)
+                .collect(Collectors.toSet())
+                .equals(annotations);
     }
 
     private Set<UsedAnnotation> usedAnnotations(Set<? extends TypeElement> annotations) {
