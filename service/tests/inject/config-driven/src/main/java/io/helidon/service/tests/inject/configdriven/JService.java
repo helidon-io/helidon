@@ -16,17 +16,24 @@
 
 package io.helidon.service.tests.inject.configdriven;
 
-import io.helidon.builder.api.Option;
-import io.helidon.builder.api.Prototype;
-import io.helidon.service.inject.api.ConfigDriven;
+import io.helidon.service.inject.api.Injection;
 
-@ConfigDriven.ConfigBean
-@ConfigDriven.AddDefault
-@ConfigDriven.AtLeastOne
-@Prototype.Configured("config-c")
-@Prototype.Blueprint
-interface CConfigBlueprint {
-    @Option.Configured
-    @Option.Default("defaultValue")
-    String value();
+@Injection.CreateFor(JConfigBlueprint.class)
+class JService implements TheContract {
+    private final JConfig config;
+
+    @Injection.Inject
+    JService(JConfig config) {
+        this.config = config;
+    }
+
+    @Override
+    public String value() {
+        return config.value();
+    }
+
+    @Override
+    public String name() {
+        return Injection.Named.DEFAULT_NAME;
+    }
 }

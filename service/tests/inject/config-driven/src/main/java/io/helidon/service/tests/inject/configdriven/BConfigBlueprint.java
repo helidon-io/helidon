@@ -21,7 +21,7 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.service.inject.api.ConfigDriven;
 
 @ConfigDriven.ConfigBean
-@ConfigDriven.WantDefault
+@ConfigDriven.AddDefault
 @Prototype.Configured("config-b")
 @Prototype.Blueprint
 interface BConfigBlueprint {

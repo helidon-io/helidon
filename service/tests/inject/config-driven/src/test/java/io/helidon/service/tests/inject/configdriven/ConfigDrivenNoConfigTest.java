@@ -147,6 +147,17 @@ public class ConfigDrivenNoConfigTest {
         assertThat(invalidName, optionalEmpty());
     }
 
+
+    @Test
+    public void testJService() {
+        var services = registry.all(JService.class);
+        assertThat(services, hasSize(1));
+
+        var instance = services.getFirst();
+        // JConfigUpdater should update the builder
+        assertThat(instance.value(), is("updated defaultValue"));
+    }
+
     private static Lookup lookup(Class<?> contract, String name) {
         return Lookup.builder()
                 .addContract(contract)

@@ -21,11 +21,10 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.service.inject.api.ConfigDriven;
 
 @ConfigDriven.ConfigBean
-@ConfigDriven.AddDefault
-@ConfigDriven.AtLeastOne
-@Prototype.Configured("config-c")
+@ConfigDriven.OrDefault
+@Prototype.Configured("config-j")
 @Prototype.Blueprint
-interface CConfigBlueprint {
+interface JConfigBlueprint {
     @Option.Configured
     @Option.Default("defaultValue")
     String value();

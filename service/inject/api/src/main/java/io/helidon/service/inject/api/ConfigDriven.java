@@ -17,6 +17,7 @@
 package io.helidon.service.inject.api;
 
 import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -57,12 +58,14 @@ public final class ConfigDriven {
      * <ul>
      *     <li>{@code static Type create(io.helidon.common.config.Config)} method</li>
      *     <li>{@code static Type create()} method if also annotated with
-     *     {@link ConfigDriven.WantDefault}</li>
+     *     {@link io.helidon.service.inject.api.ConfigDriven.AddDefault}</li>
      * </ul>
      */
     @Documented
     @Retention(RetentionPolicy.CLASS)
-    @Target(java.lang.annotation.ElementType.TYPE)
+    @Target({java.lang.annotation.ElementType.TYPE,
+            ElementType.FIELD,
+            ElementType.PARAMETER})
     @Injection.Qualifier
     public @interface ConfigBean {
         /**
@@ -75,7 +78,7 @@ public final class ConfigDriven {
          * In such a case the type must provide an accessible factory method (at least package local)
          * "{@code static MyConfigBean create(io.helidon.common.config.Config)}", if the type is also annotated
          * with either of {@link ConfigDriven.AtLeastOne} or
-         * {@link ConfigDriven.WantDefault}, an additional factory method must exist:
+         * {@link io.helidon.service.inject.api.ConfigDriven.AddDefault}, an additional factory method must exist:
          * "{@code static MyConfigBean create()}".
          * <p>
          * If places we look for yield an empty string key, we actually use the root configuration.
@@ -118,7 +121,7 @@ public final class ConfigDriven {
     @Retention(RetentionPolicy.CLASS)
     @Target(java.lang.annotation.ElementType.TYPE)
     @Injection.Qualifier
-    public @interface WantDefault {
+    public @interface AddDefault {
     }
 
     /**

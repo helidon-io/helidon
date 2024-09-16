@@ -30,7 +30,7 @@ record ConfigBeanAnnotation(String configKey,
     static final TypeName CONFIG_BEAN_TYPE = TypeName.create("io.helidon.service.inject.api.ConfigDriven.ConfigBean");
     static final TypeName AT_LEAST_ONE_TYPE = TypeName.create("io.helidon.service.inject.api.ConfigDriven.AtLeastOne");
     static final TypeName REPEATABLE_TYPE = TypeName.create("io.helidon.service.inject.api.ConfigDriven.Repeatable");
-    static final TypeName WANT_DEFAULT_TYPE = TypeName.create("io.helidon.service.inject.api.ConfigDriven.WantDefault");
+    static final TypeName WANT_DEFAULT_TYPE = TypeName.create("io.helidon.service.inject.api.ConfigDriven.AddDefault");
     static final TypeName OR_DEFAULT_TYPE = TypeName.create("io.helidon.service.inject.api.ConfigDriven.OrDefault");
 
     static ConfigBeanAnnotation create(TypeInfo typeInfo) {

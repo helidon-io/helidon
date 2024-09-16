@@ -184,6 +184,7 @@ class ConfigBeanCodegen implements RegistryCodegenExtension {
         var builderClass = ClassModel.builder()
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .addAnnotation(SINGLETON_ANNOTATION)
+                .addAnnotation(CONFIG_BEAN_ANNOTATION)
                 .type(generatedTypeBuilder)
                 .addInterface(TypeName.builder()
                                       .from(TypeNames.SUPPLIER)
@@ -203,6 +204,10 @@ class ConfigBeanCodegen implements RegistryCodegenExtension {
                         .addContent("var config = this.config.get(\"")
                         .addContent(cb.annotation().configKey())
                         .addContentLine("\");")
+                        .addContentLine("")
+                        .update(it -> addThrowIfList(it,
+                                                     cb.annotation().configKey(),
+                                                     "When using @ConfigDriven.OrDefault the configuration must not be a list"))
                         .addContentLine("")
                         .addContentLine("if (config.exists()) {")
                         .addContent("return ")
@@ -331,14 +336,7 @@ class ConfigBeanCodegen implements RegistryCodegenExtension {
          */
         if (!repeatable) {
             // if list and not repeatable, fail
-            method.addContentLine("if (config.isList()) {")
-                    .addContent("throw new ")
-                    .addContent(CONFIG_EXCEPTION)
-                    .addContent("(\"Expecting a single node at \\\"")
-                    .addContent(configKey)
-                    .addContentLine("\\\", but got a list. Add @ConfigDriven.Repeatable to your config bean"
-                                            + " if a list is expected.\");")
-                    .addContentLine("}");
+            addThrowIfList(method, configKey, "Add @ConfigDriven.Repeatable to your config bean if a list is expected.");
         }
 
         // prepare the result list
@@ -377,6 +375,18 @@ class ConfigBeanCodegen implements RegistryCodegenExtension {
         method.addContent("return ")
                 .addContent(List.class)
                 .addContentLine(".copyOf(result);");
+    }
+
+    private void addThrowIfList(Method.Builder method, String configKey, String message) {
+        method.addContentLine("if (config.isList()) {")
+                .addContent("throw new ")
+                .addContent(CONFIG_EXCEPTION)
+                .addContent("(\"Expecting a single node at \\\"")
+                .addContent(configKey)
+                .addContent("\\\", but got a list. ")
+                .addContent(message)
+                .addContentLine("\");")
+                .addContentLine("}");
     }
 
     private void generateServicesMethodSingleBuilder(Method.Builder method,

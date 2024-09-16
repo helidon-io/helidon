@@ -38,7 +38,7 @@ record ConfigBean(TypeName configBeanType,
 
         The type info MUST:
         - have a "static T create(Config config)" to get configured instances
-        - if has @AtLeastOne or @WantDefault, then a "static T create()" to get default instances
+        - if has @AtLeastOne or @AddDefault, then a "static T create()" to get default instances
          */
         ConfigBeanAnnotation configBean = ConfigBeanAnnotation.create(configBeanTypeInfo);
 
@@ -66,7 +66,7 @@ record ConfigBean(TypeName configBeanType,
             if (configBean.wantDefault()) {
                 throw new CodegenException("Annotation @ConfigDriven.OrDefault cannot be combined with any other ConfigDriven"
                                                    + " annotation, except for @ConfigDriven.ConfigBean,"
-                                                   + " but @ConfigDriven.WantDefault is used.",
+                                                   + " but @ConfigDriven.AddDefault is used.",
                                            typeInfo.originatingElementValue());
             }
             if (configBean.atLeastOne()) {

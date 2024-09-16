@@ -16,17 +16,25 @@
 
 package io.helidon.service.tests.inject.configdriven;
 
-import io.helidon.builder.api.Option;
-import io.helidon.builder.api.Prototype;
-import io.helidon.service.inject.api.ConfigDriven;
+import java.util.function.Supplier;
 
+import io.helidon.common.Weight;
+import io.helidon.service.inject.api.ConfigDriven;
+import io.helidon.service.inject.api.Injection;
+
+@Injection.Singleton
+@Weight(90)
+// to update a service to be used by service further up, we must have the same qualifiers as the service itself
 @ConfigDriven.ConfigBean
-@ConfigDriven.AddDefault
-@ConfigDriven.AtLeastOne
-@Prototype.Configured("config-c")
-@Prototype.Blueprint
-interface CConfigBlueprint {
-    @Option.Configured
-    @Option.Default("defaultValue")
-    String value();
+class JConfigUpdater implements Supplier<io.helidon.service.tests.inject.configdriven.JConfig.Builder> {
+    private final JConfig.Builder config;
+
+    JConfigUpdater(@ConfigDriven.ConfigBean io.helidon.service.tests.inject.configdriven.JConfig.Builder config) {
+        this.config = config;
+    }
+
+    @Override
+    public JConfig.Builder get() {
+        return config.value("updated " + config.value());
+    }
 }

@@ -19,8 +19,6 @@ package io.helidon.service.tests.inject.configdriven;
 import io.helidon.common.config.GlobalConfig;
 import io.helidon.service.inject.InjectRegistryManager;
 import io.helidon.service.inject.api.InjectRegistry;
-import io.helidon.service.inject.api.Lookup;
-import io.helidon.service.inject.api.Qualifier;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -191,10 +189,13 @@ public class ConfigDrivenConfigServiceTest {
         assertThat(instance.value(), is("value-h_2"));
     }
 
-    private static Lookup lookup(Class<?> contract, String name) {
-        return Lookup.builder()
-                .addContract(contract)
-                .addQualifier(Qualifier.createNamed(name))
-                .build();
+    @Test
+    public void testJService() {
+        var services = registry.all(JService.class);
+        assertThat(services, hasSize(1));
+
+        var instance = services.getFirst();
+        // JConfigUpdater should update the builder
+        assertThat(instance.value(), is("updated value-j"));
     }
 }
