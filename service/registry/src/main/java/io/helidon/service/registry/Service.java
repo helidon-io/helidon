@@ -73,6 +73,36 @@ public final class Service {
     }
 
     /**
+     * A method annotated with this annotation will be invoked after the constructor is finished
+     * and all dependencies are satisfied.
+     * <p>
+     * The method must not have any parameters and must be accessible (not {@code private}).
+     */
+    @Documented
+    @Retention(RetentionPolicy.CLASS)
+    @Target(ElementType.METHOD)
+    public @interface PostConstruct {
+    }
+
+    /**
+     * A method annotated with this annotation will be invoked when the service registry shuts down.
+     * <p>
+     * Behavior of this annotation may differ based on the service registry implementation used. For example
+     * when using Helidon Service Inject (to be introduced), a pre-destroy method would be used when the scope
+     * a service is created in is finished. The core service registry behaves similar like a singleton scope - instance
+     * is created once, and pre-destroy is called when the registry is shut down.
+     * This also implies that instances that are NOT created within a scope cannot have their pre-destroy methods
+     * invoked, as we do not control their lifecycle.
+     * <p>
+     * The method must not have any parameters and must be accessible (not {@code private}).
+     */
+    @Documented
+    @Retention(RetentionPolicy.CLASS)
+    @Target(ElementType.METHOD)
+    public @interface PreDestroy {
+    }
+
+    /**
      * The {@code Contract} annotation is used to relay significance to the type that it annotates. While remaining optional in
      * its use, it is typically placed on an interface definition to signify that the given type can be used for lookup in the
      * service registry.

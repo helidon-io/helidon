@@ -34,6 +34,16 @@ import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 
 class ExistingTypesTest {
     @Test
+    void testNewServiceRegistry() throws IOException {
+        Hson.Array modules;
+        try (InputStream inputStream = resource("/new-service-registry.json")) {
+            assertThat(inputStream, notNullValue());
+            modules = Hson.parse(inputStream)
+                    .asArray();
+        }
+        assertThat(modules, notNullValue());
+    }
+    @Test
     void testServiceRegistry() throws IOException {
         Hson.Struct object;
         try (InputStream inputStream = resource("/service-registry.json")) {

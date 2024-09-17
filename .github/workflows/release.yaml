@@ -115,3 +115,47 @@ jobs:
         with:
           name: io-helidon-artifacts-${{ needs.create-tag.outputs.version }}
           path: staging
+  resolve-all:
+    needs: [ create-tag, deploy ]
+    timeout-minutes: 30
+    runs-on: ubuntu-20.04
+    name: resolve-all
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+          ref: ${{ needs.create-tag.outputs.tag }}
+      - uses: ./.github/actions/common
+        with:
+          run: |
+            mvn ${MAVEN_ARGS} -N \
+              -Possrh-staging \
+              -Dartifact=io.helidon:helidon-all:${{ needs.create-tag.outputs.version }}:pom \
+              dependency:get
+  smoketest:
+    needs: [ create-tag, deploy ]
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        archetype:
+          - bare-se
+          - bare-mp
+          - quickstart-se
+          - quickstart-mp
+          - database-se
+          - database-mp
+    runs-on: ubuntu-20.04
+    name: smoketest/${{ matrix.archetype }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+          ref: ${{ needs.create-tag.outputs.tag }}
+      - uses: ./.github/actions/common
+        with:
+          run: |
+            ./etc/scripts/smoketest.sh \
+              --clean \
+              --staged \
+              --version=${{ needs.create-tag.outputs.version }} \
+              --archetype=${{ matrix.archetype }}

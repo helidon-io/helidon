@@ -17,7 +17,7 @@
 package io.helidon.service.codegen;
 
 /**
- * Code generation extension for Helidon Service REgistry.
+ * Code generation extension for Helidon Service Registry.
  */
 interface RegistryCodegenExtension {
     /**

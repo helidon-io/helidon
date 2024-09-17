@@ -16,6 +16,8 @@
 
 package io.helidon.common.types;
 
+import java.util.Objects;
+
 /**
  * When creating an {@link io.helidon.common.types.Annotation}, we may need to create an enum value
  * without access to the enumeration.
@@ -31,17 +33,24 @@ public interface EnumValue {
      * @return enum value
      */
     static EnumValue create(TypeName enumType, String enumName) {
-        return new EnumValue() {
-            @Override
-            public TypeName type() {
-                return enumType;
-            }
+        Objects.requireNonNull(enumType);
+        Objects.requireNonNull(enumName);
+        return new EnumValueImpl(enumType, enumName);
+    }
 
-            @Override
-            public String name() {
-                return enumName;
-            }
-        };
+    /**
+     * Create a new enum value.
+     *
+     * @param type enum type
+     * @param value enum value constant
+     * @return new enum value
+     * @param <T> type of the enum
+     */
+    static <T extends Enum<T>> EnumValue create(Class<T> type, T value) {
+        Objects.requireNonNull(type);
+        Objects.requireNonNull(value);
+
+        return new EnumValueImpl(TypeName.create(type), value.name());
     }
 
     /**

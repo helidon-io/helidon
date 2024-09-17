@@ -58,6 +58,37 @@ class AnnotationTest {
     }
 
     @Test
+    void testMetaAnnotation() {
+        Field field = Field.builder()
+                .accessModifier(AccessModifier.PRIVATE)
+                .type(Annotation.class)
+                .name("annotation")
+                .addContentCreate(Annotation.builder()
+                                          .typeName(ANNOTATION_TYPE)
+                                          .putValue("value", "someValue")
+                                          .addMetaAnnotation(Annotation.builder()
+                                                                     .typeName(ANNOTATION_TYPE)
+                                                                     .putValue("value", "string")
+                                                                     .build())
+                                          .build())
+                .build();
+        String text = write(field);
+
+        String expected = """
+                private Annotation annotation = Annotation.builder()
+                .typeName(TypeName.create("org.junit.jupiter.api.Test"))
+                .putValue("value", "someValue")
+                .addMetaAnnotation(Annotation.builder()
+                .typeName(TypeName.create("org.junit.jupiter.api.Test"))
+                .putValue("value", "string")
+                .build()
+                )
+                .build();""";
+
+        assertThat(text, is(expected));
+    }
+
+    @Test
     void testContentCreateEnumValue() {
         TypeName enumType = TypeName.create(TestEnum.class);
 

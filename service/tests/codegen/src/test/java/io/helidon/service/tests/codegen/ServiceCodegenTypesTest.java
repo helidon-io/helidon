@@ -62,6 +62,8 @@ class ServiceCodegenTypesTest {
         }
 
         checkField(toCheck, checked, fields, "SERVICE_ANNOTATION_PROVIDER", Service.Provider.class);
+        checkField(toCheck, checked, fields, "SERVICE_ANNOTATION_PRE_DESTROY", Service.PreDestroy.class);
+        checkField(toCheck, checked, fields, "SERVICE_ANNOTATION_POST_CONSTRUCT", Service.PostConstruct.class);
         checkField(toCheck, checked, fields, "SERVICE_ANNOTATION_CONTRACT", Service.Contract.class);
         checkField(toCheck, checked, fields, "SERVICE_ANNOTATION_EXTERNAL_CONTRACTS", Service.ExternalContracts.class);
         checkField(toCheck, checked, fields, "SERVICE_ANNOTATION_DESCRIPTOR", Service.Descriptor.class);

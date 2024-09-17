@@ -53,8 +53,7 @@ public final class CodegenValidator {
                                                + property + "(): "
                                                + "\"" + value + "\" cannot be parsed. Invalid URI.",
                                        e,
-                                       element.originatingElement().orElseGet(() -> enclosingType.fqName() + "."
-                                               + element.elementName()));
+                                       element.originatingElementValue());
         }
     }
 
@@ -84,8 +83,7 @@ public final class CodegenValidator {
                                                + " expression such as 'PT1S' (1 second), 'PT0.1S' (tenth of a second)."
                                                + " Please check javadoc of " + Duration.class.getName() + " class.",
                                        e,
-                                       element.originatingElement().orElseGet(() -> enclosingType.fqName() + "."
-                                               + element.elementName()));
+                                       element.originatingElementValue());
         }
     }
 }

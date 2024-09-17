@@ -109,10 +109,12 @@ class ConfigMetadataCodegenExtension implements CodegenExtension {
                              .build());
         }
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (PrintWriter w = new PrintWriter(baos, true, StandardCharsets.UTF_8)) {
-            Hson.Array.create(root).write(w);
+        if (!root.isEmpty()) {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            try (PrintWriter w = new PrintWriter(baos, true, StandardCharsets.UTF_8)) {
+                Hson.Array.create(root).write(w);
+            }
+            ctx.filer().writeResource(baos.toByteArray(), META_FILE);
         }
-        ctx.filer().writeResource(baos.toByteArray(), META_FILE);
     }
 }

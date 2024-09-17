@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,6 +78,15 @@ interface AnnotationBlueprint {
      */
     @Option.Singular
     Map<String, Object> values();
+
+    /**
+     * A list of inherited annotations (from the whole hierarchy).
+     *
+     * @return list of all annotations declared on the annotation type, or inherited from them
+     */
+    @Option.Redundant
+    @Option.Singular
+    List<Annotation> metaAnnotations();
 
     /**
      * The value property.
@@ -653,4 +662,19 @@ interface AnnotationBlueprint {
         return AnnotationSupport.asEnums(typeName(), values(), property, type);
     }
 
+    /**
+     * Check if {@link io.helidon.common.types.Annotation#metaAnnotations()} contains an annotation of the provided type.
+     * <p>
+     * Note: we ignore {@link java.lang.annotation.Target}, {@link java.lang.annotation.Inherited},
+     * {@link java.lang.annotation.Documented}, and {@link java.lang.annotation.Retention}.
+     *
+     * @param annotationType type of annotation
+     * @return {@code true} if the annotation is declared on this annotation, or is inherited from a declared annotation
+     */
+    default boolean hasMetaAnnotation(TypeName annotationType) {
+        return metaAnnotations()
+                .stream()
+                .map(Annotation::typeName)
+                .anyMatch(annotationType::equals);
+    }
 }

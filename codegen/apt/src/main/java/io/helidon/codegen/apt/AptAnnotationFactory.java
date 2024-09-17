@@ -16,8 +16,11 @@
 
 package io.helidon.codegen.apt;
 
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
@@ -26,6 +29,7 @@ import javax.lang.model.util.Elements;
 
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
 
 /**
  * Factory for annotations.
@@ -48,7 +52,43 @@ final class AptAnnotationFactory {
                 .orElseThrow(() -> new IllegalArgumentException("Cannot create annotation for non-existent type: "
                                                                         + am.getAnnotationType()));
 
-        return Annotation.create(val, extractAnnotationValues(am, elements));
+        // ignore these annotations, unless one of them was explicitly requested
+        var set = new HashSet<TypeName>();
+        set.add(TypeNames.INHERITED);
+        set.add(TypeNames.TARGET);
+        set.add(TypeNames.RETENTION);
+        set.add(TypeNames.DOCUMENTED);
+        set.remove(val);
+
+        return createAnnotation(elements, am, set)
+                .orElseThrow();
+    }
+
+    private static Optional<Annotation> createAnnotation(Elements elements, AnnotationMirror am, Set<TypeName> processedTypes) {
+        TypeName val = AptTypeFactory.createTypeName(am.getAnnotationType())
+                .orElseThrow(() -> new IllegalArgumentException("Cannot create annotation for non-existent type: "
+                                                                        + am.getAnnotationType()));
+
+        if (processedTypes.contains(val)) {
+            return Optional.empty();
+        }
+
+        Annotation.Builder builder = Annotation.builder();
+
+        elements.getAllAnnotationMirrors(am.getAnnotationType().asElement())
+                .stream()
+                .map(it -> {
+                    var newProcessed = new HashSet<>(processedTypes);
+                    newProcessed.add(val);
+                    return createAnnotation(elements, it, newProcessed);
+                })
+                .flatMap(Optional::stream)
+                .forEach(builder::addMetaAnnotation);
+
+        return Optional.of(builder
+                                   .typeName(val)
+                                   .values(extractAnnotationValues(am, elements))
+                                   .build());
     }
 
     /**

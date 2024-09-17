@@ -1,4 +1,6 @@
 # List of service contracts we want to support either from service registry, or from service loader
 io.helidon.config.spi.ConfigParser
 io.helidon.config.spi.ConfigFilter
-io.helidon.config.spi.ConfigMapperProvider
+# This cannot be done for now, as ObjectConfigMapper ends up before built-ins when
+# we disable mapper services
+# io.helidon.config.spi.ConfigMapperProvider

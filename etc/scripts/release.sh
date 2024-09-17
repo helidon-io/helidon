@@ -23,7 +23,7 @@ on_error(){
   CODE="${?}" && \
   set +x && \
   printf "[ERROR] Error(code=%s) occurred at %s:%s command: %s\n" \
-      "${CODE}" "${BASH_SOURCE[0]}" "${LINENO}" "${BASH_COMMAND}" >&2
+    "${CODE}" "${BASH_SOURCE[0]}" "${LINENO}" "${BASH_COMMAND}" >&2
 }
 trap on_error ERR
 
@@ -99,16 +99,16 @@ readonly COMMAND
 exec 6>&1 1>&2
 
 if [ -z "${COMMAND+x}" ] ; then
-    echo "ERROR: no command provided"
-    exit 1
+  echo "ERROR: no command provided"
+  exit 1
 fi
 
 case ${COMMAND} in
 "update_version")
   if [ -z "${VERSION}" ] ; then
-      echo "ERROR: version required" >&2
-      usage
-      exit 1
+    echo "ERROR: version required" >&2
+    usage
+    exit 1
   fi
   ;;
 "create_tag"|"get_version")

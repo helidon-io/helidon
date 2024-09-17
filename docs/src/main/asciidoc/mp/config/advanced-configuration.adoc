@@ -119,7 +119,9 @@ If a file named `mp-meta-config.yaml`, or `mp-meta-config.properties` is in the 
 on the classpath, and there is no explicit setup of configuration in the code, the configuration will
 be loaded from the `meta-config` file.
 The location of the file can be overridden using system property `io.helidon.config.mp.meta-config`,
-or environment variable `HELIDON_MP_META_CONFIG`
+or environment variable `HELIDON_MP_META_CONFIG`.
+
+*Important Note:* Do not use custom files named `meta-config.*`, as even when using Micro-Profile, we still use Helidon configuration in some of our components, and this file would be recognized as a Helidon SE Meta Configuration file, which may cause erroneous behavior.
 
 [source,yaml]
 .Example of a YAML meta configuration file:
