@@ -623,7 +623,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
 
     /**
      * Sampler type definition.
-     * Available options are "const", "probabilistic", "ratelimiting" and "remote".
+     * Available options are "const" and "ratio".
      */
     public enum SamplerType {
         /**
