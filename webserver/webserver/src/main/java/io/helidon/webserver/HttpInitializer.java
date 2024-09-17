@@ -198,13 +198,14 @@ class HttpInitializer extends ChannelInitializer<SocketChannel> {
         }
 
         // Set up idle handler to close inactive connections based on config
-        int idleTimeout = serverConfig.connectionIdleTimeout();
+        int idleTimeout = soConfig.connectionIdleTimeout();
         if (idleTimeout > 0) {
             p.addLast(new IdleStateHandler(idleTimeout, idleTimeout, idleTimeout));
             p.addLast(new ChannelDuplexHandler() {
                 @Override
                 public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
                     if (evt instanceof IdleStateEvent) {
+                        LOGGER.finer(() -> "Closing idle connection on channel" + ctx.channel());
                         ctx.close();        // async close of idle connection
                     }
                 }
