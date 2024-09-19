@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,9 @@ import com.typesafe.config.ConfigFactory;
 import com.typesafe.config.ConfigList;
 import com.typesafe.config.ConfigObject;
 import com.typesafe.config.ConfigParseOptions;
+import com.typesafe.config.ConfigRenderOptions;
 import com.typesafe.config.ConfigResolveOptions;
+import com.typesafe.config.ConfigValue;
 
 /**
  * Typesafe (Lightbend) Config (HOCON) {@link ConfigParser} implementation that supports following media types:
@@ -70,9 +72,12 @@ public class HoconConfigParser implements ConfigParser {
      * Priority of the parser used if registered by {@link io.helidon.config.Config.Builder} automatically.
      */
     public static final int PRIORITY = ConfigParser.PRIORITY + 100;
+
     private static final List<String> SUPPORTED_SUFFIXES = List.of("json", "conf");
+    private static final ConfigRenderOptions CONFIG_RENDER_OPTIONS = ConfigRenderOptions.defaults().setJson(false);
     private static final Set<String> SUPPORTED_MEDIA_TYPES =
             Set.of(MEDIA_TYPE_APPLICATION_HOCON, MEDIA_TYPE_APPLICATION_JSON);
+
 
     private final boolean resolvingEnabled;
     private final ConfigResolveOptions resolveOptions;
@@ -176,7 +181,7 @@ public class HoconConfigParser implements ConfigParser {
                     // An unresolved ConfigReference resolved later in config module since
                     // Helidon and Hocon use the same reference syntax and resolving here
                     // would be too early for resolution across sources
-                    builder.addValue(key, value.render());
+                    builder.addValue(key, renderUnresolvedValue(value));
                 }
             }
         });
@@ -202,11 +207,32 @@ public class HoconConfigParser implements ConfigParser {
                     // An unresolved ConfigReference resolved later in config module since
                     // Helidon and Hocon use the same reference syntax and resolving here
                     // would be too early for resolution across sources
-                    builder.addValue(value.render());
+                    builder.addValue(renderUnresolvedValue(value));
                 }
             }
         });
         return builder.build();
     }
 
+    /**
+     * <p>Special rendering for a non-structured, unquoted string value that includes
+     * one or more unresolved variable references such as {@code ${var}}. If an unresolved variable
+     * is either preceded and/or followed by a string containing non-alphabetic characters,
+     * it will be rendered in double quotes. For example, {@code ${var}/foo} will be
+     * rendered as {@code ${var}"/foo"} instead of {@code ${var}/foo}.
+     *
+     * <p>Note that if the original string was already in double quotes (not unquoted in
+     * HOCON terms) it will never throw {@link com.typesafe.config.ConfigException.NotResolved}
+     * since variable references in quotes are never resolved. This method will never be
+     * called as a result.
+     *
+     * @param unresolved string containing one or more unresolved references, typically a
+     *                   concatenation node with a combination of strings and unresolved
+     *                   references.
+     * @return a rendering, possibly with double quotes removed
+     */
+    private static String renderUnresolvedValue(ConfigValue unresolved) {
+        String rendering = unresolved.render(CONFIG_RENDER_OPTIONS);
+        return rendering.contains("\"") ? rendering.replace("\"", "") : rendering;
+    }
 }

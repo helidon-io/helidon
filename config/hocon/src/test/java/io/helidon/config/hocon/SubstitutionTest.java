@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,12 @@ package io.helidon.config.hocon;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import io.helidon.config.ClasspathConfigSource;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
+
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
@@ -54,5 +57,19 @@ class SubstitutionTest {
                 .orElse(Collections.emptyList());
         assertThat(list, Matchers.<Collection<String>> allOf(
                 hasSize(2), hasItem(is("Hello"))));
+    }
+
+    @Test
+    void testHoconExpansion() {
+        Config config = Config.create(
+                ConfigSources.create("foo: ${VAR1}/bar", "application/hocon"));
+        assertThat(config.get("foo").asString().orElseThrow(NoSuchElementException::new), is("foo/bar"));
+    }
+
+    @Test
+    void testHoconExpansionQuotes() {
+        Config config = Config.create(
+                ConfigSources.create("foo: \"${VAR1}/bar\"", "application/hocon"));
+        assertThat(config.get("foo").asString().orElseThrow(NoSuchElementException::new), is("foo/bar"));
     }
 }
