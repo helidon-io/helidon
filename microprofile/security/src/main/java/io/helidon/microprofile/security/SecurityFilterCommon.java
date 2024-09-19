@@ -23,9 +23,14 @@ import java.util.Map;
 import java.util.ServiceLoader;
 
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.LazyValue;
 import io.helidon.common.config.Config;
 import io.helidon.common.context.Contexts;
+import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
+import io.helidon.config.mp.MpConfig;
+import io.helidon.http.PathMatcher;
+import io.helidon.http.PathMatchers;
 import io.helidon.microprofile.security.spi.SecurityResponseMapper;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.AuthorizationResponse;
@@ -45,6 +50,7 @@ import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.glassfish.jersey.server.ContainerRequest;
 
 /**
@@ -55,6 +61,7 @@ abstract class SecurityFilterCommon {
 
     private static final List<SecurityResponseMapper> RESPONSE_MAPPERS = HelidonServiceLoader
             .builder(ServiceLoader.load(SecurityResponseMapper.class)).build().asList();
+    private static final LazyValue<List<PathConfig>> PATH_CONFIGS = LazyValue.create(SecurityFilterCommon::createPathConfigs);
 
     private final Security security;
 
@@ -65,6 +72,30 @@ abstract class SecurityFilterCommon {
     SecurityFilterCommon(@Context Security security, @Context FeatureConfig featureConfig) {
         this.security = security;
         this.featureConfig = featureConfig;
+    }
+
+    private static List<PathConfig> createPathConfigs() {
+        return MpConfig.toHelidonConfig(ConfigProvider.getConfig())
+                .get("server.features.security.endpoints")
+                .asNodeList()
+                .orElse(List.of())
+                .stream()
+                .map(PathConfig::create)
+                .toList();
+    }
+
+    /**
+     * Returns the real class of this object, skipping proxies.
+     *
+     * @param object The object.
+     * @return Its class.
+     */
+    static Class<?> getRealClass(Class<?> object) {
+        Class<?> result = object;
+        while (result.isSynthetic()) {
+            result = result.getSuperclass();
+        }
+        return result;
     }
 
     protected void doFilter(ContainerRequestContext request, SecurityContext securityContext) {
@@ -79,7 +110,7 @@ abstract class SecurityFilterCommon {
                          filterContext);
         }
 
-        if (filterContext.isShouldFinish()) {
+        if (filterContext.shouldFinish()) {
             if (logger().isLoggable(Level.TRACE)) {
                 logger().log(Level.TRACE, "Endpoint %s not found, no security", request.getUriInfo().getRequestUri());
             }
@@ -96,17 +127,17 @@ abstract class SecurityFilterCommon {
         } else {
             origRequest = requestUri.getPath() + "?" + query;
         }
-        Map<String, List<String>> allHeaders = new HashMap<>(filterContext.getHeaders());
+        Map<String, List<String>> allHeaders = new HashMap<>(filterContext.headers());
         allHeaders.put(Security.HEADER_ORIG_URI, List.of(origRequest));
 
         SecurityEnvironment.Builder envBuilder = SecurityEnvironment.builder(security.serverTime())
                 .transport(requestUri.getScheme())
-                .path(filterContext.getResourcePath())
-                .targetUri(filterContext.getTargetUri())
-                .method(filterContext.getMethod())
-                .queryParams(filterContext.getQueryParams())
+                .path(filterContext.resourcePath())
+                .targetUri(filterContext.targetUri())
+                .method(filterContext.method())
+                .queryParams(filterContext.queryParams())
                 .headers(allHeaders)
-                .addAttribute("resourceType", filterContext.getResourceName());
+                .addAttribute("resourceType", filterContext.resourceName());
 
         // The following two lines are not possible in JAX-RS or Jersey - we would have to touch
         // underlying web server's request...
@@ -120,9 +151,14 @@ abstract class SecurityFilterCommon {
         }
 
         SecurityEnvironment env = envBuilder.build();
+        Map<String, Config> configMap = new HashMap<>();
+        findMethodConfig(UriPath.create(requestUri.getPath()))
+                .asNode()
+                .ifPresent(conf -> conf.asNodeList().get().forEach(node -> configMap.put(node.name(), node)));
 
         EndpointConfig ec = EndpointConfig.builder()
-                .securityLevels(filterContext.getMethodSecurity().getSecurityLevels())
+                .securityLevels(filterContext.methodSecurity().securityLevels())
+                .configMap(configMap)
                 .build();
 
         try {
@@ -132,12 +168,12 @@ abstract class SecurityFilterCommon {
             request.setProperty(PROP_FILTER_CONTEXT, filterContext);
             //context is needed even if authn/authz fails - for auditing
             request.setSecurityContext(new JerseySecurityContext(securityContext,
-                                                                 filterContext.getMethodSecurity(),
-                                                                 "https".equals(filterContext.getTargetUri().getScheme())));
+                                                                 filterContext.methodSecurity(),
+                                                                 "https".equals(filterContext.targetUri().getScheme())));
 
             processSecurity(request, filterContext, tracing, securityContext);
         } finally {
-            if (filterContext.isTraceSuccess()) {
+            if (filterContext.traceSuccess()) {
                 tracing.logProceed();
                 tracing.finish();
             } else {
@@ -147,13 +183,22 @@ abstract class SecurityFilterCommon {
         }
     }
 
+    Config findMethodConfig(UriPath path) {
+        return PATH_CONFIGS.get()
+                .stream()
+                .filter(pathConfig -> pathConfig.pathMatcher.prefixMatch(path).accepted())
+                .findFirst()
+                .map(PathConfig::config)
+                .orElseGet(Config::empty);
+    }
+
     protected void authenticate(SecurityFilterContext context, SecurityContext securityContext, AtnTracing atnTracing) {
         try {
-            SecurityDefinition methodSecurity = context.getMethodSecurity();
+            SecurityDefinition methodSecurity = context.methodSecurity();
 
             if (methodSecurity.requiresAuthentication()) {
                 if (logger().isLoggable(Level.TRACE)) {
-                    logger().log(Level.TRACE, "Endpoint {0} requires authentication", context.getTargetUri());
+                    logger().log(Level.TRACE, "Endpoint {0} requires authentication", context.targetUri());
                 }
                 //authenticate request
                 SecurityClientBuilder<AuthenticationResponse> clientBuilder = securityContext
@@ -161,15 +206,15 @@ abstract class SecurityFilterCommon {
                         .optional(methodSecurity.authenticationOptional())
                         .tracingSpan(atnTracing.findParent().orElse(null));
 
-                clientBuilder.explicitProvider(methodSecurity.getAuthenticator());
+                clientBuilder.explicitProvider(methodSecurity.authenticator());
                 processAuthentication(context, clientBuilder, methodSecurity, atnTracing);
             } else {
                 if (logger().isLoggable(Level.TRACE)) {
-                    logger().log(Level.TRACE, "Endpoint {0} does not require authentication", context.getTargetUri());
+                    logger().log(Level.TRACE, "Endpoint {0} does not require authentication", context.targetUri());
                 }
             }
         } finally {
-            if (context.isTraceSuccess()) {
+            if (context.traceSuccess()) {
                 securityContext.user()
                         .ifPresent(atnTracing::logUser);
 
@@ -178,9 +223,9 @@ abstract class SecurityFilterCommon {
 
                 atnTracing.finish();
             } else {
-                Throwable ctxThrowable = context.getTraceThrowable();
+                Throwable ctxThrowable = context.traceThrowable();
                 if (null == ctxThrowable) {
-                    atnTracing.error(context.getTraceDescription());
+                    atnTracing.error(context.traceDescription());
                 } else {
                     atnTracing.error(ctxThrowable);
                 }
@@ -209,17 +254,17 @@ abstract class SecurityFilterCommon {
                 if (methodSecurity.authenticationOptional()) {
                     logger().log(Level.TRACE, "Authentication failed, but was optional, so assuming anonymous");
                 } else {
-                    context.setTraceSuccess(false);
-                    context.setTraceDescription(response.description().orElse(responseStatus.toString()));
-                    context.setTraceThrowable(response.throwable().orElse(null));
-                    context.setShouldFinish(true);
+                    context.traceSuccess(false);
+                    context.traceDescription(response.description().orElse(responseStatus.toString()));
+                    context.traceThrowable(response.throwable().orElse(null));
+                    context.shouldFinish(true);
 
                     int status = response.statusCode().orElse(Response.Status.UNAUTHORIZED.getStatusCode());
                     abortRequest(context, response, status, Map.of());
                 }
             }
             case SUCCESS_FINISH -> {
-                context.setShouldFinish(true);
+                context.shouldFinish(true);
                 int status = response.statusCode().orElse(Response.Status.OK.getStatusCode());
                 abortRequest(context, response, status, Map.of());
             }
@@ -227,9 +272,9 @@ abstract class SecurityFilterCommon {
                 if (methodSecurity.authenticationOptional()) {
                     logger().log(Level.TRACE, "Authentication failed, but was optional, so assuming anonymous");
                 } else {
-                    context.setTraceSuccess(false);
-                    context.setTraceDescription(response.description().orElse(responseStatus.toString()));
-                    context.setShouldFinish(true);
+                    context.traceSuccess(false);
+                    context.traceDescription(response.description().orElse(responseStatus.toString()));
+                    context.shouldFinish(true);
                     abortRequest(context,
                             response,
                             Response.Status.UNAUTHORIZED.getStatusCode(),
@@ -240,23 +285,23 @@ abstract class SecurityFilterCommon {
                 if (methodSecurity.authenticationOptional() && !methodSecurity.failOnFailureIfOptional()) {
                     logger().log(Level.TRACE, "Authentication failed, but was optional, so assuming anonymous");
                 } else {
-                    context.setTraceDescription(response.description().orElse(responseStatus.toString()));
-                    context.setTraceThrowable(response.throwable().orElse(null));
-                    context.setTraceSuccess(false);
+                    context.traceDescription(response.description().orElse(responseStatus.toString()));
+                    context.traceThrowable(response.throwable().orElse(null));
+                    context.traceSuccess(false);
                     abortRequest(context,
                             response,
                             Response.Status.UNAUTHORIZED.getStatusCode(),
                             Map.of());
-                    context.setShouldFinish(true);
+                    context.shouldFinish(true);
                 }
             }
             //noinspection DuplicatedCode
             default -> {
-                context.setTraceSuccess(false);
-                context.setTraceDescription(response.description().orElse("UNKNOWN_RESPONSE: " + responseStatus));
-                context.setShouldFinish(true);
+                context.traceSuccess(false);
+                context.traceDescription(response.description().orElse("UNKNOWN_RESPONSE: " + responseStatus));
+                context.shouldFinish(true);
                 SecurityException throwable = new SecurityException("Invalid SecurityStatus returned: " + responseStatus);
-                context.setTraceThrowable(throwable);
+                context.traceThrowable(throwable);
                 throw throwable;
             }
         }
@@ -267,41 +312,41 @@ abstract class SecurityFilterCommon {
     protected void authorize(SecurityFilterContext context,
                              SecurityContext securityContext,
                              AtzTracing atzTracing) {
-        if (context.getMethodSecurity().isAtzExplicit()) {
+        if (context.methodSecurity().atzExplicit()) {
             // authorization is explicitly done by user, we MUST skip it here
             if (logger().isLoggable(Level.TRACE)) {
-                logger().log(Level.TRACE, "Endpoint {0} uses explicit authorization, skipping", context.getTargetUri());
+                logger().log(Level.TRACE, "Endpoint {0} uses explicit authorization, skipping", context.targetUri());
             }
-            context.setExplicitAtz(true);
+            context.explicitAtz(true);
             return;
         }
 
         try {
             //now authorize (also authorize anonymous requests, as we may have a path-based authorization that allows public
             // access
-            if (context.getMethodSecurity().requiresAuthorization()) {
+            if (context.methodSecurity().requiresAuthorization()) {
                 if (logger().isLoggable(Level.TRACE)) {
-                    logger().log(Level.TRACE, "Endpoint {0} requires authorization", context.getTargetUri());
+                    logger().log(Level.TRACE, "Endpoint {0} requires authorization", context.targetUri());
                 }
                 SecurityClientBuilder<AuthorizationResponse> clientBuilder = securityContext.atzClientBuilder()
                         .tracingSpan(atzTracing.findParent().orElse(null))
-                        .explicitProvider(context.getMethodSecurity().getAuthorizer());
+                        .explicitProvider(context.methodSecurity().authorizer());
 
                 processAuthorization(context, clientBuilder);
             } else {
                 if (logger().isLoggable(Level.TRACE)) {
                     logger().log(Level.TRACE, "Endpoint {0} does not require authorization. Method security: {1}",
-                                 context.getTargetUri(),
-                                 context.getMethodSecurity());
+                                 context.targetUri(),
+                                 context.methodSecurity());
                 }
             }
         } finally {
-            if (context.isTraceSuccess()) {
+            if (context.traceSuccess()) {
                 atzTracing.finish();
             } else {
-                Throwable throwable = context.getTraceThrowable();
+                Throwable throwable = context.traceThrowable();
                 if (null == throwable) {
-                    atzTracing.error(context.getTraceDescription());
+                    atzTracing.error(context.traceDescription());
                 } else {
                     atzTracing.error(throwable);
                 }
@@ -321,32 +366,32 @@ abstract class SecurityFilterCommon {
                 //everything is fine, we can continue with processing
             }
             case FAILURE_FINISH -> {
-                context.setTraceSuccess(false);
-                context.setTraceDescription(response.description().orElse(responseStatus.toString()));
-                context.setTraceThrowable(response.throwable().orElse(null));
-                context.setShouldFinish(true);
+                context.traceSuccess(false);
+                context.traceDescription(response.description().orElse(responseStatus.toString()));
+                context.traceThrowable(response.throwable().orElse(null));
+                context.shouldFinish(true);
                 int status = response.statusCode().orElse(Response.Status.FORBIDDEN.getStatusCode());
                 abortRequest(context, response, status, Map.of());
             }
             case SUCCESS_FINISH -> {
-                context.setShouldFinish(true);
+                context.shouldFinish(true);
                 int status = response.statusCode().orElse(Response.Status.OK.getStatusCode());
                 abortRequest(context, response, status, Map.of());
             }
             case FAILURE -> {
-                context.setTraceSuccess(false);
-                context.setTraceDescription(response.description().orElse(responseStatus.toString()));
-                context.setTraceThrowable(response.throwable().orElse(null));
-                context.setShouldFinish(true);
+                context.traceSuccess(false);
+                context.traceDescription(response.description().orElse(responseStatus.toString()));
+                context.traceThrowable(response.throwable().orElse(null));
+                context.shouldFinish(true);
                 abortRequest(context,
                         response,
                         response.statusCode().orElse(Response.Status.FORBIDDEN.getStatusCode()),
                         Map.of());
             }
             case ABSTAIN -> {
-                context.setTraceSuccess(false);
-                context.setTraceDescription(response.description().orElse(responseStatus.toString()));
-                context.setShouldFinish(true);
+                context.traceSuccess(false);
+                context.traceDescription(response.description().orElse(responseStatus.toString()));
+                context.shouldFinish(true);
                 abortRequest(context,
                         response,
                         response.statusCode().orElse(Response.Status.FORBIDDEN.getStatusCode()),
@@ -354,11 +399,11 @@ abstract class SecurityFilterCommon {
             }
             //noinspection DuplicatedCode
             default -> {
-                context.setTraceSuccess(false);
-                context.setTraceDescription(response.description().orElse("UNKNOWN_RESPONSE: " + responseStatus));
-                context.setShouldFinish(true);
+                context.traceSuccess(false);
+                context.traceDescription(response.description().orElse("UNKNOWN_RESPONSE: " + responseStatus));
+                context.shouldFinish(true);
                 SecurityException throwable = new SecurityException("Invalid SecurityStatus returned: " + responseStatus);
-                context.setTraceThrowable(throwable);
+                context.traceThrowable(throwable);
                 throw throwable;
             }
         }
@@ -389,7 +434,7 @@ abstract class SecurityFilterCommon {
         }
 
         if (featureConfig.useAbortWith()) {
-            context.getJerseyRequest().abortWith(responseBuilder.build());
+            context.jerseyRequest().abortWith(responseBuilder.build());
         } else {
             String description = response.description()
                     .orElse("Security did not allow this request to proceed.");
@@ -408,17 +453,17 @@ abstract class SecurityFilterCommon {
     protected SecurityFilterContext configureContext(SecurityFilterContext context,
                                                      ContainerRequestContext requestContext,
                                                      UriInfo uriInfo) {
-        context.setMethod(requestContext.getMethod());
-        context.setHeaders(requestContext.getHeaders());
-        context.setTargetUri(requestContext.getUriInfo().getRequestUri());
-        context.setResourcePath(context.getTargetUri().getPath());
-        context.setQueryParams(UriQuery.create(uriInfo.getRequestUri()));
+        context.method(requestContext.getMethod());
+        context.headers(requestContext.getHeaders());
+        context.targetUri(requestContext.getUriInfo().getRequestUri());
+        context.resourcePath(context.targetUri().getPath());
+        context.queryParams(UriQuery.create(uriInfo.getRequestUri()));
 
-        context.setJerseyRequest((ContainerRequest) requestContext);
+        context.jerseyRequest((ContainerRequest) requestContext);
 
         // now extract headers
         featureConfig().getQueryParamHandlers()
-                .forEach(handler -> handler.extract(uriInfo, context.getHeaders()));
+                .forEach(handler -> handler.extract(uriInfo, context.headers()));
 
         return context;
     }
@@ -440,5 +485,15 @@ abstract class SecurityFilterCommon {
 
     Config config(String child) {
         return security.configFor(child);
+    }
+
+    private record PathConfig(PathMatcher pathMatcher, Config config) {
+
+        static PathConfig create(Config config) {
+            String path = config.get("path").asString().orElseThrow();
+            PathMatcher matcher = PathMatchers.create(path);
+            return new PathConfig(matcher, config.get("config"));
+        }
+
     }
 }
