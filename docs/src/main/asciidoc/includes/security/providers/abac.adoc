@@ -196,3 +196,15 @@ security:
 ----
 include::{sourcedir}/includes/security/providers/AbacSnippets.java[tag=snippet_4, indent=0]
 ----
+
+[source,yaml]
+.Configuration example for `JAX-RS` over the configuration
+----
+server:
+  features:
+    security:
+      endpoints:
+        - path: "/somePath"
+          config:
+            abac.policy-validator.statement: "${env.time.year >= 2017}"
+----

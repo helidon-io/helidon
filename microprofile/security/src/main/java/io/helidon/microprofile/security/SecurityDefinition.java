@@ -21,6 +21,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.common.config.Config;
 import io.helidon.security.AuditEvent;
 import io.helidon.security.SecurityLevel;
 import io.helidon.security.annotations.Audited;
@@ -97,7 +98,21 @@ class SecurityDefinition {
         return result;
     }
 
-    public void add(Authenticated atn) {
+    void fromConfig(Config config) {
+        config.get("authorize").as(Boolean.class).ifPresent(this::requiresAuthorization);
+        config.get("authorizer").as(String.class).ifPresent(this::authorizer);
+        config.get("authorization-explicit").as(Boolean.class).ifPresent(this::atzExplicit);
+        config.get("authenticate").as(Boolean.class).ifPresent(this::requiresAuthentication);
+        config.get("authenticator").as(String.class).ifPresent(this::authenticator);
+        config.get("authentication-optional").as(Boolean.class).ifPresent(this::authenticationOptional);
+        config.get("audit").as(Boolean.class).ifPresent(this::audited);
+        config.get("audit-event-type").as(String.class).ifPresent(this::auditEventType);
+        config.get("audit-message-format").as(String.class).ifPresent(this::auditMessageFormat);
+        config.get("audit-ok-severity").as(AuditEvent.AuditSeverity.class).ifPresent(this::auditOkSeverity);
+        config.get("audit-error-severity").as(AuditEvent.AuditSeverity.class).ifPresent(this::auditErrorSeverity);
+    }
+
+    void add(Authenticated atn) {
         if (null == atn) {
             return;
         }
@@ -106,7 +121,7 @@ class SecurityDefinition {
         this.authenticator = "".equals(atn.provider()) ? null : atn.provider();
     }
 
-    public void add(Authorized atz) {
+    void add(Authorized atz) {
         if (null == atz) {
             return;
         }
@@ -130,7 +145,7 @@ class SecurityDefinition {
         this.requiresAuthentication = atn;
     }
 
-    void setRequiresAuthorization(boolean atz) {
+    void requiresAuthorization(boolean atz) {
         this.requiresAuthorization = atz;
     }
 
@@ -154,8 +169,16 @@ class SecurityDefinition {
         return authnOptional;
     }
 
+    void authenticationOptional(boolean authnOptional) {
+        this.authnOptional = authnOptional;
+    }
+
     boolean failOnFailureIfOptional() {
         return failOnFailureIfOptional;
+    }
+
+    void failOnFailureIfOptional(boolean failOnFailureIfOptional) {
+        this.failOnFailureIfOptional = failOnFailureIfOptional;
     }
 
     boolean requiresAuthorization() {
@@ -171,47 +194,79 @@ class SecurityDefinition {
         return (count != 0) || authorizeByDefault;
     }
 
-    public boolean isAtzExplicit() {
+    boolean atzExplicit() {
         return atzExplicit;
     }
 
-    String getAuthenticator() {
+    void atzExplicit(boolean atzExplicit) {
+        this.atzExplicit = atzExplicit;
+    }
+
+    String authenticator() {
         return authenticator;
     }
 
-    String getAuthorizer() {
+    void authenticator(String authenticator) {
+        this.authenticator = authenticator;
+    }
+
+    String authorizer() {
         return authorizer;
     }
 
-    public List<SecurityLevel> getSecurityLevels() {
+    void authorizer(String authorizer) {
+        this.authorizer = authorizer;
+    }
+
+    List<SecurityLevel> securityLevels() {
         return securityLevels;
     }
 
-    public boolean isAudited() {
+    boolean audited() {
         return audited;
     }
 
-    public String getAuditEventType() {
+    void audited(boolean audited) {
+        this.audited = audited;
+    }
+
+    String auditEventType() {
         return auditEventType;
     }
 
-    public String getAuditMessageFormat() {
+    void auditEventType(String auditEventType) {
+        this.auditEventType = auditEventType;
+    }
+
+    String auditMessageFormat() {
         return auditMessageFormat;
     }
 
-    public AuditEvent.AuditSeverity getAuditOkSeverity() {
+    void auditMessageFormat(String auditMessageFormat) {
+        this.auditMessageFormat = auditMessageFormat;
+    }
+
+    AuditEvent.AuditSeverity auditOkSeverity() {
         return auditOkSeverity;
     }
 
-    public AuditEvent.AuditSeverity getAuditErrorSeverity() {
+    void auditOkSeverity(AuditEvent.AuditSeverity auditOkSeverity) {
+        this.auditOkSeverity = auditOkSeverity;
+    }
+
+    AuditEvent.AuditSeverity auditErrorSeverity() {
         return auditErrorSeverity;
     }
 
-    public AnnotationAnalyzer.AnalyzerResponse analyzerResponse(AnnotationAnalyzer analyzer) {
+    void auditErrorSeverity(AuditEvent.AuditSeverity auditOkSeverity) {
+        this.auditErrorSeverity = auditOkSeverity;
+    }
+
+    AnnotationAnalyzer.AnalyzerResponse analyzerResponse(AnnotationAnalyzer analyzer) {
         return analyzerResponses.get(analyzer);
     }
 
-    public void analyzerResponse(AnnotationAnalyzer analyzer, AnnotationAnalyzer.AnalyzerResponse analyzerResponse) {
+    void analyzerResponse(AnnotationAnalyzer analyzer, AnnotationAnalyzer.AnalyzerResponse analyzerResponse) {
         analyzerResponses.put(analyzer, analyzerResponse);
 
         switch (analyzerResponse.authenticationResponse()) {
