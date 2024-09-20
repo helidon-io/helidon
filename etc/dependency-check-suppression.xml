@@ -2,6 +2,20 @@
 <suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
 <!-- For information see https://jeremylong.github.io/DependencyCheck/general/suppression.html -->
 
+<!--
+    This CVE is against DOMPurify brought in by javascript in the smallrye UI component.
+    In 4.x we made this component "provided". We can't do that in 2.x and 3.x due to compatiblity concerns.
+    Also, this is primarily a developer feature and not intended for a production runtime.
+-->
+
+<suppress>
+   <notes><![CDATA[
+   file name: smallrye-open-api-ui-2.0.26.jar: swagger-ui-bundle.js
+   ]]></notes>
+   <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
+   <vulnerabilityName>CVE-2024-45801</vulnerabilityName>
+</suppress>
+
 <!-- This CVE is against the etcd server. We ship a Java client -->
 <suppress>
    <notes><![CDATA[
