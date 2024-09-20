@@ -411,15 +411,11 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
             if (finished) {
                 return -1;
             }
-            try {
-                ensureBuffer(512);
-                if (finished || currentBuffer == null) {
-                    return -1;
-                }
-                return currentBuffer.read();
-            } catch (DataReader.InsufficientDataAvailableException e) {
+            ensureBuffer(512);
+            if (finished || currentBuffer == null) {
                 return -1;
             }
+            return currentBuffer.read();
         }
 
         @Override
@@ -427,15 +423,11 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
             if (finished) {
                 return -1;
             }
-            try {
-                ensureBuffer(len);
-                if (finished || currentBuffer == null) {
-                    return -1;
-                }
-                return currentBuffer.read(b, off, len);
-            } catch (DataReader.InsufficientDataAvailableException e) {
+            ensureBuffer(len);
+            if (finished || currentBuffer == null) {
                 return -1;
             }
+            return currentBuffer.read(b, off, len);
         }
 
         private void ensureBuffer(int estimate) {

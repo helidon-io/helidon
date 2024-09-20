@@ -50,7 +50,7 @@ public class SseSinkProvider implements SinkProvider<SseEvent> {
     @Override
     @SuppressWarnings("unchecked")
     public <X extends Sink<SseEvent>> X create(SinkProviderContext context) {
-        return (X) new SseSink(context);
+        return (X) new DataWriterSseSink(context);
     }
 
     /**
@@ -64,10 +64,10 @@ public class SseSinkProvider implements SinkProvider<SseEvent> {
      * @deprecated replaced by {@link #create(SinkProviderContext)}
      */
     @Override
+    @Deprecated(since = "4.1.2", forRemoval = true)
     public <X extends Sink<SseEvent>> X create(ServerResponse response,
                                                BiConsumer<Object, MediaType> eventConsumer,
                                                Runnable closeRunnable) {
-        throw new UnsupportedOperationException("Deprecated, use other create method in class");
+        return (X) new OutputStreamSseSink(response, eventConsumer, closeRunnable);
     }
-
 }

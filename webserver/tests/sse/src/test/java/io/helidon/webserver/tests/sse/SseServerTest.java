@@ -28,16 +28,13 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.http.HeaderValues.ACCEPT_JSON;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
 class SseServerTest extends SseBaseTest {
 
-    private final WebServer webServer;
-
     SseServerTest(WebServer webServer) {
-        this.webServer = webServer;
+        super(webServer);
     }
 
     @SetUpRoute
@@ -84,19 +81,10 @@ class SseServerTest extends SseBaseTest {
     @Test
     void testWrongAcceptType() {
         Http1Client client = Http1Client.builder()
-                .baseUri("http://localhost:" + webServer.port())
+                .baseUri("http://localhost:" + webServer().port())
                 .build();
         try (Http1ClientResponse response = client.get("/sseString1").header(ACCEPT_JSON).request()) {
             assertThat(response.status(), is(Status.NOT_ACCEPTABLE_406));
-        }
-    }
-
-    private void testSse(String path, String... events) throws Exception {
-        try (SimpleSseClient sseClient = SimpleSseClient.create(webServer.port(), path)) {
-            for (String e : events) {
-                assertThat(sseClient.nextEvent(), is(e));
-            }
-            assertThat(sseClient.nextEvent(), is(nullValue()));
         }
     }
 }

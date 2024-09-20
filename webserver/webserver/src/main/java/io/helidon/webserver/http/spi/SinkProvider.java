@@ -60,7 +60,7 @@ public interface SinkProvider<T> {
      * @return newly created sink
      * @deprecated replaced by {@link #create(SinkProviderContext)}
      */
-    @Deprecated(forRemoval = true, since = "4.1.2")
+    @Deprecated(since = "4.1.2", forRemoval = true)
     <X extends Sink<T>> X create(ServerResponse response,
                                  BiConsumer<Object, MediaType> eventConsumer,
                                  Runnable closeRunnable);

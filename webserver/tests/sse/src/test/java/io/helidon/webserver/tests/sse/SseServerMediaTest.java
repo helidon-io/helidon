@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import io.helidon.common.Weighted;
 import io.helidon.common.config.Config;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpMediaType;
-import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.MediaSupport;
@@ -34,7 +33,7 @@ import io.helidon.http.media.StringSupport;
 import io.helidon.http.media.spi.MediaSupportProvider;
 import io.helidon.http.sse.SseEvent;
 import io.helidon.webclient.http1.Http1Client;
-import io.helidon.webclient.http1.Http1ClientResponse;
+import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
@@ -44,23 +43,20 @@ import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.http.HeaderValues.ACCEPT_EVENT_STREAM;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-
 /**
  * Test that shows how to serialize an individual SSE event using a custom
  * {@link io.helidon.http.media.spi.MediaSupportProvider} and a user-defined
  * media type. Each SSE event can be given a different media type.
  */
 @ServerTest
-class SseServerMediaTest {
+class SseServerMediaTest extends SseBaseTest {
 
     private static final HttpMediaType MY_PLAIN_TEXT = HttpMediaType.create("text/my_plain");
 
     private final Http1Client client;
 
-    SseServerMediaTest(Http1Client client) {
+    SseServerMediaTest(WebServer webServer, Http1Client client) {
+        super(webServer);
         this.client = client;
     }
 
@@ -70,21 +66,14 @@ class SseServerMediaTest {
     }
 
     @Test
-    void testSseJson() {
-        testSse("/sse", "data:HELLO\n\ndata:world\n\n");
+    void testSseJson() throws Exception {
+        testSse("/sse", "data:HELLO", "data:world");
     }
 
     private static void sse(ServerRequest req, ServerResponse res) {
         try (SseSink sseSink = res.sink(SseSink.TYPE)) {
             sseSink.emit(SseEvent.create("hello", MY_PLAIN_TEXT))        // custom media type
                     .emit(SseEvent.create("world"));                          // text/plain by default
-        }
-    }
-
-    private void testSse(String path, String result) {
-        try (Http1ClientResponse response = client.get(path).header(ACCEPT_EVENT_STREAM).request()) {
-            assertThat(response.status(), is(Status.OK_200));
-            assertThat(response.as(String.class), is(result));
         }
     }
 
@@ -143,6 +132,10 @@ class SseServerMediaTest {
         }
     }
 
+    /**
+     * Provider for {@link io.helidon.webserver.tests.sse.SseServerMediaTest.MyStringSupport},
+     * loaded as a service.
+     */
     public static class MyStringSupportProvider implements MediaSupportProvider, Weighted {
 
         @Override
