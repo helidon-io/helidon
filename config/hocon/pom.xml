@@ -74,6 +74,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <environmentVariables>
+                        <VAR1>foo</VAR1>
                         <HOCON_TEST_PROPERTY>This Is My ENV VARS Value.</HOCON_TEST_PROPERTY>
                     </environmentVariables>
                 </configuration>
