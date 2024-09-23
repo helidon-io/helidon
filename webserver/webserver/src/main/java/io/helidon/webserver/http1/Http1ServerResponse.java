@@ -75,7 +75,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
     private boolean streamingEntity;
     private boolean isSent;
-    private ClosingBufferedOutputStream outputStream;
+    private ResponseOutputStream outputStream;
     private long bytesWritten;
     private String streamResult = "";
     private final boolean validateHeaders;
@@ -395,7 +395,11 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                                                             validateHeaders);
 
         int writeBufferSize = ctx.listenerContext().config().writeBufferSize();
-        outputStream = new ClosingBufferedOutputStream(bos, writeBufferSize);
+        if (writeBufferSize > 0) {
+            outputStream = new ClosingBufferedOutputStream(bos, writeBufferSize);
+        } else {
+            outputStream = bos;
+        }
 
         OutputStream encodedOutputStream = outputStream;
         if (!skipEncoders) {
@@ -405,7 +409,29 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         return outputStreamFilter == null ? encodedOutputStream : outputStreamFilter.apply(encodedOutputStream);
     }
 
-    static class BlockingOutputStream extends OutputStream {
+    abstract static class ResponseOutputStream extends OutputStream {
+        abstract long totalBytesWritten();
+
+        abstract void commit();
+
+        /**
+         * This is a noop, even when user closes the output stream, we wait for the
+         * call to {@link this#commit()}.
+         */
+        @Override
+        public void close() {
+            // no-op
+        }
+
+        /**
+         * Calls the {@link OutputStream#close()}, which is currently a no-op.
+         */
+        void superClose() throws IOException {
+            super.close();
+        }
+    }
+
+    static class BlockingOutputStream extends ResponseOutputStream {
         private final ServerResponseHeaders headers;
         private final WritableHeaders<?> trailers;
         private final Supplier<Status> status;
@@ -491,15 +517,6 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         }
 
         /**
-         * This is a noop, even when user closes the output stream, we wait for the
-         * call to {@link this#commit()}.
-         */
-        @Override
-        public void close() {
-            // no-op
-        }
-
-        /**
          * Informs output stream that closing phase has started. Special handling
          * for {@link this#flush()}.
          */
@@ -542,12 +559,13 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
             responseCloseRunnable.run();
             try {
-                super.close();
+                superClose();
             } catch (IOException e) {
                 throw new ServerConnectionException("Failed to close server response stream.", e);
             }
         }
 
+        @Override
         long totalBytesWritten() {
             return responseBytesTotal;
         }
@@ -728,7 +746,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
      * of close logic. Note that due to some locking issues in the JDK, this class
      * must use delegation with {@link BufferedOutputStream} instead of subclassing.
      */
-    static class ClosingBufferedOutputStream extends OutputStream {
+    static class ClosingBufferedOutputStream extends ResponseOutputStream {
 
         private final BlockingOutputStream delegate;
         private final BufferedOutputStream bufferedDelegate;
@@ -768,10 +786,12 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             }
         }
 
+        @Override
         long totalBytesWritten() {
             return delegate.totalBytesWritten();
         }
 
+        @Override
         void commit() {
             try {
                 flush();
