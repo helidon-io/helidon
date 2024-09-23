@@ -16,12 +16,13 @@
 
 package io.helidon.webserver;
 
-import io.helidon.common.task.HelidonTaskExecutor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
-/** 
+import io.helidon.common.task.HelidonTaskExecutor;
+
+/**
  * Encapsulates operations with {@link Executors}. Helps to workaround
  * limitations of GraalVM for JDK21 which doesn't support execution of
  * virtual threads and Graal.js code together. New versions of GraalVM
@@ -38,7 +39,8 @@ final class ExecutorsFactory {
     private ExecutorsFactory() {
     }
 
-    /** Used by {@link LoomServer} to allocate its executor service.
+    /**
+     * Used by {@link LoomServer} to allocate its executor service.
      *
      * @return {@link Executors#newVirtualThreadPerTaskExecutor()}
      */
@@ -46,7 +48,8 @@ final class ExecutorsFactory {
         return Executors.newVirtualThreadPerTaskExecutor();
     }
 
-    /** Used by {@link ServerListener} to allocate its reader executor.
+    /**
+     * Used by {@link ServerListener} to allocate its reader executor.
      *
      * @return {@link ThreadPerTaskExecutor#create(java.util.concurrent.ThreadFactory)}
      */
@@ -54,14 +57,14 @@ final class ExecutorsFactory {
         return ThreadPerTaskExecutor.create(virtualThreadFactory());
     }
 
-    /** Used by {@link ServerListener} to allocate its shared executor.
+    /**
+     * Used by {@link ServerListener} to allocate its shared executor.
      *
      * @return {@link Executors#newThreadPerTaskExecutor(java.util.concurrent.ThreadFactory)}.
      */
     static ExecutorService newServerListenerSharedExecutor() {
         return Executors.newThreadPerTaskExecutor(virtualThreadFactory());
     }
-
 
     private static ThreadFactory virtualThreadFactory() {
         return Thread.ofVirtual().factory();
