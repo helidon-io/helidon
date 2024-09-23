@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ import java.util.Timer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -143,12 +142,10 @@ class ServerListener implements ListenerContext {
                 .unstarted(this::listen);
 
         // to read requests and execute tasks
-        this.readerExecutor = ThreadPerTaskExecutor.create(Thread.ofVirtual()
-                                                                   .factory());
+        this.readerExecutor = ExecutorsFactory.newServerListenerReaderExecutor();
 
         // to do anything else (writers etc.)
-        this.sharedExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
-                                                                         .factory());
+        this.sharedExecutor = ExecutorsFactory.newServerListenerSharedExecutor();
 
         this.closeFuture = new CompletableFuture<>();
 
