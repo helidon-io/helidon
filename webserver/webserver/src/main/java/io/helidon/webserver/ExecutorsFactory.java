@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
-/** Encapsulates operations with {@link Executors}. Helps to workaround
+/** 
+ * Encapsulates operations with {@link Executors}. Helps to workaround
  * limitations of GraalVM for JDK21 which doesn't support execution of
  * virtual threads and Graal.js code together. New versions of GraalVM
  * don't have this limitation, but for those who stick with JDK21, this
