@@ -71,7 +71,7 @@ class LoomServer implements WebServer {
                         .id("web-" + WEBSERVER_COUNTER.getAndIncrement())
                         .build());
         this.serverConfig = serverConfig;
-        this.executorService = Executors.newVirtualThreadPerTaskExecutor();
+        this.executorService = ExecutorsFactory.newLoomServerVirtualThreadPerTaskExecutor();
 
         Map<String, ListenerConfig> sockets = new HashMap<>(serverConfig.sockets());
         sockets.put(DEFAULT_SOCKET_NAME, serverConfig);

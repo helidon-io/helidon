@@ -60,6 +60,7 @@ import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.ERROR;
 import static java.lang.System.Logger.Level.INFO;
 import static java.lang.System.Logger.Level.TRACE;
+import java.util.concurrent.ThreadFactory;
 
 class ServerListener implements ListenerContext {
     private static final System.Logger LOGGER = System.getLogger(ServerListener.class.getName());
@@ -143,12 +144,10 @@ class ServerListener implements ListenerContext {
                 .unstarted(this::listen);
 
         // to read requests and execute tasks
-        this.readerExecutor = ThreadPerTaskExecutor.create(Thread.ofVirtual()
-                                                                   .factory());
+        this.readerExecutor = ExecutorsFactory.newServerListenerReaderExecutor();
 
         // to do anything else (writers etc.)
-        this.sharedExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
-                                                                         .factory());
+        this.sharedExecutor = ExecutorsFactory.newServerListenerSharedExecutor();
 
         this.closeFuture = new CompletableFuture<>();
 
