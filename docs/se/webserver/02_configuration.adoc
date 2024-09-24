@@ -85,6 +85,7 @@ Available socket configuration options:
 |`enabled` |`true` |boolean |A socket can be disabled through configuration, in which case it is never opened
 |`max-chunk-size` | `8192` |int |Maximal size of a chunk to read from incoming requests
 |`max-payload-size` | `-1` |long |Maximal size of a request payload in bytes. If exceeded a 413 error is returned. Negative value means no limit.
+|`connection-idle-timeout` | `0` |int |Timeout seconds after which any idle connection will be automatically closed. 0 means no timeout.
 |`backpressure-buffer-size` |long |`5242880` |Set a maximum length of the unflushed response data sending buffer can keep without applying backpressure.
 Depends on `backpressure-policy` what happens if max buffer size is reached.
 
