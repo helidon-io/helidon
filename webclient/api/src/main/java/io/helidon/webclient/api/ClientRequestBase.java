@@ -262,7 +262,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     }
 
     @Override
-    public final R submit(Object entity) {
+    public R submit(Object entity) {
         if (!(entity instanceof byte[] bytes && bytes.length == 0)) {
             rejectHeadWithEntity();
         }
@@ -271,7 +271,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     }
 
     @Override
-    public final R outputStream(OutputStreamHandler outputStreamConsumer) {
+    public R outputStream(OutputStreamHandler outputStreamConsumer) {
         rejectHeadWithEntity();
         additionalHeaders();
         return doOutputStream(outputStreamConsumer);
@@ -481,7 +481,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     }
 
     private void rejectHeadWithEntity() {
-        if (this.method.equals(Method.HEAD)) {
+        if (Method.HEAD.equals(this.method)) {
             throw new IllegalArgumentException("Payload in method '" + Method.HEAD + "' has no defined semantics");
         }
     }
