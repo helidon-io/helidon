@@ -66,12 +66,14 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     protected static final BufferData EMPTY_BUFFER_DATA = BufferData.empty();
 
     private final GrpcClientImpl grpcClient;
+    private final GrpcChannel grpcChannel;
     private final MethodDescriptor<ReqT, ResT> methodDescriptor;
     private final CallOptions callOptions;
     private final int initBufferSize;
     private final Duration pollWaitTime;
     private final boolean abortPollTimeExpired;
     private final Duration heartbeatPeriod;
+    private final ClientUriSuppliers.ClientUriSupplier clientUriSupplier;
 
     private final MethodDescriptor.Marshaller<ReqT> requestMarshaller;
     private final MethodDescriptor.Marshaller<ResT> responseMarshaller;
@@ -81,8 +83,9 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     private volatile Listener<ResT> responseListener;
     private volatile HelidonSocket socket;
 
-    GrpcBaseClientCall(GrpcClientImpl grpcClient, MethodDescriptor<ReqT, ResT> methodDescriptor, CallOptions callOptions) {
-        this.grpcClient = grpcClient;
+    GrpcBaseClientCall(GrpcChannel grpcChannel, MethodDescriptor<ReqT, ResT> methodDescriptor, CallOptions callOptions) {
+        this.grpcClient = (GrpcClientImpl) grpcChannel.grpcClient();
+        this.grpcChannel = grpcChannel;
         this.methodDescriptor = methodDescriptor;
         this.callOptions = callOptions;
         this.requestMarshaller = methodDescriptor.getRequestMarshaller();
@@ -91,6 +94,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         this.pollWaitTime = grpcClient.prototype().protocolConfig().pollWaitTime();
         this.abortPollTimeExpired = grpcClient.prototype().protocolConfig().abortPollTimeExpired();
         this.heartbeatPeriod = grpcClient.prototype().protocolConfig().heartbeatPeriod();
+        this.clientUriSupplier = grpcClient.prototype().clientUriSupplier().orElse(null);
     }
 
     @Override
@@ -100,10 +104,11 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         this.responseListener = responseListener;
 
         // obtain HTTP2 connection
-        ClientConnection clientConnection = clientConnection();
+        ClientUri clientUri = nextClientUri();
+        ClientConnection clientConnection = clientConnection(clientUri);
         socket = clientConnection.helidonSocket();
         connection = Http2ClientConnection.create((Http2ClientImpl) grpcClient.http2Client(),
-                clientConnection, true);
+                                                  clientConnection, true);
 
         // create HTTP2 stream from connection
         clientStream = new GrpcClientStream(
@@ -134,7 +139,6 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         startStreamingThreads();
 
         // send HEADERS frame
-        ClientUri clientUri = grpcClient.prototype().baseUri().orElseThrow();
         WritableHeaders<?> headers = WritableHeaders.create();
         headers.add(Http2Headers.AUTHORITY_NAME, clientUri.authority());
         headers.add(Http2Headers.METHOD_NAME, "POST");
@@ -165,11 +169,13 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         }
     }
 
-    protected ClientConnection clientConnection() {
-        GrpcClientConfig clientConfig = grpcClient.prototype();
-        ClientUri clientUri = clientConfig.baseUri().orElseThrow();
-        WebClient webClient = grpcClient.webClient();
+    protected GrpcClientImpl grpcClient() {
+        return grpcClient;
+    }
 
+    protected ClientConnection clientConnection(ClientUri clientUri) {
+        WebClient webClient = grpcClient.webClient();
+        GrpcClientConfig clientConfig = grpcClient.prototype();
         ConnectionKey connectionKey = new ConnectionKey(
                 clientUri.scheme(),
                 clientUri.host(),
@@ -179,7 +185,6 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
                 DefaultDnsResolver.create(),
                 DnsAddressLookup.defaultLookup(),
                 Proxy.noProxy());
-
         return TcpClientConnection.create(webClient,
                 connectionKey,
                 Collections.emptyList(),
@@ -244,5 +249,20 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
 
     protected HelidonSocket socket() {
         return socket;
+    }
+
+    private ClientUri nextClientUri() {
+        GrpcClientConfig clientConfig = grpcClient.prototype();
+        ClientUri clientUri;
+        if (clientUriSupplier != null) {
+            if (clientUriSupplier.hasNext()) {
+                clientUri = clientUriSupplier.next();
+            } else {
+                throw new RuntimeException("No more ClientURis to connect to");
+            }
+        } else {
+            clientUri = clientConfig.baseUri().orElseThrow();
+        }
+        return clientUri;
     }
 }
