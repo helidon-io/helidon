@@ -9,6 +9,17 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 
 For Helidon 3.x releases please see [Helidon 3.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-3.x/CHANGELOG.md)
 
+## [2.6.9]
+
+This is a bugfix release of Helidon. It is recommended for all users of Helidon 2. Helidon 2 requires a minimum Java 11.
+
+### CHANGES
+
+- Config: Handle special case of an unquoted string containing an unresolved variable reference [9263](https://github.com/helidon-io/helidon/pull/9263)
+- WebServer: Adds ability to close idle HTTP connections after a certain time [9203](https://github.com/helidon-io/helidon/pull/9203) [9252](https://github.com/helidon-io/helidon/pull/9252) [9239](https://github.com/helidon-io/helidon/pull/9239)
+- Documentation: document connection-idle-timeout [9283](https://github.com/helidon-io/helidon/pull/9283)
+- Dependencies: Upgrade protobuf to 3.25.5 [9266](https://github.com/helidon-io/helidon/pull/9266)  [9268](https://github.com/helidon-io/helidon/pull/9268)
+
 ## [2.6.8]
 
 This is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
@@ -2258,6 +2269,7 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
+[2.6.9]: https://github.com/oracle/helidon/compare/2.6.8...2.6.9
 [2.6.8]: https://github.com/oracle/helidon/compare/2.6.7...2.6.8
 [2.6.7]: https://github.com/oracle/helidon/compare/2.6.6...2.6.7
 [2.6.6]: https://github.com/oracle/helidon/compare/2.6.5...2.6.6
