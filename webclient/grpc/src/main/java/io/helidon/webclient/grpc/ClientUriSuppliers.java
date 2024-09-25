@@ -16,6 +16,7 @@
 package io.helidon.webclient.grpc;
 
 import java.net.URI;
+import java.security.SecureRandom;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -28,12 +29,6 @@ import io.helidon.webclient.api.ClientUri;
  * implementations of it.
  */
 public class ClientUriSuppliers {
-
-    /**
-     * Interfaces implemented by all client URI suppliers.
-     */
-    public interface ClientUriSupplier extends Iterator<ClientUri> {
-    }
 
     /**
      * Supplies an iterator that returns URIs chosen in order from
@@ -171,6 +166,8 @@ public class ClientUriSuppliers {
 
         private boolean supplied;
         private final ClientUri[] clientUris;
+        private final SecureRandom random = new SecureRandom();
+
 
         /**
          * Creates a random supplier.
@@ -205,7 +202,7 @@ public class ClientUriSuppliers {
         public ClientUri next() {
             if (!supplied) {
                 supplied = true;
-                return clientUris[(int) (Math.random() * clientUris.length)];
+                return clientUris[random.nextInt(clientUris.length)];
             }
             throw new NoSuchElementException("No more client URIs available");
         }

@@ -39,12 +39,11 @@ interface GrpcClientConfigBlueprint extends HttpClientConfig, Prototype.Factory<
     GrpcClientProtocolConfig protocolConfig();
 
     /**
-     * A {@link io.helidon.webclient.grpc.ClientUriSuppliers.ClientUriSupplier} that
-     * can dynamically provide zero or more {@link io.helidon.webclient.api.ClientUri}s
-     * to connect to.
+     * A {@link io.helidon.webclient.grpc.ClientUriSupplier} that can dynamically
+     * provide zero or more {@link io.helidon.webclient.api.ClientUri}s to connect.
      *
      * @return a supplier for zero or more client URIs
      */
-    Optional<ClientUriSuppliers.ClientUriSupplier> clientUriSupplier();
+    Optional<ClientUriSupplier> clientUriSupplier();
 }
 

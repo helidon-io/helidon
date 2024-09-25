@@ -21,6 +21,7 @@ import java.util.concurrent.CountDownLatch;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.tls.Tls;
+import io.helidon.faulttolerance.Retry;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.grpc.ClientUriSuppliers;
 import io.helidon.webclient.grpc.GrpcClient;
@@ -52,8 +53,11 @@ class GrpcClientUriTest extends GrpcBaseTest {
                 .build();
     }
 
+    /**
+     * Shows how each gRPC call advances the iterator in the {@code ClientUriSupplier}.
+     */
     @Test
-    void testClientUris() {
+    void testSupplier() {
         CountDownLatch latch = new CountDownLatch(2);
         ClientUri clientUri = ClientUri.create(URI.create("https://localhost:" + server.port()));
         GrpcClient grpcClient = GrpcClient.builder()
@@ -66,7 +70,26 @@ class GrpcClientUriTest extends GrpcBaseTest {
         assertThat(res1.getText(), is("HELLO"));
         Strings.StringMessage res2 = service.upper(newStringMessage("hello"));
         assertThat(res2.getText(), is("HELLO"));
+        assertThat(latch.getCount(), is(0L));
+    }
 
+    /**
+     * Should fail to connect to first URI but succeed with second after retrying.
+     */
+    @Test
+    void testSupplierWithRetries() {
+        CountDownLatch latch = new CountDownLatch(2);
+        ClientUri badUri = ClientUri.create(URI.create("https://foo:8000"));
+        ClientUri goodUri = ClientUri.create(URI.create("https://localhost:" + server.port()));
+        GrpcClient grpcClient = GrpcClient.builder()
+                .tls(clientTls)
+                .clientUriSupplier(new ClientUriSupplierTest(latch, badUri, goodUri))
+                .build();
+        StringServiceGrpc.StringServiceBlockingStub service = StringServiceGrpc.newBlockingStub(grpcClient.channel());
+
+        Retry retry = Retry.builder().calls(2).build();
+        Strings.StringMessage res = retry.invoke(() -> service.upper(newStringMessage("hello")));
+        assertThat(res.getText(), is("HELLO"));
         assertThat(latch.getCount(), is(0L));
     }
 

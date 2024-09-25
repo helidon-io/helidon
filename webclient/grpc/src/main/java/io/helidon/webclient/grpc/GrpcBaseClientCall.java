@@ -73,7 +73,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     private final Duration pollWaitTime;
     private final boolean abortPollTimeExpired;
     private final Duration heartbeatPeriod;
-    private final ClientUriSuppliers.ClientUriSupplier clientUriSupplier;
+    private final ClientUriSupplier clientUriSupplier;
 
     private final MethodDescriptor.Marshaller<ReqT> requestMarshaller;
     private final MethodDescriptor.Marshaller<ResT> responseMarshaller;
@@ -186,11 +186,11 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
                 DnsAddressLookup.defaultLookup(),
                 Proxy.noProxy());
         return TcpClientConnection.create(webClient,
-                connectionKey,
-                Collections.emptyList(),
-                connection -> false,
-                connection -> {
-                }).connect();
+                                          connectionKey,
+                                          Collections.emptyList(),
+                                          connection -> false,
+                                          connection -> {
+                                          }).connect();
     }
 
     protected boolean isRemoteOpen() {
@@ -251,18 +251,15 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         return socket;
     }
 
+    /**
+     * Retrieves the next URI either from the supplier or directly from config. If
+     * a supplier is provided, it will take precedence.
+     *
+     * @return the next {@link ClientUri}
+     * @throws java.util.NoSuchElementException if supplier has been exhausted
+     */
     private ClientUri nextClientUri() {
-        GrpcClientConfig clientConfig = grpcClient.prototype();
-        ClientUri clientUri;
-        if (clientUriSupplier != null) {
-            if (clientUriSupplier.hasNext()) {
-                clientUri = clientUriSupplier.next();
-            } else {
-                throw new RuntimeException("No more ClientURis to connect to");
-            }
-        } else {
-            clientUri = clientConfig.baseUri().orElseThrow();
-        }
-        return clientUri;
+        return clientUriSupplier == null ? grpcClient.prototype().baseUri().orElseThrow()
+                : clientUriSupplier.next();
     }
 }
