@@ -83,6 +83,7 @@ public final class GeneratedInjectService {
      * io.helidon.service.inject.api.GeneratedInjectService.Descriptor#instantiate(io.helidon.service.registry.DependencyContext,
      * io.helidon.service.inject.api.GeneratedInjectService.InterceptionMetadata)}).
      */
+    @Injection.Describe(Injection.Singleton.class)
     public interface InterceptionMetadata {
         /**
          * Create an invoker that handles interception if needed, for constructors.

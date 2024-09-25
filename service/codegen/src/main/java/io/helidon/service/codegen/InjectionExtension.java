@@ -73,6 +73,7 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.INJECT_QUALIFIED_PR
 import static io.helidon.service.codegen.ServiceCodegenTypes.INJECT_SCOPE_HANDLER;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INJECT_SCOPE_HANDLER_DESCRIPTOR;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INJECT_SERVICE_INSTANCE;
+import static io.helidon.service.codegen.ServiceCodegenTypes.INTERCEPTION_DELEGATE;
 import static io.helidon.service.codegen.ServiceCodegenTypes.QUALIFIED_PROVIDER;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICES_PROVIDER;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_PROVIDER;
@@ -107,6 +108,7 @@ class InjectionExtension implements RegistryCodegenExtension {
     private final RegistryCodegenContext ctx;
     private final boolean autoAddContracts;
     private final Interception interception;
+    private final InterceptionSupport interceptionSupport;
     private final Set<TypeName> scopeMetaAnnotations;
     private final List<InjectCodegenObserver> observers;
 
@@ -115,6 +117,7 @@ class InjectionExtension implements RegistryCodegenExtension {
         CodegenOptions options = codegenContext.options();
         this.autoAddContracts = ServiceOptions.AUTO_ADD_NON_CONTRACT_INTERFACES.value(options);
         this.interception = new Interception(InjectOptions.INTERCEPTION_STRATEGY.value(options));
+        this.interceptionSupport = InterceptionSupport.create(ctx);
         this.scopeMetaAnnotations = InjectOptions.SCOPE_META_ANNOTATIONS.value(options);
         this.observers = HelidonServiceLoader.create(ServiceLoader.load(InjectCodegenObserverProvider.class,
                                                                         InjectionExtension.class.getClassLoader()))
@@ -157,6 +160,8 @@ class InjectionExtension implements RegistryCodegenExtension {
         for (TypeInfo typeInfo : descriptorsRequired) {
             if (typeInfo.hasAnnotation(INJECTION_DESCRIBE)) {
                 generateScopeDescriptor(typeInfo, typeInfo.annotation(INJECTION_DESCRIBE));
+            } else if (typeInfo.hasAnnotation(INTERCEPTION_DELEGATE)) {
+                generateInterceptionDelegate(typeInfo);
             } else {
                 generateDescriptor(descriptorsRequired, typeInfo);
             }
@@ -229,6 +234,14 @@ class InjectionExtension implements RegistryCodegenExtension {
         ctx.addType(generatedType,
                     applicationMain,
                     GENERATOR);
+    }
+
+    private void generateInterceptionDelegate(TypeInfo typeInfo) {
+        if (typeInfo.kind() != ElementKind.INTERFACE) {
+            throw new CodegenException("Attempting to create delegate interception for non interface type",
+                                       typeInfo.originatingElementValue());
+        }
+        interceptionSupport.generateDelegateInterception(typeInfo, typeInfo.typeName());
     }
 
     private void generateScopeDescriptor(TypeInfo typeInfo, Annotation describeAnnotation) {

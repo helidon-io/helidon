@@ -23,7 +23,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import io.helidon.common.types.TypeName;
 import io.helidon.service.registry.Service;
 
 /**
@@ -45,6 +44,34 @@ public final class Interception {
     @Target(ElementType.ANNOTATION_TYPE)
     @Inherited
     public @interface Trigger {
+    }
+
+    /**
+     * Use this annotation to force generation of an interception delegate for an interface
+     * (cannot be applied to classes).
+     * The interception delegate can be used from service provider to wrap an instance and support interception.
+     * <p>
+     * The delegate implements the annotated interface, and has a static method {@code create} with the following parameters:
+     * <ul>
+     *     <li>{@link io.helidon.service.inject.api.GeneratedInjectService.InterceptionMetadata} - can be injected</li>
+     *     <li>{@link io.helidon.service.inject.api.GeneratedInjectService.Descriptor} - descriptor of the service,
+     *              to have the correct type annotations, contracts, scope, qualifiers etc.</li>
+     *     <li>An instance of the annotated interface to delegate calls to</li>
+     * </ul>
+     *
+     * Why this cannot be applied to classes:
+     * Delegation requires an existing delegate instance (which may be obtained in any way, which may have private or
+     * inaccessible constructor(s), may be final, may require constructor parameters that are not known to the registry). As a
+     * result, we could not create the delegate instance if it extended a class. Implementing an interface is on the other
+     * hand a clean approach.
+     * <p>
+     * If you feel you need interception for classes that you know how to construct, you can create a service that extends
+     * the desired class and provide it as a service to the registry. Such services are automatically intercepted as expected.
+     */
+    @Documented
+    @Retention(RetentionPolicy.CLASS)
+    @Target(ElementType.TYPE)
+    public @interface Delegate {
     }
 
     /**
@@ -86,33 +113,5 @@ public final class Interception {
              */
             V proceed(Object[] args) throws Exception;
         }
-
-    }
-
-    /**
-     * A factory that can create intercepted instances using delegation.
-     * This is used for types where instances are created at runtime and do not have the
-     * proper intercepted types generated as subclasses, but rather as implementations of the
-     * interface with delegation.
-     * <p>
-     * Each implementation must be named with the class name of the supported interface.
-     *
-     * @param <T> the intercepted type this factory supports
-     */
-    public interface Factory<T> {
-        /**
-         * Type of this interface.
-         */
-        TypeName TYPE = TypeName.create(Factory.class);
-
-        /**
-         * Create an intercepted type from the delegate.
-         *
-         * @param descriptor descriptor associated with this type
-         * @param delegate   delegate to invoke methods
-         * @return intercepted type
-         */
-        T create(GeneratedInjectService.Descriptor<?> descriptor,
-                 T delegate);
     }
 }

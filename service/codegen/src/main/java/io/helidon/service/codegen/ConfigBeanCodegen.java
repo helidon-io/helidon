@@ -37,11 +37,9 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.CONFIG_COMMON_CONFI
 import static io.helidon.service.codegen.ServiceCodegenTypes.CONFIG_EXCEPTION;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_INJECT;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_NAMED;
-import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_NAMED_BY_CLASS;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_SINGLETON;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INJECT_QUALIFIER;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INJECT_SERVICE_INSTANCE;
-import static io.helidon.service.codegen.ServiceCodegenTypes.INTERCEPTION_FACTORY;
 import static io.helidon.service.codegen.ServiceCodegenTypes.QUALIFIED_INSTANCE;
 import static io.helidon.service.codegen.ServiceCodegenTypes.WEIGHT;
 
@@ -125,13 +123,13 @@ class ConfigBeanCodegen implements RegistryCodegenExtension {
         boolean intercepted = interceptionSupport.intercepted(typeInfo);
         TypeName descriptorType = ctx.descriptorType(generatedType);
 
-        TypeName factoryType;
+        TypeName interceptedType;
         if (intercepted) {
-            interceptionSupport.generateDelegateInterception(typeInfo, cb.configBeanType());
-            factoryType = factoryType(cb.configBeanType());
+            interceptedType = interceptionSupport.generateDelegateInterception(typeInfo, cb.configBeanType());
         } else {
-            factoryType = null;
+            interceptedType = null;
         }
+
         classModel = configBeanClass(cb.generatedType(), servicesProviderType)
                 .addAnnotation(CONFIG_BEAN_ANNOTATION)
                 .addField(buildersField -> buildersField
@@ -139,7 +137,7 @@ class ConfigBeanCodegen implements RegistryCodegenExtension {
                         .isFinal(true)
                         .name("builders")
                         .type(serviceInstanceList(builderType)))
-                .update(it -> addFactoryField(it, intercepted, factoryType))
+                .update(it -> addInterceptionMetadataField(it, intercepted))
                 .addConstructor(ctr -> ctr
                         .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                         .addAnnotation(INJECT_ANNOTATION)
@@ -148,7 +146,7 @@ class ConfigBeanCodegen implements RegistryCodegenExtension {
                                 .addAnnotation(WILDCARD_NAME_ANNOTATION)
                                 .type(serviceInstanceList(builderType)))
                         .addContentLine("this.builders = builders;")
-                        .update(it -> addFactoryConstructor(it, intercepted, factoryType, cb.configBeanType())))
+                        .update(it -> addInterceptionMetadataParameter(it, intercepted)))
                 .addMethod(servicesMethod -> servicesMethod
                         .accessModifier(AccessModifier.PUBLIC)
                         .addAnnotation(OVERRIDE)
@@ -170,7 +168,7 @@ class ConfigBeanCodegen implements RegistryCodegenExtension {
                         .addParameter(instance -> instance
                                 .type(serviceInstance(builderType))
                                 .name("instance"))
-                        .update(it -> prototypeMethodBody(it, intercepted, descriptorType)));
+                        .update(it -> prototypeMethodBody(it, intercepted, descriptorType, interceptedType)));
 
         ctx.addType(generatedType, classModel, annotatedType, typeInfo.originatingElementValue());
     }
@@ -225,13 +223,11 @@ class ConfigBeanCodegen implements RegistryCodegenExtension {
         // singleton accepting the config builder and producing the config
         TypeName generatedType = cb.generatedType();
         boolean intercepted = interceptionSupport.intercepted(typeInfo);
-
-        TypeName factoryType;
+        TypeName interceptedType;
         if (intercepted) {
-            interceptionSupport.generateDelegateInterception(typeInfo, cb.configBeanType());
-            factoryType = factoryType(cb.configBeanType());
+            interceptedType = interceptionSupport.generateDelegateInterception(typeInfo, cb.configBeanType());
         } else {
-            factoryType = null;
+            interceptedType = null;
         }
         var configBeanClass = ClassModel.builder()
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
@@ -246,7 +242,7 @@ class ConfigBeanCodegen implements RegistryCodegenExtension {
                         .isFinal(true)
                         .name("builder")
                         .type(builderType))
-                .update(it -> this.addFactoryField(it, intercepted, factoryType))
+                .update(it -> this.addInterceptionMetadataField(it, intercepted))
                 .addConstructor(ctr -> ctr
                         .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                         .addAnnotation(INJECT_ANNOTATION)
@@ -254,13 +250,23 @@ class ConfigBeanCodegen implements RegistryCodegenExtension {
                                 .name("builder")
                                 .type(builderType))
                         .addContentLine("this.builder = builder;")
-                        .update(it -> addFactoryConstructor(it, intercepted, factoryType, cb.configBeanType())))
+                        .update(it -> addInterceptionMetadataParameter(it, intercepted)))
                 .addMethod(get -> get
                         .accessModifier(AccessModifier.PUBLIC)
                         .addAnnotation(OVERRIDE)
                         .name("get")
                         .returnType(cb.configBeanType())
-                        .addContentLine("return builder.buildPrototype();")
+                        .update(getMethod -> {
+                            if (intercepted) {
+                                getMethod.addContent("return ")
+                                        .addContent(interceptedType)
+                                        .addContent(".create(interceptionMetadata, ")
+                                        .addContent(ctx.descriptorType(generatedType))
+                                        .addContentLine(".INSTANCE, builder.buildPrototype());");
+                            } else {
+                                getMethod.addContentLine("return builder.buildPrototype();");
+                            }
+                        })
                 );
 
         ctx.addType(generatedType, configBeanClass, annotatedType, typeInfo.originatingElementValue());
@@ -272,23 +278,22 @@ class ConfigBeanCodegen implements RegistryCodegenExtension {
         TypeName servicesProviderType = servicesProviderType(cb.configBeanType());
 
         boolean intercepted = interceptionSupport.intercepted(typeInfo);
-        TypeName factoryType;
+        TypeName interceptedType;
         if (intercepted) {
-            interceptionSupport.generateDelegateInterception(typeInfo, cb.configBeanType());
-            factoryType = factoryType(cb.configBeanType());
+            interceptedType = interceptionSupport.generateDelegateInterception(typeInfo, cb.configBeanType());
         } else {
-            factoryType = null;
+            interceptedType = null;
         }
 
         ClassModel.Builder classModel = configBeanClass(generatedType, servicesProviderType)
                 .addAnnotation(CONFIG_BEAN_ANNOTATION)
                 .update(this::addConfigField)
-                .update(it -> addFactoryField(it, intercepted, factoryType))
+                .update(it -> addInterceptionMetadataField(it, intercepted))
                 .addConstructor(ctr -> ctr
                         .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                         .addAnnotation(INJECT_ANNOTATION)
                         .update(this::configConstructor)
-                        .update(it -> addFactoryConstructor(it, intercepted, factoryType, cb.configBeanType())))
+                        .update(it -> addInterceptionMetadataParameter(it, intercepted)))
                 .addMethod(servicesMethod -> servicesMethod
                         .accessModifier(AccessModifier.PUBLIC)
                         .addAnnotation(OVERRIDE)
@@ -298,7 +303,7 @@ class ConfigBeanCodegen implements RegistryCodegenExtension {
                         .addContent(cb.annotation().configKey())
                         .addContentLine("\");")
                         .addContentLine("")
-                        .update(it -> generateServicesMethod(it, cb, intercepted)));
+                        .update(it -> generateServicesMethod(it, cb, intercepted, interceptedType)));
 
         ctx.addType(generatedType, classModel, annotatedType, typeInfo.originatingElementValue());
     }
@@ -477,19 +482,6 @@ class ConfigBeanCodegen implements RegistryCodegenExtension {
                 .addInterface(servicesProviderType);
     }
 
-    private Annotation namedByClassAnnotation(TypeName typeName) {
-        return Annotation.builder()
-                .typeName(INJECTION_NAMED_BY_CLASS)
-                .putValue("value", typeName)
-                .build();
-    }
-
-    private TypeName factoryType(TypeName typeName) {
-        return TypeName.builder(INTERCEPTION_FACTORY)
-                .addTypeArgument(typeName)
-                .build();
-    }
-
     private TypeName qualifiedInstanceList(TypeName typeName) {
         return TypeName.builder(TypeNames.LIST)
                 .addTypeArgument(TypeName.builder(QUALIFIED_INSTANCE)
@@ -518,7 +510,7 @@ class ConfigBeanCodegen implements RegistryCodegenExtension {
                 .build();
     }
 
-    private void generateServicesMethod(Method.Builder method, ConfigBean cb, boolean intercepted) {
+    private void generateServicesMethod(Method.Builder method, ConfigBean cb, boolean intercepted, TypeName interceptedType) {
         ConfigBeanAnnotation cbAnnot = cb.annotation();
         TypeName cbType = cb.configBeanType();
         String configKey = cbAnnot.configKey();
@@ -575,9 +567,9 @@ class ConfigBeanCodegen implements RegistryCodegenExtension {
         }
 
         if (repeatable) {
-            generateServicesMethodRepeatable(method, cbType, wantDefault, intercepted, descriptor);
+            generateServicesMethodRepeatable(method, cbType, wantDefault, intercepted, descriptor, interceptedType);
         } else {
-            generateServicesMethodSingle(method, cbType, wantDefault, atLeastOne, intercepted, descriptor);
+            generateServicesMethodSingle(method, cbType, wantDefault, atLeastOne, intercepted, descriptor, interceptedType);
         }
 
         // we have all the named instances, now resolve default
@@ -605,7 +597,8 @@ class ConfigBeanCodegen implements RegistryCodegenExtension {
                                                   TypeName cbType,
                                                   boolean wantDefault,
                                                   boolean intercepted,
-                                                  TypeName descriptorType) {
+                                                  TypeName descriptorType,
+                                                  TypeName interceptedType) {
 
         method.addContent("var childNodes = config.asNodeList().orElseGet(")
                 .addContent(List.class)
@@ -632,7 +625,9 @@ class ConfigBeanCodegen implements RegistryCodegenExtension {
                 .addContentLine(".create(childNode);");
 
         if (intercepted) {
-            method.addContent("instance = factory.create(")
+            method.addContent("instance = ")
+                    .addContent(interceptedType)
+                    .addContent(".create(interceptionMetadata, ")
                     .addContent(descriptorType)
                     .addContentLine(".INSTANCE, instance);");
         }
@@ -651,14 +646,15 @@ class ConfigBeanCodegen implements RegistryCodegenExtension {
                                               boolean wantDefault,
                                               boolean atLeastOne,
                                               boolean intercepted,
-                                              TypeName descriptorType) {
+                                              TypeName descriptorType,
+                                              TypeName interceptedType) {
 
         if (atLeastOne) {
-            createSingleInstanceAndAddToResult(method, cbType, wantDefault, intercepted, descriptorType);
+            createSingleInstanceAndAddToResult(method, cbType, wantDefault, intercepted, descriptorType, interceptedType);
 
         } else {
             method.addContentLine("if (config.exists()) {");
-            createSingleInstanceAndAddToResult(method, cbType, wantDefault, intercepted, descriptorType);
+            createSingleInstanceAndAddToResult(method, cbType, wantDefault, intercepted, descriptorType, interceptedType);
             method.addContentLine("}");
         }
     }
@@ -667,13 +663,16 @@ class ConfigBeanCodegen implements RegistryCodegenExtension {
                                                     TypeName cbType,
                                                     boolean wantDefault,
                                                     boolean intercepted,
-                                                    TypeName descriptorType) {
+                                                    TypeName descriptorType,
+                                                    TypeName interceptedType) {
         // var instance = AConfig.create(config);
         method.addContent("var instance = ")
                 .addContent(cbType)
                 .addContentLine(".create(config);");
         if (intercepted) {
-            method.addContent("instance = factory.create(")
+            method.addContent("instance = ")
+                    .addContent(interceptedType)
+                    .addContent(".create(interceptionMetadata, ")
                     .addContent(descriptorType)
                     .addContentLine(".INSTANCE, instance);");
         }
@@ -732,9 +731,14 @@ class ConfigBeanCodegen implements RegistryCodegenExtension {
                                       .build());
     }
 
-    private void prototypeMethodBody(Method.Builder method, boolean intercepted, TypeName descriptorType) {
+    private void prototypeMethodBody(Method.Builder method,
+                                     boolean intercepted,
+                                     TypeName descriptorType,
+                                     TypeName interceptedType) {
         if (intercepted) {
-            method.addContent("var bean = factory.create(")
+            method.addContent("var bean = ")
+                    .addContent(interceptedType)
+                    .addContent(".create(interceptionMetadata, ")
                     .addContent(descriptorType)
                     .addContentLine(".INSTANCE, instance.get().buildPrototype());");
         } else {
@@ -745,26 +749,23 @@ class ConfigBeanCodegen implements RegistryCodegenExtension {
                 .addContentLine(".create(bean, instance.qualifiers());");
     }
 
-    private void addFactoryField(ClassModel.Builder builder, boolean intercepted, TypeName factoryType) {
+    private void addInterceptionMetadataField(ClassModel.Builder builder, boolean intercepted) {
         if (intercepted) {
-            builder.addField(factory -> factory
-                    .name("factory")
+            builder.addField(metadata -> metadata
+                    .name("interceptionMetadata")
                     .accessModifier(AccessModifier.PRIVATE)
                     .isFinal(true)
-                    .type(factoryType));
+                    .type(ServiceCodegenTypes.INTERCEPTION_METADATA));
         }
     }
 
-    private void addFactoryConstructor(Constructor.Builder builder,
-                                       boolean intercepted,
-                                       TypeName factoryType,
-                                       TypeName typeName) {
+    private void addInterceptionMetadataParameter(Constructor.Builder builder,
+                                                  boolean intercepted) {
         if (intercepted) {
-            builder.addParameter(factory -> factory
-                            .name("factory")
-                            .type(factoryType)
-                            .addAnnotation(namedByClassAnnotation(typeName)))
-                    .addContentLine("this.factory = factory;");
+            builder.addParameter(metadata -> metadata
+                            .name("interceptionMetadata")
+                            .type(ServiceCodegenTypes.INTERCEPTION_METADATA))
+                    .addContentLine("this.interceptionMetadata = interceptionMetadata;");
         }
     }
 

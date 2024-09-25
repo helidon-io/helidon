@@ -19,11 +19,14 @@ package io.helidon.service.inject.api;
 import java.util.Map;
 
 import io.helidon.common.types.TypeName;
+import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceInfo;
 
 /**
  * Inject service registry SPI, to be used for scope handlers and other extension services.
  */
+@Service.Contract
+@Injection.Describe(Injection.Singleton.class)
 public interface InjectRegistrySpi extends InjectRegistry {
     /**
      * Type name of this interface.

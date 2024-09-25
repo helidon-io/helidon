@@ -314,7 +314,7 @@ public final class Injection {
          *
          * @return scope to use for the generated service descriptor
          */
-        Class<? extends Annotation> scope() default RequestScope.class;
+        Class<? extends Annotation> value() default RequestScope.class;
     }
 
     /**

@@ -52,8 +52,10 @@ import io.helidon.service.inject.api.Activator;
 import io.helidon.service.inject.api.CreateForName__ServiceDescriptor;
 import io.helidon.service.inject.api.GeneratedInjectService.Descriptor;
 import io.helidon.service.inject.api.GeneratedInjectService.InterceptionMetadata;
+import io.helidon.service.inject.api.GeneratedInjectService_InterceptionMetadata__ServiceDescriptor;
 import io.helidon.service.inject.api.InjectRegistry;
 import io.helidon.service.inject.api.InjectRegistrySpi;
+import io.helidon.service.inject.api.InjectRegistrySpi__ServiceDescriptor;
 import io.helidon.service.inject.api.InjectServiceInfo;
 import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.Interception;
@@ -62,7 +64,6 @@ import io.helidon.service.inject.api.Qualifier;
 import io.helidon.service.inject.api.Scope;
 import io.helidon.service.inject.api.ScopeNotActiveException;
 import io.helidon.service.inject.api.ScopedRegistry;
-import io.helidon.service.inject.api.ServiceRegistry__ServiceDescriptor;
 import io.helidon.service.registry.ServiceInfo;
 import io.helidon.service.registry.ServiceRegistryException;
 
@@ -119,8 +120,17 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
                               Map<TypeName, Set<InjectServiceInfo>> qualifiedProvidersByQualifier,
                               Map<TypedQualifiedProviderKey, Set<InjectServiceInfo>> typedQualifiedProviders) {
 
-        // this must be bound here, as the instance exists now (and we do not want to allow post-constructor binding
-        explicitInstances.put(ServiceRegistry__ServiceDescriptor.INSTANCE, this);
+        this.interceptionEnabled = config.interceptionEnabled();
+        // this is a bit tricky - we are leaking our instance that is not yet finished, so it must
+        // not be accessed in the constructor!
+        this.interceptionMetadata = interceptionEnabled
+                ? InterceptionMetadataImpl.create(this)
+                : InterceptionMetadataImpl.noop();
+
+        // these must be bound here, as the instance exists now
+        // (and we do not want to allow post-constructor binding)
+        explicitInstances.put(InjectRegistrySpi__ServiceDescriptor.INSTANCE, this);
+        explicitInstances.put(GeneratedInjectService_InterceptionMetadata__ServiceDescriptor.INSTANCE, interceptionMetadata);
 
         this.cacheEnabled = config.lookupCacheEnabled();
         this.cache = cacheEnabled ? config.lookupCache().orElseGet(LruCache::create) : null;
@@ -140,11 +150,6 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
         this.servicesByContract = servicesByContract;
         this.qualifiedProvidersByQualifier = qualifiedProvidersByQualifier;
         this.typedQualifiedProviders = typedQualifiedProviders;
-
-        this.interceptionEnabled = config.interceptionEnabled();
-        this.interceptionMetadata = interceptionEnabled
-                ? InterceptionMetadataImpl.create(this)
-                : InterceptionMetadataImpl.noop();
         this.activationRequest = ActivationRequest.builder()
                 .targetPhase(config.limitRuntimePhase())
                 .build();

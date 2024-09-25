@@ -134,7 +134,7 @@ class ServiceCodegenTypesTest {
         checkField(toCheck, checked, fields, "INVOKER", Invoker.class);
         checkField(toCheck, checked, fields, "INVOCATION_EXCEPTION", InvocationException.class);
         checkField(toCheck, checked, fields, "INTERCEPTION_TRIGGER", Interception.Trigger.class);
-        checkField(toCheck, checked, fields, "INTERCEPTION_FACTORY", Interception.Factory.class);
+        checkField(toCheck, checked, fields, "INTERCEPTION_DELEGATE", Interception.Delegate.class);
         checkField(toCheck, checked, fields, "INTERCEPTION_METADATA", GeneratedInjectService.InterceptionMetadata.class);
 
         checkField(toCheck, checked, fields, "BUILDER_BLUEPRINT", Prototype.Blueprint.class);

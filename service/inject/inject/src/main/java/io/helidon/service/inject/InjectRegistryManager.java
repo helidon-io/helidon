@@ -34,11 +34,12 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.service.inject.api.GeneratedInjectService;
 import io.helidon.service.inject.api.GeneratedInjectService.Descriptor;
+import io.helidon.service.inject.api.GeneratedInjectService_InterceptionMetadata__ServiceDescriptor;
 import io.helidon.service.inject.api.InjectRegistry;
+import io.helidon.service.inject.api.InjectRegistrySpi__ServiceDescriptor;
 import io.helidon.service.inject.api.InjectServiceInfo;
 import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.Ip;
-import io.helidon.service.inject.api.ServiceRegistry__ServiceDescriptor;
 import io.helidon.service.metadata.DescriptorMetadata;
 import io.helidon.service.registry.DependencyContext;
 import io.helidon.service.registry.GeneratedService;
@@ -197,9 +198,19 @@ public class InjectRegistryManager implements ServiceRegistryManager {
             }
 
             // add service registry information (service registry cannot be overridden in any way)
-            Descriptor<?> myDescriptor = ServiceRegistry__ServiceDescriptor.INSTANCE;
-            Described described = new Described(myDescriptor, myDescriptor, false);
-            descriptorToDescribed.put(myDescriptor, described);
+            Descriptor<?> registrySpiDescriptor = InjectRegistrySpi__ServiceDescriptor.INSTANCE;
+            Described registrySpiDescribed = new Described(registrySpiDescriptor, registrySpiDescriptor, false);
+            descriptorToDescribed.put(registrySpiDescriptor, registrySpiDescribed);
+            bind(applications, scopeHandlers,
+                 servicesByType,
+                 servicesByContract,
+                 qualifiedProvidersByQualifier,
+                 typedQualifiedProviders,
+                 registrySpiDescribed);
+            // add injection metadata information
+            Descriptor<?> interceptDescriptor = GeneratedInjectService_InterceptionMetadata__ServiceDescriptor.INSTANCE;
+            Described described = new Described(interceptDescriptor, interceptDescriptor, false);
+            descriptorToDescribed.put(interceptDescriptor, described);
             bind(applications, scopeHandlers,
                  servicesByType,
                  servicesByContract,
