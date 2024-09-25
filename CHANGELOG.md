@@ -11,7 +11,7 @@ For Helidon 3.x releases please see [Helidon 3.x CHANGELOG.md](https://github.co
 
 ## [2.6.9]
 
-This is a bugfix release of Helidon. It is recommended for all users of Helidon 2. Helidon 2 requires Java 11.
+This is a bugfix release of Helidon. It is recommended for all users of Helidon 2. Helidon 2 requires a minimum Java 11.
 
 ### CHANGES
 
