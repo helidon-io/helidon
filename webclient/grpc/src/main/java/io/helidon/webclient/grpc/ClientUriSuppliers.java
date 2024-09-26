@@ -20,7 +20,6 @@ import java.security.SecureRandom;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.NoSuchElementException;
 
 import io.helidon.webclient.api.ClientUri;
 
@@ -160,14 +159,12 @@ public class ClientUriSuppliers {
     }
 
     /**
-     * Supplies an iterator that returns a URI chosen at random.
+     * Supplies an iterator that returns a URI chosen at random, never ends.
      */
     public static class RandomSupplier implements ClientUriSupplier {
 
-        private boolean supplied;
         private final ClientUri[] clientUris;
         private final SecureRandom random = new SecureRandom();
-
 
         /**
          * Creates a random supplier.
@@ -195,16 +192,12 @@ public class ClientUriSuppliers {
 
         @Override
         public boolean hasNext() {
-            return !supplied;
+            return true;
         }
 
         @Override
         public ClientUri next() {
-            if (!supplied) {
-                supplied = true;
-                return clientUris[random.nextInt(clientUris.length)];
-            }
-            throw new NoSuchElementException("No more client URIs available");
+            return clientUris[random.nextInt(clientUris.length)];
         }
     }
 }

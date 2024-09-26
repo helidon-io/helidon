@@ -29,4 +29,8 @@
         <Class name="io.helidon.webclient.grpc.ClientUriSuppliers$SingleSupplier" />
         <Bug pattern="IT_NO_SUCH_ELEMENT" />
     </Match>
+    <Match>
+        <Class name="io.helidon.webclient.grpc.ClientUriSuppliers$RandomSupplier" />
+        <Bug pattern="IT_NO_SUCH_ELEMENT" />
+    </Match>
 </FindBugsFilter>
