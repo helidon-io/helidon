@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,9 +26,12 @@ import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.http.spi.Sink;
 import io.helidon.webserver.http.spi.SinkProvider;
+import io.helidon.webserver.http.spi.SinkProviderContext;
 
 /**
  * Sink provider for SSE type.
+ *
+ * @see io.helidon.webserver.http.spi.SinkProvider
  */
 public class SseSinkProvider implements SinkProvider<SseEvent> {
 
@@ -37,10 +40,34 @@ public class SseSinkProvider implements SinkProvider<SseEvent> {
         return SseSink.TYPE.equals(type) && request.headers().isAccepted(MediaTypes.TEXT_EVENT_STREAM);
     }
 
+    /**
+     * Creates a Sink for SSE events.
+     *
+     * @param context the context
+     * @return newly created sink
+     * @param <X> type of sink
+     */
     @Override
     @SuppressWarnings("unchecked")
-    public <X extends Sink<SseEvent>> X create(ServerResponse response, BiConsumer<Object, MediaType> eventConsumer,
-                                        Runnable closeRunnable) {
-        return (X) new SseSink(response, eventConsumer, closeRunnable);
+    public <X extends Sink<SseEvent>> X create(SinkProviderContext context) {
+        return (X) new DataWriterSseSink(context);
+    }
+
+    /**
+     * Creates a Sink for SSE events.
+     *
+     * @param response the HTTP response
+     * @param eventConsumer an event consumer
+     * @param closeRunnable a runnable to call on close
+     * @param <X> type of sink
+     * @return newly created sink
+     * @deprecated replaced by {@link #create(SinkProviderContext)}
+     */
+    @Override
+    @Deprecated(since = "4.1.2", forRemoval = true)
+    public <X extends Sink<SseEvent>> X create(ServerResponse response,
+                                               BiConsumer<Object, MediaType> eventConsumer,
+                                               Runnable closeRunnable) {
+        return (X) new OutputStreamSseSink(response, eventConsumer, closeRunnable);
     }
 }
