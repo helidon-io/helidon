@@ -25,8 +25,8 @@ import java.util.NoSuchElementException;
 import io.helidon.webclient.api.ClientUri;
 
 /**
- * Defines the {@code ClientUriSupplier} interface and provides a few basic
- * implementations of it.
+ * Some popular implementations of the {@link io.helidon.webclient.grpc.ClientUriSupplier}
+ * interface.
  */
 public class ClientUriSuppliers {
 
@@ -59,7 +59,7 @@ public class ClientUriSuppliers {
         }
 
         protected OrderedSupplier(Collection<ClientUri> clientUris) {
-            this.clientUris = clientUris.iterator();
+            this.clientUris = List.copyOf(clientUris).iterator();
         }
 
         @Override
@@ -195,7 +195,7 @@ public class ClientUriSuppliers {
 
         @Override
         public boolean hasNext() {
-            return supplied;
+            return !supplied;
         }
 
         @Override
