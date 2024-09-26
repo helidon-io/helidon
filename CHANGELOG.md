@@ -11,6 +11,16 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [4.1.2]
+
+This release contains important bugfixes and enhancements and is recommended for all users of Helidon 4. 
+
+A minimum of Java 21 is required to use Helidon 4.
+
+
+### CHANGES
+
+
 ## [4.1.1]
 
 This release contains important bugfixes and enhancements and is recommended for all users of Helidon 4. It is compatible with Helidon 4.0.X.
@@ -1435,6 +1445,7 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/oracle/helidon/pull/4737)
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
+[4.1.2]: https://github.com/oracle/helidon/compare/4.1.1...4.1.2
 [4.1.1]: https://github.com/oracle/helidon/compare/4.1.0...4.1.1
 [4.1.0]: https://github.com/oracle/helidon/compare/4.0.11...4.1.0
 [4.0.11]: https://github.com/oracle/helidon/compare/4.0.10...4.0.11
