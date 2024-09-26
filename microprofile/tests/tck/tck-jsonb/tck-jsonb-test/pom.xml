@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.microprofile.tests.tck</groupId>
         <artifactId>helidon-microprofile-tests-tck-jsonb</artifactId>
-        <version>4.1.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-microprofile-tests-tck-jsonb-test</artifactId>
     <name>Helidon Microprofile Tests TCK JSONB</name>

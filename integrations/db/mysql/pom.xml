@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.integrations.db</groupId>
         <artifactId>helidon-integrations-db-project</artifactId>
-        <version>4.1.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-integrations-db-mysql</artifactId>
