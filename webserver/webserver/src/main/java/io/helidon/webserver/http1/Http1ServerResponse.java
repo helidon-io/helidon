@@ -45,9 +45,11 @@ import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.MediaContext;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ServerConnectionException;
+import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.http.ServerResponseBase;
 import io.helidon.webserver.http.spi.Sink;
 import io.helidon.webserver.http.spi.SinkProvider;
+import io.helidon.webserver.http.spi.SinkProviderContext;
 
 /**
  * An HTTP/1 server response.
@@ -261,7 +263,31 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     public <X extends Sink<?>> X sink(GenericType<X> sinkType) {
         for (SinkProvider<?> p : SINK_PROVIDERS) {
             if (p.supports(sinkType, request)) {
-                return (X) p.create(this, this::handleSinkData, this::commit);
+                try {
+                    return (X) p.create(new SinkProviderContext() {
+                        @Override
+                        public ServerResponse serverResponse() {
+                            return Http1ServerResponse.this;
+                        }
+
+                        @Override
+                        public ConnectionContext connectionContext() {
+                            return Http1ServerResponse.this.ctx;
+                        }
+
+                        @Override
+                        public Runnable closeRunnable() {
+                            return () -> {
+                                Http1ServerResponse.this.isSent = true;
+                                afterSend();
+                                request.reset();
+                            };
+                        }
+                    });
+                } catch (UnsupportedOperationException e) {
+                    // deprecated - will be removed in 5.x
+                    return (X) p.create(this, this::handleSinkData, this::commit);
+                }
             }
         }
         // Request not acceptable if provider not found

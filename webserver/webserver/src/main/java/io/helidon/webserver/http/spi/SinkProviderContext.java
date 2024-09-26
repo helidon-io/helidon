@@ -13,34 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.webserver.sse;
+package io.helidon.webserver.http.spi;
 
-import io.helidon.common.GenericType;
-import io.helidon.http.sse.SseEvent;
-import io.helidon.webserver.http.spi.Sink;
+import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.http.ServerResponse;
 
 /**
- * A sink for SSE events.
+ * A context for {@link io.helidon.webserver.http.spi.SinkProvider}s supplied
+ * at creation time.
  */
-public interface SseSink extends Sink<SseEvent> {
+public interface SinkProviderContext {
 
     /**
-     * Type of SSE event sinks.
-     */
-    GenericType<SseSink> TYPE = GenericType.create(SseSink.class);
-
-    /**
-     * Emits an event using to the sink.
+     * Obtains the server response associated with this context.
      *
-     * @param event the event to emit
-     * @return this sink
+     * @return the server response
      */
-    @Override
-    SseSink emit(SseEvent event);
+    ServerResponse serverResponse();
 
     /**
-     * Close SSE sink.
+     * Obtains access to the connection context.
+     *
+     * @return the connection context
      */
-    @Override
-    void close();
+    ConnectionContext connectionContext();
+
+    /**
+     * Runnable to execute to close the response.
+     *
+     * @return the close runnable
+     */
+    Runnable closeRunnable();
 }

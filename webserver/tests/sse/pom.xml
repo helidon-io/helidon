@@ -28,11 +28,18 @@
     <name>Helidon WebServer Tests SSE</name>
     <description>WebServer SSE tests</description>
 
+    <properties>
+        <mainClass>io.helidon.webserver.tests.sse.Main</mainClass>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver-sse</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.webclient</groupId>
@@ -70,4 +77,51 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>${version.plugin.resources}</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>${version.plugin.dependency}</version>
+                <executions>
+                    <execution>
+                        <id>copy-libs</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/libs</outputDirectory>
+                            <overWriteReleases>false</overWriteReleases>
+                            <overWriteSnapshots>false</overWriteSnapshots>
+                            <overWriteIfNewer>true</overWriteIfNewer>
+                            <overWriteIfNewer>true</overWriteIfNewer>
+                            <includeScope>runtime</includeScope>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>${version.plugin.jar}</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <classpathPrefix>libs</classpathPrefix>
+                            <mainClass>${mainClass}</mainClass>
+                            <useUniqueVersions>false</useUniqueVersions>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

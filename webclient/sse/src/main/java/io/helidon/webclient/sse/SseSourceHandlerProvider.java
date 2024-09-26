@@ -25,6 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.buffers.DataReader;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.sse.SseEvent;
@@ -93,6 +94,9 @@ public class SseSourceHandlerProvider implements SourceHandlerProvider<SseEvent>
                 }
             }
 
+            source.onClose();
+        } catch (DataReader.InsufficientDataAvailableException e) {
+            // normal SSE termination when connection closed by server
             source.onClose();
         } catch (IOException e) {
             source.onError(e);
