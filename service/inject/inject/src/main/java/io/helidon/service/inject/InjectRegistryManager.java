@@ -42,12 +42,14 @@ import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.Ip;
 import io.helidon.service.metadata.DescriptorMetadata;
 import io.helidon.service.registry.DependencyContext;
+import io.helidon.service.registry.DescriptorHandler;
 import io.helidon.service.registry.GeneratedService;
 import io.helidon.service.registry.ServiceDiscovery;
 import io.helidon.service.registry.ServiceInfo;
 import io.helidon.service.registry.ServiceLoader__ServiceDescriptor;
 import io.helidon.service.registry.ServiceRegistryException;
 import io.helidon.service.registry.ServiceRegistryManager;
+import io.helidon.service.registry.VirtualDescriptor;
 
 /**
  * Manager is responsible for managing the state of a {@link io.helidon.service.inject.api.InjectRegistry}.
@@ -147,7 +149,12 @@ public class InjectRegistryManager implements ServiceRegistryManager {
             List<GeneratedService.Descriptor<Binding>> applications = new ArrayList<>();
 
             config.serviceInstances()
-                    .forEach((descriptor, instance) -> {
+                    .forEach((desc, instance) -> {
+                        var descriptor = desc;
+                        if (descriptor instanceof VirtualDescriptor) {
+                            // maybe we have a real descriptor for this type
+                            descriptor = virtualDescriptor(config, discovery, descriptor);
+                        }
                         Described described = toDescribed(descriptorToDescribed, descriptor);
                         bind(applications, scopeHandlers,
                              servicesByType,
@@ -257,6 +264,29 @@ public class InjectRegistryManager implements ServiceRegistryManager {
         } finally {
             lock.unlock();
         }
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static GeneratedService.Descriptor<?> virtualDescriptor(InjectConfig config,
+                                                                    ServiceDiscovery discovery,
+                                                                    GeneratedService.Descriptor<?> descriptor) {
+        TypeName serviceType = descriptor.serviceType();
+        var fromConfig = config.serviceDescriptors()
+                .stream()
+                .filter(registered -> registered.serviceType().equals(serviceType))
+                .findFirst();
+        if (fromConfig.isPresent()) {
+            return fromConfig.get();
+        }
+
+        return discovery.allMetadata()
+                .stream()
+                .filter(handler -> handler.contracts().contains(serviceType))
+                .map(DescriptorHandler::descriptor)
+                .filter(desc -> desc.serviceType().equals(serviceType))
+                .findFirst()
+                .map(it -> (GeneratedService.Descriptor) it)
+                .orElse(descriptor);
     }
 
     private Described toDescribed(Map<io.helidon.service.registry.ServiceInfo, Described> descriptorToDescribed,

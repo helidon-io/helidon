@@ -303,18 +303,18 @@ public final class Injection {
      * Describe the annotated type. This will generate a service descriptor that cannot create an instance.
      * This is useful for scoped instances that are provided when the scope is activated.
      * <p>
-     * This annotation will ignore type hierarchy.
+     * This annotation will ignore type hierarchy (the descriptor will never have a super type).
      */
     @Documented
     @Retention(RetentionPolicy.CLASS)
     @Target(ElementType.TYPE)
     public @interface Describe {
         /**
-         * Customize the scope to use, defaults to {@link io.helidon.service.inject.api.Injection.RequestScope}.
+         * Customize the scope to use, defaults to {@link io.helidon.service.inject.api.Injection.Singleton}.
          *
          * @return scope to use for the generated service descriptor
          */
-        Class<? extends Annotation> value() default RequestScope.class;
+        Class<? extends Annotation> value() default Singleton.class;
     }
 
     /**
