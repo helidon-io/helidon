@@ -132,8 +132,10 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
             }
 
             reader = new DataReader(new MapExceptionDataSupplier(helidonSocket));
-            writer = SocketWriter.create(listenerContext.executor(), helidonSocket,
-                    listenerContext.config().writeQueueLength());
+            writer = SocketWriter.create(listenerContext.executor(),
+                                         helidonSocket,
+                                         listenerConfig.writeQueueLength(),
+                                         listenerConfig.smartAsyncWrites());
         } catch (Exception e) {
             throw e instanceof RuntimeException re ? re : new RuntimeException(e);      // see ServerListener
         }
