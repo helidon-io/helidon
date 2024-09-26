@@ -53,8 +53,8 @@ public class GrpcChannel extends Channel {
             MethodDescriptor<ReqT, ResT> methodDescriptor, CallOptions callOptions) {
         MethodDescriptor.MethodType methodType = methodDescriptor.getType();
         return methodType == MethodDescriptor.MethodType.UNARY
-                ? new GrpcUnaryClientCall<>(grpcClient, methodDescriptor, callOptions)
-                : new GrpcClientCall<>(grpcClient, methodDescriptor, callOptions);
+                ? new GrpcUnaryClientCall<>(this, methodDescriptor, callOptions)
+                : new GrpcClientCall<>(this, methodDescriptor, callOptions);
     }
 
     @Override

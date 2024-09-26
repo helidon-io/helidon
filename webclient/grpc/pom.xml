@@ -27,6 +27,10 @@
     <artifactId>helidon-webclient-grpc</artifactId>
     <name>Helidon WebClient gRPC</name>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.grpc</groupId>
