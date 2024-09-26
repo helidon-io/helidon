@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,6 @@ import org.eclipse.microprofile.metrics.Tag;
 public class MicrostreamMetricsSupport {
 
     private static final String CONFIG_METRIC_ENABLED_VENDOR = "vendor.";
-    static final String BASE_ENABLED_KEY = CONFIG_METRIC_ENABLED_VENDOR + "enabled";
 
     private static final Metadata GLOBAL_FILE_COUNT = Metadata.builder()
             .withName("microstream.globalFileCount")

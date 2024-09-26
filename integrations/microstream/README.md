@@ -2,7 +2,7 @@
 
 This projects add [Microstream](https://microstream.one) support to Helidon.
 
-The offical [Microstream documentation](https://manual.docs.microstream.one/) can be found here.
+The official [Microstream documentation](https://manual.docs.microstream.one/) can be found here.
 
 ## helidon-integrations-microstream
 

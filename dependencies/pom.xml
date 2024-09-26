@@ -122,7 +122,7 @@
         <version.lib.microprofile-rest-client>3.0</version.lib.microprofile-rest-client>
         <version.lib.microprofile-tracing>3.0</version.lib.microprofile-tracing>
         <version.lib.microprofile-lra-api>2.0-RC1</version.lib.microprofile-lra-api>
-        <version.lib.microstream>05.00.02-MS-GA</version.lib.microstream>
+        <version.lib.microstream>08.01.01-MS-GA</version.lib.microstream>
         <version.lib.mongodb.reactivestreams>1.11.0</version.lib.mongodb.reactivestreams>
         <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
         <version.lib.mysql-connector-j>8.2.0</version.lib.mysql-connector-j>
@@ -734,6 +734,11 @@
             <dependency>
                 <groupId>one.microstream</groupId>
                 <artifactId>microstream-cache</artifactId>
+                <version>${version.lib.microstream}</version>
+            </dependency>
+            <dependency>
+                <groupId>one.microstream</groupId>
+                <artifactId>microstream-persistence-binary-jdk17</artifactId>
                 <version>${version.lib.microstream}</version>
             </dependency>
 
