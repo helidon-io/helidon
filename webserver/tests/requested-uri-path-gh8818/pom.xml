@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.webserver.tests</groupId>
         <artifactId>helidon-webserver-tests-project</artifactId>
-        <version>4.1.1</version>
+        <version>4.1.2-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-webserver-tests-requested-uri-path-gh8818</artifactId>
