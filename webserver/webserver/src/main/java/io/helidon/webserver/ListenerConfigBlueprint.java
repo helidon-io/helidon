@@ -163,6 +163,17 @@ interface ListenerConfigBlueprint {
     int writeQueueLength();
 
     /**
+     * If enabled and {@link #writeQueueLength()} is greater than 1, then
+     * start with async writes but possibly switch to sync writes if
+     * async queue size is always below a certain threshold.
+     *
+     * @return smart async setting
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(false)
+    boolean smartAsyncWrites();
+
+    /**
      * Initial buffer size in bytes of {@link java.io.BufferedOutputStream} created internally to
      * write data to a socket connection. Default is {@code 4096}.
      *
