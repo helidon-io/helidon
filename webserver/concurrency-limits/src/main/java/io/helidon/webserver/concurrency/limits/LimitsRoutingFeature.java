@@ -34,7 +34,7 @@ class LimitsRoutingFeature implements HttpFeature, Weighted {
 
     LimitsRoutingFeature(LimitsFeatureConfig config, double featureWeight) {
         this.featureWeight = featureWeight;
-        this.limits = config.limit().orElse(null);
+        this.limits = config.concurrencyLimit().orElse(null);
         this.enabled = config.enabled();
     }
 

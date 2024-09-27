@@ -63,7 +63,7 @@ interface LimitsFeatureConfigBlueprint extends Prototype.Factory<LimitsFeature> 
      */
     @Option.Provider(value = LimitProvider.class, discoverServices = false)
     @Option.Configured
-    Optional<Limit> limit();
+    Optional<Limit> concurrencyLimit();
 
     /**
      * Whether this feature is enabled, defaults to {@code true}.
