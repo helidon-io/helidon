@@ -51,12 +51,11 @@ readonly HELIDON_VERSION
 # If needed we clone the helidon-examples repo
 if [ ! -d "${WS_DIR}/helidon-examples" ]; then
   echo "Cloning examples repository into ${WS_DIR}/helidon-examples"
-  git clone --branch dev-4.x --single-branch https://github.com/helidon-io/helidon-examples.git "${WS_DIR}/helidon-examples"
-
-  # If in a tag, update the version on the fly
-  if [ -n "$(git tag --points-at HEAD)" ] ; then
-    "${WS_DIR}/helidon-examples"/etc/scripts/update-version.sh "${HELIDON_VERSION}"
-  fi
+  # We can't clone the dev-4.x branch since that has already moved on to the Helidon version in main.
+  # So we use the tag of the last matching minor, then update the helidon version in examples to
+  # match what is in our branch
+  git clone --branch 4.1.1 --single-branch https://github.com/helidon-io/helidon-examples.git "${WS_DIR}/helidon-examples"
+  "${WS_DIR}/helidon-examples"/etc/scripts/update-version.sh "${HELIDON_VERSION}"
 fi
 
 HELIDON_VERSION_IN_EXAMPLES=$(version "${WS_DIR}/helidon-examples/pom.xml")
