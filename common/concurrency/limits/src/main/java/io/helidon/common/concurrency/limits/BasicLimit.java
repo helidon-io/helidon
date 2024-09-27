@@ -34,7 +34,7 @@ public class BasicLimit implements Limit, SemaphoreLimit, RuntimeType.Api<BasicL
      * Default limit, meaning unlimited execution.
      */
     public static final int DEFAULT_LIMIT = 0;
-    static final String TYPE = "semaphore";
+    static final String TYPE = "basic";
 
     private final BasicLimitConfig config;
     private final LimiterHandler handler;

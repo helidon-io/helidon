@@ -21,12 +21,14 @@ import java.util.concurrent.Semaphore;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.concurrency.limits.spi.LimitProvider;
 
 /**
  * Configuration of {@link BasicLimit}.
  */
 @Prototype.Blueprint
 @Prototype.Configured(value = BasicLimit.TYPE, root = false)
+@Prototype.Provides(LimitProvider.class)
 interface BasicLimitConfigBlueprint extends Prototype.Factory<BasicLimit> {
     /**
      * Number of permit to allow.
