@@ -244,6 +244,11 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
         return Optional.ofNullable(proxyProtocolData);
     }
 
+    @Override
+    public HelidonSocket serverSocket() {
+        return helidonSocket;
+    }
+
     private ServerConnection identifyConnection() {
         // if just one candidate, take a chance with it
         if (providerCandidates.size() == 1) {
