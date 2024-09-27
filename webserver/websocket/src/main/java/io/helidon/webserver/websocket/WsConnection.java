@@ -25,6 +25,9 @@ import java.util.concurrent.Semaphore;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
+import io.helidon.common.concurrency.limits.BasicLimit;
+import io.helidon.common.concurrency.limits.Limit;
+import io.helidon.common.concurrency.limits.LimitException;
 import io.helidon.common.socket.SocketContext;
 import io.helidon.http.DateTime;
 import io.helidon.http.Headers;
@@ -124,39 +127,51 @@ public class WsConnection implements ServerConnection, WsSession {
         return new WsConnection(ctx, prologue, upgradeHeaders, wsKey, wsRoute.listener());
     }
 
+    @SuppressWarnings("removal")
     @Override
     public void handle(Semaphore requestSemaphore) {
-        myThread = Thread.currentThread();
-        listener.onOpen(this);
+        handle(BasicLimit.create(requestSemaphore));
+    }
 
-        if (requestSemaphore.tryAcquire()) {
-            try {
-                while (canRun) {
-                    readingNetwork = true;
-                    ClientWsFrame frame = readFrame();
-                    readingNetwork = false;
-                    lastRequestTimestamp = DateTime.timestamp();
-                    try {
-                        if (!processFrame(frame)) {
-                            lastRequestTimestamp = DateTime.timestamp();
-                            return;
-                        }
-                        lastRequestTimestamp = DateTime.timestamp();
-                    } catch (CloseConnectionException e) {
-                        throw e;
-                    } catch (Exception e) {
-                        listener.onError(this, e);
-                        this.close(WsCloseCodes.UNEXPECTED_CONDITION, e.getMessage());
-                        return;
-                    }
-                }
-                this.close(WsCloseCodes.NORMAL_CLOSE, "Idle timeout");
-            } finally {
-                requestSemaphore.release();
-            }
-        } else {
-            listener.onClose(this, WsCloseCodes.TRY_AGAIN_LATER, "Too Many Concurrent Requests");
+    @Override
+    public void handle(Limit limit) {
+        myThread = Thread.currentThread();
+
+        try {
+            limit.invoke(() -> listener.onOpen(this));
+        } catch (LimitException e) {
+            close(WsCloseCodes.TRY_AGAIN_LATER, "Too Many Concurrent Requests");
+            return;
+        } catch (Exception e) {
+            close(WsCloseCodes.UNEXPECTED_CONDITION, e.getMessage());
+            return;
         }
+
+        while (canRun) {
+            readingNetwork = true;
+            ClientWsFrame frame = readFrame();
+            readingNetwork = false;
+            lastRequestTimestamp = DateTime.timestamp();
+            try {
+                boolean result = limit.invoke(() -> processFrame(frame));
+                if (!result) {
+                    lastRequestTimestamp = DateTime.timestamp();
+                    return;
+                }
+                lastRequestTimestamp = DateTime.timestamp();
+            } catch (LimitException e) {
+                listener.onClose(this, WsCloseCodes.TRY_AGAIN_LATER, "Too Many Concurrent Requests");
+                close(WsCloseCodes.TRY_AGAIN_LATER, "Too Many Concurrent Requests");
+                return;
+            } catch (CloseConnectionException e) {
+                throw e;
+            } catch (Exception e) {
+                listener.onError(this, e);
+                this.close(WsCloseCodes.UNEXPECTED_CONDITION, e.getMessage());
+                return;
+            }
+        }
+        this.close(WsCloseCodes.NORMAL_CLOSE, "Idle timeout");
     }
 
     @Override

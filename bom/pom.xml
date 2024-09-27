@@ -610,6 +610,11 @@
                 <artifactId>helidon-common-features</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.common.concurrency</groupId>
+                <artifactId>helidon-common-concurrency-limits</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
             <!-- db client -->
             <dependency>

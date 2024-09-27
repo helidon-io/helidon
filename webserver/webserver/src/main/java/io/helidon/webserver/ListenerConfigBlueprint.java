@@ -28,6 +28,8 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.concurrency.limits.Limit;
+import io.helidon.common.concurrency.limits.spi.LimitProvider;
 import io.helidon.common.context.Context;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.tls.Tls;
@@ -254,12 +256,27 @@ interface ListenerConfigBlueprint {
      * Defaults to {@code -1}, meaning "unlimited" - what the system allows.
      * Also make sure that this number is higher than the expected time it takes to handle a single request in your application,
      * as otherwise you may stop in-progress requests.
+     * <p>
+     * Setting this option will always ignore {@link #concurrencyLimit()} and will use
+     * the {@link io.helidon.common.concurrency.limits.BasicLimit}.
      *
      * @return number of requests that can be processed on this listener, regardless of protocol
      */
     @Option.Configured
     @Option.DefaultInt(-1)
     int maxConcurrentRequests();
+
+    /**
+     * Concurrency limit to use to limit concurrent execution of incoming requests.
+     * The default is to have unlimited concurrency.
+     * <p>
+     * Note that if {@link #maxConcurrentRequests()} is configured, this is ignored.
+     *
+     * @return concurrency limit
+     */
+    @Option.Provider(value = LimitProvider.class, discoverServices = false)
+    @Option.Configured
+    Optional<Limit> concurrencyLimit();
 
     /**
      * How long should we wait before closing a connection that has no traffic on it.

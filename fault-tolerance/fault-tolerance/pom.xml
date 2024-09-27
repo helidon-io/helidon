@@ -42,6 +42,10 @@
             <artifactId>helidon-common-configurable</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.common.concurrency</groupId>
+            <artifactId>helidon-common-concurrency-limits</artifactId>
+        </dependency>
+        <dependency>
             <!--
             Generating config driven beans with builders
             -->

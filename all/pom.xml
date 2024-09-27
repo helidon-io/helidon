@@ -464,6 +464,10 @@
             <artifactId>helidon-common-features</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.common.concurrency</groupId>
+            <artifactId>helidon-common-concurrency-limits</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.dbclient</groupId>
             <artifactId>helidon-dbclient</artifactId>
         </dependency>
