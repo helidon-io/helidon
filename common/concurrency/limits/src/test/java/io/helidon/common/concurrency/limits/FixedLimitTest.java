@@ -29,14 +29,18 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 
-public class BasicLimitTest {
+public class FixedLimitTest {
     @Test
     public void testUnlimited() throws InterruptedException {
         FixedLimit limiter = FixedLimit.create();
         int concurrency = 5;
         CountDownLatch cdl = new CountDownLatch(1);
+        CountDownLatch threadsCdl = new CountDownLatch(concurrency);
+
         Lock lock = new ReentrantLock();
         List<String> result = new ArrayList<>(concurrency);
 
@@ -46,6 +50,7 @@ public class BasicLimitTest {
             threads[i] = new Thread(() -> {
                 try {
                     limiter.invoke(() -> {
+                        threadsCdl.countDown();
                         cdl.await(10, TimeUnit.SECONDS);
                         lock.lock();
                         try {
@@ -56,6 +61,7 @@ public class BasicLimitTest {
                         return null;
                     });
                 } catch (Exception e) {
+                    threadsCdl.countDown();
                     throw new RuntimeException(e);
                 }
             });
@@ -63,6 +69,7 @@ public class BasicLimitTest {
         for (Thread thread : threads) {
             thread.start();
         }
+        threadsCdl.await();
         cdl.countDown();
         for (Thread thread : threads) {
             thread.join(Duration.ofSeconds(5));
@@ -78,6 +85,8 @@ public class BasicLimitTest {
 
         int concurrency = 5;
         CountDownLatch cdl = new CountDownLatch(1);
+        CountDownLatch threadsCdl = new CountDownLatch(concurrency);
+
         Lock lock = new ReentrantLock();
         List<String> result = new ArrayList<>(concurrency);
         AtomicInteger failures = new AtomicInteger();
@@ -88,6 +97,7 @@ public class BasicLimitTest {
             threads[i] = new Thread(() -> {
                 try {
                     limiter.invoke(() -> {
+                        threadsCdl.countDown();
                         cdl.await(10, TimeUnit.SECONDS);
                         lock.lock();
                         try {
@@ -98,8 +108,10 @@ public class BasicLimitTest {
                         return null;
                     });
                 } catch (LimitException e) {
+                    threadsCdl.countDown();
                     failures.incrementAndGet();
                 } catch (Exception e) {
+                    threadsCdl.countDown();
                     throw new RuntimeException(e);
                 }
             });
@@ -108,12 +120,14 @@ public class BasicLimitTest {
         for (Thread thread : threads) {
             thread.start();
         }
+        // wait for all threads to reach appropriate destination
+        threadsCdl.await();
         cdl.countDown();
         for (Thread thread : threads) {
             thread.join(Duration.ofSeconds(5));
         }
         assertThat(failures.get(), is(concurrency - 1));
-        assertThat(result, hasSize(1));
+        assertThat(result.size(), is(1));
     }
 
     @Test
@@ -126,6 +140,7 @@ public class BasicLimitTest {
 
         int concurrency = 5;
         CountDownLatch cdl = new CountDownLatch(1);
+
         Lock lock = new ReentrantLock();
         List<String> result = new ArrayList<>(concurrency);
         AtomicInteger failures = new AtomicInteger();
@@ -154,16 +169,18 @@ public class BasicLimitTest {
         }
 
         for (Thread thread : threads) {
-            TimeUnit.MILLISECONDS.sleep(100);
             thread.start();
         }
+        // wait for the threads to reach their destination (either failed, or on cdl, or in queue)
+        TimeUnit.MILLISECONDS.sleep(100);
         cdl.countDown();
         for (Thread thread : threads) {
             thread.join(Duration.ofSeconds(5));
         }
-        // 1 submitted, 1 in queue
-        assertThat(failures.get(), is(concurrency - 2));
-        assertThat(result, hasSize(2));
+        // 1 submitted, 1 in queue (may be less failures, as the queue length is not guaranteed to be atomic
+        assertThat(failures.get(), lessThanOrEqualTo(concurrency - 2));
+        // may be 2 or more (1 submitted, 1 or more queued)
+        assertThat(result.size(), greaterThanOrEqualTo(2));
     }
 
     @Test
