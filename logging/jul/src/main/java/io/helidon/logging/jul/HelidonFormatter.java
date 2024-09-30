@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,12 +36,13 @@ import io.helidon.logging.common.HelidonMdc;
  * It also supports replacement of {@code "!thread!"} with the current thread.
  */
 public class HelidonFormatter extends SimpleFormatter {
-    private static final String THREAD = "thread";
-    private static final String THREAD_TOKEN = "!" + THREAD + "!";
-    private static final Pattern THREAD_PATTERN = Pattern.compile(THREAD_TOKEN);
-    private static final Pattern X_VALUE = Pattern.compile("(\\s?%X\\{)(\\S*?)(})");
-    private static final Map<String, Pattern> PATTERN_CACHE = new HashMap<>();
-    private static final String JUL_FORMAT_PROP_KEY = "java.util.logging.SimpleFormatter.format";
+    static final String THREAD = "thread";
+    static final String THREAD_TOKEN = "!" + THREAD + "!";
+    static final Pattern THREAD_PATTERN = Pattern.compile(THREAD_TOKEN);
+    static final Pattern X_VALUE = Pattern.compile("(\\s?%X\\{)(\\S*?)(})");
+    static final Map<String, Pattern> PATTERN_CACHE = new HashMap<>();
+    static final String JUL_FORMAT_PROP_KEY = "java.util.logging.SimpleFormatter.format";
+
     private final String format = LogManager.getLogManager().getProperty(JUL_FORMAT_PROP_KEY);
     private final Set<String> parsedProps = new HashSet<>();
     private final boolean thread;
@@ -57,18 +58,10 @@ public class HelidonFormatter extends SimpleFormatter {
         }
     }
 
-    @Override
-    public String format(LogRecord record) {
-        String message = thread ? thread() : format;
-        for (String parsedKey : parsedProps) {
-            String value = HelidonMdc.get(parsedKey).orElse("");
-            message = PATTERN_CACHE.computeIfAbsent(parsedKey, key -> Pattern.compile("%X\\{" + key + "}"))
-                    .matcher(message).replaceAll(value);
-        }
-        return formatRow(record, message);
-    }
-
-    private String thread() {
+    /*
+    Replace the thread pattern in the format with the current thread value
+     */
+    static String thread(String format) {
         String currentThread = Thread.currentThread().toString();
         String message = PATTERN_CACHE.computeIfAbsent(THREAD, key -> Pattern.compile("%X\\{" + THREAD + "}"))
                 .matcher(format).replaceAll(currentThread);
@@ -76,9 +69,11 @@ public class HelidonFormatter extends SimpleFormatter {
         return message;
     }
 
-    //Copied from SimpleFormatter
-    private String formatRow(LogRecord record, String format) {
-        ZonedDateTime zdt = ZonedDateTime.ofInstant(
+    /*
+    All parameters expected by simple formatter (and json formatter as well)
+     */
+    static Object[] parameters(LogRecord record, String formattedMessage) {
+        var timestamp = ZonedDateTime.ofInstant(
                 record.getInstant(), ZoneId.systemDefault());
         String source;
         if (record.getSourceClassName() != null) {
@@ -89,7 +84,7 @@ public class HelidonFormatter extends SimpleFormatter {
         } else {
             source = record.getLoggerName();
         }
-        String message = formatMessage(record);
+
         String throwable = "";
         if (record.getThrown() != null) {
             StringWriter sw = new StringWriter();
@@ -99,12 +94,31 @@ public class HelidonFormatter extends SimpleFormatter {
             pw.close();
             throwable = sw.toString();
         }
+
+        Object[] result = new Object[6];
+        result[0] = timestamp;
+        result[1] = source;
+        result[2] = record.getLoggerName();
+        result[3] = record.getLevel().getName();
+        result[4] = formattedMessage;
+        result[5] = throwable;
+
+        return result;
+    }
+
+    @Override
+    public String format(LogRecord record) {
+        String message = thread ? thread(format) : format;
+        for (String parsedKey : parsedProps) {
+            String value = HelidonMdc.get(parsedKey).orElse("");
+            message = PATTERN_CACHE.computeIfAbsent(parsedKey, key -> Pattern.compile("%X\\{" + key + "}"))
+                    .matcher(message).replaceAll(value);
+        }
+        return formatRow(record, message);
+    }
+
+    private String formatRow(LogRecord record, String format) {
         return String.format(format,
-                             zdt,
-                             source,
-                             record.getLoggerName(),
-                             record.getLevel().getLocalizedName(),
-                             message,
-                             throwable);
+                             parameters(record, super.formatMessage(record)));
     }
 }

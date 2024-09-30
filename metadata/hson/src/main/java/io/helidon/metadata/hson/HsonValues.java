@@ -76,13 +76,15 @@ final class HsonValues {
         }
 
         private String escape(String string) {
-            return string.replaceAll("\n", "\\\\n")
-                    .replaceAll("\"", "\\\\\"")
-                    .replaceAll("\t", "\\\\\t")
-                    .replaceAll("\r", "\\\\\r")
-                    // replace two backslashes with four backslashes
-                    .replaceAll("\\\\\\\\", "\\\\\\\\\\\\\\\\")
-                    .replaceAll("\f", "\\\\\f");
+            String result = string.replaceAll("\n", "\\\\n");
+
+            result = result.replaceAll("\"", "\\\\\"");
+            result = result.replaceAll("\t", "\\\\t");
+            result = result.replaceAll("\r", "\\\\r");
+            // replace two backslashes with four backslashes
+            result = result.replaceAll("\\\\\\\\", "\\\\\\\\\\\\\\\\");
+            result = result.replaceAll("\f", "\\\\f");
+            return result;
         }
     }
 

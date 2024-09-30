@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.logging.jul;
 
 import java.util.logging.Level;
+import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 import java.util.logging.StreamHandler;
 
@@ -35,9 +36,15 @@ public class HelidonConsoleHandler extends StreamHandler {
      * </ul>.
      */
     public HelidonConsoleHandler() {
+        super();
         setOutputStream(System.out);
-        setLevel(Level.ALL); // Handlers should not filter, loggers should
-        setFormatter(new HelidonFormatter());
+        if (LogManager.getLogManager().getProperty(HelidonConsoleHandler.class.getName() + ".level") == null) {
+            setLevel(Level.ALL); // Handlers should not filter, loggers should
+        }
+        // only set this if none set
+        if (LogManager.getLogManager().getProperty(HelidonConsoleHandler.class.getName() + ".formatter") == null) {
+            setFormatter(new HelidonFormatter());
+        }
     }
 
     @Override
