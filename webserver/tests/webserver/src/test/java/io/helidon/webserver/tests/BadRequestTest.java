@@ -18,7 +18,9 @@ package io.helidon.webserver.tests;
 
 import java.util.List;
 
+import io.helidon.common.Weighted;
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
+import io.helidon.http.BadRequestException;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.Header;
@@ -30,6 +32,8 @@ import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.DirectHandlers;
+import io.helidon.webserver.http.HttpFeature;
+import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http1.Http1Route;
 import io.helidon.webserver.testing.junit5.ServerTest;
@@ -42,6 +46,7 @@ import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+
 
 @ServerTest
 class BadRequestTest {
@@ -198,5 +203,24 @@ class BadRequestTest {
                 .headers(responseHeaders)
                 .entity(CUSTOM_ENTITY)
                 .build();
+    }
+
+    static class CheckHostHeaderFeature implements HttpFeature, Weighted {
+        @Override
+        public void setup(HttpRouting.Builder routing) {
+            routing.addFilter((chain, req, res) -> {
+                try {
+                    req.requestedUri();
+                    chain.proceed();
+                } catch (Exception e) {
+                    throw new BadRequestException("Invalid host header", e);
+                }
+            });
+        }
+
+        @Override
+        public double weight() {
+            return 1000;
+        }
     }
 }
