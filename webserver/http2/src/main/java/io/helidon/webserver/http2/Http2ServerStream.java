@@ -18,14 +18,15 @@ package io.helidon.webserver.http2;
 
 import java.io.UncheckedIOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Semaphore;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.concurrency.limits.BasicLimit;
+import io.helidon.common.concurrency.limits.FixedLimit;
 import io.helidon.common.concurrency.limits.Limit;
-import io.helidon.common.concurrency.limits.LimitException;
+import io.helidon.common.concurrency.limits.LimitAlgorithm;
 import io.helidon.common.socket.SocketWriterException;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.Header;
@@ -104,7 +105,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
     private HttpPrologue prologue;
     // create a limit if accessed before we get the one from connection
     // must be volatile, as it is accessed both from connection thread and from stream thread
-    private volatile Limit requestLimit = BasicLimit.create(new Semaphore(1));
+    private volatile Limit requestLimit = FixedLimit.create(new Semaphore(1));
 
     /**
      * A new HTTP/2 server stream.
@@ -517,15 +518,33 @@ class Http2ServerStream implements Runnable, Http2Stream {
             Http2ServerResponse response = new Http2ServerResponse(this, request);
 
             try {
-                try {
-                    requestLimit.invoke(() -> routing.route(ctx, request, response));
-                } catch (LimitException e) {
+                Optional<LimitAlgorithm.Token> token = requestLimit.tryAcquire();
+
+                if (token.isEmpty()) {
                     ctx.log(LOGGER, TRACE, "Too many concurrent requests, rejecting request.");
                     response.status(Status.SERVICE_UNAVAILABLE_503)
                             .send("Too Many Concurrent Requests");
                     response.commit();
-                } catch (Exception e) {
-                    throw new CloseConnectionException("Failed to handle request", e);
+                } else {
+                    LimitAlgorithm.Token permit = token.get();
+                    try {
+                        routing.route(ctx, request, response);
+                    } finally {
+                        if (response.status() == Status.NOT_FOUND_404) {
+                            permit.ignore();
+                        } else {
+                            switch (response.status().family()) {
+                            case INFORMATIONAL:
+                            case SUCCESSFUL:
+                            case REDIRECTION:
+                                permit.success();
+                                break;
+                            default:
+                                permit.dropped();
+                                break;
+                            }
+                        }
+                    }
                 }
             } finally {
                 request.content().consume();

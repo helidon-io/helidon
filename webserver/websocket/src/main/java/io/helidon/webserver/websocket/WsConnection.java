@@ -25,7 +25,7 @@ import java.util.concurrent.Semaphore;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
-import io.helidon.common.concurrency.limits.BasicLimit;
+import io.helidon.common.concurrency.limits.FixedLimit;
 import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.concurrency.limits.LimitException;
 import io.helidon.common.socket.SocketContext;
@@ -130,7 +130,7 @@ public class WsConnection implements ServerConnection, WsSession {
     @SuppressWarnings("removal")
     @Override
     public void handle(Semaphore requestSemaphore) {
-        handle(BasicLimit.create(requestSemaphore));
+        handle(FixedLimit.create(requestSemaphore));
     }
 
     @Override

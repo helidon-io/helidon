@@ -18,6 +18,7 @@ server:
   features:
     limits:
       concurrency-limit:
-        bulkhead:
-          limit: 1
+        fixed:
+          permits: 1
           queue-length: 0
+

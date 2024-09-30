@@ -16,8 +16,6 @@
 
 package io.helidon.common.concurrency.limits;
 
-import java.util.concurrent.Callable;
-
 import io.helidon.common.config.NamedService;
 import io.helidon.service.registry.Service;
 
@@ -25,34 +23,5 @@ import io.helidon.service.registry.Service;
  * Contract for a concurrency limiter.
  */
 @Service.Contract
-public interface Limit extends NamedService {
-    /**
-     * Invoke a callable within the limits of this limiter.
-     * <p>
-     * {@link io.helidon.common.concurrency.limits.Limit} implementors note:
-     * Make sure to catch {@link io.helidon.common.concurrency.limits.IgnoreTaskException} from the
-     * callable, and call its {@link IgnoreTaskException#handle()} to either return the provided result,
-     * or throw the exception after ignoring the timing for future decisions.
-     *
-     * @param callable callable to execute within the limit
-     * @param <T>      the callable return type
-     * @return result of the callable
-     * @throws LimitException      in case the limiter did not have an available permit
-     * @throws java.lang.Exception in case the task failed with an exception
-     */
-    <T> T invoke(Callable<T> callable) throws LimitException, Exception;
-
-    /**
-     * Invoke a runnable within the limits of this limiter.
-     * <p>
-     * {@link io.helidon.common.concurrency.limits.Limit} implementors note:
-     * Make sure to catch {@link io.helidon.common.concurrency.limits.IgnoreTaskException} from the
-     * runnable, and call its {@link IgnoreTaskException#handle()} to either return the provided result,
-     * or throw the exception after ignoring the timing for future decisions.
-     *
-     * @param runnable runnable to execute within the limit
-     * @throws LimitException in case the limiter did not have an available permit
-     * @throws java.lang.Exception in case the task failed with an exception
-     */
-    void invoke(Runnable runnable) throws LimitException, Exception;
+public interface Limit extends LimitAlgorithm, NamedService {
 }

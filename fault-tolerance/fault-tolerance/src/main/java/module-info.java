@@ -31,12 +31,8 @@ module io.helidon.faulttolerance {
     requires io.helidon.common.configurable;
     requires io.helidon.config;
     requires io.helidon.builder.api;
-    requires io.helidon.common.concurrency.limits;
 
     requires static io.helidon.common.features.api;
 
     exports io.helidon.faulttolerance;
-
-    provides io.helidon.common.concurrency.limits.spi.LimitProvider
-            with io.helidon.faulttolerance.BulkheadLimitProvider;
 }

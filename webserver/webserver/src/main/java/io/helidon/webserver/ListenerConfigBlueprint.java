@@ -258,7 +258,7 @@ interface ListenerConfigBlueprint {
      * as otherwise you may stop in-progress requests.
      * <p>
      * Setting this option will always ignore {@link #concurrencyLimit()} and will use
-     * the {@link io.helidon.common.concurrency.limits.BasicLimit}.
+     * the {@link io.helidon.common.concurrency.limits.FixedLimit}.
      *
      * @return number of requests that can be processed on this listener, regardless of protocol
      */

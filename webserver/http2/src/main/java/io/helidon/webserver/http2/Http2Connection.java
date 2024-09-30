@@ -27,7 +27,7 @@ import java.util.concurrent.Semaphore;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
-import io.helidon.common.concurrency.limits.BasicLimit;
+import io.helidon.common.concurrency.limits.FixedLimit;
 import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.task.InterruptableTask;
 import io.helidon.common.tls.TlsUtils;
@@ -214,7 +214,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     @SuppressWarnings("removal")
     @Override
     public void handle(Semaphore requestSemaphore) throws InterruptedException {
-        handle(BasicLimit.create(requestSemaphore));
+        handle(FixedLimit.create(requestSemaphore));
     }
 
     /**

@@ -34,7 +34,7 @@ import static org.hamcrest.Matchers.hasSize;
 public class BasicLimitTest {
     @Test
     public void testUnlimited() throws InterruptedException {
-        BasicLimit limiter = BasicLimit.create();
+        FixedLimit limiter = FixedLimit.create();
         int concurrency = 5;
         CountDownLatch cdl = new CountDownLatch(1);
         Lock lock = new ReentrantLock();
@@ -72,7 +72,7 @@ public class BasicLimitTest {
 
     @Test
     public void testLimit() throws Exception {
-        BasicLimit limiter = BasicLimit.builder()
+        FixedLimit limiter = FixedLimit.builder()
                 .permits(1)
                 .build();
 
@@ -117,13 +117,78 @@ public class BasicLimitTest {
     }
 
     @Test
+    public void testLimitWithQueue() throws Exception {
+        FixedLimit limiter = FixedLimit.builder()
+                .permits(1)
+                .queueLength(1)
+                .queueTimeout(Duration.ofSeconds(5))
+                .build();
+
+        int concurrency = 5;
+        CountDownLatch cdl = new CountDownLatch(1);
+        Lock lock = new ReentrantLock();
+        List<String> result = new ArrayList<>(concurrency);
+        AtomicInteger failures = new AtomicInteger();
+
+        Thread[] threads = new Thread[concurrency];
+        for (int i = 0; i < concurrency; i++) {
+            int index = i;
+            threads[i] = new Thread(() -> {
+                try {
+                    limiter.invoke(() -> {
+                        cdl.await(10, TimeUnit.SECONDS);
+                        lock.lock();
+                        try {
+                            result.add("result_" + index);
+                        } finally {
+                            lock.unlock();
+                        }
+                        return null;
+                    });
+                } catch (LimitException e) {
+                    failures.incrementAndGet();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
+
+        for (Thread thread : threads) {
+            TimeUnit.MILLISECONDS.sleep(100);
+            thread.start();
+        }
+        cdl.countDown();
+        for (Thread thread : threads) {
+            thread.join(Duration.ofSeconds(5));
+        }
+        // 1 submitted, 1 in queue
+        assertThat(failures.get(), is(concurrency - 2));
+        assertThat(result, hasSize(2));
+    }
+
+    @Test
     public void testSemaphoreReleased() throws Exception {
-        Limit limit = BasicLimit.builder()
+        Limit limit = FixedLimit.builder()
                 .permits(5)
                 .build();
 
         for (int i = 0; i < 5000; i++) {
-            limit.invoke(() -> {});
+            limit.invoke(() -> {
+            });
+        }
+    }
+
+    @Test
+    public void testSemaphoreReleasedWithQueue() throws Exception {
+        Limit limit = FixedLimit.builder()
+                .permits(5)
+                .queueLength(10)
+                .queueTimeout(Duration.ofMillis(100))
+                .build();
+
+        for (int i = 0; i < 5000; i++) {
+            limit.invoke(() -> {
+            });
         }
     }
 }

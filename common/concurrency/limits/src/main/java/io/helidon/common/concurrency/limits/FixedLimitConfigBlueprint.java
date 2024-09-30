@@ -16,6 +16,7 @@
 
 package io.helidon.common.concurrency.limits;
 
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.Semaphore;
 
@@ -24,21 +25,25 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.common.concurrency.limits.spi.LimitProvider;
 
 /**
- * Configuration of {@link BasicLimit}.
+ * Configuration of {@link FixedLimit}.
+ *
+ * @see #permits()
+ * @see #queueLength()
+ * @see #queueTimeout()
  */
 @Prototype.Blueprint
-@Prototype.Configured(value = BasicLimit.TYPE, root = false)
+@Prototype.Configured(value = FixedLimit.TYPE, root = false)
 @Prototype.Provides(LimitProvider.class)
-interface BasicLimitConfigBlueprint extends Prototype.Factory<BasicLimit> {
+interface FixedLimitConfigBlueprint extends Prototype.Factory<FixedLimit> {
     /**
      * Number of permit to allow.
-     * Defaults to {@value BasicLimit#DEFAULT_LIMIT}.
+     * Defaults to {@value FixedLimit#DEFAULT_LIMIT}.
      * When set to {@code 0}, we switch to unlimited.
      *
      * @return number of permits
      */
     @Option.Configured
-    @Option.DefaultInt(BasicLimit.DEFAULT_LIMIT)
+    @Option.DefaultInt(FixedLimit.DEFAULT_LIMIT)
     int permits();
 
     /**
@@ -52,11 +57,35 @@ interface BasicLimitConfigBlueprint extends Prototype.Factory<BasicLimit> {
     boolean fair();
 
     /**
+     * How many requests can be enqueued waiting for a permit.
+     * Note that this may not be an exact behavior due to concurrent invocations.
+     * We use {@link java.util.concurrent.Semaphore#getQueueLength()} in the
+     * {@link io.helidon.common.concurrency.limits.FixedLimit} implementation.
+     * Default value is {@value FixedLimit#DEFAULT_QUEUE_LENGTH}.
+     * If set to {code 0}, there is no queueing.
+     *
+     * @return number of requests to enqueue
+     */
+    @Option.Configured
+    @Option.DefaultInt(FixedLimit.DEFAULT_QUEUE_LENGTH)
+    int queueLength();
+
+    /**
+     * How long to wait for a permit when enqueued.
+     * Defaults to {@value FixedLimit#DEFAULT_QUEUE_TIMEOUT_DURATION}
+     *
+     * @return duration of the timeout
+     */
+    @Option.Configured
+    @Option.Default(FixedLimit.DEFAULT_QUEUE_TIMEOUT_DURATION)
+    Duration queueTimeout();
+
+    /**
      * Name of this instance.
      *
      * @return name of the instance
      */
-    @Option.Default(BasicLimit.TYPE)
+    @Option.Default(FixedLimit.TYPE)
     String name();
 
     /**

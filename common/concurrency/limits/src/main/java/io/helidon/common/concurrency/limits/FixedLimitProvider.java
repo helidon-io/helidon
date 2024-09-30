@@ -21,25 +21,25 @@ import io.helidon.common.concurrency.limits.spi.LimitProvider;
 import io.helidon.common.config.Config;
 
 /**
- * {@link java.util.ServiceLoader} service provider for {@link io.helidon.common.concurrency.limits.BasicLimit}
+ * {@link java.util.ServiceLoader} service provider for {@link FixedLimit}
  * limit implementation.
  */
 @Weight(90)
-public class BasicLimitProvider implements LimitProvider {
+public class FixedLimitProvider implements LimitProvider {
     /**
      * Constructor required by the service loader.
      */
-    public BasicLimitProvider() {
+    public FixedLimitProvider() {
     }
 
     @Override
     public String configKey() {
-        return BasicLimit.TYPE;
+        return FixedLimit.TYPE;
     }
 
     @Override
     public Limit create(Config config, String name) {
-        return BasicLimit.builder()
+        return FixedLimit.builder()
                 .config(config)
                 .name(name)
                 .build();

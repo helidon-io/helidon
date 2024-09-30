@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
  * Use {@link #INSTANCE} to get an instance of this semaphore.
  *
  * @deprecated this is only provided for backward compatibility and will be removed, use
- *         {@link BasicLimit#create()} to get unlimited limit
+ *         {@link FixedLimit#create()} to get unlimited limit
  */
 @Deprecated(forRemoval = true, since = "4.2.0")
 public class NoopSemaphore extends Semaphore {

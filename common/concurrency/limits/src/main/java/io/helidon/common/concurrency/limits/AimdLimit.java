@@ -16,6 +16,7 @@
 
 package io.helidon.common.concurrency.limits;
 
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Semaphore;
 import java.util.function.Consumer;
@@ -104,6 +105,11 @@ public class AimdLimit implements Limit, SemaphoreLimit, RuntimeType.Api<AimdLim
     @Override
     public void invoke(Runnable runnable) throws Exception {
         aimdLimitImpl.invoke(runnable);
+    }
+
+    @Override
+    public Optional<Token> tryAcquire() {
+        return aimdLimitImpl.tryAcquire();
     }
 
     @SuppressWarnings("removal")

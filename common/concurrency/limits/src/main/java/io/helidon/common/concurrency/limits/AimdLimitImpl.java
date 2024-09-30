@@ -17,6 +17,7 @@
 package io.helidon.common.concurrency.limits;
 
 import java.io.Serial;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -64,7 +65,6 @@ class AimdLimitImpl {
         if (initialLimit < minLimit) {
             throw new ConfigException("Initial limit must be higher than minimum limit");
         }
-
     }
 
     Semaphore semaphore() {
@@ -73,6 +73,14 @@ class AimdLimitImpl {
 
     int currentLimit() {
         return limit.get();
+    }
+
+    Optional<Limit.Token> tryAcquire() {
+        if (!semaphore.tryAcquire()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(new AimdToken(clock, concurrentRequests));
     }
 
     void invoke(Runnable runnable) throws Exception {
@@ -154,6 +162,32 @@ class AimdLimitImpl {
         @Override
         protected void reducePermits(int reduction) {
             super.reducePermits(reduction);
+        }
+    }
+
+    private class AimdToken implements Limit.Token {
+        private final long startTime;
+        private final int currentRequests;
+
+        private AimdToken(Supplier<Long> clock, AtomicInteger concurrentRequests) {
+            startTime = clock.get();
+            currentRequests = concurrentRequests.incrementAndGet();
+        }
+
+        @Override
+        public void dropped() {
+            updateWithSample(startTime, clock.get(), currentRequests, false);
+        }
+
+        @Override
+        public void ignore() {
+            concurrentRequests.decrementAndGet();
+        }
+
+        @Override
+        public void success() {
+            updateWithSample(startTime, clock.get(), currentRequests, true);
+            concurrentRequests.decrementAndGet();
         }
     }
 }

@@ -16,10 +16,12 @@
 
 package io.helidon.webserver.concurrency.limits;
 
+import java.util.Optional;
+
 import io.helidon.common.Weighted;
 import io.helidon.common.concurrency.limits.Limit;
-import io.helidon.common.concurrency.limits.LimitException;
-import io.helidon.http.InternalServerException;
+import io.helidon.common.concurrency.limits.LimitAlgorithm;
+import io.helidon.http.HttpException;
 import io.helidon.http.Status;
 import io.helidon.webserver.http.FilterChain;
 import io.helidon.webserver.http.HttpFeature;
@@ -45,23 +47,25 @@ class LimitsRoutingFeature implements HttpFeature, Weighted {
         }
     }
 
-    private void filter(FilterChain chain, RoutingRequest req, RoutingResponse res) {
-        try {
-            limits.invoke(() -> {
-                chain.proceed();
-                return null;
-            });
-        } catch (LimitException ex) {
-            res.status(Status.SERVICE_UNAVAILABLE_503).send();
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new InternalServerException("Failed to invoke limit", e);
-        }
-    }
-
     @Override
     public double weight() {
         return featureWeight;
+    }
+
+    private void filter(FilterChain chain, RoutingRequest req, RoutingResponse res) {
+        Optional<LimitAlgorithm.Token> token = limits.tryAcquire();
+
+        if (token.isEmpty()) {
+            throw new HttpException("Limit exceeded", Status.SERVICE_UNAVAILABLE_503);
+        }
+
+        LimitAlgorithm.Token permit = token.get();
+        try {
+            chain.proceed();
+            permit.success();
+        } catch (Throwable e) {
+            permit.dropped();
+            throw e;
+        }
     }
 }

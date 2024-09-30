@@ -18,6 +18,6 @@
  * Concurrency limits API and default implementations.
  *
  * @see io.helidon.common.concurrency.limits.Limit
- * @see io.helidon.common.concurrency.limits.BasicLimit
+ * @see io.helidon.common.concurrency.limits.FixedLimit
  */
 package io.helidon.common.concurrency.limits;

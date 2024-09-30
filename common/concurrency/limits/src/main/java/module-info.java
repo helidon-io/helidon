@@ -30,6 +30,6 @@ module io.helidon.common.concurrency.limits {
     exports io.helidon.common.concurrency.limits.spi;
 
     provides io.helidon.common.concurrency.limits.spi.LimitProvider
-            with io.helidon.common.concurrency.limits.BasicLimitProvider,
+            with io.helidon.common.concurrency.limits.FixedLimitProvider,
                     io.helidon.common.concurrency.limits.AimdLimitProvider;
 }

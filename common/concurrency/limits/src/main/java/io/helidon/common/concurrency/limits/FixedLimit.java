@@ -16,48 +16,67 @@
 
 package io.helidon.common.concurrency.limits;
 
+import java.time.Duration;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.config.Config;
 
 /**
- * Basic limit, that provides {@link java.util.concurrent.Semaphore} like feature of limiting
- * concurrent executions to a fixed number.
+ * Semaphore based limit, that supports queuing for a permit, and timeout on the queue.
+ * The default behavior is non-queuing.
+ *
+ * @see io.helidon.common.concurrency.limits.FixedLimitConfig
  */
 @SuppressWarnings("removal")
-@RuntimeType.PrototypedBy(BasicLimitConfig.class)
-public class BasicLimit implements Limit, SemaphoreLimit, RuntimeType.Api<BasicLimitConfig> {
+@RuntimeType.PrototypedBy(FixedLimitConfig.class)
+public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedLimitConfig> {
     /**
      * Default limit, meaning unlimited execution.
      */
     public static final int DEFAULT_LIMIT = 0;
-    static final String TYPE = "basic";
+    /**
+     * Default length of the queue.
+     */
+    public static final int DEFAULT_QUEUE_LENGTH = 0;
+    /**
+     * Timeout of a request that is enqueued.
+     */
+    public static final String DEFAULT_QUEUE_TIMEOUT_DURATION = "PT1S";
 
-    private final BasicLimitConfig config;
+    static final String TYPE = "fixed";
+
+    private final FixedLimitConfig config;
     private final LimiterHandler handler;
 
-    private BasicLimit(BasicLimitConfig config) {
+    private FixedLimit(FixedLimitConfig config) {
         this.config = config;
-        if (config.semaphore().isPresent()) {
-            this.handler = new RealSemaphoreHandler(config.semaphore().get());
-        } else if (config.permits() == 0) {
+        if (config.permits() == 0 && config.semaphore().isEmpty()) {
             this.handler = new NoOpSemaphoreHandler();
         } else {
-            this.handler = new RealSemaphoreHandler(new Semaphore(config.permits(), config.fair()));
+            Semaphore semaphore = config.semaphore().orElseGet(() -> new Semaphore(config.permits(), config.fair()));
+            if (config.queueLength() == 0) {
+                this.handler = new RealSemaphoreHandler(semaphore);
+            } else {
+                this.handler = new QueuedSemaphoreHandler(semaphore,
+                                                          config.queueLength(),
+                                                          config.queueTimeout());
+            }
         }
     }
 
     /**
-     * Create a new fluent API builder to construct {@link io.helidon.common.concurrency.limits.BasicLimit}
+     * Create a new fluent API builder to construct {@link FixedLimit}
      * instance.
      *
      * @return fluent API builder
      */
-    public static BasicLimitConfig.Builder builder() {
-        return BasicLimitConfig.builder();
+    public static FixedLimitConfig.Builder builder() {
+        return FixedLimitConfig.builder();
     }
 
     /**
@@ -65,7 +84,7 @@ public class BasicLimit implements Limit, SemaphoreLimit, RuntimeType.Api<BasicL
      *
      * @return a new limit instance
      */
-    public static BasicLimit create() {
+    public static FixedLimit create() {
         return builder().build();
     }
 
@@ -73,9 +92,9 @@ public class BasicLimit implements Limit, SemaphoreLimit, RuntimeType.Api<BasicL
      * Create an instance from the provided semaphore.
      *
      * @param semaphore semaphore to use
-     * @return a new basic limit backed by the provided semaphore
+     * @return a new fixed limit backed by the provided semaphore
      */
-    public static BasicLimit create(Semaphore semaphore) {
+    public static FixedLimit create(Semaphore semaphore) {
         return builder()
                 .semaphore(semaphore)
                 .build();
@@ -84,10 +103,10 @@ public class BasicLimit implements Limit, SemaphoreLimit, RuntimeType.Api<BasicL
     /**
      * Create a new instance from configuration.
      *
-     * @param config configuration of the basic limit
+     * @param config configuration of the fixed limit
      * @return a new limit instance configured from {@code config}
      */
-    public static BasicLimit create(Config config) {
+    public static FixedLimit create(Config config) {
         return builder()
                 .config(config)
                 .build();
@@ -96,11 +115,11 @@ public class BasicLimit implements Limit, SemaphoreLimit, RuntimeType.Api<BasicL
     /**
      * Create a new instance from configuration.
      *
-     * @param config configuration of the basic limit
+     * @param config configuration of the fixed limit
      * @return a new limit instance configured from {@code config}
      */
-    public static BasicLimit create(BasicLimitConfig config) {
-        return new BasicLimit(config);
+    public static FixedLimit create(FixedLimitConfig config) {
+        return new FixedLimit(config);
     }
 
     /**
@@ -109,7 +128,7 @@ public class BasicLimit implements Limit, SemaphoreLimit, RuntimeType.Api<BasicL
      * @param consumer consumer of configuration builder
      * @return a new limit instance configured from the builder
      */
-    public static BasicLimit create(Consumer<BasicLimitConfig.Builder> consumer) {
+    public static FixedLimit create(Consumer<FixedLimitConfig.Builder> consumer) {
         return builder()
                 .update(consumer)
                 .build();
@@ -125,6 +144,11 @@ public class BasicLimit implements Limit, SemaphoreLimit, RuntimeType.Api<BasicL
         handler.invoke(runnable);
     }
 
+    @Override
+    public Optional<Token> tryAcquire() {
+        return handler.tryAcquire();
+    }
+
     @SuppressWarnings("removal")
     @Override
     public Semaphore semaphore() {
@@ -132,7 +156,7 @@ public class BasicLimit implements Limit, SemaphoreLimit, RuntimeType.Api<BasicL
     }
 
     @Override
-    public BasicLimitConfig prototype() {
+    public FixedLimitConfig prototype() {
         return config;
     }
 
@@ -143,16 +167,28 @@ public class BasicLimit implements Limit, SemaphoreLimit, RuntimeType.Api<BasicL
 
     @Override
     public String type() {
-        return BasicLimit.TYPE;
+        return FixedLimit.TYPE;
     }
 
     @SuppressWarnings("removal")
-    private interface LimiterHandler extends SemaphoreLimit {
-        <T> T invoke(Callable<T> callable) throws Exception;
-        void invoke(Runnable runnable) throws Exception;
+    private interface LimiterHandler extends SemaphoreLimit, LimitAlgorithm {
     }
 
     private static class NoOpSemaphoreHandler implements LimiterHandler {
+        private static final Token TOKEN = new Token() {
+            @Override
+            public void dropped() {
+            }
+
+            @Override
+            public void ignore() {
+            }
+
+            @Override
+            public void success() {
+            }
+        };
+
         @Override
         public <T> T invoke(Callable<T> callable) throws Exception {
             try {
@@ -165,6 +201,11 @@ public class BasicLimit implements Limit, SemaphoreLimit, RuntimeType.Api<BasicL
         @Override
         public void invoke(Runnable runnable) {
             runnable.run();
+        }
+
+        @Override
+        public Optional<Token> tryAcquire() {
+            return Optional.of(TOKEN);
         }
 
         @SuppressWarnings("removal")
@@ -213,9 +254,73 @@ public class BasicLimit implements Limit, SemaphoreLimit, RuntimeType.Api<BasicL
         }
 
         @Override
+        public Optional<Token> tryAcquire() {
+            if (!semaphore.tryAcquire()) {
+                return Optional.empty();
+            }
+            return Optional.of(new SemaphoreToken(semaphore));
+        }
+
+        @Override
         public Semaphore semaphore() {
             return semaphore;
         }
     }
 
+    private static class QueuedSemaphoreHandler implements LimiterHandler {
+        private final Semaphore semaphore;
+        private final int queueLength;
+        private final long timeoutMillis;
+
+        private QueuedSemaphoreHandler(Semaphore semaphore, int queueLength, Duration queueTimeout) {
+            this.semaphore = semaphore;
+            this.queueLength = queueLength;
+            this.timeoutMillis = queueTimeout.toMillis();
+        }
+
+        @Override
+        public Optional<Token> tryAcquire() {
+            if (semaphore.getQueueLength() >= this.queueLength) {
+                // this is an estimate - we do not promise to be precise here
+                return Optional.empty();
+            }
+
+            try {
+                if (!semaphore.tryAcquire(timeoutMillis, TimeUnit.MILLISECONDS)) {
+                    return Optional.empty();
+                }
+            } catch (InterruptedException e) {
+                return Optional.empty();
+            }
+            return Optional.of(new SemaphoreToken(semaphore));
+        }
+
+        @Override
+        public Semaphore semaphore() {
+            return semaphore;
+        }
+    }
+
+    private static class SemaphoreToken implements Token {
+        private final Semaphore semaphore;
+
+        private SemaphoreToken(Semaphore semaphore) {
+            this.semaphore = semaphore;
+        }
+
+        @Override
+        public void dropped() {
+            semaphore.release();
+        }
+
+        @Override
+        public void ignore() {
+            semaphore.release();
+        }
+
+        @Override
+        public void success() {
+            semaphore.release();
+        }
+    }
 }

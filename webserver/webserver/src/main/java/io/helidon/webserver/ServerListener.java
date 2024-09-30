@@ -43,7 +43,7 @@ import javax.net.ssl.SSLServerSocket;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
-import io.helidon.common.concurrency.limits.BasicLimit;
+import io.helidon.common.concurrency.limits.FixedLimit;
 import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.concurrency.limits.NoopSemaphore;
 import io.helidon.common.context.Context;
@@ -124,9 +124,9 @@ class ServerListener implements ListenerContext {
 
         if (listenerConfig.maxConcurrentRequests() == -1) {
             this.requestLimit = listenerConfig.concurrencyLimit()
-                    .orElseGet(BasicLimit::create); // unlimited unless configured
+                    .orElseGet(FixedLimit::create); // unlimited unless configured
         } else {
-            this.requestLimit = BasicLimit.builder()
+            this.requestLimit = FixedLimit.builder()
                     .permits(listenerConfig.maxConcurrentRequests())
                     .build();
         }

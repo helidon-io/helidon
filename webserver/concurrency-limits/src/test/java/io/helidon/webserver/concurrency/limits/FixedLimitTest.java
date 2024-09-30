@@ -35,13 +35,13 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
-public class BulkheadTest {
+public class FixedLimitTest {
     private static final CountDownLatch FIRST_ENCOUNTER = new CountDownLatch(1);
     private static final CountDownLatch FINISH_LATCH = new CountDownLatch(1);
 
     private final Http1Client client;
 
-    public BulkheadTest(Http1Client client) {
+    public FixedLimitTest(Http1Client client) {
         this.client = client;
     }
 
@@ -65,7 +65,7 @@ public class BulkheadTest {
     }
 
     @Test
-    public void testBulkhead() throws Exception {
+    public void testLimits() throws Exception {
         Callable<ClientResponseTyped<String>> callable = () -> {
             return client.get("/wait")
                     .request(String.class);
