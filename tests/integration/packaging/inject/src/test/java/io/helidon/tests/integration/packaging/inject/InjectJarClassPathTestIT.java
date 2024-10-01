@@ -31,8 +31,8 @@ class InjectJarClassPathTestIT extends InjectPackagingTestIT {
         doTestExitOnStarted();
     }
 
-//    @Test
-//    void testWebClientService() {
-//        doTestWebClientService();
-//    }
+    @Test
+    void testWebClientService() {
+        doTestWebClientService();
+    }
 }
