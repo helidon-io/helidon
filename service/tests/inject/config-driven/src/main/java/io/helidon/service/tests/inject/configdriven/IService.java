@@ -24,7 +24,7 @@ import io.helidon.service.registry.Service;
 class IService implements IContract {
     private boolean running;
 
-    // note: initially left w/o a ctor here!
+    // note: intentionally left w/o a ctor here!
 
     /**
      * For Testing.

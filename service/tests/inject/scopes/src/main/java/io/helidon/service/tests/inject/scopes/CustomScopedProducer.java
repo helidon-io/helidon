@@ -23,7 +23,7 @@ import io.helidon.service.inject.api.Injection;
 import io.helidon.service.registry.Service;
 
 @CustomScope
-class CustomScopedProducer implements RequestScopedContract {
+class CustomScopedProducer implements CustomScopedContract {
     private static final AtomicInteger COUNTER = new AtomicInteger();
 
     private final int id = COUNTER.incrementAndGet();

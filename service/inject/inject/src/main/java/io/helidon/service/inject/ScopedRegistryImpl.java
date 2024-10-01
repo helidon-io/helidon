@@ -30,6 +30,7 @@ import io.helidon.common.types.TypeName;
 import io.helidon.service.inject.api.ActivationResult;
 import io.helidon.service.inject.api.Activator;
 import io.helidon.service.inject.api.Injection;
+import io.helidon.service.inject.api.ScopeNotActiveException;
 import io.helidon.service.inject.api.ScopedRegistry;
 import io.helidon.service.registry.ServiceInfo;
 import io.helidon.service.registry.ServiceRegistryException;
@@ -167,7 +168,7 @@ class ScopedRegistryImpl implements ScopedRegistry {
 
     private void checkActive() {
         if (!active) {
-            throw new ServiceRegistryException("Injection scope " + scope.fqName() + "[" + id + "] is not active.");
+            throw new ScopeNotActiveException("Injection scope " + scope.fqName() + "[" + id + "] is not active.", scope);
         }
     }
 }

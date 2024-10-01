@@ -40,6 +40,5 @@ module io.helidon.service.codegen {
                     io.helidon.service.codegen.ConfigBeanCodegenProvider;
 
     provides io.helidon.codegen.spi.AnnotationMapperProvider
-            with io.helidon.service.codegen.MapNamedByClassProvider,
-                    io.helidon.service.codegen.MapCreateFor;
+            with io.helidon.service.codegen.MapNamedByClassProvider;
 }

@@ -211,6 +211,23 @@ class InjectionExtension implements RegistryCodegenExtension {
                 .addContent(enumValue.name());
     }
 
+    private static void addInterfaceAnnotations(List<Annotation> elementAnnotations,
+                                                List<TypedElements.DeclaredElement> declaredElements) {
+
+        for (TypedElements.DeclaredElement declaredElement : declaredElements) {
+            declaredElement.element()
+                    .annotations()
+                    .forEach(it -> addInterfaceAnnotation(elementAnnotations, it));
+        }
+    }
+
+    private static void addInterfaceAnnotation(List<Annotation> elementAnnotations, Annotation annotation) {
+        // only add if not already there
+        if (!elementAnnotations.contains(annotation)) {
+            elementAnnotations.add(annotation);
+        }
+    }
+
     private void generateMain(TypeInfo customMain) {
         // main class is ONLY generated if required by the user (through Injection.Main annotation)
         // generate the `ApplicationMain` that just starts the registry (with auto-discovery)
@@ -667,30 +684,75 @@ class InjectionExtension implements RegistryCodegenExtension {
 
     // find constructor with @Inject, if none, find the first constructor (assume @Inject)
     private TypedElementInfo injectConstructor(TypeInfo typeInfo) {
-        // first @Inject
-        return typeInfo.elementInfo()
+        var constructors = typeInfo.elementInfo()
                 .stream()
                 .filter(it -> it.kind() == ElementKind.CONSTRUCTOR)
                 .filter(it -> it.hasAnnotation(ServiceCodegenTypes.INJECTION_INJECT))
-                .findFirst()
-                // or first non-private constructor
-                .or(() -> typeInfo.elementInfo()
-                        .stream()
-                        .filter(not(ElementInfoPredicates::isPrivate))
-                        .filter(it -> it.kind() == ElementKind.CONSTRUCTOR)
-                        .findFirst())
-                // or default constructor
-                .orElse(TypedElements.DEFAULT_CONSTRUCTOR.element());
+                .collect(Collectors.toUnmodifiableList());
+        if (constructors.size() > 1) {
+            throw new CodegenException("There can only be one constructor annotated with "
+                                               + ServiceCodegenTypes.INJECTION_INJECT.fqName() + ", but there were "
+                                               + constructors.size(),
+                                       typeInfo.originatingElementValue());
+        }
+        if (!constructors.isEmpty()) {
+            // @Injection.Inject
+            TypedElementInfo first = constructors.getFirst();
+            if (ElementInfoPredicates.isPrivate(first)) {
+                throw new CodegenException("Constructor annotated with " + ServiceCodegenTypes.INJECTION_INJECT.fqName()
+                                                   + " must not be private.");
+            }
+            return first;
+        }
+
+        // or first non-private constructor
+        var allConstructors = typeInfo.elementInfo()
+                .stream()
+                .filter(it -> it.kind() == ElementKind.CONSTRUCTOR)
+                .collect(Collectors.toUnmodifiableList());
+
+        if (allConstructors.isEmpty()) {
+            // there is no constructor declared, we can use default
+            return TypedElements.DEFAULT_CONSTRUCTOR.element();
+        }
+        var nonPrivateConstructors = allConstructors.stream()
+                .filter(not(ElementInfoPredicates::isPrivate))
+                .collect(Collectors.toUnmodifiableList());
+        if (nonPrivateConstructors.isEmpty()) {
+            throw new CodegenException("There is no non-private constructor defined for " + typeInfo.typeName().fqName(),
+                                       typeInfo.originatingElementValue());
+        }
+        if (nonPrivateConstructors.size() > 1) {
+            throw new CodegenException("There are more non-private constructors defined for " + typeInfo.typeName().fqName(),
+                                       typeInfo.originatingElementValue());
+        }
+        return nonPrivateConstructors.getFirst();
     }
 
     private List<TypedElementInfo> fieldInjectElements(TypeInfo typeInfo) {
-        return typeInfo.elementInfo()
+        var injectFields = typeInfo.elementInfo()
                 .stream()
-                .filter(not(ElementInfoPredicates::isPrivate))
                 .filter(not(ElementInfoPredicates::isStatic))
                 .filter(ElementInfoPredicates::isField)
                 .filter(ElementInfoPredicates.hasAnnotation(ServiceCodegenTypes.INJECTION_INJECT))
                 .toList();
+        var firstFound = injectFields.stream()
+                .filter(ElementInfoPredicates::isPrivate)
+                .findFirst();
+        if (firstFound.isPresent()) {
+            throw new CodegenException("Discovered " + ServiceCodegenTypes.INJECTION_INJECT.fqName()
+                                               + " annotation on private field(s). We cannot support private field injection.",
+                                       firstFound.get().originatingElementValue());
+        }
+        firstFound = injectFields.stream()
+                .filter(ElementInfoPredicates::isStatic)
+                .findFirst();
+        if (firstFound.isPresent()) {
+            throw new CodegenException("Discovered " + ServiceCodegenTypes.INJECTION_INJECT.fqName()
+                                               + " annotation on static field(s).",
+                                       firstFound.get().originatingElementValue());
+        }
+        return injectFields;
     }
 
     private List<MethodDefinition> methodParams(Collection<TypeInfo> services,
@@ -2190,23 +2252,6 @@ class InjectionExtension implements RegistryCodegenExtension {
         return TypeName.builder(descriptorType)
                 .addTypeArgument(serviceType)
                 .build();
-    }
-
-    private static void addInterfaceAnnotations(List<Annotation> elementAnnotations,
-                                                List<TypedElements.DeclaredElement> declaredElements) {
-
-        for (TypedElements.DeclaredElement declaredElement : declaredElements) {
-            declaredElement.element()
-                    .annotations()
-                    .forEach(it -> addInterfaceAnnotation(elementAnnotations, it));
-        }
-    }
-
-    private static void addInterfaceAnnotation(List<Annotation> elementAnnotations, Annotation annotation) {
-        // only add if not already there
-        if (!elementAnnotations.contains(annotation)) {
-            elementAnnotations.add(annotation);
-        }
     }
 
     private record GenericTypeDeclaration(String constantName,
