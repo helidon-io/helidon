@@ -17,6 +17,7 @@
 package io.helidon.service.inject.api;
 
 import java.util.Map;
+import java.util.function.Consumer;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.service.registry.Service;
@@ -43,4 +44,10 @@ public interface InjectRegistrySpi extends InjectRegistry {
      * @return a new scoped registry that takes care of lifecycle of service instances with the scope
      */
     ScopedRegistry createForScope(TypeName scope, String id, Map<ServiceInfo, Object> initialBindings);
+
+    default Scope createScope(TypeName scope, String id, Map<ServiceInfo, Object> initialBindings) {
+        return createScope(scope, id, initialBindings, it -> {});
+    }
+
+    Scope createScope(TypeName scope, String id, Map<ServiceInfo, Object> initialBindings, Consumer<Scope> onCloseAction);
 }

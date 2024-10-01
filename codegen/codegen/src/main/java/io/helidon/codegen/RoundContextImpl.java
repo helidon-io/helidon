@@ -32,6 +32,7 @@ import io.helidon.common.types.TypedElementInfo;
 class RoundContextImpl implements RoundContext {
     private final Map<TypeName, ClassCode> newTypes = new HashMap<>();
     private final Map<TypeName, List<TypeInfo>> annotationToTypes;
+    private final Map<TypeName, Set<TypeName>> metaAnnotated;
     private final List<TypeInfo> types;
     private final CodegenContext ctx;
     private final Collection<TypeName> annotations;
@@ -39,10 +40,12 @@ class RoundContextImpl implements RoundContext {
     RoundContextImpl(CodegenContext ctx,
                      Set<TypeName> annotations,
                      Map<TypeName, List<TypeInfo>> annotationToTypes,
+                     Map<TypeName, Set<TypeName>> metaAnnotated,
                      List<TypeInfo> types) {
         this.ctx = ctx;
         this.annotations = annotations;
         this.annotationToTypes = annotationToTypes;
+        this.metaAnnotated = metaAnnotated;
         this.types = types;
     }
 
@@ -93,6 +96,11 @@ class RoundContextImpl implements RoundContext {
         }
 
         return result;
+    }
+
+    @Override
+    public Collection<TypeName> annotatedAnnotations(TypeName metaAnnotation) {
+        return Optional.ofNullable(metaAnnotated.get(metaAnnotation)).orElseGet(Set::of);
     }
 
     @Override

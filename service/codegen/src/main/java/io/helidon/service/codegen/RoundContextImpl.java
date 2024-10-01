@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.common.types.TypeInfo;
@@ -28,15 +29,18 @@ import io.helidon.common.types.TypedElementInfo;
 
 class RoundContextImpl implements RegistryRoundContext {
     private final Map<TypeName, List<TypeInfo>> annotationToTypes;
+    private final Map<TypeName, Set<TypeName>> metaAnnotated;
     private final List<TypeInfo> types;
     private final Collection<TypeName> annotations;
 
     RoundContextImpl(Set<TypeName> annotations,
                      Map<TypeName, List<TypeInfo>> annotationToTypes,
+                     Map<TypeName, Set<TypeName>> metaAnnotated,
                      List<TypeInfo> types) {
 
         this.annotations = annotations;
         this.annotationToTypes = annotationToTypes;
+        this.metaAnnotated = metaAnnotated;
         this.types = types;
     }
 
@@ -85,5 +89,10 @@ class RoundContextImpl implements RegistryRoundContext {
         }
 
         return result;
+    }
+
+    @Override
+    public Collection<TypeName> annotatedAnnotations(TypeName metaAnnotation) {
+        return Optional.ofNullable(metaAnnotated.get(metaAnnotation)).orElseGet(Set::of);
     }
 }

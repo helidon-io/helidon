@@ -86,4 +86,25 @@ class TestScopes {
             assertThat("We should get a different request scope than last time", nextId, not(id));
         }
     }
+
+    @Test
+    void testDifferentScopeDifferentValueCustomScope() {
+        CustomScopeControl ctrl = registry.get(CustomScopeControl.class);
+        Supplier<CustomScopedContract> supply = registry.supply(CustomScopedContract.class);
+
+        int id;
+        try (Scope scope = ctrl.startScope()) {
+            id = supply.get().id();
+        }
+
+        ScopeNotActiveException scopeNotAvailableException = assertThrows(ScopeNotActiveException.class, supply::get);
+        assertThat("We should not be in scope when it has been closed",
+                   scopeNotAvailableException.scope(),
+                   is(CustomScope.TYPE));
+
+        try (Scope scope = ctrl.startScope()) {
+            int nextId = supply.get().id();
+            assertThat("We should get a different custom scope than last time", nextId, not(id));
+        }
+    }
 }

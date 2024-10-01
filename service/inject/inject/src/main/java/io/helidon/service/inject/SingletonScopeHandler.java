@@ -40,7 +40,7 @@ class SingletonScopeHandler implements Injection.ScopeHandler<Injection.Singleto
     }
 
     void activate() {
-        scope.services().activate();
+        scope.registry().activate();
     }
 
     private static class SingletonScope implements Scope {
@@ -58,7 +58,7 @@ class SingletonScopeHandler implements Injection.ScopeHandler<Injection.Singleto
         }
 
         @Override
-        public ScopedRegistryImpl services() {
+        public ScopedRegistryImpl registry() {
             return services.get();
         }
     }

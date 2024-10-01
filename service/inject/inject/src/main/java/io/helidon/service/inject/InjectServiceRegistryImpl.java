@@ -323,6 +323,17 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
     }
 
     @Override
+    public Scope createScope(TypeName scopeType,
+                             String id,
+                             Map<ServiceInfo, Object> initialBindings,
+                             Consumer<Scope> onCloseAction) {
+        var registry = createForScope(scopeType, id, initialBindings);
+        var scope = new ScopeImpl(scopeType, onCloseAction, registry);
+        registry.activate();
+        return scope;
+    }
+
+    @Override
     public List<InjectServiceInfo> lookupServices(Lookup lookup) {
         try {
             stateReadLock.lock();
@@ -423,7 +434,7 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
 
     void close() {
         singletonScopeHandler.currentScope()
-                .map(Scope::services)
+                .map(Scope::registry)
                 .ifPresent(ScopedRegistry::deactivate);
     }
 
@@ -606,6 +617,34 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
         @Override
         public <R> R unwrap(Class<? extends R> c) {
             throw new UnsupportedOperationException("This is not a full counter");
+        }
+    }
+
+    private class ScopeImpl implements Scope {
+        private final TypeName scopeType;
+        private final Consumer<Scope> onCloseAction;
+        private final ScopedRegistryImpl registry;
+
+        public ScopeImpl(TypeName scopeType, Consumer<Scope> onCloseAction, ScopedRegistryImpl registry) {
+            this.scopeType = scopeType;
+            this.onCloseAction = onCloseAction;
+            this.registry = registry;
+        }
+
+        @Override
+        public void close() {
+            onCloseAction.accept(this);
+            registry.deactivate();
+        }
+
+        @Override
+        public ScopedRegistry registry() {
+            return registry;
+        }
+
+        @Override
+        public String toString() {
+            return "Scope for " + scopeType.fqName();
         }
     }
 }

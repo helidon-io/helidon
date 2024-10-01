@@ -36,7 +36,7 @@ class DependentScopeHandler implements Injection.ScopeHandler<Injection.Instance
     }
 
     void activate() {
-        scope.services().activate();
+        scope.registry().activate();
     }
 
     Scope scope() {
@@ -56,7 +56,7 @@ class DependentScopeHandler implements Injection.ScopeHandler<Injection.Instance
         }
 
         @Override
-        public ScopedRegistry services() {
+        public ScopedRegistry registry() {
             return services;
         }
     }

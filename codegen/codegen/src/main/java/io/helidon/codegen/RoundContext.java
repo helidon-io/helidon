@@ -18,6 +18,7 @@ package io.helidon.codegen;
 
 import java.util.Collection;
 import java.util.Optional;
+import java.util.Set;
 
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.common.types.TypeInfo;
@@ -51,6 +52,17 @@ public interface RoundContext {
      * @return types that contain the annotation
      */
     Collection<TypeInfo> annotatedTypes(TypeName annotationType);
+
+    /**
+     * Annotation types present on wanted types, annotated with the specific "meta" annotation.
+     *
+     * @param metaAnnotation annotations annotated with the provided annotation
+     * @return annotation types
+     */
+    default Collection<TypeName> annotatedAnnotations(TypeName metaAnnotation) {
+        // default implementation for backward compatibility reasons
+        return Set.of();
+    }
 
     /**
      * All elements annotated with a specific annotation.

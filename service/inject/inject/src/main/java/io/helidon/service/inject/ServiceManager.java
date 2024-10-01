@@ -76,7 +76,7 @@ class ServiceManager<T> {
     Activator<T> activator() {
         return scopeSupplier
                 .get()
-                .services()
+                .registry()
                 .activator(provider.descriptor().coreInfo(),
                            activatorSupplier);
     }

@@ -14,22 +14,22 @@
  * limitations under the License.
  */
 
-package io.helidon.service.inject.api;
+package io.helidon.service.tests.inject.scopes;
 
-/**
- * A scope, such as request scope.
- */
-public interface Scope extends AutoCloseable {
-    /**
-     * Stop the scope, and destroy all service instances created within it.
-     */
+import java.util.Deque;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import io.helidon.service.inject.api.Injection;
+import io.helidon.service.registry.Service;
+
+@CustomScope
+class CustomScopedProducer implements RequestScopedContract {
+    private static final AtomicInteger COUNTER = new AtomicInteger();
+
+    private final int id = COUNTER.incrementAndGet();
+
     @Override
-    void close();
-
-    /**
-     * Service registry instance associated with this scope.
-     *
-     * @return services
-     */
-    ScopedRegistry registry();
+    public int id() {
+        return id;
+    }
 }

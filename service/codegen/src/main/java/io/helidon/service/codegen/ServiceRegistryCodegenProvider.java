@@ -62,6 +62,12 @@ public class ServiceRegistryCodegenProvider implements CodegenExtensionProvider 
                     .flatMap(Set::stream)
                     .collect(Collectors.toUnmodifiableSet());
 
+    private static final Set<TypeName> SUPPORTED_META_ANNOTATIONS =
+            EXTENSIONS.stream()
+                    .map(RegistryCodegenExtensionProvider::supportedMetaAnnotations)
+                    .flatMap(Set::stream)
+                    .collect(Collectors.toUnmodifiableSet());
+
     /**
      * Required default constructor.
      *
@@ -84,6 +90,11 @@ public class ServiceRegistryCodegenProvider implements CodegenExtensionProvider 
     @Override
     public Set<String> supportedAnnotationPackages() {
         return SUPPORTED_ANNOTATION_PACKAGES;
+    }
+
+    @Override
+    public Set<TypeName> supportedMetaAnnotations() {
+        return SUPPORTED_META_ANNOTATIONS;
     }
 
     @Override

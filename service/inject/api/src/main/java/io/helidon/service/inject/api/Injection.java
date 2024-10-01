@@ -19,6 +19,7 @@ package io.helidon.service.inject.api;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -113,12 +114,13 @@ public final class Injection {
     @Documented
     @Retention(RetentionPolicy.CLASS)
     @Target(ElementType.ANNOTATION_TYPE)
+    @Inherited
     public @interface Scope {
     }
 
     /**
-     * A service that does not have a scope, yet supports injection.
-     * The "does not have a scope" means that the service instances are not managed. If this
+     * A partial scope that creates a new instance for each injection point/lookup.
+     * The "partial scope" means that the service instances are not managed. If this
      * service gets injected, a new instance is created for each injection. The service is instantiated,
      * post construct method (if any) is called, and then it is ignored (i.e. it never gets a pre destroy
      * method invocation).
@@ -126,6 +128,7 @@ public final class Injection {
     @Documented
     @Retention(RetentionPolicy.CLASS)
     @Target({ElementType.ANNOTATION_TYPE, ElementType.TYPE})
+    @Scope
     public @interface Instance {
         /**
          * Type name of this interface.

@@ -14,22 +14,21 @@
  * limitations under the License.
  */
 
-package io.helidon.service.inject.api;
+package io.helidon.service.tests.inject.scopes;
 
-/**
- * A scope, such as request scope.
- */
-public interface Scope extends AutoCloseable {
-    /**
-     * Stop the scope, and destroy all service instances created within it.
-     */
-    @Override
-    void close();
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-    /**
-     * Service registry instance associated with this scope.
-     *
-     * @return services
-     */
-    ScopedRegistry registry();
+import io.helidon.common.types.TypeName;
+import io.helidon.service.inject.api.Injection;
+
+@Documented
+@Retention(RetentionPolicy.CLASS)
+@Injection.Scope
+@Target(ElementType.TYPE)
+public @interface CustomScope {
+    TypeName TYPE = TypeName.create(CustomScope.class);
 }
