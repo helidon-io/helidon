@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,7 +91,8 @@ class SimpleMeterRegistryTests {
     void testDisabledYieldsNoOp() {
         // Disable metrics using config.
         Config metricsDisabledConfig = Config.just(ConfigSources.create(Map.of("enabled", "false")));
-        MeterRegistry shouldBeNoOp = MetricsFactory.getInstance().createMeterRegistry(MetricsConfig.create(metricsDisabledConfig));
+        MeterRegistry shouldBeNoOp = MetricsFactory.getInstance()
+                .createMeterRegistry(MetricsConfig.create(metricsDisabledConfig));
 
         Counter shouldBeNoOpCounter = shouldBeNoOp.getOrCreate(Counter.builder("shouldBeNoOpCounter"));
         assertThat("Counters after registration", shouldBeNoOp.meters(), is(emptyIterable()));
