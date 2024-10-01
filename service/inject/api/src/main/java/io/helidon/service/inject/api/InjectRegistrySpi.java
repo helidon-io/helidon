@@ -45,9 +45,26 @@ public interface InjectRegistrySpi extends InjectRegistry {
      */
     ScopedRegistry createForScope(TypeName scope, String id, Map<ServiceInfo, Object> initialBindings);
 
+    /**
+     * Create a registry managed scope.
+     *
+     * @param scope scope annotation type
+     * @param id id of the scope
+     * @param initialBindings initial bindings for the created scope
+     * @return a new scope instance
+     */
     default Scope createScope(TypeName scope, String id, Map<ServiceInfo, Object> initialBindings) {
         return createScope(scope, id, initialBindings, it -> {});
     }
 
+    /**
+     * Create a registry managed scope with a close action.
+     *
+     * @param scope scope annotation type
+     * @param id id of the scope
+     * @param initialBindings initial bindings for the created scope
+     * @param onCloseAction action to carry out when the scope is closed
+     * @return a new scope instance
+     */
     Scope createScope(TypeName scope, String id, Map<ServiceInfo, Object> initialBindings, Consumer<Scope> onCloseAction);
 }

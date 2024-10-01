@@ -620,12 +620,12 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
         }
     }
 
-    private class ScopeImpl implements Scope {
+    private static class ScopeImpl implements Scope {
         private final TypeName scopeType;
         private final Consumer<Scope> onCloseAction;
         private final ScopedRegistryImpl registry;
 
-        public ScopeImpl(TypeName scopeType, Consumer<Scope> onCloseAction, ScopedRegistryImpl registry) {
+        private ScopeImpl(TypeName scopeType, Consumer<Scope> onCloseAction, ScopedRegistryImpl registry) {
             this.scopeType = scopeType;
             this.onCloseAction = onCloseAction;
             this.registry = registry;

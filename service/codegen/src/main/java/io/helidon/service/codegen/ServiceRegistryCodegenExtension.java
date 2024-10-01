@@ -64,7 +64,7 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
                 .map(it -> {
                     RegistryCodegenExtension extension = it.create(this.ctx);
                     return new ExtensionInfo(extension,
-                                             discoveryPredicate(it.supportedMetaAnnotations(),
+                                             discoveryPredicate(it.supportedAnnotations(),
                                                                 it.supportedAnnotationPackages()),
                                              it.supportedMetaAnnotations());
                 })
