@@ -307,9 +307,7 @@ public class Jwt {
         this.cHash = JwtUtil.getByteArray(payloadJson, C_HASH, "c_hash value");
         this.nonce = JwtUtil.getString(payloadJson, NONCE);
         this.scopes = JwtUtil.toScopes(payloadJson);
-        this.userPrincipal = JwtUtil.getString(payloadJson, USER_PRINCIPAL)
-                .or(() -> preferredUsername)
-                .or(() -> subject);
+        this.userPrincipal = JwtUtil.getString(payloadJson, USER_PRINCIPAL);
     }
 
     private Jwt(Builder builder) {
@@ -357,9 +355,7 @@ public class Jwt {
         this.scopes = builder.scopes;
 
         this.userPrincipal = builder.userPrincipal
-                .or(() -> toOptionalString(builder.payloadClaims, USER_PRINCIPAL))
-                .or(() -> preferredUsername)
-                .or(() -> subject);
+                .or(() -> toOptionalString(builder.payloadClaims, USER_PRINCIPAL));
 
         this.userGroups = builder.userGroups;
     }
@@ -662,12 +658,15 @@ public class Jwt {
     }
 
     /**
-     * User principal claim ("upn" from microprofile specification).
+     * User principal claim ("upn" from microprofile specification). Falls back to
+     * "preferred_username" then "sub" claim.
      *
-     * @return user principal or empty if claim is not defined
+     * @return user principal or empty if claim and fallbacks are not defined
      */
     public Optional<String> userPrincipal() {
-        return userPrincipal;
+        return userPrincipal
+                .or(() -> preferredUsername)
+                .or(() -> subject);
     }
 
     /**
@@ -1682,8 +1681,7 @@ public class Jwt {
          * User principal claim as defined by Microprofile JWT Auth spec.
          * Uses "upn" claim.
          *
-         * @param principal name of the principal, falls back to {@link #preferredUsername(String)} and then to
-         *                  {@link #subject(String)}
+         * @param principal name of the principal
          * @return updated builder instance
          */
         public Builder userPrincipal(String principal) {

@@ -28,7 +28,9 @@ import io.helidon.security.jwt.jwk.JwkRSA;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
@@ -110,5 +112,17 @@ public class JwtTest {
         errors = jwtValidator.validate(jwt);
         errors.log(LOGGER);
         errors.checkValid();
+    }
+
+    @Test
+    public void testUpnNotAddedAutomatically() {
+        String json = Jwt.builder().subject("a").build().payloadJson().toString();
+        assertThat(json, not(containsString("\"upn\"")));
+    }
+
+    @Test
+    public void testUserPrincipalFallsbackToSub() {
+        Jwt jwt = Jwt.builder().subject("a").build();
+        assertThat(jwt.userPrincipal(), is(Optional.of("a")));
     }
 }
