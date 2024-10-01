@@ -42,5 +42,6 @@
         <module>path-params</module>
         <module>security-response-mapper</module>
         <module>security-annotation</module>
+        <module>abac-policy</module>
     </modules>
 </project>

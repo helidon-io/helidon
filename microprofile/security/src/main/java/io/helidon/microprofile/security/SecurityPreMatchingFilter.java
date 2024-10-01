@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,10 +97,10 @@ class SecurityPreMatchingFilter extends SecurityFilterCommon implements Containe
         // when I reach this point, I am sure we should at least authenticate in prematching filter
         authenticate(filterContext, securityContext, tracing.atnTracing());
 
-        LOGGER.log(Level.TRACE, () -> "Filter after authentication. Should finish: " + filterContext.isShouldFinish());
+        LOGGER.log(Level.TRACE, () -> "Filter after authentication. Should finish: " + filterContext.shouldFinish());
 
         // authentication failed
-        if (filterContext.isShouldFinish()) {
+        if (filterContext.shouldFinish()) {
             return;
         }
 
@@ -122,9 +122,9 @@ class SecurityPreMatchingFilter extends SecurityFilterCommon implements Containe
 
         SecurityDefinition methodDef = new SecurityDefinition(false, false);
         methodDef.requiresAuthentication(true);
-        methodDef.setRequiresAuthorization(featureConfig().shouldUsePrematchingAuthorization());
-        context.setMethodSecurity(methodDef);
-        context.setResourceName("jax-rs");
+        methodDef.requiresAuthorization(featureConfig().shouldUsePrematchingAuthorization());
+        context.methodSecurity(methodDef);
+        context.resourceName("jax-rs");
 
         return configureContext(context, requestContext, uriInfo);
     }
