@@ -753,55 +753,59 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
      * A special stream that provides buffering for a delegate and special handling
      * of close logic. Note that due to some locking issues in the JDK, this class
      * must use delegation with {@link BufferedOutputStream} instead of subclassing.
+     *
+     * <p>If the buffer size is less or equal to zero, it will not wrap the
+     * {@link io.helidon.webserver.http1.Http1ServerResponse.BlockingOutputStream}
+     * with a {@link java.io.BufferedOutputStream}.
      */
     static class ClosingBufferedOutputStream extends OutputStream {
 
-        private final BlockingOutputStream delegate;
-        private final BufferedOutputStream bufferedDelegate;
+        private final BlockingOutputStream closingDelegate;
+        private final OutputStream delegate;
 
         ClosingBufferedOutputStream(BlockingOutputStream out, int size) {
-            this.delegate = out;
-            this.bufferedDelegate = new BufferedOutputStream(out, size);
+            this.closingDelegate = out;
+            this.delegate = size <= 0 ? out : new BufferedOutputStream(out, size);
         }
 
         @Override
         public void write(int b) throws IOException {
-            bufferedDelegate.write(b);
+            delegate.write(b);
         }
 
         @Override
         public void write(byte[] b) throws IOException {
-            bufferedDelegate.write(b);
+            delegate.write(b);
         }
 
         @Override
         public void write(byte[] b, int off, int len) throws IOException {
-            bufferedDelegate.write(b, off, len);
+            delegate.write(b, off, len);
         }
 
         @Override
         public void flush() throws IOException {
-            bufferedDelegate.flush();
+            delegate.flush();
         }
 
         @Override
         public void close() {
-            delegate.closing();     // inform of imminent call to close for last flush
+            closingDelegate.closing();     // inform of imminent call to close for last flush
             try {
-                bufferedDelegate.close();
+                delegate.close();
             } catch (IOException e) {
                 throw new ServerConnectionException("Failed to close server output stream", e);
             }
         }
 
         long totalBytesWritten() {
-            return delegate.totalBytesWritten();
+            return closingDelegate.totalBytesWritten();
         }
 
         void commit() {
             try {
                 flush();
-                delegate.commit();
+                closingDelegate.commit();
             } catch (IOException e) {
                 throw new ServerConnectionException("Failed to flush server output stream", e);
             }

@@ -175,7 +175,8 @@ interface ListenerConfigBlueprint {
 
     /**
      * Initial buffer size in bytes of {@link java.io.BufferedOutputStream} created internally to
-     * write data to a socket connection. Default is {@code 4096}.
+     * write data to a socket connection. Default is {@code 4096}. Set buffer size to a value
+     * less than one to turn off buffering.
      *
      * @return initial buffer size used for writing
      */
