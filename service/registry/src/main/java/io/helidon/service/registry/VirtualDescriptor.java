@@ -25,7 +25,7 @@ import io.helidon.common.types.TypeName;
 /**
  * A virtual descriptor is not backed by a generated descriptor.
  */
-public class VirtualDescriptor implements GeneratedService.Descriptor<Object> {
+public class VirtualDescriptor implements ServiceDescriptor<Object> {
     private static final TypeName TYPE = TypeName.create(VirtualDescriptor.class);
     private final Set<TypeName> contracts;
     private final TypeName serviceType;

@@ -32,7 +32,7 @@ import io.helidon.service.inject.ServiceSupplies.ServiceSupply;
 import io.helidon.service.inject.ServiceSupplies.ServiceSupplyList;
 import io.helidon.service.inject.ServiceSupplies.ServiceSupplyOptional;
 import io.helidon.service.inject.api.CreateForName__ServiceDescriptor;
-import io.helidon.service.inject.api.GeneratedInjectService.Descriptor;
+import io.helidon.service.inject.api.InjectServiceDescriptor;
 import io.helidon.service.inject.api.Lookup;
 import io.helidon.service.registry.Dependency;
 import io.helidon.service.registry.ServiceInfo;
@@ -41,12 +41,12 @@ import io.helidon.service.registry.ServiceRegistryException;
 class ServicePlanBinder implements InjectionPlanBinder.Binder {
     private final Map<Dependency, IpPlan<?>> injectionPlan = new LinkedHashMap<>();
 
-    private final Descriptor<?> self;
+    private final InjectServiceDescriptor<?> self;
     private final Consumer<Map<Dependency, IpPlan<?>>> injectionPlanConsumer;
     private final InjectServiceRegistryImpl registry;
 
     private ServicePlanBinder(InjectServiceRegistryImpl registry,
-                              Descriptor<?> self,
+                              InjectServiceDescriptor<?> self,
                               Consumer<Map<Dependency, IpPlan<?>>> injectionPlanConsumer) {
         this.registry = registry;
         this.self = self;
@@ -54,7 +54,7 @@ class ServicePlanBinder implements InjectionPlanBinder.Binder {
     }
 
     static <T> InjectionPlanBinder.Binder create(InjectServiceRegistryImpl registry,
-                                                 Descriptor<T> descriptor,
+                                                 InjectServiceDescriptor<T> descriptor,
                                                  Consumer<Map<Dependency, IpPlan<?>>> planConsumer) {
         return new ServicePlanBinder(registry, descriptor, planConsumer);
     }

@@ -38,16 +38,17 @@ import io.helidon.service.inject.api.ActivationResult;
 import io.helidon.service.inject.api.Activator;
 import io.helidon.service.inject.api.GeneratedInjectService;
 import io.helidon.service.inject.api.GeneratedInjectService.CreateForDescriptor;
-import io.helidon.service.inject.api.GeneratedInjectService.Descriptor;
-import io.helidon.service.inject.api.GeneratedInjectService.InterceptionMetadata;
 import io.helidon.service.inject.api.GeneratedInjectService.QualifiedProviderDescriptor;
+import io.helidon.service.inject.api.InjectServiceDescriptor;
 import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.Injection.InjectionPointProvider;
 import io.helidon.service.inject.api.Injection.QualifiedInstance;
 import io.helidon.service.inject.api.Injection.QualifiedProvider;
 import io.helidon.service.inject.api.Injection.ServicesProvider;
+import io.helidon.service.inject.api.InterceptionMetadata;
 import io.helidon.service.inject.api.Ip;
 import io.helidon.service.inject.api.Lookup;
+import io.helidon.service.inject.api.ProviderType;
 import io.helidon.service.inject.api.Qualifier;
 import io.helidon.service.inject.api.ServiceInstance;
 import io.helidon.service.registry.Dependency;
@@ -81,43 +82,40 @@ final class Activators {
     }
 
     static <T> Supplier<Activator<T>> create(InjectServiceRegistryImpl registry, ServiceProvider<T> provider) {
-        Descriptor<T> descriptor = provider.descriptor();
-        Set<TypeName> contracts = descriptor.contracts();
+        InjectServiceDescriptor<T> descriptor = provider.descriptor();
 
         if (descriptor.scope().equals(Injection.Instance.TYPE)) {
-            if (contracts.contains(ServicesProvider.TYPE)) {
-                return () -> new ActivatorsPerLookup.ServicesProviderActivator<>(provider);
-            }
-            if (contracts.contains(InjectionPointProvider.TYPE)) {
-                return () -> new ActivatorsPerLookup.IpProviderActivator<>(provider);
-            }
-            if (contracts.contains(TypeNames.SUPPLIER)) {
-                return () -> new ActivatorsPerLookup.SupplierActivator<>(provider);
-            }
-            if (descriptor instanceof GeneratedInjectService.CreateForDescriptor dbd) {
-                return () -> new ActivatorsPerLookup.CreateForActivator<>(registry, dbd, provider);
-            }
-            if (descriptor instanceof QualifiedProviderDescriptor qpd) {
-                return () -> new ActivatorsPerLookup.QualifiedProviderActivator<>(provider, qpd);
-            }
-            return () -> new ActivatorsPerLookup.SingleServiceActivator<>(provider);
+            return switch (descriptor.providerType()) {
+                case NONE -> throw new ServiceRegistryException("Invalid provider type NONE. Cannot create activator for "
+                                                                        + descriptor.serviceType().fqName());
+                case SERVICE -> {
+                    if (descriptor instanceof GeneratedInjectService.CreateForDescriptor dbd) {
+                        yield () -> new ActivatorsPerLookup.CreateForActivator<>(registry, provider, dbd);
+                    }
+                    yield () -> new ActivatorsPerLookup.SingleServiceActivator<>(provider);
+                }
+                case SUPPLIER -> () -> new ActivatorsPerLookup.SupplierActivator<>(provider);
+                case SERVICES_PROVIDER -> () -> new ActivatorsPerLookup.ServicesProviderActivator<>(provider);
+                case IP_PROVIDER -> () -> new ActivatorsPerLookup.IpProviderActivator<>(provider);
+                case QUALIFIED_PROVIDER -> () ->
+                        new ActivatorsPerLookup.QualifiedProviderActivator<>(provider, (QualifiedProviderDescriptor) descriptor);
+            };
         } else {
-            if (contracts.contains(ServicesProvider.TYPE)) {
-                return () -> new Activators.ServicesProviderActivator<>(provider);
-            }
-            if (contracts.contains(InjectionPointProvider.TYPE)) {
-                return () -> new Activators.IpProviderActivator<>(provider);
-            }
-            if (contracts.contains(TypeNames.SUPPLIER)) {
-                return () -> new Activators.SupplierActivator<>(provider);
-            }
-            if (descriptor instanceof GeneratedInjectService.CreateForDescriptor dbd) {
-                return () -> new CreateForActivator<>(registry, provider, dbd);
-            }
-            if (descriptor instanceof QualifiedProviderDescriptor qpd) {
-                return () -> new Activators.QualifiedProviderActivator<>(provider, qpd);
-            }
-            return () -> new Activators.SingleServiceActivator<>(provider);
+            return switch (descriptor.providerType()) {
+                case NONE -> throw new ServiceRegistryException("Invalid provider type NONE. Cannot create activator for "
+                                                                        + descriptor.serviceType().fqName());
+                case SERVICE -> {
+                    if (descriptor instanceof GeneratedInjectService.CreateForDescriptor dbd) {
+                        yield () -> new Activators.CreateForActivator<>(registry, provider, dbd);
+                    }
+                    yield () -> new Activators.SingleServiceActivator<>(provider);
+                }
+                case SUPPLIER -> () -> new Activators.SupplierActivator<>(provider);
+                case SERVICES_PROVIDER -> () -> new Activators.ServicesProviderActivator<>(provider);
+                case IP_PROVIDER -> () -> new Activators.IpProviderActivator<>(provider);
+                case QUALIFIED_PROVIDER -> () ->
+                        new Activators.QualifiedProviderActivator<>(provider, (QualifiedProviderDescriptor) descriptor);
+            };
         }
     }
 
@@ -166,7 +164,7 @@ final class Activators {
         }
 
         @Override
-        public Descriptor<T> descriptor() {
+        public InjectServiceDescriptor<T> descriptor() {
             return provider.descriptor();
         }
 
@@ -448,7 +446,7 @@ final class Activators {
 
         @Override
         protected Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
-            if (lookup.contracts().contains(TypeNames.SUPPLIER)) {
+            if (lookup.providerTypes().contains(ProviderType.SUPPLIER)) {
                 // the user requested the provider, not the provided
                 T instance = serviceInstance.get();
                 return Optional.of(List.of(QualifiedInstance.create(instance, provider.descriptor().qualifiers())));
@@ -552,7 +550,7 @@ final class Activators {
             }
             var ipProvider = (InjectionPointProvider<T>) serviceInstance.get();
 
-            if (lookup.contracts().contains(InjectionPointProvider.TYPE)) {
+            if (lookup.providerTypes().contains(ProviderType.IP_PROVIDER)) {
                 // the user requested the provider, not the provided
                 T instance = (T) ipProvider;
                 return Optional.of(List.of(QualifiedInstance.create(instance, provider.descriptor().qualifiers())));
@@ -594,7 +592,7 @@ final class Activators {
         @SuppressWarnings("unchecked")
         @Override
         protected Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
-            if (lookup.contracts().contains(ServicesProvider.TYPE)) {
+            if (lookup.providerTypes().contains(ProviderType.SERVICES_PROVIDER)) {
                 return Optional.of(List.of(QualifiedInstance.create((T) serviceInstance, descriptor().qualifiers())));
             }
 
@@ -785,11 +783,13 @@ final class Activators {
         private final ReentrantLock lock = new ReentrantLock();
         private final DependencyContext ctx;
         private final InterceptionMetadata interceptionMetadata;
-        private final Descriptor<T> source;
+        private final InjectServiceDescriptor<T> source;
 
         private volatile T instance;
 
-        private InstanceHolder(DependencyContext ctx, InterceptionMetadata interceptionMetadata, Descriptor<T> source) {
+        private InstanceHolder(DependencyContext ctx,
+                               InterceptionMetadata interceptionMetadata,
+                               InjectServiceDescriptor<T> source) {
             this.ctx = ctx;
             this.interceptionMetadata = interceptionMetadata;
             this.source = source;

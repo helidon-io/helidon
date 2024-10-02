@@ -114,10 +114,10 @@ public final class ServiceCodegenTypes {
      */
     public static final TypeName INJECT_SERVICE_INSTANCE = TypeName.create("io.helidon.service.inject.api.ServiceInstance");
     /**
-     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.ServiceDescriptor}.
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.InjectServiceDescriptor}.
      */
     public static final TypeName INJECT_SERVICE_DESCRIPTOR = TypeName.create(
-            "io.helidon.service.inject.api.GeneratedInjectService.Descriptor");
+            "io.helidon.service.inject.api.InjectServiceDescriptor");
     /**
      * {@link io.helidon.common.types.TypeName} for
      * {@code io.helidon.service.inject.api.GeneratedInjectService.CreateForDescriptor}.
@@ -147,9 +147,9 @@ public final class ServiceCodegenTypes {
     public static final TypeName INJECT_IP_SUPPORT = TypeName.create(
             "io.helidon.service.inject.api.GeneratedInjectService.IpSupport");
     /**
-     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.GeneratedService.Descriptor}.
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.ServiceDescriptor}.
      */
-    public static final TypeName SERVICE_DESCRIPTOR = TypeName.create("io.helidon.service.registry.GeneratedService.Descriptor");
+    public static final TypeName SERVICE_DESCRIPTOR = TypeName.create("io.helidon.service.registry.ServiceDescriptor");
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Invoker}.
      */
@@ -162,6 +162,11 @@ public final class ServiceCodegenTypes {
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Interception.Delegate}.
      */
     public static final TypeName INTERCEPTION_DELEGATE = TypeName.create("io.helidon.service.inject.api.Interception.Delegate");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Interception.ExternalDelegates}.
+     */
+    public static final TypeName INTERCEPTION_EXTERNAL_DELEGATES =
+            TypeName.create("io.helidon.service.inject.api.Interception.ExternalDelegates");
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Qualifier}.
      */
@@ -178,6 +183,10 @@ public final class ServiceCodegenTypes {
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.ServicesProvider}.
      */
     public static final TypeName SERVICES_PROVIDER = TypeName.create("io.helidon.service.inject.api.Injection.ServicesProvider");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.ProviderType}.
+     */
+    public static final TypeName SERVICE_PROVIDER_TYPE = TypeName.create("io.helidon.service.inject.api.ProviderType");
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.QualifiedInstance}.
      */
@@ -201,7 +210,7 @@ public final class ServiceCodegenTypes {
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.InterceptionMetadata}.
      */
     public static final TypeName INTERCEPTION_METADATA = TypeName.create(
-            "io.helidon.service.inject.api.GeneratedInjectService.InterceptionMetadata");
+            "io.helidon.service.inject.api.InterceptionMetadata");
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Application}.
      */

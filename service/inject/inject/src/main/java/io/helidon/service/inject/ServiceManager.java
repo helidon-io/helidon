@@ -21,7 +21,7 @@ import java.util.function.Supplier;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.service.inject.api.Activator;
-import io.helidon.service.inject.api.GeneratedInjectService.Descriptor;
+import io.helidon.service.inject.api.InjectServiceDescriptor;
 import io.helidon.service.inject.api.InjectServiceInfo;
 import io.helidon.service.inject.api.Injection.QualifiedInstance;
 import io.helidon.service.inject.api.Lookup;
@@ -51,7 +51,7 @@ class ServiceManager<T> {
         return provider.descriptor().serviceType().classNameWithEnclosingNames();
     }
 
-    public ServiceInstance<T> registryInstance(Lookup lookup, QualifiedInstance<T> instance) {
+    ServiceInstance<T> registryInstance(Lookup lookup, QualifiedInstance<T> instance) {
         return new ServiceInstanceImpl<>(provider.descriptor(),
                                          provider.contracts(lookup),
                                          instance);
@@ -82,11 +82,11 @@ class ServiceManager<T> {
     }
 
     private static final class ServiceInstanceImpl<T> implements ServiceInstance<T> {
-        private final Descriptor<T> descriptor;
+        private final InjectServiceDescriptor<T> descriptor;
         private final QualifiedInstance<T> qualifiedInstance;
         private final Set<TypeName> contracts;
 
-        private ServiceInstanceImpl(Descriptor<T> descriptor,
+        private ServiceInstanceImpl(InjectServiceDescriptor<T> descriptor,
                                     Set<TypeName> contracts,
                                     QualifiedInstance<T> qualifiedInstance) {
             this.descriptor = descriptor;

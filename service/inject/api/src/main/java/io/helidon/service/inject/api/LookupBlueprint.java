@@ -112,6 +112,31 @@ interface LookupBlueprint {
     Optional<Ip> injectionPoint();
 
     /**
+     * If configured, the lookup will return service providers of the
+     * chosen types.
+     * If no provider types are defined, service instances are returned.
+     * <p>
+     * Otherwise only service provider of the chosen types are returned, as follows:
+     * <ul>
+     *     <li>{@link io.helidon.service.inject.api.ProviderType#SERVICE} - only services that directly implement the
+     *     contract</li>
+     *     <li>{@link io.helidon.service.inject.api.ProviderType#SUPPLIER} - only that are {@link java.util.function.Supplier}
+     *     of the contract</li>
+     *     <li>{@link io.helidon.service.inject.api.ProviderType#QUALIFIED_PROVIDER} - services that are
+     *     {@link io.helidon.service.inject.api.Injection.QualifiedProvider} of the contract</li>
+     *     <li>{@link io.helidon.service.inject.api.ProviderType#SERVICES_PROVIDER} - services that are
+     *     {@link io.helidon.service.inject.api.Injection.ServicesProvider} of the contract</li>
+     *     <li>{@link io.helidon.service.inject.api.ProviderType#IP_PROVIDER} - services that are
+     *     {@link io.helidon.service.inject.api.Injection.InjectionPointProvider} of the contract</li>
+     *     <li>{@link io.helidon.service.inject.api.ProviderType#NONE} - this has no effect and will not modify the lookup</li>
+     * </ul>
+     *
+     * @return desired provider types
+     */
+    @Option.Singular
+    Set<ProviderType> providerTypes();
+
+    /**
      * Determines whether this lookup matches the criteria for injection.
      * Matches is a looser form of equality check than {@code equals()}. If a service matches criteria
      * it is generally assumed to be viable for assignability.
@@ -146,6 +171,7 @@ interface LookupBlueprint {
                     || this.contracts().contains(serviceInfo.serviceType());
         }
         return matches
+                && matchesProviderTypes(providerTypes(), serviceInfo.providerType())
                 && matchesAbstract(includeAbstract(), serviceInfo.isAbstract())
                 && (this.scopes().isEmpty() || this.scopes().contains(serviceInfo.scope()))
                 && Qualifiers.matchesQualifiers(serviceInfo.qualifiers(), this.qualifiers())
@@ -180,6 +206,13 @@ interface LookupBlueprint {
      */
     default boolean matchesQualifiers(Set<Qualifier> qualifiers) {
         return Qualifiers.matchesQualifiers(qualifiers, qualifiers());
+    }
+
+    private boolean matchesProviderTypes(Set<ProviderType> providerTypes, ProviderType providerType) {
+        if (providerTypes.isEmpty() || (providerTypes.size() == 1 && providerTypes.contains(ProviderType.NONE))) {
+            return true;
+        }
+        return providerTypes.contains(providerType);
     }
 
     private static boolean matchesWeight(InjectServiceInfo src,

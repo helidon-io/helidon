@@ -22,9 +22,11 @@ import java.util.Set;
 import io.helidon.common.GenericType;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
-import io.helidon.service.inject.api.GeneratedInjectService;
+import io.helidon.service.inject.api.InjectServiceDescriptor;
 import io.helidon.service.inject.api.Injection;
+import io.helidon.service.inject.api.InterceptionMetadata;
 import io.helidon.service.inject.api.Ip;
+import io.helidon.service.inject.api.ProviderType;
 import io.helidon.service.registry.Dependency;
 import io.helidon.service.registry.DependencyContext;
 import io.helidon.service.registry.GeneratedService;
@@ -111,7 +113,7 @@ public class CyclicDependencyCoreTest {
         }
     }
 
-    private static class Descriptor2 implements GeneratedInjectService.Descriptor<Service2> {
+    private static class Descriptor2 implements InjectServiceDescriptor<Service2> {
         private static final TypeName TYPE = TypeName.create(Descriptor2.class);
 
         private static final Ip DEP = Ip.builder()
@@ -126,7 +128,7 @@ public class CyclicDependencyCoreTest {
                 .build();
 
         @Override
-        public Object instantiate(DependencyContext ctx, GeneratedInjectService.InterceptionMetadata interceptionMetadata) {
+        public Object instantiate(DependencyContext ctx, InterceptionMetadata interceptionMetadata) {
             return new Service2(ctx.dependency(DEP));
         }
 

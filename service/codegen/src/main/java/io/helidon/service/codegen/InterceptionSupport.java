@@ -18,8 +18,8 @@ package io.helidon.service.codegen;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import io.helidon.codegen.CodegenException;
@@ -37,6 +37,7 @@ import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.service.codegen.ServiceCodegenTypes.INJECT_SERVICE_DESCRIPTOR;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INTERCEPTION_METADATA;
+import static java.util.function.Predicate.not;
 
 /**
  * Tools for interception of non-service interfaces. Classes (even abstract) cannot be used,
@@ -103,32 +104,57 @@ public final class InterceptionSupport {
      * This is used from Helidon Config Beans, so you can check appropriate code in
      * {@code io.helidon.service.codegen.ConfigBeanCodegen}.
      *
-     * @param typeInfo      interface type info that will be intercepted
-     * @param interfaceType type of the interface used for interception (may differ from typeInfo type)
+     * @param typeInfo        interface type info that will be intercepted
+     * @param interceptedType type of the interface (or class) used for interception (may differ from typeInfo type)
+     * @param packageName     package to generate the delegate into (may differ from type, when using external delegates)
      * @return type name of the generated delegate implementation
      * @throws io.helidon.codegen.CodegenException in case the type is not an interface
      */
-    public TypeName generateDelegateInterception(TypeInfo typeInfo, TypeName interfaceType) {
-        if (typeInfo.kind() != ElementKind.INTERFACE) {
-            throw new CodegenException("We can generate a delegate interception only for interfaces, but "
-                                               + typeInfo.typeName().fqName() + " is " + typeInfo.kind(),
-                                       typeInfo.originatingElementValue());
-        }
+    public TypeName generateDelegateInterception(TypeInfo typeInfo, TypeName interceptedType, String packageName) {
+        boolean samePackage = packageName.equals(interceptedType.packageName());
 
         List<TypedElements.ElementMeta> elementMetas = interception.maybeIntercepted(typeInfo);
         Set<ElementSignature> interceptedSignatures = new HashSet<>();
         elementMetas.stream()
                 .map(TypedElements.ElementMeta::element)
+                .peek(it -> {
+                    if (samePackage) {
+                        return;
+                    }
+                    if (it.accessModifier() != AccessModifier.PUBLIC) {
+                        throw new CodegenException("Cannot generate interception delegate for a non-public method"
+                                                           + " when the delegate is in a different package",
+                                                   it.originatingElementValue());
+                    }
+                })
                 .map(TypedElementInfo::signature)
                 .forEach(interceptedSignatures::add);
         List<TypedElementInfo> otherMethods = typeInfo.elementInfo()
                 .stream()
                 .filter(ElementInfoPredicates::isMethod)
-                .filter(Predicate.not(ElementInfoPredicates::isStatic))
-                .filter(Predicate.not(ElementInfoPredicates::isPrivate))
+                .filter(not(ElementInfoPredicates::isStatic))
+                .filter(not(ElementInfoPredicates::isPrivate))
+                .filter(it -> {
+                    if (samePackage) {
+                        return true;
+                    }
+                    return ElementInfoPredicates.isPublic(it);
+                })
                 .filter(it -> !interceptedSignatures.contains(it.signature()))
                 .collect(Collectors.toUnmodifiableList());
-        return generateIntercepted(typeInfo, interfaceType, elementMetas, otherMethods);
+
+        TypeName generatedType = interceptedDelegateType(interceptedType);
+        generatedType = TypeName.builder()
+                .from(generatedType)
+                .packageName(packageName)
+                .build();
+
+        if (typeInfo.kind() == ElementKind.INTERFACE) {
+            return generateInterceptionDelegateInterface(typeInfo, interceptedType, generatedType, elementMetas, otherMethods);
+        } else {
+            return generateInterceptionDelegateClass(typeInfo, interceptedType, generatedType, elementMetas, otherMethods);
+        }
+
     }
 
     /**
@@ -144,12 +170,121 @@ public final class InterceptionSupport {
                 .build();
     }
 
-    private TypeName generateIntercepted(TypeInfo typeInfo,
-                                         TypeName interfaceType,
-                                         List<TypedElements.ElementMeta> elementMetas,
-                                         List<TypedElementInfo> otherMethods) {
+    private TypeName generateInterceptionDelegateClass(TypeInfo typeInfo,
+                                                       TypeName classType,
+                                                       TypeName generatedType,
+                                                       List<TypedElements.ElementMeta> elementMetas,
+                                                       List<TypedElementInfo> otherMethods) {
 
-        TypeName generatedType = interceptedDelegateType(interfaceType);
+        Optional<TypedElementInfo> foundCtr = typeInfo.elementInfo()
+                .stream()
+                .filter(ElementInfoPredicates::isConstructor)
+                .filter(ElementInfoPredicates.hasParams())
+                .filter(not(ElementInfoPredicates::isPrivate))
+                .findFirst();
+
+        if (foundCtr.isEmpty()) {
+            throw new CodegenException("Interception delegate requires accessible no-arg constructor.",
+                                       typeInfo.originatingElementValue());
+        }
+
+        var definitions = InterceptedTypeGenerator.MethodDefinition.toDefinitions(ctx, typeInfo, elementMetas);
+
+        var classModel = ClassModel.builder()
+                .accessModifier(AccessModifier.PACKAGE_PRIVATE)
+                .superType(classType)
+                .type(generatedType)
+                .copyright(CodegenUtil.copyright(GENERATOR,
+                                                 classType,
+                                                 generatedType))
+                .description("Intercepted class implementation, that delegates to the provided instance.")
+                .addAnnotation(CodegenUtil.generatedAnnotation(GENERATOR,
+                                                               classType,
+                                                               generatedType,
+                                                               "",
+                                                               ""));
+
+        // add type annotations
+        InjectionExtension.annotationsField(classModel, typeInfo);
+        // this is a special case, where we may not have the correct descriptor
+        InterceptedTypeGenerator.generateElementInfoFields(classModel, definitions);
+        InterceptedTypeGenerator.generateInvokerFields(classModel, definitions);
+        InterceptedTypeGenerator.generateInterceptedMethods(classModel, definitions);
+        generateOtherMethods(classModel, otherMethods);
+
+        classModel.addField(delegate -> delegate
+                .name(DELEGATE_PARAM)
+                .accessModifier(AccessModifier.PRIVATE)
+                .isFinal(true)
+                .type(classType));
+
+        classModel.addConstructor(ctr -> ctr
+                .accessModifier(AccessModifier.PRIVATE)
+                .addParameter(interceptMeta -> interceptMeta
+                        .type(INTERCEPTION_METADATA)
+                        .name(INTERCEPT_META_PARAM))
+                .addParameter(descriptor -> descriptor
+                        .type(DESCRIPTOR_TYPE)
+                        .name(DESCRIPTOR_PARAM))
+                .addParameter(delegate -> delegate
+                        .type(classType)
+                        .name(DELEGATE_PARAM))
+                .addContentLine("// no-arg constructor is required for delegation")
+                .addContentLine("super();")
+                .addContentLine("")
+                .addContent("this.")
+                .addContent(DELEGATE_PARAM)
+                .addContent(" = ")
+                .addContent(DELEGATE_PARAM)
+                .addContentLine(";")
+                .update(it -> InterceptedTypeGenerator.createInvokers(it,
+                                                                      definitions,
+                                                                      false,
+                                                                      INTERCEPT_META_PARAM,
+                                                                      DESCRIPTOR_PARAM,
+                                                                      DESCRIPTOR_PARAM + ".qualifiers()",
+                                                                      TYPE_ANNOTATIONS_FIELD,
+                                                                      DELEGATE_PARAM)));
+
+        // and finally the create method (to be invoked by user code)
+        classModel.addMethod(create -> create
+                .accessModifier(AccessModifier.PACKAGE_PRIVATE)
+                .isStatic(true)
+                .returnType(classType)
+                .name("create")
+                .addParameter(interceptMeta -> interceptMeta
+                        .type(INTERCEPTION_METADATA)
+                        .name(INTERCEPT_META_PARAM))
+                .addParameter(descriptor -> descriptor
+                        .type(DESCRIPTOR_TYPE)
+                        .name(DESCRIPTOR_PARAM))
+                .addParameter(delegate -> delegate
+                        .type(classType)
+                        .name(DELEGATE_PARAM))
+                .addContent("return new ")
+                .addContent(generatedType)
+                .addContent("(")
+                .addContent(INTERCEPT_META_PARAM)
+                .addContentLine(",")
+                .increaseContentPadding()
+                .increaseContentPadding()
+                .addContent(DESCRIPTOR_PARAM)
+                .addContentLine(",")
+                .addContent(DELEGATE_PARAM)
+                .addContentLine(");")
+        );
+
+        ctx.addType(generatedType, classModel, classType, typeInfo.originatingElementValue());
+
+        return generatedType;
+    }
+
+    private TypeName generateInterceptionDelegateInterface(TypeInfo typeInfo,
+                                                           TypeName interfaceType,
+                                                           TypeName generatedType,
+                                                           List<TypedElements.ElementMeta> elementMetas,
+                                                           List<TypedElementInfo> otherMethods) {
+
         var definitions = InterceptedTypeGenerator.MethodDefinition.toDefinitions(ctx, typeInfo, elementMetas);
 
         var classModel = ClassModel.builder()

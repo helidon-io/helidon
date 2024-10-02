@@ -331,7 +331,9 @@ public final class GeneratedService {
      * of the service instance, with dependent services as parameters.
      *
      * @param <T> type of the described service
+     * @deprecated use {@link io.helidon.service.registry.ServiceDescriptor} instead
      */
+    @Deprecated(forRemoval = true, since = "4.2.0")
     public interface Descriptor<T> extends ServiceInfo {
         /**
          * Create a new service instance.

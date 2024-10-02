@@ -67,6 +67,7 @@ public class InjectionExtensionProvider implements RegistryCodegenExtensionProvi
                       ServiceCodegenTypes.INJECTION_MAIN,
                       ServiceCodegenTypes.INJECTION_DESCRIBE,
                       ServiceCodegenTypes.INTERCEPTION_DELEGATE,
+                      ServiceCodegenTypes.INTERCEPTION_EXTERNAL_DELEGATES,
                       ServiceCodegenTypes.INJECTION_CREATE_FOR);
     }
 

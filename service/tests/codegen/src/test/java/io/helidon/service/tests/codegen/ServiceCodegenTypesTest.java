@@ -35,24 +35,26 @@ import io.helidon.service.inject.InjectConfig;
 import io.helidon.service.inject.InjectRegistryManager;
 import io.helidon.service.inject.InjectionMain;
 import io.helidon.service.inject.InjectionPlanBinder;
-import io.helidon.service.inject.api.GeneratedInjectService;
 import io.helidon.service.inject.api.GeneratedInjectService.CreateForDescriptor;
 import io.helidon.service.inject.api.GeneratedInjectService.IpSupport;
 import io.helidon.service.inject.api.GeneratedInjectService.QualifiedProviderDescriptor;
 import io.helidon.service.inject.api.GeneratedInjectService.ScopeHandlerDescriptor;
 import io.helidon.service.inject.api.InjectRegistry;
+import io.helidon.service.inject.api.InjectServiceDescriptor;
 import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.Interception;
+import io.helidon.service.inject.api.InterceptionMetadata;
 import io.helidon.service.inject.api.InvocationException;
 import io.helidon.service.inject.api.Invoker;
 import io.helidon.service.inject.api.Ip;
 import io.helidon.service.inject.api.Lookup;
 import io.helidon.service.inject.api.Qualifier;
 import io.helidon.service.inject.api.ServiceInstance;
+import io.helidon.service.inject.api.ProviderType;
 import io.helidon.service.registry.Dependency;
 import io.helidon.service.registry.DependencyContext;
-import io.helidon.service.registry.GeneratedService;
 import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceDescriptor;
 import io.helidon.service.registry.ServiceInfo;
 
 import org.hamcrest.CoreMatchers;
@@ -92,7 +94,7 @@ class ServiceCodegenTypesTest {
         checkField(toCheck, checked, fields, "SERVICE_ANNOTATION_CONTRACT", Service.Contract.class);
         checkField(toCheck, checked, fields, "SERVICE_ANNOTATION_EXTERNAL_CONTRACTS", Service.ExternalContracts.class);
         checkField(toCheck, checked, fields, "SERVICE_ANNOTATION_DESCRIPTOR", Service.Descriptor.class);
-        checkField(toCheck, checked, fields, "SERVICE_DESCRIPTOR", GeneratedService.Descriptor.class);
+        checkField(toCheck, checked, fields, "SERVICE_DESCRIPTOR", ServiceDescriptor.class);
         checkField(toCheck, checked, fields, "SERVICE_DEPENDENCY", Dependency.class);
         checkField(toCheck, checked, fields, "SERVICE_DEPENDENCY_CONTEXT", DependencyContext.class);
         checkField(toCheck, checked, fields, "SERVICE_INFO", ServiceInfo.class);
@@ -109,7 +111,7 @@ class ServiceCodegenTypesTest {
         checkField(toCheck, checked, fields, "INJECTION_RUN_LEVEL", Injection.RunLevel.class);
         checkField(toCheck, checked, fields, "INJECTION_MAIN", Injection.Main.class);
         checkField(toCheck, checked, fields, "INJECTION_DESCRIBE", Injection.Describe.class);
-        checkField(toCheck, checked, fields, "INJECT_SERVICE_DESCRIPTOR", GeneratedInjectService.Descriptor.class);
+        checkField(toCheck, checked, fields, "INJECT_SERVICE_DESCRIPTOR", InjectServiceDescriptor.class);
         checkField(toCheck, checked, fields, "INJECT_LOOKUP", Lookup.class);
         checkField(toCheck, checked, fields, "INJECT_QUALIFIER", Qualifier.class);
         checkField(toCheck, checked, fields, "INJECTION_POINT", Ip.class);
@@ -135,7 +137,8 @@ class ServiceCodegenTypesTest {
         checkField(toCheck, checked, fields, "INVOCATION_EXCEPTION", InvocationException.class);
         checkField(toCheck, checked, fields, "INTERCEPTION_TRIGGER", Interception.Trigger.class);
         checkField(toCheck, checked, fields, "INTERCEPTION_DELEGATE", Interception.Delegate.class);
-        checkField(toCheck, checked, fields, "INTERCEPTION_METADATA", GeneratedInjectService.InterceptionMetadata.class);
+        checkField(toCheck, checked, fields, "INTERCEPTION_EXTERNAL_DELEGATES", Interception.ExternalDelegates.class);
+        checkField(toCheck, checked, fields, "INTERCEPTION_METADATA", InterceptionMetadata.class);
 
         checkField(toCheck, checked, fields, "BUILDER_BLUEPRINT", Prototype.Blueprint.class);
         checkField(toCheck, checked, fields, "BUILDER_CONFIGURED", Prototype.Configured.class);
@@ -143,6 +146,8 @@ class ServiceCodegenTypesTest {
         checkField(toCheck, checked, fields, "CONFIG_COMMON_CONFIG", Config.class);
         checkField(toCheck, checked, fields, "CONFIG_EXCEPTION", ConfigException.class);
         checkField(toCheck, checked, fields, "CONFIG_META_CONFIGURED", Configured.class);
+
+        checkField(toCheck, checked, fields, "SERVICE_PROVIDER_TYPE", ProviderType.class);
 
         checkField(toCheck, checked, fields, "WEIGHT", Weight.class);
 

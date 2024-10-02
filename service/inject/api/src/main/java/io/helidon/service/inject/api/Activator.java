@@ -19,8 +19,6 @@ package io.helidon.service.inject.api;
 import java.util.List;
 import java.util.Optional;
 
-import io.helidon.service.inject.api.GeneratedInjectService.Descriptor;
-
 /**
  * Activator is responsible for lifecycle management of a service instance within a scope.
  *
@@ -32,7 +30,7 @@ public interface Activator<T> {
      *
      * @return service descriptor
      */
-    Descriptor<T> descriptor();
+    InjectServiceDescriptor<T> descriptor();
 
     /**
      * Get instances from this managed service.

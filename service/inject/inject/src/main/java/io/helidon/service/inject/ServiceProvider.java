@@ -22,12 +22,14 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
 import io.helidon.service.inject.api.ActivationRequest;
-import io.helidon.service.inject.api.GeneratedInjectService.Descriptor;
-import io.helidon.service.inject.api.GeneratedInjectService.InterceptionMetadata;
+import io.helidon.service.inject.api.InjectServiceDescriptor;
+import io.helidon.service.inject.api.InterceptionMetadata;
 import io.helidon.service.inject.api.InjectServiceInfo;
 import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.Lookup;
+import io.helidon.service.inject.api.ProviderType;
 import io.helidon.service.inject.api.ServiceInstance;
 import io.helidon.service.registry.Dependency;
 import io.helidon.service.registry.ServiceInfo;
@@ -41,7 +43,7 @@ import io.helidon.service.registry.ServiceRegistryException;
 class ServiceProvider<T> {
     private final InjectServiceRegistryImpl registry;
     private final InjectServiceInfo serviceInfo;
-    private final Descriptor<T> descriptor;
+    private final InjectServiceDescriptor<T> descriptor;
 
     private final ActivationRequest activationRequest;
     private final InterceptionMetadata interceptionMetadata;
@@ -59,11 +61,11 @@ class ServiceProvider<T> {
         this.serviceInfo = WrapServiceInfo.create(serviceInfo);
         this.descriptor = null;
 
-        this.contracts = Contracts.create(serviceInfo);
+        this.contracts = Contracts.create(this.serviceInfo);
     }
 
     ServiceProvider(InjectServiceRegistryImpl serviceRegistry,
-                    Descriptor<T> descriptor) {
+                    InjectServiceDescriptor<T> descriptor) {
         this.registry = serviceRegistry;
         this.interceptionMetadata = registry.interceptionMetadata();
         this.activationRequest = registry.activationRequest();
@@ -82,7 +84,7 @@ class ServiceProvider<T> {
         return serviceInfo;
     }
 
-    Descriptor<T> descriptor() {
+    InjectServiceDescriptor<T> descriptor() {
         return descriptor;
     }
 
@@ -268,6 +270,14 @@ class ServiceProvider<T> {
         @Override
         public boolean isAbstract() {
             return delegate.isAbstract();
+        }
+
+        @Override
+        public ProviderType providerType() {
+            if (contracts().contains(TypeNames.SUPPLIER)) {
+                return ProviderType.SUPPLIER;
+            }
+            return ProviderType.SERVICE;
         }
     }
 }

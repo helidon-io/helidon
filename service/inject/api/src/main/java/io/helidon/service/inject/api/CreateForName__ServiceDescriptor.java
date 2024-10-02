@@ -29,7 +29,7 @@ import io.helidon.common.types.TypeNames;
  * as it may be used in generated binding.
  */
 @SuppressWarnings({"checkstyle:TypeName"}) // matches pattern of generated descriptors
-public class CreateForName__ServiceDescriptor implements GeneratedInjectService.Descriptor<String> {
+public class CreateForName__ServiceDescriptor implements InjectServiceDescriptor<String> {
     /**
      * Singleton instance to be referenced when building bindings.
      */
@@ -59,5 +59,10 @@ public class CreateForName__ServiceDescriptor implements GeneratedInjectService.
     @Override
     public TypeName scope() {
         return Injection.Singleton.TYPE;
+    }
+
+    @Override
+    public ProviderType providerType() {
+        return ProviderType.NONE;
     }
 }

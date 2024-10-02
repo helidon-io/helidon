@@ -22,9 +22,9 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
+import io.helidon.service.inject.api.InjectServiceInfo;
 import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.Lookup;
-import io.helidon.service.registry.ServiceInfo;
 
 /*
 Management of contracts, to return correct contracts for services created from other services,
@@ -34,18 +34,16 @@ final class Contracts {
     private Contracts() {
     }
 
-    static <T> ContractLookup create(ServiceInfo descriptor) {
+    static ContractLookup create(InjectServiceInfo descriptor) {
         Set<TypeName> contracts = descriptor.contracts();
-        if (contracts.contains(Injection.ServicesProvider.TYPE)) {
-            return new ProviderContracts(contracts, Injection.ServicesProvider.TYPE);
-        }
-        if (contracts.contains(Injection.InjectionPointProvider.TYPE)) {
-            return new ProviderContracts(contracts, Injection.InjectionPointProvider.TYPE);
-        }
-        if (contracts.contains(TypeNames.SUPPLIER)) {
-            return new ProviderContracts(contracts, TypeNames.SUPPLIER);
-        }
-        return new FixedContracts(contracts);
+
+        return switch(descriptor.providerType()) {
+            case NONE, SERVICE -> new FixedContracts(contracts);
+            case SUPPLIER -> new ProviderContracts(contracts, TypeNames.SUPPLIER);
+            case SERVICES_PROVIDER -> new ProviderContracts(contracts, Injection.ServicesProvider.TYPE);
+            case IP_PROVIDER -> new ProviderContracts(contracts, Injection.InjectionPointProvider.TYPE);
+            case QUALIFIED_PROVIDER -> new ProviderContracts(contracts, Injection.QualifiedProvider.TYPE);
+        };
     }
 
     interface ContractLookup {

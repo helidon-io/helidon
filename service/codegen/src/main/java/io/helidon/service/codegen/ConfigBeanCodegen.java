@@ -125,7 +125,9 @@ class ConfigBeanCodegen implements RegistryCodegenExtension {
 
         TypeName interceptedType;
         if (intercepted) {
-            interceptedType = interceptionSupport.generateDelegateInterception(typeInfo, cb.configBeanType());
+            interceptedType = interceptionSupport.generateDelegateInterception(typeInfo,
+                                                                               cb.configBeanType(),
+                                                                               cb.configBeanType().packageName());
         } else {
             interceptedType = null;
         }
@@ -225,7 +227,9 @@ class ConfigBeanCodegen implements RegistryCodegenExtension {
         boolean intercepted = interceptionSupport.intercepted(typeInfo);
         TypeName interceptedType;
         if (intercepted) {
-            interceptedType = interceptionSupport.generateDelegateInterception(typeInfo, cb.configBeanType());
+            interceptedType = interceptionSupport.generateDelegateInterception(typeInfo,
+                                                                               cb.configBeanType(),
+                                                                               cb.configBeanType().packageName());
         } else {
             interceptedType = null;
         }
@@ -280,7 +284,9 @@ class ConfigBeanCodegen implements RegistryCodegenExtension {
         boolean intercepted = interceptionSupport.intercepted(typeInfo);
         TypeName interceptedType;
         if (intercepted) {
-            interceptedType = interceptionSupport.generateDelegateInterception(typeInfo, cb.configBeanType());
+            interceptedType = interceptionSupport.generateDelegateInterception(typeInfo,
+                                                                               cb.configBeanType(),
+                                                                               cb.configBeanType().packageName());
         } else {
             interceptedType = null;
         }

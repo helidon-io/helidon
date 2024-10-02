@@ -22,10 +22,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypedElementInfo;
 import io.helidon.service.registry.DependencyContext;
 import io.helidon.service.registry.GeneratedService;
 
@@ -34,100 +32,6 @@ import io.helidon.service.registry.GeneratedService;
  */
 public final class GeneratedInjectService {
     private GeneratedInjectService() {
-    }
-
-    /**
-     * A descriptor of a service. In addition to providing service metadata, this also allows instantiation
-     * and injection to the service instance.
-     *
-     * @param <T> type of the service this descriptor describes
-     */
-    public interface Descriptor<T> extends GeneratedService.Descriptor<T>, InjectServiceInfo {
-        /**
-         * Create a new service instance.
-         *
-         * @param ctx                  injection context with all injection points data
-         * @param interceptionMetadata interception metadata to use when the constructor should be intercepted
-         * @return a new instance, must be of the type T or a subclass
-         */
-        // we cannot return T, as it does not allow us to correctly handle inheritance
-        default Object instantiate(DependencyContext ctx, InterceptionMetadata interceptionMetadata) {
-            throw new IllegalStateException("Cannot instantiate type " + serviceType().fqName() + ", as it is either abstract,"
-                                                    + " or an interface.");
-        }
-
-        /**
-         * Inject fields and methods.
-         *
-         * @param ctx                  injection context
-         * @param interceptionMetadata interception metadata to support interception of field injection
-         * @param injected             mutable set of already injected methods from subtypes
-         * @param instance             instance to update
-         */
-        default void inject(DependencyContext ctx,
-                            InterceptionMetadata interceptionMetadata,
-                            Set<String> injected,
-                            T instance) {
-        }
-    }
-
-    /**
-     * Provides a service descriptor, or an intercepted instance with information
-     * whether to, and how to intercept elements.
-     * <p>
-     * Used by generated code (passed as a parameter to
-     * {@link
-     * io.helidon.service.inject.api.GeneratedInjectService.Descriptor#inject(io.helidon.service.registry.DependencyContext,
-     * io.helidon.service.inject.api.GeneratedInjectService.InterceptionMetadata, java.util.Set, Object)}, and
-     * {@link
-     * io.helidon.service.inject.api.GeneratedInjectService.Descriptor#instantiate(io.helidon.service.registry.DependencyContext,
-     * io.helidon.service.inject.api.GeneratedInjectService.InterceptionMetadata)}).
-     */
-    @Injection.Describe
-    public interface InterceptionMetadata {
-        /**
-         * Create an invoker that handles interception if needed, for constructors.
-         *
-         * @param descriptor        metadata of the service being intercepted
-         * @param typeQualifiers    qualifiers on the type
-         * @param typeAnnotations   annotations on the type
-         * @param element           element being intercepted
-         * @param targetInvoker     invoker of the element
-         * @param checkedExceptions expected checked exceptions that can be thrown by the invoker
-         * @param <T>               type of the result of the invoker
-         * @return an invoker that handles interception if enabled and if there are matching interceptors, any checkedException
-         *         will
-         *         be re-thrown, any runtime exception will be re-thrown
-         */
-        <T> Invoker<T> createInvoker(InjectServiceInfo descriptor,
-                                     Set<Qualifier> typeQualifiers,
-                                     List<Annotation> typeAnnotations,
-                                     TypedElementInfo element,
-                                     Invoker<T> targetInvoker,
-                                     Set<Class<? extends Throwable>> checkedExceptions);
-
-        /**
-         * Create an invoker that handles interception if needed.
-         *
-         * @param serviceInstance   instance of the service that is being intercepted
-         * @param descriptor        metadata of the service being intercepted
-         * @param typeQualifiers    qualifiers on the type
-         * @param typeAnnotations   annotations on the type
-         * @param element           element being intercepted
-         * @param targetInvoker     invoker of the element
-         * @param checkedExceptions expected checked exceptions that can be thrown by the invoker
-         * @param <T>               type of the result of the invoker
-         * @return an invoker that handles interception if enabled and if there are matching interceptors, any checkedException
-         *         will
-         *         be re-thrown, any runtime exception will be re-thrown
-         */
-        <T> Invoker<T> createInvoker(Object serviceInstance,
-                                     InjectServiceInfo descriptor,
-                                     Set<Qualifier> typeQualifiers,
-                                     List<Annotation> typeAnnotations,
-                                     TypedElementInfo element,
-                                     Invoker<T> targetInvoker,
-                                     Set<Class<? extends Throwable>> checkedExceptions);
     }
 
     /**

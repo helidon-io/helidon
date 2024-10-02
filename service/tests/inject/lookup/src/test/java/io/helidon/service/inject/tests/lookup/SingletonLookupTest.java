@@ -25,6 +25,7 @@ import io.helidon.service.inject.api.InjectRegistry;
 import io.helidon.service.inject.api.InjectServiceInfo;
 import io.helidon.service.inject.api.Injection.InjectionPointProvider;
 import io.helidon.service.inject.api.Lookup;
+import io.helidon.service.inject.api.ProviderType;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -241,7 +242,7 @@ class SingletonLookupTest {
     void testIpProviderLookup() {
         Lookup lookup = Lookup.builder()
                 .addContract(ContractSingleton.class)
-                .addContract(InjectionPointProvider.class)
+                .addProviderType(ProviderType.IP_PROVIDER)
                 .build();
         InjectionPointProvider<?> instance = registry.get(lookup);
 
@@ -252,7 +253,7 @@ class SingletonLookupTest {
     void testSupplierLookup() {
         Lookup lookup = Lookup.builder()
                 .addContract(ContractSingleton.class)
-                .addContract(Supplier.class)
+                .addProviderType(ProviderType.SUPPLIER)
                 .build();
         Supplier<?> instance = registry.get(lookup);
 

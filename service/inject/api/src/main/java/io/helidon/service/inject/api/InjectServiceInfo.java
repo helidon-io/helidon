@@ -64,6 +64,16 @@ public interface InjectServiceInfo extends io.helidon.service.registry.ServiceIn
     TypeName scope();
 
     /**
+     * What provider type is the described service.
+     * Inject services can be any of the types in the {@link io.helidon.service.inject.api.ProviderType enum}.
+     *
+     * @return provider type
+     */
+    default ProviderType providerType() {
+        return ProviderType.SERVICE;
+    }
+
+    /**
      * Returns the instance of the core service descriptor.
      * As we use identity, this is a required method that MUST return the singleton instance of the service descriptor.
      *

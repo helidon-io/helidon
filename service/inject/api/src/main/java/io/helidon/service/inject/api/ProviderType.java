@@ -1,0 +1,39 @@
+package io.helidon.service.inject.api;
+
+/**
+ * Described service type.
+ * <p>
+ * Core services (services defined for core service registry) can be only {@link #SERVICE} or {@link #SUPPLIER}.
+ */
+public enum ProviderType {
+    /**
+     * This service descriptor cannot provide an instance (such as service descriptors generated from interfaces,
+     * where we provide instances as part of creating a scope).
+     */
+    NONE,
+    /**
+     * Direct implementation of a service.
+     * <p>
+     * This is the case when service does not implement any of the service provider interfaces, but it does
+     * implement at least one contract.
+     */
+    SERVICE,
+    /**
+     * The service implements a {@link java.util.function.Supplier} of a contract.
+     */
+    SUPPLIER,
+    /**
+     * The service implements a provider of a list of contract instances.
+     */
+    SERVICES_PROVIDER,
+    /**
+     * The service implements a provider that satisfies a specific injection point (either a single contract,
+     * or a list of contract instances).
+     */
+    IP_PROVIDER,
+    /**
+     * The service implements a provider that is called for specific qualifiers (either a single contract,
+     * or a list of contract instances).
+     */
+    QUALIFIED_PROVIDER
+}

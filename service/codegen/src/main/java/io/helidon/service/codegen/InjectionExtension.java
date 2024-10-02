@@ -28,14 +28,12 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenOptions;
 import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.ElementInfoPredicates;
-import io.helidon.codegen.TypeHierarchy;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.codegen.classmodel.Field;
@@ -65,7 +63,6 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_CREATE_FO
 import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_DESCRIBE;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_INSTANCE;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_NAMED;
-import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_POINT_PROVIDER;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_REQUEST_SCOPE;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INJECTION_SINGLETON;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INJECT_IP_SUPPORT;
@@ -74,9 +71,9 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.INJECT_SCOPE_HANDLE
 import static io.helidon.service.codegen.ServiceCodegenTypes.INJECT_SCOPE_HANDLER_DESCRIPTOR;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INJECT_SERVICE_INSTANCE;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INTERCEPTION_DELEGATE;
-import static io.helidon.service.codegen.ServiceCodegenTypes.QUALIFIED_PROVIDER;
-import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICES_PROVIDER;
+import static io.helidon.service.codegen.ServiceCodegenTypes.INTERCEPTION_EXTERNAL_DELEGATES;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_PROVIDER;
+import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_PROVIDER_TYPE;
 import static java.util.function.Predicate.not;
 
 class InjectionExtension implements RegistryCodegenExtension {
@@ -158,6 +155,9 @@ class InjectionExtension implements RegistryCodegenExtension {
         mainClass.forEach(descriptorsRequired::remove);
 
         for (TypeInfo typeInfo : descriptorsRequired) {
+            if (typeInfo.hasAnnotation(INTERCEPTION_EXTERNAL_DELEGATES)) {
+                generateInterceptionExternalDelegates(typeInfo);
+            }
             if (typeInfo.hasAnnotation(INJECTION_DESCRIBE)) {
                 generateScopeDescriptor(typeInfo, typeInfo.annotation(INJECTION_DESCRIBE));
             } else if (typeInfo.hasAnnotation(INTERCEPTION_DELEGATE)) {
@@ -253,12 +253,37 @@ class InjectionExtension implements RegistryCodegenExtension {
                     GENERATOR);
     }
 
+    private void generateInterceptionExternalDelegates(TypeInfo typeInfo) {
+        Annotation annotation = typeInfo.annotation(INTERCEPTION_EXTERNAL_DELEGATES);
+        List<TypeName> typeNames = annotation.typeValues().orElseGet(List::of);
+        boolean supportClasses = annotation.booleanValue("classDelegates").orElse(false);
+
+        for (TypeName typeName : typeNames) {
+            TypeInfo delegateType = ctx.typeInfo(typeName)
+                    .orElseThrow(() -> new CodegenException("Cannot resolve type " + typeName.fqName() + " for "
+                                                                    + " external interception delegates",
+                                                            typeInfo.originatingElementValue()));
+            if (!supportClasses && typeInfo.kind() != ElementKind.INTERFACE) {
+                throw new CodegenException("Attempting to create external delegate interception for non interface type: "
+                                                   + typeName.fqName(),
+                                           typeInfo.originatingElementValue());
+            }
+            interceptionSupport.generateDelegateInterception(delegateType,
+                                                             delegateType.typeName(),
+                                                             typeInfo.typeName().packageName());
+        }
+    }
+
     private void generateInterceptionDelegate(TypeInfo typeInfo) {
-        if (typeInfo.kind() != ElementKind.INTERFACE) {
+        boolean supportClasses = typeInfo.annotation(INTERCEPTION_DELEGATE)
+                .booleanValue()
+                .orElse(false);
+
+        if (!supportClasses && typeInfo.kind() != ElementKind.INTERFACE) {
             throw new CodegenException("Attempting to create delegate interception for non interface type",
                                        typeInfo.originatingElementValue());
         }
-        interceptionSupport.generateDelegateInterception(typeInfo, typeInfo.typeName());
+        interceptionSupport.generateDelegateInterception(typeInfo, typeInfo.typeName(), typeInfo.typeName().packageName());
     }
 
     private void generateScopeDescriptor(TypeInfo typeInfo, Annotation describeAnnotation) {
@@ -290,13 +315,11 @@ class InjectionExtension implements RegistryCodegenExtension {
         singletonInstanceField(classModel, serviceType, descriptorType);
         serviceTypeFields(classModel, serviceType, descriptorType);
 
-        Set<TypeName> contracts = new HashSet<>();
-        Set<String> collectedFullyQualifiedContracts = new HashSet<>();
-        AtomicReference<TypeName> qualifiedProviderQualifier = new AtomicReference<>();
-        contracts(typeInfo, autoAddContracts, contracts, collectedFullyQualifiedContracts, qualifiedProviderQualifier);
-
         Set<Annotation> qualifiers = new HashSet<>();
         qualifiers(typeInfo, qualifiers);
+        DescribedService ds = new DescribedService(ctx, typeInfo);
+        ds.analyze(!autoAddContracts);
+        var contracts = ds.contracts(ds.providerType());
 
         // annotations of the type
         annotationsField(classModel, typeInfo);
@@ -311,6 +334,7 @@ class InjectionExtension implements RegistryCodegenExtension {
         scopeMethod(classModel, scope);
         weightMethod(typeInfo, classModel, superType);
         runLevelMethod(typeInfo, classModel, superType);
+        providerType(classModel, superType, ProviderType.NONE);
 
         // service type is an implicit contract
         Set<TypeName> allContracts = new HashSet<>(contracts);
@@ -387,10 +411,14 @@ class InjectionExtension implements RegistryCodegenExtension {
 
         Map<String, GenericTypeDeclaration> genericTypes = genericTypes(classModel, params, methods);
         Optional<TypeName> scope = scope(typeInfo);
-        Set<TypeName> contracts = new HashSet<>();
-        Set<String> collectedFullyQualifiedContracts = new HashSet<>();
-        AtomicReference<TypeName> qualifiedProviderQualifier = new AtomicReference<>();
-        contracts(typeInfo, autoAddContracts, contracts, collectedFullyQualifiedContracts, qualifiedProviderQualifier);
+
+        // TODO if this is a service provider (supplier, servicesprovider etc.), and the provided contract is intercepted,
+        // we must do some magic here - this descriptor will only provide the service itself, and a new service is generated
+        // that delegates to this service to get instance(s), and then wraps it(them) in appropriate interception delegate
+        // if there is no delegate annotation and the contract is a class, fail (can be fixed by @Interception.ExternalDelegates)
+        DescribedService ds = new DescribedService(ctx, typeInfo);
+        ds.analyze(!autoAddContracts);
+        var contracts = ds.contracts(ds.providerType());
 
         Set<Annotation> qualifiers = new HashSet<>();
         qualifiers(typeInfo, qualifiers);
@@ -450,9 +478,10 @@ class InjectionExtension implements RegistryCodegenExtension {
         scopeMethod(classModel, scope.orElse(INJECTION_INSTANCE));
         weightMethod(typeInfo, classModel, superType);
         runLevelMethod(typeInfo, classModel, superType);
-        createForMethod(typeInfo, classModel, superType, contracts);
-        qualifiedProvider(classModel, qualifiedProviderQualifier.get());
+        createForMethod(typeInfo, classModel, superType, ds);
+        qualifiedProvider(classModel, ds.qualifiedProviderQualifier());
         scopeHandler(typeInfo, classModel, contracts);
+        providerType(classModel, superType, ds.providerType());
 
         // service type is an implicit contract
         Set<TypeName> allContracts = new HashSet<>(contracts);
@@ -469,6 +498,24 @@ class InjectionExtension implements RegistryCodegenExtension {
         if (methodsIntercepted) {
             generateInterceptedType(typeInfo, serviceType, descriptorType, constructorInjectElement, maybeIntercepted);
         }
+    }
+
+    private void providerType(ClassModel.Builder classModel, SuperType superType, ProviderType providerType) {
+        if (!superType.hasSupertype() && providerType == ProviderType.SERVICE) {
+            // default
+            return;
+        }
+        classModel.addMethod(providerTypeMethod -> providerTypeMethod
+                .name("providerType")
+                .accessModifier(AccessModifier.PUBLIC)
+                .addAnnotation(Annotations.OVERRIDE)
+                .returnType(SERVICE_PROVIDER_TYPE)
+                .addContent("return ")
+                .addContent(SERVICE_PROVIDER_TYPE)
+                .addContent(".")
+                .addContent(providerType.name())
+                .addContentLine(";")
+        );
     }
 
     private void methodElementFields(ClassModel.Builder classModel,
@@ -592,20 +639,20 @@ class InjectionExtension implements RegistryCodegenExtension {
                                            + ", ScopeHandler<Type> must be directly implemented by the service.");
     }
 
-    private void createForMethod(TypeInfo typeInfo, ClassModel.Builder classModel, SuperType superType, Set<TypeName> contracts) {
+    private void createForMethod(TypeInfo typeInfo,
+                                 ClassModel.Builder classModel,
+                                 SuperType superType,
+                                 DescribedService describedService) {
         Optional<Annotation> createFor = typeInfo.findAnnotation(INJECTION_CREATE_FOR);
         if (!superType.hasSupertype() && createFor.isEmpty()) {
             // this is the default
             return;
         }
         if (createFor.isPresent()) {
-            // make sure that driven by does not implement providers
-            if (contracts.contains(INJECTION_POINT_PROVIDER)
-                    || contracts.contains(SERVICES_PROVIDER)
-                    || contracts.contains(QUALIFIED_PROVIDER)) {
+            if (describedService.providerType() != ProviderType.SERVICE) {
                 throw new CodegenException("Service " + typeInfo.typeName().classNameWithEnclosingNames()
                                                    + " is annotated with @CreateFor, and as such it must not implement any "
-                                                   + "provider interfaces. Contracts: " + contracts,
+                                                   + "provider interfaces. Provider type: " + describedService.providerType(),
                                            typeInfo.originatingElementValue());
             }
 
@@ -1261,116 +1308,6 @@ class InjectionExtension implements RegistryCodegenExtension {
         }
 
         return result.stream().findFirst();
-    }
-
-    private void contracts(TypeInfo typeInfo,
-                           boolean contractEligible,
-                           Set<TypeName> collectedContracts,
-                           Set<String> collectedFullyQualified,
-                           AtomicReference<TypeName> qualifiedProviderQualifier) {
-        TypeName typeName = typeInfo.typeName();
-
-        boolean addedThisContract = false;
-        if (contractEligible) {
-            collectedContracts.add(typeName);
-            addedThisContract = true;
-            if (!collectedFullyQualified.add(typeName.resolvedName())) {
-                // let us go no further, this type was already processed
-                return;
-            }
-        }
-
-        if (typeName.equals(QUALIFIED_PROVIDER)) {
-            // a very special case
-            if (typeName.typeArguments().isEmpty()) {
-                // this is the QualifiedProvider interface itself, no need to do anything
-                return;
-            }
-            TypeName providedType = typeName.typeArguments().get(1); // second type
-            if (providedType.generic()) {
-                // just a <T> or similar
-                return;
-            }
-            // add the qualifier of this qualified provider (we care about the first one - if supertype implements it, ignore
-            qualifiedProviderQualifier.compareAndSet(null, typeName.typeArguments().get(0));
-            collectedContracts.add(QUALIFIED_PROVIDER);
-            if (TypeNames.OBJECT.equals(providedType)) {
-                collectedContracts.add(TypeNames.OBJECT);
-            } else {
-                Optional<TypeInfo> providedTypeInfo = ctx.typeInfo(providedType);
-                if (providedTypeInfo.isPresent()) {
-                    contracts(providedTypeInfo.get(),
-                              true,
-                              collectedContracts,
-                              collectedFullyQualified,
-                              qualifiedProviderQualifier);
-                } else {
-                    collectedContracts.add(providedType);
-                    if (!collectedFullyQualified.add(providedType.resolvedName())) {
-                        // let us go no further, this type was already processed
-                        return;
-                    }
-                }
-            }
-        } else if (typeName.isSupplier()
-                || typeName.equals(INJECTION_POINT_PROVIDER)
-                || typeName.equals(SERVICES_PROVIDER)) {
-            // this may be the interface itself, and then it does not have a type argument
-            if (!typeName.typeArguments().isEmpty()) {
-                // provider must have a type argument (and the type argument is an automatic contract
-                TypeName providedType = typeName.typeArguments().getFirst();
-                if (!providedType.generic()) {
-                    Optional<TypeInfo> providedTypeInfo = ctx.typeInfo(providedType);
-                    if (providedTypeInfo.isPresent()) {
-                        contracts(providedTypeInfo.get(),
-                                  true,
-                                  collectedContracts,
-                                  collectedFullyQualified,
-                                  qualifiedProviderQualifier);
-                    } else {
-                        collectedContracts.add(providedType);
-                        if (!collectedFullyQualified.add(providedType.resolvedName())) {
-                            // let us go no further, this type was already processed
-                            return;
-                        }
-                    }
-                }
-            }
-
-            // provider itself is a contract
-            if (!addedThisContract) {
-                collectedContracts.add(typeName);
-                if (!collectedFullyQualified.add(typeName.resolvedName())) {
-                    // let us go no further, this type was already processed
-                    return;
-                }
-            }
-        }
-
-        // add contracts from interfaces and types annotated as @Contract
-        if (Annotations.findFirst(ServiceCodegenTypes.SERVICE_ANNOTATION_CONTRACT,
-                                  TypeHierarchy.hierarchyAnnotations(ctx, typeInfo)).isPresent()) {
-            collectedContracts.add(typeInfo.typeName());
-        }
-
-        // add contracts from @ExternalContracts
-        typeInfo.findAnnotation(ServiceCodegenTypes.SERVICE_ANNOTATION_EXTERNAL_CONTRACTS)
-                .ifPresent(it -> collectedContracts.addAll(it.typeValues().orElseGet(List::of)));
-
-        // go through hierarchy
-        typeInfo.superTypeInfo().ifPresent(it -> contracts(it,
-                                                           contractEligible,
-                                                           collectedContracts,
-                                                           collectedFullyQualified,
-                                                           qualifiedProviderQualifier
-        ));
-        // interfaces are considered contracts by default
-        typeInfo.interfaceTypeInfo().forEach(it -> contracts(it,
-                                                             contractEligible,
-                                                             collectedContracts,
-                                                             collectedFullyQualified,
-                                                             qualifiedProviderQualifier
-        ));
     }
 
     private void singletonInstanceField(ClassModel.Builder classModel, TypeName serviceType, TypeName descriptorType) {

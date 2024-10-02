@@ -25,26 +25,26 @@ import java.util.function.Supplier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.service.inject.ServiceSupplies.ServiceSupply;
-import io.helidon.service.inject.api.GeneratedInjectService;
 import io.helidon.service.inject.api.InjectServiceInfo;
 import io.helidon.service.inject.api.Interception;
+import io.helidon.service.inject.api.InterceptionMetadata;
 import io.helidon.service.inject.api.InvocationContext;
 import io.helidon.service.inject.api.Invoker;
 import io.helidon.service.inject.api.Lookup;
 import io.helidon.service.inject.api.Qualifier;
 
-class InterceptionMetadataImpl implements GeneratedInjectService.InterceptionMetadata {
+class InterceptionMetadataImpl implements InterceptionMetadata {
     private final InjectServiceRegistryImpl registry;
 
     private InterceptionMetadataImpl(InjectServiceRegistryImpl registry) {
         this.registry = registry;
     }
 
-    static GeneratedInjectService.InterceptionMetadata create(InjectServiceRegistryImpl registry) {
+    static InterceptionMetadata create(InjectServiceRegistryImpl registry) {
         return new InterceptionMetadataImpl(registry);
     }
 
-    static GeneratedInjectService.InterceptionMetadata noop() {
+    static InterceptionMetadata noop() {
         return new NoopMetadata();
     }
 
@@ -140,7 +140,7 @@ class InterceptionMetadataImpl implements GeneratedInjectService.InterceptionMet
         return false;
     }
 
-    private static class NoopMetadata implements GeneratedInjectService.InterceptionMetadata {
+    private static class NoopMetadata implements InterceptionMetadata {
         @Override
         public <T> Invoker<T> createInvoker(InjectServiceInfo descriptor,
                                             Set<Qualifier> typeQualifiers,

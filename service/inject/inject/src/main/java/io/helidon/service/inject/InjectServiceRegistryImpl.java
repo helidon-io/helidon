@@ -50,15 +50,15 @@ import io.helidon.service.inject.ServiceSupplies.ServiceSupplyList;
 import io.helidon.service.inject.api.ActivationRequest;
 import io.helidon.service.inject.api.Activator;
 import io.helidon.service.inject.api.CreateForName__ServiceDescriptor;
-import io.helidon.service.inject.api.GeneratedInjectService.Descriptor;
-import io.helidon.service.inject.api.GeneratedInjectService.InterceptionMetadata;
-import io.helidon.service.inject.api.GeneratedInjectService_InterceptionMetadata__ServiceDescriptor;
+import io.helidon.service.inject.api.InjectServiceDescriptor;
 import io.helidon.service.inject.api.InjectRegistry;
 import io.helidon.service.inject.api.InjectRegistrySpi;
 import io.helidon.service.inject.api.InjectRegistrySpi__ServiceDescriptor;
 import io.helidon.service.inject.api.InjectServiceInfo;
 import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.Interception;
+import io.helidon.service.inject.api.InterceptionMetadata;
+import io.helidon.service.inject.api.InterceptionMetadata__ServiceDescriptor;
 import io.helidon.service.inject.api.Lookup;
 import io.helidon.service.inject.api.Qualifier;
 import io.helidon.service.inject.api.Scope;
@@ -130,7 +130,7 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
         // these must be bound here, as the instance exists now
         // (and we do not want to allow post-constructor binding)
         explicitInstances.put(InjectRegistrySpi__ServiceDescriptor.INSTANCE, this);
-        explicitInstances.put(GeneratedInjectService_InterceptionMetadata__ServiceDescriptor.INSTANCE, interceptionMetadata);
+        explicitInstances.put(InterceptionMetadata__ServiceDescriptor.INSTANCE, interceptionMetadata);
 
         this.cacheEnabled = config.lookupCacheEnabled();
         this.cache = cacheEnabled ? config.lookupCache().orElseGet(LruCache::create) : null;
@@ -170,12 +170,12 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
         Set<TypeName> usedScopes = new HashSet<>();
 
         descriptorToDescribed.forEach((descriptor, described) -> {
-            Descriptor<?> injectDescriptor = described.injectDescriptor();
+            InjectServiceDescriptor<?> injectDescriptor = described.injectDescriptor();
             usedScopes.add(injectDescriptor.scope());
 
             Object instance = explicitInstances.get(descriptor);
             ServiceProvider<Object> provider = new ServiceProvider<>(this,
-                                                                     (Descriptor<Object>) described.injectDescriptor());
+                                                                     (InjectServiceDescriptor<Object>) described.injectDescriptor());
 
             if (instance != null) {
                 Activator<Object> activator = Activators.create(provider, instance);

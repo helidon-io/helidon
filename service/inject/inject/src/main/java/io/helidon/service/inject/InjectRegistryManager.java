@@ -33,17 +33,19 @@ import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.service.inject.api.GeneratedInjectService;
-import io.helidon.service.inject.api.GeneratedInjectService.Descriptor;
-import io.helidon.service.inject.api.GeneratedInjectService_InterceptionMetadata__ServiceDescriptor;
 import io.helidon.service.inject.api.InjectRegistry;
 import io.helidon.service.inject.api.InjectRegistrySpi__ServiceDescriptor;
+import io.helidon.service.inject.api.InjectServiceDescriptor;
 import io.helidon.service.inject.api.InjectServiceInfo;
 import io.helidon.service.inject.api.Injection;
+import io.helidon.service.inject.api.InterceptionMetadata;
+import io.helidon.service.inject.api.InterceptionMetadata__ServiceDescriptor;
 import io.helidon.service.inject.api.Ip;
+import io.helidon.service.inject.api.ProviderType;
 import io.helidon.service.metadata.DescriptorMetadata;
 import io.helidon.service.registry.DependencyContext;
 import io.helidon.service.registry.DescriptorHandler;
-import io.helidon.service.registry.GeneratedService;
+import io.helidon.service.registry.ServiceDescriptor;
 import io.helidon.service.registry.ServiceDiscovery;
 import io.helidon.service.registry.ServiceInfo;
 import io.helidon.service.registry.ServiceLoader__ServiceDescriptor;
@@ -110,7 +112,7 @@ public class InjectRegistryManager implements ServiceRegistryManager {
                                                  : ServiceDiscovery.noop());
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "removal"})
     @Override
     public InjectRegistry registry() {
         Lock readLock = lifecycleLock.readLock();
@@ -146,16 +148,16 @@ public class InjectRegistryManager implements ServiceRegistryManager {
             Map<TypedQualifiedProviderKey, Set<InjectServiceInfo>> typedQualifiedProviders =
                     new HashMap<>();
 
-            List<GeneratedService.Descriptor<Binding>> applications = new ArrayList<>();
+            List<ServiceDescriptor<Binding>> applications = new ArrayList<>();
 
             config.serviceInstances()
                     .forEach((desc, instance) -> {
                         var descriptor = desc;
                         if (descriptor instanceof VirtualDescriptor) {
                             // maybe we have a real descriptor for this type
-                            descriptor = virtualDescriptor(config, discovery, descriptor);
+                            descriptor = virtualDescriptor(config, discovery, ServiceDiscovery.wrap(descriptor));
                         }
-                        Described described = toDescribed(descriptorToDescribed, descriptor);
+                        Described described = toDescribed(descriptorToDescribed, ServiceDiscovery.wrap(descriptor));
                         bind(applications, scopeHandlers,
                              servicesByType,
                              servicesByContract,
@@ -172,7 +174,7 @@ public class InjectRegistryManager implements ServiceRegistryManager {
                      servicesByContract,
                      qualifiedProvidersByQualifier,
                      typedQualifiedProviders,
-                     toDescribed(descriptorToDescribed, descriptor));
+                     toDescribed(descriptorToDescribed, ServiceDiscovery.wrap(descriptor)));
             }
 
             boolean logUnsupported = LOGGER.isLoggable(System.Logger.Level.TRACE);
@@ -188,9 +190,9 @@ public class InjectRegistryManager implements ServiceRegistryManager {
                     continue;
                 }
 
-                GeneratedService.Descriptor<?> descriptor = descriptorMeta.descriptor();
+                ServiceDescriptor<?> descriptor = descriptorMeta.descriptor();
                 if (descriptor.contracts().contains(Binding.TYPE)) {
-                    applications.add((GeneratedService.Descriptor<Binding>) descriptor);
+                    applications.add((ServiceDescriptor<Binding>) descriptor);
                     // applications are not bound to the registry
                 } else {
                     Described described = toDescribed(descriptorToDescribed, descriptor);
@@ -205,7 +207,7 @@ public class InjectRegistryManager implements ServiceRegistryManager {
             }
 
             // add service registry information (service registry cannot be overridden in any way)
-            Descriptor<?> registrySpiDescriptor = InjectRegistrySpi__ServiceDescriptor.INSTANCE;
+            InjectServiceDescriptor<?> registrySpiDescriptor = InjectRegistrySpi__ServiceDescriptor.INSTANCE;
             Described registrySpiDescribed = new Described(registrySpiDescriptor, registrySpiDescriptor, false);
             descriptorToDescribed.put(registrySpiDescriptor, registrySpiDescribed);
             bind(applications, scopeHandlers,
@@ -215,7 +217,7 @@ public class InjectRegistryManager implements ServiceRegistryManager {
                  typedQualifiedProviders,
                  registrySpiDescribed);
             // add injection metadata information
-            Descriptor<?> interceptDescriptor = GeneratedInjectService_InterceptionMetadata__ServiceDescriptor.INSTANCE;
+            InjectServiceDescriptor<?> interceptDescriptor = InterceptionMetadata__ServiceDescriptor.INSTANCE;
             Described described = new Described(interceptDescriptor, interceptDescriptor, false);
             descriptorToDescribed.put(interceptDescriptor, described);
             bind(applications, scopeHandlers,
@@ -236,7 +238,7 @@ public class InjectRegistryManager implements ServiceRegistryManager {
 
             // now check if we have an application, and if so, apply it
             if (config.useBinding()) {
-                for (GeneratedService.Descriptor<Binding> application : applications) {
+                for (ServiceDescriptor<Binding> application : applications) {
                     // applications cannot have dependencies
                     Binding appInstance = (Binding) application.instantiate(DependencyContext.create(Map.of()));
                     appInstance.configure(new ApplicationPlanBinder(appInstance, registry));
@@ -266,17 +268,17 @@ public class InjectRegistryManager implements ServiceRegistryManager {
         }
     }
 
-    @SuppressWarnings("rawtypes")
-    private static GeneratedService.Descriptor<?> virtualDescriptor(InjectConfig config,
-                                                                    ServiceDiscovery discovery,
-                                                                    GeneratedService.Descriptor<?> descriptor) {
+    @SuppressWarnings({"rawtypes", "removal"})
+    private static ServiceDescriptor<?> virtualDescriptor(InjectConfig config,
+                                                          ServiceDiscovery discovery,
+                                                          ServiceDescriptor<?> descriptor) {
         TypeName serviceType = descriptor.serviceType();
         var fromConfig = config.serviceDescriptors()
                 .stream()
                 .filter(registered -> registered.serviceType().equals(serviceType))
                 .findFirst();
         if (fromConfig.isPresent()) {
-            return fromConfig.get();
+            return ServiceDiscovery.wrap(fromConfig.get());
         }
 
         return discovery.allMetadata()
@@ -285,14 +287,14 @@ public class InjectRegistryManager implements ServiceRegistryManager {
                 .map(DescriptorHandler::descriptor)
                 .filter(desc -> desc.serviceType().equals(serviceType))
                 .findFirst()
-                .map(it -> (GeneratedService.Descriptor) it)
+                .map(it -> (ServiceDescriptor) it)
                 .orElse(descriptor);
     }
 
     private Described toDescribed(Map<io.helidon.service.registry.ServiceInfo, Described> descriptorToDescribed,
-                                  GeneratedService.Descriptor<?> descriptor) {
+                                  ServiceDescriptor<?> descriptor) {
         return descriptorToDescribed.computeIfAbsent(descriptor, it -> {
-            if (descriptor instanceof Descriptor<?> injectDescriptor) {
+            if (descriptor instanceof InjectServiceDescriptor<?> injectDescriptor) {
                 return new Described(descriptor, injectDescriptor, false);
             } else {
                 return new Described(descriptor, new CoreDescriptorWrapper(descriptor), true);
@@ -301,7 +303,7 @@ public class InjectRegistryManager implements ServiceRegistryManager {
     }
 
     @SuppressWarnings("unchecked")
-    private void bind(List<GeneratedService.Descriptor<Binding>> applications,
+    private void bind(List<ServiceDescriptor<Binding>> applications,
                       Map<TypeName, InjectServiceInfo> scopeHandlers,
                       Map<TypeName, InjectServiceInfo> servicesByType,
                       Map<TypeName, Set<InjectServiceInfo>> servicesByContract,
@@ -309,10 +311,10 @@ public class InjectRegistryManager implements ServiceRegistryManager {
                       Map<TypedQualifiedProviderKey, Set<InjectServiceInfo>> typedQualifiedProviders,
                       Described described) {
 
-        Descriptor<?> descriptor = described.injectDescriptor();
+        InjectServiceDescriptor<?> descriptor = described.injectDescriptor();
 
         if (descriptor.contracts().contains(Binding.TYPE)) {
-            applications.add((GeneratedService.Descriptor<Binding>) described.coreDescriptor());
+            applications.add((ServiceDescriptor<Binding>) described.coreDescriptor());
             // application is not bound to the registry
             return;
         }
@@ -356,7 +358,7 @@ public class InjectRegistryManager implements ServiceRegistryManager {
             }
         }
 
-        if (contracts.contains(Injection.QualifiedProvider.TYPE)) {
+        if (descriptor.providerType() == ProviderType.QUALIFIED_PROVIDER) {
             // a special kind of service that matches ANY qualifier instance of a specific type, and also may match
             // a specific contract, or ANY contract
             if (descriptor instanceof GeneratedInjectService.QualifiedProviderDescriptor qpd) {
@@ -392,17 +394,17 @@ public class InjectRegistryManager implements ServiceRegistryManager {
      * @param injectDescriptor instance that satisfies the inject descriptor API
      * @param isCore           if false, both are the same instance
      */
-    record Described(GeneratedService.Descriptor<?> coreDescriptor,
-                     Descriptor<?> injectDescriptor,
+    record Described(ServiceDescriptor<?> coreDescriptor,
+                     InjectServiceDescriptor<?> injectDescriptor,
                      boolean isCore) {
     }
 
-    private static class CoreDescriptorWrapper implements Descriptor<Object> {
-        private final GeneratedService.Descriptor<?> delegate;
+    private static class CoreDescriptorWrapper implements InjectServiceDescriptor<Object> {
+        private final ServiceDescriptor<?> delegate;
         private final List<Ip> injectionPoints;
         private final TypeName scope;
 
-        CoreDescriptorWrapper(GeneratedService.Descriptor<?> delegate) {
+        CoreDescriptorWrapper(ServiceDescriptor<?> delegate) {
             this.delegate = delegate;
 
             this.injectionPoints = delegate.dependencies()
@@ -456,7 +458,7 @@ public class InjectRegistryManager implements ServiceRegistryManager {
         }
 
         @Override
-        public Object instantiate(DependencyContext ctx, GeneratedInjectService.InterceptionMetadata interceptionMetadata) {
+        public Object instantiate(DependencyContext ctx, InterceptionMetadata interceptionMetadata) {
             return delegate.instantiate(ctx);
         }
 
@@ -465,7 +467,15 @@ public class InjectRegistryManager implements ServiceRegistryManager {
             return delegate;
         }
 
-        private static TypeName scope(GeneratedService.Descriptor<?> delegate) {
+        @Override
+        public ProviderType providerType() {
+            if (contracts().contains(TypeNames.SUPPLIER)) {
+                return ProviderType.SUPPLIER;
+            }
+            return ProviderType.SERVICE;
+        }
+
+        private static TypeName scope(ServiceDescriptor<?> delegate) {
             // if the core service is a supplier, we expect to get a new instance each time
             // otherwise it is a de-facto singleton
             return delegate.contracts().contains(TypeNames.SUPPLIER)

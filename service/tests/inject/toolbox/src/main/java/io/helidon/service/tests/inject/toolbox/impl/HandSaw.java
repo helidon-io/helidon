@@ -21,9 +21,6 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import io.helidon.service.inject.api.Injection;
-import io.helidon.service.inject.api.Injection.InjectionPointProvider;
-import io.helidon.service.inject.api.Lookup;
-import io.helidon.service.inject.api.Qualifier;
 import io.helidon.service.tests.inject.toolbox.AbstractBlade;
 import io.helidon.service.tests.inject.toolbox.AbstractSaw;
 import io.helidon.service.tests.inject.toolbox.Lubricant;
@@ -41,11 +38,11 @@ public class HandSaw extends AbstractSaw {
     Supplier<AbstractBlade> setterInjectedPkgPrivateProviderInSubClass;
     Optional<AbstractBlade> setterInjectedPkgPrivateOptionalInSubClass;
     List<AbstractBlade> setterInjectedPkgPrivateListInSubClass;
-    List<InjectionPointProvider<AbstractBlade>> setterInjectedAllProviderListInSubClass;
+
     int setterInjectedPkgPrivateProviderInSubClassInjectedCount;
     int setterInjectedPkgPrivateOptionalInSubClassInjectedCount;
     int setterInjectedPkgPrivateListInSubClassInjectedCount;
-    int setterInjectedAllProviderListInSubClassInjectedCount;
+
     private Optional<Lubricant> ctorInjectedLubricantInSubClass;
     private Optional<Lubricant> setterInjectedLubricantInSubClass;
     private int setterInjectedLubricantInSubClassInjectedCount;
@@ -97,22 +94,6 @@ public class HandSaw extends AbstractSaw {
                                     setterInjectedPkgPrivateListInSubClassInjectedCount,
                                     1,
                                     AbstractBlade.class);
-        Verification.verifyInjected(setterInjectedAllProviderListInSubClass,
-                                    getClass() +
-                                            ".setAllBlades(List<AbstractBlade> blades)",
-                                    setterInjectedAllProviderListInSubClassInjectedCount,
-                                    1,
-                                    InjectionPointProvider.class);
-        List<AbstractBlade> blades = setterInjectedAllProviderListInSubClass.getFirst()
-                .list(Lookup.builder()
-                              .addContract(AbstractBlade.class)
-                              .addQualifier(Qualifier.WILDCARD_NAMED)
-                              .build())
-                .stream()
-                .map(Supplier::get)
-                .toList();
-        Verification.verifyInjected(blades, getClass() +
-                "<all blades>", null, 3, AbstractBlade.class);
 
         super.verifyState();
     }
@@ -140,11 +121,4 @@ public class HandSaw extends AbstractSaw {
         setterInjectedPkgPrivateListInSubClass = blades;
         setterInjectedPkgPrivateListInSubClassInjectedCount++;
     }
-
-    @Injection.Inject
-    void setAllBlades(@Injection.Named("*") List<InjectionPointProvider<AbstractBlade>> blades) {
-        setterInjectedAllProviderListInSubClass = blades;
-        setterInjectedAllProviderListInSubClassInjectedCount++;
-    }
-
 }

@@ -32,8 +32,8 @@ import io.helidon.common.types.TypeNames;
 import io.helidon.service.inject.api.ActivationResult;
 import io.helidon.service.inject.api.Activator.Phase;
 import io.helidon.service.inject.api.GeneratedInjectService;
-import io.helidon.service.inject.api.GeneratedInjectService.Descriptor;
-import io.helidon.service.inject.api.GeneratedInjectService.InterceptionMetadata;
+import io.helidon.service.inject.api.InjectServiceDescriptor;
+import io.helidon.service.inject.api.InterceptionMetadata;
 import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.Injection.InjectionPointProvider;
 import io.helidon.service.inject.api.Injection.QualifiedInstance;
@@ -41,6 +41,7 @@ import io.helidon.service.inject.api.Injection.QualifiedProvider;
 import io.helidon.service.inject.api.Injection.ServicesProvider;
 import io.helidon.service.inject.api.Ip;
 import io.helidon.service.inject.api.Lookup;
+import io.helidon.service.inject.api.ProviderType;
 import io.helidon.service.inject.api.Qualifier;
 import io.helidon.service.inject.api.ServiceInstance;
 import io.helidon.service.registry.Dependency;
@@ -111,7 +112,7 @@ final class ActivatorsPerLookup {
 
         @Override
         protected Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
-            if (lookup.contracts().contains(TypeNames.SUPPLIER)) {
+            if (lookup.providerTypes().contains(ProviderType.SUPPLIER)) {
                 if (serviceInstance == null) {
                     return Optional.empty();
                 }
@@ -205,7 +206,7 @@ final class ActivatorsPerLookup {
             }
             var ipProvider = (InjectionPointProvider<T>) serviceInstance.get(currentPhase);
 
-            if (lookup.contracts().contains(InjectionPointProvider.TYPE)) {
+            if (lookup.providerTypes().contains(ProviderType.IP_PROVIDER)) {
                 // the user requested the provider, not the provided
                 T instance = (T) ipProvider;
                 return Optional.of(List.of(QualifiedInstance.create(instance, provider.descriptor().qualifiers())));
@@ -233,7 +234,7 @@ final class ActivatorsPerLookup {
         protected Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
             ServicesProvider<T> instanceSupplier = (ServicesProvider<T>) serviceInstance.get(currentPhase);
 
-            if (lookup.contracts().contains(ServicesProvider.TYPE)) {
+            if (lookup.providerTypes().contains(ProviderType.SERVICES_PROVIDER)) {
                 return Optional.of(List.of(QualifiedInstance.create((T) instanceSupplier, descriptor().qualifiers())));
             }
 
@@ -258,8 +259,8 @@ final class ActivatorsPerLookup {
         private List<QualifiedOnDemandInstance<T>> serviceInstances;
 
         CreateForActivator(InjectServiceRegistryImpl registry,
-                           GeneratedInjectService.CreateForDescriptor dbd,
-                           ServiceProvider<T> provider) {
+                           ServiceProvider<T> provider,
+                           GeneratedInjectService.CreateForDescriptor dbd) {
             super(provider);
 
             this.registry = registry;
@@ -328,11 +329,11 @@ final class ActivatorsPerLookup {
         private final ReentrantLock lock = new ReentrantLock();
         private final DependencyContext ctx;
         private final InterceptionMetadata interceptionMetadata;
-        private final Descriptor<T> source;
+        private final InjectServiceDescriptor<T> source;
 
         OnDemandInstance(DependencyContext ctx,
                          InterceptionMetadata interceptionMetadata,
-                         Descriptor<T> source) {
+                         InjectServiceDescriptor<T> source) {
             this.ctx = ctx;
             this.interceptionMetadata = interceptionMetadata;
             this.source = source;
