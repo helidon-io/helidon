@@ -174,4 +174,22 @@
    <cpe>cpe:/a:mysql:mysql</cpe>
 </suppress>
 
+<!-- False Positive.
+     This is against an old version of prometheusa (not prometheus metrics nor micrometer)
+ -->
+<suppress>
+   <notes><![CDATA[
+   file name: micrometer-registry-prometheus-simpleclient-1.13.4.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.micrometer/micrometer-registry-prometheus-simpleclient@.*$</packageUrl>
+   <cve>CVE-2019-3826</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: prometheus-metrics-core-1.2.1.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.prometheus/prometheus-metrics-(.*)@.*$</packageUrl>
+   <cve>CVE-2019-3826</cve>
+</suppress>
+
 </suppressions>
