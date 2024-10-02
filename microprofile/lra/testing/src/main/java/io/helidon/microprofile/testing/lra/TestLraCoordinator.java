@@ -59,10 +59,10 @@ public class TestLraCoordinator {
                        CoordinatorLocatorService coordinatorLocator) {
         this.serverCdiExtension = serverCdiExtension;
         this.coordinatorService = CoordinatorService.builder()
-                .url(this::getUrl)
+                .url(this::coordinatorUri)
                 .config(config.get(CoordinatorService.CONFIG_PREFIX))
                 .build();
-        coordinatorLocator.overrideCoordinatorUriSupplier(this::getUrl);
+        coordinatorLocator.overrideCoordinatorUriSupplier(this::coordinatorUri);
     }
 
     @Produces
@@ -78,7 +78,7 @@ public class TestLraCoordinator {
      *
      * @return coordinator url
      */
-    public URI getUrl() {
+    public URI coordinatorUri() {
         return URI.create("http://localhost:" + awaitPort() + CONTEXT_PATH);
     }
 
@@ -92,8 +92,8 @@ public class TestLraCoordinator {
         if (lraId == null) {
             return null;
         }
-        if (lraId.startsWith(getUrl() + "/")) {
-            return coordinatorService.lra(lraId.substring(getUrl().toString().length() + 1));
+        if (lraId.startsWith(coordinatorUri() + "/")) {
+            return coordinatorService.lra(lraId.substring(coordinatorUri().toString().length() + 1));
         }
         return coordinatorService.lra(lraId);
     }
