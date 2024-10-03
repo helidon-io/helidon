@@ -49,6 +49,11 @@ mvn -U archetype:generate -DinteractiveMode=false \
     -Dpackage=io.helidon.examples.quickstart.se
 ----
 
+TIP: If you are using an earlier version of Helidon and the above command
+fails with `java.lang.NoSuchMethodError` then you can work-around the error
+by replacing `archetype:generate` with `org.apache.maven.plugins:maven-archetype-plugin:3.2.1:generate`.
+Or use the helidon CLI.
+
 [source,bash]
 .Or alternatively run the helidon CLI
 ----
