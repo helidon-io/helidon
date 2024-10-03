@@ -30,6 +30,8 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceContext;
 
+import io.helidon.microprofile.config.ConfigCdiExtension;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -64,7 +66,8 @@ class TestApplicationAndContainerManagedInjections {
         }
         SeContainerInitializer i = SeContainerInitializer.newInstance()
             .disableDiscovery()
-            .addExtensions(PersistenceExtension.class,
+            .addExtensions(ConfigCdiExtension.class,
+                           PersistenceExtension.class,
                            com.arjuna.ats.jta.cdi.TransactionExtension.class,
                            io.helidon.integrations.datasource.hikaricp.cdi.HikariCPBackedDataSourceExtension.class)
             .addBeanClasses(Frobnicator.class);
