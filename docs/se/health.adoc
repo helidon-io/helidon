@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -364,7 +364,7 @@ Built-in health checks can be configured using the config property keys
 described in this
 <<built-in-health-checks-table,table>>. Further, you can suppress one or more of the built-in
 health checks by setting the configuration item
-`helidon.health.exclude` to a comma-separated list of the health check names
+`health.exclude` to a comma-separated list of the health check names
 (from this <<built-in-health-checks-table,table>>) you want to exclude.
 
 == Examples
