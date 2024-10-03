@@ -168,7 +168,7 @@
                 <plugin>
                     <groupId>io.helidon.build-tools</groupId>
                     <artifactId>helidon-build-cache-maven-plugin</artifactId>
-                    <version>4.0.11</version>
+                    <version>4.0.12</version>
                 </plugin>
             </plugins>
         </pluginManagement>
