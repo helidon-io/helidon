@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,10 +29,7 @@ module io.helidon.integrations.microstream.cdi {
     requires transitive jakarta.inject;
     requires jakarta.interceptor.api;
     requires jakarta.annotation;
-    requires microstream.base;
     requires microstream.cache;
-    requires microstream.persistence;
-    requires microstream.storage;
     requires microstream.storage.embedded;
 
     provides jakarta.enterprise.inject.spi.Extension
