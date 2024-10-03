@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ interface LraPersistentRegistry {
      * @param lraId to look for
      * @return lra if exist
      */
-    Lra get(String lraId);
+    LraImpl get(String lraId);
 
     /**
      * Add new Lra.
@@ -47,7 +47,7 @@ interface LraPersistentRegistry {
      * @param lraId id of new lra
      * @param lra   Lra
      */
-    void put(String lraId, Lra lra);
+    void put(String lraId, LraImpl lra);
 
     /**
      * Remove lra by id.
@@ -61,6 +61,6 @@ interface LraPersistentRegistry {
      *
      * @return stream of all the Lras
      */
-    Stream<Lra> stream();
+    Stream<LraImpl> stream();
 
 }
