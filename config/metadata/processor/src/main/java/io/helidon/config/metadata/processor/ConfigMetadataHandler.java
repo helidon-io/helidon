@@ -19,6 +19,8 @@ package io.helidon.config.metadata.processor;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -50,7 +52,7 @@ import static io.helidon.config.metadata.processor.UsedTypes.META_CONFIGURED;
 /*
  * This class is separated so javac correctly reports possible errors.
  */
-class  ConfigMetadataHandler {
+class ConfigMetadataHandler {
     /*
      * Configuration metadata file location.
      */
@@ -94,11 +96,8 @@ class  ConfigMetadataHandler {
         try {
             return doProcess(roundEnv);
         } catch (Exception e) {
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            e.printStackTrace(pw);
             messager.printMessage(Diagnostic.Kind.ERROR, "Failed to process config metadata annotation processor. "
-                    + sw);
+                    + stackTraceAsString(e));
             return false;
         }
     }
@@ -213,7 +212,21 @@ class  ConfigMetadataHandler {
         }
     }
 
-    private String toMessage(Exception e) {
-        return e.getClass().getName() + ": " + e.getMessage();
+    @Retention(RetentionPolicy.CLASS)
+    private @interface SuppressFBWarnings {
+ 
+        String[] value() default {};
+
+        String justification() default "";
+    }
+
+    @SuppressFBWarnings(
+            value = "INFORMATION_EXPOSURE_THROUGH_AN_ERROR_MESSAGE",
+            justification = "During compile time this isn't a problem.")
+    private static String stackTraceAsString(Throwable e) {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        e.printStackTrace(pw);
+        return sw.toString();
     }
 }
