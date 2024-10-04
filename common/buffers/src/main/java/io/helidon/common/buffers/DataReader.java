@@ -445,6 +445,9 @@ public class DataReader {
                     }
                     indexWithinNode = crIndex + 1;
                     idx += indexWithinNode;
+                    if (idx >= max) {
+                        return max;
+                    }
                     continue;
                 }
             }
