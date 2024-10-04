@@ -781,6 +781,16 @@
                 <artifactId>helidon-lra-coordinator-narayana-client</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.lra</groupId>
+                <artifactId>helidon-lra-coordinator-server</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.lra</groupId>
+                <artifactId>helidon-microprofile-lra-testing</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
             <!-- integrations -->
             <dependency>
