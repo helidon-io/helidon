@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.common</groupId>
         <artifactId>helidon-common-project</artifactId>
-        <version>4.1.2-SNAPSHOT</version>
+        <version>4.1.2</version>
     </parent>
     <artifactId>helidon-common-config</artifactId>
     <name>Helidon Common Config</name>

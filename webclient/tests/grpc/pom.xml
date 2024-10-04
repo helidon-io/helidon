@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.webclient.tests</groupId>
         <artifactId>helidon-webclient-tests-project</artifactId>
-        <version>4.1.2-SNAPSHOT</version>
+        <version>4.1.2</version>
     </parent>
 
     <artifactId>helidon-webclient-tests-grpc</artifactId>

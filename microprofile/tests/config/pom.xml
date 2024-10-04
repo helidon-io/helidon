@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.microprofile.tests</groupId>
         <artifactId>helidon-microprofile-tests-project</artifactId>
-        <version>4.1.2-SNAPSHOT</version>
+        <version>4.1.2</version>
     </parent>
     <artifactId>helidon-microprofile-tests-config</artifactId>
     <name>Helidon Microprofile Config Tests</name>
