@@ -17,9 +17,23 @@ This release contains important bugfixes and enhancements and is recommended for
 
 A minimum of Java 21 is required to use Helidon 4.
 
-
 ### CHANGES
 
+- gRPC: Adds support to iterate over URIs when connecting to a gRPC service [9300](https://github.com/helidon-io/helidon/pull/9300)
+- LRA: LRA testing feature [9320](https://github.com/helidon-io/helidon/pull/9320)
+- Logging: JSON Formatter for JUL  [9301](https://github.com/helidon-io/helidon/pull/9301)
+- Security: Policy validator configurable per endpoint in config (#9248) [9308](https://github.com/helidon-io/helidon/pull/9308)
+- WebServer: Allows the webserver's write buffer size to be set to 0  [9314](https://github.com/helidon-io/helidon/pull/9314)
+- WebServer: Fix DataReader.findNewLine with lone EOL character [9327](https://github.com/helidon-io/helidon/pull/9327)
+- WebServer: Grouping Executors related methods into a single class [9298](https://github.com/helidon-io/helidon/pull/9298)
+- WebServer: New implementation for SSE in webserver [9297](https://github.com/helidon-io/helidon/pull/9297)
+- WebServer: Smart async writer in webserver [9292](https://github.com/helidon-io/helidon/pull/9292)
+- Dependencies: Upgrade Jersey to 3.1.8  [9303](https://github.com/helidon-io/helidon/pull/9303)
+- Dependencies: Upgrades protobuf to 3.25.5 [9299](https://github.com/helidon-io/helidon/pull/9299)
+- Dependencies: Uptake build-tools 4.0.12 (fixes [9305](https://github.com/helidon-io/helidon/issues/9305)) [9323](https://github.com/helidon-io/helidon/pull/9323)
+- Docs: Add emphasis on including an OTel exporter and configuring  [9312](https://github.com/helidon-io/helidon/pull/9312)
+- Docs: Document work-around for maven archetype issue (#9316) [9324](https://github.com/helidon-io/helidon/pull/9324)
+- Tests: Fix DbClient PostgreSQL tests [9293](https://github.com/helidon-io/helidon/pull/9293)
 
 ## [4.1.1]
 
