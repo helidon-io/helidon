@@ -28,7 +28,7 @@ A minimum of Java 21 is required to use Helidon 4.
 - WebServer: Grouping Executors related methods into a single class [9298](https://github.com/helidon-io/helidon/pull/9298)
 - WebServer: New implementation for SSE in webserver [9297](https://github.com/helidon-io/helidon/pull/9297)
 - WebServer: Smart async writer in webserver [9292](https://github.com/helidon-io/helidon/pull/9292)
-- Dependencies: Upgrade Jersy to 3.1.8  [9303](https://github.com/helidon-io/helidon/pull/9303)
+- Dependencies: Upgrade Jersey to 3.1.8  [9303](https://github.com/helidon-io/helidon/pull/9303)
 - Dependencies: Upgrades protobuf to 3.25.5 [9299](https://github.com/helidon-io/helidon/pull/9299)
 - Dependencies: Uptake build-tools 4.0.12 (fixes [9305](https://github.com/helidon-io/helidon/issues/9305)) [9323](https://github.com/helidon-io/helidon/pull/9323)
 - Docs: Add emphasis on including an OTel exporter and configuring  [9312](https://github.com/helidon-io/helidon/pull/9312)
