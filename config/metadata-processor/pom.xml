@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.config</groupId>
         <artifactId>helidon-config-project</artifactId>
-        <version>3.2.10-SNAPSHOT</version>
+        <version>3.2.10</version>
     </parent>
     <artifactId>helidon-config-metadata-processor</artifactId>
     <name>Helidon Config Metadata Annotation Processor</name>

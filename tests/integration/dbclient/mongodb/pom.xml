@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.tests.integration.dbclient</groupId>
         <artifactId>helidon-tests-integration-dbclient-project</artifactId>
-        <version>3.2.10-SNAPSHOT</version>
+        <version>3.2.10</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
