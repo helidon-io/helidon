@@ -30,7 +30,7 @@
     <name>Helidon Archetypes</name>
     <packaging>pom</packaging>
     <properties>
-        <version.lib.helidon-archetype-engine>3.0.4</version.lib.helidon-archetype-engine>
+        <version.lib.helidon-archetype-engine>3.0.8</version.lib.helidon-archetype-engine>
     </properties>
 
     <modules>
