@@ -29,7 +29,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.service.inject.api.GeneratedInjectService;
@@ -38,9 +37,7 @@ import io.helidon.service.inject.api.InjectRegistrySpi__ServiceDescriptor;
 import io.helidon.service.inject.api.InjectServiceDescriptor;
 import io.helidon.service.inject.api.InjectServiceInfo;
 import io.helidon.service.inject.api.Injection;
-import io.helidon.service.inject.api.InterceptionMetadata;
 import io.helidon.service.inject.api.InterceptionMetadata__ServiceDescriptor;
-import io.helidon.service.inject.api.Ip;
 import io.helidon.service.inject.api.ProviderType;
 import io.helidon.service.metadata.DescriptorMetadata;
 import io.helidon.service.registry.DependencyContext;
@@ -297,7 +294,7 @@ public class InjectRegistryManager implements ServiceRegistryManager {
             if (descriptor instanceof InjectServiceDescriptor<?> injectDescriptor) {
                 return new Described(descriptor, injectDescriptor, false);
             } else {
-                return new Described(descriptor, new CoreDescriptorWrapper(descriptor), true);
+                return new Described(descriptor, CoreWrappers.create(descriptor), true);
             }
         });
     }
@@ -397,91 +394,6 @@ public class InjectRegistryManager implements ServiceRegistryManager {
     record Described(ServiceDescriptor<?> coreDescriptor,
                      InjectServiceDescriptor<?> injectDescriptor,
                      boolean isCore) {
-    }
-
-    private static class CoreDescriptorWrapper implements InjectServiceDescriptor<Object> {
-        private final ServiceDescriptor<?> delegate;
-        private final List<Ip> injectionPoints;
-        private final TypeName scope;
-
-        CoreDescriptorWrapper(ServiceDescriptor<?> delegate) {
-            this.delegate = delegate;
-
-            this.injectionPoints = delegate.dependencies()
-                    .stream()
-                    .map(it -> Ip.builder()
-                            .from(it)
-                            .elementKind(ElementKind.CONSTRUCTOR)
-                            .build())
-                    .collect(Collectors.toList());
-            this.scope = scope(delegate);
-        }
-
-        @Override
-        public TypeName scope() {
-            return scope;
-        }
-
-        @Override
-        public TypeName serviceType() {
-            return delegate.serviceType();
-        }
-
-        @Override
-        public TypeName descriptorType() {
-            return delegate.descriptorType();
-        }
-
-        @Override
-        public Set<TypeName> contracts() {
-            return delegate.contracts();
-        }
-
-        @Override
-        public List<Ip> dependencies() {
-            return injectionPoints;
-        }
-
-        @Override
-        public boolean isAbstract() {
-            return delegate.isAbstract();
-        }
-
-        @Override
-        public Object instantiate(DependencyContext ctx) {
-            return delegate.instantiate(ctx);
-        }
-
-        @Override
-        public double weight() {
-            return delegate.weight();
-        }
-
-        @Override
-        public Object instantiate(DependencyContext ctx, InterceptionMetadata interceptionMetadata) {
-            return delegate.instantiate(ctx);
-        }
-
-        @Override
-        public io.helidon.service.registry.ServiceInfo coreInfo() {
-            return delegate;
-        }
-
-        @Override
-        public ProviderType providerType() {
-            if (contracts().contains(TypeNames.SUPPLIER)) {
-                return ProviderType.SUPPLIER;
-            }
-            return ProviderType.SERVICE;
-        }
-
-        private static TypeName scope(ServiceDescriptor<?> delegate) {
-            // if the core service is a supplier, we expect to get a new instance each time
-            // otherwise it is a de-facto singleton
-            return delegate.contracts().contains(TypeNames.SUPPLIER)
-                    ? Injection.Instance.TYPE
-                    : Injection.Singleton.TYPE;
-        }
     }
 
     private static class ApplicationPlanBinder implements InjectionPlanBinder {

@@ -21,13 +21,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import io.helidon.common.types.Annotation;
-import io.helidon.common.types.TypedElementInfo;
-import io.helidon.service.inject.api.InjectServiceInfo;
 import io.helidon.service.inject.api.Interception;
-import io.helidon.service.inject.api.InvocationContext;
-import io.helidon.service.inject.api.InvocationException;
-import io.helidon.service.inject.api.Invoker;
+import io.helidon.service.inject.api.InterceptionContext;
+import io.helidon.service.inject.api.InterceptionException;
+import io.helidon.service.inject.api.InterceptionInvoker;
 
 /**
  * Handles the invocation of {@link io.helidon.service.inject.api.Interception.Interceptor} methods.
@@ -36,70 +33,23 @@ import io.helidon.service.inject.api.Invoker;
  * or to the ultimate target, the invocation will be prevented from being executed again.
  *
  * @param <V> the invocation type
- * @see io.helidon.service.inject.api.InvocationContext
+ * @see io.helidon.service.inject.api.InterceptionContext
  */
 class Invocation<V> implements Interception.Interceptor.Chain<V> {
-    private final InvocationContext ctx;
+    private final InterceptionContext ctx;
     private final List<Supplier<Interception.Interceptor>> interceptors;
     private final Set<Class<? extends Throwable>> checkedExceptions;
     private int interceptorPos;
-    private Invoker<V> call;
+    private InterceptionInvoker<V> call;
 
-    private Invocation(InvocationContext ctx,
+    private Invocation(InterceptionContext ctx,
                        List<Supplier<Interception.Interceptor>> interceptors,
-                       Invoker<V> call,
+                       InterceptionInvoker<V> call,
                        Set<Class<? extends Throwable>> checkedExceptions) {
         this.ctx = ctx;
         this.call = call;
         this.interceptors = List.copyOf(interceptors);
         this.checkedExceptions = checkedExceptions;
-    }
-
-    /**
-     * Creates an instance of {@link io.helidon.service.inject.Invocation} and invokes it in this context.
-     *
-     * @param descriptor      service descriptor
-     * @param typeAnnotations type level annotations
-     * @param element         element being invoked
-     * @param call            the call to the base service provider's method
-     * @param args            the call arguments
-     * @param <V>             the type returned from the method element
-     * @return the invocation instance
-     * @throws io.helidon.service.inject.api.InvocationException if there are errors during invocation chain processing
-     */
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    public static <V> V createInvokeAndSupply(InjectServiceInfo descriptor,
-                                              List<Annotation> typeAnnotations,
-                                              TypedElementInfo element,
-                                              List<Supplier<Interception.Interceptor>> interceptors,
-                                              Invoker<V> call,
-                                              Object... args) {
-        Objects.requireNonNull(descriptor);
-        Objects.requireNonNull(typeAnnotations);
-        Objects.requireNonNull(element);
-        Objects.requireNonNull(interceptors);
-        Objects.requireNonNull(call);
-        Objects.requireNonNull(args);
-
-        InvocationContext ctx = InvocationContext.builder()
-                .serviceInfo(descriptor)
-                .typeAnnotations(typeAnnotations)
-                .elementInfo(element)
-                .build();
-
-        try {
-            if (interceptors.isEmpty()) {
-                return call.invoke(args);
-            } else {
-                return (V) new Invocation(ctx, interceptors, call, Set.of()).proceed(args);
-            }
-        } catch (InvocationException e) {
-            throw e;
-        } catch (Throwable t) {
-            // this method does not support checked exceptions
-            // (and as a result, we do not support checked exceptions in intercepted constructors)
-            throw new InvocationException("Error in interceptor chain processing", t, true);
-        }
     }
 
     /**
@@ -111,15 +61,15 @@ class Invocation<V> implements Interception.Interceptor.Chain<V> {
      * @param checkedExceptions expected exception types
      * @param <V>               the type returned from the method element
      * @return the invocation instance
-     * @throws InvocationException if there are errors during invocation chain processing
-     * @throws Exception           any checked exception declared by the method itself
+     * @throws io.helidon.service.inject.api.InterceptionException if there are errors during invocation chain processing
+     * @throws Exception                                           any checked exception declared by the method itself
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
-    static <V> V createInvokeAndSupply(InvocationContext ctx,
-                                       List<? extends Supplier<Interception.Interceptor>> interceptors,
-                                       Invoker<V> call,
-                                       Object[] args,
-                                       Set<Class<? extends Throwable>> checkedExceptions) throws Exception {
+    static <V> V invokeInterception(InterceptionContext ctx,
+                                    List<? extends Supplier<Interception.Interceptor>> interceptors,
+                                    InterceptionInvoker<V> call,
+                                    Object[] args,
+                                    Set<Class<? extends Throwable>> checkedExceptions) throws Exception {
         Objects.requireNonNull(ctx);
         Objects.requireNonNull(call);
         Objects.requireNonNull(args);
@@ -132,7 +82,7 @@ class Invocation<V> implements Interception.Interceptor.Chain<V> {
                 if (shouldThrow(checkedExceptions, t.getClass())) {
                     throw t;
                 }
-                throw new InvocationException("Error in interceptor chain processing", t, true);
+                throw new InterceptionException("Error in interceptor chain processing", t, true);
             }
         } else {
             return (V) new Invocation(ctx, interceptors, call, checkedExceptions).proceed(args);
@@ -147,7 +97,7 @@ class Invocation<V> implements Interception.Interceptor.Chain<V> {
     @Override
     public V proceed(Object... args) throws Exception {
         if (this.call == null) {
-            throw new InvocationException("Duplicate invocation, or unknown call type: " + this, true);
+            throw new InterceptionException("Duplicate invocation, or unknown call type: " + this, true);
         }
 
         if (interceptorPos < interceptors.size()) {
@@ -169,16 +119,16 @@ class Invocation<V> implements Interception.Interceptor.Chain<V> {
                 String message = "Error in interceptor chain processing";
                 boolean called = call == null;
 
-                throw new InvocationException(message, t, called);
+                throw new InterceptionException(message, t, called);
             }
         }
 
-        Invoker<V> call = this.call;
+        InterceptionInvoker<V> call = this.call;
         this.call = null;
 
         try {
             return call.invoke(args);
-        } catch (InvocationException e) {
+        } catch (InterceptionException e) {
             if (e.targetWasCalled()) {
                 // allow the call to happen again
                 this.call = call;
@@ -195,7 +145,7 @@ class Invocation<V> implements Interception.Interceptor.Chain<V> {
                 throw t;
             }
             // wrap, unexpected exception/throwable
-            throw new InvocationException("Error in interceptor chain processing", t, true);
+            throw new InterceptionException("Error in interceptor chain processing", t, true);
         }
     }
 

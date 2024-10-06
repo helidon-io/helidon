@@ -22,14 +22,11 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypeNames;
 import io.helidon.service.inject.api.ActivationRequest;
 import io.helidon.service.inject.api.InjectServiceDescriptor;
-import io.helidon.service.inject.api.InterceptionMetadata;
 import io.helidon.service.inject.api.InjectServiceInfo;
-import io.helidon.service.inject.api.Injection;
+import io.helidon.service.inject.api.InterceptionMetadata;
 import io.helidon.service.inject.api.Lookup;
-import io.helidon.service.inject.api.ProviderType;
 import io.helidon.service.inject.api.ServiceInstance;
 import io.helidon.service.registry.Dependency;
 import io.helidon.service.registry.ServiceInfo;
@@ -58,7 +55,7 @@ class ServiceProvider<T> {
         this.registry = serviceRegistry;
         this.interceptionMetadata = registry.interceptionMetadata();
         this.activationRequest = registry.activationRequest();
-        this.serviceInfo = WrapServiceInfo.create(serviceInfo);
+        this.serviceInfo = CoreWrappers.create(serviceInfo);
         this.descriptor = null;
 
         this.contracts = Contracts.create(this.serviceInfo);
@@ -225,59 +222,6 @@ class ServiceProvider<T> {
             } else {
                 injectionPlan.bind(injectionPoint, discovered.getFirst());
             }
-        }
-    }
-
-    private static class WrapServiceInfo implements InjectServiceInfo {
-        private final ServiceInfo delegate;
-
-        private WrapServiceInfo(ServiceInfo delegate) {
-            this.delegate = delegate;
-        }
-
-        static InjectServiceInfo create(ServiceInfo serviceInfo) {
-            if (serviceInfo instanceof InjectServiceInfo inj) {
-                return inj;
-            }
-            return new WrapServiceInfo(serviceInfo);
-        }
-
-        @Override
-        public double weight() {
-            return delegate.weight();
-        }
-
-        @Override
-        public TypeName scope() {
-            return Injection.Singleton.TYPE;
-        }
-
-        @Override
-        public TypeName serviceType() {
-            return delegate.serviceType();
-        }
-
-        @Override
-        public TypeName descriptorType() {
-            return delegate.descriptorType();
-        }
-
-        @Override
-        public Set<TypeName> contracts() {
-            return delegate.contracts();
-        }
-
-        @Override
-        public boolean isAbstract() {
-            return delegate.isAbstract();
-        }
-
-        @Override
-        public ProviderType providerType() {
-            if (contracts().contains(TypeNames.SUPPLIER)) {
-                return ProviderType.SUPPLIER;
-            }
-            return ProviderType.SERVICE;
         }
     }
 }

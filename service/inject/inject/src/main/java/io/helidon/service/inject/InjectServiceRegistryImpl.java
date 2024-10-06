@@ -50,10 +50,10 @@ import io.helidon.service.inject.ServiceSupplies.ServiceSupplyList;
 import io.helidon.service.inject.api.ActivationRequest;
 import io.helidon.service.inject.api.Activator;
 import io.helidon.service.inject.api.CreateForName__ServiceDescriptor;
-import io.helidon.service.inject.api.InjectServiceDescriptor;
 import io.helidon.service.inject.api.InjectRegistry;
 import io.helidon.service.inject.api.InjectRegistrySpi;
 import io.helidon.service.inject.api.InjectRegistrySpi__ServiceDescriptor;
+import io.helidon.service.inject.api.InjectServiceDescriptor;
 import io.helidon.service.inject.api.InjectServiceInfo;
 import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.Interception;
@@ -174,8 +174,9 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
             usedScopes.add(injectDescriptor.scope());
 
             Object instance = explicitInstances.get(descriptor);
-            ServiceProvider<Object> provider = new ServiceProvider<>(this,
-                                                                     (InjectServiceDescriptor<Object>) described.injectDescriptor());
+            ServiceProvider<Object> provider = new ServiceProvider<>(
+                    this,
+                    (InjectServiceDescriptor<Object>) described.injectDescriptor());
 
             if (instance != null) {
                 Activator<Object> activator = Activators.create(provider, instance);

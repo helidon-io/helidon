@@ -27,9 +27,9 @@ import io.helidon.common.types.TypedElementInfo;
 import io.helidon.service.inject.ServiceSupplies.ServiceSupply;
 import io.helidon.service.inject.api.InjectServiceInfo;
 import io.helidon.service.inject.api.Interception;
+import io.helidon.service.inject.api.InterceptionContext;
+import io.helidon.service.inject.api.InterceptionInvoker;
 import io.helidon.service.inject.api.InterceptionMetadata;
-import io.helidon.service.inject.api.InvocationContext;
-import io.helidon.service.inject.api.Invoker;
 import io.helidon.service.inject.api.Lookup;
 import io.helidon.service.inject.api.Qualifier;
 
@@ -49,12 +49,12 @@ class InterceptionMetadataImpl implements InterceptionMetadata {
     }
 
     @Override
-    public <T> Invoker<T> createInvoker(InjectServiceInfo descriptor,
-                                        Set<Qualifier> typeQualifiers,
-                                        List<Annotation> typeAnnotations,
-                                        TypedElementInfo element,
-                                        Invoker<T> targetInvoker,
-                                        Set<Class<? extends Throwable>> checkedExceptions) {
+    public <T> InterceptionInvoker<T> createInvoker(InjectServiceInfo descriptor,
+                                                    Set<Qualifier> typeQualifiers,
+                                                    List<Annotation> typeAnnotations,
+                                                    TypedElementInfo element,
+                                                    InterceptionInvoker<T> targetInvoker,
+                                                    Set<Class<? extends Throwable>> checkedExceptions) {
         Objects.requireNonNull(descriptor);
         Objects.requireNonNull(typeQualifiers);
         Objects.requireNonNull(typeAnnotations);
@@ -66,26 +66,26 @@ class InterceptionMetadataImpl implements InterceptionMetadata {
         if (interceptors.isEmpty()) {
             return targetInvoker;
         } else {
-            return params -> Invocation.createInvokeAndSupply(InvocationContext.builder()
-                                                                      .serviceInfo(descriptor)
-                                                                      .typeAnnotations(typeAnnotations)
-                                                                      .elementInfo(element)
-                                                                      .build(),
-                                                              interceptors,
-                                                              targetInvoker,
-                                                              params,
-                                                              checkedExceptions);
+            return params -> Invocation.invokeInterception(InterceptionContext.builder()
+                                                                   .serviceInfo(descriptor)
+                                                                   .typeAnnotations(typeAnnotations)
+                                                                   .elementInfo(element)
+                                                                   .build(),
+                                                           interceptors,
+                                                           targetInvoker,
+                                                           params,
+                                                           checkedExceptions);
         }
     }
 
     @Override
-    public <T> Invoker<T> createInvoker(Object serviceInstance,
-                                        InjectServiceInfo descriptor,
-                                        Set<Qualifier> typeQualifiers,
-                                        List<Annotation> typeAnnotations,
-                                        TypedElementInfo element,
-                                        Invoker<T> targetInvoker,
-                                        Set<Class<? extends Throwable>> checkedExceptions) {
+    public <T> InterceptionInvoker<T> createInvoker(Object serviceInstance,
+                                                    InjectServiceInfo descriptor,
+                                                    Set<Qualifier> typeQualifiers,
+                                                    List<Annotation> typeAnnotations,
+                                                    TypedElementInfo element,
+                                                    InterceptionInvoker<T> targetInvoker,
+                                                    Set<Class<? extends Throwable>> checkedExceptions) {
         Objects.requireNonNull(serviceInstance);
         Objects.requireNonNull(descriptor);
         Objects.requireNonNull(typeQualifiers);
@@ -98,16 +98,16 @@ class InterceptionMetadataImpl implements InterceptionMetadata {
         if (interceptors.isEmpty()) {
             return targetInvoker;
         } else {
-            return params -> Invocation.createInvokeAndSupply(InvocationContext.builder()
-                                                                      .serviceInstance(serviceInstance)
-                                                                      .serviceInfo(descriptor)
-                                                                      .typeAnnotations(typeAnnotations)
-                                                                      .elementInfo(element)
-                                                                      .build(),
-                                                              interceptors,
-                                                              targetInvoker,
-                                                              params,
-                                                              checkedExceptions);
+            return params -> Invocation.invokeInterception(InterceptionContext.builder()
+                                                                   .serviceInstance(serviceInstance)
+                                                                   .serviceInfo(descriptor)
+                                                                   .typeAnnotations(typeAnnotations)
+                                                                   .elementInfo(element)
+                                                                   .build(),
+                                                           interceptors,
+                                                           targetInvoker,
+                                                           params,
+                                                           checkedExceptions);
         }
     }
 
@@ -142,12 +142,12 @@ class InterceptionMetadataImpl implements InterceptionMetadata {
 
     private static class NoopMetadata implements InterceptionMetadata {
         @Override
-        public <T> Invoker<T> createInvoker(InjectServiceInfo descriptor,
-                                            Set<Qualifier> typeQualifiers,
-                                            List<Annotation> typeAnnotations,
-                                            TypedElementInfo element,
-                                            Invoker<T> targetInvoker,
-                                            Set<Class<? extends Throwable>> checkedExceptions) {
+        public <T> InterceptionInvoker<T> createInvoker(InjectServiceInfo descriptor,
+                                                        Set<Qualifier> typeQualifiers,
+                                                        List<Annotation> typeAnnotations,
+                                                        TypedElementInfo element,
+                                                        InterceptionInvoker<T> targetInvoker,
+                                                        Set<Class<? extends Throwable>> checkedExceptions) {
             Objects.requireNonNull(descriptor);
             Objects.requireNonNull(typeQualifiers);
             Objects.requireNonNull(typeAnnotations);
@@ -159,13 +159,13 @@ class InterceptionMetadataImpl implements InterceptionMetadata {
         }
 
         @Override
-        public <T> Invoker<T> createInvoker(Object serviceInstance,
-                                            InjectServiceInfo descriptor,
-                                            Set<Qualifier> typeQualifiers,
-                                            List<Annotation> typeAnnotations,
-                                            TypedElementInfo element,
-                                            Invoker<T> targetInvoker,
-                                            Set<Class<? extends Throwable>> checkedExceptions) {
+        public <T> InterceptionInvoker<T> createInvoker(Object serviceInstance,
+                                                        InjectServiceInfo descriptor,
+                                                        Set<Qualifier> typeQualifiers,
+                                                        List<Annotation> typeAnnotations,
+                                                        TypedElementInfo element,
+                                                        InterceptionInvoker<T> targetInvoker,
+                                                        Set<Class<? extends Throwable>> checkedExceptions) {
             Objects.requireNonNull(serviceInstance);
             Objects.requireNonNull(descriptor);
             Objects.requireNonNull(typeQualifiers);

@@ -267,6 +267,33 @@ final class Activators {
             return Optional.empty();
         }
 
+        /**
+         * Check if a provider was requested as part of the lookup.
+         * This is the case if:
+         * <ul>
+         *     <li>The lookup explicitly asks for a provider by its type</li>
+         *     <li>The lookup looks for contract that is the same as this service type</li>
+         *     <li>The lookup looks for service type that is the same as this service type</li>
+         * </ul>
+         *
+         * @param lookup       requested lookup
+         * @param providerType type of provider this type implements
+         * @return whether the provider itself should be returned
+         */
+        protected boolean requestedProvider(Lookup lookup, ProviderType providerType) {
+            if (lookup.providerTypes().contains(providerType)) {
+                return true;
+            }
+            if (lookup.contracts().size() == 1 && lookup.contracts().contains(descriptor().serviceType())) {
+                return true;
+            }
+            if (lookup.serviceType().isPresent() && lookup.serviceType().get().equals(descriptor().serviceType())) {
+                return true;
+            }
+
+            return false;
+        }
+
         private void stateTransitionStart(ActivationResult.Builder res, Phase phase) {
             res.finishingActivationPhase(phase);
             this.currentPhase = phase;
@@ -446,11 +473,12 @@ final class Activators {
 
         @Override
         protected Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
-            if (lookup.providerTypes().contains(ProviderType.SUPPLIER)) {
+            if (requestedProvider(lookup, ProviderType.SUPPLIER)) {
                 // the user requested the provider, not the provided
                 T instance = serviceInstance.get();
                 return Optional.of(List.of(QualifiedInstance.create(instance, provider.descriptor().qualifiers())));
             }
+
             return super.targetInstances(lookup);
         }
 
@@ -550,7 +578,7 @@ final class Activators {
             }
             var ipProvider = (InjectionPointProvider<T>) serviceInstance.get();
 
-            if (lookup.providerTypes().contains(ProviderType.IP_PROVIDER)) {
+            if (requestedProvider(lookup, ProviderType.IP_PROVIDER)) {
                 // the user requested the provider, not the provided
                 T instance = (T) ipProvider;
                 return Optional.of(List.of(QualifiedInstance.create(instance, provider.descriptor().qualifiers())));
@@ -592,8 +620,8 @@ final class Activators {
         @SuppressWarnings("unchecked")
         @Override
         protected Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
-            if (lookup.providerTypes().contains(ProviderType.SERVICES_PROVIDER)) {
-                return Optional.of(List.of(QualifiedInstance.create((T) serviceInstance, descriptor().qualifiers())));
+            if (requestedProvider(lookup, ProviderType.SERVICES_PROVIDER)) {
+                return Optional.of(List.of(QualifiedInstance.create((T) serviceInstance.get(), descriptor().qualifiers())));
             }
 
             if (targetInstances == null) {
@@ -780,7 +808,6 @@ final class Activators {
     }
 
     static class InstanceHolder<T> {
-        private final ReentrantLock lock = new ReentrantLock();
         private final DependencyContext ctx;
         private final InterceptionMetadata interceptionMetadata;
         private final InjectServiceDescriptor<T> source;

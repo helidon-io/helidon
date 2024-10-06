@@ -33,12 +33,12 @@ import io.helidon.service.inject.api.ActivationResult;
 import io.helidon.service.inject.api.Activator.Phase;
 import io.helidon.service.inject.api.GeneratedInjectService;
 import io.helidon.service.inject.api.InjectServiceDescriptor;
-import io.helidon.service.inject.api.InterceptionMetadata;
 import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.Injection.InjectionPointProvider;
 import io.helidon.service.inject.api.Injection.QualifiedInstance;
 import io.helidon.service.inject.api.Injection.QualifiedProvider;
 import io.helidon.service.inject.api.Injection.ServicesProvider;
+import io.helidon.service.inject.api.InterceptionMetadata;
 import io.helidon.service.inject.api.Ip;
 import io.helidon.service.inject.api.Lookup;
 import io.helidon.service.inject.api.ProviderType;
@@ -112,7 +112,7 @@ final class ActivatorsPerLookup {
 
         @Override
         protected Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
-            if (lookup.providerTypes().contains(ProviderType.SUPPLIER)) {
+            if (requestedProvider(lookup, ProviderType.SUPPLIER)) {
                 if (serviceInstance == null) {
                     return Optional.empty();
                 }
@@ -206,7 +206,7 @@ final class ActivatorsPerLookup {
             }
             var ipProvider = (InjectionPointProvider<T>) serviceInstance.get(currentPhase);
 
-            if (lookup.providerTypes().contains(ProviderType.IP_PROVIDER)) {
+            if (requestedProvider(lookup, ProviderType.IP_PROVIDER)) {
                 // the user requested the provider, not the provided
                 T instance = (T) ipProvider;
                 return Optional.of(List.of(QualifiedInstance.create(instance, provider.descriptor().qualifiers())));
@@ -234,7 +234,7 @@ final class ActivatorsPerLookup {
         protected Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
             ServicesProvider<T> instanceSupplier = (ServicesProvider<T>) serviceInstance.get(currentPhase);
 
-            if (lookup.providerTypes().contains(ProviderType.SERVICES_PROVIDER)) {
+            if (requestedProvider(lookup, ProviderType.SERVICES_PROVIDER)) {
                 return Optional.of(List.of(QualifiedInstance.create((T) instanceSupplier, descriptor().qualifiers())));
             }
 
