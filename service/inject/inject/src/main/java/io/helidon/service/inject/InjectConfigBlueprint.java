@@ -65,7 +65,6 @@ interface InjectConfigBlueprint extends ServiceRegistryConfig {
      * In certain conditions Injection services should be initialized but not started (i.e., avoiding calls to
      * {@code PostConstruct}
      * etc.). This can be used in special cases where the normal Injection startup should limit lifecycle up to a given phase.
-     * Normally one should not use this feature - it is mainly used in Injection tooling (e.g., the service maven-plugin).
      *
      * @return the phase to stop at during lifecycle
      */
@@ -86,15 +85,4 @@ interface InjectConfigBlueprint extends ServiceRegistryConfig {
     @Option.Configured
     @Option.DefaultBoolean(true)
     boolean useBinding();
-
-    /**
-     * Maximal run level to handle when starting from the generated main class
-     * ({@link InjectionMain}). This setting is ignored when starting registry using
-     * other means, as run levels are not handled by default.
-     *
-     * @return maximal run level to lookup during application startup when using generated main class
-     */
-    @Option.Configured
-    @Option.DefaultDouble(Double.MAX_VALUE)
-    double maxRunLevel();
 }

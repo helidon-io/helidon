@@ -293,16 +293,6 @@ public final class Injection {
     }
 
     /**
-     * Marks a custom main class.
-     * This is a required annotation if the main class extends the generated main class.
-     */
-    @Documented
-    @Retention(RetentionPolicy.CLASS)
-    @Target(ElementType.TYPE)
-    public @interface Main {
-    }
-
-    /**
      * Describe the annotated type. This will generate a service descriptor that cannot create an instance.
      * This is useful for scoped instances that are provided when the scope is activated.
      * <p>

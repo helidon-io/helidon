@@ -29,8 +29,6 @@ module io.helidon.service.inject {
     requires static io.helidon.common.features.api;
 
     requires io.helidon.metrics.api;
-    requires io.helidon;
-    requires io.helidon.logging.common;
     requires io.helidon.service.metadata;
 
     requires transitive io.helidon.service.inject.api;
@@ -44,7 +42,4 @@ module io.helidon.service.inject {
 
     provides io.helidon.service.registry.spi.ServiceRegistryManagerProvider
             with io.helidon.service.inject.InjectRegistryManagerProvider;
-
-    provides io.helidon.spi.HelidonStartupProvider
-            with io.helidon.service.inject.InjectStartupProvider;
 }
