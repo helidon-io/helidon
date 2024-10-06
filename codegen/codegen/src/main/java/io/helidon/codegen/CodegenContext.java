@@ -81,10 +81,12 @@ public interface CodegenContext {
     CodegenOptions options();
 
     /**
-     * Discover information about the provided type.
+     * Discover information about the provided type. This method only checks existing classes in the
+     * system, and ignored classes created as part of the current processing round.
      *
      * @param typeName type name to discover
      * @return discovered type information, or empty if the type cannot be discovered
+     * @see io.helidon.codegen.RoundContext#typeInfo(io.helidon.common.types.TypeName)
      */
     Optional<TypeInfo> typeInfo(TypeName typeName);
 

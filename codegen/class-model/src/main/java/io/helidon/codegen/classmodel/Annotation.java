@@ -31,10 +31,12 @@ import io.helidon.common.types.TypeName;
 public final class Annotation extends CommonComponent {
 
     private final List<AnnotationParameter> parameters;
+    private final io.helidon.common.types.Annotation commonAnnotation;
 
     private Annotation(Builder builder) {
         super(builder);
         this.parameters = List.copyOf(builder.parameters.values());
+        this.commonAnnotation = builder.commonAnntation;
     }
 
     /**
@@ -88,6 +90,35 @@ public final class Annotation extends CommonComponent {
         return builder.build();
     }
 
+    /**
+     * Create a class model annotation from common types annotation.
+     *
+     * @param annotation annotation to process
+     * @return a new class model annotation
+     */
+    public static Annotation create(io.helidon.common.types.Annotation annotation) {
+        return builder().from(annotation).build();
+    }
+
+    /**
+     * Convert class model annotation to Helidon Common Types annotation.
+     *
+     * @return common types annotation
+     */
+    public io.helidon.common.types.Annotation toTypesAnnotation() {
+        if (this.commonAnnotation != null) {
+            return commonAnnotation;
+        }
+        var builder = io.helidon.common.types.Annotation.builder()
+                .typeName(type().genericTypeName());
+
+        for (AnnotationParameter parameter : parameters) {
+            builder.putValue(parameter.name(), parameter.value());
+        }
+
+        return builder.build();
+    }
+
     @Override
     void writeComponent(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports, ClassType classType)
             throws IOException {
@@ -128,6 +159,7 @@ public final class Annotation extends CommonComponent {
     public static final class Builder extends CommonComponent.Builder<Builder, Annotation> {
 
         private final Map<String, AnnotationParameter> parameters = new LinkedHashMap<>();
+        private io.helidon.common.types.Annotation commonAnntation;
 
         private Builder() {
         }
@@ -210,6 +242,13 @@ public final class Annotation extends CommonComponent {
             return this;
         }
 
+        Builder from(io.helidon.common.types.Annotation annotation) {
+            this.commonAnntation = annotation;
+            type(annotation.typeName());
+            annotation.values()
+                    .forEach(this::addParameter);
+            return this;
+        }
     }
 
 }

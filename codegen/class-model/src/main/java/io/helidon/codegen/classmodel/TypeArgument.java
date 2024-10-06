@@ -207,6 +207,11 @@ public final class TypeArgument extends Type implements TypeName {
         return token.compareTo(o);
     }
 
+    @Override
+    TypeName typeName() {
+        return this;
+    }
+
     /**
      * Fluent API builder for {@link TypeArgument}.
      */

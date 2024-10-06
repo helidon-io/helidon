@@ -58,6 +58,8 @@ abstract class Type extends ModelComponent {
         return typeBuilder.build();
     }
 
+    abstract TypeName typeName();
+
     private static String extractBoundTypeName(TypeName instance) {
         String name = calcName(instance);
         StringBuilder nameBuilder = new StringBuilder(name);

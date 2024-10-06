@@ -144,7 +144,7 @@ public class Codegen {
         for (var extension : extensions) {
             // and now for each extension, we discover types that contain annotations supported by that extension
             // and create a new round context
-            RoundContextImpl roundCtx = createRoundContext(annotatedTypes, extension);
+            RoundContextImpl roundCtx = createRoundContext(annotatedTypes, extension, toWrite);
             extension.extension().process(roundCtx);
             toWrite.addAll(roundCtx.newTypes());
         }
@@ -160,7 +160,7 @@ public class Codegen {
 
         // do processing over in each extension
         for (var extension : extensions) {
-            RoundContextImpl roundCtx = createRoundContext(List.of(), extension);
+            RoundContextImpl roundCtx = createRoundContext(List.of(), extension, toWrite);
             extension.extension().processingOver(roundCtx);
             toWrite.addAll(roundCtx.newTypes());
         }
@@ -246,7 +246,9 @@ public class Codegen {
         }
     }
 
-    private RoundContextImpl createRoundContext(List<TypeInfoAndAnnotations> annotatedTypes, ExtensionInfo extension) {
+    private RoundContextImpl createRoundContext(List<TypeInfoAndAnnotations> annotatedTypes,
+                                                ExtensionInfo extension,
+                                                List<ClassCode> newTypes) {
         Set<TypeName> availableAnnotations = new HashSet<>();
         Map<TypeName, List<TypeInfo>> annotationToTypes = new HashMap<>();
         Map<TypeName, TypeInfo> processedTypes = new HashMap<>();
@@ -269,6 +271,7 @@ public class Codegen {
 
         return new RoundContextImpl(
                 ctx,
+                newTypes,
                 Set.copyOf(availableAnnotations),
                 Map.copyOf(annotationToTypes),
                 Map.copyOf(metaAnnotationToAnnotations),

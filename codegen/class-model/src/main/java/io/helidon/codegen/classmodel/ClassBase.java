@@ -19,10 +19,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -81,36 +83,100 @@ public abstract class ClassBase extends AnnotatedComponent {
         this.superType = builder.superType;
     }
 
-    private static int methodCompare(Method method1, Method method2) {
-        if (method1.accessModifier() == method2.accessModifier()) {
-            return 0;
-        } else {
-            return method1.accessModifier().compareTo(method2.accessModifier());
-        }
+    /**
+     * All declared fields.
+     *
+     * @return fields
+     */
+    public List<Field> fields() {
+        return List.copyOf(fields);
     }
 
-    private static int fieldComparator(Field field1, Field field2) {
-        //This is here for ordering purposes.
-        if (field1.accessModifier() == field2.accessModifier()) {
-            if (field1.isFinal() == field2.isFinal()) {
-                if (field1.type().simpleTypeName().equals(field2.type().simpleTypeName())) {
-                    if (field1.type().resolvedTypeName().equals(field2.type().resolvedTypeName())) {
-                        return field1.name().compareTo(field2.name());
-                    }
-                    return field1.type().resolvedTypeName().compareTo(field2.type().resolvedTypeName());
-                } else if (field1.type().simpleTypeName().equalsIgnoreCase(field2.type().simpleTypeName())) {
-                    //To ensure that types with the types with the same name,
-                    //but with the different capital letters, will not be mixed
-                    return field1.type().simpleTypeName().compareTo(field2.type().simpleTypeName());
-                }
-                //ignoring case sensitivity to ensure primitive types are properly sorted
-                return field1.type().simpleTypeName().compareToIgnoreCase(field2.type().simpleTypeName());
-            }
-            //final fields should be before non-final
-            return Boolean.compare(field2.isFinal(), field1.isFinal());
-        } else {
-            return field1.accessModifier().compareTo(field2.accessModifier());
-        }
+    /**
+     * All declared methods.
+     *
+     * @return methods
+     */
+    public List<Method> methods() {
+        return List.copyOf(methods);
+    }
+
+    /**
+     * All declared inner classes.
+     *
+     * @return inner classes
+     */
+    public List<ClassBase> innerClasses() {
+        return List.copyOf(innerClasses);
+    }
+
+    /**
+     * All declared constructors.
+     *
+     * @return constructors
+     */
+    public List<Constructor> constructors() {
+        return List.copyOf(constructors);
+    }
+
+    /**
+     * Kind of this type.
+     *
+     * @return kind
+     */
+    public ElementKind kind() {
+        return switch (classType) {
+            case CLASS -> ElementKind.CLASS;
+            case INTERFACE -> ElementKind.INTERFACE;
+        };
+    }
+
+    /**
+     * Type name of the super class (if this is a class and it extends another class).
+     *
+     * @return super type
+     */
+    public Optional<TypeName> superTypeName() {
+        return Optional.ofNullable(superType)
+                .map(Type::genericTypeName);
+    }
+
+    /**
+     * Implemented interfaces.
+     *
+     * @return interfaces this type implements (or extends, if this is an interface)
+     */
+    public List<TypeName> interfaceTypeNames() {
+        return interfaces.stream()
+                .map(Type::genericTypeName)
+                .collect(Collectors.toUnmodifiableList());
+    }
+
+    /**
+     * Is this a final class.
+     *
+     * @return whether this class is final
+     */
+    public boolean isFinal() {
+        return isFinal;
+    }
+
+    /**
+     * Is this an abstract class.
+     *
+     * @return whether this class is abstract
+     */
+    public boolean isAbstract() {
+        return isAbstract;
+    }
+
+    /**
+     * Is this a static class.
+     *
+     * @return whether this class is static
+     */
+    public boolean isStatic() {
+        return isStatic;
     }
 
     @Override
@@ -177,6 +243,67 @@ public abstract class ClassBase extends AnnotatedComponent {
         }
         writer.write("\n");
         writer.write("}");
+    }
+
+    @Override
+    void addImports(ImportOrganizer.Builder imports) {
+        super.addImports(imports);
+        fields.forEach(field -> field.addImports(imports));
+        staticFields.forEach(field -> field.addImports(imports));
+        methods.forEach(method -> method.addImports(imports));
+        staticMethods.forEach(method -> method.addImports(imports));
+        interfaces.forEach(imp -> imp.addImports(imports));
+        constructors.forEach(constructor -> constructor.addImports(imports));
+        genericParameters.forEach(param -> param.addImports(imports));
+        innerClasses.forEach(innerClass -> {
+            imports.from(innerClass.imports());
+            innerClass.addImports(imports);
+        });
+        if (superType != null) {
+            superType.addImports(imports);
+        }
+    }
+
+    ClassType classType() {
+        return classType;
+    }
+
+    Map<String, InnerClass> innerClassesMap() {
+        Map<String, InnerClass> result = new HashMap<>();
+        innerClasses.forEach(innerClass -> result.put(innerClass.name(), innerClass));
+        return result;
+    }
+
+    private static int methodCompare(Method method1, Method method2) {
+        if (method1.accessModifier() == method2.accessModifier()) {
+            return 0;
+        } else {
+            return method1.accessModifier().compareTo(method2.accessModifier());
+        }
+    }
+
+    private static int fieldComparator(Field field1, Field field2) {
+        //This is here for ordering purposes.
+        if (field1.accessModifier() == field2.accessModifier()) {
+            if (field1.isFinal() == field2.isFinal()) {
+                if (field1.type().simpleTypeName().equals(field2.type().simpleTypeName())) {
+                    if (field1.type().resolvedTypeName().equals(field2.type().resolvedTypeName())) {
+                        return field1.name().compareTo(field2.name());
+                    }
+                    return field1.type().resolvedTypeName().compareTo(field2.type().resolvedTypeName());
+                } else if (field1.type().simpleTypeName().equalsIgnoreCase(field2.type().simpleTypeName())) {
+                    //To ensure that types with the types with the same name,
+                    //but with the different capital letters, will not be mixed
+                    return field1.type().simpleTypeName().compareTo(field2.type().simpleTypeName());
+                }
+                //ignoring case sensitivity to ensure primitive types are properly sorted
+                return field1.type().simpleTypeName().compareToIgnoreCase(field2.type().simpleTypeName());
+            }
+            //final fields should be before non-final
+            return Boolean.compare(field2.isFinal(), field1.isFinal());
+        } else {
+            return field1.accessModifier().compareTo(field2.accessModifier());
+        }
     }
 
     private void writeGenericParameters(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports)
@@ -259,29 +386,6 @@ public abstract class ClassBase extends AnnotatedComponent {
             writer.writeSeparatorLine();
         }
         writer.decreasePaddingLevel();
-    }
-
-    @Override
-    void addImports(ImportOrganizer.Builder imports) {
-        super.addImports(imports);
-        fields.forEach(field -> field.addImports(imports));
-        staticFields.forEach(field -> field.addImports(imports));
-        methods.forEach(method -> method.addImports(imports));
-        staticMethods.forEach(method -> method.addImports(imports));
-        interfaces.forEach(imp -> imp.addImports(imports));
-        constructors.forEach(constructor -> constructor.addImports(imports));
-        genericParameters.forEach(param -> param.addImports(imports));
-        innerClasses.forEach(innerClass -> {
-            imports.from(innerClass.imports());
-            innerClass.addImports(imports);
-        });
-        if (superType != null) {
-            superType.addImports(imports);
-        }
-    }
-
-    ClassType classType() {
-        return classType;
     }
 
     /**
@@ -686,6 +790,10 @@ public abstract class ClassBase extends AnnotatedComponent {
 
         ImportOrganizer.Builder importOrganizer() {
             return importOrganizer;
+        }
+
+        Map<String, InnerClass> innerClasses() {
+            return innerClasses;
         }
     }
 }

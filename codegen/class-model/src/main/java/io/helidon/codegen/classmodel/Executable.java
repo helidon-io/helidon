@@ -24,6 +24,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeName;
@@ -54,10 +55,10 @@ public abstract class Executable extends AnnotatedComponent {
 
     void writeThrows(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports, ClassType classType)
             throws IOException {
-        if (!exceptions().isEmpty()) {
+        if (!exceptionTypes().isEmpty()) {
             writer.write(" throws ");
             boolean first = true;
-            for (Type exception : exceptions()) {
+            for (Type exception : exceptionTypes()) {
                 if (first) {
                     first = false;
                 } else {
@@ -76,11 +77,27 @@ public abstract class Executable extends AnnotatedComponent {
         writer.write("\n");
     }
 
-    List<Parameter> parameters() {
-        return parameters;
+    /**
+     * List of method parameters.
+     *
+     * @return parameters
+     */
+    public List<Parameter> parameters() {
+        return List.copyOf(parameters);
     }
 
-    List<Type> exceptions() {
+    /**
+     * List of thrown exceptions.
+     *
+     * @return exceptions
+     */
+    public List<TypeName> exceptions() {
+        return exceptions.stream()
+                .map(Type::genericTypeName)
+                .collect(Collectors.toUnmodifiableList());
+    }
+
+    List<Type> exceptionTypes() {
         return exceptions;
     }
 
