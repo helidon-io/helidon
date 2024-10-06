@@ -368,19 +368,19 @@ public final class Injection {
          * Get (or create) an instance of this service type for the given injection point context. This is logically the same
          * as using the first element of the result from calling {@link #list(io.helidon.service.inject.api.Lookup)}.
          *
-         * @param query the service query
+         * @param lookup the service query
          * @return the best service provider matching the criteria, if any matched, with qualifiers (if any)
          */
-        Optional<QualifiedInstance<T>> first(Lookup query);
+        Optional<QualifiedInstance<T>> first(Lookup lookup);
 
         /**
          * Get (or create) a list of instances matching the criteria for the given injection point context.
          *
-         * @param query the service query
+         * @param lookup the service query
          * @return the resolved services matching criteria for the injection point in order of weight, or empty if none matching
          */
-        default List<QualifiedInstance<T>> list(Lookup query) {
-            return first(query).map(List::of).orElseGet(List::of);
+        default List<QualifiedInstance<T>> list(Lookup lookup) {
+            return first(lookup).map(List::of).orElseGet(List::of);
         }
     }
 
@@ -394,12 +394,12 @@ public final class Injection {
      * <p>
      * A good practice is to create an accompanying codegen extension that validates injection points at build time.
      *
-     * @param <A> type of qualifier supported by this provider
      * @param <T> type of the provided instance, the special case is {@link java.lang.Object} - if used, we consider this
      *            provider to be capable of handling ANY type, and will allow injection points with any type as long as it is
      *            qualified by the qualifier
+     * @param <A> type of qualifier supported by this provider
      */
-    public interface QualifiedProvider<A extends Annotation, T> {
+    public interface QualifiedProvider<T, A extends Annotation> {
         /**
          * Type name of this interface.
          */
@@ -452,9 +452,6 @@ public final class Injection {
          * @return a new qualified instance
          */
         static <T> QualifiedInstance<T> create(T instance, io.helidon.service.inject.api.Qualifier... qualifiers) {
-            /*
-                Developer note: this method is used from generated code of __ConfigBean
-            */
             return new QualifiedInstanceImpl<>(instance, Set.of(qualifiers));
         }
 

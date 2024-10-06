@@ -184,7 +184,7 @@ final class ActivatorsPerLookup {
 
         @SuppressWarnings("unchecked")
         private List<QualifiedInstance<T>> targetInstances(Lookup lookup, Qualifier qualifier, GenericType<T> contract) {
-            var qProvider = (QualifiedProvider<?, T>) serviceInstance.get(currentPhase);
+            var qProvider = (QualifiedProvider<T, ?>) serviceInstance.get(currentPhase);
 
             return qProvider.list(qualifier, lookup, contract);
         }

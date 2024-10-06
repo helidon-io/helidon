@@ -27,7 +27,7 @@ import io.helidon.service.inject.api.Lookup;
 import io.helidon.service.inject.api.Qualifier;
 
 @Injection.Singleton
-class SecondQualifiedProvider implements QualifiedProvider<SecondQualifier, QualifiedContract> {
+class SecondQualifiedProvider implements QualifiedProvider<QualifiedContract, SecondQualifier> {
     private final Map<String, QualifiedContract> values = Map.of("first", new QualifiedContractImpl("first"),
                                                                  "second", new QualifiedContractImpl("second"));
 

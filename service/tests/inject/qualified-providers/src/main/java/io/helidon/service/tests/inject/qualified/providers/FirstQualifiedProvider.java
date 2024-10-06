@@ -26,7 +26,7 @@ import io.helidon.service.inject.api.Lookup;
 import io.helidon.service.inject.api.Qualifier;
 
 @Injection.Singleton
-class FirstQualifiedProvider implements Injection.QualifiedProvider<FirstQualifier, Object> {
+class FirstQualifiedProvider implements Injection.QualifiedProvider<Object, FirstQualifier> {
     private final Map<String, String> values = Map.of("first", "first",
                                                       "second", "49");
 

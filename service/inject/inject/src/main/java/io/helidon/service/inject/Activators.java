@@ -523,7 +523,7 @@ final class Activators {
 
         @SuppressWarnings("unchecked")
         private List<QualifiedInstance<T>> targetInstances(Lookup lookup, Qualifier qualifier, GenericType<T> contract) {
-            var qProvider = (QualifiedProvider<?, T>) serviceInstance.get();
+            var qProvider = (QualifiedProvider<T, ?>) serviceInstance.get();
 
             return qProvider.list(qualifier, lookup, contract);
         }

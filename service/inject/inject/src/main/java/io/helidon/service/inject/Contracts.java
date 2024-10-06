@@ -37,7 +37,7 @@ final class Contracts {
     static ContractLookup create(InjectServiceInfo descriptor) {
         Set<TypeName> contracts = descriptor.contracts();
 
-        return switch(descriptor.providerType()) {
+        return switch (descriptor.providerType()) {
             case NONE, SERVICE -> new FixedContracts(contracts);
             case SUPPLIER -> new ProviderContracts(contracts, TypeNames.SUPPLIER);
             case SERVICES_PROVIDER -> new ProviderContracts(contracts, Injection.ServicesProvider.TYPE);
