@@ -36,8 +36,7 @@ module io.helidon.service.codegen {
             with io.helidon.service.codegen.ServiceRegistryCodegenProvider;
     provides io.helidon.service.codegen.spi.RegistryCodegenExtensionProvider
             with io.helidon.service.codegen.InjectionExtensionProvider,
-                    io.helidon.service.codegen.ServiceExtensionProvider,
-                    io.helidon.service.codegen.ConfigBeanCodegenProvider;
+                    io.helidon.service.codegen.ServiceExtensionProvider;
 
     provides io.helidon.codegen.spi.AnnotationMapperProvider
             with io.helidon.service.codegen.MapNamedByClassProvider;

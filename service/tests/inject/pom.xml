@@ -44,6 +44,5 @@
         <module>scopes</module>
         <module>stacking</module>
         <module>toolbox</module>
-        <module>config-driven</module>
     </modules>
 </project>
