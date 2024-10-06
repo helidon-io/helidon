@@ -38,11 +38,11 @@ class RequestScopeInjectionPointProviderExample implements InjectionPointProvide
                                      SECOND_QUALI);
 
     @Override
-    public Optional<QualifiedInstance<ContractRequestScope>> first(Lookup query) {
-        if (query.qualifiers().contains(FIRST_QUALI)) {
+    public Optional<QualifiedInstance<ContractRequestScope>> first(Lookup lookup) {
+        if (lookup.qualifiers().contains(FIRST_QUALI)) {
             return Optional.of(FIRST);
         }
-        if (query.qualifiers().contains(SECOND_QUALI)) {
+        if (lookup.qualifiers().contains(SECOND_QUALI)) {
             return Optional.of(SECOND);
         }
         return Optional.empty();

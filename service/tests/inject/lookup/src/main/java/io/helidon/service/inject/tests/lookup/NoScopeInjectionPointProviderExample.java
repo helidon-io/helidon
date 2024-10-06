@@ -32,11 +32,11 @@ class NoScopeInjectionPointProviderExample implements InjectionPointProvider<Con
     static final Qualifier SECOND_QUALI = Qualifier.create(NoScopeInjectionPointProviderExample.SecondQuali.class);
 
     @Override
-    public Optional<QualifiedInstance<ContractNoScope>> first(Lookup query) {
-        if (query.qualifiers().contains(FIRST_QUALI)) {
+    public Optional<QualifiedInstance<ContractNoScope>> first(Lookup lookup) {
+        if (lookup.qualifiers().contains(FIRST_QUALI)) {
             return Optional.of(QualifiedInstance.create(new FirstClass(), FIRST_QUALI));
         }
-        if (query.qualifiers().contains(SECOND_QUALI)) {
+        if (lookup.qualifiers().contains(SECOND_QUALI)) {
             return Optional.of(QualifiedInstance.create(new SecondClass(), SECOND_QUALI));
         }
         return Optional.empty();

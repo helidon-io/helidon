@@ -24,35 +24,26 @@ import java.util.Map;
 import java.util.Set;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.Weight;
-import io.helidon.common.config.Config;
-import io.helidon.common.config.ConfigException;
 import io.helidon.common.types.TypeName;
-import io.helidon.config.metadata.Configured;
 import io.helidon.service.codegen.ServiceCodegenTypes;
-import io.helidon.service.inject.Binding;
-import io.helidon.service.inject.InjectConfig;
-import io.helidon.service.inject.InjectRegistryManager;
-import io.helidon.service.inject.InjectionMain;
-import io.helidon.service.inject.InjectionPlanBinder;
+import io.helidon.service.inject.api.GeneratedInjectService;
 import io.helidon.service.inject.api.GeneratedInjectService.CreateForDescriptor;
 import io.helidon.service.inject.api.GeneratedInjectService.IpSupport;
 import io.helidon.service.inject.api.GeneratedInjectService.QualifiedProviderDescriptor;
 import io.helidon.service.inject.api.GeneratedInjectService.ScopeHandlerDescriptor;
-import io.helidon.service.inject.api.InjectRegistry;
 import io.helidon.service.inject.api.InjectServiceDescriptor;
 import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.Interception;
+import io.helidon.service.inject.api.InterceptionException;
+import io.helidon.service.inject.api.InterceptionInvoker;
 import io.helidon.service.inject.api.InterceptionMetadata;
-import io.helidon.service.inject.api.InvocationException;
-import io.helidon.service.inject.api.Invoker;
 import io.helidon.service.inject.api.Ip;
-import io.helidon.service.inject.api.Lookup;
+import io.helidon.service.inject.api.ProviderType;
 import io.helidon.service.inject.api.Qualifier;
 import io.helidon.service.inject.api.ServiceInstance;
-import io.helidon.service.inject.api.ProviderType;
 import io.helidon.service.registry.Dependency;
 import io.helidon.service.registry.DependencyContext;
+import io.helidon.service.registry.GeneratedService;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceDescriptor;
 import io.helidon.service.registry.ServiceInfo;
@@ -67,6 +58,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class ServiceCodegenTypesTest {
+    @SuppressWarnings("removal")
     @Test
     void testTypes() {
         // it is really important to test ALL constants on the class, so let's use reflection
@@ -94,62 +86,13 @@ class ServiceCodegenTypesTest {
         checkField(toCheck, checked, fields, "SERVICE_ANNOTATION_CONTRACT", Service.Contract.class);
         checkField(toCheck, checked, fields, "SERVICE_ANNOTATION_EXTERNAL_CONTRACTS", Service.ExternalContracts.class);
         checkField(toCheck, checked, fields, "SERVICE_ANNOTATION_DESCRIPTOR", Service.Descriptor.class);
-        checkField(toCheck, checked, fields, "SERVICE_DESCRIPTOR", ServiceDescriptor.class);
+        checkField(toCheck, checked, fields, "SERVICE_INFO", ServiceInfo.class);
+        checkField(toCheck, checked, fields, "SERVICE_DESCRIPTOR", GeneratedService.Descriptor.class);
         checkField(toCheck, checked, fields, "SERVICE_DEPENDENCY", Dependency.class);
         checkField(toCheck, checked, fields, "SERVICE_DEPENDENCY_CONTEXT", DependencyContext.class);
-        checkField(toCheck, checked, fields, "SERVICE_INFO", ServiceInfo.class);
-
-        checkField(toCheck, checked, fields, "INJECTION_INJECT", Injection.Inject.class);
-        checkField(toCheck, checked, fields, "INJECTION_SCOPE", Injection.Scope.class);
-        checkField(toCheck, checked, fields, "INJECTION_SINGLETON", Injection.Singleton.class);
-        checkField(toCheck, checked, fields, "INJECTION_REQUEST_SCOPE", Injection.RequestScope.class);
-        checkField(toCheck, checked, fields, "INJECTION_NAMED", Injection.Named.class);
-        checkField(toCheck, checked, fields, "INJECTION_NAMED_BY_CLASS", Injection.NamedByClass.class);
-        checkField(toCheck, checked, fields, "INJECTION_QUALIFIER", Injection.Qualifier.class);
-        checkField(toCheck, checked, fields, "INJECTION_INSTANCE", Injection.Instance.class);
-        checkField(toCheck, checked, fields, "INJECTION_CREATE_FOR", Injection.CreateFor.class);
-        checkField(toCheck, checked, fields, "INJECTION_RUN_LEVEL", Injection.RunLevel.class);
-        checkField(toCheck, checked, fields, "INJECTION_MAIN", Injection.Main.class);
-        checkField(toCheck, checked, fields, "INJECTION_DESCRIBE", Injection.Describe.class);
-        checkField(toCheck, checked, fields, "INJECT_SERVICE_DESCRIPTOR", InjectServiceDescriptor.class);
-        checkField(toCheck, checked, fields, "INJECT_LOOKUP", Lookup.class);
-        checkField(toCheck, checked, fields, "INJECT_QUALIFIER", Qualifier.class);
-        checkField(toCheck, checked, fields, "INJECTION_POINT", Ip.class);
-        checkField(toCheck, checked, fields, "SERVICES_PROVIDER", Injection.ServicesProvider.class);
-        checkField(toCheck, checked, fields, "QUALIFIED_INSTANCE", Injection.QualifiedInstance.class);
-        checkField(toCheck, checked, fields, "INJECTION_POINT_PROVIDER", Injection.InjectionPointProvider.class);
-        checkField(toCheck, checked, fields, "QUALIFIED_PROVIDER", Injection.QualifiedProvider.class);
-        checkField(toCheck, checked, fields, "INJECTION_PLAN_BINDER", InjectionPlanBinder.class);
-        checkField(toCheck, checked, fields, "INJECT_SCOPE_HANDLER", Injection.ScopeHandler.class);
-        checkField(toCheck, checked, fields, "INJECT_BINDING", Binding.class);
-        checkField(toCheck, checked, fields, "INJECT_CONFIG_BUILDER", InjectConfig.Builder.class);
-        checkField(toCheck, checked, fields, "INJECT_QUALIFIED_PROVIDER_DESCRIPTOR", QualifiedProviderDescriptor.class);
-        checkField(toCheck, checked, fields, "INJECT_SCOPE_HANDLER_DESCRIPTOR", ScopeHandlerDescriptor.class);
-        checkField(toCheck, checked, fields, "INJECT_CREATE_FOR_DESCRIPTOR", CreateForDescriptor.class);
-        checkField(toCheck, checked, fields, "INJECT_IP_SUPPORT", IpSupport.class);
-        checkField(toCheck, checked, fields, "INJECT_CONFIG", InjectConfig.class);
-        checkField(toCheck, checked, fields, "INJECT_REGISTRY_MANAGER", InjectRegistryManager.class);
-        checkField(toCheck, checked, fields, "INJECT_SERVICE_INSTANCE", ServiceInstance.class);
-        checkField(toCheck, checked, fields, "INJECT_REGISTRY", InjectRegistry.class);
-        checkField(toCheck, checked, fields, "INJECT_APPLICATION_MAIN", InjectionMain.class);
-
-        checkField(toCheck, checked, fields, "INVOKER", Invoker.class);
-        checkField(toCheck, checked, fields, "INVOCATION_EXCEPTION", InvocationException.class);
-        checkField(toCheck, checked, fields, "INTERCEPTION_TRIGGER", Interception.Trigger.class);
-        checkField(toCheck, checked, fields, "INTERCEPTION_DELEGATE", Interception.Delegate.class);
-        checkField(toCheck, checked, fields, "INTERCEPTION_EXTERNAL_DELEGATES", Interception.ExternalDelegates.class);
-        checkField(toCheck, checked, fields, "INTERCEPTION_METADATA", InterceptionMetadata.class);
+        checkField(toCheck, checked, fields, "REGISTRY_SERVICE_DESCRIPTOR", ServiceDescriptor.class);
 
         checkField(toCheck, checked, fields, "BUILDER_BLUEPRINT", Prototype.Blueprint.class);
-        checkField(toCheck, checked, fields, "BUILDER_CONFIGURED", Prototype.Configured.class);
-
-        checkField(toCheck, checked, fields, "CONFIG_COMMON_CONFIG", Config.class);
-        checkField(toCheck, checked, fields, "CONFIG_EXCEPTION", ConfigException.class);
-        checkField(toCheck, checked, fields, "CONFIG_META_CONFIGURED", Configured.class);
-
-        checkField(toCheck, checked, fields, "SERVICE_PROVIDER_TYPE", ProviderType.class);
-
-        checkField(toCheck, checked, fields, "WEIGHT", Weight.class);
 
         assertThat("If the collection is not empty, please add appropriate checkField line to this test",
                    toCheck,

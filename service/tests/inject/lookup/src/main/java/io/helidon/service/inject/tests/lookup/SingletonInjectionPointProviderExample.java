@@ -34,11 +34,11 @@ class SingletonInjectionPointProviderExample implements InjectionPointProvider<C
     static final QualifiedInstance<ContractSingleton> SECOND = QualifiedInstance.create(new SecondClass(), SECOND_QUALI);
 
     @Override
-    public Optional<QualifiedInstance<ContractSingleton>> first(Lookup query) {
-        if (query.qualifiers().contains(FIRST_QUALI)) {
+    public Optional<QualifiedInstance<ContractSingleton>> first(Lookup lookup) {
+        if (lookup.qualifiers().contains(FIRST_QUALI)) {
             return Optional.of(FIRST);
         }
-        if (query.qualifiers().contains(SECOND_QUALI)) {
+        if (lookup.qualifiers().contains(SECOND_QUALI)) {
             return Optional.of(SECOND);
         }
         return Optional.empty();

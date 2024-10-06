@@ -41,20 +41,20 @@ public class BladeProvider implements InjectionPointProvider<AbstractBlade> {
     static final Qualifier QUALIFIER_DULL = Qualifier.createNamed("dull");
 
     @Override
-    public Optional<QualifiedInstance<AbstractBlade>> first(Lookup query) {
-        assert (query.contracts().size() == 1) : query;
-        assert (query.contracts().contains(TypeName.create(AbstractBlade.class))) : query;
+    public Optional<QualifiedInstance<AbstractBlade>> first(Lookup lookup) {
+        assert (lookup.contracts().size() == 1) : lookup;
+        assert (lookup.contracts().contains(TypeName.create(AbstractBlade.class))) : lookup;
 
         AbstractBlade blade;
         Qualifier qualifier;
-        if (query.qualifiers().contains(QUALIFIER_ALL) || query.qualifiers().contains(QUALIFIER_COARSE)) {
+        if (lookup.qualifiers().contains(QUALIFIER_ALL) || lookup.qualifiers().contains(QUALIFIER_COARSE)) {
             qualifier = QUALIFIER_COARSE;
             blade = new CoarseBlade();
-        } else if (query.qualifiers().contains(QUALIFIER_FINE)) {
+        } else if (lookup.qualifiers().contains(QUALIFIER_FINE)) {
             qualifier = QUALIFIER_FINE;
             blade = new FineBlade();
         } else {
-            assert (query.qualifiers().isEmpty());
+            assert (lookup.qualifiers().isEmpty());
             qualifier = QUALIFIER_DULL;
             blade = new DullBlade();
         }
@@ -63,17 +63,17 @@ public class BladeProvider implements InjectionPointProvider<AbstractBlade> {
     }
 
     @Override
-    public List<QualifiedInstance<AbstractBlade>> list(Lookup query) {
+    public List<QualifiedInstance<AbstractBlade>> list(Lookup lookup) {
         List<QualifiedInstance<AbstractBlade>> result = new ArrayList<>();
-        if (query.qualifiers().contains(QUALIFIER_ALL) || query.qualifiers().contains(QUALIFIER_COARSE)) {
+        if (lookup.qualifiers().contains(QUALIFIER_ALL) || lookup.qualifiers().contains(QUALIFIER_COARSE)) {
             result.add(QualifiedInstance.create(new CoarseBlade(), QUALIFIER_COARSE));
         }
 
-        if (query.qualifiers().contains(QUALIFIER_ALL) || query.qualifiers().contains(QUALIFIER_FINE)) {
+        if (lookup.qualifiers().contains(QUALIFIER_ALL) || lookup.qualifiers().contains(QUALIFIER_FINE)) {
             result.add(QualifiedInstance.create(new FineBlade(), QUALIFIER_FINE));
         }
 
-        if (query.qualifiers().contains(QUALIFIER_ALL) || query.qualifiers().isEmpty()) {
+        if (lookup.qualifiers().contains(QUALIFIER_ALL) || lookup.qualifiers().isEmpty()) {
             result.add(QualifiedInstance.create(new DullBlade(), QUALIFIER_DULL));
         }
 
