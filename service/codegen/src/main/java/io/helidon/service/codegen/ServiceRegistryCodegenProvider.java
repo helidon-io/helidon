@@ -28,6 +28,8 @@ import io.helidon.codegen.spi.CodegenExtension;
 import io.helidon.codegen.spi.CodegenExtensionProvider;
 import io.helidon.codegen.spi.CodegenProvider;
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.service.codegen.spi.RegistryCodegenExtensionProvider;
@@ -36,6 +38,7 @@ import io.helidon.service.codegen.spi.RegistryCodegenExtensionProvider;
  * A {@link java.util.ServiceLoader} provider implementation for {@link io.helidon.codegen.spi.CodegenExtensionProvider}
  * that handles Helidon Service Registry code generation.
  */
+@Weight(Weighted.DEFAULT_WEIGHT - 10) // we want builders to be processed first
 public class ServiceRegistryCodegenProvider implements CodegenExtensionProvider {
     private static final List<RegistryCodegenExtensionProvider> EXTENSIONS =
             HelidonServiceLoader.create(ServiceLoader.load(RegistryCodegenExtensionProvider.class,

@@ -17,7 +17,6 @@
 package io.helidon.service.codegen;
 
 import java.util.Set;
-import java.util.function.Function;
 
 import io.helidon.codegen.Option;
 import io.helidon.common.GenericType;
@@ -48,34 +47,6 @@ public final class InjectOptions {
                              Set.of(),
                              TypeName::create,
                              new GenericType<Set<TypeName>>() { });
-
-    /**
-     * Identify whether any unsupported types should trigger annotation processing to keep going.
-     */
-    public static final Option<Boolean> IGNORE_UNSUPPORTED_ANNOTATIONS = Option.create(
-            "helidon.inject.ignoreUnsupportedAnnotations",
-            "Identify whether any unsupported types should trigger annotation processing to keep going.",
-            false);
-
-    /**
-     * Use JSR-330 strict analysis of types (such as adding POJO if used for injection).
-     */
-    public static final Option<Boolean> JSR_330_STRICT = Option.create(
-            "helidon.inject.supports-jsr330.strict",
-            "Use JSR-330 strict analysis of types (such as adding POJO if used for injection)",
-            false);
-
-    /**
-     * Name of the generated Main class for Injection. Defaults to
-     * {@value ApplicationMainCodegen#CLASS_NAME}.
-     * The same property must be provided to the maven plugin, to correctly update the generated class.
-     */
-    public static final Option<String> INJECTION_MAIN_CLASS =
-            Option.create("helidon.inject.application.main.class.name",
-                          "Name of the generated Main class for Helidon Injection.",
-                          ApplicationMainCodegen.CLASS_NAME,
-                          Function.identity(),
-                          GenericType.STRING);
 
     private InjectOptions() {
     }

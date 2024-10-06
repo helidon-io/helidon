@@ -45,7 +45,7 @@ public class MapNamedByClassProvider implements AnnotationMapperProvider {
 
     @Override
     public Set<TypeName> supportedAnnotations() {
-        return Set.of(ServiceCodegenTypes.INJECTION_NAMED_BY_CLASS);
+        return Set.of(InjectCodegenTypes.INJECTION_NAMED_BY_CLASS);
     }
 
     @Override
@@ -60,12 +60,12 @@ public class MapNamedByClassProvider implements AnnotationMapperProvider {
 
         @Override
         public boolean supportsAnnotation(Annotation annotation) {
-            return annotation.typeName().equals(ServiceCodegenTypes.INJECTION_NAMED_BY_CLASS);
+            return annotation.typeName().equals(InjectCodegenTypes.INJECTION_NAMED_BY_CLASS);
         }
 
         @Override
         public Collection<Annotation> mapAnnotation(CodegenContext ctx, Annotation original, ElementKind elementKind) {
-            return Set.of(Annotation.create(ServiceCodegenTypes.INJECTION_NAMED, original.value().orElse("")));
+            return Set.of(Annotation.create(InjectCodegenTypes.INJECTION_NAMED, original.value().orElse("")));
         }
     }
 }

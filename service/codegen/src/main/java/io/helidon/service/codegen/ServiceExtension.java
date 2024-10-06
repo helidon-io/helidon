@@ -36,12 +36,7 @@ class ServiceExtension implements RegistryCodegenExtension {
         Collection<TypeInfo> descriptorsRequired = roundContext.types();
 
         for (TypeInfo typeInfo : descriptorsRequired) {
-            generateDescriptor(descriptorsRequired, typeInfo);
+            GenerateServiceDescriptor.generate(GENERATOR, ctx, descriptorsRequired, typeInfo);
         }
-    }
-
-    private void generateDescriptor(Collection<TypeInfo> services,
-                                    TypeInfo typeInfo) {
-        GenerateServiceDescriptor.generate(GENERATOR, ctx, services, typeInfo);
     }
 }

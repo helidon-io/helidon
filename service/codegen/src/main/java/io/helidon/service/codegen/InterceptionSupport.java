@@ -16,6 +16,7 @@
 
 package io.helidon.service.codegen;
 
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -35,15 +36,11 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 
-import static io.helidon.service.codegen.ServiceCodegenTypes.INJECT_SERVICE_DESCRIPTOR;
-import static io.helidon.service.codegen.ServiceCodegenTypes.INTERCEPTION_METADATA;
+import static io.helidon.service.codegen.InjectCodegenTypes.INJECT_SERVICE_DESCRIPTOR;
+import static io.helidon.service.codegen.InjectCodegenTypes.INTERCEPT_METADATA;
 import static java.util.function.Predicate.not;
 
-/**
- * Tools for interception of non-service interfaces. Classes (even abstract) cannot be used,
- * as we do not know how to instantiate them.
- */
-public final class InterceptionSupport {
+final class InterceptionSupport {
     private static final TypeName GENERATOR = TypeName.create(InterceptionSupport.class);
     private static final TypeName DESCRIPTOR_TYPE = TypeName.builder(INJECT_SERVICE_DESCRIPTOR)
             .addTypeArgument(TypeName.create("?"))
@@ -69,20 +66,7 @@ public final class InterceptionSupport {
      */
     public static InterceptionSupport create(RegistryCodegenContext ctx) {
         return new InterceptionSupport(ctx,
-                                       new Interception(InjectOptions.INTERCEPTION_STRATEGY.value(ctx.options())));
-    }
-
-    /**
-     * Check whether the provided type has an intercepted annotation (anywhere, including super types).
-     *
-     * @param typeInfo type info of the analyzed type
-     * @return {@code true} if the interface may be intercepted
-     */
-    public boolean intercepted(TypeInfo typeInfo) {
-        if (typeInfo.kind() != ElementKind.INTERFACE) {
-            return false;
-        }
-        return !interception.maybeIntercepted(typeInfo).isEmpty();
+                                       new Interception(ctx, InjectOptions.INTERCEPTION_STRATEGY.value(ctx.options())));
     }
 
     /**
@@ -101,8 +85,6 @@ public final class InterceptionSupport {
      *     <li>Invoke {@code Contract__InterceptedDelegate.create(interceptMeta, ServiceDescriptor.INSTANCE, instance)}
      *     to wrap your instance, the service descriptor must be your descriptor that describes the service</li>
      * </ol>
-     * This is used from Helidon Config Beans, so you can check appropriate code in
-     * {@code io.helidon.service.codegen.ConfigBeanCodegen}.
      *
      * @param typeInfo        interface type info that will be intercepted
      * @param interceptedType type of the interface (or class) used for interception (may differ from typeInfo type)
@@ -110,7 +92,10 @@ public final class InterceptionSupport {
      * @return type name of the generated delegate implementation
      * @throws io.helidon.codegen.CodegenException in case the type is not an interface
      */
-    public TypeName generateDelegateInterception(TypeInfo typeInfo, TypeName interceptedType, String packageName) {
+    public TypeName generateDelegateInterception(RegistryRoundContext roundContext,
+                                                 TypeInfo typeInfo,
+                                                 TypeName interceptedType,
+                                                 String packageName) {
         boolean samePackage = packageName.equals(interceptedType.packageName());
 
         List<TypedElements.ElementMeta> elementMetas = interception.maybeIntercepted(typeInfo);
@@ -150,9 +135,19 @@ public final class InterceptionSupport {
                 .build();
 
         if (typeInfo.kind() == ElementKind.INTERFACE) {
-            return generateInterceptionDelegateInterface(typeInfo, interceptedType, generatedType, elementMetas, otherMethods);
+            return generateInterceptionDelegateInterface(roundContext,
+                                                         typeInfo,
+                                                         interceptedType,
+                                                         generatedType,
+                                                         elementMetas,
+                                                         otherMethods);
         } else {
-            return generateInterceptionDelegateClass(typeInfo, interceptedType, generatedType, elementMetas, otherMethods);
+            return generateInterceptionDelegateClass(roundContext,
+                                                     typeInfo,
+                                                     interceptedType,
+                                                     generatedType,
+                                                     elementMetas,
+                                                     otherMethods);
         }
 
     }
@@ -170,7 +165,78 @@ public final class InterceptionSupport {
                 .build();
     }
 
-    private TypeName generateInterceptionDelegateClass(TypeInfo typeInfo,
+    void generateDelegateInterception(RegistryRoundContext roundContext,
+                                      TypeInfo typeInfo,
+                                      DescribedElements describedElements,
+                                      TypeName interceptionDelegateType) {
+        TypeName interceptedTypeName = typeInfo.typeName();
+        boolean samePackage = interceptedTypeName.packageName().equals(interceptionDelegateType.packageName());
+
+        // validate we can generate everything
+        describedElements.interceptedElements()
+                .stream()
+                .forEach(it -> {
+                    if (ElementInfoPredicates.isStatic(it.element())) {
+                        throw new CodegenException("Interception of static methods is not possible",
+                                                   it.element().originatingElementValue());
+                    }
+                    if (it.element().accessModifier() == AccessModifier.PRIVATE) {
+                        throw new CodegenException("Cannot generate interception delegate for a private method: ",
+                                                   it.element().originatingElementValue());
+                    }
+                    if (samePackage) {
+                        return;
+                    }
+                    Set<AccessModifier> allowedModifiers = EnumSet.of(AccessModifier.PUBLIC);
+                    if (typeInfo.kind() == ElementKind.CLASS) {
+                        allowedModifiers.add(AccessModifier.PROTECTED);
+                    }
+                    if (!allowedModifiers.contains(it.element().accessModifier())) {
+                        throw new CodegenException("Cannot generate interception delegate for a method that is not public"
+                                                           + " or protected, when"
+                                                           + " the delegate is in a different package than the intercepted type"
+                                                           + " intercepted type: " + interceptedTypeName.fqName()
+                                                           + ", delegate: " + interceptionDelegateType.fqName(),
+                                                   it.element().originatingElementValue());
+                    }
+                });
+        // now we are sure we can implement all intercepted methods
+        List<TypedElements.ElementMeta> interceptedMethods = describedElements.interceptedElements()
+                .stream()
+                .collect(Collectors.toUnmodifiableList());
+        List<TypedElementInfo> plainSignatures = describedElements.plainElements()
+                .stream()
+                .map(TypedElements.ElementMeta::element)
+                .filter(ElementInfoPredicates::isMethod)
+                .filter(not(ElementInfoPredicates::isStatic))
+                .filter(not(ElementInfoPredicates::isPrivate))
+                .filter(it -> {
+                    if (samePackage) {
+                        return true;
+                    }
+                    return ElementInfoPredicates.isPublic(it);
+                })
+                .collect(Collectors.toUnmodifiableList());
+
+        if (typeInfo.kind() == ElementKind.INTERFACE) {
+            generateInterceptionDelegateInterface(roundContext,
+                                                  typeInfo,
+                                                  interceptedTypeName,
+                                                  interceptionDelegateType,
+                                                  interceptedMethods,
+                                                  plainSignatures);
+        } else {
+            generateInterceptionDelegateClass(roundContext,
+                                              typeInfo,
+                                              interceptedTypeName,
+                                              interceptionDelegateType,
+                                              interceptedMethods,
+                                              plainSignatures);
+        }
+    }
+
+    private TypeName generateInterceptionDelegateClass(RegistryRoundContext roundContext,
+                                                       TypeInfo typeInfo,
                                                        TypeName classType,
                                                        TypeName generatedType,
                                                        List<TypedElements.ElementMeta> elementMetas,
@@ -221,7 +287,7 @@ public final class InterceptionSupport {
         classModel.addConstructor(ctr -> ctr
                 .accessModifier(AccessModifier.PRIVATE)
                 .addParameter(interceptMeta -> interceptMeta
-                        .type(INTERCEPTION_METADATA)
+                        .type(INTERCEPT_METADATA)
                         .name(INTERCEPT_META_PARAM))
                 .addParameter(descriptor -> descriptor
                         .type(DESCRIPTOR_TYPE)
@@ -253,7 +319,7 @@ public final class InterceptionSupport {
                 .returnType(classType)
                 .name("create")
                 .addParameter(interceptMeta -> interceptMeta
-                        .type(INTERCEPTION_METADATA)
+                        .type(INTERCEPT_METADATA)
                         .name(INTERCEPT_META_PARAM))
                 .addParameter(descriptor -> descriptor
                         .type(DESCRIPTOR_TYPE)
@@ -274,12 +340,13 @@ public final class InterceptionSupport {
                 .addContentLine(");")
         );
 
-        ctx.addType(generatedType, classModel, classType, typeInfo.originatingElementValue());
+        roundContext.addGeneratedType(generatedType, classModel, classType, typeInfo.originatingElementValue());
 
         return generatedType;
     }
 
-    private TypeName generateInterceptionDelegateInterface(TypeInfo typeInfo,
+    private TypeName generateInterceptionDelegateInterface(RegistryRoundContext roundContext,
+                                                           TypeInfo typeInfo,
                                                            TypeName interfaceType,
                                                            TypeName generatedType,
                                                            List<TypedElements.ElementMeta> elementMetas,
@@ -318,7 +385,7 @@ public final class InterceptionSupport {
         classModel.addConstructor(ctr -> ctr
                 .accessModifier(AccessModifier.PRIVATE)
                 .addParameter(interceptMeta -> interceptMeta
-                        .type(INTERCEPTION_METADATA)
+                        .type(INTERCEPT_METADATA)
                         .name(INTERCEPT_META_PARAM))
                 .addParameter(descriptor -> descriptor
                         .type(DESCRIPTOR_TYPE)
@@ -347,7 +414,7 @@ public final class InterceptionSupport {
                 .returnType(interfaceType)
                 .name("create")
                 .addParameter(interceptMeta -> interceptMeta
-                        .type(INTERCEPTION_METADATA)
+                        .type(INTERCEPT_METADATA)
                         .name(INTERCEPT_META_PARAM))
                 .addParameter(descriptor -> descriptor
                         .type(DESCRIPTOR_TYPE)
@@ -368,7 +435,7 @@ public final class InterceptionSupport {
                 .addContentLine(");")
         );
 
-        ctx.addType(generatedType, classModel, interfaceType, typeInfo.originatingElementValue());
+        roundContext.addGeneratedType(generatedType, classModel, interfaceType, typeInfo.originatingElementValue());
 
         return generatedType;
     }

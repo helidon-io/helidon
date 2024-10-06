@@ -26,12 +26,14 @@ import java.util.Set;
 import io.helidon.codegen.ClassCode;
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenContextDelegate;
+import io.helidon.codegen.classmodel.ClassBase;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.types.TypeName;
 import io.helidon.service.codegen.spi.InjectAssignment;
 import io.helidon.service.codegen.spi.InjectAssignmentProvider;
 
+@SuppressWarnings("removal")
 class RegistryCodegenContextImpl extends CodegenContextDelegate implements RegistryCodegenContext {
     private final List<DescriptorClassCode> descriptors = new ArrayList<>();
     private final List<ClassCode> nonDescriptors = new ArrayList<>();
@@ -56,6 +58,23 @@ class RegistryCodegenContextImpl extends CodegenContextDelegate implements Regis
             ClassCode classCode = descriptor.classCode();
             if (classCode.mainTrigger().equals(serviceType)) {
                 return Optional.of(classCode.classModel());
+            }
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<ClassBase> generatedClass(TypeName typeName) {
+        for (ClassCode classCode : nonDescriptors) {
+            Optional<ClassBase> inProgress = classCode.classModel().find(typeName);
+            if (inProgress.isPresent()) {
+                return inProgress;
+            }
+        }
+        for (DescriptorClassCode descriptor : descriptors) {
+            Optional<ClassBase> inProgress = descriptor.classCode().classModel().find(typeName);
+            if (inProgress.isPresent()) {
+                return inProgress;
             }
         }
         return Optional.empty();

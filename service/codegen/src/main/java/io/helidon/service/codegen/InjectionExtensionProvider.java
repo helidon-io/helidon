@@ -24,6 +24,8 @@ import java.util.stream.Stream;
 
 import io.helidon.codegen.Option;
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.common.types.TypeName;
 import io.helidon.service.codegen.spi.InjectCodegenObserverProvider;
 import io.helidon.service.codegen.spi.RegistryCodegenExtension;
@@ -33,6 +35,7 @@ import io.helidon.service.codegen.spi.RegistryCodegenExtensionProvider;
  * A {@link java.util.ServiceLoader} provider implementation that adds code generation for Helidon Inject.
  * This extension creates service descriptors, and intercepted types.
  */
+@Weight(Weighted.DEFAULT_WEIGHT - 20) // lower weight than config beans, as we may need them
 public class InjectionExtensionProvider implements RegistryCodegenExtensionProvider {
     private static final List<InjectCodegenObserverProvider> OBSERVER_PROVIDERS =
             HelidonServiceLoader.create(ServiceLoader.load(InjectCodegenObserverProvider.class,
@@ -51,10 +54,11 @@ public class InjectionExtensionProvider implements RegistryCodegenExtensionProvi
 
     @Override
     public Set<Option<?>> supportedOptions() {
-        return Stream.concat(Stream.of(ServiceOptions.AUTO_ADD_NON_CONTRACT_INTERFACES,
-                                       InjectOptions.INTERCEPTION_STRATEGY,
-                                       InjectOptions.SCOPE_META_ANNOTATIONS,
-                                       InjectOptions.INJECTION_MAIN_CLASS),
+        return Stream.concat(Stream.of(
+                                     ServiceOptions.AUTO_ADD_NON_CONTRACT_INTERFACES,
+                                     InjectOptions.INTERCEPTION_STRATEGY,
+                                     InjectOptions.SCOPE_META_ANNOTATIONS
+                             ),
                              OBSERVER_PROVIDERS.stream()
                                      .map(InjectCodegenObserverProvider::supportedOptions)
                                      .flatMap(Set::stream))
@@ -63,17 +67,14 @@ public class InjectionExtensionProvider implements RegistryCodegenExtensionProvi
 
     @Override
     public Set<TypeName> supportedAnnotations() {
-        return Set.of(ServiceCodegenTypes.INJECTION_INJECT,
-                      ServiceCodegenTypes.INJECTION_MAIN,
-                      ServiceCodegenTypes.INJECTION_DESCRIBE,
-                      ServiceCodegenTypes.INTERCEPTION_DELEGATE,
-                      ServiceCodegenTypes.INTERCEPTION_EXTERNAL_DELEGATES,
-                      ServiceCodegenTypes.INJECTION_CREATE_FOR);
+        return Set.of(InjectCodegenTypes.INJECTION_INJECT,
+                      InjectCodegenTypes.INJECTION_DESCRIBE,
+                      InjectCodegenTypes.INJECTION_CREATE_FOR);
     }
 
     @Override
     public Set<TypeName> supportedMetaAnnotations() {
-        return Set.of(ServiceCodegenTypes.INJECTION_SCOPE);
+        return Set.of(InjectCodegenTypes.INJECTION_SCOPE);
     }
 
     @Override

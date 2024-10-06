@@ -16,58 +16,42 @@
 
 package io.helidon.service.codegen;
 
-import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
-import io.helidon.common.types.TypeInfo;
+import io.helidon.codegen.RoundContext;
+import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypedElementInfo;
 
 /**
  * Context of a single round of code generation.
  * For example the first round may generate types, that require additional code generation.
  */
-public interface RegistryRoundContext {
+public interface RegistryRoundContext extends RoundContext {
     /**
-     * Available annotations for this provider.
+     * Add a new service descriptor.
      *
-     * @return annotation types
+     * @param registryType        service registry this descriptor is designed for (core is the "top" level)
+     * @param serviceType         type of the service (the implementation class we generate descriptor for)
+     * @param descriptorType      type of the service descriptor
+     * @param descriptor          descriptor class model
+     * @param weight              weight of this service descriptor
+     * @param contracts           contracts of this service descriptor
+     * @param originatingElements possible originating elements (such as Element in APT, or ClassInfo in classpath scanning)
+     * @throws java.lang.IllegalStateException if an attempt is done to register a new descriptor for the same type
      */
-    Collection<TypeName> availableAnnotations();
-
-    /**
-     * All types for processing in this round.
-     *
-     * @return all type infos
-     */
-
-    Collection<TypeInfo> types();
-
-    /**
-     * All types annotated with a specific annotation.
-     *
-     * @param annotationType annotation type
-     * @return type infos annotated with the provided annotation
-     */
-
-    Collection<TypeInfo> annotatedTypes(TypeName annotationType);
+    void addDescriptor(String registryType,
+                       TypeName serviceType,
+                       TypeName descriptorType,
+                       ClassModel.Builder descriptor,
+                       double weight,
+                       Set<TypeName> contracts,
+                       Object... originatingElements);
 
     /**
-     * Annotation types present on wanted types, annotated with the specific "meta" annotation.
+     * All newly generated descriptors.
      *
-     * @param metaAnnotation annotations annotated with the provided annotation
-     * @return annotation types
+     * @return list of descriptors and their source class model
      */
-    default Collection<TypeName> annotatedAnnotations(TypeName metaAnnotation) {
-        // default implementation for backward compatibility reasons
-        return Set.of();
-    }
-
-    /**
-     * All elements annotated with a specific annotation.
-     *
-     * @param annotationType annotation type
-     * @return elements annotated with the provided annotation
-     */
-    Collection<TypedElementInfo> annotatedElements(TypeName annotationType);
+    List<DescriptorClassCode> descriptors();
 }

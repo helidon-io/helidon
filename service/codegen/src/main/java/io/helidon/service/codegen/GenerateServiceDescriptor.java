@@ -60,7 +60,7 @@ public class GenerateServiceDescriptor {
     private static final TypeName LIST_OF_DEPENDENCIES = TypeName.builder(TypeNames.LIST)
             .addTypeArgument(ServiceCodegenTypes.SERVICE_DEPENDENCY)
             .build();
-    private static final TypeName DESCRIPTOR_TYPE = TypeName.builder(ServiceCodegenTypes.SERVICE_DESCRIPTOR)
+    private static final TypeName DESCRIPTOR_TYPE = TypeName.builder(ServiceCodegenTypes.REGISTRY_SERVICE_DESCRIPTOR)
             .addTypeArgument(TypeName.create("T"))
             .build();
     private static final TypedElementInfo DEFAULT_CONSTRUCTOR = TypedElementInfo.builder()
@@ -77,16 +77,19 @@ public class GenerateServiceDescriptor {
     private final Collection<TypeInfo> services;
     private final TypeInfo typeInfo;
     private final boolean autoAddContracts;
+    private final DescriptorConsumer descriptorConsumer;
 
     private GenerateServiceDescriptor(TypeName generator,
                                       RegistryCodegenContext ctx,
                                       Collection<TypeInfo> allServices,
-                                      TypeInfo service) {
+                                      TypeInfo service,
+                                      DescriptorConsumer descriptorConsumer) {
         this.generator = generator;
         this.ctx = ctx;
         this.services = allServices;
         this.typeInfo = service;
         this.autoAddContracts = ServiceOptions.AUTO_ADD_NON_CONTRACT_INTERFACES.value(ctx.options());
+        this.descriptorConsumer = descriptorConsumer;
     }
 
     /**
@@ -97,12 +100,36 @@ public class GenerateServiceDescriptor {
      * @param allServices all services processed in this round of processing
      * @param service     service to create a descriptor for
      * @return class model builder of the service descriptor
+     * @deprecated use
+     *         {@link #generate(io.helidon.common.types.TypeName, RegistryCodegenContext, RegistryRoundContext,
+     *         java.util.Collection, io.helidon.common.types.TypeInfo)} instead
      */
+    @SuppressWarnings("removal")
+    @Deprecated(forRemoval = true, since = "4.2.0")
     public static ClassModel.Builder generate(TypeName generator,
                                               RegistryCodegenContext ctx,
                                               Collection<TypeInfo> allServices,
                                               TypeInfo service) {
-        return new GenerateServiceDescriptor(generator, ctx, allServices, service)
+        return new GenerateServiceDescriptor(generator, ctx, allServices, service, ctx::addDescriptor)
+                .generate();
+    }
+
+    /**
+     * Generate a service descriptor for the provided service type info.
+     *
+     * @param generator    type of the generator responsible for this event
+     * @param ctx          context of code generation
+     * @param roundContext current round context
+     * @param allServices  all services processed in this round of processing
+     * @param service      service to create a descriptor for
+     * @return class model builder of the service descriptor
+     */
+    public static ClassModel.Builder generate(TypeName generator,
+                                              RegistryCodegenContext ctx,
+                                              RegistryRoundContext roundContext,
+                                              Collection<TypeInfo> allServices,
+                                              TypeInfo service) {
+        return new GenerateServiceDescriptor(generator, ctx, allServices, service, roundContext::addDescriptor)
                 .generate();
     }
 
@@ -203,13 +230,13 @@ public class GenerateServiceDescriptor {
         Set<TypeName> allContracts = new HashSet<>(contracts);
         allContracts.add(serviceType);
 
-        ctx.addDescriptor("core",
-                          serviceType,
-                          descriptorType,
-                          classModel,
-                          weight(typeInfo).orElse(Weighted.DEFAULT_WEIGHT),
-                          allContracts,
-                          typeInfo.originatingElementValue());
+        descriptorConsumer.addDescriptor("core",
+                                         serviceType,
+                                         descriptorType,
+                                         classModel,
+                                         weight(typeInfo).orElse(Weighted.DEFAULT_WEIGHT),
+                                         allContracts,
+                                         typeInfo.originatingElementValue());
 
         return classModel;
     }
@@ -874,6 +901,16 @@ public class GenerateServiceDescriptor {
         return TypeName.builder(descriptorType)
                 .addTypeArgument(serviceType)
                 .build();
+    }
+
+    private interface DescriptorConsumer {
+        void addDescriptor(String registryType,
+                           TypeName serviceType,
+                           TypeName descriptorType,
+                           ClassModel.Builder descriptor,
+                           double weight,
+                           Set<TypeName> contracts,
+                           Object... originatingElements);
     }
 
     private record GenericTypeDeclaration(String constantName,

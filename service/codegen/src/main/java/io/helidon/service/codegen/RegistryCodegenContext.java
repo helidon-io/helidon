@@ -23,6 +23,7 @@ import java.util.function.Consumer;
 
 import io.helidon.codegen.ClassCode;
 import io.helidon.codegen.CodegenContext;
+import io.helidon.codegen.classmodel.ClassBase;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.common.types.TypeName;
@@ -51,6 +52,15 @@ public interface RegistryCodegenContext extends CodegenContext {
     Optional<ClassModel.Builder> descriptor(TypeName serviceType);
 
     /**
+     * Class mode for a type that is to be code generated (either a {@link #type(io.helidon.common.types.TypeName)}
+     * or {@link #descriptor(io.helidon.common.types.TypeName)}, but also returns inner class if it matches.
+     *
+     * @param type type to look for
+     * @return top level or inner class matching the type if any
+     */
+    Optional<ClassBase> generatedClass(TypeName type);
+
+    /**
      * Add a new service descriptor.
      *
      * @param registryType        service registry this descriptor is designed for (core is the "top" level)
@@ -61,7 +71,10 @@ public interface RegistryCodegenContext extends CodegenContext {
      * @param contracts           contracts of this service descriptor
      * @param originatingElements possible originating elements (such as Element in APT, or ClassInfo in classpath scanning)
      * @throws java.lang.IllegalStateException if an attempt is done to register a new descriptor for the same type
+     * @deprecated use
+     *         {@link io.helidon.service.codegen.RegistryRoundContext#addDescriptor(String, io.helidon.common.types.TypeName, io.helidon.common.types.TypeName, io.helidon.codegen.classmodel.ClassModel.Builder, double, java.util.Set, Object...)}
      */
+    @Deprecated(forRemoval = true, since = "4.2.0")
     void addDescriptor(String registryType,
                        TypeName serviceType,
                        TypeName descriptorType,
@@ -77,7 +90,11 @@ public interface RegistryCodegenContext extends CodegenContext {
      * @param newClass            builder of the new class
      * @param mainTrigger         a type that caused this, may be the processor itself, if not bound to any type
      * @param originatingElements possible originating elements  (such as Element in APT, or ClassInfo in classpath scanning)
+     * @deprecated use
+     *         {@link io.helidon.service.codegen.RegistryRoundContext#addGeneratedType(io.helidon.common.types.TypeName,
+     *         io.helidon.codegen.classmodel.ClassModel.Builder, io.helidon.common.types.TypeName, Object...)}
      */
+    @Deprecated(forRemoval = true, since = "4.2.0")
     void addType(TypeName type, ClassModel.Builder newClass, TypeName mainTrigger, Object... originatingElements);
 
     /**
@@ -100,14 +117,19 @@ public interface RegistryCodegenContext extends CodegenContext {
      * All newly generated types.
      *
      * @return list of types and their source class model
+     * @deprecated use {@link io.helidon.codegen.RoundContext#generatedType(io.helidon.common.types.TypeName)} instead to get a
+     *  single type; otherwise this is no longer available (kindly file an issue if this method is needed)
      */
+    @Deprecated(forRemoval = true, since = "4.2.0")
     List<ClassCode> types();
 
     /**
      * All newly generated descriptors.
      *
      * @return list of descriptors and their source class model
+     * @deprecated use {@link RegistryRoundContext#descriptors()} instead
      */
+    @Deprecated(forRemoval = true, since = "4.2.0")
     List<DescriptorClassCode> descriptors();
 
     /**

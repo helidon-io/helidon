@@ -22,7 +22,7 @@ package io.helidon.service.codegen;
  * <p>
  * The strategy is (in Helidon inject) only honored at compilation time. At runtime, it can only be enabled or disabled.
  */
-public enum InterceptionStrategy {
+enum InterceptionStrategy {
     /**
      * No annotations will qualify in triggering interceptor creation (interception is disabled).
      */

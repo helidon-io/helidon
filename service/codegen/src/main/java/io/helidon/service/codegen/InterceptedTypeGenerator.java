@@ -256,7 +256,7 @@ class InterceptedTypeGenerator {
     }
 
     private static TypeName invokerType(TypeName type) {
-        return TypeName.builder(ServiceCodegenTypes.INVOKER)
+        return TypeName.builder(InjectCodegenTypes.INTERCEPT_INVOKER)
                 .addTypeArgument(type.boxed())
                 .build();
     }
@@ -264,7 +264,7 @@ class InterceptedTypeGenerator {
     private void generateConstructor(ClassModel.Builder classModel) {
         classModel.addConstructor(constructor -> constructor
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
-                .addParameter(interceptMeta -> interceptMeta.type(ServiceCodegenTypes.INTERCEPTION_METADATA)
+                .addParameter(interceptMeta -> interceptMeta.type(InjectCodegenTypes.INTERCEPT_METADATA)
                         .name(INTERCEPT_META_PARAM))
                 .addParameter(descriptor -> descriptor.type(descriptorType)
                         .name(SERVICE_DESCRIPTOR_PARAM))

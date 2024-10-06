@@ -33,9 +33,11 @@ final class Interception {
     private static final Annotation RUNTIME_RETENTION = Annotation.create(Retention.class, RetentionPolicy.RUNTIME.name());
     private static final Annotation CLASS_RETENTION = Annotation.create(Retention.class, RetentionPolicy.CLASS.name());
 
+    private final RegistryCodegenContext ctx;
     private final InterceptionStrategy interceptionStrategy;
 
-    Interception(InterceptionStrategy interceptionStrategy) {
+    Interception(RegistryCodegenContext ctx, InterceptionStrategy interceptionStrategy) {
+        this.ctx = ctx;
         this.interceptionStrategy = interceptionStrategy;
     }
 
@@ -63,21 +65,63 @@ final class Interception {
                     .forEach(result::add);
             result.add(TypedElements.DEFAULT_CONSTRUCTOR); // we must intercept construction as well
         } else {
-            result.addAll(allElements.stream()
-                                  .filter(methodMetadata -> hasInterceptTrigger(typeInfo, methodMetadata))
-                                  .peek(it -> {
-                                      if (it.element().accessModifier() == AccessModifier.PRIVATE) {
-                                          throw new CodegenException(typeInfo.typeName()
-                                                                             .fqName() + "#" + it.element()
-                                                  .elementName() + " is declared "
-                                                                             + "as private, but has interceptor trigger "
-                                                                             + "annotation declared. "
-                                                                             + "This cannot be supported, as we do not modify "
-                                                                             + "sources or bytecode.",
-                                                                     it.element().originatingElementValue());
-                                      }
-                                  })
-                                  .toList());
+            allElements.stream()
+                    .filter(methodMetadata -> hasInterceptTrigger(typeInfo, methodMetadata))
+                    .peek(it -> {
+                        if (it.element().accessModifier() == AccessModifier.PRIVATE) {
+                            throw new CodegenException(typeInfo.typeName()
+                                                               .fqName() + "#" + it.element()
+                                    .elementName() + " is declared "
+                                                               + "as private, but has interceptor trigger "
+                                                               + "annotation declared. "
+                                                               + "This cannot be supported, as we do not modify "
+                                                               + "sources or bytecode.",
+                                                       it.element().originatingElementValue());
+                        }
+                    })
+                    .forEach(result::add);
+        }
+
+        return result;
+    }
+
+    /**
+     * Find all elements that may be intercepted.
+     * This method also returns fields (as injection into fields can be intercepted).
+     *
+     * @param typeInfo the type
+     * @param elements elements to process
+     * @return all elements that may be intercepted (constructors, fields, methods)
+     */
+    List<TypedElements.ElementMeta> maybeIntercepted(TypeInfo typeInfo, List<TypedElements.ElementMeta> elements) {
+        if (interceptionStrategy == InterceptionStrategy.NONE) {
+            return List.of();
+        }
+
+        List<TypedElements.ElementMeta> result = new ArrayList<>();
+
+        if (hasInterceptTrigger(typeInfo)) {
+            // we cannot intercept private stuff (never modify source code or bytecode!)
+            elements.stream()
+                    .filter(it -> it.element().accessModifier() != AccessModifier.PRIVATE)
+                    .forEach(result::add);
+            result.add(TypedElements.DEFAULT_CONSTRUCTOR); // we must intercept construction as well
+        } else {
+            elements.stream()
+                    .filter(methodMetadata -> hasInterceptTrigger(typeInfo, methodMetadata))
+                    .peek(it -> {
+                        if (it.element().accessModifier() == AccessModifier.PRIVATE) {
+                            throw new CodegenException(typeInfo.typeName()
+                                                               .fqName() + "#" + it.element()
+                                    .elementName() + " is declared "
+                                                               + "as private, but has interceptor trigger "
+                                                               + "annotation declared. "
+                                                               + "This cannot be supported, as we do not modify "
+                                                               + "sources or bytecode.",
+                                                       it.element().originatingElementValue());
+                        }
+                    })
+                    .forEach(result::add);
         }
 
         return result;
@@ -114,7 +158,7 @@ final class Interception {
     private boolean hasInterceptTrigger(TypeInfo typeInfo, Annotated element) {
         for (Annotation annotation : element.annotations()) {
             if (interceptionStrategy.ordinal() >= InterceptionStrategy.EXPLICIT.ordinal()) {
-                if (typeInfo.hasMetaAnnotation(annotation.typeName(), ServiceCodegenTypes.INTERCEPTION_TRIGGER)) {
+                if (typeInfo.hasMetaAnnotation(annotation.typeName(), InjectCodegenTypes.INTERCEPTION_TRIGGER)) {
                     return true;
                 }
             }

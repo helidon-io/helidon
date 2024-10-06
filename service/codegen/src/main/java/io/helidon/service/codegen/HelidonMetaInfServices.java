@@ -41,7 +41,7 @@ import static io.helidon.service.metadata.Descriptors.SERVICE_REGISTRY_LOCATION;
  * <p>
  * Helidon replacement for Java {@link java.util.ServiceLoader}.
  * Each service annotated with appropriate annotation
- * ({@link io.helidon.service.codegen.ServiceCodegenTypes#SERVICE_ANNOTATION_PROVIDER})
+ * ({@link io.helidon.service.codegen.ServiceCodegenTypes#SERVICE_PROVIDER})
  * will have a service descriptor generated at build time.
  * <p>
  * The service descriptor is then discoverable at runtime through our own resource in
