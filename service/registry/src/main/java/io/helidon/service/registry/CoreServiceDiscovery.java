@@ -324,6 +324,16 @@ class CoreServiceDiscovery implements ServiceDiscovery {
         public int compareTo(Weighted o) {
             return descriptor.compareTo(o);
         }
+
+        @Override
+        public int hashCode() {
+            return descriptor.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return descriptor.equals(obj);
+        }
     }
 }
 

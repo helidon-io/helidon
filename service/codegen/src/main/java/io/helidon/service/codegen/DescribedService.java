@@ -226,12 +226,8 @@ class DescribedService {
                                                   serviceTypeInfo.typeName(),
                                                   directContracts,
                                                   serviceElements);
-            DescribedElements providedElements;
-            if (providedTypeInfo != null) {
-                providedElements = DescribedElements.create(ctx, interception, providedContracts, providedTypeInfo);
-            } else {
-                providedElements = null;
-            }
+            DescribedElements providedElements = DescribedElements.create(ctx, interception, providedContracts, providedTypeInfo);
+
             providedDescriptor = new DescribedType(providedTypeInfo,
                                                    providedTypeName,
                                                    providedContracts,

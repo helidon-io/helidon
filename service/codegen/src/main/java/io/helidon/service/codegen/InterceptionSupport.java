@@ -64,7 +64,7 @@ final class InterceptionSupport {
      * @param ctx codegen context
      * @return a new interception support instance
      */
-    public static InterceptionSupport create(RegistryCodegenContext ctx) {
+    static InterceptionSupport create(RegistryCodegenContext ctx) {
         return new InterceptionSupport(ctx,
                                        new Interception(ctx, InjectOptions.INTERCEPTION_STRATEGY.value(ctx.options())));
     }
@@ -92,7 +92,7 @@ final class InterceptionSupport {
      * @return type name of the generated delegate implementation
      * @throws io.helidon.codegen.CodegenException in case the type is not an interface
      */
-    public TypeName generateDelegateInterception(RegistryRoundContext roundContext,
+    TypeName generateDelegateInterception(RegistryRoundContext roundContext,
                                                  TypeInfo typeInfo,
                                                  TypeName interceptedType,
                                                  String packageName) {
@@ -158,7 +158,7 @@ final class InterceptionSupport {
      * @param interfaceType type of the interface
      * @return type name that will be generated for it
      */
-    public TypeName interceptedDelegateType(TypeName interfaceType) {
+    TypeName interceptedDelegateType(TypeName interfaceType) {
         return TypeName.builder()
                 .packageName(interfaceType.packageName())
                 .className(interfaceType.classNameWithEnclosingNames().replace('.', '_') + "__InterceptedDelegate")

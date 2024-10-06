@@ -86,8 +86,7 @@ final class Activators {
 
         if (descriptor.scope().equals(Injection.Instance.TYPE)) {
             return switch (descriptor.providerType()) {
-                case NONE -> throw new ServiceRegistryException("Invalid provider type NONE. Cannot create activator for "
-                                                                        + descriptor.serviceType().fqName());
+                case NONE -> new MissingDescribedActivator(provider);
                 case SERVICE -> {
                     if (descriptor instanceof GeneratedInjectService.CreateForDescriptor dbd) {
                         yield () -> new ActivatorsPerLookup.CreateForActivator<>(registry, provider, dbd);
@@ -102,8 +101,7 @@ final class Activators {
             };
         } else {
             return switch (descriptor.providerType()) {
-                case NONE -> throw new ServiceRegistryException("Invalid provider type NONE. Cannot create activator for "
-                                                                        + descriptor.serviceType().fqName());
+                case NONE -> new MissingDescribedActivator(provider);
                 case SERVICE -> {
                     if (descriptor instanceof GeneratedInjectService.CreateForDescriptor dbd) {
                         yield () -> new Activators.CreateForActivator<>(registry, provider, dbd);
@@ -850,6 +848,35 @@ final class Activators {
 
         void preDestroy() {
             source.preDestroy(instance);
+        }
+    }
+
+    private static class MissingDescribedActivator<T> implements Supplier<Activator<T>> {
+        private static final System.Logger LOGGER = System.getLogger(Activators.class.getName());
+        private final String serviceType;
+
+        private MissingDescribedActivator(ServiceProvider<T> provider) {
+            this.serviceType = provider.serviceInfo().serviceType().fqName();
+
+            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                LOGGER.log(System.Logger.Level.DEBUG,
+                           "The registry knows of a descriptor that was generated on demand "
+                                   + "(@" + Injection.Describe.class.getName() + "), which expects an instance configured for "
+                                   + "it, either"
+                                   + " when creating the registry through configuration, or when creating a scope. "
+                                   + "Service that does not have an instance registered: "
+                                   + serviceType
+                                   + ", if there is an attempt on injecting this type, a runtime exception "
+                                   + "will be thrown");
+            }
+
+        }
+
+        @Override
+        public Activator<T> get() {
+            throw new ServiceRegistryException("Instance for " + serviceType + " must be provided explicitly "
+                                                       + "either during startup, or when creating a scope."
+                                                       + " Cannot provide an instance for a descriptor without a service.");
         }
     }
 }

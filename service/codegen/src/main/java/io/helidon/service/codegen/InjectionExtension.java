@@ -512,7 +512,9 @@ class InjectionExtension implements RegistryCodegenExtension {
         }
     }
 
-    private void generateDelegationService(RegistryRoundContext roundContext, DescribedService service, TypeName delegateType) {
+    private void generateDelegationService(RegistryRoundContext roundContext,
+                                           DescribedService service,
+                                           TypeName delegateType) {
         TypeName typeName = service.serviceDescriptor().typeName();
 
         String typeNameSuffix = "__Interception_Wrapper";
@@ -556,7 +558,7 @@ class InjectionExtension implements RegistryCodegenExtension {
                 .addContentLine("this.interceptMeta = interceptMeta;")
         );
 
-        TypeName descriptorType = ctx.descriptorType(wrapperType);
+        TypeName descriptorType = service.descriptorType();
         classModel.addMethod(wrap -> wrap
                 .addAnnotation(Annotations.OVERRIDE)
                 .accessModifier(AccessModifier.PROTECTED)

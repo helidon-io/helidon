@@ -116,11 +116,29 @@ public final class GeneratedInjectService {
         }
     }
 
+    /**
+     * Intercepted wrapper for generated interception delegates.
+     *
+     * @param <T> type of the provided contratc
+     */
     abstract static class InterceptionWrapper<T> {
-        public Injection.QualifiedInstance<T> wrapQualifiedInstance(Injection.QualifiedInstance<T> qualifiedInstance) {
+        /**
+         * Wrap a qualified instance so the actual instance is correctly intercepted.
+         *
+         * @param qualifiedInstance qualified instance created by appropriate provider
+         * @return qualified instance with wrapped instance
+         */
+        protected Injection.QualifiedInstance<T> wrapQualifiedInstance(Injection.QualifiedInstance<T> qualifiedInstance) {
             return Injection.QualifiedInstance.create(wrap(qualifiedInstance.get()), qualifiedInstance.qualifiers());
         }
 
+        /**
+         * Wrap the instance for interception.
+         * This method is code generated.
+         *
+         * @param originalInstance instance to wrap
+         * @return wrapped instance
+         */
         protected abstract T wrap(T originalInstance);
     }
 
@@ -133,6 +151,11 @@ public final class GeneratedInjectService {
             implements Supplier<T> {
         private final Supplier<T> delegate;
 
+        /**
+         * Creates a new instance delegating service instantiation to the provided supplier.
+         *
+         * @param delegate used to obtain service instance that will be {@link #wrap(Object) wrapped} for interception
+         */
         protected SupplierProviderInterceptionWrapper(Supplier<T> delegate) {
             this.delegate = delegate;
         }
@@ -153,6 +176,11 @@ public final class GeneratedInjectService {
             implements Injection.ServicesProvider<T> {
         private final Injection.ServicesProvider<T> delegate;
 
+        /**
+         * Creates a new instance delegating service instantiation to the provided services provider.
+         *
+         * @param delegate used to obtain service instances that will be {@link #wrap(Object) wrapped} for interception
+         */
         protected ServicesProviderInterceptionWrapper(Injection.ServicesProvider<T> delegate) {
             this.delegate = delegate;
         }
@@ -176,6 +204,11 @@ public final class GeneratedInjectService {
             implements Injection.InjectionPointProvider<T> {
         private final Injection.InjectionPointProvider<T> delegate;
 
+        /**
+         * Creates a new instance delegating service instantiation to the provided injection point provider.
+         *
+         * @param delegate used to obtain service instances that will be {@link #wrap(Object) wrapped} for interception
+         */
         protected IpProviderInterceptionWrapper(Injection.InjectionPointProvider<T> delegate) {
             this.delegate = delegate;
         }
@@ -206,6 +239,11 @@ public final class GeneratedInjectService {
             implements Injection.QualifiedProvider<T, A> {
         private final Injection.QualifiedProvider<T, A> delegate;
 
+        /**
+         * Creates a new instance delegating service instantiation to the provided qualified provider.
+         *
+         * @param delegate used to obtain service instances that will be {@link #wrap(Object) wrapped} for interception
+         */
         protected QualifiedProviderInterceptionWrapper(Injection.QualifiedProvider<T, A> delegate) {
             this.delegate = delegate;
         }
