@@ -28,7 +28,7 @@ import io.helidon.common.types.TypedElementInfo;
  * Used by {@link io.helidon.service.inject.api.Interception.Interceptor}.
  */
 @Prototype.Blueprint
-interface InvocationContextBlueprint {
+interface InterceptionContextBlueprint {
     /**
      * The service instance being intercepted.
      * This always returns the underlying instance.

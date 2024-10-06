@@ -21,8 +21,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.Interception;
-import io.helidon.service.inject.api.InvocationContext;
-import io.helidon.service.inject.api.InvocationException;
+import io.helidon.service.inject.api.InterceptionContext;
+import io.helidon.service.inject.api.InterceptionException;
 
 @Injection.NamedByClass(Repeat.class)
 @Injection.Singleton
@@ -34,7 +34,7 @@ class RepeatingInterceptor implements Interception.Interceptor {
     }
 
     @Override
-    public <V> V proceed(InvocationContext ctx, Chain<V> chain, Object... args) throws Exception {
+    public <V> V proceed(InterceptionContext ctx, Chain<V> chain, Object... args) throws Exception {
         LAST_CALL.set(new Invocation(ctx.elementInfo().elementName(), Arrays.copyOf(args, args.length)));
         if (args.length < 3) {
             // safeguard
@@ -55,7 +55,7 @@ class RepeatingInterceptor implements Interception.Interceptor {
         }
         try {
             return chain.proceed(args);
-        } catch (InvocationException e) {
+        } catch (InterceptionException e) {
             throw e;
         } catch (Exception e) {
             System.out.println("exception 2: " + e.getClass().getName() + ": " + e.getMessage());

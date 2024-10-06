@@ -23,7 +23,7 @@ package io.helidon.service.inject.api;
  * @param <T> type of the result of the invocation
  */
 @FunctionalInterface
-public interface Invoker<T> {
+public interface InterceptionInvoker<T> {
     /**
      * Invoke the element.
      *

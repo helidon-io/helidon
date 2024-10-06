@@ -47,108 +47,49 @@ public final class Interception {
     }
 
     /**
-     * Use this annotation to force generation of an interception delegate for an interface
-     * (cannot be applied to classes).
-     * The interception delegate can be used from service provider to wrap an instance and support interception.
+     * Use this annotation to mark a class ready for interception delegation.
+     * The delegates are code generated automatically if a service provider (such as a {@link java.util.function.Supplier})
+     * provides an instance of a class (or provides an interface implementation) that has methods
+     * annotated with interception trigger(s).
      * <p>
-     * The delegate implements the annotated interface, and has a static method {@code create} with the following parameters:
+     * Classes are by default not good candidates for interception, so they MUST be annotated either with
+     * this annotation, or referenced via {@link io.helidon.service.inject.api.Interception.ExternalDelegate}.
+     * <p>
+     * Implementing a delegate for a class introduces several problems, the biggest one being
+     * construction side-effects.
+     * <p>
+     * If you want delegation for classes to support interception:
      * <ul>
-     *     <li>{@link InterceptionMetadata} - can be injected</li>
-     *     <li>{@link InjectServiceDescriptor} - descriptor of the service,
-     *              to have the correct type annotations, contracts, scope, qualifiers etc.</li>
-     *     <li>An instance of the annotated interface to delegate calls to</li>
+     *     <li>The class must have accessible no-arg constructor (at least package local)</li>
+     *     <li>The constructor should have no side effects, as the instance will act only as a wrapper for the delegate</li>
+     *     <li>All invoked methods must be accessible (at least package local)</li>
      * </ul>
-     *
-     * Why this cannot be applied to classes:
-     * Delegation requires an existing delegate instance (which may be obtained in any way, which may have private or
-     * inaccessible constructor(s), may be final, may require constructor parameters that are not known to the registry). As a
-     * result, we could not create the delegate instance if it extended a class. Implementing an interface is on the other
-     * hand a clean approach.
-     * <p>
-     * If you feel you need interception for classes that you know how to construct, you can create a service that extends
-     * the desired class and provide it as a service to the registry. Such services are automatically intercepted as expected.
      */
     @Documented
     @Retention(RetentionPolicy.CLASS)
     @Target(ElementType.TYPE)
     public @interface Delegate {
-        /**
-         * Enable interception delegates for classes (only interfaces are supported by default).
-         * The expected approach is that a service exposes contract defined by an interface.
-         * <p>
-         * <b>WARNING: </b> a lot of things can go wrong in this case, only enable if you understand the rest of this
-         * documentation.
-         * <p>
-         * Implementing a delegate for a class introduces several problems, the biggest one being
-         * construction side-effects.
-         * <p>
-         * If you want delegation for classes, so you can support interception:
-         * <ul>
-         *     <li>The class must have accessible no-arg constructor (at least package local)</li>
-         *     <li>The constructor should have no side effects, as the instance will act only as a wrapper for the delegate</li>
-         *     <li>All invoked methods must be accessible (at least package local)</li>
-         *     <li>Make sure the invoked methods are not using {@code private} from the instance that require information
-         *     from constructor parameters, as these are NOT available in the interception delegate!</li>
-         * </ul>
-         * @return whether to enable interception delegation for classes
-         */
-        boolean value() default false;
     }
 
     /**
-     * Use this annotation to force generation of an interception delegate for an interface
-     * (cannot be applied to classes).
-     * The interception delegate can be used from service provider to wrap an instance and support interception.
+     * Use this annotation to mark an external class ready for interception delegation.
+     * This annotations must be added to the service provider (such as a {@link java.util.function.Supplier})
+     * that provides an instance of a class.
      * <p>
-     * The delegate implements the annotated interface, and has a static method {@code create} with the following parameters:
-     * <ul>
-     *     <li>{@link InterceptionMetadata} - can be injected</li>
-     *     <li>{@link InjectServiceDescriptor} - descriptor of the service,
-     *              to have the correct type annotations, contracts, scope, qualifiers etc.</li>
-     *     <li>An instance of the annotated interface to delegate calls to</li>
-     * </ul>
+     * If the provider provides an interface, this annotation is not needed, as interfaces are safe to delegate.
      *
-     * Why this cannot be applied to classes:
-     * Delegation requires an existing delegate instance (which may be obtained in any way, which may have private or
-     * inaccessible constructor(s), may be final, may require constructor parameters that are not known to the registry). As a
-     * result, we could not create the delegate instance if it extended a class. Implementing an interface is on the other
-     * hand a clean approach.
-     * <p>
-     * If you feel you need interception for classes that you know how to construct, you can create a service that extends
-     * the desired class and provide it as a service to the registry. Such services are automatically intercepted as expected.
+     * @see io.helidon.service.inject.api.Interception.Delegate
      */
     @Documented
     @Retention(RetentionPolicy.CLASS)
     @Target(ElementType.TYPE)
-    public @interface ExternalDelegates {
+    public @interface ExternalDelegate {
         /**
-         * Types that we want to generate interception delegates for (in the current package).
+         * Type provided by this service provider that is a class and should support interception.
          *
-         * @return types we need to generate delegates for
+         * @return type that should be intercepted, see {@link io.helidon.service.inject.api.Interception.Delegate}
          */
-        Class<?>[] value();
-
-        /**
-         * Enable interception delegates for classes (only interfaces are supported by default).
-         * The expected approach is that a service exposes contract defined by an interface.
-         * <p>
-         * <b>WARNING: </b> a lot of things can go wrong in this case, only enable if you understand the rest of this
-         * documentation.
-         * <p>
-         * Implementing a delegate for a class introduces several problems, the biggest one being
-         * construction side-effects.
-         * <p>
-         * If you want delegation for classes, so you can support interception:
-         * <ul>
-         *     <li>The class must have accessible no-arg constructor (public if it is in another package)</li>
-         *     <li>The constructor should have no side effects, as the instance will act only as a wrapper for the delegate</li>
-         *     <li>All invoked methods must be accessible (public if it is in another package)</li>
-         *     <li>Make sure the invoked methods are not using inaccessible methods from the instance that require information
-         *     from constructor parameters, as these are NOT available in the interception delegate!</li>
-         * </ul>
-         * @return whether to enable interception delegation for classes
-         */
-        boolean classDelegates() default false;
+        Class<?> value();
     }
 
     /**
@@ -169,7 +110,7 @@ public final class Interception {
          * @return the return value to the caller
          * @throws Exception if there are any checked exceptions thrown by the underlying method, or any runtime exception thrown
          */
-        <V> V proceed(InvocationContext ctx, Chain<V> chain, Object... args) throws Exception;
+        <V> V proceed(InterceptionContext ctx, Chain<V> chain, Object... args) throws Exception;
 
         /**
          * Represents the next in line for interception, terminating with a call to the wrapped service provider.

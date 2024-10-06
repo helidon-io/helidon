@@ -22,7 +22,7 @@ import io.helidon.service.registry.ServiceRegistryException;
  * Wraps any checked exceptions that are thrown during the {@link io.helidon.service.inject.api.Interception.Interceptor}
  * invocations.
  */
-public class InvocationException extends ServiceRegistryException {
+public class InterceptionException extends ServiceRegistryException {
 
     /**
      * Tracks whether the target being intercepted was called once successfully - meaning that the target was called and it
@@ -36,8 +36,8 @@ public class InvocationException extends ServiceRegistryException {
      * @param msg             the message
      * @param targetWasCalled set to true if the target of interception was ultimately called successfully
      */
-    public InvocationException(String msg,
-                               boolean targetWasCalled) {
+    public InterceptionException(String msg,
+                                 boolean targetWasCalled) {
         super(msg);
         this.targetWasCalled = targetWasCalled;
     }
@@ -49,9 +49,9 @@ public class InvocationException extends ServiceRegistryException {
      * @param cause           the root cause
      * @param targetWasCalled set to true if the target of interception was ultimately called successfully
      */
-    public InvocationException(String msg,
-                               Throwable cause,
-                               boolean targetWasCalled) {
+    public InterceptionException(String msg,
+                                 Throwable cause,
+                                 boolean targetWasCalled) {
         super(msg, cause);
         this.targetWasCalled = targetWasCalled;
     }

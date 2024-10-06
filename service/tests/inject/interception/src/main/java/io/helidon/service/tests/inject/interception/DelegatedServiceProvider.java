@@ -19,22 +19,12 @@ package io.helidon.service.tests.inject.interception;
 import java.util.function.Supplier;
 
 import io.helidon.service.inject.api.Injection;
-import io.helidon.service.inject.api.InterceptionMetadata;
 
 @Injection.Singleton
 class DelegatedServiceProvider implements Supplier<DelegatedContract> {
-    private final InterceptionMetadata interceptMeta;
-
-    @Injection.Inject
-    DelegatedServiceProvider(InterceptionMetadata interceptMeta) {
-        this.interceptMeta = interceptMeta;
-    }
-
     @Override
     public DelegatedContract get() {
-        return DelegatedContract__InterceptedDelegate.create(interceptMeta,
-                                                             DelegatedServiceProvider__ServiceDescriptor.INSTANCE,
-                                                             new DelegatedImpl());
+        return new DelegatedImpl();
     }
 
     private static class DelegatedImpl implements DelegatedContract {

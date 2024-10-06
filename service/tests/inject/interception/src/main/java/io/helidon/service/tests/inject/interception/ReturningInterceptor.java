@@ -23,7 +23,7 @@ import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.Interception;
-import io.helidon.service.inject.api.InvocationContext;
+import io.helidon.service.inject.api.InterceptionContext;
 
 @Injection.NamedByClass(Return.class)
 @Injection.Singleton
@@ -37,7 +37,7 @@ class ReturningInterceptor implements Interception.Interceptor {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <V> V proceed(InvocationContext ctx, Chain<V> chain, Object... args) throws Exception {
+    public <V> V proceed(InterceptionContext ctx, Chain<V> chain, Object... args) throws Exception {
         LAST_CALL.set(new Invocation(ctx.elementInfo().elementName(), Arrays.copyOf(args, args.length)));
         if (args.length < 4) {
             // safeguard

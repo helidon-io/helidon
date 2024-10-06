@@ -14,13 +14,28 @@
  * limitations under the License.
  */
 
-package io.helidon.service.tests.inject.configdriven;
+package io.helidon.service.tests.inject.interception;
 
+import io.helidon.service.inject.api.Interception;
 import io.helidon.service.registry.Service;
 
 @Service.Contract
-interface TheContract {
-    String name();
+@Interception.Delegate
+class DelegatedClass {
+    private boolean throwException = false;
 
-    String value();
+    @Modify
+    @Repeat
+    @Return
+    protected String intercepted(String message, boolean modify, boolean repeat, boolean doReturn) {
+        if (throwException) {
+            throwException = false;
+            throw new RuntimeException("forced");
+        }
+        return message;
+    }
+
+    void throwException(boolean throwException) {
+        this.throwException = throwException;
+    }
 }

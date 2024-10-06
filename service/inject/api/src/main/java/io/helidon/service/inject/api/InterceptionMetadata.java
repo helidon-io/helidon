@@ -50,12 +50,12 @@ public interface InterceptionMetadata {
      *         will
      *         be re-thrown, any runtime exception will be re-thrown
      */
-    <T> Invoker<T> createInvoker(InjectServiceInfo descriptor,
-                                 Set<Qualifier> typeQualifiers,
-                                 List<Annotation> typeAnnotations,
-                                 TypedElementInfo element,
-                                 Invoker<T> targetInvoker,
-                                 Set<Class<? extends Throwable>> checkedExceptions);
+    <T> InterceptionInvoker<T> createInvoker(InjectServiceInfo descriptor,
+                                             Set<Qualifier> typeQualifiers,
+                                             List<Annotation> typeAnnotations,
+                                             TypedElementInfo element,
+                                             InterceptionInvoker<T> targetInvoker,
+                                             Set<Class<? extends Throwable>> checkedExceptions);
 
     /**
      * Create an invoker that handles interception if needed.
@@ -72,11 +72,11 @@ public interface InterceptionMetadata {
      *         will
      *         be re-thrown, any runtime exception will be re-thrown
      */
-    <T> Invoker<T> createInvoker(Object serviceInstance,
-                                 InjectServiceInfo descriptor,
-                                 Set<Qualifier> typeQualifiers,
-                                 List<Annotation> typeAnnotations,
-                                 TypedElementInfo element,
-                                 Invoker<T> targetInvoker,
-                                 Set<Class<? extends Throwable>> checkedExceptions);
+    <T> InterceptionInvoker<T> createInvoker(Object serviceInstance,
+                                             InjectServiceInfo descriptor,
+                                             Set<Qualifier> typeQualifiers,
+                                             List<Annotation> typeAnnotations,
+                                             TypedElementInfo element,
+                                             InterceptionInvoker<T> targetInvoker,
+                                             Set<Class<? extends Throwable>> checkedExceptions);
 }

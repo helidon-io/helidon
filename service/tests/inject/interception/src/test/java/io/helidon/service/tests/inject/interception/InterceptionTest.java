@@ -18,7 +18,7 @@ package io.helidon.service.tests.inject.interception;
 
 import io.helidon.service.inject.InjectRegistryManager;
 import io.helidon.service.inject.api.InjectRegistry;
-import io.helidon.service.inject.api.InvocationException;
+import io.helidon.service.inject.api.InterceptionException;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -204,8 +204,8 @@ class InterceptionTest {
      */
     @Test
     void testRepeatWithNoExceptionThrownFromTarget() {
-        InvocationException e = assertThrows(InvocationException.class,
-                                             () -> service.intercepted("hello", false, true, false));
+        InterceptionException e = assertThrows(InterceptionException.class,
+                                               () -> service.intercepted("hello", false, true, false));
         assertThat(e.getMessage(), startsWith("Duplicate invocation, or unknown call type: java.lang.String intercepted"));
         assertThat(e.targetWasCalled(), is(true));
     }

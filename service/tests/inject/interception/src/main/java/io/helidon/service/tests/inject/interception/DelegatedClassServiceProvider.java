@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-package io.helidon.service.tests.inject.configdriven;
+package io.helidon.service.tests.inject.interception;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.util.function.Supplier;
 
-import io.helidon.service.inject.api.Interception;
+import io.helidon.service.inject.api.Injection;
 
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.SOURCE)
-@Interception.Trigger
-@interface Track {
+@Injection.Singleton
+class DelegatedClassServiceProvider implements Supplier<DelegatedClass> {
+    @Override
+    public DelegatedClass get() {
+        return new DelegatedClass();
+    }
 }

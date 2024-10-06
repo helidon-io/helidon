@@ -16,16 +16,17 @@
 
 package io.helidon.service.inject.api;
 
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import io.helidon.common.GenericType;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
-import io.helidon.service.registry.DependencyContext;
-import io.helidon.service.registry.GeneratedService;
 
 /**
  * All types in this class are used from generated code for services.
@@ -112,6 +113,115 @@ public final class GeneratedInjectService {
                                   .toList());
 
             return List.copyOf(result);
+        }
+    }
+
+    abstract static class InterceptionWrapper<T> {
+        public Injection.QualifiedInstance<T> wrapQualifiedInstance(Injection.QualifiedInstance<T> qualifiedInstance) {
+            return Injection.QualifiedInstance.create(wrap(qualifiedInstance.get()), qualifiedInstance.qualifiers());
+        }
+
+        protected abstract T wrap(T originalInstance);
+    }
+
+    /**
+     * Wrapper for generated Service providers that implement a {@link java.util.function.Supplier} of a service.
+     *
+     * @param <T> type of the provided contract
+     */
+    public abstract static class SupplierProviderInterceptionWrapper<T> extends InterceptionWrapper<T>
+            implements Supplier<T> {
+        private final Supplier<T> delegate;
+
+        protected SupplierProviderInterceptionWrapper(Supplier<T> delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public T get() {
+            return wrap(delegate.get());
+        }
+    }
+
+    /**
+     * Wrapper for generated Service providers that implement a
+     * {@link io.helidon.service.inject.api.Injection.ServicesProvider}.
+     *
+     * @param <T> type of the provided contract
+     */
+    public abstract static class ServicesProviderInterceptionWrapper<T> extends InterceptionWrapper<T>
+            implements Injection.ServicesProvider<T> {
+        private final Injection.ServicesProvider<T> delegate;
+
+        protected ServicesProviderInterceptionWrapper(Injection.ServicesProvider<T> delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public List<Injection.QualifiedInstance<T>> services() {
+            return delegate.services()
+                    .stream()
+                    .map(this::wrapQualifiedInstance)
+                    .collect(Collectors.toUnmodifiableList());
+        }
+    }
+
+    /**
+     * Wrapper for generated Service providers that implement a
+     * {@link io.helidon.service.inject.api.Injection.InjectionPointProvider}.
+     *
+     * @param <T> type of the provided contract
+     */
+    public abstract static class IpProviderInterceptionWrapper<T> extends InterceptionWrapper<T>
+            implements Injection.InjectionPointProvider<T> {
+        private final Injection.InjectionPointProvider<T> delegate;
+
+        protected IpProviderInterceptionWrapper(Injection.InjectionPointProvider<T> delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public List<Injection.QualifiedInstance<T>> list(Lookup lookup) {
+            return delegate.first(lookup)
+                    .stream()
+                    .map(this::wrapQualifiedInstance)
+                    .collect(Collectors.toUnmodifiableList());
+        }
+
+        @Override
+        public Optional<Injection.QualifiedInstance<T>> first(Lookup lookup) {
+            return delegate.first(lookup)
+                    .map(this::wrapQualifiedInstance);
+        }
+    }
+
+    /**
+     * Wrapper for generated Service providers that implement a
+     * {@link io.helidon.service.inject.api.Injection.QualifiedProvider}.
+     *
+     * @param <T> type of the provided contract
+     * @param <A> type of the qualifier annotation
+     */
+    public abstract static class QualifiedProviderInterceptionWrapper<T, A extends Annotation> extends InterceptionWrapper<T>
+            implements Injection.QualifiedProvider<T, A> {
+        private final Injection.QualifiedProvider<T, A> delegate;
+
+        protected QualifiedProviderInterceptionWrapper(Injection.QualifiedProvider<T, A> delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public List<Injection.QualifiedInstance<T>> list(Qualifier qualifier, Lookup lookup, GenericType<T> type) {
+            return delegate.list(qualifier, lookup, type)
+                    .stream()
+                    .map(this::wrapQualifiedInstance)
+                    .collect(Collectors.toUnmodifiableList());
+        }
+
+        @Override
+        public Optional<Injection.QualifiedInstance<T>> first(Qualifier qualifier, Lookup lookup, GenericType<T> type) {
+            return delegate.first(qualifier, lookup, type)
+                    .map(this::wrapQualifiedInstance);
         }
     }
 }
