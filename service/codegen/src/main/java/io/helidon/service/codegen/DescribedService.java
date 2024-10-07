@@ -33,8 +33,8 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 
-import static io.helidon.service.codegen.InjectCodegenTypes.INJECTION_PER_INSTANCE;
 import static io.helidon.service.codegen.InjectCodegenTypes.INJECTION_NAMED;
+import static io.helidon.service.codegen.InjectCodegenTypes.INJECTION_PER_INSTANCE;
 import static io.helidon.service.codegen.InjectCodegenTypes.INJECTION_POINT_PROVIDER;
 import static io.helidon.service.codegen.InjectCodegenTypes.INJECTION_QUALIFIED_PROVIDER;
 import static io.helidon.service.codegen.InjectCodegenTypes.INJECTION_SERVICES_PROVIDER;
