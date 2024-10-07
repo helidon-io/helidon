@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.service.inject.api.Injection;
 
-@Injection.Instance
+@Injection.PerLookup
 class AServiceContractImpl implements AServiceContract {
     static final AtomicInteger INSTANCES = new AtomicInteger();
     static final AtomicInteger INJECTIONS = new AtomicInteger();

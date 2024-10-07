@@ -23,7 +23,7 @@ import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.Scope;
 import io.helidon.service.inject.api.ScopedRegistry;
 
-class DependentScopeHandler implements Injection.ScopeHandler<Injection.Instance> {
+class DependentScopeHandler implements Injection.ScopeHandler<Injection.PerLookup> {
     private final Scope scope;
 
     DependentScopeHandler(InjectServiceRegistryImpl serviceRegistry) {
@@ -66,7 +66,7 @@ class DependentScopeHandler implements Injection.ScopeHandler<Injection.Instance
      */
     private static class DependentScopeRegistry extends ScopedRegistryImpl {
         DependentScopeRegistry(InjectServiceRegistryImpl serviceRegistry) {
-            super(serviceRegistry, Injection.Instance.TYPE, serviceRegistry.id(), Map.of());
+            super(serviceRegistry, Injection.PerLookup.TYPE, serviceRegistry.id(), Map.of());
         }
     }
 }

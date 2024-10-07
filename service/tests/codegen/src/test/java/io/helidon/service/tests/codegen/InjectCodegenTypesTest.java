@@ -76,7 +76,7 @@ class InjectCodegenTypesTest {
         checkField(toCheck, checked, fields, "INJECTION_QUALIFIER", Injection.Qualifier.class);
         checkField(toCheck, checked, fields, "INJECTION_DESCRIBE", Injection.Describe.class);
         checkField(toCheck, checked, fields, "INJECTION_SCOPE", Injection.Scope.class);
-        checkField(toCheck, checked, fields, "INJECTION_INSTANCE", Injection.Instance.class);
+        checkField(toCheck, checked, fields, "INJECTION_INSTANCE", Injection.PerLookup.class);
         checkField(toCheck, checked, fields, "INJECTION_CREATE_FOR", Injection.CreateFor.class);
         checkField(toCheck, checked, fields, "INJECTION_RUN_LEVEL", Injection.RunLevel.class);
         checkField(toCheck, checked, fields, "INJECTION_POINT_PROVIDER", Injection.InjectionPointProvider.class);

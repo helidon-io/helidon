@@ -105,7 +105,7 @@ class CoreWrappers {
             // if the core service is a supplier, we expect to get a new instance each time
             // otherwise it is a de-facto singleton
             return delegate.contracts().contains(TypeNames.SUPPLIER)
-                    ? Injection.Instance.TYPE
+                    ? Injection.PerLookup.TYPE
                     : Injection.Singleton.TYPE;
         }
     }

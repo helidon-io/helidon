@@ -52,9 +52,9 @@ public class InjectCodegenTypes {
      */
     public static final TypeName INJECTION_SCOPE = TypeName.create("io.helidon.service.inject.api.Injection.Scope");
     /**
-     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.Instance}.
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.PerLookup}.
      */
-    public static final TypeName INJECTION_INSTANCE = TypeName.create("io.helidon.service.inject.api.Injection.Instance");
+    public static final TypeName INJECTION_PER_LOOKUP = TypeName.create("io.helidon.service.inject.api.Injection.PerLookup");
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.CreateFor}.
      */

@@ -18,6 +18,6 @@ package io.helidon.service.inject.tests.lookup;
 
 import io.helidon.service.inject.api.Injection;
 
-@Injection.Instance
+@Injection.PerLookup
 class NoScopeDirectExample implements ContractNoScopeNoIpProvider {
 }

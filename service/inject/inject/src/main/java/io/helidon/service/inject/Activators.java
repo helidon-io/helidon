@@ -84,7 +84,7 @@ final class Activators {
     static <T> Supplier<Activator<T>> create(InjectServiceRegistryImpl registry, ServiceProvider<T> provider) {
         InjectServiceDescriptor<T> descriptor = provider.descriptor();
 
-        if (descriptor.scope().equals(Injection.Instance.TYPE)) {
+        if (descriptor.scope().equals(Injection.PerLookup.TYPE)) {
             return switch (descriptor.providerType()) {
                 case NONE -> new MissingDescribedActivator(provider);
                 case SERVICE -> {

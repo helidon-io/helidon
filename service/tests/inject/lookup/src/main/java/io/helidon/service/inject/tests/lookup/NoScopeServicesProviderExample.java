@@ -23,7 +23,7 @@ import io.helidon.service.inject.api.Injection.QualifiedInstance;
 import io.helidon.service.inject.api.Injection.ServicesProvider;
 import io.helidon.service.inject.api.Qualifier;
 
-@Injection.Instance
+@Injection.PerLookup
 @NoScopeServicesProviderExample.FirstQuali
 @NoScopeServicesProviderExample.SecondQuali
 class NoScopeServicesProviderExample implements ServicesProvider<ContractNoScopeNoIpProvider> {

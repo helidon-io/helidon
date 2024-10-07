@@ -42,7 +42,7 @@ public interface ServiceInstance<T> extends Injection.QualifiedInstance<T> {
     /**
      * Scope this instance was created in. Always the same as the scope of the associated service descriptor
      * ({@link InjectServiceDescriptor#scope()}.
-     * This method may return {@link io.helidon.service.inject.api.Injection.Instance} in case no scope is
+     * This method may return {@link io.helidon.service.inject.api.Injection.PerLookup} in case no scope is
      * defined ("Dependent" scope is not a real scope, as the instances cannot be managed, so each time an instance is injected,
      * it is constructed, injected, post constructed, and then forgotten by the registry).
      *

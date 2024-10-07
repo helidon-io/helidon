@@ -61,7 +61,7 @@ import static io.helidon.codegen.CodegenUtil.toConstantName;
 import static io.helidon.service.codegen.InjectCodegenTypes.INJECTION_CREATE_FOR;
 import static io.helidon.service.codegen.InjectCodegenTypes.INJECTION_DESCRIBE;
 import static io.helidon.service.codegen.InjectCodegenTypes.INJECTION_INJECT;
-import static io.helidon.service.codegen.InjectCodegenTypes.INJECTION_INSTANCE;
+import static io.helidon.service.codegen.InjectCodegenTypes.INJECTION_PER_LOOKUP;
 import static io.helidon.service.codegen.InjectCodegenTypes.INJECTION_SCOPE_HANDLER;
 import static io.helidon.service.codegen.InjectCodegenTypes.INJECTION_SINGLETON;
 import static io.helidon.service.codegen.InjectCodegenTypes.INJECT_G_IP_SUPPORT;
@@ -365,7 +365,7 @@ class InjectionExtension implements RegistryCodegenExtension {
             return;
         }
 
-        TypeName scope = scope(typeInfo).orElse(INJECTION_INSTANCE);
+        TypeName scope = scope(typeInfo).orElse(INJECTION_PER_LOOKUP);
         DescribedService service = DescribedService.create(ctx,
                                                            roundContext,
                                                            interception,
