@@ -77,7 +77,7 @@ class InjectCodegenTypesTest {
         checkField(toCheck, checked, fields, "INJECTION_DESCRIBE", Injection.Describe.class);
         checkField(toCheck, checked, fields, "INJECTION_SCOPE", Injection.Scope.class);
         checkField(toCheck, checked, fields, "INJECTION_INSTANCE", Injection.PerLookup.class);
-        checkField(toCheck, checked, fields, "INJECTION_CREATE_FOR", Injection.CreateFor.class);
+        checkField(toCheck, checked, fields, "INJECTION_CREATE_FOR", Injection.PerInstance.class);
         checkField(toCheck, checked, fields, "INJECTION_RUN_LEVEL", Injection.RunLevel.class);
         checkField(toCheck, checked, fields, "INJECTION_POINT_PROVIDER", Injection.InjectionPointProvider.class);
         checkField(toCheck, checked, fields, "INJECTION_SCOPE_HANDLER", Injection.ScopeHandler.class);
@@ -103,7 +103,7 @@ class InjectCodegenTypesTest {
 
         // generated inject service types
         checkField(toCheck, checked, fields, "INJECT_G_CREATE_FOR_DESCRIPTOR",
-                   GeneratedInjectService.CreateForDescriptor.class);
+                   GeneratedInjectService.PerInstanceDescriptor.class);
         checkField(toCheck, checked, fields, "INJECT_G_QUALIFIED_PROVIDER_DESCRIPTOR",
                    GeneratedInjectService.QualifiedProviderDescriptor.class);
         checkField(toCheck, checked, fields, "INJECT_G_SCOPE_HANDLER_DESCRIPTOR",

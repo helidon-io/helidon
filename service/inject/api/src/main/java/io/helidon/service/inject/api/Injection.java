@@ -147,7 +147,7 @@ public final class Injection {
      * Alternative to this annotation is {@link io.helidon.service.inject.api.Injection.PerLookup} (or no annotation on a type
      * that has {@link Injection.Inject} on its elements). Such a service would be injected
      * every time its provider is invoked (each injection point, or on call to {@link java.util.function.Supplier#get()} if
-     * supplier is injected), and {@link Injection.RequestScope} for request bound instances.
+     * supplier is injected), and {@link io.helidon.service.inject.api.Injection.PerRequest} for request bound instances.
      */
     @Documented
     @Retention(RetentionPolicy.CLASS)
@@ -175,11 +175,11 @@ public final class Injection {
     @Retention(RetentionPolicy.CLASS)
     @Scope
     @Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE, ElementType.METHOD})
-    public @interface RequestScope {
+    public @interface PerRequest {
         /**
          * This interface type.
          */
-        TypeName TYPE = TypeName.create(RequestScope.class);
+        TypeName TYPE = TypeName.create(PerRequest.class);
     }
 
     /**
@@ -259,17 +259,17 @@ public final class Injection {
      * <li>There MAY be an injection point of the type defined in {@link #value()}, without any qualifiers -
      * this injection point will be satisfied by the driving instance</li>
      * <li>There MAY be a {@link String} injection point qualified with
-     * {@link io.helidon.service.inject.api.Injection.CreateForName} - this injection point will be satisfied by the
+     * {@link io.helidon.service.inject.api.Injection.InstanceName} - this injection point will be satisfied by the
      * name of the driving instance</li>
      * </ul>
      */
     @Documented
     @Retention(RetentionPolicy.CLASS)
     @Target(ElementType.TYPE)
-    public @interface CreateFor {
+    public @interface PerInstance {
         /**
-         * The service type driving this service. The service type MUST provide {@link Injection.Named}
-         * instances.
+         * The service type driving this service. If the service provides more than one instance,
+         * the instances MUST be {@link Injection.Named}.
          *
          * @return type of the service driving instances of this service
          */
@@ -277,19 +277,19 @@ public final class Injection {
     }
 
     /**
-     * For types that are {@link io.helidon.service.inject.api.Injection.CreateFor}, an injection point (field, parameter) can
+     * For types that are {@link io.helidon.service.inject.api.Injection.PerInstance}, an injection point (field, parameter) can
      * be annotated with this annotation to receive the name qualifier associated with this instance.
      */
     @Documented
     @Retention(RetentionPolicy.CLASS)
     @Target({ElementType.PARAMETER, ElementType.FIELD})
     @Qualifier
-    public @interface CreateForName {
+    public @interface InstanceName {
         /**
          * Type name of this interface.
          * {@link io.helidon.common.types.TypeName} is used in Helidon Inject APIs.
          */
-        TypeName TYPE = TypeName.create(CreateForName.class);
+        TypeName TYPE = TypeName.create(InstanceName.class);
     }
 
     /**

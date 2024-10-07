@@ -22,7 +22,7 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 
 /**
- * Service descriptor to enable injection of String name of a {@link io.helidon.service.inject.api.Injection.CreateFor}
+ * Service descriptor to enable injection of String name of a {@link io.helidon.service.inject.api.Injection.PerInstance}
  * service.
  * <p>
  * Not intended for direct use by users, implementation detail of the service registry, must be public,

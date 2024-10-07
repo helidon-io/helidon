@@ -69,7 +69,7 @@ public class InjectionExtensionProvider implements RegistryCodegenExtensionProvi
     public Set<TypeName> supportedAnnotations() {
         return Set.of(InjectCodegenTypes.INJECTION_INJECT,
                       InjectCodegenTypes.INJECTION_DESCRIBE,
-                      InjectCodegenTypes.INJECTION_CREATE_FOR);
+                      InjectCodegenTypes.INJECTION_PER_INSTANCE);
     }
 
     @Override

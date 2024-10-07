@@ -56,9 +56,9 @@ public class InjectCodegenTypes {
      */
     public static final TypeName INJECTION_PER_LOOKUP = TypeName.create("io.helidon.service.inject.api.Injection.PerLookup");
     /**
-     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.CreateFor}.
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.PerInstance}.
      */
-    public static final TypeName INJECTION_CREATE_FOR = TypeName.create("io.helidon.service.inject.api.Injection.CreateFor");
+    public static final TypeName INJECTION_PER_INSTANCE = TypeName.create("io.helidon.service.inject.api.Injection.PerInstance");
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.RunLevel}.
      */
@@ -136,10 +136,10 @@ public class InjectCodegenTypes {
             TypeName.create("io.helidon.service.inject.api.InterceptionInvoker");
     /**
      * {@link io.helidon.common.types.TypeName} for
-     * {@code io.helidon.service.inject.api.GeneratedInjectService.CreateForDescriptor}.
+     * {@code io.helidon.service.inject.api.GeneratedInjectService.PerInstanceDescriptor}.
      */
-    public static final TypeName INJECT_G_CREATE_FOR_DESCRIPTOR = TypeName.create(
-            "io.helidon.service.inject.api.GeneratedInjectService.CreateForDescriptor");
+    public static final TypeName INJECT_G_PER_INSTANCE_DESCRIPTOR = TypeName.create(
+            "io.helidon.service.inject.api.GeneratedInjectService.PerInstanceDescriptor");
     /**
      * {@link io.helidon.common.types.TypeName} for
      * {@code io.helidon.service.inject.api.GeneratedInjectService.QualifiedProviderDescriptor}.

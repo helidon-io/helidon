@@ -250,7 +250,7 @@ final class ActivatorsPerLookup {
     }
 
     /**
-     * Service annotated {@link io.helidon.service.inject.api.Injection.CreateFor}.
+     * Service annotated {@link io.helidon.service.inject.api.Injection.PerInstance}.
      */
     static class CreateForActivator<T> extends Activators.BaseActivator<T> {
         private final InjectServiceRegistryImpl registry;
@@ -260,7 +260,7 @@ final class ActivatorsPerLookup {
 
         CreateForActivator(InjectServiceRegistryImpl registry,
                            ServiceProvider<T> provider,
-                           GeneratedInjectService.CreateForDescriptor dbd) {
+                           GeneratedInjectService.PerInstanceDescriptor dbd) {
             super(provider);
 
             this.registry = registry;

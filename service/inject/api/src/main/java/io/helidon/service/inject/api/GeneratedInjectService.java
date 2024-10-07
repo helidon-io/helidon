@@ -49,10 +49,10 @@ public final class GeneratedInjectService {
     }
 
     /**
-     * Each descriptor for s service that is annotated with {@link io.helidon.service.inject.api.Injection.CreateFor}
+     * Each descriptor for s service that is annotated with {@link io.helidon.service.inject.api.Injection.PerInstance}
      * implements this interface to provide information about the type that drives it.
      */
-    public interface CreateForDescriptor {
+    public interface PerInstanceDescriptor {
         /**
          * Service instances may be created for instances of another service.
          * If a type is created for another type, it inherits ALL qualifiers of the type that it is based on.

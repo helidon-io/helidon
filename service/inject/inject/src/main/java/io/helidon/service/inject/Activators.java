@@ -36,8 +36,7 @@ import io.helidon.common.types.TypeNames;
 import io.helidon.service.inject.api.ActivationRequest;
 import io.helidon.service.inject.api.ActivationResult;
 import io.helidon.service.inject.api.Activator;
-import io.helidon.service.inject.api.GeneratedInjectService;
-import io.helidon.service.inject.api.GeneratedInjectService.CreateForDescriptor;
+import io.helidon.service.inject.api.GeneratedInjectService.PerInstanceDescriptor;
 import io.helidon.service.inject.api.GeneratedInjectService.QualifiedProviderDescriptor;
 import io.helidon.service.inject.api.InjectServiceDescriptor;
 import io.helidon.service.inject.api.Injection;
@@ -88,7 +87,7 @@ final class Activators {
             return switch (descriptor.providerType()) {
                 case NONE -> new MissingDescribedActivator(provider);
                 case SERVICE -> {
-                    if (descriptor instanceof GeneratedInjectService.CreateForDescriptor dbd) {
+                    if (descriptor instanceof PerInstanceDescriptor dbd) {
                         yield () -> new ActivatorsPerLookup.CreateForActivator<>(registry, provider, dbd);
                     }
                     yield () -> new ActivatorsPerLookup.SingleServiceActivator<>(provider);
@@ -103,7 +102,7 @@ final class Activators {
             return switch (descriptor.providerType()) {
                 case NONE -> new MissingDescribedActivator(provider);
                 case SERVICE -> {
-                    if (descriptor instanceof GeneratedInjectService.CreateForDescriptor dbd) {
+                    if (descriptor instanceof PerInstanceDescriptor dbd) {
                         yield () -> new Activators.CreateForActivator<>(registry, provider, dbd);
                     }
                     yield () -> new Activators.SingleServiceActivator<>(provider);
@@ -638,7 +637,7 @@ final class Activators {
     }
 
     /**
-     * Service annotated {@link io.helidon.service.inject.api.Injection.CreateFor}.
+     * Service annotated {@link io.helidon.service.inject.api.Injection.PerInstance}.
      */
     static class CreateForActivator<T> extends BaseActivator<T> {
         private final InjectServiceRegistryImpl registry;
@@ -647,7 +646,7 @@ final class Activators {
         private List<QualifiedServiceInstance<T>> serviceInstances;
         private List<QualifiedInstance<T>> targetInstances;
 
-        CreateForActivator(InjectServiceRegistryImpl registry, ServiceProvider<T> provider, CreateForDescriptor dbd) {
+        CreateForActivator(InjectServiceRegistryImpl registry, ServiceProvider<T> provider, PerInstanceDescriptor dbd) {
             super(provider);
 
             this.registry = registry;
@@ -685,7 +684,7 @@ final class Activators {
                     // @CreateForName String name
                     if (ip.qualifiers()
                             .stream()
-                            .anyMatch(it -> Injection.CreateForName.TYPE.equals(it.typeName()))) {
+                            .anyMatch(it -> Injection.InstanceName.TYPE.equals(it.typeName()))) {
                         updatedPlan.put(ip,
                                         new IpPlan<>(() -> name.value().orElse(Injection.Named.DEFAULT_NAME),
                                                      injectionPlan.get(ip).descriptors()));

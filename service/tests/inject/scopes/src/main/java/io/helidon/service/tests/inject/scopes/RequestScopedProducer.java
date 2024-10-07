@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.service.inject.api.Injection;
 
-@Injection.RequestScope
+@Injection.PerRequest
 class RequestScopedProducer implements RequestScopedContract {
     private static final AtomicInteger COUNTER = new AtomicInteger();
 

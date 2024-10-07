@@ -33,7 +33,7 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 
-import static io.helidon.service.codegen.InjectCodegenTypes.INJECTION_CREATE_FOR;
+import static io.helidon.service.codegen.InjectCodegenTypes.INJECTION_PER_INSTANCE;
 import static io.helidon.service.codegen.InjectCodegenTypes.INJECTION_NAMED;
 import static io.helidon.service.codegen.InjectCodegenTypes.INJECTION_POINT_PROVIDER;
 import static io.helidon.service.codegen.InjectCodegenTypes.INJECTION_QUALIFIED_PROVIDER;
@@ -322,7 +322,7 @@ class DescribedService {
 
     private static Set<Annotation> gatherQualifiers(TypeInfo serviceTypeInfo) {
         Set<Annotation> qualifiers = new LinkedHashSet<>();
-        if (serviceTypeInfo.hasAnnotation(INJECTION_CREATE_FOR)) {
+        if (serviceTypeInfo.hasAnnotation(INJECTION_PER_INSTANCE)) {
             qualifiers.add(WILDCARD_NAMED);
         }
 

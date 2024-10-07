@@ -59,7 +59,7 @@ class TestScopes {
         SingletonContract service = serviceProvider.get();
 
         ScopeNotActiveException scopeNotAvailableException = assertThrows(ScopeNotActiveException.class, service::id);
-        assertThat(scopeNotAvailableException.scope(), is(Injection.RequestScope.TYPE));
+        assertThat(scopeNotAvailableException.scope(), is(Injection.PerRequest.TYPE));
     }
 
     @Test
@@ -78,7 +78,7 @@ class TestScopes {
         ScopeNotActiveException scopeNotAvailableException = assertThrows(ScopeNotActiveException.class, service::id);
         assertThat("We should not be in scope when it has been closed",
                    scopeNotAvailableException.scope(),
-                   is(Injection.RequestScope.TYPE));
+                   is(Injection.PerRequest.TYPE));
 
         try (Scope scope = requestonControl.startRequestScope("test-2", Map.of())) {
             int nextId = service.id();

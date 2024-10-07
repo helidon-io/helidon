@@ -58,7 +58,7 @@ import io.helidon.service.codegen.spi.InjectCodegenObserverProvider;
 import io.helidon.service.codegen.spi.RegistryCodegenExtension;
 
 import static io.helidon.codegen.CodegenUtil.toConstantName;
-import static io.helidon.service.codegen.InjectCodegenTypes.INJECTION_CREATE_FOR;
+import static io.helidon.service.codegen.InjectCodegenTypes.INJECTION_PER_INSTANCE;
 import static io.helidon.service.codegen.InjectCodegenTypes.INJECTION_DESCRIBE;
 import static io.helidon.service.codegen.InjectCodegenTypes.INJECTION_INJECT;
 import static io.helidon.service.codegen.InjectCodegenTypes.INJECTION_PER_LOOKUP;
@@ -733,7 +733,7 @@ class InjectionExtension implements RegistryCodegenExtension {
         TypeInfo serviceTypeInfo = service.serviceDescriptor().typeInfo();
         TypeName serviceTypeName = service.serviceDescriptor().typeName();
 
-        Optional<Annotation> createFor = serviceTypeInfo.findAnnotation(INJECTION_CREATE_FOR);
+        Optional<Annotation> createFor = serviceTypeInfo.findAnnotation(INJECTION_PER_INSTANCE);
         if (!service.superType().hasSupertype() && createFor.isEmpty()) {
             // this is the default
             return;
@@ -748,7 +748,7 @@ class InjectionExtension implements RegistryCodegenExtension {
 
             TypeName createForType = createFor.get()
                     .typeValue()
-                    .orElseThrow(() -> new CodegenException(INJECTION_CREATE_FOR.fqName()
+                    .orElseThrow(() -> new CodegenException(INJECTION_PER_INSTANCE.fqName()
                                                                     + ".value() is required, yet not found on type: "
                                                                     + serviceTypeName.fqName()));
 
@@ -773,7 +773,7 @@ class InjectionExtension implements RegistryCodegenExtension {
 
             // used from lambda
             TypeName createForTypeFinal = createForType;
-            classModel.addInterface(InjectCodegenTypes.INJECT_G_CREATE_FOR_DESCRIPTOR);
+            classModel.addInterface(InjectCodegenTypes.INJECT_G_PER_INSTANCE_DESCRIPTOR);
 
             classModel.addField(createForField -> createForField
                     .accessModifier(AccessModifier.PRIVATE)
@@ -1389,7 +1389,7 @@ class InjectionExtension implements RegistryCodegenExtension {
                                                + "This is not supported. Scopes. " + result);
         }
 
-        if (result.isEmpty() && service.hasAnnotation(INJECTION_CREATE_FOR)) {
+        if (result.isEmpty() && service.hasAnnotation(INJECTION_PER_INSTANCE)) {
             result.add(INJECTION_SINGLETON);
         }
 

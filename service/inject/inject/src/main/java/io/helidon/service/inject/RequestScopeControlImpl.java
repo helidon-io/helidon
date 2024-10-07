@@ -26,7 +26,7 @@ import io.helidon.service.inject.api.Scope;
 import io.helidon.service.registry.ServiceInfo;
 
 @Injection.Singleton
-class RequestScopeControlImpl implements RequestScopeControl, Injection.ScopeHandler<Injection.RequestScope> {
+class RequestScopeControlImpl implements RequestScopeControl, Injection.ScopeHandler<Injection.PerRequest> {
     private static final ThreadLocal<Scope> REQUEST_SCOPES = new ThreadLocal<>();
 
     private final InjectRegistrySpi registry;
@@ -50,7 +50,7 @@ class RequestScopeControlImpl implements RequestScopeControl, Injection.ScopeHan
         }
 
         Thread thread = Thread.currentThread();
-        scope = registry.createScope(Injection.RequestScope.TYPE,
+        scope = registry.createScope(Injection.PerRequest.TYPE,
                                      id,
                                      initialBindings,
                                      it -> closeScope(it, thread));
