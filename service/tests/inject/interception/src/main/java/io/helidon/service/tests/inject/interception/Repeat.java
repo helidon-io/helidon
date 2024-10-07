@@ -30,7 +30,7 @@ import io.helidon.service.inject.api.Interception;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@Interception.Trigger
+@Interception.Intercepted
 @Target(ElementType.METHOD)
 @Inherited
 @interface Repeat {

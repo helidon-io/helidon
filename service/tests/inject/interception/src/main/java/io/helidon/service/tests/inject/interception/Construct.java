@@ -23,7 +23,7 @@ import java.lang.annotation.Target;
 
 import io.helidon.service.inject.api.Interception;
 
-@Interception.Trigger
+@Interception.Intercepted
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.CONSTRUCTOR)
 @interface Construct {

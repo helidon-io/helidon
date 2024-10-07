@@ -85,9 +85,9 @@ public class InjectCodegenTypes {
             TypeName.create("io.helidon.service.inject.api.Injection.QualifiedProvider");
 
     /**
-     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Interception.Trigger}.
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Interception.Intercepted}.
      */
-    public static final TypeName INTERCEPTION_TRIGGER = TypeName.create("io.helidon.service.inject.api.Interception.Trigger");
+    public static final TypeName INTERCEPTION_TRIGGER = TypeName.create("io.helidon.service.inject.api.Interception.Intercepted");
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Interception.Delegate}.
      */

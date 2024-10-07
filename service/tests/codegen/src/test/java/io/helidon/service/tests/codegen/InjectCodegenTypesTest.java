@@ -85,7 +85,7 @@ class InjectCodegenTypesTest {
         checkField(toCheck, checked, fields, "INJECTION_QUALIFIED_PROVIDER", Injection.QualifiedProvider.class);
 
         // api.Interception.*
-        checkField(toCheck, checked, fields, "INTERCEPTION_TRIGGER", Interception.Trigger.class);
+        checkField(toCheck, checked, fields, "INTERCEPTION_TRIGGER", Interception.Intercepted.class);
         checkField(toCheck, checked, fields, "INTERCEPTION_DELEGATE", Interception.Delegate.class);
         checkField(toCheck, checked, fields, "INTERCEPTION_EXTERNAL_DELEGATE", Interception.ExternalDelegate.class);
 

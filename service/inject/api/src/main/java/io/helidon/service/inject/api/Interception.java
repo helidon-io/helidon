@@ -43,7 +43,7 @@ public final class Interception {
     @Retention(RetentionPolicy.CLASS)
     @Target(ElementType.ANNOTATION_TYPE)
     @Inherited
-    public @interface Trigger {
+    public @interface Intercepted {
     }
 
     /**
@@ -94,7 +94,7 @@ public final class Interception {
 
     /**
      * Implementors of this contract must be {@link io.helidon.service.inject.api.Injection.Named}
-     * according to the {@link Interception.Trigger} annotation they support.
+     * according to the {@link io.helidon.service.inject.api.Interception.Intercepted} annotation they support.
      */
     @Service.Contract
     public interface Interceptor {
