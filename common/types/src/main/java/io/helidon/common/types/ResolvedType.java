@@ -20,7 +20,7 @@ import java.lang.reflect.Type;
 
 /**
  * A special case of {@link io.helidon.common.types.TypeName} that defines equals method based on
- * {@link #resolvedName()} (i.e. including all type arguments).
+ * {@link io.helidon.common.types.ResolvedType#resolvedName()} (i.e. including all type arguments).
  * This can be used in {@link java.util.HashSet} or {@link java.util.HashMap} as a key that
  * is only equal if both the {@link #fqName()} and {@link #typeArguments()} are the same.
  */

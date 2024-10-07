@@ -32,7 +32,7 @@ final class LookupSupport {
 
     static final class CustomMethods {
         /**
-         * Empty lookup would match anything and everything except for abstract types.
+         * Empty lookup matches anything and everything except for abstract types.
          */
         @Prototype.Constant
         static final Lookup EMPTY = createEmpty();

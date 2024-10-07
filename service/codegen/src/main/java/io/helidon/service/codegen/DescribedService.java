@@ -507,7 +507,6 @@ class DescribedService {
                                      TypeInfo typeInfo) {
 
         TypeName withGenerics = typeInfo.typeName();
-        TypeName withoutGenerics = withGenerics.genericTypeName();
 
         if (!processedFullyQualified.add(withGenerics.resolvedName())) {
             // this type was already fully processed
