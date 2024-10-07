@@ -570,6 +570,13 @@
                 <version>${helidon.version}</version>
             </dependency>
 
+            <!-- soap-ws -->
+            <dependency>
+                <groupId>io.helidon.soap-ws</groupId>
+                <artifactId>helidon-soap-ws</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+
             <!-- common -->
             <dependency>
                 <groupId>io.helidon.common</groupId>

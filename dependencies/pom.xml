@@ -39,6 +39,7 @@
         <version.lib.activemq>5.16.0</version.lib.activemq>
         <version.lib.animal-sniffer>1.18</version.lib.animal-sniffer>
         <version.lib.annotation-api>1.3.5</version.lib.annotation-api>
+        <version.lib.asm>9.1</version.lib.asm>
         <version.lib.brave-opentracing>1.0.0</version.lib.brave-opentracing>
         <version.lib.reactivestreams>1.0.4</version.lib.reactivestreams>
         <!-- Force upgrade byte-buddy for Java 23. Remove after upgrading hibernate -->
@@ -82,14 +83,18 @@
         <version.lib.jakarta.jsonb-api>2.0.0</version.lib.jakarta.jsonb-api>
         <version.lib.jakarta.jsonp-api>2.0.2</version.lib.jakarta.jsonp-api>
         <version.lib.jakarta.persistence-api>3.0.0</version.lib.jakarta.persistence-api>
+        <version.lib.jakarta.resource-api>2.1.0</version.lib.jakarta.resource-api>
         <version.lib.jakarta.transaction-api>2.0.0</version.lib.jakarta.transaction-api>
         <version.lib.jakarta.validation-api>3.0.2</version.lib.jakarta.validation-api>
         <version.lib.jakarta.websockets-api>2.1.1</version.lib.jakarta.websockets-api>
         <!-- Check Hibernate when upgrading to ensure its supplied jaxb-runtime is compatible. -->
         <version.lib.jakarta.xml.bind-api>3.0.1</version.lib.jakarta.xml.bind-api>
+        <version.lib.jakarta.xml.soap-api>3.0.0</version.lib.jakarta.xml.soap-api>
+        <version.lib.jakarta.xml.ws-api>4.0.0</version.lib.jakarta.xml.ws-api>
         <version.lib.jandex>2.4.3.Final</version.lib.jandex>
         <version.lib.jaxb-core>3.0.2</version.lib.jaxb-core>
         <version.lib.jaxb-impl>3.0.2</version.lib.jaxb-impl>
+        <version.lib.jaxws-ri>4.0.1</version.lib.jaxws-ri>
         <version.lib.jboss.classfilewriter>1.2.5.Final</version.lib.jboss.classfilewriter>
         <version.lib.jboss.logging>3.5.3.Final</version.lib.jboss.logging>
         <version.lib.jboss.transaction-spi>7.6.1.Final</version.lib.jboss.transaction-spi>
@@ -105,6 +110,7 @@
         <version.lib.logback>1.4.14</version.lib.logback>
         <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
         <version.lib.maven-wagon>2.10</version.lib.maven-wagon>
+        <version.lib.metro>4.0.2</version.lib.metro>
         <version.lib.micrometer>1.6.6</version.lib.micrometer>
         <version.lib.micronaut>3.8.7</version.lib.micronaut>
         <version.lib.micronaut.data>3.4.3</version.lib.micronaut.data>
@@ -1375,6 +1381,80 @@
                 <version>${version.lib.log4j}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.metro</groupId>
+                <artifactId>metro-bom</artifactId>
+                <version>${version.lib.metro}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.xml.ws</groupId>
+                <artifactId>jakarta.xml.ws-api</artifactId>
+                <version>${version.lib.jakarta.xml.ws-api}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.xml.soap</groupId>
+                <artifactId>jakarta.xml.soap-api</artifactId>
+                <version>${version.lib.jakarta.xml.soap-api}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.xml.ws</groupId>
+                <artifactId>rt</artifactId>
+                <version>${version.lib.jaxws-ri}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.xml.ws</groupId>
+                <artifactId>rt-fi</artifactId>
+                <version>${version.lib.jaxws-ri}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.metro</groupId>
+                <artifactId>wsit-api</artifactId>
+                <version>${version.lib.metro}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.metro</groupId>
+                <artifactId>wsit-impl</artifactId>
+                <version>${version.lib.metro}</version>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.resource</groupId>
+                <artifactId>jakarta.resource-api</artifactId>
+                <version>${version.lib.jakarta.resource-api}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm</artifactId>
+                <version>${version.lib.asm}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm-analysis</artifactId>
+                <version>${version.lib.asm}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm-tree</artifactId>
+                <version>${version.lib.asm}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm-commons</artifactId>
+                <version>${version.lib.asm}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

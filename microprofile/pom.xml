@@ -57,5 +57,6 @@
         <module>scheduling</module>
         <module>lra</module>
         <module>bean-validation</module>
+	<module>soap-ws</module>
     </modules>
 </project>
