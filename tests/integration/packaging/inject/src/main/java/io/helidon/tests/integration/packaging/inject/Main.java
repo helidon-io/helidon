@@ -18,6 +18,10 @@ package io.helidon.tests.integration.packaging.inject;
 
 import io.helidon.common.config.Config;
 import io.helidon.common.config.GlobalConfig;
+import io.helidon.service.inject.InjectRegistryManager;
+import io.helidon.service.inject.api.InjectRegistry;
+import io.helidon.service.inject.api.Injection;
+import io.helidon.service.inject.api.Lookup;
 
 /**
  * We must provide a main class when using modularized jar file with main class attribute,
@@ -29,6 +33,11 @@ public class Main {
         Config config = GlobalConfig.config();
         System.out.println("Configured port: " + config.get("server.port").asInt().orElse(-1));
         GlobalConfig.config(() -> config);
-        io.helidon.Main.main(args);
+
+        InjectRegistry registry = InjectRegistryManager.create()
+                .registry();
+        registry.get(Lookup.builder()
+                             .runLevel(Injection.RunLevel.SERVER)
+                             .build());
     }
 }
