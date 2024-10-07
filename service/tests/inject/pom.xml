@@ -45,5 +45,6 @@
         <module>qualified-providers</module>
         <module>stacking</module>
         <module>toolbox</module>
+        <module>events</module>
     </modules>
 </project>
