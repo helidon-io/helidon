@@ -479,10 +479,15 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             this.validateHeaders = validateHeaders;
         }
 
-        void checkResponseHeaders(){
-            this.isChunked = !headers.contains(HeaderNames.CONTENT_LENGTH);
-            this.forcedChunked = headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)
-                    || headers.contains(HeaderNames.TRAILER);
+        void checkResponseHeaders() {
+            if (headers.contains(HeaderNames.TRAILER)) {
+                headers.remove(HeaderNames.CONTENT_LENGTH);
+                isChunked = true;
+                forcedChunked = true;
+            } else {
+                isChunked = !headers.contains(HeaderNames.CONTENT_LENGTH);
+                forcedChunked = headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+            }
         }
 
         @Override
@@ -557,13 +562,13 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             }
 
             if (sendTrailers) {
-                    // not optimized, trailers enabled: we need to write trailers
-                    trailers.set(STREAM_RESULT_NAME, streamResult.get());
-                    BufferData buffer = BufferData.growing(128);
-                    writeHeaders(trailers, buffer, this.validateHeaders);
-                    buffer.write('\r');        // "\r\n" - empty line after headers
-                    buffer.write('\n');
-                    dataWriter.write(buffer);
+                // not optimized, trailers enabled: we need to write trailers
+                trailers.set(STREAM_RESULT_NAME, streamResult.get());
+                BufferData buffer = BufferData.growing(128);
+                writeHeaders(trailers, buffer, this.validateHeaders);
+                buffer.write('\r');        // "\r\n" - empty line after headers
+                buffer.write('\n');
+                dataWriter.write(buffer);
             }
 
             responseCloseRunnable.run();
