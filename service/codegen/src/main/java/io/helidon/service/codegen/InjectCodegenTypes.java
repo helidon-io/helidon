@@ -35,10 +35,10 @@ public class InjectCodegenTypes {
      */
     public static final TypeName INJECTION_NAMED = TypeName.create("io.helidon.service.inject.api.Injection.Named");
     /**
-     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.NamedByClass}.
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.NamedByType}.
      */
-    public static final TypeName INJECTION_NAMED_BY_CLASS =
-            TypeName.create("io.helidon.service.inject.api.Injection.NamedByClass");
+    public static final TypeName INJECTION_NAMED_BY_TYPE =
+            TypeName.create("io.helidon.service.inject.api.Injection.NamedByType");
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.Qualifier}.
      */

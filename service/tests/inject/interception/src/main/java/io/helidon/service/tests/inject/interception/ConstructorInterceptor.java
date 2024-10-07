@@ -25,7 +25,7 @@ import io.helidon.service.inject.api.Interception;
 import io.helidon.service.inject.api.InterceptionContext;
 
 @Injection.Singleton
-@Injection.NamedByClass(Construct.class)
+@Injection.NamedByType(Construct.class)
 class ConstructorInterceptor implements Interception.Interceptor {
     static final Set<TypeName> CONSTRUCTED = new HashSet<>();
 

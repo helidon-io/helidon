@@ -25,7 +25,7 @@ import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.Interception;
 import io.helidon.service.inject.api.InterceptionContext;
 
-@Injection.NamedByClass(Modify.class)
+@Injection.NamedByType(Modify.class)
 @Injection.Singleton
 @Weight(Weighted.DEFAULT_WEIGHT + 50)
 class ModifyingInterceptor implements Interception.Interceptor {

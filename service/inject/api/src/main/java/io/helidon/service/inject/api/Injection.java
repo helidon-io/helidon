@@ -185,17 +185,17 @@ public final class Injection {
     /**
      * This annotation is effectively the same as {@link Injection.Named}
      * where the {@link Injection.Named#value()} is a {@link Class}
-     * name instead of a {@link String}. The name that would be used is the fully qualified name of the class.
+     * name instead of a {@link String}. The name that would be used is the fully qualified name of the type.
      */
     @Qualifier
     @Documented
     @Retention(RetentionPolicy.CLASS)
-    public @interface NamedByClass {
+    public @interface NamedByType {
         /**
          * Type name of this interface.
          * {@link io.helidon.common.types.TypeName} is used in Helidon Inject APIs.
          */
-        TypeName TYPE = TypeName.create(NamedByClass.class);
+        TypeName TYPE = TypeName.create(NamedByType.class);
 
         /**
          * The class used will function as the name.

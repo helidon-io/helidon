@@ -170,7 +170,7 @@ class QualifierSupport {
          * @return named qualifier
          */
         @Prototype.FactoryMethod
-        static Qualifier createNamed(Injection.NamedByClass name) {
+        static Qualifier createNamed(Injection.NamedByType name) {
             Objects.requireNonNull(name);
             return Qualifier.builder()
                     .typeName(Injection.Named.TYPE)
@@ -194,7 +194,7 @@ class QualifierSupport {
         }
 
         private static TypeName maybeNamed(TypeName qualifierType) {
-            if (Injection.NamedByClass.TYPE.equals(qualifierType)) {
+            if (Injection.NamedByType.TYPE.equals(qualifierType)) {
                 return Injection.Named.TYPE;
             }
             return qualifierType;
