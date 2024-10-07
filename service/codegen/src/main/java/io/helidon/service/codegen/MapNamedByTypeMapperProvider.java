@@ -33,14 +33,14 @@ import io.helidon.common.types.TypeName;
  * A {@link java.util.ServiceLoader} provider implementation to map class named annotations to named annotations.
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 10) // lower weight than JavaxAnnotationMapper
-public class MapNamedByClassProvider implements AnnotationMapperProvider {
+public class MapNamedByTypeMapperProvider implements AnnotationMapperProvider {
     /**
      * Required default constructor.
      *
      * @deprecated only for {@link java.util.ServiceLoader}.
      */
     @Deprecated
-    public MapNamedByClassProvider() {
+    public MapNamedByTypeMapperProvider() {
     }
 
     @Override
@@ -50,12 +50,12 @@ public class MapNamedByClassProvider implements AnnotationMapperProvider {
 
     @Override
     public AnnotationMapper create(CodegenOptions options) {
-        return new NamedByClassMapper();
+        return new NamedByTypeMapper();
     }
 
-    private static class NamedByClassMapper implements AnnotationMapper {
+    private static class NamedByTypeMapper implements AnnotationMapper {
 
-        private NamedByClassMapper() {
+        private NamedByTypeMapper() {
         }
 
         @Override

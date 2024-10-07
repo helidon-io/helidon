@@ -25,7 +25,7 @@
     <Match>
         <!-- I cannot figure this one out, the method is called and invokes post-construct on instances,
          why is it identified as useless? -->
-        <Class name="io.helidon.service.inject.Activators$CreateForActivator"/>
+        <Class name="io.helidon.service.inject.Activators$PerInstanceActivator"/>
         <Method name="postConstruct"/>
         <Bug pattern="UC_USELESS_VOID_METHOD"/>
     </Match>

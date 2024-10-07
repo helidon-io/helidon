@@ -49,13 +49,13 @@ import io.helidon.service.inject.InjectRegistryManager.TypedQualifiedProviderKey
 import io.helidon.service.inject.ServiceSupplies.ServiceSupplyList;
 import io.helidon.service.inject.api.ActivationRequest;
 import io.helidon.service.inject.api.Activator;
-import io.helidon.service.inject.api.CreateForName__ServiceDescriptor;
 import io.helidon.service.inject.api.InjectRegistry;
 import io.helidon.service.inject.api.InjectRegistrySpi;
 import io.helidon.service.inject.api.InjectRegistrySpi__ServiceDescriptor;
 import io.helidon.service.inject.api.InjectServiceDescriptor;
 import io.helidon.service.inject.api.InjectServiceInfo;
 import io.helidon.service.inject.api.Injection;
+import io.helidon.service.inject.api.InstanceName__ServiceDescriptor;
 import io.helidon.service.inject.api.Interception;
 import io.helidon.service.inject.api.InterceptionMetadata;
 import io.helidon.service.inject.api.InterceptionMetadata__ServiceDescriptor;
@@ -341,17 +341,21 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
             // a very special lookup
             if (lookup.qualifiers().contains(Qualifier.CREATE_FOR_NAME)) {
                 if (lookup.qualifiers().size() != 1) {
-                    throw new ServiceRegistryException("Invalid injection lookup. @CreateForName must be the only qualifier used"
-                                                               + ".");
+                    throw new ServiceRegistryException("Invalid injection lookup. @"
+                                                               + Injection.InstanceName.class.getName()
+                                                               + " must be the only qualifier used.");
                 }
                 if (!lookup.contracts().contains(TypeNames.STRING)) {
-                    throw new ServiceRegistryException("Invalid injection lookup. @CreateForName must use String contract.");
+                    throw new ServiceRegistryException("Invalid injection lookup. @"
+                                                               + Injection.InstanceName.class.getName()
+                                                               + " must use String contract.");
                 }
                 if (lookup.contracts().size() != 1) {
-                    throw new ServiceRegistryException("Invalid injection lookup. @CreateForName must use String as the only "
-                                                               + "contract.");
+                    throw new ServiceRegistryException("Invalid injection lookup. @"
+                                                               + Injection.InstanceName.class.getName()
+                                                               + " must use String as the only contract.");
                 }
-                return List.of(CreateForName__ServiceDescriptor.INSTANCE);
+                return List.of(InstanceName__ServiceDescriptor.INSTANCE);
             }
 
             lookupCounter.increment();

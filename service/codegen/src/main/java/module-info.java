@@ -39,5 +39,5 @@ module io.helidon.service.codegen {
                     io.helidon.service.codegen.ServiceExtensionProvider;
 
     provides io.helidon.codegen.spi.AnnotationMapperProvider
-            with io.helidon.service.codegen.MapNamedByClassProvider;
+            with io.helidon.service.codegen.MapNamedByTypeMapperProvider;
 }

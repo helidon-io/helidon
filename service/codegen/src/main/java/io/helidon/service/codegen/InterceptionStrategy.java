@@ -28,7 +28,7 @@ enum InterceptionStrategy {
      */
     NONE,
     /**
-     * Meta-annotation based. Only annotations annotated with {@code Interception.Trigger} will
+     * Meta-annotation based. Only annotations annotated with {@code Interception.Intercepted} will
      * qualify.
      * This is the default strategy.
      */

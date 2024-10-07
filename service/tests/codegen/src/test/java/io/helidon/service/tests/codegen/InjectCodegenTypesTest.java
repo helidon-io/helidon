@@ -72,12 +72,12 @@ class InjectCodegenTypesTest {
         checkField(toCheck, checked, fields, "INJECTION_INJECT", Injection.Inject.class);
         checkField(toCheck, checked, fields, "INJECTION_SINGLETON", Injection.Singleton.class);
         checkField(toCheck, checked, fields, "INJECTION_NAMED", Injection.Named.class);
-        checkField(toCheck, checked, fields, "INJECTION_NAMED_BY_CLASS", Injection.NamedByType.class);
+        checkField(toCheck, checked, fields, "INJECTION_NAMED_BY_TYPE", Injection.NamedByType.class);
         checkField(toCheck, checked, fields, "INJECTION_QUALIFIER", Injection.Qualifier.class);
         checkField(toCheck, checked, fields, "INJECTION_DESCRIBE", Injection.Describe.class);
         checkField(toCheck, checked, fields, "INJECTION_SCOPE", Injection.Scope.class);
-        checkField(toCheck, checked, fields, "INJECTION_INSTANCE", Injection.PerLookup.class);
-        checkField(toCheck, checked, fields, "INJECTION_CREATE_FOR", Injection.PerInstance.class);
+        checkField(toCheck, checked, fields, "INJECTION_PER_LOOKUP", Injection.PerLookup.class);
+        checkField(toCheck, checked, fields, "INJECTION_PER_INSTANCE", Injection.PerInstance.class);
         checkField(toCheck, checked, fields, "INJECTION_RUN_LEVEL", Injection.RunLevel.class);
         checkField(toCheck, checked, fields, "INJECTION_POINT_PROVIDER", Injection.InjectionPointProvider.class);
         checkField(toCheck, checked, fields, "INJECTION_SCOPE_HANDLER", Injection.ScopeHandler.class);
@@ -85,7 +85,7 @@ class InjectCodegenTypesTest {
         checkField(toCheck, checked, fields, "INJECTION_QUALIFIED_PROVIDER", Injection.QualifiedProvider.class);
 
         // api.Interception.*
-        checkField(toCheck, checked, fields, "INTERCEPTION_TRIGGER", Interception.Intercepted.class);
+        checkField(toCheck, checked, fields, "INTERCEPTION_INTERCEPTED", Interception.Intercepted.class);
         checkField(toCheck, checked, fields, "INTERCEPTION_DELEGATE", Interception.Delegate.class);
         checkField(toCheck, checked, fields, "INTERCEPTION_EXTERNAL_DELEGATE", Interception.ExternalDelegate.class);
 
@@ -102,7 +102,7 @@ class InjectCodegenTypesTest {
         checkField(toCheck, checked, fields, "INTERCEPT_INVOKER", InterceptionInvoker.class);
 
         // generated inject service types
-        checkField(toCheck, checked, fields, "INJECT_G_CREATE_FOR_DESCRIPTOR",
+        checkField(toCheck, checked, fields, "INJECT_G_PER_INSTANCE_DESCRIPTOR",
                    GeneratedInjectService.PerInstanceDescriptor.class);
         checkField(toCheck, checked, fields, "INJECT_G_QUALIFIED_PROVIDER_DESCRIPTOR",
                    GeneratedInjectService.QualifiedProviderDescriptor.class);

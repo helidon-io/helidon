@@ -4,7 +4,7 @@ Inject Service Registry
 An extension to the core service registry, Helidon Service Inject adds a few concepts:
 
 - Injection - injection into constructor
-- Scoped service instances - `Singleton` scope, optional `RequestScope` and possible custom scopes
+- Scoped service instances - `Singleton` scope, optional `PerRequest` scope and possible custom scopes
 - Interceptors - intercept method invocation
 
 The main entry point to get service registry is
@@ -23,14 +23,14 @@ Annotations:
 | `Inject`         | Marks element as an injection point; although we prefer constructor injection, field and method injection works as well   |
 | `Qualifier`      | Marker for annotations that are qualifiers                                                                                |
 | `Named`          | A qualifier that provides a name                                                                                          |
-| `NamedByClass`   | An equivalent of `Named`, that uses the fully qualified class name of the configured class as name                        |
+| `NamedByType`    | An equivalent of `Named`, that uses the fully qualified class name of the configured class as name                        |
 | `Scope`          | Marker for annotations that are scopes                                                                                    |
-| `Instance`       | A service that does not have a scope, yet supports injection, and can be looked up in registry                            |
+| `PerLookup`      | Service instance is created per lookup (either for injection point, or via registry lookup)                               |
 | `Singleton`      | Singleton scope - a service registry will create zero or one instances of this service (instantiation is lazy)            |
-| `RequestScope`   | Request scope - a service registry will create zero or one instance of this service per request scope instance            |
+| `PerRequest`     | Request scope - a service registry will create zero or one instance of this service per request scope instance            |
 | `RunLevel`       | A "layer" in which this service should be instantiated; not executed by injection, will be used when starting application |
-| `CreateFor`      | Create a service instance for each instance of the configured contract available in registry (usually for named)          |
-| `CreateForName`  | Parameter or field that will be injected with the name this service instance is created for (see `CreateFor`)             |
+| `PerInstance`    | Create a service instance for each instance of the configured contract available in registry (usually for named)          |
+| `InstanceName`   | Parameter or field that will be injected with the name this service instance is created for (see `PerInstance`)           |
 | `Describe`       | Create a descriptor for a type that is not a service itself, but an instance would be provided at scope creation time     | 
 
 Interfaces:
@@ -81,7 +81,7 @@ Service instance based (to obtain registry metadata in addition to the instance)
 
 Interception provides capability to intercept call to a constructor or a method (even to fields when used as injection points).
 
-Interception is (by default) only enabled for elements annotated with an annotation that is a `Interception.Trigger`.
+Interception is (by default) only enabled for elements annotated with an annotation that is a `Interception.Intercepted`.
 Annotation processor configuration allows for creating interception "plumbing" for any annotation, or to disable it altogether.
 
 Interception works "around" the invocation, so it can:
@@ -96,14 +96,14 @@ Annotation type: `io.helidon.service.inject.api.Interception`
 
 Annotations:
 
-| Annotation class   | Description                                                                                                                                                                                                                                                                                                                                    |
-|--------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `Trigger`          | Marker for annotations that should trigger interception                                                                                                                                                                                                                                                                                        |
-| `Delegate`         | Marks a class as supporting interception delegation. Classes are not good candidates for delegation, as you need to create an instance that delegates to another instance, opening space for side-effects. To use a class, it must have an accessible no-arg constructor, and it should be designed not to have side-effects from construction |
-| `ExternalDelegate` | Add this to a service provider that provides a class that requires delegation, if the class is not part of your current project (i.e. you cannot annotate it with `Delegate`                                                                                                                                                                   | 
+| Annotation class    | Description                                                                                                                                                                                                                                                                                                                                    |
+|---------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `Intercepted`       | Marker for annotations that should trigger interception                                                                                                                                                                                                                                                                                        |
+| `Delegate`          | Marks a class as supporting interception delegation. Classes are not good candidates for delegation, as you need to create an instance that delegates to another instance, opening space for side-effects. To use a class, it must have an accessible no-arg constructor, and it should be designed not to have side-effects from construction |
+| `ExternalDelegate`  | Add this to a service provider that provides a class that requires delegation, if the class is not part of your current project (i.e. you cannot annotate it with `Delegate`                                                                                                                                                                   | 
 
 Interfaces:
 
-| Interface class | Description                                                                                                                                                                                                                                           |
-|-----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `Interceptor`   | A service implementing this interface, and named with the annotation type (maybe using `NamedByClass`) will be used as interceptor of methods annotated with that annotation. Interceptor must call `proceed` method to handle the interception chain |
+| Interface class | Description                                                                                                                                                                                                                                          |
+|-----------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `Interceptor`   | A service implementing this interface, and named with the annotation type (maybe using `NamedByType`) will be used as interceptor of methods annotated with that annotation. Interceptor must call `proceed` method to handle the interception chain |

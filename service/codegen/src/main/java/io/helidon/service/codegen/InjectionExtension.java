@@ -58,9 +58,9 @@ import io.helidon.service.codegen.spi.InjectCodegenObserverProvider;
 import io.helidon.service.codegen.spi.RegistryCodegenExtension;
 
 import static io.helidon.codegen.CodegenUtil.toConstantName;
-import static io.helidon.service.codegen.InjectCodegenTypes.INJECTION_PER_INSTANCE;
 import static io.helidon.service.codegen.InjectCodegenTypes.INJECTION_DESCRIBE;
 import static io.helidon.service.codegen.InjectCodegenTypes.INJECTION_INJECT;
+import static io.helidon.service.codegen.InjectCodegenTypes.INJECTION_PER_INSTANCE;
 import static io.helidon.service.codegen.InjectCodegenTypes.INJECTION_PER_LOOKUP;
 import static io.helidon.service.codegen.InjectCodegenTypes.INJECTION_SCOPE_HANDLER;
 import static io.helidon.service.codegen.InjectCodegenTypes.INJECTION_SINGLETON;
@@ -741,7 +741,9 @@ class InjectionExtension implements RegistryCodegenExtension {
         if (createFor.isPresent()) {
             if (service.providerType() != ProviderType.SERVICE) {
                 throw new CodegenException("Service " + serviceTypeName.classNameWithEnclosingNames()
-                                                   + " is annotated with @CreateFor, and as such it must not implement any "
+                                                   + " is annotated with @"
+                                                   + INJECTION_PER_INSTANCE.classNameWithEnclosingNames()
+                                                   + ", and as such it must not implement any "
                                                    + "provider interfaces. Provider type: " + service.providerType(),
                                            serviceTypeInfo.originatingElementValue());
             }
@@ -766,7 +768,8 @@ class InjectionExtension implements RegistryCodegenExtension {
             }
 
             if (createForType.packageName().isBlank()) {
-                throw new CodegenException("CreateFor type used on " + serviceTypeName.fqName() + " does not have a "
+                throw new CodegenException(INJECTION_PER_INSTANCE.classNameWithEnclosingNames()
+                                                   + " type used on " + serviceTypeName.fqName() + " does not have a "
                                                    + "package defined. Package is mandatory. If the type is a generated"
                                                    + " prototype, please use the Blueprint type instead.");
             }

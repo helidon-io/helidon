@@ -21,18 +21,18 @@ import java.util.Optional;
 
 import io.helidon.service.inject.api.InjectRegistrySpi;
 import io.helidon.service.inject.api.Injection;
-import io.helidon.service.inject.api.RequestScopeControl;
+import io.helidon.service.inject.api.PerRequestScopeControl;
 import io.helidon.service.inject.api.Scope;
 import io.helidon.service.registry.ServiceInfo;
 
 @Injection.Singleton
-class RequestScopeControlImpl implements RequestScopeControl, Injection.ScopeHandler<Injection.PerRequest> {
+class PerRequestScopeControlImpl implements PerRequestScopeControl, Injection.ScopeHandler<Injection.PerRequest> {
     private static final ThreadLocal<Scope> REQUEST_SCOPES = new ThreadLocal<>();
 
     private final InjectRegistrySpi registry;
 
     @Injection.Inject
-    RequestScopeControlImpl(InjectRegistrySpi registry) {
+    PerRequestScopeControlImpl(InjectRegistrySpi registry) {
         this.registry = registry;
     }
 

@@ -26,7 +26,7 @@ import io.helidon.service.registry.ServiceInfo;
  * Do not forget to call {@link io.helidon.service.inject.api.Scope#close()} when the scope should finish.
  */
 @Service.Contract
-public interface RequestScopeControl {
+public interface PerRequestScopeControl {
     /**
      * Start the request scope.
      *

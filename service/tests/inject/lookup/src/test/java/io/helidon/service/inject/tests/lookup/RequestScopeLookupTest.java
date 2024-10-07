@@ -25,7 +25,7 @@ import io.helidon.service.inject.InjectRegistryManager;
 import io.helidon.service.inject.api.InjectRegistry;
 import io.helidon.service.inject.api.InjectServiceInfo;
 import io.helidon.service.inject.api.Lookup;
-import io.helidon.service.inject.api.RequestScopeControl;
+import io.helidon.service.inject.api.PerRequestScopeControl;
 import io.helidon.service.inject.api.Scope;
 
 import org.junit.jupiter.api.AfterAll;
@@ -69,7 +69,7 @@ class RequestScopeLookupTest {
 
     @BeforeEach
     void startRequestScope() {
-        requestScope = registry.get(RequestScopeControl.class)
+        requestScope = registry.get(PerRequestScopeControl.class)
                 .startRequestScope("unit-test", Map.of());
     }
 

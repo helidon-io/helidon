@@ -158,7 +158,7 @@ final class Interception {
     private boolean hasInterceptTrigger(TypeInfo typeInfo, Annotated element) {
         for (Annotation annotation : element.annotations()) {
             if (interceptionStrategy.ordinal() >= InterceptionStrategy.EXPLICIT.ordinal()) {
-                if (typeInfo.hasMetaAnnotation(annotation.typeName(), InjectCodegenTypes.INTERCEPTION_TRIGGER)) {
+                if (typeInfo.hasMetaAnnotation(annotation.typeName(), InjectCodegenTypes.INTERCEPTION_INTERCEPTED)) {
                     return true;
                 }
             }

@@ -29,16 +29,16 @@ import io.helidon.common.types.TypeNames;
  * as it may be used in generated binding.
  */
 @SuppressWarnings({"checkstyle:TypeName"}) // matches pattern of generated descriptors
-public class CreateForName__ServiceDescriptor implements InjectServiceDescriptor<String> {
+public class InstanceName__ServiceDescriptor implements InjectServiceDescriptor<String> {
     /**
      * Singleton instance to be referenced when building bindings.
      */
-    public static final CreateForName__ServiceDescriptor INSTANCE = new CreateForName__ServiceDescriptor();
+    public static final InstanceName__ServiceDescriptor INSTANCE = new InstanceName__ServiceDescriptor();
 
-    private static final TypeName INFO_TYPE = TypeName.create(CreateForName__ServiceDescriptor.class);
+    private static final TypeName INFO_TYPE = TypeName.create(InstanceName__ServiceDescriptor.class);
     private static final Set<TypeName> CONTRACTS = Set.of(TypeNames.STRING);
 
-    private CreateForName__ServiceDescriptor() {
+    private InstanceName__ServiceDescriptor() {
     }
 
     @Override

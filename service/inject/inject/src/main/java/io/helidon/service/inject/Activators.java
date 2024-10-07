@@ -88,7 +88,7 @@ final class Activators {
                 case NONE -> new MissingDescribedActivator(provider);
                 case SERVICE -> {
                     if (descriptor instanceof PerInstanceDescriptor dbd) {
-                        yield () -> new ActivatorsPerLookup.CreateForActivator<>(registry, provider, dbd);
+                        yield () -> new ActivatorsPerLookup.PerInstanceActivator<>(registry, provider, dbd);
                     }
                     yield () -> new ActivatorsPerLookup.SingleServiceActivator<>(provider);
                 }
@@ -103,7 +103,7 @@ final class Activators {
                 case NONE -> new MissingDescribedActivator(provider);
                 case SERVICE -> {
                     if (descriptor instanceof PerInstanceDescriptor dbd) {
-                        yield () -> new Activators.CreateForActivator<>(registry, provider, dbd);
+                        yield () -> new PerInstanceActivator<>(registry, provider, dbd);
                     }
                     yield () -> new Activators.SingleServiceActivator<>(provider);
                 }
@@ -639,14 +639,14 @@ final class Activators {
     /**
      * Service annotated {@link io.helidon.service.inject.api.Injection.PerInstance}.
      */
-    static class CreateForActivator<T> extends BaseActivator<T> {
+    static class PerInstanceActivator<T> extends BaseActivator<T> {
         private final InjectServiceRegistryImpl registry;
         private final TypeName createFor;
         private final Lookup createForLookup;
         private List<QualifiedServiceInstance<T>> serviceInstances;
         private List<QualifiedInstance<T>> targetInstances;
 
-        CreateForActivator(InjectServiceRegistryImpl registry, ServiceProvider<T> provider, PerInstanceDescriptor dbd) {
+        PerInstanceActivator(InjectServiceRegistryImpl registry, ServiceProvider<T> provider, PerInstanceDescriptor dbd) {
             super(provider);
 
             this.registry = registry;
@@ -681,7 +681,7 @@ final class Activators {
                 }
                 // injection point for the service name
                 if (TypeNames.STRING.equals(ip.contract())) {
-                    // @CreateForName String name
+                    // @InstanceName String name
                     if (ip.qualifiers()
                             .stream()
                             .anyMatch(it -> Injection.InstanceName.TYPE.equals(it.typeName()))) {

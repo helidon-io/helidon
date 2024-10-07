@@ -23,7 +23,7 @@ import io.helidon.service.inject.InjectConfig;
 import io.helidon.service.inject.InjectRegistryManager;
 import io.helidon.service.inject.api.InjectRegistry;
 import io.helidon.service.inject.api.Injection;
-import io.helidon.service.inject.api.RequestScopeControl;
+import io.helidon.service.inject.api.PerRequestScopeControl;
 import io.helidon.service.inject.api.Scope;
 import io.helidon.service.inject.api.ScopeNotActiveException;
 
@@ -67,7 +67,7 @@ class TestScopes {
         Supplier<SingletonContract> serviceProvider = registry.supply(SingletonContract.class);
         SingletonContract service = serviceProvider.get();
 
-        RequestScopeControl requestonControl = registry.get(RequestScopeControl.class);
+        PerRequestScopeControl requestonControl = registry.get(PerRequestScopeControl.class);
 
         int id;
         try (Scope scope = requestonControl.startRequestScope("test-1", Map.of())) {

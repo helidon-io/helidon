@@ -31,8 +31,9 @@ import io.helidon.service.inject.ServiceSupplies.ServiceInstanceSupplyOptional;
 import io.helidon.service.inject.ServiceSupplies.ServiceSupply;
 import io.helidon.service.inject.ServiceSupplies.ServiceSupplyList;
 import io.helidon.service.inject.ServiceSupplies.ServiceSupplyOptional;
-import io.helidon.service.inject.api.CreateForName__ServiceDescriptor;
+import io.helidon.service.inject.api.InstanceName__ServiceDescriptor;
 import io.helidon.service.inject.api.InjectServiceDescriptor;
+import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.Lookup;
 import io.helidon.service.registry.Dependency;
 import io.helidon.service.registry.ServiceInfo;
@@ -61,8 +62,8 @@ class ServicePlanBinder implements InjectionPlanBinder.Binder {
 
     @Override
     public InjectionPlanBinder.Binder bind(Dependency dependency, ServiceInfo descriptor) {
-        if (descriptor == CreateForName__ServiceDescriptor.INSTANCE) {
-            injectionPlan.put(dependency, new IpPlan<>(new CreateForNameFailingSupplier(dependency), descriptor));
+        if (descriptor == InstanceName__ServiceDescriptor.INSTANCE) {
+            injectionPlan.put(dependency, new IpPlan<>(new InstanceNameFailingSupplier(dependency), descriptor));
         } else {
             ServiceSupply<?> supply = new ServiceSupply<>(Lookup.create(dependency),
                                                           List.of(registry.serviceManager(descriptor)));
@@ -190,17 +191,19 @@ class ServicePlanBinder implements InjectionPlanBinder.Binder {
         return result;
     }
 
-    private static final class CreateForNameFailingSupplier implements Supplier<Object> {
+    private static final class InstanceNameFailingSupplier implements Supplier<Object> {
         private final Dependency dependency;
 
-        private CreateForNameFailingSupplier(Dependency dependency) {
+        private InstanceNameFailingSupplier(Dependency dependency) {
             this.dependency = dependency;
         }
 
         @Override
         public Object get() {
-            throw new ServiceRegistryException("@CreateForName should have been resolved to correct name during lookup for "
-                                                       + dependency);
+            throw new ServiceRegistryException(
+                    "@" + Injection.InstanceName.class.getName()
+                            + "should have been resolved to correct name during lookup for "
+                            + dependency);
         }
     }
 }
