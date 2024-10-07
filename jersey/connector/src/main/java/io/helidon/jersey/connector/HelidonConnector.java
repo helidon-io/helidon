@@ -56,6 +56,7 @@ import static io.helidon.jersey.connector.HelidonProperties.PROTOCOL_ID;
 import static io.helidon.jersey.connector.HelidonProperties.SHARE_CONNECTION_CACHE;
 import static io.helidon.jersey.connector.HelidonProperties.TLS;
 import static org.glassfish.jersey.client.ClientProperties.CONNECT_TIMEOUT;
+import static org.glassfish.jersey.client.ClientProperties.EXPECT_100_CONTINUE;
 import static org.glassfish.jersey.client.ClientProperties.FOLLOW_REDIRECTS;
 import static org.glassfish.jersey.client.ClientProperties.READ_TIMEOUT;
 import static org.glassfish.jersey.client.ClientProperties.getValue;
@@ -76,10 +77,11 @@ class HelidonConnector implements Connector {
     private final WebClient webClient;
     private final Proxy proxy;
 
+    @SuppressWarnings("unchecked")
     HelidonConnector(Client client, Configuration config) {
         // create underlying HTTP client
         Map<String, Object> properties = config.getProperties();
-        var builder = WebClientConfig.builder();
+        WebClientConfig.Builder builder = WebClientConfig.builder();
 
         // use config for client
         Config helidonConfig = helidonConfig(config).orElse(Config.empty());
@@ -98,14 +100,17 @@ class HelidonConnector implements Connector {
         if (properties.containsKey(FOLLOW_REDIRECTS)) {
             builder.followRedirects(getValue(properties, FOLLOW_REDIRECTS, true));
         }
+        if (properties.containsKey(EXPECT_100_CONTINUE)) {
+            builder.sendExpectContinue(getValue(properties, EXPECT_100_CONTINUE, true));
+        }
 
-        //Whether WebClient TLS has been already set via config
+        // whether WebClient TLS has been already set via config
         boolean helidonConfigTlsSet = helidonConfig.map(hc -> hc.get("tls").exists()).orElse(false);
         boolean isJerseyClient = client instanceof JerseyClient;
-        //Whether Jersey client has non-default SslContext set. If so, we should honor these settings
+        // whether Jersey client has non-default SslContext set. If so, we should honor these settings
         boolean jerseyHasDefaultSsl = isJerseyClient && ((JerseyClient) client).isDefaultSslContext();
 
-        if (!helidonConfigTlsSet || !isJerseyClient || !jerseyHasDefaultSsl) {// prefer Tls over SSLContext
+        if (!helidonConfigTlsSet || !isJerseyClient || !jerseyHasDefaultSsl) {  // prefer Tls over SSLContext
             if (properties.containsKey(TLS)) {
                 builder.tls(getValue(properties, TLS, Tls.class));
             } else if (client.getSslContext() != null) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ class ConfigTest {
     }
 
     @Test
-    void testConfigDefaut() {
+    void testConfigDefault() {
         Client client = ClientBuilder.newClient();
         HelidonConnector connector = new HelidonConnector(client, client.getConfiguration());
         assertThat(connector.proxy(), is(Proxy.create()));
@@ -90,5 +90,21 @@ class ConfigTest {
         assertThat(connector.proxy().type(), is(Proxy.ProxyType.HTTP));
         assertThat(connector.proxy().username(), is(Optional.of("user")));
         assertThat(connector.proxy().password(), notNullValue());
+    }
+
+    @Test
+    void testConfig100ContinueDefault() {
+        Client client = ClientBuilder.newBuilder().build();
+        HelidonConnector connector = new HelidonConnector(client, client.getConfiguration());
+        assertThat(connector.client().prototype().sendExpectContinue(), is(true));
+    }
+
+    @Test
+    void testConfig100ContinueOverride() {
+        Client client = ClientBuilder.newBuilder()
+                .property(ClientProperties.EXPECT_100_CONTINUE, "false")
+                .build();
+        HelidonConnector connector = new HelidonConnector(client, client.getConfiguration());
+        assertThat(connector.client().prototype().sendExpectContinue(), is(false));
     }
 }
