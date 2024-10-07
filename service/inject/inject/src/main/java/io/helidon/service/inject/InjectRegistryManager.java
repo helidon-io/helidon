@@ -29,6 +29,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.service.inject.api.GeneratedInjectService;
@@ -138,7 +139,7 @@ public class InjectRegistryManager implements ServiceRegistryManager {
             // implementation type to its manager
             Map<TypeName, InjectServiceInfo> servicesByType = new HashMap<>();
             // implemented contracts to their manager(s)
-            Map<TypeName, Set<InjectServiceInfo>> servicesByContract = new HashMap<>();
+            Map<ResolvedType, Set<InjectServiceInfo>> servicesByContract = new HashMap<>();
             // map of qualifier type to a service info that can provide instances for it
             Map<TypeName, Set<InjectServiceInfo>> qualifiedProvidersByQualifier = new HashMap<>();
             // map of a qualifier type and contract to a service info
@@ -303,7 +304,7 @@ public class InjectRegistryManager implements ServiceRegistryManager {
     private void bind(List<ServiceDescriptor<Binding>> applications,
                       Map<TypeName, InjectServiceInfo> scopeHandlers,
                       Map<TypeName, InjectServiceInfo> servicesByType,
-                      Map<TypeName, Set<InjectServiceInfo>> servicesByContract,
+                      Map<ResolvedType, Set<InjectServiceInfo>> servicesByContract,
                       Map<TypeName, Set<InjectServiceInfo>> qualifiedProvidersByQualifier,
                       Map<TypedQualifiedProviderKey, Set<InjectServiceInfo>> typedQualifiedProviders,
                       Described described) {
@@ -329,13 +330,15 @@ public class InjectRegistryManager implements ServiceRegistryManager {
         // by service type
         servicesByType.putIfAbsent(descriptor.serviceType(), descriptor);
         // service type is a contract as well (to make lookup easier)
-        servicesByContract.computeIfAbsent(descriptor.serviceType(), it -> new TreeSet<>(SERVICE_INFO_COMPARATOR))
+        servicesByContract.computeIfAbsent(ResolvedType.create(descriptor.serviceType()),
+                                           it -> new TreeSet<>(SERVICE_INFO_COMPARATOR))
                 .add(descriptor);
 
         Set<TypeName> contracts = descriptor.contracts();
         // by contract
         for (TypeName contract : contracts) {
-            servicesByContract.computeIfAbsent(contract, it -> new TreeSet<>(SERVICE_INFO_COMPARATOR))
+            servicesByContract.computeIfAbsent(ResolvedType.create(contract),
+                                               it -> new TreeSet<>(SERVICE_INFO_COMPARATOR))
                     .add(descriptor);
         }
 
@@ -370,7 +373,8 @@ public class InjectRegistryManager implements ServiceRegistryManager {
                             .filter(Predicate.not(Injection.QualifiedProvider.TYPE::equals))
                             .collect(Collectors.toSet());
                     for (TypeName realContract : realContracts) {
-                        TypedQualifiedProviderKey key = new TypedQualifiedProviderKey(qualifierType, realContract);
+                        TypedQualifiedProviderKey key = new TypedQualifiedProviderKey(qualifierType,
+                                                                                      ResolvedType.create(realContract));
                         typedQualifiedProviders.computeIfAbsent(key, it -> new TreeSet<>(SERVICE_INFO_COMPARATOR))
                                 .add(descriptor);
                     }
@@ -383,7 +387,7 @@ public class InjectRegistryManager implements ServiceRegistryManager {
         }
     }
 
-    record TypedQualifiedProviderKey(TypeName qualifier, TypeName contract) {
+    record TypedQualifiedProviderKey(TypeName qualifier, ResolvedType contract) {
     }
 
     /**

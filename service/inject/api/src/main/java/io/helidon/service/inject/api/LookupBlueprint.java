@@ -23,6 +23,7 @@ import java.util.Set;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.GenericType;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -63,7 +64,7 @@ interface LookupBlueprint {
      * @return the service contracts implemented
      */
     @Option.Singular
-    Set<TypeName> contracts();
+    Set<ResolvedType> contracts();
 
     /**
      * A single {@link io.helidon.common.GenericType} can be defined if the lookup should also honor
@@ -168,7 +169,7 @@ interface LookupBlueprint {
         boolean matches = matches(serviceInfo.serviceType(), this.serviceType());
         if (matches && this.serviceType().isEmpty()) {
             matches = serviceInfo.contracts().containsAll(this.contracts())
-                    || this.contracts().contains(serviceInfo.serviceType());
+                    || this.contracts().contains(ResolvedType.create(serviceInfo.serviceType()));
         }
         return matches
                 && matchesProviderTypes(providerTypes(), serviceInfo.providerType())
@@ -208,13 +209,6 @@ interface LookupBlueprint {
         return Qualifiers.matchesQualifiers(qualifiers, qualifiers());
     }
 
-    private boolean matchesProviderTypes(Set<ProviderType> providerTypes, ProviderType providerType) {
-        if (providerTypes.isEmpty() || (providerTypes.size() == 1 && providerTypes.contains(ProviderType.NONE))) {
-            return true;
-        }
-        return providerTypes.contains(providerType);
-    }
-
     private static boolean matchesWeight(InjectServiceInfo src,
                                          LookupBlueprint criteria) {
         if (criteria.weight().isEmpty()) {
@@ -231,6 +225,13 @@ interface LookupBlueprint {
             return true;
         }
         return Objects.equals(src, criteria.get());
+    }
+
+    private boolean matchesProviderTypes(Set<ProviderType> providerTypes, ProviderType providerType) {
+        if (providerTypes.isEmpty() || (providerTypes.size() == 1 && providerTypes.contains(ProviderType.NONE))) {
+            return true;
+        }
+        return providerTypes.contains(providerType);
     }
 
     private boolean matchesTypes(Set<TypeName> scopes, Set<TypeName> criteria) {

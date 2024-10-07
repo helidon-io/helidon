@@ -16,6 +16,7 @@
 
 package io.helidon.common.types;
 
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -26,6 +27,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.GenericType;
 
 final class TypeNameSupport {
     private static final TypeName PRIMITIVE_BOOLEAN = TypeName.create(boolean.class);
@@ -171,29 +173,47 @@ final class TypeNameSupport {
      * Update builder from the provided type.
      *
      * @param builder builder to update
-     * @param type type to get information (package name, class name, primitive, array)
+     * @param type    type to get information (package name, class name, primitive, array)
      */
     @Prototype.BuilderMethod
     static void type(TypeName.BuilderBase<?, ?> builder, Type type) {
         Objects.requireNonNull(type);
         if (type instanceof Class<?> classType) {
-            Class<?> componentType = classType.isArray() ? classType.getComponentType() : classType;
-            builder.packageName(componentType.getPackageName());
-            builder.className(componentType.getSimpleName());
-            builder.primitive(componentType.isPrimitive());
-            builder.array(classType.isArray());
-
-            Class<?> enclosingClass = classType.getEnclosingClass();
-            LinkedList<String> enclosingTypes = new LinkedList<>();
-            while (enclosingClass != null) {
-                enclosingTypes.addFirst(enclosingClass.getSimpleName());
-                enclosingClass = enclosingClass.getEnclosingClass();
-            }
-            builder.enclosingNames(enclosingTypes);
-        } else {
-            // todo
-            throw new IllegalArgumentException("Currently we only support class as a parameter, but got: " + type);
+            updateFromClass(builder, classType);
+            return;
         }
+        Type reflectGenericType = type;
+
+        if (type instanceof GenericType<?> gt) {
+            if (gt.isClass()) {
+                // simple case - just a class
+                updateFromClass(builder, gt.rawType());
+                return;
+            } else {
+                // complex case - has generic type arguments
+                reflectGenericType = gt.type();
+            }
+        }
+
+        // translate the generic type into type name
+        if (reflectGenericType instanceof ParameterizedType pt) {
+            Type raw = pt.getRawType();
+            if (raw instanceof Class<?> theClass) {
+                updateFromClass(builder, theClass);
+            } else {
+                throw new IllegalArgumentException("Raw type of a ParameterizedType is not a class: " + raw.getClass().getName()
+                                                           + ", for " + pt.getTypeName());
+            }
+
+            Type[] actualTypeArguments = pt.getActualTypeArguments();
+            for (Type actualTypeArgument : actualTypeArguments) {
+                builder.addTypeArgument(TypeName.create(actualTypeArgument));
+            }
+            return;
+        }
+
+        throw new IllegalArgumentException("We can only create a type from a class, GenericType, or a ParameterizedType,"
+                                                   + " but got: " + reflectGenericType.getClass().getName());
     }
 
     /**
@@ -307,6 +327,22 @@ final class TypeNameSupport {
                 .className(Objects.requireNonNull(genericAliasTypeName))
                 .wildcard(genericAliasTypeName.startsWith("?"))
                 .build();
+    }
+
+    private static void updateFromClass(TypeName.BuilderBase<?, ?> builder, Class<?> classType) {
+        Class<?> componentType = classType.isArray() ? classType.getComponentType() : classType;
+        builder.packageName(componentType.getPackageName());
+        builder.className(componentType.getSimpleName());
+        builder.primitive(componentType.isPrimitive());
+        builder.array(classType.isArray());
+
+        Class<?> enclosingClass = classType.getEnclosingClass();
+        LinkedList<String> enclosingTypes = new LinkedList<>();
+        while (enclosingClass != null) {
+            enclosingTypes.addFirst(enclosingClass.getSimpleName());
+            enclosingClass = enclosingClass.getEnclosingClass();
+        }
+        builder.enclosingNames(enclosingTypes);
     }
 
     private static String calcName(TypeName instance, String typeSeparator) {

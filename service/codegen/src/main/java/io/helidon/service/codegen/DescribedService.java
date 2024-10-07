@@ -516,7 +516,7 @@ class DescribedService {
 
         // add this type if eligible
         if (eligibleContracts.contains(withGenerics)) {
-            contractSet.add(withoutGenerics);
+            contractSet.add(withGenerics);
         }
 
         // super type

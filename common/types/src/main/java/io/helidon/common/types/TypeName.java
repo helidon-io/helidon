@@ -215,7 +215,8 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         /**
          * Update builder from the provided type.
          *
-         * @param type type to get information (package name, class name, primitive, array)
+         * @param type type to get information (package name, class name, primitive, array), can only be a class or a
+         *             {@link io.helidon.common.GenericType}
          * @return updated builder instance
          */
         public BUILDER type(Type type) {

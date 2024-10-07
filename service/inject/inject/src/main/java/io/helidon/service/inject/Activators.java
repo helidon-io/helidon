@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.LazyValue;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.service.inject.api.ActivationRequest;
@@ -85,7 +86,7 @@ final class Activators {
 
         if (descriptor.scope().equals(Injection.PerLookup.TYPE)) {
             return switch (descriptor.providerType()) {
-                case NONE -> new MissingDescribedActivator(provider);
+                case NONE -> new MissingDescribedActivator<>(provider);
                 case SERVICE -> {
                     if (descriptor instanceof PerInstanceDescriptor dbd) {
                         yield () -> new ActivatorsPerLookup.PerInstanceActivator<>(registry, provider, dbd);
@@ -100,7 +101,7 @@ final class Activators {
             };
         } else {
             return switch (descriptor.providerType()) {
-                case NONE -> new MissingDescribedActivator(provider);
+                case NONE -> new MissingDescribedActivator<>(provider);
                 case SERVICE -> {
                     if (descriptor instanceof PerInstanceDescriptor dbd) {
                         yield () -> new PerInstanceActivator<>(registry, provider, dbd);
@@ -281,7 +282,7 @@ final class Activators {
             if (lookup.providerTypes().contains(providerType)) {
                 return true;
             }
-            if (lookup.contracts().size() == 1 && lookup.contracts().contains(descriptor().serviceType())) {
+            if (lookup.contracts().size() == 1 && lookup.contracts().contains(ResolvedType.create(descriptor().serviceType()))) {
                 return true;
             }
             if (lookup.serviceType().isPresent() && lookup.serviceType().get().equals(descriptor().serviceType())) {
@@ -614,7 +615,6 @@ final class Activators {
             targetInstances = instanceSupplier.services();
         }
 
-        @SuppressWarnings("unchecked")
         @Override
         protected Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
             if (requestedProvider(lookup, ProviderType.SERVICES_PROVIDER)) {
@@ -641,7 +641,7 @@ final class Activators {
      */
     static class PerInstanceActivator<T> extends BaseActivator<T> {
         private final InjectServiceRegistryImpl registry;
-        private final TypeName createFor;
+        private final ResolvedType createFor;
         private final Lookup createForLookup;
         private List<QualifiedServiceInstance<T>> serviceInstances;
         private List<QualifiedInstance<T>> targetInstances;
@@ -650,7 +650,7 @@ final class Activators {
             super(provider);
 
             this.registry = registry;
-            this.createFor = dbd.createFor();
+            this.createFor = ResolvedType.create(dbd.createFor());
             this.createForLookup = Lookup.builder()
                     .addContract(createFor)
                     .build();
@@ -767,7 +767,7 @@ final class Activators {
             return Optional.of(List.copyOf(response));
         }
 
-        private List<ServiceInfo> driversFromPlan(Map<Dependency, IpPlan<?>> ipSupplierMap, TypeName createFor) {
+        private List<ServiceInfo> driversFromPlan(Map<Dependency, IpPlan<?>> ipSupplierMap, ResolvedType createFor) {
             // I need the list of descriptors from the injection plan
             for (Map.Entry<Dependency, IpPlan<?>> entry : ipSupplierMap.entrySet()) {
                 Dependency dependency = entry.getKey();

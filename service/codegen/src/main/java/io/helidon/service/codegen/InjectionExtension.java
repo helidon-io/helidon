@@ -1298,7 +1298,7 @@ class InjectionExtension implements RegistryCodegenExtension {
                                        addTypeConstant(classModel, param.translatedType(), response);
                                        return response;
                                    });
-            result.computeIfAbsent(param.contract().fqName(),
+            result.computeIfAbsent(param.contract().resolvedName(),
                                    type -> {
                                        var response = new GenericTypeDeclaration("TYPE_" + counter.getAndIncrement(),
                                                                                  param.declaredType());
@@ -1457,10 +1457,10 @@ class InjectionExtension implements RegistryCodegenExtension {
                                 .addContent(param.constantName())
                                 .addContentLine("\")")
                                 .addContent(".contract(")
-                                .addContent(genericTypes.get(param.contract().fqName()).constantName())
+                                .addContent(genericTypes.get(param.contract().resolvedName()).constantName())
                                 .addContentLine(")")
                                 .addContent(".contractType(G")
-                                .addContent(genericTypes.get(param.contract().fqName()).constantName())
+                                .addContent(genericTypes.get(param.contract().resolvedName()).constantName())
                                 .addContentLine(")");
                         if (param.access() != AccessModifier.PACKAGE_PRIVATE) {
                             it.addContent(".access(")
@@ -1709,7 +1709,7 @@ class InjectionExtension implements RegistryCodegenExtension {
                 .update(it -> {
                     Iterator<TypeName> iterator = contracts.iterator();
                     while (iterator.hasNext()) {
-                        it.addContentCreate(iterator.next().genericTypeName());
+                        it.addContentCreate(iterator.next());
                         if (iterator.hasNext()) {
                             it.addContent(", ");
                         }

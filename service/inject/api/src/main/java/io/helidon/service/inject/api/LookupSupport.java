@@ -22,6 +22,7 @@ import java.util.Set;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.GenericType;
 import io.helidon.common.types.ElementKind;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 import io.helidon.service.registry.Dependency;
 
@@ -93,7 +94,7 @@ final class LookupSupport {
         @Prototype.FactoryMethod
         static Lookup create(TypeName contract) {
             return Lookup.builder()
-                    .addContract(contract)
+                    .addContract(ResolvedType.create(contract))
                     .build();
         }
 
@@ -106,7 +107,7 @@ final class LookupSupport {
          */
         @Prototype.BuilderMethod
         static void addContract(Lookup.BuilderBase<?, ?> builder, Class<?> contract) {
-            builder.addContract(TypeName.create(contract));
+            builder.addContract(ResolvedType.create(contract));
         }
 
         /**
@@ -131,7 +132,7 @@ final class LookupSupport {
             if (injectionPoint.isPresent()) {
                 Ip value = injectionPoint.get();
                 builder.qualifiers(value.qualifiers())
-                        .addContract(value.contract());
+                        .addContract(ResolvedType.create(value.contract()));
 
                 if (!GenericType.OBJECT.equals(value.contractType())) {
                     builder.contractType(value.contractType());
@@ -144,7 +145,8 @@ final class LookupSupport {
                         shouldClear = false;
 
                     }
-                    if (!(builder.contracts().contains(existing.contract()) && builder.contracts().size() == 1)) {
+                    if (!(builder.contracts().contains(ResolvedType.create(existing.contract()))
+                                  && builder.contracts().size() == 1)) {
                         shouldClear = false;
                     }
 
@@ -165,7 +167,7 @@ final class LookupSupport {
             if (optionValue.isEmpty()) {
                 return;
             }
-            builder.addContract(TypeName.create(optionValue.get().rawType()));
+            builder.addContract(ResolvedType.create(optionValue.get()));
         }
     }
 }

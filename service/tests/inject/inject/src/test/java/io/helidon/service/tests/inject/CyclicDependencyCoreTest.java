@@ -26,10 +26,9 @@ import io.helidon.service.inject.api.InjectServiceDescriptor;
 import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.InterceptionMetadata;
 import io.helidon.service.inject.api.Ip;
-import io.helidon.service.inject.api.ProviderType;
 import io.helidon.service.registry.Dependency;
 import io.helidon.service.registry.DependencyContext;
-import io.helidon.service.registry.GeneratedService;
+import io.helidon.service.registry.ServiceDescriptor;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryException;
@@ -74,7 +73,7 @@ public class CyclicDependencyCoreTest {
         }
     }
 
-    private static class Descriptor1 implements GeneratedService.Descriptor<Service1> {
+    private static class Descriptor1 implements ServiceDescriptor<Service1> {
         private static final TypeName TYPE = TypeName.create(Descriptor1.class);
 
         private static final Dependency DEP = Dependency.builder()

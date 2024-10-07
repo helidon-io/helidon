@@ -18,7 +18,6 @@ package io.helidon.service.inject;
 
 import java.lang.System.Logger.Level;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -39,8 +38,8 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.config.Config;
 import io.helidon.common.config.GlobalConfig;
 import io.helidon.common.configurable.LruCache;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypeNames;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
@@ -85,10 +84,15 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
     private final Lock stateReadLock = stateLock.readLock();
     private final Lock stateWriteLock = stateLock.writeLock();
 
+    // map of scope annotation to service info
     private final Map<TypeName, InjectServiceInfo> scopeHandlerServices;
+    // map of service implementation class to service info
     private final Map<TypeName, InjectServiceInfo> servicesByType;
-    private final Map<TypeName, Set<InjectServiceInfo>> servicesByContract;
+    // map of provided contracts to service info(s)
+    private final Map<ResolvedType, Set<InjectServiceInfo>> servicesByContract;
+    // map of qualifier annotations to service info(s)
     private final Map<TypeName, Set<InjectServiceInfo>> qualifiedProvidersByQualifier;
+    // map of qualifier annotations and resolved type combination to service info(s)
     private final Map<TypedQualifiedProviderKey, Set<InjectServiceInfo>> typedQualifiedProviders;
 
     private final RegistryCounter lookupCounter;
@@ -116,7 +120,7 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
                               Map<TypeName, InjectServiceInfo> scopeHandlers,
                               Map<ServiceInfo, Object> explicitInstances,
                               Map<TypeName, InjectServiceInfo> servicesByType,
-                              Map<TypeName, Set<InjectServiceInfo>> servicesByContract,
+                              Map<ResolvedType, Set<InjectServiceInfo>> servicesByContract,
                               Map<TypeName, Set<InjectServiceInfo>> qualifiedProvidersByQualifier,
                               Map<TypedQualifiedProviderKey, Set<InjectServiceInfo>> typedQualifiedProviders) {
 
@@ -167,11 +171,8 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
         /*
         For each known service descriptor, create an appropriate service manager
          */
-        Set<TypeName> usedScopes = new HashSet<>();
-
         descriptorToDescribed.forEach((descriptor, described) -> {
             InjectServiceDescriptor<?> injectDescriptor = described.injectDescriptor();
-            usedScopes.add(injectDescriptor.scope());
 
             Object instance = explicitInstances.get(descriptor);
             ServiceProvider<Object> provider = new ServiceProvider<>(
@@ -345,7 +346,7 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
                                                                + Injection.InstanceName.class.getName()
                                                                + " must be the only qualifier used.");
                 }
-                if (!lookup.contracts().contains(TypeNames.STRING)) {
+                if (!lookup.contracts().contains(ResolvedType.STRING)) {
                     throw new ServiceRegistryException("Invalid injection lookup. @"
                                                                + Injection.InstanceName.class.getName()
                                                                + " must use String contract.");
@@ -387,7 +388,7 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
 
             if (1 == lookup.contracts().size()) {
                 // a single contract is requested, we are ready for this ("indexed by contract")
-                TypeName theOnlyContractRequested = lookup.contracts().iterator().next();
+                ResolvedType theOnlyContractRequested = lookup.contracts().iterator().next();
                 Set<InjectServiceInfo> subsetOfMatches = servicesByContract.get(theOnlyContractRequested);
                 if (subsetOfMatches != null) {
                     // the subset is ordered, cannot use parallel, also no need to re-order
@@ -411,7 +412,7 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
             if (result.isEmpty() && !lookup.qualifiers().isEmpty()) {
                 // check qualified providers
                 if (lookup.contracts().size() == 1) {
-                    TypeName contract = lookup.contracts().iterator().next();
+                    ResolvedType contract = lookup.contracts().iterator().next();
                     for (Qualifier qualifier : lookup.qualifiers()) {
                         TypeName qualifierType = qualifier.typeName();
                         Set<InjectServiceInfo> found = typedQualifiedProviders.get(new TypedQualifiedProviderKey(qualifierType,
@@ -443,7 +444,7 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
                 .ifPresent(ScopedRegistry::deactivate);
     }
 
-    List<ServiceInfo> servicesByContract(TypeName contract) {
+    List<ServiceInfo> servicesByContract(ResolvedType contract) {
         Set<InjectServiceInfo> serviceInfos = servicesByContract.get(contract);
         if (serviceInfos == null) {
             return List.of();

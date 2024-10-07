@@ -27,6 +27,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.service.inject.api.ActivationResult;
@@ -254,7 +255,7 @@ final class ActivatorsPerLookup {
      */
     static class PerInstanceActivator<T> extends Activators.BaseActivator<T> {
         private final InjectServiceRegistryImpl registry;
-        private final TypeName createFor;
+        private final ResolvedType createFor;
 
         private List<QualifiedOnDemandInstance<T>> serviceInstances;
 
@@ -264,7 +265,7 @@ final class ActivatorsPerLookup {
             super(provider);
 
             this.registry = registry;
-            this.createFor = dbd.createFor();
+            this.createFor = ResolvedType.create(dbd.createFor());
         }
 
         @Override
