@@ -23,6 +23,7 @@
 :rootdir: {docdir}/..
 
 include::{rootdir}/includes/se.adoc[]
+:built-in-health-check-config-prefix: health.checks
 
 == Contents
 
@@ -216,16 +217,14 @@ common health check statuses:
 |available disk space
 |`diskSpace`
 | link:{health-javadoc-base-url}/io/helidon/health/checks/DiskSpaceHealthCheck.html[`DiskSpaceHealthCheck`]
-|`helidon.healthCheck.diskSpace.thresholdPercent` +
-+
-`helidon.healthCheck.diskSpace.path`
+|`{built-in-health-check-config-prefix}.diskSpace.thresholdPercent` +
+`{built-in-health-check-config-prefix}.diskSpace.path`
 | `99.999` +
-+
 `/`
 |available heap memory
 | `heapMemory`
 | link:{health-javadoc-base-url}/io/helidon/health/checks/HeapMemoryHealthCheck.html[`HeapMemoryHealthCheck`]
-|`helidon.healthCheck.heapMemory.thresholdPercent`
+|`{built-in-health-check-config-prefix}.heapMemory.thresholdPercent`
 |`98`
 |=======
 
