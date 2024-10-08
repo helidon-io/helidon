@@ -86,14 +86,20 @@ public class DiskSpaceHealthCheck implements HealthCheck {
 
     /**
      * Full configuration key for path, when configured through MicroProfile config.
+     *
+     * @deprecated The value will change to {@value CURRENT_CONFIG_KEY_PATH} in a future release
      */
+    @Deprecated(since = "3.2.11")
     public static final String CONFIG_KEY_PATH = HealthChecks.DEPRECATED_CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX
             + "." + CONFIG_KEY_DISKSPACE_PREFIX
             + "." + CONFIG_KEY_PATH_SUFFIX;
 
     /**
      * Full configuration key for threshold percent, when configured through Microprofile config.
+     *
+     * @deprecated The value will change to {@value CURRENT_CONFIG_KEY_THRESHOLD_PERCENT} in future release
      */
+    @Deprecated(since = "3.2.11")
     public static final String CONFIG_KEY_THRESHOLD_PERCENT = HealthChecks.DEPRECATED_CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX
             + "." + CONFIG_KEY_DISKSPACE_PREFIX
             + "." + CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX;
