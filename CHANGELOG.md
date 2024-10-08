@@ -11,6 +11,68 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [4.1.2]
+
+This release contains important bugfixes and enhancements and is recommended for all users of Helidon 4. 
+
+A minimum of Java 21 is required to use Helidon 4.
+
+### CHANGES
+
+- gRPC: Adds support to iterate over URIs when connecting to a gRPC service [9300](https://github.com/helidon-io/helidon/pull/9300)
+- LRA: LRA testing feature [9320](https://github.com/helidon-io/helidon/pull/9320)
+- Logging: JSON Formatter for JUL  [9301](https://github.com/helidon-io/helidon/pull/9301)
+- Security: Policy validator configurable per endpoint in config (#9248) [9308](https://github.com/helidon-io/helidon/pull/9308)
+- WebServer: Allows the webserver's write buffer size to be set to 0  [9314](https://github.com/helidon-io/helidon/pull/9314)
+- WebServer: Fix DataReader.findNewLine with lone EOL character [9327](https://github.com/helidon-io/helidon/pull/9327)
+- WebServer: Grouping Executors related methods into a single class [9298](https://github.com/helidon-io/helidon/pull/9298)
+- WebServer: New implementation for SSE in webserver [9297](https://github.com/helidon-io/helidon/pull/9297)
+- WebServer: Smart async writer in webserver [9292](https://github.com/helidon-io/helidon/pull/9292)
+- Dependencies: Upgrade Jersey to 3.1.8  [9303](https://github.com/helidon-io/helidon/pull/9303)
+- Dependencies: Upgrades protobuf to 3.25.5 [9299](https://github.com/helidon-io/helidon/pull/9299)
+- Dependencies: Uptake build-tools 4.0.12 (fixes [9305](https://github.com/helidon-io/helidon/issues/9305)) [9323](https://github.com/helidon-io/helidon/pull/9323)
+- Docs: Add emphasis on including an OTel exporter and configuring  [9312](https://github.com/helidon-io/helidon/pull/9312)
+- Docs: Document work-around for maven archetype issue (#9316) [9324](https://github.com/helidon-io/helidon/pull/9324)
+- Tests: Fix DbClient PostgreSQL tests [9293](https://github.com/helidon-io/helidon/pull/9293)
+
+## [4.1.1]
+
+This release contains important bugfixes and enhancements and is recommended for all users of Helidon 4. It is compatible with Helidon 4.0.X.
+
+A minimum of Java 21 is required to use Helidon 4.
+
+### Notable Changes
+
+- Implement gRPC MP Client [9026](https://github.com/helidon-io/helidon/pull/9026)
+
+### CHANGES
+
+- CORS: Remove headers that do not affect CORS decision-making from request adapter logging output [9178](https://github.com/helidon-io/helidon/pull/9178)
+- Codegen: Add support for additional modifiers [9201](https://github.com/helidon-io/helidon/pull/9201)
+- Codegen: Fix generation of annotations, including lists, nested annotations etc. [9182](https://github.com/helidon-io/helidon/pull/9182)
+- Codegen: Handling enum and type values in a consistent way in code generation. [9167](https://github.com/helidon-io/helidon/pull/9167)
+- Codegen: Support for validation of Duration and URI default values. [9166](https://github.com/helidon-io/helidon/pull/9166)
+- Codegen: Udpates to types and annotation processing [9168](https://github.com/helidon-io/helidon/pull/9168)
+- Config: Replace manual casts on pattern with instanceof in HoconConfigParser [9209](https://github.com/helidon-io/helidon/pull/9209)
+- LRA: Replace deprecated method Scheduling.fixedRateBuilder() [9098](https://github.com/helidon-io/helidon/pull/9098)
+- Security: Required authorization propagated from the class level now [9137](https://github.com/helidon-io/helidon/pull/9137)
+- Tracing: Allow users to direct Helidon to use an existing global `OpenTelemetry` instance rather than create its own [9205](https://github.com/helidon-io/helidon/pull/9205)
+- WebServer: Allows the creation of empty SSE events [9207](https://github.com/helidon-io/helidon/pull/9207)
+- WebServer: Increases default value of write-buffer-size to 4K [9190](https://github.com/helidon-io/helidon/pull/9190)
+- WebServer: UncheckedIOException no longer a special case [9206](https://github.com/helidon-io/helidon/pull/9206)
+- gRPC: Downgrades version of protobuf for backwards compatibility [9162](https://github.com/helidon-io/helidon/pull/9162)
+- gRPC: Implements support for client gRPC channel injections [9155](https://github.com/helidon-io/helidon/pull/9155)
+- gRPC: Implements the gRPC MP Client API [9026](https://github.com/helidon-io/helidon/pull/9026)
+- gRPC: Renames package-private Grpc type to GrpcRouteHandler [9173](https://github.com/helidon-io/helidon/pull/9173)
+- Build: Fix nightly script [9221](https://github.com/helidon-io/helidon/pull/9221)
+- Build: Update release workflows [9210](https://github.com/helidon-io/helidon/pull/9210)
+- Dependencies: Upgrade microprofile-cdi-tck to 4.0.13 [9141](https://github.com/helidon-io/helidon/pull/9141)
+- Dependencies: Upgrade oci sdk to 3.46.1 [9179](https://github.com/helidon-io/helidon/pull/9179)
+- Dependencies: Upgrade slf4j to 2.0.16 [9143](https://github.com/helidon-io/helidon/pull/9143)
+- Deprecation: deprecate old injection integration for oci [9184](https://github.com/helidon-io/helidon/pull/9184)
+- Docs: Clarify description of config profiles [9188](https://github.com/helidon-io/helidon/pull/9188)
+- Docs: Documents gRPC MP Client API [9150](https://github.com/helidon-io/helidon/pull/9150)
+- Tests: Builder tests that confidential options are not printed in toString() [9154](https://github.com/helidon-io/helidon/pull/9154)
 
 ## [4.1.0]
 
@@ -1397,6 +1459,8 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/oracle/helidon/pull/4737)
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
+[4.1.2]: https://github.com/oracle/helidon/compare/4.1.1...4.1.2
+[4.1.1]: https://github.com/oracle/helidon/compare/4.1.0...4.1.1
 [4.1.0]: https://github.com/oracle/helidon/compare/4.0.11...4.1.0
 [4.0.11]: https://github.com/oracle/helidon/compare/4.0.10...4.0.11
 [4.0.10]: https://github.com/oracle/helidon/compare/4.0.9...4.0.10
