@@ -30,6 +30,7 @@ import io.helidon.health.HealthCheckException;
 import io.helidon.health.common.BuiltInHealthCheck;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.spi.CDI;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
@@ -131,8 +132,8 @@ public class DiskSpaceHealthCheck implements HealthCheck {
     }
 
     @Inject
-    DiskSpaceHealthCheck(Config rootConfig) {
-        Config diskSpaceConfig = DeprecatedConfig.get(rootConfig,
+    DiskSpaceHealthCheck() {
+        Config diskSpaceConfig = DeprecatedConfig.get(config(),
                                                          HealthChecks.CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX,
                                                          HealthChecks.DEPRECATED_CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX)
                 .get(CONFIG_KEY_DISKSPACE_PREFIX);
@@ -313,5 +314,9 @@ public class DiskSpaceHealthCheck implements HealthCheck {
 
             return this;
         }
+    }
+
+    private static Config config() {
+        return CDI.current().select(Config.class).get();
     }
 }

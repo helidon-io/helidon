@@ -24,6 +24,7 @@ import io.helidon.config.DeprecatedConfig;
 import io.helidon.health.common.BuiltInHealthCheck;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.spi.CDI;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
@@ -84,9 +85,8 @@ public class HeapMemoryHealthCheck implements HealthCheck {
     // this will be ignored if not within CDI
     @Inject
     HeapMemoryHealthCheck(
-            Runtime runtime,
-            Config rootConfig) {
-        this(runtime, DeprecatedConfig.get(rootConfig,
+            Runtime runtime) {
+        this(runtime, DeprecatedConfig.get(config(),
                                            HealthChecks.CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX,
                                            HealthChecks.DEPRECATED_CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX)
                 .get(CONFIG_KEY_HEAP_PREFIX)
@@ -98,6 +98,10 @@ public class HeapMemoryHealthCheck implements HealthCheck {
     HeapMemoryHealthCheck(Runtime runtime, double thresholdPercent) {
         this.rt = runtime;
         this.thresholdPercent = thresholdPercent;
+    }
+
+    private static Config config() {
+        return CDI.current().select(Config.class).get();
     }
 
     private HeapMemoryHealthCheck(Builder builder) {
