@@ -92,14 +92,30 @@ public interface LimitAlgorithm {
     }
 
     /**
-     * Try to acquire a token.
+     * Try to acquire a token, waiting for available permits for the configured amount of time, if queuing is enabled.
+     * <p>
      * If acquired, the caller must call one of the {@link io.helidon.common.concurrency.limits.Limit.Token}
      * operations to release the token.
      * If the response is empty, the limit does not have an available token.
      *
      * @return acquired token, or empty if there is no available token
      */
-    Optional<Token> tryAcquire();
+    default Optional<Token> tryAcquire() {
+        return tryAcquire(true);
+    }
+
+    /**
+     * Try to acquire a token, waiting for available permits for the configured amount of time, if
+     * {@code wait} is enabled, returning immediately otherwise.
+     * <p>
+     * If acquired, the caller must call one of the {@link io.helidon.common.concurrency.limits.Limit.Token}
+     * operations to release the token.
+     * If the response is empty, the limit does not have an available token.
+     *
+     * @param wait whether to wait in the queue (if one is configured/available in the limit), or to return immediately
+     * @return acquired token, or empty if there is no available token
+     */
+    Optional<Token> tryAcquire(boolean wait);
 
     /**
      * When a token is retrieved from {@link #tryAcquire()}, one of its methods must be called when the task

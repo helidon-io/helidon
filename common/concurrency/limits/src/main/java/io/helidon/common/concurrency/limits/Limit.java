@@ -24,4 +24,10 @@ import io.helidon.service.registry.Service;
  */
 @Service.Contract
 public interface Limit extends LimitAlgorithm, NamedService {
+    /**
+     * Create a copy of this limit with the same configuration.
+     *
+     * @return a copy of this limit
+     */
+    Limit copy();
 }

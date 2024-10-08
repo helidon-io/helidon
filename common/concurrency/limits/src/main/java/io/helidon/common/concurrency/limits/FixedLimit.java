@@ -52,6 +52,7 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
 
     private final FixedLimitConfig config;
     private final LimiterHandler handler;
+    private int initialPermits;
 
     private FixedLimit(FixedLimitConfig config) {
         this.config = config;
@@ -59,6 +60,7 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
             this.handler = new NoOpSemaphoreHandler();
         } else {
             Semaphore semaphore = config.semaphore().orElseGet(() -> new Semaphore(config.permits(), config.fair()));
+            this.initialPermits = semaphore.availablePermits();
             if (config.queueLength() == 0) {
                 this.handler = new RealSemaphoreHandler(semaphore);
             } else {
@@ -145,8 +147,8 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
     }
 
     @Override
-    public Optional<Token> tryAcquire() {
-        return handler.tryAcquire();
+    public Optional<Token> tryAcquire(boolean wait) {
+        return handler.tryAcquire(wait);
     }
 
     @SuppressWarnings("removal")
@@ -168,6 +170,19 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
     @Override
     public String type() {
         return FixedLimit.TYPE;
+    }
+
+    @Override
+    public Limit copy() {
+        if (config.semaphore().isPresent()) {
+            Semaphore semaphore = config.semaphore().get();
+
+            return FixedLimitConfig.builder()
+                    .from(config)
+                    .semaphore(new Semaphore(initialPermits, semaphore.isFair()))
+                    .build();
+        }
+        return config.build();
     }
 
     @SuppressWarnings("removal")
@@ -204,7 +219,7 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
         }
 
         @Override
-        public Optional<Token> tryAcquire() {
+        public Optional<Token> tryAcquire(boolean wait) {
             return Optional.of(TOKEN);
         }
 
@@ -254,7 +269,7 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
         }
 
         @Override
-        public Optional<Token> tryAcquire() {
+        public Optional<Token> tryAcquire(boolean wait) {
             if (!semaphore.tryAcquire()) {
                 return Optional.empty();
             }
@@ -279,16 +294,23 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
         }
 
         @Override
-        public Optional<Token> tryAcquire() {
+        public Optional<Token> tryAcquire(boolean wait) {
             if (semaphore.getQueueLength() >= this.queueLength) {
                 // this is an estimate - we do not promise to be precise here
                 return Optional.empty();
             }
 
             try {
-                if (!semaphore.tryAcquire(timeoutMillis, TimeUnit.MILLISECONDS)) {
-                    return Optional.empty();
+                if (wait) {
+                    if (!semaphore.tryAcquire(timeoutMillis, TimeUnit.MILLISECONDS)) {
+                        return Optional.empty();
+                    }
+                } else {
+                    if (!semaphore.tryAcquire()) {
+                        return Optional.empty();
+                    }
                 }
+
             } catch (InterruptedException e) {
                 return Optional.empty();
             }

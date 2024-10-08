@@ -108,7 +108,7 @@ public class AimdLimit implements Limit, SemaphoreLimit, RuntimeType.Api<AimdLim
     }
 
     @Override
-    public Optional<Token> tryAcquire() {
+    public Optional<Token> tryAcquire(boolean wait) {
         return aimdLimitImpl.tryAcquire();
     }
 
@@ -131,5 +131,10 @@ public class AimdLimit implements Limit, SemaphoreLimit, RuntimeType.Api<AimdLim
     @Override
     public AimdLimitConfig prototype() {
         return config;
+    }
+
+    @Override
+    public Limit copy() {
+        return config.build();
     }
 }
