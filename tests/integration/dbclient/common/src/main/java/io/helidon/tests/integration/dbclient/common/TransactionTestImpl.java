@@ -16,14 +16,21 @@
 package io.helidon.tests.integration.dbclient.common;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
+import io.helidon.dbclient.DbColumn;
+import io.helidon.dbclient.DbResultDml;
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbTransaction;
 import io.helidon.tests.integration.dbclient.common.model.Pokemon;
 import io.helidon.tests.integration.dbclient.common.model.Pokemons;
 import io.helidon.tests.integration.dbclient.common.model.Types;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 
 /**
  * Actual implementation of {@link TransactionTests}.
@@ -373,6 +380,126 @@ public final class TransactionTestImpl extends AbstractTestImpl implements Trans
                 .insert(stmt, pokemon.id(), pokemon.name());
         tx.commit();
         verifyInsertPokemon(result, pokemon);
+    }
+
+    /**
+     * Verify {@code namedInsert(String)} API method with named parameters and returned generated keys.
+     */
+    @Override
+    public void testInsertNamedArgsReturnedKeys() throws Exception {
+        DbTransaction tx = db.transaction();
+        try (DbResultDml result = tx.createNamedInsert("insert-match")
+                .addParam("red", Pokemons.RAICHU.id())
+                .addParam("blue", Pokemons.MACHOP.id())
+                .returnGeneratedKeys()
+                .insert()) {
+            List<DbRow> keys = result.generatedKeys().toList();
+            long records = result.result();
+            assertThat(records, equalTo(1L));
+            assertThat(keys, hasSize(1));
+            DbRow keysRow = keys.getFirst();
+            AtomicInteger columnsCount = new AtomicInteger(0);
+            keysRow.forEach(dbColumn -> columnsCount.incrementAndGet());
+            DbColumn keyByName;
+            // Result is vendor dependent
+            switch(db.dbType()) {
+                case "mongoDb":
+                    assertThat(columnsCount.get(), equalTo(1));
+                    keyByName = keysRow.column("_id");
+                    break;
+                case "jdbc:h2":
+                    assertThat(columnsCount.get(), equalTo(1));
+                    keyByName = keysRow.column("id");
+                    break;
+                case "jdbc:mysql":
+                    assertThat(columnsCount.get(), equalTo(1));
+                    keyByName = keysRow.column("GENERATED_KEY");
+                    break;
+                case "jdbc:postgresql":
+                    assertThat(columnsCount.get(), equalTo(3));
+                    keyByName = keysRow.column("id");
+                    break;
+                case "jdbc:oracle":
+                    assertThat(columnsCount.get(), equalTo(1));
+                    keyByName = keysRow.column("ROWID");
+                    break;
+                default:
+                    throw new IllegalStateException("Unknown database type: " + db.dbType());
+            }
+            DbColumn keyByIndex = keysRow.column(1);
+            assertThat(keyByName, equalTo(keyByIndex));
+            tx.commit();
+        } catch (Exception ex) {
+            tx.rollback();
+        }
+    }
+
+    /**
+     * Verify {@code namedInsert(String)} API method with named parameters and returned insert columns.
+     */
+    @Override
+    public void testInsertNamedArgsReturnedColumns() throws Exception {
+        DbTransaction tx = db.transaction();
+        try (DbResultDml result = tx.createNamedInsert("insert-match")
+                .addParam("red", Pokemons.SNORLAX.id())
+                .addParam("blue", Pokemons.CHARIZARD.id())
+                .returnColumns(List.of("id", "red"))
+                .insert()) {
+            List<DbRow> keys = result.generatedKeys().toList();
+            long records = result.result();
+            assertThat(records, equalTo(1L));
+            assertThat(keys, hasSize(1));
+            DbRow keysRow = keys.getFirst();
+            AtomicInteger columnsCount = new AtomicInteger(0);
+            keysRow.forEach(dbColumn -> columnsCount.incrementAndGet());
+            DbColumn idByName;
+            DbColumn idByIndex;
+            DbColumn redByName;
+            DbColumn redByIndex;
+            // Result is vendor dependent
+            switch(db.dbType()) {
+                case "mongoDb":
+                    break;
+                case "jdbc:h2":
+                    assertThat(columnsCount.get(), equalTo(2));
+                    idByName = keysRow.column("id");
+                    idByIndex = keysRow.column(1);
+                    assertThat(idByName, equalTo(idByIndex));
+                    redByName = keysRow.column("red");
+                    redByIndex = keysRow.column(2);
+                    assertThat(redByName, equalTo(redByIndex));
+                    break;
+                case "jdbc:mysql":
+                    assertThat(columnsCount.get(), equalTo(1));
+                    idByName = keysRow.column("GENERATED_KEY");
+                    idByIndex = keysRow.column(1);
+                    assertThat(idByName, equalTo(idByIndex));
+                    break;
+                case "jdbc:postgresql":
+                    assertThat(columnsCount.get(), equalTo(2));
+                    idByName = keysRow.column("id");
+                    idByIndex = keysRow.column(1);
+                    assertThat(idByName, equalTo(idByIndex));
+                    redByName = keysRow.column("red");
+                    redByIndex = keysRow.column(2);
+                    assertThat(redByName, equalTo(redByIndex));
+                    break;
+                case "jdbc:oracle":
+                    assertThat(columnsCount.get(), equalTo(2));
+                    idByName = keysRow.column("ID");
+                    idByIndex = keysRow.column(1);
+                    assertThat(idByName, equalTo(idByIndex));
+                    redByName = keysRow.column("RED");
+                    redByIndex = keysRow.column(2);
+                    assertThat(redByName, equalTo(redByIndex));
+                    break;
+                default:
+                    throw new IllegalStateException("Unknown database type: " + db.dbType());
+            }
+            tx.commit();
+        } catch (Exception ex) {
+            tx.rollback();
+        }
     }
 
     @Override
