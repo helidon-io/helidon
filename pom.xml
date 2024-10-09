@@ -465,6 +465,13 @@
                     <groupId>org.jboss.jandex</groupId>
                     <artifactId>jandex-maven-plugin</artifactId>
                     <version>${version.plugin.jandex}</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.jboss</groupId>
+                            <artifactId>jandex</artifactId>
+                            <version>3.2.2</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
