@@ -9,6 +9,20 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [3.2.10]
+
+This is a bugfix release of Helidon and is recommended for all users of Helidon 3.  Helidon 3 requires Java 17 or newer.
+
+### CHANGES
+
+- Config: Replace manual casts on pattern with instanceof in helidon/config modules [9237](https://github.com/helidon-io/helidon/pull/9237) [9217](https://github.com/helidon-io/helidon/pull/9217)
+- WebServer: Adds ability to close idle HTTP connections after a certain time [9194](https://github.com/helidon-io/helidon/pull/9194)
+- WebServer: Uses socket config instead of server config to configure idle connection handler [9253](https://github.com/helidon-io/helidon/pull/9253)
+- Dependencies: Upgrade ASM to 9.7.0 and byte-buddy to 1.14.18 for Java 23 support [9238](https://github.com/helidon-io/helidon/pull/9238)
+- Dependencies: Microstream version bump backport [9289](https://github.com/helidon-io/helidon/pull/9289)
+- Dependencies: Upgrades protobuf to 3.25.5 [9278](https://github.com/helidon-io/helidon/pull/9278)
+- Docs: Correct config prefix in doc for excluding health checks [9321](https://github.com/helidon-io/helidon/pull/9321)
+
 ## [3.2.9]
 
 This is a bugfix release of Helidon and is recommended for all users of Helidon 3.  Helidon 3 requires Java 17 or newer.

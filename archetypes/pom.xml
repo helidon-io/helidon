@@ -23,14 +23,14 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>3.2.10-SNAPSHOT</version>
+        <version>3.2.11-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.archetypes</groupId>
     <artifactId>helidon-archetypes-project</artifactId>
     <name>Helidon Archetypes</name>
     <packaging>pom</packaging>
     <properties>
-        <version.lib.helidon-archetype-engine>3.0.8</version.lib.helidon-archetype-engine>
+        <version.lib.helidon-archetype-engine>3.0.9</version.lib.helidon-archetype-engine>
     </properties>
 
     <modules>
