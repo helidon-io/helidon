@@ -1,0 +1,34 @@
+
+## Run the application in Kubernetes
+
+If you don’t have access to a Kubernetes cluster, you can [install one](https://helidon.io/docs/latest/#/about/kubernetes) on your desktop.
+
+### Verify connectivity to cluster
+
+```
+kubectl cluster-info                        # Verify which cluster
+kubectl get pods                            # Verify connectivity to cluster
+```
+{{#k8s-readme-sections}}
+    {{#first}}
+
+    {{/first}}
+    {{.}}
+{{/k8s-readme-sections}}
+
+### Deploy the application to Kubernetes
+
+```
+kubectl create -f app.yaml                              # Deploy application
+kubectl get pods                                        # Wait for quickstart pod to be RUNNING
+kubectl get service  {{artifactId}}                     # Get service info
+kubectl port-forward service/{{artifactId}} 8081:8080   # Forward service port to 8081
+```
+
+You can now exercise the application as you did before but use the port number 8081.
+
+After you’re done, cleanup.
+
+```
+kubectl delete -f app.yaml
+```

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+    <exec src="/nodes/se/features/common/output.xml"/>
+    <exec src="/nodes/se/features/media/output.xml"/>
+    <exec src="/nodes/se/features/security/legacy/legacy.xml"/>
+    <exec src="/nodes/se/features/webclient/output.xml"/>
+    <source src="/nodes/se/features/cors/output.xml"/>
+    <exec src="/nodes/se/features/fault-tolerance/output.xml"/>
+    <exec src="/nodes/se/features/metrics/output.xml"/>
+    <exec src="/nodes/se/features/health/output.xml"/>
+    <exec src="/nodes/se/features/tracing/legacy/legacy.xml" if="${tracing}"/>
+    <exec src="/nodes/se/features/tracing/output.xml" if="${tracing}"/>
+    <exec src="/nodes/se/features/output.xml"/>
+    <exec src="/nodes/se/features/docker/output.xml"/>
+    <exec src="/features/kubernetes/output.xml"/>
+    <exec src="/features/verrazzano/output.xml"/>
+    <exec src="/nodes/se/features/jpms/output.xml"/>
+    <exec src="/nodes/se/features/database/output.xml" if="${db}"/>
+    <exec src="/nodes/se/features/security/output.xml" if="${security}"/>
+    <exec src="/nodes/se/features/native-image/output.xml"/>
+    <exec src="/features/maven/output.xml"/>
+    <exec src="/features/customize-project/output.xml"/>
+    <output>
+        <model>
+            <list key="Main-routing-builder">
+                <value><![CDATA[.get("/simple-greet", (req, res) -> res.send("Hello World!"))]]></value>
+            </list>
+            <list key="Abstract-tests">
+                <value><![CDATA[
+    @Test
+    void testSimpleGreet() {
+        ClientResponseTyped<String> response = client.get("/simple-greet").request(String.class);
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity(), is("Hello World!"));
+    }
+]]>
+                </value>
+            </list>
+            <list key="readme-exercise-the-application">
+                <value order="999"><![CDATA[
+Basic:
+```
+curl -X GET http://localhost:8080/simple-greet
+Hello World!
+```
+]]>
+                </value>
+            </list>
+            <list key="module-requires">
+                <value>io.helidon.logging.common</value>
+            </list>
+            <list key="dependencies">
+                <map order="50" if="!(${extra} contains 'webclient') || ${security}">
+                    <value key="groupId">io.helidon.webclient</value>
+                    <value key="artifactId">helidon-webclient</value>
+                    <value key="scope" if="!${security}">test</value>
+                </map>
+            </list>
+        </model>
+    </output>
+</archetype-script>

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+    <methods>
+        <method name="pre-processed-models">
+            <output>
+                <model>
+                    <value key="docker-run-readme-section"
+                           template="mustache"
+                           file="files/README.md.docker.mustache"/>
+                </model>
+            </output>
+        </method>
+        <method name="common">
+            <output>
+                <transformation id="mustache">
+                    <replace regex="\.mustache$" replacement=""/>
+                </transformation>
+                <transformation id="packaged">
+                    <replace regex="__pkg__" replacement="${package/\./\/}"/>
+                </transformation>
+                <transformation id="json-mustache">
+                    <replace regex="\.json.mustache$" replacement=""/>
+                </transformation>
+                <transformation id="jsonp-mustache">
+                    <replace regex="\.jsonp.mustache$" replacement=""/>
+                </transformation>
+                <transformation id="multipart-mustache">
+                    <replace regex="\.multipart.mustache$" replacement=""/>
+                </transformation>
+                <transformation id="native-image">
+                    <replace regex="groupid" replacement="${groupId/\./\/}"/>
+                    <replace regex="artifactid" replacement="${artifactId/\./\/}"/>
+                </transformation>
+                <templates engine="mustache" transformations="mustache,packaged">
+                    <directory>/nodes/mp/features/common/files</directory>
+                    <includes>
+                        <include>.helidon.mustache</include>
+                        <include>README.md.mustache</include>
+                        <include>.gitignore.mustache</include>
+                    </includes>
+                </templates>
+                <model>
+                    <value key="dot-helidon-schema-version">1.1.0</value>
+                    <list key="dependencies">
+                        <map>
+                            <value key="groupId">io.helidon.logging</value>
+                            <value key="artifactId">helidon-logging-jul</value>
+                            <value key="scope">runtime</value>
+                        </map>
+                    </list>
+                </model>
+            </output>
+        </method>
+    </methods>
+    <variables>
+        <text path="module-dir">server</text>
+        <boolean path="multi-module">true</boolean>
+    </variables>
+    <presets>
+        <boolean path="db">false</boolean>
+        <boolean path="docker">true</boolean>
+        <boolean path="docker.native-image">false</boolean>
+        <boolean path="docker.jlink-image">false</boolean>
+        <boolean path="k8s">true</boolean>
+        <boolean path="v8o">false</boolean>
+        <boolean path="jpms">false</boolean>
+    </presets>
+    <call method="pre-processed-models"/>
+    <call method="common"/>
+    <exec src="/features/includes/multi-module-output.xml"/>
+    <exec src="/nodes/mp/steps/packaging.xml"/>
+    <exec src="/nodes/mp/features/docker/output.xml"/>
+    <exec src="/features/kubernetes/output.xml"/>
+    <exec src="/features/verrazzano/output.xml"/>
+    <exec src="/nodes/mp/features/jpms/output.xml"/>
+    <exec src="/nodes/mp/steps/customize-project.xml"/>
+    <exec src="/features/maven/output.xml"/>
+    <exec src="/features/customize-project/output.xml"/>
+</archetype-script>
