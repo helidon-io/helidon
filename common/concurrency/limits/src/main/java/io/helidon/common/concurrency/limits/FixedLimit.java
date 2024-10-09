@@ -52,12 +52,13 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
 
     private final FixedLimitConfig config;
     private final LimiterHandler handler;
-    private int initialPermits;
+    private final int initialPermits;
 
     private FixedLimit(FixedLimitConfig config) {
         this.config = config;
         if (config.permits() == 0 && config.semaphore().isEmpty()) {
             this.handler = new NoOpSemaphoreHandler();
+            this.initialPermits = 0;
         } else {
             Semaphore semaphore = config.semaphore().orElseGet(() -> new Semaphore(config.permits(), config.fair()));
             this.initialPermits = semaphore.availablePermits();

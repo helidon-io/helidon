@@ -57,13 +57,13 @@ class AimdLimitImpl {
             throw new ConfigException("Backoff ratio must be within [0.5, 1.0)");
         }
         if (maxLimit < minLimit) {
-            throw new ConfigException("Max limit must be higher than min limit");
+            throw new ConfigException("Max limit must be higher than min limit, or equal to it");
         }
         if (initialLimit > maxLimit) {
-            throw new ConfigException("Initial limit must be lower than max limit");
+            throw new ConfigException("Initial limit must be lower than max limit, or equal to it");
         }
         if (initialLimit < minLimit) {
-            throw new ConfigException("Initial limit must be higher than minimum limit");
+            throw new ConfigException("Initial limit must be higher than minimum limit, or equal to it");
         }
     }
 
