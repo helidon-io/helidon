@@ -20,11 +20,12 @@ import java.util.Formatter;
 import java.util.Locale;
 
 import io.helidon.config.Config;
+import io.helidon.config.DeprecatedConfig;
 import io.helidon.health.common.BuiltInHealthCheck;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.spi.CDI;
 import jakarta.inject.Inject;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.Liveness;
@@ -36,7 +37,7 @@ import org.eclipse.microprofile.health.Liveness;
  * By default, this health check has a threshold of {@value DEFAULT_THRESHOLD} ({@value DEFAULT_THRESHOLD}%).
  * If heap usage exceeds this level, then the server
  * is considered to be unhealthy. This default can be modified using the
- * {@value CONFIG_KEY_THRESHOLD_PERCENT} property. The threshold should be set as a percent, such as
+ * {@value CURRENT_CONFIG_KEY_THRESHOLD_PERCENT} property. The threshold should be set as a percent, such as
  * 50 for 50% or 99 for 99%.
  * </p>
  * <p>
@@ -62,10 +63,21 @@ public class HeapMemoryHealthCheck implements HealthCheck {
 
     /**
      * Config property key for heap memory threshold.
+     *
+     * @deprecated The value will change to {@value #CURRENT_CONFIG_KEY_THRESHOLD_PERCENT} in a future release
      */
-    public static final String CONFIG_KEY_THRESHOLD_PERCENT = HealthChecks.CONFIG_KEY_HEALTH_PREFIX
+    @Deprecated(since = "3.2.11")
+    public static final String CONFIG_KEY_THRESHOLD_PERCENT = HealthChecks.DEPRECATED_CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX
             + "." + CONFIG_KEY_HEAP_PREFIX
             + "." + CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX;
+
+    // The following constant is used in the Javadoc to nudge users toward using the current config key prefix "health.checks"
+    // rather than the deprecated "helidon.health". The public constant above has always used the now-deprecated prefix so that
+    // value is unchanged to preserve backward compatibility.
+    private static final String CURRENT_CONFIG_KEY_THRESHOLD_PERCENT = HealthChecks.CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX
+            + "." + CONFIG_KEY_HEAP_PREFIX
+            + "." + CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX;
+
 
     private final Runtime rt;
     private final double thresholdPercent;
@@ -73,10 +85,23 @@ public class HeapMemoryHealthCheck implements HealthCheck {
     // this will be ignored if not within CDI
     @Inject
     HeapMemoryHealthCheck(
-            Runtime runtime,
-            @ConfigProperty(name = CONFIG_KEY_THRESHOLD_PERCENT, defaultValue = "98") double threshold) {
-        this.thresholdPercent = threshold;
+            Runtime runtime) {
+        this(runtime, DeprecatedConfig.get(config(),
+                                           HealthChecks.CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX,
+                                           HealthChecks.DEPRECATED_CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX)
+                .get(CONFIG_KEY_HEAP_PREFIX)
+                .get(CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX)
+                .asDouble()
+                .orElse(98d));
+    }
+
+    HeapMemoryHealthCheck(Runtime runtime, double thresholdPercent) {
         this.rt = runtime;
+        this.thresholdPercent = thresholdPercent;
+    }
+
+    private static Config config() {
+        return CDI.current().select(Config.class).get();
     }
 
     private HeapMemoryHealthCheck(Builder builder) {
