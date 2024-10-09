@@ -82,6 +82,14 @@
             <plugin>
                 <groupId>org.jboss.jandex</groupId>
                 <artifactId>jandex-maven-plugin</artifactId>
+                <!-- Temporal fix meanwhile there are no newer versions of the plugin -->
+                <dependencies>
+                    <dependency>
+                        <groupId>org.jboss</groupId>
+                        <artifactId>jandex</artifactId>
+                        <version>3.1.8</version>
+                    </dependency>
+                </dependencies>
                 <executions>
                     <execution>
                         <id>make-index</id>
