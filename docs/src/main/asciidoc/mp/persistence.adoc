@@ -435,7 +435,7 @@ a service name of `XE`, a `user` of `scott`, and a `password` of
 [source,properties]
 ----
 javax.sql.DataSource.main.connectionFactoryClassName = oracle.jdbc.pool.OracleDataSource# <1>
-javax.sql.DataSource.main.url = jdbc:oracle:thin://@localhost:1521/XE# <2>
+javax.sql.DataSource.main.URL = jdbc:oracle:thin:@//localhost:1521/XE# <2>
 javax.sql.DataSource.main.user = scott
 javax.sql.DataSource.main.password = tiger
 ----
