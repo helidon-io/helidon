@@ -44,6 +44,10 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>io.helidon.testing</groupId>
+            <artifactId>helidon-testing-junit5</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.glassfish.jersey.ext.cdi</groupId>
             <artifactId>jersey-weld2-se</artifactId>
             <optional>true</optional>

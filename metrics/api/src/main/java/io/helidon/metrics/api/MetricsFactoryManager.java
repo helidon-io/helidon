@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,13 @@ package io.helidon.metrics.api;
 
 import java.lang.System.Logger.Level;
 import java.util.Collection;
-import java.util.Objects;
 import java.util.ServiceLoader;
-import java.util.concurrent.Callable;
-import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.config.Config;
 import io.helidon.common.config.GlobalConfig;
+import io.helidon.common.context.ContextSingleton;
 import io.helidon.metrics.spi.MetersProvider;
 import io.helidon.metrics.spi.MetricsFactoryProvider;
 import io.helidon.metrics.spi.MetricsProgrammaticConfig;
@@ -52,17 +50,19 @@ class MetricsFactoryManager {
      * for obtaining new {@link io.helidon.metrics.api.MetricsFactory} instances; this module contains a no-op implementation
      * as a last resort.
      */
-    private static final LazyValue<MetricsFactoryProvider> METRICS_FACTORY_PROVIDER =
-            io.helidon.common.LazyValue.create(() -> {
-                MetricsFactoryProvider result = HelidonServiceLoader.builder(ServiceLoader.load(MetricsFactoryProvider.class))
-                        .addService(NoOpMetricsFactoryProvider.create(), Double.MIN_VALUE)
-                        .build()
-                        .iterator()
-                        .next();
-                LOGGER.log(Level.DEBUG, "Loaded metrics factory provider: {0}",
-                           result.getClass().getName());
-                return result;
-            });
+    private static final ContextSingleton<MetricsFactoryProvider> METRICS_FACTORY_PROVIDER =
+            ContextSingleton.create(MetricsFactoryManager.class,
+                                    MetricsFactoryProvider.class, () -> {
+                        MetricsFactoryProvider result =
+                                HelidonServiceLoader.builder(ServiceLoader.load(MetricsFactoryProvider.class))
+                                .addService(NoOpMetricsFactoryProvider.create(), Double.MIN_VALUE)
+                                .build()
+                                .iterator()
+                                .next();
+                        LOGGER.log(Level.DEBUG, "Loaded metrics factory provider: {0}",
+                                   result.getClass().getName());
+                        return result;
+                    });
     /**
      * Config overrides that can change the {@link io.helidon.metrics.api.MetricsConfig} that is read from config sources
      * if there are specific requirements in a given runtime (e.g., MP) for certain settings. For example, the tag name used
@@ -73,23 +73,21 @@ class MetricsFactoryManager {
                                                        HelidonServiceLoader
                                                                .create(ServiceLoader.load(MetricsProgrammaticConfig.class))
                                                                .asList());
-    private static final ReentrantLock LOCK = new ReentrantLock();
     /**
      * Providers of meter builders (such as the built-in "base" meters for system performance information). All providers are
      * furnished to all {@link io.helidon.metrics.api.MeterRegistry} instances that are created by any
      * {@link io.helidon.metrics.api.MetricsFactory}.
      */
-    private static final LazyValue<Collection<MetersProvider>> METER_PROVIDERS =
-            LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(MetersProvider.class))
-                    .asList());
-    /**
-     * The metrics {@link io.helidon.common.config.Config} node used to initialize the current metrics factory.
-     */
-    private static Config metricsConfigNode;
-    /**
-     * The {@link io.helidon.metrics.api.MetricsFactory} most recently created via either {@link #getMetricsFactory} method.
-     */
-    private static MetricsFactory metricsFactory;
+    private static final ContextSingleton<MetersProviders> METER_PROVIDERS =
+            ContextSingleton.create(MetricsFactoryManager.class,
+                                    MetersProviders.class,
+                                    () ->
+                    new MetersProviders(HelidonServiceLoader.create(ServiceLoader.load(MetersProvider.class)).asList()));
+    // we cannot use Config directly, as that would conflict with GlobalConfig itself
+    private static final ContextSingleton<MetricsConfigHolder> METRICS_CONFIG =
+            ContextSingleton.create(MetricsFactoryManager.class, MetricsConfigHolder.class);
+    private static final ContextSingleton<MetricsFactory> METRICS_FACTORY = ContextSingleton.create(MetricsFactoryManager.class,
+                                                                                                    MetricsFactory.class);
 
     private MetricsFactoryManager() {
     }
@@ -103,12 +101,10 @@ class MetricsFactoryManager {
      * @return new metrics factory
      */
     static MetricsFactory getMetricsFactory(Config metricsConfigNode) {
+        METRICS_CONFIG.set(new MetricsConfigHolder(metricsConfigNode));
 
-        MetricsFactoryManager.metricsConfigNode = metricsConfigNode;
-
-        MetricsConfig metricsConfig = MetricsConfig.create(metricsConfigNode);
-
-        metricsFactory = access(() -> completeGetInstance(metricsConfig, metricsConfigNode));
+        MetricsFactory metricsFactory = buildMetricsFactory(metricsConfigNode);
+        METRICS_FACTORY.set(metricsFactory);
 
         return metricsFactory;
     }
@@ -121,12 +117,11 @@ class MetricsFactoryManager {
      * @return current metrics factory
      */
     static MetricsFactory getMetricsFactory() {
-        return access(() -> {
-            metricsConfigNode = Objects.requireNonNullElseGet(metricsConfigNode,
-                                                              MetricsFactoryManager::externalMetricsConfig);
-            metricsFactory = Objects.requireNonNullElseGet(metricsFactory,
-                                                           () -> getMetricsFactory(metricsConfigNode));
-            return metricsFactory;
+        return METRICS_FACTORY.get(() -> {
+            Config metricsConfig = METRICS_CONFIG.get(() -> new MetricsConfigHolder(MetricsFactoryManager
+                                                                                            .externalMetricsConfig()))
+                    .config();
+            return buildMetricsFactory(metricsConfig);
         });
     }
 
@@ -142,12 +137,21 @@ class MetricsFactoryManager {
         return METRICS_FACTORY_PROVIDER.get().create(metricsConfigNode,
                                                      MetricsConfig.create(
                                                              metricsConfigNode.get(MetricsConfig.METRICS_CONFIG_KEY)),
-                                                     METER_PROVIDERS.get());
+                                                     METER_PROVIDERS.get().providers());
     }
 
     static void closeAll() {
         METRICS_FACTORY_PROVIDER.get().close();
-        metricsFactory = null;
+        METRICS_FACTORY.value()
+                .ifPresent(MetricsFactory::close);
+    }
+
+    private static MetricsFactory buildMetricsFactory(Config metricsConfigNode) {
+        MetricsConfig metricsConfig = applyOverrides(MetricsConfig.create(metricsConfigNode));
+        SystemTagsManager.instance(metricsConfig);
+
+        return METRICS_FACTORY_PROVIDER.get()
+                .create(metricsConfigNode, metricsConfig, METER_PROVIDERS.get().providers());
     }
 
     private static Config externalMetricsConfig() {
@@ -158,30 +162,15 @@ class MetricsFactoryManager {
         return serverFeaturesMetricsConfig;
     }
 
-    private static MetricsFactory completeGetInstance(MetricsConfig metricsConfig, Config metricsConfigNode) {
-
-        metricsConfig = applyOverrides(metricsConfig);
-
-        SystemTagsManager.instance(metricsConfig);
-        metricsFactory = METRICS_FACTORY_PROVIDER.get().create(metricsConfigNode, metricsConfig, METER_PROVIDERS.get());
-
-        return metricsFactory;
-    }
-
     private static MetricsConfig applyOverrides(MetricsConfig metricsConfig) {
         MetricsConfig.Builder metricsConfigBuilder = MetricsConfig.builder(metricsConfig);
         METRICS_CONFIG_OVERRIDES.get().forEach(override -> override.apply(metricsConfigBuilder));
         return metricsConfigBuilder.build();
     }
 
-    private static <T> T access(Callable<T> c) {
-        LOCK.lock();
-        try {
-            return c.call();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        } finally {
-            LOCK.unlock();
-        }
+    private record MetersProviders(Collection<MetersProvider> providers) {
+    }
+
+    private record MetricsConfigHolder(Config config) {
     }
 }

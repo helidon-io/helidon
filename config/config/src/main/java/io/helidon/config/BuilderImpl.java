@@ -519,7 +519,6 @@ class BuilderImpl implements Config.Builder {
 
     private static void loadMapperServices(List<PrioritizedMapperProvider> providers) {
         HelidonServiceLoader.builder(ServiceLoader.load(ConfigMapperProvider.class))
-                .addService(new EnumMapperProvider())
                 .build()
                 .forEach(mapper -> providers.add(new HelidonMapperWrapper(mapper, Weights.find(mapper, 100))));
     }

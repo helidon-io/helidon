@@ -36,9 +36,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.helidon.common.context.Context;
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
+import io.helidon.testing.junit5.TestJunitExtension;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Dependent;
@@ -77,16 +79,16 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
 
-
 /**
  * Junit5 extension to support Helidon CDI container in tests.
  */
-class HelidonJunitExtension implements BeforeAllCallback,
-                                       AfterAllCallback,
-                                       BeforeEachCallback,
-                                       AfterEachCallback,
-                                       InvocationInterceptor,
-                                       ParameterResolver {
+class HelidonJunitExtension extends TestJunitExtension
+        implements BeforeAllCallback,
+                   AfterAllCallback,
+                   BeforeEachCallback,
+                   AfterEachCallback,
+                   InvocationInterceptor,
+                   ParameterResolver {
     private static final Set<Class<? extends Annotation>> HELIDON_TEST_ANNOTATIONS =
             Set.of(AddBean.class, AddConfig.class, AddExtension.class, Configuration.class, AddJaxRs.class);
     private static final Map<Class<? extends Annotation>, Annotation> BEAN_DEFINING = new HashMap<>();
@@ -109,59 +111,219 @@ class HelidonJunitExtension implements BeforeAllCallback,
     private Config config;
     private SeContainer container;
 
-
-    @SuppressWarnings("unchecked")
     @Override
     public void beforeAll(ExtensionContext context) {
-        testClass = context.getRequiredTestClass();
+        super.beforeAll(context);
 
-        AddConfig[] configs = getAnnotations(testClass, AddConfig.class);
-        classLevelConfigMeta.addConfig(configs);
-        classLevelConfigMeta.configuration(testClass.getAnnotation(Configuration.class));
-        classLevelConfigMeta.addConfigBlock(testClass.getAnnotation(AddConfigBlock.class));
-        configProviderResolver = ConfigProviderResolver.instance();
+        run(context, () -> {
+            testClass = context.getRequiredTestClass();
 
-        AddExtension[] extensions = getAnnotations(testClass, AddExtension.class);
-        classLevelExtensions.addAll(Arrays.asList(extensions));
+            AddConfig[] configs = getAnnotations(testClass, AddConfig.class);
+            classLevelConfigMeta.addConfig(configs);
+            classLevelConfigMeta.configuration(testClass.getAnnotation(Configuration.class));
+            classLevelConfigMeta.addConfigBlock(testClass.getAnnotation(AddConfigBlock.class));
+            configProviderResolver = ConfigProviderResolver.instance();
 
-        AddBean[] beans = getAnnotations(testClass, AddBean.class);
-        classLevelBeans.addAll(Arrays.asList(beans));
+            AddExtension[] extensions = getAnnotations(testClass, AddExtension.class);
+            classLevelExtensions.addAll(Arrays.asList(extensions));
 
-        HelidonTest testAnnot = testClass.getAnnotation(HelidonTest.class);
-        if (testAnnot != null) {
-            resetPerTest = testAnnot.resetPerTest();
-        }
+            AddBean[] beans = getAnnotations(testClass, AddBean.class);
+            classLevelBeans.addAll(Arrays.asList(beans));
 
-        DisableDiscovery discovery = testClass.getAnnotation(DisableDiscovery.class);
-        if (discovery != null) {
-            classLevelDisableDiscovery = discovery.value();
-        }
+            HelidonTest testAnnot = testClass.getAnnotation(HelidonTest.class);
+            if (testAnnot != null) {
+                resetPerTest = testAnnot.resetPerTest();
+            }
 
+            DisableDiscovery discovery = testClass.getAnnotation(DisableDiscovery.class);
+            if (discovery != null) {
+                classLevelDisableDiscovery = discovery.value();
+            }
+
+            if (resetPerTest) {
+                validatePerTest();
+
+                return;
+            }
+            validatePerClass();
+
+            // add beans when using JaxRS
+            AddJaxRs addJaxRsAnnotation = testClass.getAnnotation(AddJaxRs.class);
+            if (addJaxRsAnnotation != null) {
+                classLevelExtensions.add(ProcessAllAnnotatedTypesLiteral.INSTANCE);
+                classLevelExtensions.add(ServerCdiExtensionLiteral.INSTANCE);
+                classLevelExtensions.add(JaxRsCdiExtensionLiteral.INSTANCE);
+                classLevelExtensions.add(CdiComponentProviderLiteral.INSTANCE);
+                classLevelBeans.add(WeldRequestScopeLiteral.INSTANCE);
+            }
+
+            configure(classLevelConfigMeta);
+
+            if (!classLevelConfigMeta.useExisting) {
+                // the container startup is delayed in case we `useExisting`, so the is first set up by the user
+                // when we do not need to `useExisting`, we want to start early, so parameterized test method sources that use CDI
+                // can work
+                startContainer(classLevelBeans, classLevelExtensions, classLevelDisableDiscovery);
+            }
+        });
+    }
+
+    @Override
+    public void beforeEach(ExtensionContext context) {
         if (resetPerTest) {
-            validatePerTest();
+            Method method = context.getRequiredTestMethod();
 
-            return;
+            Context helidonContext = Context.builder()
+                    .id("test-" + testClass.getName() + "-" + System.identityHashCode(testClass)
+                                + "-" + System.identityHashCode(method))
+                    .build();
+            super.context(context, helidonContext);
+
+            super.run(context, () -> {
+                AddConfig[] configs = method.getAnnotationsByType(AddConfig.class);
+                ConfigMeta methodLevelConfigMeta = classLevelConfigMeta.nextMethod();
+                methodLevelConfigMeta.addConfig(configs);
+                methodLevelConfigMeta.configuration(method.getAnnotation(Configuration.class));
+                methodLevelConfigMeta.addConfigBlock(method.getAnnotation(AddConfigBlock.class));
+
+                configure(methodLevelConfigMeta);
+
+                List<AddExtension> methodLevelExtensions = new ArrayList<>(classLevelExtensions);
+                List<AddBean> methodLevelBeans = new ArrayList<>(classLevelBeans);
+                boolean methodLevelDisableDiscovery = classLevelDisableDiscovery;
+
+                AddExtension[] extensions = method.getAnnotationsByType(AddExtension.class);
+                methodLevelExtensions.addAll(Arrays.asList(extensions));
+
+                AddBean[] beans = method.getAnnotationsByType(AddBean.class);
+                methodLevelBeans.addAll(Arrays.asList(beans));
+
+                DisableDiscovery discovery = method.getAnnotation(DisableDiscovery.class);
+                if (discovery != null) {
+                    methodLevelDisableDiscovery = discovery.value();
+                }
+
+                startContainer(methodLevelBeans, methodLevelExtensions, methodLevelDisableDiscovery);
+            });
         }
-        validatePerClass();
+    }
 
-        // add beans when using JaxRS
-        AddJaxRs addJaxRsAnnotation = testClass.getAnnotation(AddJaxRs.class);
-        if (addJaxRsAnnotation != null){
-            classLevelExtensions.add(ProcessAllAnnotatedTypesLiteral.INSTANCE);
-            classLevelExtensions.add(ServerCdiExtensionLiteral.INSTANCE);
-            classLevelExtensions.add(JaxRsCdiExtensionLiteral.INSTANCE);
-            classLevelExtensions.add(CdiComponentProviderLiteral.INSTANCE);
-            classLevelBeans.add(WeldRequestScopeLiteral.INSTANCE);
-        }
+    @Override
+    public void afterEach(ExtensionContext context) {
+        run(context, () -> {
+            if (resetPerTest) {
+                releaseConfig();
+                stopContainer();
+            }
+        });
+    }
 
-        configure(classLevelConfigMeta);
+    @Override
+    public void afterAll(ExtensionContext context) {
+        run(context, () -> {
+            stopContainer();
+            releaseConfig();
+            callAfterStop();
+        });
+        super.afterAll(context);
+    }
 
-        if (!classLevelConfigMeta.useExisting) {
-            // the container startup is delayed in case we `useExisting`, so the is first set up by the user
-            // when we do not need to `useExisting`, we want to start early, so parameterized test method sources that use CDI
-            // can work
-            startContainer(classLevelBeans, classLevelExtensions, classLevelDisableDiscovery);
-        }
+    @Override
+    public <T> T interceptTestClassConstructor(Invocation<T> invocation,
+                                               ReflectiveInvocationContext<Constructor<T>> invocationContext,
+                                               ExtensionContext extensionContext) throws Throwable {
+
+        return callWithThrowableInContext(extensionContext, () -> {
+            if (resetPerTest) {
+                // Junit creates test instance
+                return invocation.proceed();
+            }
+
+            // we need to start container before the test class is instantiated, to honor @BeforeAll that
+            // creates a custom MP config
+            if (container == null) {
+                // at this early stage the class should be checked whether it is annotated with
+                // @TestInstance(TestInstance.Lifecycle.PER_CLASS) to start correctly the container
+                TestInstance testClassAnnotation = testClass.getAnnotation(TestInstance.class);
+                if (testClassAnnotation != null && testClassAnnotation.value().equals(TestInstance.Lifecycle.PER_CLASS)) {
+                    throw new RuntimeException("When a class is annotated with @HelidonTest, "
+                                                       + "it is not compatible with @TestInstance(TestInstance.Lifecycle"
+                                                       + ".PER_CLASS)"
+                                                       + "annotation, as it is a Singleton CDI Bean.");
+                }
+                startContainer(classLevelBeans, classLevelExtensions, classLevelDisableDiscovery);
+            }
+
+            // we need to replace instantiation with CDI lookup, to properly injection into fields (and constructors)
+            invocation.skip();
+
+            return container.select(invocationContext.getExecutable().getDeclaringClass())
+                    .get();
+        });
+    }
+
+    @Override
+    public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
+            throws ParameterResolutionException {
+
+        return call(extensionContext, () -> {
+            Executable executable = parameterContext.getParameter().getDeclaringExecutable();
+
+            if (resetPerTest) {
+                if (executable instanceof Constructor) {
+                    throw new ParameterResolutionException(
+                            "When a test class is annotated with @HelidonTest(resetPerMethod=true), constructor must not have "
+                                    + "parameters.");
+                }
+            } else {
+                // we need to start container before the test class is instantiated, to honor @BeforeAll that
+                // creates a custom MP config
+                if (container == null) {
+                    startContainer(classLevelBeans, classLevelExtensions, classLevelDisableDiscovery);
+                }
+            }
+
+            Class<?> paramType = parameterContext.getParameter().getType();
+
+            if (executable instanceof Constructor) {
+                return !container.select(paramType).isUnsatisfied();
+            } else if (executable instanceof Method) {
+                if (paramType.equals(SeContainer.class)) {
+                    return true;
+                }
+                if (paramType.equals(WebTarget.class)) {
+                    return true;
+                }
+            }
+
+            return false;
+        });
+    }
+
+    @Override
+    public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
+            throws ParameterResolutionException {
+        return call(extensionContext, () -> {
+            Executable executable = parameterContext.getParameter().getDeclaringExecutable();
+            Class<?> paramType = parameterContext.getParameter().getType();
+
+            if (executable instanceof Method) {
+                if (paramType.equals(SeContainer.class)) {
+                    return container;
+                }
+                if (paramType.equals(WebTarget.class)) {
+                    return container.select(WebTarget.class).get();
+                }
+            }
+            // we return null, as construction of the object is done by CDI
+            // for primitive types we must return appropriate primitive default
+            if (paramType.isPrimitive()) {
+                // a hack to get to default value of a primitive type
+                return Array.get(Array.newInstance(paramType, 1), 0);
+            } else {
+                return null;
+            }
+        });
     }
 
     @SuppressWarnings("unchecked")
@@ -181,49 +343,10 @@ class HelidonJunitExtension implements BeforeAllCallback,
 
         Object result = Array.newInstance(annotClass, allAnnotations.size());
         for (int i = 0; i < allAnnotations.size(); i++) {
-             Array.set(result, i, allAnnotations.get(i));
+            Array.set(result, i, allAnnotations.get(i));
         }
 
         return (T[]) result;
-    }
-
-    @Override
-    public void beforeEach(ExtensionContext context) throws Exception {
-        if (resetPerTest) {
-            Method method = context.getRequiredTestMethod();
-            AddConfig[] configs = method.getAnnotationsByType(AddConfig.class);
-            ConfigMeta methodLevelConfigMeta = classLevelConfigMeta.nextMethod();
-            methodLevelConfigMeta.addConfig(configs);
-            methodLevelConfigMeta.configuration(method.getAnnotation(Configuration.class));
-            methodLevelConfigMeta.addConfigBlock(method.getAnnotation(AddConfigBlock.class));
-
-            configure(methodLevelConfigMeta);
-
-            List<AddExtension> methodLevelExtensions = new ArrayList<>(classLevelExtensions);
-            List<AddBean> methodLevelBeans = new ArrayList<>(classLevelBeans);
-            boolean methodLevelDisableDiscovery = classLevelDisableDiscovery;
-
-            AddExtension[] extensions = method.getAnnotationsByType(AddExtension.class);
-            methodLevelExtensions.addAll(Arrays.asList(extensions));
-
-            AddBean[] beans = method.getAnnotationsByType(AddBean.class);
-            methodLevelBeans.addAll(Arrays.asList(beans));
-
-            DisableDiscovery discovery = method.getAnnotation(DisableDiscovery.class);
-            if (discovery != null) {
-                methodLevelDisableDiscovery = discovery.value();
-            }
-
-            startContainer(methodLevelBeans, methodLevelExtensions, methodLevelDisableDiscovery);
-        }
-    }
-
-    @Override
-    public void afterEach(ExtensionContext context) throws Exception {
-        if (resetPerTest) {
-            releaseConfig();
-            stopContainer();
-        }
     }
 
     private void validatePerClass() {
@@ -254,8 +377,8 @@ class HelidonJunitExtension implements BeforeAllCallback,
         }
 
         AddJaxRs addJaxRsAnnotation = testClass.getAnnotation(AddJaxRs.class);
-        if (addJaxRsAnnotation != null){
-            if (testClass.getAnnotation(DisableDiscovery.class) == null){
+        if (addJaxRsAnnotation != null) {
+            if (testClass.getAnnotation(DisableDiscovery.class) == null) {
                 throw new RuntimeException("@AddJaxRs annotation should be used only with @DisableDiscovery annotation.");
             }
         }
@@ -337,6 +460,7 @@ class HelidonJunitExtension implements BeforeAllCallback,
             configProviderResolver.registerConfig(config, Thread.currentThread().getContextClassLoader());
         }
     }
+
     private void releaseConfig() {
         if (configProviderResolver != null && config != null) {
             configProviderResolver.releaseConfig(config);
@@ -375,104 +499,6 @@ class HelidonJunitExtension implements BeforeAllCallback,
         if (container != null) {
             container.close();
             container = null;
-        }
-    }
-
-    @Override
-    public void afterAll(ExtensionContext context) {
-        stopContainer();
-        releaseConfig();
-        callAfterStop();
-    }
-
-    @Override
-    public <T> T interceptTestClassConstructor(Invocation<T> invocation,
-                                               ReflectiveInvocationContext<Constructor<T>> invocationContext,
-                                               ExtensionContext extensionContext) throws Throwable {
-
-        if (resetPerTest) {
-            // Junit creates test instance
-            return invocation.proceed();
-        }
-
-        // we need to start container before the test class is instantiated, to honor @BeforeAll that
-        // creates a custom MP config
-        if (container == null) {
-            // at this early stage the class should be checked whether it is annotated with
-            // @TestInstance(TestInstance.Lifecycle.PER_CLASS) to start correctly the container
-            TestInstance testClassAnnotation = testClass.getAnnotation(TestInstance.class);
-            if (testClassAnnotation != null && testClassAnnotation.value().equals(TestInstance.Lifecycle.PER_CLASS)){
-                throw new RuntimeException("When a class is annotated with @HelidonTest, "
-                        + "it is not compatible with @TestInstance(TestInstance.Lifecycle.PER_CLASS)"
-                        + "annotation, as it is a Singleton CDI Bean.");
-            }
-            startContainer(classLevelBeans, classLevelExtensions, classLevelDisableDiscovery);
-        }
-
-        // we need to replace instantiation with CDI lookup, to properly injection into fields (and constructors)
-        invocation.skip();
-
-        return container.select(invocationContext.getExecutable().getDeclaringClass())
-                .get();
-    }
-
-    @Override
-    public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
-            throws ParameterResolutionException {
-
-        Executable executable = parameterContext.getParameter().getDeclaringExecutable();
-
-        if (resetPerTest) {
-            if (executable instanceof Constructor) {
-                throw new ParameterResolutionException(
-                        "When a test class is annotated with @HelidonTest(resetPerMethod=true), constructor must not have "
-                                + "parameters.");
-            }
-        } else {
-            // we need to start container before the test class is instantiated, to honor @BeforeAll that
-            // creates a custom MP config
-            if (container == null) {
-                startContainer(classLevelBeans, classLevelExtensions, classLevelDisableDiscovery);
-            }
-        }
-
-        Class<?> paramType = parameterContext.getParameter().getType();
-
-        if (executable instanceof Constructor) {
-            return !container.select(paramType).isUnsatisfied();
-        } else if (executable instanceof Method) {
-            if (paramType.equals(SeContainer.class)) {
-                return true;
-            }
-            if (paramType.equals(WebTarget.class)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    @Override
-    public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
-            throws ParameterResolutionException {
-        Executable executable = parameterContext.getParameter().getDeclaringExecutable();
-        Class<?> paramType = parameterContext.getParameter().getType();
-
-        if (executable instanceof Method) {
-            if (paramType.equals(SeContainer.class)) {
-                return container;
-            }
-            if (paramType.equals(WebTarget.class)) {
-                return container.select(WebTarget.class).get();
-            }
-        }
-        // we return null, as construction of the object is done by CDI
-        // for primitive types we must return appropriate primitive default
-        if (paramType.isPrimitive()) {
-            // a hack to get to default value of a primitive type
-            return Array.get(Array.newInstance(paramType, 1), 0);
-        } else {
-            return null;
         }
     }
 
@@ -517,17 +543,16 @@ class HelidonJunitExtension implements BeforeAllCallback,
             this.addBeans = addBeans;
         }
 
-
-        void processSocketInjectionPoints(@Observes ProcessInjectionPoint<?, WebTarget> event) throws Exception{
-             InjectionPoint injectionPoint = event.getInjectionPoint();
-             Set<Annotation> qualifiers = injectionPoint.getQualifiers();
-                for (Annotation qualifier : qualifiers) {
-                    if (qualifier.annotationType().equals(Socket.class)) {
-                        String value = ((Socket) qualifier).value();
-                        socketAnnotations.put(value, qualifier);
-                        break;
-                    }
+        void processSocketInjectionPoints(@Observes ProcessInjectionPoint<?, WebTarget> event) throws Exception {
+            InjectionPoint injectionPoint = event.getInjectionPoint();
+            Set<Annotation> qualifiers = injectionPoint.getQualifiers();
+            for (Annotation qualifier : qualifiers) {
+                if (qualifier.annotationType().equals(Socket.class)) {
+                    String value = ((Socket) qualifier).value();
+                    socketAnnotations.put(value, qualifier);
+                    break;
                 }
+            }
 
         }
 
@@ -552,21 +577,6 @@ class HelidonJunitExtension implements BeforeAllCallback,
 
         }
 
-        @SuppressWarnings("unchecked")
-        private static WebTarget getWebTarget(Client client, String namedPort) {
-            try {
-                Class<? extends Extension> extClass = (Class<? extends Extension>) Class
-                        .forName("io.helidon.microprofile.server.ServerCdiExtension");
-                Extension extension = CDI.current().getBeanManager().getExtension(extClass);
-                Method m = extension.getClass().getMethod("port", String.class);
-                int port = (int) m.invoke(extension, new Object[]{namedPort});
-                String uri = "http://localhost:" + port;
-                return client.target(uri);
-            } catch (ReflectiveOperationException e) {
-                return client.target("http://localhost:7001");
-            }
-        }
-
         void registerAddedBeans(@Observes BeforeBeanDiscovery event) {
             event.addAnnotatedType(testClass, "junit-" + testClass.getName())
                     .add(ApplicationScoped.Literal.INSTANCE);
@@ -588,6 +598,21 @@ class HelidonJunitExtension implements BeforeAllCallback,
                 if (!hasBda(addBean.value())) {
                     configurator.add(scope);
                 }
+            }
+        }
+
+        @SuppressWarnings("unchecked")
+        private static WebTarget getWebTarget(Client client, String namedPort) {
+            try {
+                Class<? extends Extension> extClass = (Class<? extends Extension>) Class
+                        .forName("io.helidon.microprofile.server.ServerCdiExtension");
+                Extension extension = CDI.current().getBeanManager().getExtension(extClass);
+                Method m = extension.getClass().getMethod("port", String.class);
+                int port = (int) m.invoke(extension, new Object[] {namedPort});
+                String uri = "http://localhost:" + port;
+                return client.target(uri);
+            } catch (ReflectiveOperationException e) {
+                return client.target("http://localhost:7001");
             }
         }
 
@@ -624,6 +649,17 @@ class HelidonJunitExtension implements BeforeAllCallback,
             additionalKeys.put("mp.config.profile", "test");
         }
 
+        ConfigMeta nextMethod() {
+            ConfigMeta methodMeta = new ConfigMeta();
+
+            methodMeta.additionalKeys.putAll(this.additionalKeys);
+            methodMeta.additionalSources.addAll(this.additionalSources);
+            methodMeta.useExisting = this.useExisting;
+            methodMeta.profile = this.profile;
+
+            return methodMeta;
+        }
+
         private void addConfig(AddConfig[] configs) {
             for (AddConfig config : configs) {
                 additionalKeys.put(config.key(), config.value());
@@ -648,19 +684,7 @@ class HelidonJunitExtension implements BeforeAllCallback,
             this.type = config.type();
             this.block = config.value();
         }
-
-        ConfigMeta nextMethod() {
-            ConfigMeta methodMeta = new ConfigMeta();
-
-            methodMeta.additionalKeys.putAll(this.additionalKeys);
-            methodMeta.additionalSources.addAll(this.additionalSources);
-            methodMeta.useExisting = this.useExisting;
-            methodMeta.profile = this.profile;
-
-            return methodMeta;
-        }
     }
-
 
     /**
      * Add WeldRequestScope. Used with {@code AddJaxRs}.
@@ -682,7 +706,6 @@ class HelidonJunitExtension implements BeforeAllCallback,
             return RequestScoped.class;
         }
     }
-
 
     /**
      * Add ProcessAllAnnotatedTypes. Used with {@code AddJaxRs}.

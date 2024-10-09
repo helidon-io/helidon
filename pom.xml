@@ -229,6 +229,7 @@
         <module>codegen</module>
         <module>service</module>
         <module>metadata</module>
+        <module>testing</module>
     </modules>
 
     <build>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,8 +52,8 @@ class TestPrometheusFormatting {
     media type.
      */
     private static final String OPENMETRICS_EOF = "# EOF\n";
-    private static MeterRegistry meterRegistry;
 
+    private static MeterRegistry meterRegistry;
     private static MetricsConfig metricsConfig;
 
     @BeforeAll
@@ -73,7 +73,6 @@ class TestPrometheusFormatting {
      *     When a metrics factory is obtained via MetricsFactory.getInstance(metricsConfig), that config object initializes
      *     the system tags manager. This happens after the @BeforeAll method runs. So re-assert the values we want for the
      *     test here. We would only need to do it once, not before each test, but it's low cost esp. in a test environment.
-     *
      * </p>
      */
     @BeforeEach

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.helidon.common.context.ContextSingleton;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.KeyPerformanceIndicatorMetricsConfig;
@@ -53,7 +54,10 @@ class KeyPerformanceIndicatorMetricsImpls {
     static final String LOAD_NAME = "load";
     static final String KPI_METERS_SCOPE = Meter.Scope.VENDOR;
 
-    private static final Map<String, KeyPerformanceIndicatorSupport.Metrics> KPI_METRICS = new HashMap<>();
+    private static final ContextSingleton<KpiMetrics> KPI_METRICS =
+            ContextSingleton.create(KeyPerformanceIndicatorMetricsImpls.class,
+                                    KpiMetrics.class,
+                                    KpiMetrics::new);
 
     private KeyPerformanceIndicatorMetricsImpls() {
     }
@@ -69,14 +73,16 @@ class KeyPerformanceIndicatorMetricsImpls {
     static KeyPerformanceIndicatorSupport.Metrics get(MeterRegistry kpiMeterRegistry,
                                                       String meterNamePrefix,
                                                       KeyPerformanceIndicatorMetricsConfig kpiConfig) {
-        return KPI_METRICS.computeIfAbsent(meterNamePrefix, prefix ->
-                kpiConfig.extended()
-                        ? new Extended(kpiMeterRegistry, meterNamePrefix, kpiConfig)
-                        : new Basic(kpiMeterRegistry, meterNamePrefix));
+        return KPI_METRICS.get()
+                .kpiMetrics
+                .computeIfAbsent(meterNamePrefix, prefix ->
+                        kpiConfig.extended()
+                                ? new Extended(kpiMeterRegistry, meterNamePrefix, kpiConfig)
+                                : new Basic(kpiMeterRegistry, meterNamePrefix));
     }
 
     static void close() {
-        KPI_METRICS.clear();
+        KPI_METRICS.get().kpiMetrics.clear();
     }
 
     /**
@@ -105,7 +111,9 @@ class KeyPerformanceIndicatorMetricsImpls {
         @Override
         public void close() {
             meters.forEach(meterRegistry::remove);
-            KPI_METRICS.clear();
+            KPI_METRICS.get()
+                    .kpiMetrics
+                    .clear();
         }
 
         protected <M extends Meter> M add(M meter) {
@@ -220,5 +228,9 @@ class KeyPerformanceIndicatorMetricsImpls {
                 return hits - load;
             }
         }
+    }
+
+    private static class KpiMetrics {
+        private final Map<String, KeyPerformanceIndicatorSupport.Metrics> kpiMetrics = new HashMap<>();
     }
 }

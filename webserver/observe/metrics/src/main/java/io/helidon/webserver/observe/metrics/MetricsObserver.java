@@ -55,7 +55,7 @@ import io.helidon.webserver.spi.ServerFeature;
 @RuntimeType.PrototypedBy(MetricsObserverConfig.class)
 public class MetricsObserver implements Observer, RuntimeType.Api<MetricsObserverConfig> {
     private final MetricsObserverConfig config;
-    private MetricsFeature metricsFeature;
+    private final MetricsFeature metricsFeature;
 
     private MetricsObserver(MetricsObserverConfig config) {
         this.config = config;

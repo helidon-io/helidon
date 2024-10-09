@@ -16,22 +16,26 @@
 
 package io.helidon.service.registry;
 
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
 
 import io.helidon.common.config.GlobalConfig;
+import io.helidon.common.context.ContextSingleton;
 
 /**
  * A global singleton manager for a service registry.
- * <p>
- * Note that when using this registry, testing is a bit more complicated, as the registry is shared
- * statically.
  */
 public final class GlobalServiceRegistry {
-    private static final AtomicReference<ServiceRegistry> INSTANCE = new AtomicReference<>();
-    private static final ReadWriteLock RW_LOCK = new ReentrantReadWriteLock();
+    private static final ContextSingleton<ServiceRegistry> CONTEXT_VALUE = ContextSingleton.create(
+            GlobalServiceRegistry.class,
+            ServiceRegistry.class, () -> {
+                ServiceRegistryConfig config;
+                if (GlobalConfig.configured()) {
+                    config = ServiceRegistryConfig.create(GlobalConfig.config().get("registry"));
+                } else {
+                    config = ServiceRegistryConfig.create();
+                }
+                return ServiceRegistryManager.create(config).registry();
+            });
 
     private GlobalServiceRegistry() {
     }
@@ -42,7 +46,7 @@ public final class GlobalServiceRegistry {
      * @return {@code true} if a registry instance was already created
      */
     public static boolean configured() {
-        return INSTANCE.get() != null;
+        return CONTEXT_VALUE.isPresent();
     }
 
     /**
@@ -51,29 +55,7 @@ public final class GlobalServiceRegistry {
      * @return global service registry
      */
     public static ServiceRegistry registry() {
-        try {
-            RW_LOCK.readLock().lock();
-            ServiceRegistry currentInstance = INSTANCE.get();
-            if (currentInstance != null) {
-                return currentInstance;
-            }
-        } finally {
-            RW_LOCK.readLock().unlock();
-        }
-        try {
-            RW_LOCK.writeLock().lock();
-            ServiceRegistryConfig config;
-            if (GlobalConfig.configured()) {
-                config = ServiceRegistryConfig.create(GlobalConfig.config().get("registry"));
-            } else {
-                config = ServiceRegistryConfig.create();
-            }
-            ServiceRegistry newInstance = ServiceRegistryManager.create(config).registry();
-            INSTANCE.set(newInstance);
-            return newInstance;
-        } finally {
-            RW_LOCK.writeLock().unlock();
-        }
+        return CONTEXT_VALUE.get();
     }
 
     /**
@@ -84,23 +66,7 @@ public final class GlobalServiceRegistry {
      * @return global service registry
      */
     public static ServiceRegistry registry(Supplier<ServiceRegistry> registrySupplier) {
-        try {
-            RW_LOCK.readLock().lock();
-            ServiceRegistry currentInstance = INSTANCE.get();
-            if (currentInstance != null) {
-                return currentInstance;
-            }
-        } finally {
-            RW_LOCK.readLock().unlock();
-        }
-        try {
-            RW_LOCK.writeLock().lock();
-            ServiceRegistry newInstance = registrySupplier.get();
-            INSTANCE.set(newInstance);
-            return newInstance;
-        } finally {
-            RW_LOCK.writeLock().unlock();
-        }
+        return CONTEXT_VALUE.get(registrySupplier);
     }
 
     /**
@@ -112,7 +78,7 @@ public final class GlobalServiceRegistry {
      * @return the same instance
      */
     public static ServiceRegistry registry(ServiceRegistry newGlobalRegistry) {
-        INSTANCE.set(newGlobalRegistry);
+        CONTEXT_VALUE.set(newGlobalRegistry);
         return newGlobalRegistry;
     }
 }

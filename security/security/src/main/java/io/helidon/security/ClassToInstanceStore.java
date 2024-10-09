@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,11 @@ package io.helidon.security;
 
 import java.util.Collection;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Map of classes to their instances.
@@ -29,6 +32,7 @@ import java.util.Optional;
  */
 public final class ClassToInstanceStore<T> {
     private final Map<Class<? extends T>, T> backingMap = new IdentityHashMap<>();
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
     /**
      * Create a new instance based on explicit instances.
@@ -55,7 +59,12 @@ public final class ClassToInstanceStore<T> {
      * @return Instance of the class or null if no mapping exists
      */
     public <U extends T> Optional<U> getInstance(Class<U> clazz) {
-        return Optional.ofNullable(clazz.cast(backingMap.get(clazz)));
+        lock.readLock().lock();
+        try {
+            return Optional.ofNullable(clazz.cast(backingMap.get(clazz)));
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     /**
@@ -67,7 +76,12 @@ public final class ClassToInstanceStore<T> {
      * @return Instance of the class if a mapping previously existed or null for no existing mapping
      */
     public <U extends T> Optional<U> putInstance(Class<? extends U> clazz, U instance) {
-        return Optional.ofNullable(clazz.cast(backingMap.put(clazz, instance)));
+        lock.writeLock().lock();
+        try {
+            return Optional.ofNullable(clazz.cast(backingMap.put(clazz, instance)));
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
     /**
@@ -78,7 +92,12 @@ public final class ClassToInstanceStore<T> {
      * @return instance that was removed (if there was one)
      */
     public <U extends T> Optional<U> removeInstance(Class<U> clazz) {
-        return Optional.ofNullable(clazz.cast(backingMap.remove(clazz)));
+        lock.writeLock().lock();
+        try {
+            return Optional.ofNullable(clazz.cast(backingMap.remove(clazz)));
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
     /**
@@ -87,7 +106,12 @@ public final class ClassToInstanceStore<T> {
      * @param toCopy store to copy into this store
      */
     public void putAll(ClassToInstanceStore<? extends T> toCopy) {
-        this.backingMap.putAll(toCopy.backingMap);
+        lock.writeLock().lock();
+        try {
+            this.backingMap.putAll(toCopy.backingMap);
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
     /**
@@ -97,7 +121,12 @@ public final class ClassToInstanceStore<T> {
      * @return true if there is a mapping for the class
      */
     public boolean containsKey(Class<? extends T> clazz) {
-        return backingMap.containsKey(clazz);
+        lock.readLock().lock();
+        try {
+            return backingMap.containsKey(clazz);
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     /**
@@ -106,7 +135,12 @@ public final class ClassToInstanceStore<T> {
      * @return true if there are no mappings in this store
      */
     public boolean isEmpty() {
-        return backingMap.isEmpty();
+        lock.readLock().lock();
+        try {
+            return backingMap.isEmpty();
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     /**
@@ -120,7 +154,12 @@ public final class ClassToInstanceStore<T> {
      */
     @SuppressWarnings("unchecked")
     public <U extends T> Optional<U> putInstance(U instance) {
-        return putInstance((Class<? extends U>) instance.getClass(), instance);
+        lock.writeLock().lock();
+        try {
+            return putInstance((Class<? extends U>) instance.getClass(), instance);
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
     /**
@@ -129,7 +168,12 @@ public final class ClassToInstanceStore<T> {
      * @return collection of values
      */
     public Collection<T> values() {
-        return backingMap.values();
+        lock.readLock().lock();
+        try {
+            return List.copyOf(backingMap.values());
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     /**
@@ -138,7 +182,12 @@ public final class ClassToInstanceStore<T> {
      * @return collection of classes used for mapping to instances
      */
     public Collection<Class<? extends T>> keys() {
-        return backingMap.keySet();
+        lock.readLock().lock();
+        try {
+            return Set.copyOf(backingMap.keySet());
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     /**
@@ -148,6 +197,11 @@ public final class ClassToInstanceStore<T> {
      */
     @Override
     public String toString() {
-        return backingMap.toString();
+        lock.readLock().lock();
+        try {
+            return backingMap.toString();
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 }

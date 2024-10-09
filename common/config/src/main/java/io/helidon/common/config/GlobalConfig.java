@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,12 @@ package io.helidon.common.config;
 import java.util.List;
 import java.util.Objects;
 import java.util.ServiceLoader;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.config.spi.ConfigProvider;
+import io.helidon.common.context.ContextSingleton;
 
 /**
  * Global configuration can be set by a user before any Helidon code is invoked, to override default discovery
@@ -37,18 +37,9 @@ import io.helidon.common.config.spi.ConfigProvider;
  */
 public final class GlobalConfig {
     private static final Config EMPTY = Config.empty();
-    private static final LazyValue<Config> DEFAULT_CONFIG = LazyValue.create(() -> {
-        List<ConfigProvider> providers = HelidonServiceLoader.create(ServiceLoader.load(ConfigProvider.class))
-                .asList();
-        // no implementations available, use empty configuration
-        if (providers.isEmpty()) {
-            return EMPTY;
-        }
-        // there is a valid provider, let's use its default configuration
-        return providers.get(0)
-                .create();
-    });
-    private static final AtomicReference<Config> CONFIG = new AtomicReference<>();
+    private static final LazyValue<Config> DEFAULT_CONFIG = LazyValue.create(GlobalConfig::create);
+    private static final ContextSingleton<Config> CONTEXT_VALUE = ContextSingleton.create(GlobalConfig.class,
+                                                                                          Config.class);
 
     private GlobalConfig() {
     }
@@ -59,7 +50,7 @@ public final class GlobalConfig {
      * @return {@code true} if there is a global configuration set already, {@code false} otherwise
      */
     public static boolean configured() {
-        return CONFIG.get() != null;
+        return CONTEXT_VALUE.isPresent();
     }
 
     /**
@@ -70,7 +61,7 @@ public final class GlobalConfig {
      * @see #config(java.util.function.Supplier, boolean)
      */
     public static Config config() {
-        return configured() ? CONFIG.get() : DEFAULT_CONFIG.get();
+        return CONTEXT_VALUE.value().orElseGet(DEFAULT_CONFIG);
     }
 
     /**
@@ -86,7 +77,7 @@ public final class GlobalConfig {
     /**
      * Set global configuration.
      *
-     * @param config configuration to use
+     * @param config    configuration to use
      * @param overwrite whether to overwrite an existing configured value
      * @return current global config
      */
@@ -96,8 +87,22 @@ public final class GlobalConfig {
         if (overwrite || !configured()) {
             // there is a certain risk we may do this twice, if two components try to set global config in parallel.
             // as the result was already unclear (as order matters), we do not need to be 100% thread safe here
-            CONFIG.set(config.get());
+            CONTEXT_VALUE.set(config.get());
+            return config();
+        } else {
+            return CONTEXT_VALUE.get(config);
         }
-        return CONFIG.get();
+    }
+
+    static Config create() {
+        List<ConfigProvider> providers = HelidonServiceLoader.create(ServiceLoader.load(ConfigProvider.class))
+                .asList();
+        // no implementations available, use empty configuration
+        if (providers.isEmpty()) {
+            return EMPTY;
+    }
+        // there is a valid provider, let's use its default configuration
+        return providers.getFirst()
+                .create();
     }
 }
