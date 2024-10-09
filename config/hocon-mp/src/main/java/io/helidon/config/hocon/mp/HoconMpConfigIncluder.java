@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,7 +59,6 @@ class HoconMpConfigIncluder implements ConfigIncluder {
 
     @Override
     public ConfigObject include(ConfigIncludeContext context, String what) {
-        new Exception().printStackTrace();
         LOGGER.log(TRACE, String.format("Received request to include resource %s, %s",
                 what, context.parseOptions().getOriginDescription()));
 
@@ -71,7 +70,6 @@ class HoconMpConfigIncluder implements ConfigIncluder {
         URL includeUrl;
         try {
             includeUrl = new URL(includePath);
-            System.out.println("includeURL: " + includeUrl);
         } catch (MalformedURLException e) {
             LOGGER.log(WARNING, String.format("Unable to create include Url for: %s with error: %s",
                     includePath, e.getMessage()));
@@ -88,7 +86,6 @@ class HoconMpConfigIncluder implements ConfigIncluder {
     private ConfigObject parseHoconFromPath(String includeName) {
         Path path = relativePath.resolve(includeName);
         if (Files.exists(path) && Files.isReadable(path) && !Files.isDirectory(path)) {
-            System.out.println("Path: " + path);
             try (BufferedReader reader = Files.newBufferedReader(path, charset)) {
                 Config typesafeConfig = ConfigFactory.parseReader(reader, parseOptions);
                 return typesafeConfig.root();
