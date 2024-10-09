@@ -46,5 +46,6 @@
         <module>jax-rs-multiple-apps</module>
         <module>param-converter-provider</module>
         <module>config-profiles</module>
+        <module>leyden-quickstart</module>
     </modules>
 </project>
