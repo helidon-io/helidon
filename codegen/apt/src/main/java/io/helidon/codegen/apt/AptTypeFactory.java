@@ -167,6 +167,11 @@ public final class AptTypeFactory {
      * @return the associated type name instance
      */
     public static Optional<TypeName> createTypeName(Element type) {
+        // be fault-tolerant because the ECJ may enter this method with null
+        if (type == null) {
+            return Optional.empty();
+        }
+
         if (type instanceof VariableElement) {
             return createTypeName(type.asType());
         }
