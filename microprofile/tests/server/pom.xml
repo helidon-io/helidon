@@ -65,5 +65,10 @@
             <artifactId>helidon-logging-jul</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient-http1</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>
