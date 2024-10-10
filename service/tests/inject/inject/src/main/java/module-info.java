@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,22 +14,12 @@
  * limitations under the License.
  */
 
-package io.helidon.service.codegen;
+module io.helidon.service.tests.inject {
+    requires io.helidon.service.registry;
+    requires io.helidon.service.inject.api;
+    requires io.helidon.service.inject;
+    requires io.helidon.http;
+    requires io.helidon.common.context;
 
-/**
- * Code generation extension for Helidon Service Registry.
- */
-interface RegistryCodegenExtension {
-    /**
-     * Process a single round.
-     *
-     * @param roundContext round context
-     */
-    void process(RegistryRoundContext roundContext);
-
-    /**
-     * Called when the processing is over, and there will not be an additional processing round.
-     */
-    default void processingOver() {
-    }
+    exports io.helidon.service.tests.inject;
 }

@@ -49,6 +49,16 @@ public final class ElementInfoPredicates {
     }
 
     /**
+     * Predicate for constructor element kind.
+     *
+     * @param element typed element info to test
+     * @return whether the element represents a constructor
+     */
+    public static boolean isConstructor(TypedElementInfo element) {
+        return ElementKind.CONSTRUCTOR == element.kind();
+    }
+
+    /**
      * Predicate for field element kind.
      *
      * @param element typed element info to test

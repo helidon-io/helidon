@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.ElementInfoPredicates;
+import io.helidon.codegen.TypeHierarchy;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.Javadoc;
 import io.helidon.codegen.classmodel.Method;
@@ -52,14 +53,14 @@ import static java.util.function.Predicate.not;
 /**
  * Generates a service descriptor.
  */
-class GenerateServiceDescriptor {
+public class GenerateServiceDescriptor {
     static final TypeName SET_OF_TYPES = TypeName.builder(TypeNames.SET)
             .addTypeArgument(TypeNames.TYPE_NAME)
             .build();
     private static final TypeName LIST_OF_DEPENDENCIES = TypeName.builder(TypeNames.LIST)
             .addTypeArgument(ServiceCodegenTypes.SERVICE_DEPENDENCY)
             .build();
-    private static final TypeName DESCRIPTOR_TYPE = TypeName.builder(ServiceCodegenTypes.SERVICE_DESCRIPTOR)
+    private static final TypeName DESCRIPTOR_TYPE = TypeName.builder(ServiceCodegenTypes.REGISTRY_SERVICE_DESCRIPTOR)
             .addTypeArgument(TypeName.create("T"))
             .build();
     private static final TypedElementInfo DEFAULT_CONSTRUCTOR = TypedElementInfo.builder()
@@ -76,16 +77,19 @@ class GenerateServiceDescriptor {
     private final Collection<TypeInfo> services;
     private final TypeInfo typeInfo;
     private final boolean autoAddContracts;
+    private final DescriptorConsumer descriptorConsumer;
 
     private GenerateServiceDescriptor(TypeName generator,
                                       RegistryCodegenContext ctx,
                                       Collection<TypeInfo> allServices,
-                                      TypeInfo service) {
+                                      TypeInfo service,
+                                      DescriptorConsumer descriptorConsumer) {
         this.generator = generator;
         this.ctx = ctx;
         this.services = allServices;
         this.typeInfo = service;
         this.autoAddContracts = ServiceOptions.AUTO_ADD_NON_CONTRACT_INTERFACES.value(ctx.options());
+        this.descriptorConsumer = descriptorConsumer;
     }
 
     /**
@@ -96,12 +100,36 @@ class GenerateServiceDescriptor {
      * @param allServices all services processed in this round of processing
      * @param service     service to create a descriptor for
      * @return class model builder of the service descriptor
+     * @deprecated use
+     *         {@link #generate(io.helidon.common.types.TypeName, RegistryCodegenContext, RegistryRoundContext,
+     *         java.util.Collection, io.helidon.common.types.TypeInfo)} instead
      */
-    static ClassModel.Builder generate(TypeName generator,
-                                       RegistryCodegenContext ctx,
-                                       Collection<TypeInfo> allServices,
-                                       TypeInfo service) {
-        return new GenerateServiceDescriptor(generator, ctx, allServices, service)
+    @SuppressWarnings("removal")
+    @Deprecated(forRemoval = true, since = "4.2.0")
+    public static ClassModel.Builder generate(TypeName generator,
+                                              RegistryCodegenContext ctx,
+                                              Collection<TypeInfo> allServices,
+                                              TypeInfo service) {
+        return new GenerateServiceDescriptor(generator, ctx, allServices, service, ctx::addDescriptor)
+                .generate();
+    }
+
+    /**
+     * Generate a service descriptor for the provided service type info.
+     *
+     * @param generator    type of the generator responsible for this event
+     * @param ctx          context of code generation
+     * @param roundContext current round context
+     * @param allServices  all services processed in this round of processing
+     * @param service      service to create a descriptor for
+     * @return class model builder of the service descriptor
+     */
+    public static ClassModel.Builder generate(TypeName generator,
+                                              RegistryCodegenContext ctx,
+                                              RegistryRoundContext roundContext,
+                                              Collection<TypeInfo> allServices,
+                                              TypeInfo service) {
+        return new GenerateServiceDescriptor(generator, ctx, allServices, service, roundContext::addDescriptor)
                 .generate();
     }
 
@@ -130,7 +158,7 @@ class GenerateServiceDescriptor {
 
         if (typeInfo.kind() == ElementKind.INTERFACE) {
             throw new CodegenException("We can only generated service descriptors for classes, interface was requested: ",
-                                       typeInfo.originatingElement().orElse(serviceType));
+                                       typeInfo.originatingElementValue());
         }
         boolean isAbstractClass = typeInfo.elementModifiers().contains(Modifier.ABSTRACT)
                 && typeInfo.kind() == ElementKind.CLASS;
@@ -202,13 +230,13 @@ class GenerateServiceDescriptor {
         Set<TypeName> allContracts = new HashSet<>(contracts);
         allContracts.add(serviceType);
 
-        ctx.addDescriptor("core",
-                          serviceType,
-                          descriptorType,
-                          classModel,
-                          weight(typeInfo).orElse(Weighted.DEFAULT_WEIGHT),
-                          allContracts,
-                          typeInfo.originatingElement().orElseGet(typeInfo::typeName));
+        descriptorConsumer.addDescriptor("core",
+                                         serviceType,
+                                         descriptorType,
+                                         classModel,
+                                         weight(typeInfo).orElse(Weighted.DEFAULT_WEIGHT),
+                                         allContracts,
+                                         typeInfo.originatingElementValue());
 
         return classModel;
     }
@@ -219,7 +247,7 @@ class GenerateServiceDescriptor {
         // check if the super type is part of current annotation processing
         Optional<TypeInfo> superTypeInfoOptional = typeInfo.superTypeInfo();
         if (superTypeInfoOptional.isEmpty()) {
-            return SuperType.noSuperType();
+            return new SuperType();
         }
         TypeInfo superType = superTypeInfoOptional.get();
         TypeName expectedSuperDescriptor = ctx.descriptorType(superType.typeName());
@@ -241,7 +269,7 @@ class GenerateServiceDescriptor {
         // if not found in current list, try checking existing types
         return ctx.typeInfo(expectedSuperDescriptor)
                 .map(it -> new SuperType(true, superTypeToExtend, superType, true))
-                .orElseGet(SuperType::noSuperType);
+                .orElseGet(SuperType::new);
     }
 
     // there must be none, or one non-private constructor (actually there may be more, we just use the first)
@@ -461,8 +489,10 @@ class GenerateServiceDescriptor {
         }
 
         // add contracts from interfaces and types annotated as @Contract
-        typeInfo.findAnnotation(ServiceCodegenTypes.SERVICE_ANNOTATION_CONTRACT)
-                .ifPresent(it -> collectedContracts.add(typeInfo.typeName()));
+        if (Annotations.findFirst(ServiceCodegenTypes.SERVICE_ANNOTATION_CONTRACT,
+                                  TypeHierarchy.hierarchyAnnotations(ctx, typeInfo)).isPresent()) {
+            collectedContracts.add(typeInfo.typeName());
+        }
 
         // add contracts from @ExternalContracts
         typeInfo.findAnnotation(ServiceCodegenTypes.SERVICE_ANNOTATION_EXTERNAL_CONTRACTS)
@@ -533,6 +563,7 @@ class GenerateServiceDescriptor {
         // constant for dependency
         for (ParamDefinition param : params) {
             classModel.addField(field -> field
+                    // must be public, used in generated Injection__Binding to bind services
                     .accessModifier(AccessModifier.PUBLIC)
                     .isStatic(true)
                     .isFinal(true)
@@ -578,13 +609,6 @@ class GenerateServiceDescriptor {
                                 .addContent(".contractType(G")
                                 .addContent(genericTypes.get(param.contract().fqName()).constantName())
                                 .addContentLine(")");
-                        if (param.access() != AccessModifier.PACKAGE_PRIVATE) {
-                            it.addContent(".access(")
-                                    .addContent(TypeNames.ACCESS_MODIFIER)
-                                    .addContent(".")
-                                    .addContent(param.access().name())
-                                    .addContentLine(")");
-                        }
 
                         if (param.isStatic()) {
                             it.addContentLine(".isStatic(true)");
@@ -798,21 +822,21 @@ class GenerateServiceDescriptor {
         TypedElementInfo method = list.getFirst();
         if (method.accessModifier() == AccessModifier.PRIVATE) {
             throw new CodegenException("Method annotated with " + annotationType.fqName()
-                                                    + ", is private, which is not supported: " + typeInfo.typeName().fqName()
-                                                    + "#" + method.elementName(),
-                                       method.originatingElement().orElseGet(method::elementName));
+                                               + ", is private, which is not supported: " + typeInfo.typeName().fqName()
+                                               + "#" + method.elementName(),
+                                       method.originatingElementValue());
         }
         if (!method.parameterArguments().isEmpty()) {
             throw new CodegenException("Method annotated with " + annotationType.fqName()
-                                                    + ", has parameters, which is not supported: " + typeInfo.typeName().fqName()
-                                                    + "#" + method.elementName(),
-                                       method.originatingElement().orElseGet(method::elementName));
+                                               + ", has parameters, which is not supported: " + typeInfo.typeName().fqName()
+                                               + "#" + method.elementName(),
+                                       method.originatingElementValue());
         }
         if (!method.typeName().equals(TypeNames.PRIMITIVE_VOID)) {
             throw new CodegenException("Method annotated with " + annotationType.fqName()
-                                                    + ", is not void, which is not supported: " + typeInfo.typeName().fqName()
-                                                    + "#" + method.elementName(),
-                                       method.originatingElement().orElseGet(method::elementName));
+                                               + ", is not void, which is not supported: " + typeInfo.typeName().fqName()
+                                               + "#" + method.elementName(),
+                                       method.originatingElementValue());
         }
         return Optional.of(method);
     }
@@ -877,6 +901,16 @@ class GenerateServiceDescriptor {
         return TypeName.builder(descriptorType)
                 .addTypeArgument(serviceType)
                 .build();
+    }
+
+    private interface DescriptorConsumer {
+        void addDescriptor(String registryType,
+                           TypeName serviceType,
+                           TypeName descriptorType,
+                           ClassModel.Builder descriptor,
+                           double weight,
+                           Set<TypeName> contracts,
+                           Object... originatingElements);
     }
 
     private record GenericTypeDeclaration(String constantName,

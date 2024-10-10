@@ -133,8 +133,6 @@ The format is as follows (using `//` to comment sections, not part of the format
 ]
 ```
 
-Example:
+# Helidon Service Inject
 
-```
-core:io.helidon.ContractImpl__ServiceDescriptor:101.3:io.helidon.Contract1,io.helidon.Contract2
-```
+See details in [Helidon Inject](inject/README.md).

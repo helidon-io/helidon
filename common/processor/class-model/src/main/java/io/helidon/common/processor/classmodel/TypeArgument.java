@@ -180,6 +180,17 @@ public final class TypeArgument extends Type implements TypeName {
     }
 
     @Override
+    public List<TypeName> lowerBounds() {
+        // not yet supported
+        return List.of();
+    }
+
+    @Override
+    public List<TypeName> upperBounds() {
+        return List.of(bound.genericTypeName());
+    }
+
+    @Override
     public String toString() {
         if (bound == null) {
             return "Token: " + token.className();

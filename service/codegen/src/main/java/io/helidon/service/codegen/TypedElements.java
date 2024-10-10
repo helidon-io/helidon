@@ -17,11 +17,18 @@
 package io.helidon.service.codegen;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
+import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.ElementInfoPredicates;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.ElementKind;
+import io.helidon.common.types.ElementSignature;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -57,7 +64,7 @@ final class TypedElements {
                             .filter(ElementInfoPredicates::isMethod)
                             .filter(not(ElementInfoPredicates::isStatic))
                             .filter(not(ElementInfoPredicates::isPrivate))
-                            .filter(it -> signatureMatches(declaredMethod, it))
+                            .filter(it -> declaredMethod.signature().equals(it.signature()))
                             .findFirst()
                             .ifPresent(it -> interfaceMethods.add(new TypedElements.DeclaredElement(info, it)));
                 }
@@ -68,18 +75,62 @@ final class TypedElements {
         return result;
     }
 
-    private static boolean signatureMatches(TypedElementInfo method, TypedElementInfo interfaceMethod) {
-        // if the method has the same name and same parameter types, it is our candidate (return type MUST be the same,
-        // as otherwise this could not be compiled
-        if (!ElementInfoPredicates.elementName(method.elementName()).test(interfaceMethod)) {
-            return false;
-        }
-        List<TypeName> expectedParams = method.parameterArguments()
-                .stream()
-                .map(TypedElementInfo::typeName)
-                .toList();
+    static List<TypedElements.ElementMeta> gatherElements(CodegenContext ctx,
+                                                          Collection<ResolvedType> contracts,
+                                                          TypeInfo typeInfo) {
+        List<TypedElements.ElementMeta> result = new ArrayList<>();
+        Set<ElementSignature> processedSignatures = new HashSet<>();
 
-        return ElementInfoPredicates.hasParams(expectedParams).test(interfaceMethod);
+        typeInfo.elementInfo()
+                .stream()
+                .filter(it -> it.kind() != ElementKind.CLASS)
+                .forEach(declaredElement -> {
+                    List<TypedElements.DeclaredElement> interfaceMethods = new ArrayList<>();
+
+                    if (declaredElement.kind() == ElementKind.METHOD) {
+                        // now find the same method on any interface (if declared there)
+                        for (TypeInfo info : typeInfo.interfaceTypeInfo()) {
+                            if (!contracts.contains(ResolvedType.create(info.typeName()))) {
+                                // only interested in contracts
+                                continue;
+                            }
+                            info.elementInfo()
+                                    .stream()
+                                    .filter(ElementInfoPredicates::isMethod)
+                                    .filter(not(ElementInfoPredicates::isStatic))
+                                    .filter(not(ElementInfoPredicates::isPrivate))
+                                    .filter(it -> declaredElement.signature().equals(it.signature()))
+                                    .findFirst()
+                                    .ifPresent(it -> interfaceMethods.add(new TypedElements.DeclaredElement(info, it)));
+                        }
+                    }
+                    result.add(new TypedElements.ElementMeta(declaredElement, interfaceMethods));
+                    processedSignatures.add(declaredElement.signature());
+                });
+
+        // we have gathered all the declared elements, now let's gather inherited elements (default methods etc.)
+        for (TypeName contract : contracts) {
+            Optional<TypeInfo> contractTypeInfo = ctx.typeInfo(contract);
+            if (contractTypeInfo.isPresent()) {
+                TypeInfo inheritedContract = contractTypeInfo.get();
+                inheritedContract.elementInfo()
+                        .stream()
+                        .filter(it -> it.kind() != ElementKind.CLASS)
+                        .forEach(superElement -> {
+                            if (!processedSignatures.add(superElement.signature())) {
+                                // already processed
+                                return;
+                            }
+                            List<TypedElements.DeclaredElement> interfaceMethods = new ArrayList<>();
+                            if (superElement.kind() == ElementKind.METHOD) {
+                                interfaceMethods.add(new DeclaredElement(inheritedContract, superElement));
+                            }
+                            result.add(new TypedElements.ElementMeta(superElement, interfaceMethods));
+                        });
+            }
+        }
+
+        return result;
     }
 
     record ElementMeta(TypedElementInfo element,

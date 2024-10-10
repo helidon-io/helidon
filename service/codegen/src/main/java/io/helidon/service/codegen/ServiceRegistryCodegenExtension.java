@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -29,17 +28,18 @@ import java.util.function.Predicate;
 
 import io.helidon.codegen.ClassCode;
 import io.helidon.codegen.CodegenContext;
-import io.helidon.codegen.CodegenFiler;
 import io.helidon.codegen.CodegenOptions;
 import io.helidon.codegen.ModuleInfo;
-import io.helidon.codegen.classmodel.ClassModel;
+import io.helidon.codegen.RoundContext;
+import io.helidon.codegen.TypeHierarchy;
 import io.helidon.codegen.spi.CodegenExtension;
 import io.helidon.common.Weighted;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
-import io.helidon.common.types.TypedElementInfo;
+import io.helidon.service.codegen.spi.RegistryCodegenExtension;
+import io.helidon.service.codegen.spi.RegistryCodegenExtensionProvider;
 import io.helidon.service.metadata.DescriptorMetadata;
 
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_DESCRIPTOR;
@@ -48,31 +48,38 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_
  * Handles processing of all extensions, creates context and writes types.
  */
 class ServiceRegistryCodegenExtension implements CodegenExtension {
-    private final Map<TypeName, List<RegistryCodegenExtension>> typeToExtensions = new HashMap<>();
-    private final Map<RegistryCodegenExtension, Predicate<TypeName>> extensionPredicates = new IdentityHashMap<>();
     private final Set<DescriptorMetadata> generatedServiceDescriptors = new HashSet<>();
+    private final List<ExtensionInfo> extensions;
     private final RegistryCodegenContext ctx;
-    private final List<RegistryCodegenExtension> extensions;
     private final String module;
 
-    private ServiceRegistryCodegenExtension(CodegenContext ctx, TypeName generator) {
+    private ServiceRegistryCodegenExtension(CodegenContext ctx,
+                                            TypeName generator,
+                                            List<RegistryCodegenExtensionProvider> extensions) {
         this.ctx = RegistryCodegenContext.create(ctx);
         this.module = ctx.moduleName().orElse(null);
-
-        ServiceExtension serviceExtension = new ServiceExtension(this.ctx);
-        this.extensions = List.of(serviceExtension);
-        this.typeToExtensions.put(ServiceCodegenTypes.SERVICE_ANNOTATION_PROVIDER, List.of(serviceExtension));
+        this.extensions = extensions.stream()
+                .map(it -> {
+                    RegistryCodegenExtension extension = it.create(this.ctx);
+                    return new ExtensionInfo(extension,
+                                             discoveryPredicate(it.supportedAnnotations(),
+                                                                it.supportedAnnotationPackages()),
+                                             it.supportedMetaAnnotations());
+                })
+                .toList();
     }
 
-    static ServiceRegistryCodegenExtension create(CodegenContext ctx, TypeName generator) {
-        return new ServiceRegistryCodegenExtension(ctx, generator);
+    static ServiceRegistryCodegenExtension create(CodegenContext ctx,
+                                                  TypeName generator,
+                                                  List<RegistryCodegenExtensionProvider> extensions) {
+        return new ServiceRegistryCodegenExtension(ctx, generator, extensions);
     }
 
     @Override
     public void process(io.helidon.codegen.RoundContext roundContext) {
         Collection<TypeInfo> allTypes = roundContext.types();
         if (allTypes.isEmpty()) {
-            extensions.forEach(it -> it.process(createRoundContext(List.of(), it)));
+            extensions.forEach(it -> it.extension().process(createRoundContext(roundContext, List.of(), it)));
             return;
         }
 
@@ -83,11 +90,11 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
         // and create a new round context for each extension
 
         // for each extension, create a RoundContext with just the stuff it wants
-        for (RegistryCodegenExtension extension : extensions) {
-            extension.process(createRoundContext(annotatedTypes, extension));
+        for (var extension : extensions) {
+            extension.extension().process(createRoundContext(roundContext, annotatedTypes, extension));
         }
 
-        writeNewTypes();
+        writeNewTypes(roundContext);
 
         for (TypeInfo typeInfo : roundContext.annotatedTypes(SERVICE_ANNOTATION_DESCRIPTOR)) {
             // add each declared descriptor in source code
@@ -121,10 +128,13 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
     @Override
     public void processingOver(io.helidon.codegen.RoundContext roundContext) {
         // do processing over in each extension
-        extensions.forEach(RegistryCodegenExtension::processingOver);
+        extensions
+                .stream()
+                .map(ExtensionInfo::extension)
+                .forEach(RegistryCodegenExtension::processingOver);
 
         // if there was any type generated, write it out (will not trigger next round)
-        writeNewTypes();
+        writeNewTypes(roundContext);
 
         if (!generatedServiceDescriptors.isEmpty()) {
             // re-check, maybe we run from a tool that does not generate anything except for the module component,
@@ -133,6 +143,24 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
             addDescriptorsToServiceMeta();
             generatedServiceDescriptors.clear();
         }
+    }
+
+    private static Predicate<TypeName> discoveryPredicate(Set<TypeName> typeNames, Collection<String> packages) {
+        List<String> prefixes = packages.stream()
+                .map(it -> it.endsWith(".*") ? it.substring(0, it.length() - 2) : it)
+                .toList();
+        return typeName -> {
+            if (typeNames.contains(typeName)) {
+                return true;
+            }
+            String packageName = typeName.packageName();
+            for (String prefix : prefixes) {
+                if (packageName.startsWith(prefix)) {
+                    return true;
+                }
+            }
+            return false;
+        };
     }
 
     private void addDescriptorsToServiceMeta() {
@@ -154,107 +182,98 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
         services.write();
     }
 
-    private void writeNewTypes() {
-        // after each round, write all generated types
-        CodegenFiler filer = ctx.filer();
-
+    @SuppressWarnings("removal")
+    private void writeNewTypes(RoundContext roundContext) {
+        /*
+        This is not longer going to write the types, as it is now (correctly) delegated to
+        codegen round context
+         */
         // generate all code
         var descriptors = ctx.descriptors();
         for (var descriptor : descriptors) {
             ClassCode classCode = descriptor.classCode();
-            ClassModel classModel = classCode.classModel().build();
             generatedServiceDescriptors.add(DescriptorMetadata.create(descriptor.registryType(),
                                                                       classCode.newType(),
                                                                       descriptor.weight(),
                                                                       descriptor.contracts()));
-            filer.writeSourceFile(classModel, classCode.originatingElements());
+            if (roundContext.generatedType(classCode.newType()).isEmpty()) {
+                // add the ones added through deprecated methods on context
+                roundContext.addGeneratedType(classCode.newType(),
+                                              classCode.classModel(),
+                                              classCode.mainTrigger(),
+                                              classCode.originatingElements());
+            }
         }
-        descriptors.clear();
 
-        var otherTypes = ctx.types();
-        for (var classCode : otherTypes) {
-            ClassModel classModel = classCode.classModel().build();
-            filer.writeSourceFile(classModel, classCode.originatingElements());
+        for (ClassCode classCode : ctx.types()) {
+            // add the ones added through deprecated methods on context
+            if (roundContext.generatedType(classCode.newType()).isEmpty()) {
+                roundContext.addGeneratedType(classCode.newType(),
+                                              classCode.classModel(),
+                                              classCode.mainTrigger(),
+                                              classCode.originatingElements());
+            }
         }
-        otherTypes.clear();
+
+        descriptors.clear();
+        ctx.types().clear();
     }
 
     private List<TypeInfoAndAnnotations> annotatedTypes(Collection<TypeInfo> allTypes) {
         List<TypeInfoAndAnnotations> result = new ArrayList<>();
 
         for (TypeInfo typeInfo : allTypes) {
-            result.add(new TypeInfoAndAnnotations(typeInfo, annotations(typeInfo)));
+            result.add(new TypeInfoAndAnnotations(typeInfo, TypeHierarchy.nestedAnnotations(ctx, typeInfo)));
         }
         return result;
     }
 
-    private RegistryRoundContext createRoundContext(List<TypeInfoAndAnnotations> annotatedTypes,
-                                                    RegistryCodegenExtension extension) {
-        Set<TypeName> extAnnots = new HashSet<>();
-        Map<TypeName, List<TypeInfo>> extAnnotToType = new HashMap<>();
-        Map<TypeName, TypeInfo> extTypes = new HashMap<>();
+    private RegistryRoundContext createRoundContext(RoundContext roundContext,
+                                                    List<TypeInfoAndAnnotations> annotatedTypes,
+                                                    ExtensionInfo extension) {
+
+        Set<TypeName> availableAnnotations = new HashSet<>();
+        Map<TypeName, List<TypeInfo>> annotationToTypes = new HashMap<>();
+        Map<TypeName, TypeInfo> processedTypes = new HashMap<>();
 
         for (TypeInfoAndAnnotations annotatedType : annotatedTypes) {
-            for (TypeName typeName : annotatedType.annotations()) {
-                boolean added = false;
-                List<RegistryCodegenExtension> validExts = this.typeToExtensions.get(typeName);
-                if (validExts != null) {
-                    for (RegistryCodegenExtension validExt : validExts) {
-                        if (validExt == extension) {
-                            extAnnots.add(typeName);
-                            extAnnotToType.computeIfAbsent(typeName, key -> new ArrayList<>())
-                                    .add(annotatedType.typeInfo());
-                            extTypes.put(annotatedType.typeInfo().typeName(), annotatedType.typeInfo);
-                            added = true;
-                        }
-                    }
-                }
-                if (!added) {
-                    Predicate<TypeName> predicate = this.extensionPredicates.get(extension);
-                    if (predicate != null && predicate.test(typeName)) {
-                        extAnnots.add(typeName);
-                        extAnnotToType.computeIfAbsent(typeName, key -> new ArrayList<>())
-                                .add(annotatedType.typeInfo());
-                        extTypes.put(annotatedType.typeInfo().typeName(), annotatedType.typeInfo);
-                    }
+            for (TypeName annotationType : annotatedType.annotations()) {
+                // first check if directly supported
+                if (extension.supportedAnnotationsPredicate.test(annotationType)
+                        || isMetaAnnotated(roundContext, extension, annotationType)) {
+
+                    availableAnnotations.add(annotationType);
+                    processedTypes.put(annotatedType.typeInfo().typeName(), annotatedType.typeInfo());
+                    annotationToTypes.computeIfAbsent(annotationType, k -> new ArrayList<>())
+                            .add(annotatedType.typeInfo());
+                    // annotation is meta-annotated with a supported meta-annotation,
+                    // or we support the annotation type, or it is prefixed by the package prefix
                 }
             }
         }
 
+        Map<TypeName, Set<TypeName>> metaAnnotated = new HashMap<>();
+        for (TypeName typeName : extension.supportedMetaAnnotations()) {
+            metaAnnotated.put(typeName, Set.copyOf(roundContext.annotatedAnnotations(typeName)));
+        }
+
         return new RoundContextImpl(
-                Set.copyOf(extAnnots),
-                Map.copyOf(extAnnotToType),
-                List.copyOf(extTypes.values()));
+                this.ctx,
+                roundContext,
+                Set.copyOf(availableAnnotations),
+                Map.copyOf(annotationToTypes),
+                Map.copyOf(metaAnnotated),
+                List.copyOf(processedTypes.values()));
     }
 
-    private Set<TypeName> annotations(TypeInfo theTypeInfo) {
-        Set<TypeName> result = new HashSet<>();
-
-        // on type
-        theTypeInfo.annotations()
-                .stream()
-                .map(Annotation::typeName)
-                .forEach(result::add);
-
-        // on fields, methods etc.
-        theTypeInfo.elementInfo()
-                .stream()
-                .map(TypedElementInfo::annotations)
-                .flatMap(List::stream)
-                .map(Annotation::typeName)
-                .forEach(result::add);
-
-        // on parameters
-        theTypeInfo.elementInfo()
-                .stream()
-                .map(TypedElementInfo::parameterArguments)
-                .flatMap(List::stream)
-                .map(TypedElementInfo::annotations)
-                .flatMap(List::stream)
-                .map(Annotation::typeName)
-                .forEach(result::add);
-
-        return result;
+    private boolean isMetaAnnotated(RoundContext roundContext, ExtensionInfo extension, TypeName annotationType) {
+        for (TypeName typeName : extension.supportedMetaAnnotations()) {
+            if (roundContext.annotatedAnnotations(typeName)
+                    .contains(annotationType)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String topLevelPackage(Set<DescriptorMetadata> typeNames) {
@@ -271,5 +290,10 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
     }
 
     private record TypeInfoAndAnnotations(TypeInfo typeInfo, Set<TypeName> annotations) {
+    }
+
+    private record ExtensionInfo(RegistryCodegenExtension extension,
+                                 Predicate<TypeName> supportedAnnotationsPredicate,
+                                 Set<TypeName> supportedMetaAnnotations) {
     }
 }
