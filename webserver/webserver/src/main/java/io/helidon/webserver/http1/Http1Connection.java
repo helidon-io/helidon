@@ -20,6 +20,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
@@ -38,6 +39,8 @@ import io.helidon.http.DirectHandler;
 import io.helidon.http.DirectHandler.EventType;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.HostValidator;
+import io.helidon.http.HtmlEncoder;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.InternalServerException;
 import io.helidon.http.RequestException;
@@ -65,15 +68,13 @@ import static java.lang.System.Logger.Level.WARNING;
  * HTTP/1.1 server connection.
  */
 public class Http1Connection implements ServerConnection, InterruptableTask<Void> {
+    static final byte[] CONTINUE_100 = "HTTP/1.1 100 Continue\r\n\r\n".getBytes(StandardCharsets.UTF_8);
     private static final System.Logger LOGGER = System.getLogger(Http1Connection.class.getName());
     private static final Supplier<RequestException> INVALID_SIZE_EXCEPTION_SUPPLIER =
             () -> RequestException.builder()
                     .type(EventType.BAD_REQUEST)
                     .message("Chunk size is invalid")
                     .build();
-
-    static final byte[] CONTINUE_100 = "HTTP/1.1 100 Continue\r\n\r\n".getBytes(StandardCharsets.UTF_8);
-
     private final ConnectionContext ctx;
     private final Http1Config http1Config;
     private final DataWriter writer;
@@ -103,7 +104,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
      * Create a new connection.
      *
      * @param ctx                connection context
-     * @param http1Config             connection provider configuration
+     * @param http1Config        connection provider configuration
      * @param upgradeProviderMap map of upgrade providers (protocol id to provider)
      */
     Http1Connection(ConnectionContext ctx,
@@ -134,6 +135,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         return true;
     }
 
+    @SuppressWarnings("removal")
     @Override
     public void handle(Semaphore requestSemaphore) throws InterruptedException {
         this.myThread = Thread.currentThread();
@@ -153,6 +155,9 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                 currentEntitySizeRead = 0;
 
                 WritableHeaders<?> headers = http1headers.readHeaders(prologue);
+                if (http1Config.validateRequestHeaders()) {
+                    validateHostHeader(prologue, headers, http1Config.validateRequestHostHeader());
+                }
                 ctx.remotePeer().tlsCertificates()
                         .flatMap(TlsUtils::parseCn)
                         .ifPresent(name -> headers.set(X_HELIDON_CN, name));
@@ -255,6 +260,133 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         } else {
             upgradeConnection.close(interrupt);
         }
+    }
+
+    void reset() {
+        currentEntitySize = 0;
+        currentEntitySizeRead = 0;
+    }
+
+    static void validateHostHeader(HttpPrologue prologue, WritableHeaders<?> headers, boolean fullValidation) {
+        if (fullValidation) {
+            try {
+                doValidateHostHeader(prologue, headers);
+            } catch (IllegalArgumentException e) {
+                throw RequestException.builder()
+                        .type(EventType.BAD_REQUEST)
+                        .status(Status.BAD_REQUEST_400)
+                        .request(DirectTransportRequest.create(prologue, headers))
+                        .setKeepAlive(false)
+                        .message("Invalid Host header: " + e.getMessage())
+                        .cause(e)
+                        .build();
+            }
+        } else {
+            simpleHostHeaderValidation(prologue, headers);
+        }
+    }
+
+    private static void simpleHostHeaderValidation(HttpPrologue prologue, WritableHeaders<?> headers) {
+        if (headers.contains(HeaderNames.HOST)) {
+            String host = headers.get(HeaderNames.HOST).get();
+            // this is what is used to set up URI information, and this MUST work
+            int index = host.lastIndexOf(':');
+            if (index < 1) {
+                return;
+            }
+            // this may still be an IPv6 address
+            if (host.charAt(host.length() - 1) == ']') {
+                // IP literal without port
+                return;
+            }
+
+            try {
+                // port must be parseable to int
+                Integer.parseInt(host.substring(index + 1));
+            } catch (NumberFormatException e) {
+                throw RequestException.builder()
+                        .type(EventType.BAD_REQUEST)
+                        .status(Status.BAD_REQUEST_400)
+                        .request(DirectTransportRequest.create(prologue, headers))
+                        .setKeepAlive(false)
+                        .message("Invalid port of the host header: " + HtmlEncoder.encode(host.substring(index + 1)))
+                        .build();
+            }
+
+        }
+
+    }
+
+    private static void doValidateHostHeader(HttpPrologue prologue, WritableHeaders<?> headers) {
+        List<String> hostHeaders = headers.all(HeaderNames.HOST, List::of);
+        if (hostHeaders.isEmpty()) {
+            throw RequestException.builder()
+                    .type(EventType.BAD_REQUEST)
+                    .status(Status.BAD_REQUEST_400)
+                    .request(DirectTransportRequest.create(prologue, headers))
+                    .setKeepAlive(false)
+                    .message("Host header must be present in the request")
+                    .build();
+        }
+        if (hostHeaders.size() > 1) {
+            throw RequestException.builder()
+                    .type(EventType.BAD_REQUEST)
+                    .status(Status.BAD_REQUEST_400)
+                    .request(DirectTransportRequest.create(prologue, headers))
+                    .setKeepAlive(false)
+                    .message("Only a single Host header is allowed in request")
+                    .build();
+        }
+        String host = hostHeaders.getFirst();
+        if (host.isEmpty()) {
+            throw RequestException.builder()
+                    .type(EventType.BAD_REQUEST)
+                    .status(Status.BAD_REQUEST_400)
+                    .request(DirectTransportRequest.create(prologue, headers))
+                    .setKeepAlive(false)
+                    .message("Host header must not be empty")
+                    .build();
+        }
+        // now host and port must be valid
+        int startLiteral = host.indexOf('[');
+        int endLiteral = host.lastIndexOf(']');
+        if (startLiteral == 0 && endLiteral == host.length() - 1) {
+            // this is most likely an IPv6 address without a port
+            HostValidator.validateIpLiteral(host);
+            return;
+        }
+        if (startLiteral == 0 && endLiteral == -1) {
+            HostValidator.validateIpLiteral(host);
+            return;
+        }
+        int colon = host.lastIndexOf(':');
+        if (colon == -1) {
+            // only host
+            HostValidator.validateNonIpLiteral(host);
+            return;
+        }
+
+        String portString = host.substring(colon + 1);
+        try {
+            Integer.parseInt(portString);
+        } catch (NumberFormatException e) {
+            throw RequestException.builder()
+                    .type(EventType.BAD_REQUEST)
+                    .status(Status.BAD_REQUEST_400)
+                    .request(DirectTransportRequest.create(prologue, headers))
+                    .setKeepAlive(false)
+                    .message("Invalid port of the host header: " + HtmlEncoder.encode(portString))
+                    .build();
+        }
+        String hostString = host.substring(0, colon);
+        // can be
+        // IP-literal [..::]
+        if (startLiteral == 0 && endLiteral == hostString.length() - 1) {
+            HostValidator.validateIpLiteral(hostString);
+            return;
+        }
+
+        HostValidator.validateNonIpLiteral(hostString);
     }
 
     private BufferData readEntityFromPipeline(HttpPrologue prologue, WritableHeaders<?> headers) {
@@ -485,10 +617,5 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         if (response.status() == Status.INTERNAL_SERVER_ERROR_500) {
             LOGGER.log(WARNING, "Internal server error", e);
         }
-    }
-
-    void reset() {
-        currentEntitySize = 0;
-        currentEntitySizeRead = 0;
     }
 }

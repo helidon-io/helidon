@@ -73,6 +73,25 @@ interface Http1ConfigBlueprint extends ProtocolConfig {
     boolean validateRequestHeaders();
 
     /**
+     * Request host header validation.
+     * When host header is invalid, we return {@link io.helidon.http.Status#BAD_REQUEST_400}.
+     * <p>
+     * The validation is done according to RFC-3986 (see {@link io.helidon.http.HostValidator}). This is a requirement of
+     * the HTTP specification.
+     * <p>
+     * This option allows you to disable the "full-blown" validation ("simple" validation is still in - the port must be
+     * parseable to integer).
+     *
+     * @return whether to do a full validation of {@code Host} header according to the specification
+     * @deprecated this switch exists for temporary backward compatible behavior, and will be removed in a future Helidon
+     *              version
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(true)
+    @Deprecated(forRemoval = true, since = "4.1.3")
+    boolean validateRequestHostHeader();
+
+    /**
      * Whether to validate headers.
      * If set to false, any value is accepted, otherwise validates headers + known headers
      * are validated by format
