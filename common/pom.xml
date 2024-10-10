@@ -55,6 +55,7 @@
         <module>tls</module>
         <module>types</module>
         <module>uri</module>
+        <module>concurrency</module>
     </modules>
 
     <build>

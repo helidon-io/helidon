@@ -81,6 +81,10 @@
             <artifactId>helidon-common-features</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.common.concurrency</groupId>
+            <artifactId>helidon-common-concurrency-limits</artifactId>
+        </dependency>
+        <dependency>
             <!--
             This dependency is not required, yet a lot of examples depend on it. Kept in for backward compatibility.
             This used to be a transitive dependency of another module.
