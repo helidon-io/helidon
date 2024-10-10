@@ -34,9 +34,12 @@ public class ParameterizedTypesTest {
     @BeforeAll
     public static void initRegistry() {
         var injectConfig = InjectConfig.builder()
-                .addServiceDescriptor(ParameterizedTypes_GenericProducerString__ServiceDescriptor.INSTANCE)
-                .addServiceDescriptor(ParameterizedTypes_GenericProducerInt__ServiceDescriptor.INSTANCE)
-                .addServiceDescriptor(ParameterizedTypes_GenericContractReceiver__ServiceDescriptor.INSTANCE)
+                .addServiceDescriptor(ParameterizedTypes_Blue__ServiceDescriptor.INSTANCE)
+                .addServiceDescriptor(ParameterizedTypes_Green__ServiceDescriptor.INSTANCE)
+                .addServiceDescriptor(ParameterizedTypes_BlueCircle__ServiceDescriptor.INSTANCE)
+                .addServiceDescriptor(ParameterizedTypes_GreenCircle__ServiceDescriptor.INSTANCE)
+                .addServiceDescriptor(ParameterizedTypes_ColorReceiver__ServiceDescriptor.INSTANCE)
+                .addServiceDescriptor(ParameterizedTypes_ColorsReceiver__ServiceDescriptor.INSTANCE)
                 .discoverServices(false)
                 .discoverServicesFromServiceLoader(false)
                 .build();
@@ -46,13 +49,22 @@ public class ParameterizedTypesTest {
 
     @AfterAll
     public static void tearDownRegistry() {
-        registryManager.shutdown();
+        if (registryManager != null) {
+            registryManager.shutdown();
+        }
     }
 
     @Test
-    void testReceiver() {
-        var receiver = registry.get(ParameterizedTypes.GenericContractReceiver.class);
+    void testColorReceiver() {
+        var receiver = registry.get(ParameterizedTypes.ColorReceiver.class);
 
-        assertThat(receiver.getString(), is("Hello-42"));
+        assertThat(receiver.getString(), is("blue-green"));
+    }
+
+    @Test
+    void testColorsReceiver() {
+        var receiver = registry.get(ParameterizedTypes.ColorsReceiver.class);
+
+        assertThat(receiver.getString(), is("green-blue"));
     }
 }

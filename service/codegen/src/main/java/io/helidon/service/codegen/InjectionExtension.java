@@ -49,6 +49,7 @@ import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.Modifier;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -691,8 +692,9 @@ class InjectionExtension implements RegistryCodegenExtension {
         );
     }
 
-    private void scopeHandler(TypeInfo typeInfo, ClassModel.Builder classModel, Set<TypeName> contracts) {
-        if (!contracts.contains(INJECTION_SCOPE_HANDLER)) {
+    private void scopeHandler(TypeInfo typeInfo, ClassModel.Builder classModel, Set<ResolvedType> contracts) {
+        if (contracts.stream()
+                .noneMatch(it -> it.genericTypeName().equals(INJECTION_SCOPE_HANDLER))) {
             return;
         }
 
@@ -1695,7 +1697,7 @@ class InjectionExtension implements RegistryCodegenExtension {
                 .addContentLine("return TYPE;"));
     }
 
-    private void contractsMethod(ClassModel.Builder classModel, Set<TypeName> contracts) {
+    private void contractsMethod(ClassModel.Builder classModel, Set<ResolvedType> contracts) {
         if (contracts.isEmpty()) {
             return;
         }
@@ -1707,7 +1709,7 @@ class InjectionExtension implements RegistryCodegenExtension {
                 .addContent(Set.class)
                 .addContent(".of(")
                 .update(it -> {
-                    Iterator<TypeName> iterator = contracts.iterator();
+                    Iterator<ResolvedType> iterator = contracts.iterator();
                     while (iterator.hasNext()) {
                         it.addContentCreate(iterator.next());
                         if (iterator.hasNext()) {

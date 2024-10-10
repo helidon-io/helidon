@@ -18,6 +18,7 @@ package io.helidon.tests.integration.packaging.inject;
 
 import io.helidon.common.config.Config;
 import io.helidon.common.config.GlobalConfig;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.service.inject.InjectRegistryManager;
 import io.helidon.service.inject.api.InjectRegistry;
 import io.helidon.service.inject.api.Injection;
@@ -28,10 +29,15 @@ import io.helidon.service.inject.api.Lookup;
  * as we cannot use a main class from another module (at least not easily).
  */
 public class Main {
+    static {
+        LogConfig.initClass();
+    }
+
     public static void main(String[] args) {
+        LogConfig.configureRuntime();
+
         // makes sure global config is initialized
         Config config = GlobalConfig.config();
-        System.out.println("Configured port: " + config.get("server.port").asInt().orElse(-1));
         GlobalConfig.config(() -> config);
 
         InjectRegistry registry = InjectRegistryManager.create()

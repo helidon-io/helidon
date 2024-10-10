@@ -35,11 +35,33 @@ import io.helidon.builder.api.Prototype;
 interface TypeInfoBlueprint extends Annotated {
     /**
      * The type name.
+     * This type name represents the type usage of this type
+     * (obtained from {@link TypeInfo#superTypeInfo()} or {@link TypeInfo#interfaceTypeInfo()}).
+     * In case this is a type info created from {@link io.helidon.common.types.TypeName}, this will be the type name returned.
      *
      * @return the type name
      */
     @Option.Required
     TypeName typeName();
+
+    /**
+     * The raw type name. This is a unique identification of a type, containing ONLY:
+     * <ul>
+     *  <li>{@link TypeName#packageName()}</li>
+     *  <li>{@link io.helidon.common.types.TypeName#className()}</li>
+     *  <li>if relevant: {@link io.helidon.common.types.TypeName#enclosingNames()}</li>
+     * </ul>
+     *
+     * @return raw type of this type info
+     */
+    TypeName rawType();
+
+    /**
+     * The declared type name, including type parameters.
+     *
+     * @return type name with declared type parameters
+     */
+    TypeName declaredType();
 
     /**
      * Description, such as javadoc, if available.

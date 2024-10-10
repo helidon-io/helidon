@@ -56,18 +56,6 @@ import static io.helidon.common.types.TypeNames.PRIMITIVE_VOID;
 // declaration in builder is always non-generic, so no need to modify default values
 class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
 
-    private static final Map<TypeName, TypeName> BOXED_TO_PRIMITIVE = Map.of(
-            BOXED_BOOLEAN, PRIMITIVE_BOOLEAN,
-            BOXED_BYTE, PRIMITIVE_BYTE,
-            BOXED_SHORT, PRIMITIVE_SHORT,
-            BOXED_INT, PRIMITIVE_INT,
-            BOXED_LONG, PRIMITIVE_LONG,
-            BOXED_CHAR, PRIMITIVE_CHAR,
-            BOXED_FLOAT, PRIMITIVE_FLOAT,
-            BOXED_DOUBLE, PRIMITIVE_DOUBLE,
-            BOXED_VOID, PRIMITIVE_VOID
-    );
-
     TypeHandlerOptional(TypeName blueprintType,
                         TypedElementInfo annotatedMethod,
                         String name, String getterName, String setterName, TypeName declaredType) {
@@ -98,14 +86,12 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
     @Override
     TypeName argumentTypeName() {
         TypeName type = actualType();
-        if (TypeNames.STRING.equals(type) || toPrimitive(type).primitive()) {
-            return TypeName.builder(OPTIONAL)
-                    .addTypeArgument(type)
-                    .build();
+        if (TypeNames.STRING.equals(type) || toPrimitive(type).primitive() || type.array()) {
+            return declaredType();
         }
 
         return TypeName.builder(OPTIONAL)
-                .addTypeArgument(toWildcard(actualType()))
+                .addTypeArgument(toWildcard(type))
                 .build();
     }
 
@@ -282,10 +268,5 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
             return ".orElse(null)";
         }
         return "";
-    }
-
-    private TypeName toPrimitive(TypeName typeName) {
-        return Optional.ofNullable(BOXED_TO_PRIMITIVE.get(typeName))
-                .orElse(typeName);
     }
 }

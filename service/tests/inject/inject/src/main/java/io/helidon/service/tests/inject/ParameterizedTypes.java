@@ -16,45 +16,84 @@
 
 package io.helidon.service.tests.inject;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.service.inject.api.Injection;
 import io.helidon.service.registry.Service;
 
-interface ParameterizedTypes {
+final class ParameterizedTypes {
+    private ParameterizedTypes() {
+    }
+
     @Service.Contract
-    interface GenericContract<T> {
-        T get();
+    interface Color {
+        String name();
+    }
+
+    @Service.Contract
+    interface Circle<T extends Color> {
+        T color();
     }
 
     @Injection.Singleton
-    class GenericProducerString implements GenericContract<String> {
+    static class Blue implements Color {
         @Override
-        public String get() {
-            return "Hello";
+        public String name() {
+            return "blue";
         }
     }
 
     @Injection.Singleton
-    class GenericProducerInt implements GenericContract<Integer> {
+    static class Green implements Color {
         @Override
-        public Integer get() {
-            return 42;
+        public String name() {
+            return "green";
         }
     }
 
     @Injection.Singleton
-    class GenericContractReceiver {
-        private final GenericContract<String> genericContractString;
-        private final GenericContract<Integer> genericContractInteger;
+    @Weight(Weighted.DEFAULT_WEIGHT + 10)
+    record BlueCircle(Blue color) implements Circle<Blue> {
+    }
+
+    @Injection.Singleton
+    record GreenCircle(Green color) implements Circle<Green> {
+    }
+
+    @Injection.Singleton
+    static class ColorReceiver {
+        private final List<Circle<Color>> circles;
 
         @Injection.Inject
-        GenericContractReceiver(GenericContract<String> genericContractString,
-                                GenericContract<Integer> genericContractInteger) {
-            this.genericContractString = genericContractString;
-            this.genericContractInteger = genericContractInteger;
+        ColorReceiver(List<Circle<Color>> circles) {
+            this.circles = circles;
         }
 
         String getString() {
-            return genericContractString.get() + "-" + genericContractInteger.get();
+            return circles.stream()
+                    .map(Circle::color)
+                    .map(Color::name)
+                    .collect(Collectors.joining("-"));
+        }
+    }
+
+    @Injection.Singleton
+    static class ColorsReceiver {
+        private final Circle<Green> greenCircle;
+        private final Circle<Blue> blueCircle;
+
+        @Injection.Inject
+        ColorsReceiver(Circle<Green> greenCircle,
+                       Circle<Blue> blueCircle) {
+            this.greenCircle = greenCircle;
+            this.blueCircle = blueCircle;
+        }
+
+        String getString() {
+            return greenCircle.color().name() + "-" + blueCircle.color().name();
         }
     }
 }

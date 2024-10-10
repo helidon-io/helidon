@@ -68,6 +68,18 @@ final class TypeInfoSupport {
                 target.addModifier(typeModifier.modifierName());
             }
             target.addModifier(target.accessModifier().get().modifierName());
+
+            // new methods, simplify for tests
+            if (target.rawType().isEmpty()) {
+                target.typeName()
+                        .map(TypeName::genericTypeName)
+                        .ifPresent(target::rawType);
+            }
+            if (target.declaredType().isEmpty()) {
+                // this may not be correct, but is correct for all types that do not have any declaration of generics
+                // so it simplifies a lot of use cases
+                target.rawType().ifPresent(target::declaredType);
+            }
         }
     }
 }

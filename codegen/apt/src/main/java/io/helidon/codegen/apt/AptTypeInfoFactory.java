@@ -430,6 +430,7 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
                 // this is probably forward referencing a generated type, ignore
                 return Optional.empty();
             }
+            TypeName declaredTypeName = declaredTypeName(ctx, genericTypeName);
             List<Annotation> annotations = createAnnotations(ctx,
                                                              foundType,
                                                              elementUtils);
@@ -451,10 +452,13 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
                                                            annotationsOnTypeOrElements,
                                                            it));
 
+
             Set<String> modifiers = toModifierNames(typeElement.getModifiers());
             TypeInfo.Builder builder = TypeInfo.builder()
                     .originatingElement(typeElement)
                     .typeName(typeName)
+                    .rawType(genericTypeName)
+                    .declaredType(declaredTypeName)
                     .kind(kind(typeElement.getKind()))
                     .annotations(annotations)
                     .inheritedAnnotations(inheritedAnnotations)
@@ -545,6 +549,12 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
         } catch (Exception e) {
             throw new IllegalStateException("Failed to process: " + typeElement, e);
         }
+    }
+
+    private static TypeName declaredTypeName(AptContext ctx, TypeName typeName) {
+        TypeElement typeElement = ctx.aptEnv().getElementUtils().getTypeElement(typeName.fqName());
+        // we know this type exists, we do not have to check for null
+        return AptTypeFactory.createTypeName(typeElement.asType()).orElseThrow();
     }
 
     private static void collectEnclosedElements(Predicate<TypedElementInfo> elementPredicate,

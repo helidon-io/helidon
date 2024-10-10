@@ -28,6 +28,7 @@ import io.helidon.codegen.ElementInfoPredicates;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.ElementSignature;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -74,7 +75,7 @@ final class TypedElements {
         return result;
     }
 
-    static List<TypedElements.ElementMeta> gatherElements(CodegenContext ctx, Collection<TypeName> contracts, TypeInfo typeInfo) {
+    static List<TypedElements.ElementMeta> gatherElements(CodegenContext ctx, Collection<ResolvedType> contracts, TypeInfo typeInfo) {
         List<TypedElements.ElementMeta> result = new ArrayList<>();
         Set<ElementSignature> processedSignatures = new HashSet<>();
 
@@ -87,7 +88,7 @@ final class TypedElements {
                     if (declaredElement.kind() == ElementKind.METHOD) {
                         // now find the same method on any interface (if declared there)
                         for (TypeInfo info : typeInfo.interfaceTypeInfo()) {
-                            if (!contracts.contains(info.typeName())) {
+                            if (!contracts.contains(ResolvedType.create(info.typeName()))) {
                                 // only interested in contracts
                                 continue;
                             }

@@ -176,7 +176,11 @@ class BuilderCodegen implements CodegenExtension {
             Javadoc javadoc = Javadoc.parse(blueprintDef.javadoc());
             classModel.javadoc(javadoc);
             typeGenericArguments.forEach(arg -> {
-                TypeArgument.Builder tokenBuilder = TypeArgument.builder().token(arg.className());
+                TypeArgument.Builder tokenBuilder = TypeArgument.builder()
+                        .token(arg.className());
+                if (!arg.upperBounds().isEmpty()) {
+                    tokenBuilder.bound(arg.upperBounds().getFirst());
+                }
                 if (javadoc.genericsTokens().containsKey(arg.className())) {
                     tokenBuilder.description(javadoc.genericsTokens().get(arg.className()));
                 }

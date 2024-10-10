@@ -80,7 +80,13 @@ class TypeHandler {
         if (typeName.wildcard()) {
             return typeName;
         }
-        return TypeName.builder(typeName).wildcard(true).build();
+        if (typeName.equals(TypeNames.STRING)) {
+            return typeName;
+        }
+        if (typeName.typeArguments().isEmpty()) {
+            return TypeName.builder(typeName).wildcard(true).build();
+        }
+        return typeName;
     }
 
     protected static TypeName collectionImplType(TypeName typeName) {
