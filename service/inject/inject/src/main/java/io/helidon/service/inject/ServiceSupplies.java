@@ -31,6 +31,10 @@ import io.helidon.service.inject.api.ServiceInstance;
 import io.helidon.service.registry.ServiceInfo;
 import io.helidon.service.registry.ServiceRegistryException;
 
+import static io.helidon.service.inject.LookupTrace.traceLookup;
+import static io.helidon.service.inject.LookupTrace.traceLookupInstance;
+import static io.helidon.service.inject.LookupTrace.traceLookupInstances;
+
 final class ServiceSupplies {
     private ServiceSupplies() {
     }
@@ -38,19 +42,26 @@ final class ServiceSupplies {
     private static <T> List<ServiceInstance<T>> explodeFilterAndSort(Lookup lookup,
                                                                      List<ServiceManager<T>> serviceManagers) {
         // this method is called when we resolve instances, so we can safely assume any scope is active
-
+        traceLookup(lookup, "explode, filter, and sort");
         List<ServiceInstance<T>> result = new ArrayList<>();
 
         for (ServiceManager<T> serviceManager : serviceManagers) {
+            List<ServiceInstance<T>> thisManager = new ArrayList<>();
             serviceManager.activator()
                     .instances(lookup)
                     .stream()
                     .flatMap(List::stream)
                     .map(it -> serviceManager.registryInstance(lookup, it))
-                    .forEach(result::add);
+                    .forEach(thisManager::add);
+
+            traceLookupInstance(lookup, serviceManager, thisManager);
+
+            result.addAll(thisManager);
         }
 
         result.sort(RegistryInstanceComparator.instance());
+
+        traceLookupInstances(lookup, result);
 
         return List.copyOf(result);
     }
