@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,6 @@ import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.MethodInfo;
-import org.jboss.jandex.Type;
 
 class ParticipantValidationModel {
 
@@ -155,7 +154,7 @@ class ParticipantValidationModel {
 
         String nameWithParams() {
             return methodInfo.name() + methodInfo.parameters().stream()
-                    .map(Type::name)
+                    .map(paramInfo -> paramInfo.type().name())
                     .map(DotName::toString)
                     .collect(Collectors.joining());
         }
