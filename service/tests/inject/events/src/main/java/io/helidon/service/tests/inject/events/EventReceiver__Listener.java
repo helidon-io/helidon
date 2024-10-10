@@ -4,15 +4,16 @@ import io.helidon.service.inject.api.Injection;
 import io.helidon.service.tests.inject.events.api.Event;
 
 @Injection.Singleton
-public class EventReceiver__Listener implements Event.Consumer<EventObject> {
+class EventReceiver__Listener implements Event.Listener<EventObject> {
     private final EventReceiver receiver;
 
+    @Injection.Inject
     EventReceiver__Listener(EventReceiver receiver) {
         this.receiver = receiver;
     }
 
     @Override
-    public void consume(EventObject eventObject) {
+    public void onEvent(EventObject eventObject) {
         receiver.event(eventObject);
     }
 }

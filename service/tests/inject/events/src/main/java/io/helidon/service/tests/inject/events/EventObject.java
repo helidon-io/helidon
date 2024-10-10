@@ -1,8 +1,6 @@
 package io.helidon.service.tests.inject.events;
 
-import io.helidon.service.tests.inject.events.api.Event;
-
-@Event.EventObject
+// arbitrary object
 class EventObject {
     private final String message;
 

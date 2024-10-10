@@ -8,10 +8,10 @@ import io.helidon.service.registry.Service;
 /**
  * Injection event types.
  * <p>
- * To publish an event, inject an instance of {@link io.helidon.service.tests.inject.events.api.Event.Publisher}.
+ * To publish an event, inject an instance of {@link io.helidon.service.tests.inject.events.api.Event.Emitter}.
  * <p>
  * To receive events, implement a method (at least package private) with the event object as a parameter, annotated with
- * {@link io.helidon.service.tests.inject.events.api.Event.Listener}. The method can have any name, must be {@code void},
+ * {@link io.helidon.service.tests.inject.events.api.Event.Observes}. The method can have any name, must be {@code void},
  * and have a single parameter.
  *
  */
@@ -20,17 +20,16 @@ public final class Event {
     }
 
     @Target(ElementType.METHOD)
-    public @interface Listener {
+    public @interface Observes {
     }
 
-    @Target(ElementType.TYPE)
-    public @interface EventObject {
-
+    @Target({ElementType.METHOD, ElementType.TYPE})
+    public @interface ObservesAsync {
     }
 
     /**
      *  To publish an event, simply inject an instance of this type (correctly typed with your event object) into your service,
-     * and call {@link #publish(Object)} on it when needed.
+     * and call {@link #emit(Object)} on it when needed.
      * <p>
      * A single service can inject more than one instance, if it wants to publish events of different types.
      * The type of the event is determining which events are published (i.e. qualifiers or any other annotation are not relevant,
@@ -39,18 +38,18 @@ public final class Event {
      * @param <T> type of the event object
      */
     @Service.Contract
-    public interface Publisher<T> {
+    public interface Emitter<T> {
         /**
          * Publish an event.
          * The method blocks until all listeners are processed.
          *
          * @param eventObject event object to deliver to the listeners
          */
-        void publish(T eventObject);
+        void emit(T eventObject);
     }
 
     @Service.Contract
-    public interface Consumer<T> {
-        void consume(T eventObject);
+    public interface Listener<T> {
+        void onEvent(T eventObject);
     }
 }

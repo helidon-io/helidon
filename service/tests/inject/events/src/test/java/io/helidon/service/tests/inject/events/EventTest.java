@@ -28,8 +28,8 @@ class EventTest {
 
     @Test
     void testEvent() {
-        EventProducer eventProducer = registry.get(EventProducer.class);
-        eventProducer.publish(new EventObject("unit-test-event"));
+        EventEmitter eventProducer = registry.get(EventEmitter.class);
+        eventProducer.emit(new EventObject("unit-test-event"));
 
         EventReceiver eventReceiver = registry.get(EventReceiver.class);
         EventObject eventObject = eventReceiver.eventObject();

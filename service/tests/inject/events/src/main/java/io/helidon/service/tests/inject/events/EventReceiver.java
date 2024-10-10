@@ -7,7 +7,7 @@ import io.helidon.service.tests.inject.events.api.Event;
 class EventReceiver {
     private volatile EventObject eventObject;
 
-    @Event.Listener
+    @Event.Observes
     void event(EventObject eventObject) {
         this.eventObject = eventObject;
     }
