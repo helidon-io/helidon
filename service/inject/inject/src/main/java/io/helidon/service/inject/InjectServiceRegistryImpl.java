@@ -16,7 +16,6 @@
 
 package io.helidon.service.inject;
 
-import java.lang.System.Logger.Level;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
@@ -67,6 +66,7 @@ import io.helidon.service.registry.ServiceInfo;
 import io.helidon.service.registry.ServiceRegistryException;
 
 import static io.helidon.service.inject.InjectRegistryManager.SERVICE_INFO_COMPARATOR;
+import static io.helidon.service.inject.LookupTrace.traceLookup;
 
 /**
  * Full-blown service registry with injection and interception support.
@@ -361,15 +361,14 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
 
             lookupCounter.increment();
 
-            if (LOGGER.isLoggable(Level.TRACE)) {
-                LOGGER.log(Level.TRACE, "Lookup: " + lookup);
-            }
+            traceLookup(lookup, "start: {0}", lookup);
 
             if (cacheEnabled) {
                 List<InjectServiceInfo> cacheResult = cache.get(lookup)
                         .orElse(null);
                 cacheLookupCounter.increment();
                 if (cacheResult != null) {
+                    traceLookup(lookup, "from cache", cacheResult);
                     cacheHitCounter.increment();
                     return cacheResult;
                 }
@@ -381,6 +380,7 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
                 // when a specific service type is requested, we go for it
                 InjectServiceInfo exact = servicesByType.get(lookup.serviceType().get());
                 if (exact != null) {
+                    traceLookup(lookup, "by service type", result);
                     result.add(exact);
                     return result;
                 }
@@ -396,6 +396,7 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
                             .filter(lookup::matches)
                             .forEach(result::add);
                     if (!result.isEmpty()) {
+                        traceLookup(lookup, "by single contract", result);
                         return result;
                     }
                 }
@@ -408,6 +409,7 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
                     .filter(lookup::matches)
                     .sorted(SERVICE_INFO_COMPARATOR)
                     .forEach(result::add);
+            traceLookup(lookup, "from full table scan", result);
 
             if (result.isEmpty() && !lookup.qualifiers().isEmpty()) {
                 // check qualified providers
@@ -418,10 +420,12 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
                         Set<InjectServiceInfo> found = typedQualifiedProviders.get(new TypedQualifiedProviderKey(qualifierType,
                                                                                                                  contract));
                         if (found != null) {
+                            traceLookup(lookup, "from typed qualified providers", found);
                             result.addAll(found);
                         }
                         found = qualifiedProvidersByQualifier.get(qualifierType);
                         if (found != null) {
+                            traceLookup(lookup, "from typed qualified providers", found);
                             result.addAll(found);
                         }
                     }
@@ -432,6 +436,7 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
                 cache.put(lookup, result);
             }
 
+            traceLookup(lookup, "full result", result);
             return result;
         } finally {
             stateReadLock.unlock();

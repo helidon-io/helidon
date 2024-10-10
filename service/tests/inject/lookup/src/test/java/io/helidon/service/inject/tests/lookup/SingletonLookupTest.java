@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import io.helidon.logging.common.LogConfig;
 import io.helidon.service.inject.InjectRegistryManager;
 import io.helidon.service.inject.api.InjectRegistry;
 import io.helidon.service.inject.api.InjectServiceInfo;
@@ -42,6 +43,10 @@ import static org.hamcrest.Matchers.hasSize;
  * Test all lookup methods for singleton.
  */
 class SingletonLookupTest {
+    static {
+        LogConfig.initClass();
+    }
+
     private static final Lookup LOOKUP = Lookup.create(ContractSingleton.class);
     private static final Class<ContractSingleton> CONTRACT = ContractSingleton.class;
     private static InjectRegistryManager registryManager;
