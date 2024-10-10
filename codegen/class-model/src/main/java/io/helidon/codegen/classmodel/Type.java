@@ -39,7 +39,14 @@ abstract class Type extends ModelComponent {
             } else if (typeName.wildcard()) {
                 List<TypeName> upperBounds = typeName.upperBounds();
                 if (upperBounds.isEmpty()) {
-                    return TypeArgument.create("?");
+                    if (typeName.lowerBounds().isEmpty()) {
+                        return TypeArgument.create("?");
+                    }
+                    return TypeArgument.builder()
+                            .token("?")
+                            .bound(typeName.lowerBounds().getFirst())
+                            .lowerBound(true)
+                            .build();
                 }
 
                 return TypeArgument.builder()

@@ -81,7 +81,7 @@ public final class AptTypeFactory {
         return createTypeName(new HashSet<>(), typeMirror);
     }
 
-    private static Optional<TypeName> createTypeName(Set<TypeMirror> processed, TypeMirror typeMirror) {
+    private static Optional<TypeName> createTypeName(Set<TypeMirror> inProgress, TypeMirror typeMirror) {
         TypeKind kind = typeMirror.getKind();
         if (kind.isPrimitive()) {
             Class<?> type = switch (kind) {
@@ -104,17 +104,21 @@ public final class AptTypeFactory {
             return Optional.of(TypeName.create(void.class));
         }
         case TYPEVAR -> {
-            if (!processed.add(typeMirror)) {
+            if (!inProgress.add(typeMirror)) {
                 return Optional.empty(); // prevent infinite loop
             }
 
-            var builder = TypeName.builder(createFromGenericDeclaration(typeMirror.toString()));
+            try {
+                var builder = TypeName.builder(createFromGenericDeclaration(typeMirror.toString()));
 
-            var typeVar = ((TypeVariable) typeMirror);
-            handleBounds(processed, typeVar.getUpperBound(), builder::addUpperBound);
-            handleBounds(processed, typeVar.getLowerBound(), builder::addLowerBound);
+                var typeVar = ((TypeVariable) typeMirror);
+                handleBounds(inProgress, typeVar.getUpperBound(), builder::addUpperBound);
+                handleBounds(inProgress, typeVar.getLowerBound(), builder::addLowerBound);
 
-            return Optional.of(builder.build());
+                return Optional.of(builder.build());
+            } finally {
+                inProgress.remove(typeMirror);
+            }
         }
         case WILDCARD -> {
             WildcardType vt = ((WildcardType) typeMirror);
@@ -123,8 +127,8 @@ public final class AptTypeFactory {
                     .wildcard(true)
                     .className("?");
 
-            handleBounds(processed, vt.getExtendsBound(), builder::addUpperBound);
-            handleBounds(processed, vt.getSuperBound(), builder::addLowerBound);
+            handleBounds(inProgress, vt.getExtendsBound(), builder::addUpperBound);
+            handleBounds(inProgress, vt.getSuperBound(), builder::addLowerBound);
 
             return Optional.of(builder.build());
         }
@@ -141,7 +145,7 @@ public final class AptTypeFactory {
         }
 
         if (typeMirror instanceof ArrayType arrayType) {
-            return Optional.of(TypeName.builder(createTypeName(processed, arrayType.getComponentType()).orElseThrow())
+            return Optional.of(TypeName.builder(createTypeName(inProgress, arrayType.getComponentType()).orElseThrow())
                                        .array(true)
                                        .build());
         }
@@ -149,16 +153,16 @@ public final class AptTypeFactory {
         if (typeMirror instanceof DeclaredType declaredType) {
             List<TypeName> typeParams = declaredType.getTypeArguments()
                     .stream()
-                    .map(it -> createTypeName(processed, it))
+                    .map(it -> createTypeName(inProgress, it))
                     .flatMap(Optional::stream)
                     .collect(Collectors.toList());
 
-            TypeName result = createTypeName(processed, declaredType.asElement()).orElse(null);
+            TypeName result = createTypeName(inProgress, declaredType.asElement()).orElse(null);
             if (typeParams.isEmpty() || result == null) {
                 return Optional.ofNullable(result);
             }
 
-            if (!processed.add(typeMirror)) {
+            if (!inProgress.add(typeMirror)) {
                 return Optional.empty(); // prevent infinite loop
             }
             return Optional.of(TypeName.builder(result).typeArguments(typeParams).build());

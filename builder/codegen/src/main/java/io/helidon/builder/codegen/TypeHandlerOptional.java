@@ -27,6 +27,7 @@ import io.helidon.codegen.classmodel.InnerClass;
 import io.helidon.codegen.classmodel.Javadoc;
 import io.helidon.codegen.classmodel.Method;
 import io.helidon.common.types.AccessModifier;
+import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
@@ -224,8 +225,14 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
     private void declaredSetter(InnerClass.Builder classBuilder,
                                 TypeName returnType,
                                 Javadoc blueprintJavadoc) {
+        boolean generic = !actualType().typeArguments().isEmpty();
         // declared setter - optional is package local, field is never optional in builder
         classBuilder.addMethod(builder -> builder.name(setterName())
+                .update(it -> {
+                    if (generic) {
+                        it.addAnnotation(Annotation.create(SuppressWarnings.class, "unchecked"));
+                    }
+                })
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .description(blueprintJavadoc.content())
                 .returnType(returnType, "updated builder instance")

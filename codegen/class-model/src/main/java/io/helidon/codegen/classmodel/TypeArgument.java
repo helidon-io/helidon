@@ -16,10 +16,12 @@
 package io.helidon.codegen.classmodel;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.helidon.common.types.TypeName;
 
@@ -29,14 +31,16 @@ import io.helidon.common.types.TypeName;
 public final class TypeArgument extends Type implements TypeName {
 
     private final TypeName token;
-    private final Type bound;
+    private final List<Type> bounds;
     private final List<String> description;
+    private final boolean isLowerBound;
 
     private TypeArgument(Builder builder) {
         super(builder);
         this.token = builder.tokenBuilder.build();
-        this.bound = builder.bound;
+        this.bounds = List.copyOf(builder.bounds);
         this.description = builder.description;
+        this.isLowerBound = builder.isLowerBound;
     }
 
     /**
@@ -65,25 +69,45 @@ public final class TypeArgument extends Type implements TypeName {
 
     @Override
     public TypeName genericTypeName() {
-        if (bound == null) {
-            return null;
+        if (bounds.isEmpty()) {
+            return this;
         }
-        return bound.genericTypeName();
+        return TypeName.builder()
+                .from(this)
+                .typeArguments(List.of())
+                .typeParameters(List.of())
+                .build();
     }
 
     @Override
     void writeComponent(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports, ClassType classType)
             throws IOException {
         writer.write(token.className());
-        if (bound != null) {
+        if (bounds.isEmpty()) {
+            return;
+        }
+
+        if (isLowerBound) {
+            writer.write(" super ");
+        } else {
             writer.write(" extends ");
-            bound.writeComponent(writer, declaredTokens, imports, classType);
+        }
+
+        if (bounds.size() == 1) {
+            bounds.getFirst().writeComponent(writer, declaredTokens, imports, classType);
+            return;
+        }
+        for (int i = 0; i < bounds.size(); i++) {
+            if (i != 0) {
+                writer.write(" & ");
+            }
+            bounds.get(i).writeComponent(writer, declaredTokens, imports, classType);
         }
     }
 
     @Override
     void addImports(ImportOrganizer.Builder imports) {
-        if (bound != null) {
+        for (Type bound : bounds) {
             bound.addImports(imports);
         }
     }
@@ -184,15 +208,17 @@ public final class TypeArgument extends Type implements TypeName {
 
     @Override
     public List<TypeName> upperBounds() {
-        return List.of(bound.typeName());
+        return bounds.stream()
+                .map(Type::typeName)
+                .collect(Collectors.toUnmodifiableList());
     }
 
     @Override
     public String toString() {
-        if (bound == null) {
+        if (bounds.isEmpty()) {
             return "Token: " + token.className();
         }
-        return "Token: " + token.className() + " Bound: " + bound;
+        return "Token: " + token.className() + " Bound: " + bounds;
     }
 
     @Override
@@ -205,12 +231,12 @@ public final class TypeArgument extends Type implements TypeName {
         }
         TypeArgument typeArgument1 = (TypeArgument) o;
         return Objects.equals(token, typeArgument1.token)
-                && Objects.equals(bound, typeArgument1.bound);
+                && Objects.equals(bounds, typeArgument1.bounds);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(token, bound);
+        return Objects.hash(token, bounds);
     }
 
     @Override
@@ -230,7 +256,9 @@ public final class TypeArgument extends Type implements TypeName {
 
         private final TypeName.Builder tokenBuilder = TypeName.builder()
                 .generic(true);
-        private Type bound;
+        private final List<Type> bounds = new ArrayList<>();
+
+        private boolean isLowerBound;
         private List<String> description = List.of();
 
         private Builder() {
@@ -269,13 +297,36 @@ public final class TypeArgument extends Type implements TypeName {
         }
 
         /**
+         * Bound is by default an upper bounds (presented as {@code extends} in code).
+         * By specifying that we use a {@code lowerBound}, the keyword will be {@code super}.
+         *
+         * @param lowerBound whether the specified bound is a lower bound (defaults to upper bound); ignore if no bound
+         * @return updated builder instance
+         */
+        public Builder lowerBound(boolean lowerBound) {
+            this.isLowerBound = lowerBound;
+            return this;
+        }
+
+        /**
          * Type this argument is bound to.
          *
          * @param bound argument bound
          * @return updated builder instance
          */
         public Builder bound(TypeName bound) {
-            this.bound = Type.fromTypeName(bound);
+            this.bounds.add(Type.fromTypeName(bound));
+            return this;
+        }
+
+        /**
+         * Type this argument is bound to (may have more than one for intersection types).
+         *
+         * @param bound argument bound
+         * @return updated builder instance
+         */
+        public Builder addBound(TypeName bound) {
+            this.bounds.add(Type.fromTypeName(bound));
             return this;
         }
 
