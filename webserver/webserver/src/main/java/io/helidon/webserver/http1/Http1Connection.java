@@ -180,8 +180,8 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                     }
                 }
 
-                if (canUpgrade) {
-                    if (headers.contains(HeaderNames.UPGRADE)) {
+                if (canUpgrade && headers.contains(HeaderNames.UPGRADE)) {
+                    if (!upgradeHasEntity(headers)) {
                         Http1Upgrader upgrader = upgradeProviderMap.get(headers.get(HeaderNames.UPGRADE).get());
                         if (upgrader != null) {
                             ServerConnection upgradeConnection = upgrader.upgrade(ctx, prologue, headers);
@@ -196,6 +196,8 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                 return;
                             }
                         }
+                    } else {
+                        ctx.log(LOGGER, WARNING, "Protocol upgrade for a request with a payload ignored");
                     }
                 }
 
@@ -281,6 +283,19 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     void reset() {
         currentEntitySize = 0;
         currentEntitySizeRead = 0;
+    }
+
+    /**
+     * Only accept protocol upgrades if no entity is present. Otherwise, a successful
+     * upgrade may result in the request entity interpreted as part of the new protocol
+     * data, resulting in a failure.
+     *
+     * @param headers the HTTP headers in the prologue
+     * @return whether to accept or reject the upgrade
+     */
+    static boolean upgradeHasEntity(WritableHeaders<?> headers) {
+        return headers.contains(HeaderNames.CONTENT_LENGTH) && !headers.contains(HeaderValues.CONTENT_LENGTH_ZERO)
+                || headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED);
     }
 
     static void validateHostHeader(HttpPrologue prologue, WritableHeaders<?> headers, boolean fullValidation) {
