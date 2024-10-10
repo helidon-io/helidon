@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.integrations.oci</groupId>
         <artifactId>helidon-integrations-oci-project</artifactId>
-        <version>4.0.11</version>
+        <version>4.0.12-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-integrations-oci-secrets-mp-config-source</artifactId>
     <name>Helidon Integrations OCI Secrets MP Config Source</name>

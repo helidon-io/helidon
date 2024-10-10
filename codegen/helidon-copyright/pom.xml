@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.codegen</groupId>
         <artifactId>helidon-codegen-project</artifactId>
-        <version>4.0.11</version>
+        <version>4.0.12-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
