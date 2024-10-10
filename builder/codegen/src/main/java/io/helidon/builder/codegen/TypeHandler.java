@@ -27,6 +27,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenValidator;
 import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.codegen.classmodel.Field;
@@ -105,14 +106,18 @@ class TypeHandler {
         if (TypeNames.SUPPLIER.equals(returnType)) {
             return new TypeHandlerSupplier(blueprintType, annotatedMethod, name, getterName, setterName, returnType);
         }
+
         if (TypeNames.SET.equals(returnType)) {
+            checkTypeArgsSizeAndTypes(annotatedMethod, returnType, TypeNames.SET, 1);
             return new TypeHandlerSet(blueprintType, annotatedMethod, name, getterName, setterName, returnType);
         }
 
         if (TypeNames.LIST.equals(returnType)) {
+            checkTypeArgsSizeAndTypes(annotatedMethod, returnType, TypeNames.LIST, 1);
             return new TypeHandlerList(blueprintType, annotatedMethod, name, getterName, setterName, returnType);
         }
         if (TypeNames.MAP.equals(returnType)) {
+            checkTypeArgsSizeAndTypes(annotatedMethod, returnType, TypeNames.MAP, 2);
             return new TypeHandlerMap(blueprintType, annotatedMethod, name, getterName, setterName, returnType, sameGeneric);
         }
 
@@ -126,6 +131,12 @@ class TypeHandler {
     static TypeName toWildcard(TypeName typeName) {
         if (typeName.wildcard()) {
             return typeName;
+        }
+        if (typeName.generic()) {
+            return TypeName.builder()
+                    .className(typeName.className())
+                    .wildcard(true)
+                    .build();
         }
         return TypeName.builder(typeName).wildcard(true).build();
     }
@@ -558,6 +569,25 @@ class TypeHandler {
     protected TypeName toPrimitive(TypeName typeName) {
         return Optional.ofNullable(BOXED_TO_PRIMITIVE.get(typeName))
                 .orElse(typeName);
+    }
+
+    private static void checkTypeArgsSizeAndTypes(TypedElementInfo annotatedMethod,
+                                                  TypeName returnType,
+                                                  TypeName collectionType,
+                                                  int expectedTypeArgs) {
+        List<TypeName> typeNames = returnType.typeArguments();
+        if (typeNames.size() != expectedTypeArgs) {
+            throw new CodegenException("Property of type " + collectionType.fqName() + " must have " + expectedTypeArgs
+                                               + " type arguments defined",
+                                       annotatedMethod.originatingElementValue());
+        }
+        for (TypeName typeName : typeNames) {
+            if (typeName.wildcard()) {
+                throw new CodegenException("Property of type " + returnType.resolvedName() + " is not supported for builder,"
+                                                   + " as wildcards cannot be handled correctly in setters",
+                                           annotatedMethod.originatingElementValue());
+            }
+        }
     }
 
     private <T> T singleDefault(List<T> defaultValues) {
