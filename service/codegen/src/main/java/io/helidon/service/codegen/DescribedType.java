@@ -21,6 +21,7 @@ import java.util.Set;
 
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.Modifier;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 
@@ -33,10 +34,10 @@ class DescribedType {
     private final TypeInfo typeInfo;
     private final boolean isAbstract;
     private final TypeName typeName;
-    private final Set<TypeName> contracts;
+    private final Set<ResolvedType> contracts;
     private final DescribedElements elements;
 
-    DescribedType(TypeInfo typeInfo, TypeName typeName, Set<TypeName> contracts, DescribedElements elements) {
+    DescribedType(TypeInfo typeInfo, TypeName typeName, Set<ResolvedType> contracts, DescribedElements elements) {
         Objects.requireNonNull(typeInfo);
         Objects.requireNonNull(typeName);
         Objects.requireNonNull(contracts);
@@ -61,7 +62,7 @@ class DescribedType {
         return typeName;
     }
 
-    Set<TypeName> contracts() {
+    Set<ResolvedType> contracts() {
         return contracts;
     }
 

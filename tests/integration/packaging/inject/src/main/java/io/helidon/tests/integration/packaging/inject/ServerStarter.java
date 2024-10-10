@@ -32,22 +32,21 @@ import io.helidon.webserver.http.HttpFeature;
 @Injection.RunLevel(Injection.RunLevel.SERVER)
 class ServerStarter {
     private final Supplier<Config> config;
-    private final Supplier<List<HttpFeature>> services;
+    private final Supplier<List<HttpFeature>> features;
 
     private volatile WebServer server;
 
     @Injection.Inject
-    ServerStarter(Supplier<Config> config, Supplier<List<HttpFeature>> services) {
+    ServerStarter(Supplier<Config> config, Supplier<List<HttpFeature>> features) {
         this.config = config;
-        this.services = services;
+        this.features = features;
     }
 
     @Service.PostConstruct
     void start() {
-        System.out.println(Thread.currentThread());
         server = WebServer.builder()
                 .config(config.get().get("server"))
-                .routing(it -> it.update(routing -> services.get().forEach(routing::addFeature)))
+                .routing(it -> it.update(routing -> features.get().forEach(routing::addFeature)))
                 .build()
                 .start();
     }

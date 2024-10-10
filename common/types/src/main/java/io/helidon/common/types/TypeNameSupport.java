@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.builder.api.Prototype;
@@ -143,30 +144,10 @@ final class TypeNameSupport {
     @Prototype.PrototypeMethod
     @Prototype.Annotated("java.lang.Override") // defined on blueprint
     static String resolvedName(TypeName instance) {
-        String name = calcName(instance, ".");
-        boolean isObject = Object.class.getName().equals(name) || "?".equals(name);
-        StringBuilder nameBuilder = (isObject)
-                ? new StringBuilder(instance.wildcard() ? "?" : name)
-                : new StringBuilder(instance.wildcard() ? "? extends " + name : name);
-
-        if (!instance.typeArguments().isEmpty()) {
-            nameBuilder.append("<");
-            int i = 0;
-            for (TypeName param : instance.typeArguments()) {
-                if (i > 0) {
-                    nameBuilder.append(", ");
-                }
-                nameBuilder.append(param.resolvedName());
-                i++;
-            }
-            nameBuilder.append(">");
+        if (instance.generic() || instance.wildcard()) {
+            return resolveGenericName(instance);
         }
-
-        if (instance.array()) {
-            nameBuilder.append("[]");
-        }
-
-        return nameBuilder.toString();
+        return resolveClassName(instance);
     }
 
     /**
@@ -329,6 +310,46 @@ final class TypeNameSupport {
                 .build();
     }
 
+    private static String resolveGenericName(TypeName instance) {
+        // ?, ? super Something; ? extends Something
+        String prefix = instance.wildcard() ? "?" : instance.className();
+        if (instance.upperBounds().isEmpty() && instance.lowerBounds().isEmpty()) {
+            return prefix;
+        }
+        if (instance.lowerBounds().isEmpty()) {
+            return prefix + " extends " + instance.upperBounds()
+                    .stream()
+                    .map(TypeName::resolvedName)
+                    .collect(Collectors.joining(" & "));
+        }
+        return prefix + " super " + instance.lowerBounds().getFirst().resolvedName();
+
+    }
+
+    private static String resolveClassName(TypeName instance) {
+        String name = calcName(instance, ".");
+        StringBuilder nameBuilder = new StringBuilder(name);
+
+        if (!instance.typeArguments().isEmpty()) {
+            nameBuilder.append("<");
+            int i = 0;
+            for (TypeName param : instance.typeArguments()) {
+                if (i > 0) {
+                    nameBuilder.append(", ");
+                }
+                nameBuilder.append(param.resolvedName());
+                i++;
+            }
+            nameBuilder.append(">");
+        }
+
+        if (instance.array()) {
+            nameBuilder.append("[]");
+        }
+
+        return nameBuilder.toString();
+    }
+
     private static void updateFromClass(TypeName.BuilderBase<?, ?> builder, Class<?> classType) {
         Class<?> componentType = classType.isArray() ? classType.getComponentType() : classType;
         builder.packageName(componentType.getPackageName());
@@ -355,5 +376,39 @@ final class TypeNameSupport {
 
         return (instance.primitive() || instance.packageName().isEmpty())
                 ? className : instance.packageName() + "." + className;
+    }
+
+    static class Decorator implements Prototype.BuilderDecorator<TypeName.BuilderBase<?, ?>> {
+        @Override
+        public void decorate(TypeName.BuilderBase<?, ?> target) {
+            fixWildcards(target);
+        }
+
+        private void fixWildcards(TypeName.BuilderBase<?, ?> target) {
+            // handle wildcards correct
+            if (target.wildcard()) {
+                if (target.upperBounds().size() == 1 && target.lowerBounds().isEmpty()) {
+                    // backward compatible for (? extends X)
+                    TypeName upperBound = target.upperBounds().getFirst();
+                    target.className(upperBound.className());
+                    target.packageName(upperBound.packageName());
+                    target.enclosingNames(upperBound.enclosingNames());
+                }
+                // wildcard set, if package + class name as well, set them as upper bounds
+                if (target.className().isPresent()
+                        && !target.className().get().equals("?")
+                        && target.upperBounds().isEmpty()
+                        && target.lowerBounds().isEmpty()) {
+                    TypeName upperBound = TypeName.builder()
+                            .from(target)
+                            .wildcard(false)
+                            .build();
+                    if (!upperBound.equals(TypeNames.OBJECT)) {
+                        target.addUpperBound(upperBound);
+                    }
+                }
+                target.generic(true);
+            }
+        }
     }
 }

@@ -24,8 +24,8 @@ import java.util.stream.Collectors;
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.ElementInfoPredicates;
 import io.helidon.common.types.ElementSignature;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeInfo;
-import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
 
 /**
@@ -74,7 +74,7 @@ class DescribedElements {
      */
     static DescribedElements create(CodegenContext ctx,
                                     Interception interception,
-                                    Collection<TypeName> contracts,
+                                    Collection<ResolvedType> contracts,
                                     TypeInfo serviceTypeInfo) {
         var all = TypedElements.gatherElements(ctx, contracts, serviceTypeInfo)
                 .stream()

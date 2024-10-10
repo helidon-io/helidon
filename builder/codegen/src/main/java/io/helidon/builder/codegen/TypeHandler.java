@@ -22,6 +22,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -38,8 +39,38 @@ import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.builder.codegen.Types.OPTION_DEFAULT;
+import static io.helidon.common.types.TypeNames.BOXED_BOOLEAN;
+import static io.helidon.common.types.TypeNames.BOXED_BYTE;
+import static io.helidon.common.types.TypeNames.BOXED_CHAR;
+import static io.helidon.common.types.TypeNames.BOXED_DOUBLE;
+import static io.helidon.common.types.TypeNames.BOXED_FLOAT;
+import static io.helidon.common.types.TypeNames.BOXED_INT;
+import static io.helidon.common.types.TypeNames.BOXED_LONG;
+import static io.helidon.common.types.TypeNames.BOXED_SHORT;
+import static io.helidon.common.types.TypeNames.BOXED_VOID;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_BOOLEAN;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_BYTE;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_CHAR;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_DOUBLE;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_FLOAT;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_INT;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_LONG;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_SHORT;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_VOID;
 
 class TypeHandler {
+    private static final Map<TypeName, TypeName> BOXED_TO_PRIMITIVE = Map.of(
+            BOXED_BOOLEAN, PRIMITIVE_BOOLEAN,
+            BOXED_BYTE, PRIMITIVE_BYTE,
+            BOXED_SHORT, PRIMITIVE_SHORT,
+            BOXED_INT, PRIMITIVE_INT,
+            BOXED_LONG, PRIMITIVE_LONG,
+            BOXED_CHAR, PRIMITIVE_CHAR,
+            BOXED_FLOAT, PRIMITIVE_FLOAT,
+            BOXED_DOUBLE, PRIMITIVE_DOUBLE,
+            BOXED_VOID, PRIMITIVE_VOID
+    );
+
     private final TypeName enclosingType;
     private final TypedElementInfo annotatedMethod;
     private final String name;
@@ -522,6 +553,11 @@ class TypeHandler {
 
         builder.addContentLine("return self();");
         classBuilder.addMethod(builder);
+    }
+
+    protected TypeName toPrimitive(TypeName typeName) {
+        return Optional.ofNullable(BOXED_TO_PRIMITIVE.get(typeName))
+                .orElse(typeName);
     }
 
     private <T> T singleDefault(List<T> defaultValues) {

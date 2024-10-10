@@ -18,6 +18,7 @@ package io.helidon.tests.integration.packaging.inject;
 
 import io.helidon.service.inject.api.Configuration;
 import io.helidon.service.inject.api.Injection;
+import io.helidon.service.registry.Service;
 import io.helidon.webserver.http.HttpFeature;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.HttpRules;
@@ -28,14 +29,15 @@ import io.helidon.webserver.http.ServerResponse;
  * A simple service to greet you.
  */
 @Injection.Singleton
-class GreetService implements HttpFeature {
+@Service.ExternalContracts(HttpFeature.class)
+class GreetFeature implements HttpFeature {
 
     /**
      * The config value for the key {@code greeting}.
      */
     private final String greeting;
 
-    GreetService(@Configuration.Value("app.greeting:Ciao") String greetingValue) {
+    GreetFeature(@Configuration.Value("app.greeting:Ciao") String greetingValue) {
         this.greeting = greetingValue;
     }
 

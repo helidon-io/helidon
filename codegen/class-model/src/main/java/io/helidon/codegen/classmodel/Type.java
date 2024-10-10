@@ -15,8 +15,8 @@
  */
 package io.helidon.codegen.classmodel;
 
+import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import io.helidon.common.types.TypeName;
 
@@ -37,15 +37,15 @@ abstract class Type extends ModelComponent {
                         .type(typeName)
                         .build();
             } else if (typeName.wildcard()) {
-                boolean isObject = typeName.name().equals("?") || Object.class.getName().equals(typeName.name());
-                if (isObject) {
+                List<TypeName> upperBounds = typeName.upperBounds();
+                if (upperBounds.isEmpty()) {
                     return TypeArgument.create("?");
-                } else {
-                    return TypeArgument.builder()
-                            .token("?")
-                            .bound(extractBoundTypeName(typeName.genericTypeName()))
-                            .build();
                 }
+
+                return TypeArgument.builder()
+                        .token("?")
+                        .bound(upperBounds.getFirst())
+                        .build();
             }
             return ConcreteType.builder()
                     .type(typeName)
@@ -61,23 +61,7 @@ abstract class Type extends ModelComponent {
     abstract TypeName typeName();
 
     private static String extractBoundTypeName(TypeName instance) {
-        String name = calcName(instance);
-        StringBuilder nameBuilder = new StringBuilder(name);
-
-        if (!instance.typeArguments().isEmpty()) {
-            nameBuilder.append('<')
-                    .append(instance.typeArguments()
-                                    .stream()
-                                    .map(TypeName::resolvedName)
-                                    .collect(Collectors.joining(", ")))
-                    .append('>');
-        }
-
-        if (instance.array()) {
-            nameBuilder.append("[]");
-        }
-
-        return nameBuilder.toString();
+        return instance.resolvedName();
     }
 
     private static String calcName(TypeName instance) {

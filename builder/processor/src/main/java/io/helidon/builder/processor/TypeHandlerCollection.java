@@ -215,9 +215,15 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
 
     @Override
     TypeName argumentTypeName() {
-        return TypeName.builder(collectionType)
-                .addTypeArgument(toWildcard(actualType()))
-                .build();
+        if (actualType().equals(TypeNames.OBJECT)) {
+            return TypeName.builder(collectionType)
+                    .addTypeArgument(TypeName.builder()
+                                             .from(TypeNames.OBJECT)
+                                             .wildcard(true)
+                                             .build())
+                    .build();
+        }
+        return declaredType();
     }
 
     @Override

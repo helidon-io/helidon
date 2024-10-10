@@ -21,14 +21,14 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
-import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenException;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -106,27 +106,29 @@ class DescribedService {
         TypeName serviceType = serviceTypeInfo.typeName();
         TypeName descriptorType = ctx.descriptorType(serviceType);
 
-        Set<TypeName> directContracts = new HashSet<>();
-        Set<TypeName> providedContracts = new HashSet<>();
+        Set<ResolvedType> directContracts = new HashSet<>();
+        Set<ResolvedType> providedContracts = new HashSet<>();
         ProviderType providerType = ProviderType.SERVICE;
         TypeName qualifiedProviderQualifier = null;
         TypeInfo providedTypeInfo = null;
         TypeName providedTypeName = null;
 
-        Set<TypeName> eligibleContracts = new HashSet<>();
-        Set<String> processedFullyQualified = new HashSet<>();
-        // now navigate the whole hierarchy to discover external contracts and contracts
-        eligibleContracts(ctx,
-                          onlyAnnotatedAreEligible,
-                          eligibleContracts,
-                          processedFullyQualified,
+        Set<TypeName> eligibleExternalContracts = new HashSet<>();
+        // gather eligible external contracts
+        eligibleContracts(eligibleExternalContracts,
+                          new HashSet<>(),
                           serviceTypeInfo);
 
-        // remove special cases (these are not user contracts)
-        eligibleContracts.remove(TypeNames.SUPPLIER);
-        eligibleContracts.remove(INJECTION_SERVICES_PROVIDER);
-        eligibleContracts.remove(INJECTION_POINT_PROVIDER);
-        eligibleContracts.remove(INJECTION_QUALIFIED_PROVIDER);
+        Function<TypeInfo, Boolean> isEligibleInfo = typeInfo -> isEligible(
+                onlyAnnotatedAreEligible,
+                eligibleExternalContracts,
+                typeInfo);
+
+        Function<TypeName, Boolean> isEligibleType = typeName -> isEligible(
+                roundContext,
+                onlyAnnotatedAreEligible,
+                eligibleExternalContracts,
+                typeName);
 
         // now we know which contracts are OK to use, and we can check the service types and real contracts
         // service is a provider only if it implements the interface directly; this is never inherited
@@ -140,7 +142,8 @@ class DescribedService {
         var response = providerContracts(roundContext,
                                          serviceTypeInfo,
                                          implementedInterfaceTypes,
-                                         eligibleContracts,
+                                         isEligibleInfo,
+                                         isEligibleType,
                                          TypeNames.SUPPLIER);
         if (response.valid) {
             providerType = ProviderType.SUPPLIER;
@@ -152,7 +155,8 @@ class DescribedService {
         response = providerContracts(roundContext,
                                      serviceTypeInfo,
                                      implementedInterfaceTypes,
-                                     eligibleContracts,
+                                     isEligibleInfo,
+                                     isEligibleType,
                                      INJECTION_SERVICES_PROVIDER);
         if (response.valid) {
             // if this is not a service type, throw
@@ -170,7 +174,8 @@ class DescribedService {
         response = providerContracts(roundContext,
                                      serviceTypeInfo,
                                      implementedInterfaceTypes,
-                                     eligibleContracts,
+                                     isEligibleInfo,
+                                     isEligibleType,
                                      INJECTION_POINT_PROVIDER);
         if (response.valid) {
             // if this is not a service type, throw
@@ -188,7 +193,8 @@ class DescribedService {
         response = qualifiedProviderContracts(roundContext,
                                               serviceTypeInfo,
                                               implementedInterfaceTypes,
-                                              eligibleContracts);
+                                              isEligibleInfo,
+                                              isEligibleType);
         if (response.valid()) {
             // if this is not a service type, throw
             if (providerType != ProviderType.SERVICE) {
@@ -203,11 +209,12 @@ class DescribedService {
             providedTypeInfo = response.providedTypeInfo();
         }
 
-        addContracts(directContracts, eligibleContracts, new HashSet<>(), serviceTypeInfo);
-
-        for (TypeInfo contract : implementedInterfaceTypes.values()) {
-            addContracts(directContracts, eligibleContracts, new HashSet<>(), contract);
-        }
+        addContracts(roundContext,
+                     directContracts,
+                     isEligibleInfo,
+                     isEligibleType,
+                     new HashSet<>(),
+                     serviceTypeInfo);
 
         DescribedType serviceDescriptor;
         DescribedType providedDescriptor;
@@ -309,6 +316,34 @@ class DescribedService {
         return qualifiedProviderQualifier;
     }
 
+    private static boolean isEligible(RegistryRoundContext ctx,
+                                      boolean onlyAnnotatedAreEligible,
+                                      Set<TypeName> eligibleExternalContracts,
+                                      TypeName toCheck) {
+        if (eligibleExternalContracts.contains(toCheck)) {
+            return true;
+        }
+        // if the type info does not exist on classpath, and is not an external contract, return false
+        return ctx.typeInfo(toCheck)
+                .map(it -> isEligible(onlyAnnotatedAreEligible, eligibleExternalContracts, it))
+                .orElse(false);
+    }
+
+    private static boolean isEligible(boolean onlyAnnotatedAreEligible,
+                                      Set<TypeName> eligibleExternalContracts,
+                                      TypeInfo toCheck) {
+        if (eligibleExternalContracts.contains(toCheck.typeName())) {
+            return true;
+        }
+        if (toCheck.hasAnnotation(SERVICE_ANNOTATION_CONTRACT)) {
+            return true;
+        }
+        if (onlyAnnotatedAreEligible) {
+            return false;
+        }
+        return toCheck.kind() == ElementKind.INTERFACE;
+    }
+
     private static TypeName createType(TypeName... types) {
         TypeName.Builder builder = TypeName.builder()
                 .from(types[0]);
@@ -335,109 +370,36 @@ class DescribedService {
         return qualifiers;
     }
 
-    private static void eligibleContracts(CodegenContext ctx,
-                                          boolean onlyAnnotatedAreEligible,
-                                          Set<TypeName> eligibleContracts,
+    /**
+     * Gather eligible external contracts from this type and super types,
+     * all other contracts are validated when encountered (and either onlyAnnotatedAreEligible is set to false,
+     * or they have to be annotated with Contract).
+     */
+    private static void eligibleContracts(Set<TypeName> eligibleContracts,
                                           Set<String> processedFullyQualified,
                                           TypeInfo typeInfo) {
-        TypeName withGenerics = typeInfo.typeName();
-        TypeName withoutGenerics = withGenerics.genericTypeName();
 
-        if (!processedFullyQualified.add(withGenerics.resolvedName())) {
+        if (!processedFullyQualified.add(typeInfo.typeName().resolvedName())) {
             // this type was already fully processed
             return;
         }
 
-        // add this type, if annotated with @Contract
-        if (onlyAnnotatedAreEligible && typeInfo.hasAnnotation(SERVICE_ANNOTATION_CONTRACT)) {
-            eligibleContracts.add(typeInfo.typeName());
-        } else {
-            if (typeInfo.kind() == ElementKind.INTERFACE) {
-                eligibleContracts.add(withoutGenerics);
-            }
-        }
-
-        // add external contracts annotated on this type
         addExternalContracts(eligibleContracts, typeInfo);
-
-        // specific cases
-        if (withGenerics.isSupplier()
-                || withoutGenerics.equals(INJECTION_POINT_PROVIDER)
-                || withoutGenerics.equals(INJECTION_SERVICES_PROVIDER)) {
-
-            // this may be the interface itself, and then it does not have a type argument
-            if (!withGenerics.typeArguments().isEmpty()) {
-                // provider must have a type argument (and the type argument is an automatic contract
-                TypeName contract = withGenerics.typeArguments().getFirst();
-                if (!contract.generic()) {
-                    Optional<TypeInfo> providedTypeInfo = ctx.typeInfo(contract);
-                    if (providedTypeInfo.isPresent()) {
-                        eligibleContracts(
-                                ctx,
-                                onlyAnnotatedAreEligible,
-                                eligibleContracts,
-                                processedFullyQualified,
-                                providedTypeInfo.get());
-                    } else {
-                        eligibleContracts.add(contract);
-                        processedFullyQualified.add(contract.resolvedName());
-                    }
-                }
-            }
-        } else if (withoutGenerics.equals(INJECTION_QUALIFIED_PROVIDER)) {
-            // a very special case
-            if (withGenerics.typeArguments().isEmpty()) {
-                // this is the QualifiedProvider interface itself, no need to do anything
-                return;
-            }
-            TypeName providedType = withGenerics.typeArguments().get(1); // second type
-            if (providedType.generic()) {
-                // just a <T> or similar
-                return;
-            }
-            eligibleContracts.add(INJECTION_QUALIFIED_PROVIDER);
-            if (TypeNames.OBJECT.equals(providedType)) {
-                eligibleContracts.add(TypeNames.OBJECT);
-            } else {
-                Optional<TypeInfo> providedTypeInfo = ctx.typeInfo(providedType);
-                eligibleContracts.add(providedType);
-                if (providedTypeInfo.isPresent()) {
-                    eligibleContracts(ctx,
-                                      onlyAnnotatedAreEligible,
-                                      eligibleContracts,
-                                      processedFullyQualified,
-                                      providedTypeInfo.get());
-                } else {
-                    processedFullyQualified.add(providedType.resolvedName());
-                }
-            }
-        }
 
         // super type
         typeInfo.superTypeInfo()
-                .ifPresent(it -> eligibleContracts(
-                        ctx,
-                        onlyAnnotatedAreEligible,
-                        eligibleContracts,
-                        processedFullyQualified,
-                        it
-                ));
+                .ifPresent(it -> eligibleContracts(eligibleContracts, processedFullyQualified, it));
 
         // interfaces
         typeInfo.interfaceTypeInfo()
-                .forEach(it -> eligibleContracts(
-                        ctx,
-                        onlyAnnotatedAreEligible,
-                        eligibleContracts,
-                        processedFullyQualified,
-                        it
-                ));
+                .forEach(it -> eligibleContracts(eligibleContracts, processedFullyQualified, it));
     }
 
     private static ProviderAnalysis providerContracts(RegistryRoundContext ctx,
                                                       TypeInfo serviceTypeInfo,
                                                       Map<TypeName, TypeInfo> implementedInterfaceTypes,
-                                                      Set<TypeName> eligibleContracts,
+                                                      Function<TypeInfo, Boolean> isEligibleInfo,
+                                                      Function<TypeName, Boolean> isEligibleType,
                                                       TypeName providerInterface) {
         TypeInfo providerInfo = implementedInterfaceTypes.remove(providerInterface);
         if (providerInfo == null) {
@@ -445,12 +407,14 @@ class DescribedService {
         }
 
         TypeName contract = requiredTypeArgument(providerInfo);
-        Set<TypeName> contracts = new HashSet<>();
-        contracts.add(contract);
+        Set<ResolvedType> contracts = new HashSet<>();
+        contracts.add(ResolvedType.create(contract));
         TypeInfo contractInfo = contractInfo(ctx, serviceTypeInfo, contract);
 
-        addContracts(contracts,
-                     eligibleContracts,
+        addContracts(ctx,
+                     contracts,
+                     isEligibleInfo,
+                     isEligibleType,
                      new HashSet<>(),
                      contractInfo);
         return new ProviderAnalysis(contract,
@@ -479,19 +443,22 @@ class DescribedService {
     private static ProviderAnalysis qualifiedProviderContracts(RegistryRoundContext ctx,
                                                                TypeInfo serviceTypeInfo,
                                                                Map<TypeName, TypeInfo> implementedInterfaceTypes,
-                                                               Set<TypeName> eligibleContracts) {
+                                                               Function<TypeInfo, Boolean> isEligibleInfo,
+                                                               Function<TypeName, Boolean> isEligibleType) {
         TypeInfo providerInfo = implementedInterfaceTypes.remove(INJECTION_QUALIFIED_PROVIDER);
         if (providerInfo == null) {
             return new ProviderAnalysis();
         }
         TypeName contract = requiredTypeArgument(providerInfo);
         TypeName qualifiedProviderQualifier = requiredTypeArgument(providerInfo, 1);
-        Set<TypeName> contracts = new LinkedHashSet<>();
-        contracts.add(contract);
+        Set<ResolvedType> contracts = new LinkedHashSet<>();
+        contracts.add(ResolvedType.create(contract));
 
         TypeInfo providedInfo = contractInfo(ctx, serviceTypeInfo, contract);
-        addContracts(contracts,
-                     eligibleContracts,
+        addContracts(ctx,
+                     contracts,
+                     isEligibleInfo,
+                     isEligibleType,
                      new HashSet<>(),
                      providedInfo);
 
@@ -501,38 +468,74 @@ class DescribedService {
                                     qualifiedProviderQualifier);
     }
 
-    private static void addContracts(Set<TypeName> contractSet,
-                                     Set<TypeName> eligibleContracts,
-                                     Set<String> processedFullyQualified,
+    private static void addContracts(RegistryRoundContext ctx,
+                                     Set<ResolvedType> contractSet,
+                                     Function<TypeInfo, Boolean> isEligibleInfo,
+                                     Function<TypeName, Boolean> isEligibleType,
+                                     Set<ResolvedType> processed,
                                      TypeInfo typeInfo) {
 
         TypeName withGenerics = typeInfo.typeName();
+        ResolvedType resolvedType = ResolvedType.create(withGenerics);
 
-        if (!processedFullyQualified.add(withGenerics.resolvedName())) {
+        if (!processed.add(resolvedType)) {
             // this type was already fully processed
             return;
         }
 
+        if (!resolvedType.typeArguments().isEmpty()) {
+            // we also need to add a contract for the type it implements
+            // i.e. if this is Circle<Green>, we may want to add Circle<Color> as well
+            ctx.typeInfo(withGenerics.genericTypeName())
+                    .ifPresent(declaration -> {
+                        TypeName tn = declaration.typeName();
+                        for (int i = 0; i < withGenerics.typeArguments().size(); i++) {
+                            TypeName declared = tn.typeArguments().get(i);
+                            if (declared.generic()) {
+                                // this is not ideal (this could be T extends Circle)
+                                var asString = declared.toString();
+                                int index = asString.indexOf(" extends ");
+                                if (index != -1) {
+                                    TypeName extendedType = TypeName.create(asString.substring(index + 9));
+                                    if (isEligibleType.apply(extendedType)) {
+                                        contractSet.add(ResolvedType.create(
+                                                TypeName.builder()
+                                                        .from(withGenerics)
+                                                        .typeArguments(List.of(extendedType))
+                                                        .build()));
+                                    }
+                                }
+                            } else {
+                                contractSet.add(ResolvedType.create(declared));
+                            }
+                        }
+                    });
+        }
+
         // add this type if eligible
-        if (eligibleContracts.contains(withGenerics)) {
-            contractSet.add(withGenerics);
+        if (isEligibleInfo.apply(typeInfo)) {
+            contractSet.add(ResolvedType.create(withGenerics));
         }
 
         // super type
         typeInfo.superTypeInfo()
                 .ifPresent(it -> addContracts(
+                        ctx,
                         contractSet,
-                        eligibleContracts,
-                        processedFullyQualified,
+                        isEligibleInfo,
+                        isEligibleType,
+                        processed,
                         it
                 ));
 
         // interfaces
         typeInfo.interfaceTypeInfo()
                 .forEach(it -> addContracts(
+                        ctx,
                         contractSet,
-                        eligibleContracts,
-                        processedFullyQualified,
+                        isEligibleInfo,
+                        isEligibleType,
+                        processed,
                         it
                 ));
     }
@@ -567,19 +570,19 @@ class DescribedService {
     private record ProviderAnalysis(boolean valid,
                                     TypeName providedType,
                                     TypeInfo providedTypeInfo,
-                                    Set<TypeName> providedContracts,
+                                    Set<ResolvedType> providedContracts,
                                     TypeName qualifiedProviderQualifier) {
         private ProviderAnalysis() {
             this(false, null, null, null, null);
         }
 
-        private ProviderAnalysis(TypeName providedType, TypeInfo providedTypeInfo, Set<TypeName> providedContracts) {
+        private ProviderAnalysis(TypeName providedType, TypeInfo providedTypeInfo, Set<ResolvedType> providedContracts) {
             this(true, providedType, providedTypeInfo, providedContracts, null);
         }
 
         private ProviderAnalysis(TypeName providedType,
                                  TypeInfo providedTypeInfo,
-                                 Set<TypeName> providedContracts,
+                                 Set<ResolvedType> providedContracts,
                                  TypeName qualifiedProviderQualifier) {
             this(true, providedType, providedTypeInfo, providedContracts, qualifiedProviderQualifier);
         }

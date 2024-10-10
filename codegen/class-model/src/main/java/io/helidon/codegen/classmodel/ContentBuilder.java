@@ -19,6 +19,7 @@ package io.helidon.codegen.classmodel;
 import java.util.List;
 
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
 
@@ -108,6 +109,25 @@ public interface ContentBuilder<T extends ContentBuilder<T>> {
     default T addContentCreate(TypeName typeName) {
         ContentSupport.addCreateTypeName(this, typeName);
         return addContent("");
+    }
+
+    /**
+     * Add content that creates a new {@link io.helidon.common.types.ResolvedType} in the generated code that is the same as the
+     * type name provided.
+     * <p>
+     * To create a type name without type arguments (such as when used with {@code .class}), use
+     * {@link io.helidon.common.types.TypeName#genericTypeName()}.
+     * <p>
+     * The generated content will be similar to: {@code TypeName.create("some.type.Name")}
+     *
+     * @param type type name to code generate
+     * @return updated builder instance
+     */
+    default T addContentCreate(ResolvedType type) {
+        addContent(ResolvedType.class)
+                .addContent(".create(");
+        ContentSupport.addCreateTypeName(this, type);
+        return addContent(")");
     }
 
     /**
