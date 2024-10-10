@@ -327,7 +327,7 @@ the `test` data source's associated connection pool or vendor-specific
 
 [source,properties]
 ----
-javax.sql.DataSource.test.foo.bar=baz# <1> <2> <3>
+javax.sql.DataSource.test.foo.bar=baz# <1><2><3>
 ----
 <1> The *_objecttype_* portion of the configuration property name is
     `javax.sql.DataSource`.
@@ -489,7 +489,7 @@ password:
 [source,properties]
 ----
 javax.sql.DataSource.test.dataSourceClassName = org.h2.jdbcx.JdbcDataSource# <1>
-javax.sql.DataSource.test.dataSource.url = jdbc:h2:mem:unit-testing;DB_CLOSE_DELAY=-1# <2> <3>
+javax.sql.DataSource.test.dataSource.url = jdbc:h2:mem:unit-testing;DB_CLOSE_DELAY=-1# <2><3>
 javax.sql.DataSource.test.dataSource.user = sa
 javax.sql.DataSource.test.dataSource.password =
 ----
