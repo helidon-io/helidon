@@ -75,7 +75,9 @@ final class TypedElements {
         return result;
     }
 
-    static List<TypedElements.ElementMeta> gatherElements(CodegenContext ctx, Collection<ResolvedType> contracts, TypeInfo typeInfo) {
+    static List<TypedElements.ElementMeta> gatherElements(CodegenContext ctx,
+                                                          Collection<ResolvedType> contracts,
+                                                          TypeInfo typeInfo) {
         List<TypedElements.ElementMeta> result = new ArrayList<>();
         Set<ElementSignature> processedSignatures = new HashSet<>();
 

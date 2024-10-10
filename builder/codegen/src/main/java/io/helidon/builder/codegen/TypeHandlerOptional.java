@@ -17,7 +17,6 @@
 package io.helidon.builder.codegen;
 
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -34,25 +33,7 @@ import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.builder.codegen.Types.CHAR_ARRAY;
 import static io.helidon.codegen.CodegenUtil.capitalize;
-import static io.helidon.common.types.TypeNames.BOXED_BOOLEAN;
-import static io.helidon.common.types.TypeNames.BOXED_BYTE;
-import static io.helidon.common.types.TypeNames.BOXED_CHAR;
-import static io.helidon.common.types.TypeNames.BOXED_DOUBLE;
-import static io.helidon.common.types.TypeNames.BOXED_FLOAT;
-import static io.helidon.common.types.TypeNames.BOXED_INT;
-import static io.helidon.common.types.TypeNames.BOXED_LONG;
-import static io.helidon.common.types.TypeNames.BOXED_SHORT;
-import static io.helidon.common.types.TypeNames.BOXED_VOID;
 import static io.helidon.common.types.TypeNames.OPTIONAL;
-import static io.helidon.common.types.TypeNames.PRIMITIVE_BOOLEAN;
-import static io.helidon.common.types.TypeNames.PRIMITIVE_BYTE;
-import static io.helidon.common.types.TypeNames.PRIMITIVE_CHAR;
-import static io.helidon.common.types.TypeNames.PRIMITIVE_DOUBLE;
-import static io.helidon.common.types.TypeNames.PRIMITIVE_FLOAT;
-import static io.helidon.common.types.TypeNames.PRIMITIVE_INT;
-import static io.helidon.common.types.TypeNames.PRIMITIVE_LONG;
-import static io.helidon.common.types.TypeNames.PRIMITIVE_SHORT;
-import static io.helidon.common.types.TypeNames.PRIMITIVE_VOID;
 
 // declaration in builder is always non-generic, so no need to modify default values
 class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
