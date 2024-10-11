@@ -16,20 +16,29 @@
 
 package io.helidon.service.tests.inject.scopes;
 
-import java.util.Deque;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.service.inject.api.Injection;
-import io.helidon.service.registry.Service;
 
 @CustomScope
 class CustomScopedProducer implements CustomScopedContract {
     private static final AtomicInteger COUNTER = new AtomicInteger();
 
     private final int id = COUNTER.incrementAndGet();
+    private final CustomScopeDescribedContract describedContract;
+
+    @Injection.Inject
+    CustomScopedProducer(CustomScopeDescribedContract describedContract) {
+        this.describedContract = describedContract;
+    }
 
     @Override
     public int id() {
         return id;
+    }
+
+    @Override
+    public String message() {
+        return describedContract.message();
     }
 }

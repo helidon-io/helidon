@@ -105,6 +105,51 @@ class ResolvedTypeImpl implements ResolvedType {
     }
 
     @Override
+    public String classNameWithEnclosingNames() {
+        return typeName.classNameWithEnclosingNames();
+    }
+
+    @Override
+    public boolean isList() {
+        return typeName.isList();
+    }
+
+    @Override
+    public boolean isSet() {
+        return typeName.isSet();
+    }
+
+    @Override
+    public boolean isMap() {
+        return typeName.isMap();
+    }
+
+    @Override
+    public boolean isOptional() {
+        return typeName.isOptional();
+    }
+
+    @Override
+    public boolean isSupplier() {
+        return typeName.isSupplier();
+    }
+
+    @Override
+    public String classNameWithTypes() {
+        return typeName.classNameWithTypes();
+    }
+
+    @Override
+    public String name() {
+        return typeName.name();
+    }
+
+    @Override
+    public String fqName() {
+        return typeName.fqName();
+    }
+
+    @Override
     public int hashCode() {
         return noTypes ? typeName.hashCode() : resolvedName.hashCode();
     }

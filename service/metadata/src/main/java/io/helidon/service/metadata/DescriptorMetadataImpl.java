@@ -71,10 +71,18 @@ record DescriptorMetadataImpl(String registryType,
             builder.set("weight", weight);
         }
         builder.set("descriptor", descriptorType.fqName());
-        builder.setStrings("contracts", contracts.stream()
-                .map(TypeName::fqName)
-                .sorted(String.CASE_INSENSITIVE_ORDER)
-                .collect(Collectors.toUnmodifiableList()));
+        if (registryType.equals(REGISTRY_TYPE_CORE)) {
+            builder.setStrings("contracts", contracts.stream()
+                    .map(TypeName::fqName)
+                    .sorted(String.CASE_INSENSITIVE_ORDER)
+                    .distinct()
+                    .collect(Collectors.toUnmodifiableList()));
+        } else {
+            builder.setStrings("contracts", contracts.stream()
+                    .map(TypeName::resolvedName)
+                    .sorted(String.CASE_INSENSITIVE_ORDER)
+                    .collect(Collectors.toUnmodifiableList()));
+        }
 
         return builder.build();
     }

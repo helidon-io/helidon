@@ -62,6 +62,7 @@ import io.helidon.service.inject.api.Qualifier;
 import io.helidon.service.inject.api.Scope;
 import io.helidon.service.inject.api.ScopeNotActiveException;
 import io.helidon.service.inject.api.ScopedRegistry;
+import io.helidon.service.registry.ServiceDescriptor;
 import io.helidon.service.registry.ServiceInfo;
 import io.helidon.service.registry.ServiceRegistryException;
 
@@ -317,7 +318,7 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
     }
 
     @Override
-    public ScopedRegistryImpl createForScope(TypeName scope, String id, Map<ServiceInfo, Object> initialBindings) {
+    public ScopedRegistryImpl createForScope(TypeName scope, String id, Map<ServiceDescriptor<?>, Object> initialBindings) {
         return new ScopedRegistryImpl(this,
                                       scope,
                                       id,
@@ -327,7 +328,7 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
     @Override
     public Scope createScope(TypeName scopeType,
                              String id,
-                             Map<ServiceInfo, Object> initialBindings,
+                             Map<ServiceDescriptor<?>, Object> initialBindings,
                              Consumer<Scope> onCloseAction) {
         var registry = createForScope(scopeType, id, initialBindings);
         var scope = new ScopeImpl(scopeType, onCloseAction, registry);
@@ -441,6 +442,11 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
         } finally {
             stateReadLock.unlock();
         }
+    }
+
+    void ensureInjectionPlans() {
+        servicesByDescriptor.values()
+                .forEach(ServiceManager::ensureInjectionPlan);
     }
 
     void close() {

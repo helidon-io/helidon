@@ -19,6 +19,7 @@ package io.helidon.service.inject.api;
 import java.util.Map;
 
 import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceDescriptor;
 import io.helidon.service.registry.ServiceInfo;
 
 /**
@@ -34,5 +35,5 @@ public interface PerRequestScopeControl {
      * @param initialBindings initial bindings for services (already known by the registry)
      * @return a new request scope, that needs to be closed when the request is done
      */
-    Scope startRequestScope(String id, Map<ServiceInfo, Object> initialBindings);
+    Scope startRequestScope(String id, Map<ServiceDescriptor<?>, Object> initialBindings);
 }

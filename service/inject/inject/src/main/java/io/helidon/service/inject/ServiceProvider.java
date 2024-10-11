@@ -18,6 +18,8 @@ package io.helidon.service.inject;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -47,22 +49,12 @@ class ServiceProvider<T> {
     private final Contracts.ContractLookup contracts;
     private volatile Map<Dependency, IpPlan<?>> injectionPlan = null;
 
-    /*
-    Service provider used for initial bindings in a scope, where we NEVER create instances
-     */
-    ServiceProvider(InjectServiceRegistryImpl serviceRegistry,
-                    ServiceInfo serviceInfo) {
-        this.registry = serviceRegistry;
-        this.interceptionMetadata = registry.interceptionMetadata();
-        this.activationRequest = registry.activationRequest();
-        this.serviceInfo = CoreWrappers.create(serviceInfo);
-        this.descriptor = null;
-
-        this.contracts = Contracts.create(this.serviceInfo);
-    }
-
     ServiceProvider(InjectServiceRegistryImpl serviceRegistry,
                     InjectServiceDescriptor<T> descriptor) {
+
+        Objects.requireNonNull(serviceRegistry);
+        Objects.requireNonNull(descriptor);
+
         this.registry = serviceRegistry;
         this.interceptionMetadata = registry.interceptionMetadata();
         this.activationRequest = registry.activationRequest();

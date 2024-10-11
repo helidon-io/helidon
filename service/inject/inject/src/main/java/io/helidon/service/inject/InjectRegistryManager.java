@@ -146,7 +146,7 @@ public class InjectRegistryManager implements ServiceRegistryManager {
             Map<TypedQualifiedProviderKey, Set<InjectServiceInfo>> typedQualifiedProviders =
                     new HashMap<>();
 
-            List<ServiceDescriptor<Binding>> applications = new ArrayList<>();
+            List<ServiceDescriptor<Binding>> bindings = new ArrayList<>();
 
             config.serviceInstances()
                     .forEach((desc, instance) -> {
@@ -156,7 +156,8 @@ public class InjectRegistryManager implements ServiceRegistryManager {
                             descriptor = virtualDescriptor(config, discovery, ServiceDiscovery.wrap(descriptor));
                         }
                         Described described = toDescribed(descriptorToDescribed, ServiceDiscovery.wrap(descriptor));
-                        bind(applications, scopeHandlers,
+                        bind(bindings,
+                             scopeHandlers,
                              servicesByType,
                              servicesByContract,
                              qualifiedProvidersByQualifier,
@@ -166,7 +167,7 @@ public class InjectRegistryManager implements ServiceRegistryManager {
                     });
 
             for (var descriptor : config.serviceDescriptors()) {
-                bind(applications,
+                bind(bindings,
                      scopeHandlers,
                      servicesByType,
                      servicesByContract,
@@ -190,12 +191,13 @@ public class InjectRegistryManager implements ServiceRegistryManager {
 
                 ServiceDescriptor<?> descriptor = descriptorMeta.descriptor();
                 if (descriptor.contracts().contains(Binding.TYPE)) {
-                    applications.add((ServiceDescriptor<Binding>) descriptor);
+                    bindings.add((ServiceDescriptor<Binding>) descriptor);
                     // applications are not bound to the registry
                 } else {
                     Described described = toDescribed(descriptorToDescribed, descriptor);
 
-                    bind(applications, scopeHandlers,
+                    bind(bindings,
+                         scopeHandlers,
                          servicesByType,
                          servicesByContract,
                          qualifiedProvidersByQualifier,
@@ -208,7 +210,8 @@ public class InjectRegistryManager implements ServiceRegistryManager {
             InjectServiceDescriptor<?> registrySpiDescriptor = InjectRegistrySpi__ServiceDescriptor.INSTANCE;
             Described registrySpiDescribed = new Described(registrySpiDescriptor, registrySpiDescriptor, false);
             descriptorToDescribed.put(registrySpiDescriptor, registrySpiDescribed);
-            bind(applications, scopeHandlers,
+            bind(bindings,
+                 scopeHandlers,
                  servicesByType,
                  servicesByContract,
                  qualifiedProvidersByQualifier,
@@ -218,7 +221,8 @@ public class InjectRegistryManager implements ServiceRegistryManager {
             InjectServiceDescriptor<?> interceptDescriptor = InterceptionMetadata__ServiceDescriptor.INSTANCE;
             Described described = new Described(interceptDescriptor, interceptDescriptor, false);
             descriptorToDescribed.put(interceptDescriptor, described);
-            bind(applications, scopeHandlers,
+            bind(bindings,
+                 scopeHandlers,
                  servicesByType,
                  servicesByContract,
                  qualifiedProvidersByQualifier,
@@ -236,12 +240,15 @@ public class InjectRegistryManager implements ServiceRegistryManager {
 
             // now check if we have an application, and if so, apply it
             if (config.useBinding()) {
-                for (ServiceDescriptor<Binding> application : applications) {
+                for (ServiceDescriptor<Binding> binding : bindings) {
                     // applications cannot have dependencies
-                    Binding appInstance = (Binding) application.instantiate(DependencyContext.create(Map.of()));
-                    appInstance.configure(new ApplicationPlanBinder(appInstance, registry));
+                    Binding bindingInstance = (Binding) binding.instantiate(DependencyContext.create(Map.of()));
+                    bindingInstance.configure(new ApplicationPlanBinder(bindingInstance, registry));
                 }
             }
+
+            // and if application was not bound using binding(s), we need to create the bindings now
+            registry.ensureInjectionPlans();
 
             return registry;
         } finally {
@@ -301,7 +308,7 @@ public class InjectRegistryManager implements ServiceRegistryManager {
     }
 
     @SuppressWarnings("unchecked")
-    private void bind(List<ServiceDescriptor<Binding>> applications,
+    private void bind(List<ServiceDescriptor<Binding>> bindings,
                       Map<TypeName, InjectServiceInfo> scopeHandlers,
                       Map<TypeName, InjectServiceInfo> servicesByType,
                       Map<ResolvedType, Set<InjectServiceInfo>> servicesByContract,
@@ -312,7 +319,7 @@ public class InjectRegistryManager implements ServiceRegistryManager {
         InjectServiceDescriptor<?> descriptor = described.injectDescriptor();
 
         if (descriptor.contracts().contains(Binding.TYPE)) {
-            applications.add((ServiceDescriptor<Binding>) described.coreDescriptor());
+            bindings.add((ServiceDescriptor<Binding>) described.coreDescriptor());
             // application is not bound to the registry
             return;
         }

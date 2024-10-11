@@ -51,6 +51,10 @@ class ServiceManager<T> {
         return provider.descriptor().serviceType().classNameWithEnclosingNames();
     }
 
+    void ensureInjectionPlan() {
+        provider.injectionPlan();
+    }
+
     ServiceInstance<T> registryInstance(Lookup lookup, QualifiedInstance<T> instance) {
         return new ServiceInstanceImpl<>(provider.descriptor(),
                                          provider.contracts(lookup),

@@ -95,6 +95,7 @@ class TestScopes {
         int id;
         try (Scope scope = ctrl.startScope()) {
             id = supply.get().id();
+            assertThat(supply.get().message(), is("It works!"));
         }
 
         ScopeNotActiveException scopeNotAvailableException = assertThrows(ScopeNotActiveException.class, supply::get);

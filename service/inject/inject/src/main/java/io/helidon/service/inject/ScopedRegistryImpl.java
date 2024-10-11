@@ -29,9 +29,11 @@ import java.util.function.Supplier;
 import io.helidon.common.types.TypeName;
 import io.helidon.service.inject.api.ActivationResult;
 import io.helidon.service.inject.api.Activator;
+import io.helidon.service.inject.api.InjectServiceDescriptor;
 import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.ScopeNotActiveException;
 import io.helidon.service.inject.api.ScopedRegistry;
+import io.helidon.service.registry.ServiceDescriptor;
 import io.helidon.service.registry.ServiceInfo;
 import io.helidon.service.registry.ServiceRegistryException;
 
@@ -56,12 +58,12 @@ class ScopedRegistryImpl implements ScopedRegistry {
     ScopedRegistryImpl(InjectServiceRegistryImpl registry,
                        TypeName scope,
                        String id,
-                       Map<ServiceInfo, Object> initialBindings) {
+                       Map<ServiceDescriptor<?>, Object> initialBindings) {
         this.scope = scope;
         this.id = id;
 
-        for (Map.Entry<ServiceInfo, Object> entry : initialBindings.entrySet()) {
-            ServiceInfo key = entry.getKey();
+        for (Map.Entry<ServiceDescriptor<?>, Object> entry : initialBindings.entrySet()) {
+            InjectServiceDescriptor<?> key = CoreWrappers.create(entry.getKey());
             ServiceProvider provider = new ServiceProvider<>(registry,
                                                              key
             );

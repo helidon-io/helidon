@@ -21,7 +21,7 @@ import java.util.function.Consumer;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.service.registry.Service;
-import io.helidon.service.registry.ServiceInfo;
+import io.helidon.service.registry.ServiceDescriptor;
 
 /**
  * Inject service registry SPI, to be used for scope handlers and other extension services.
@@ -43,28 +43,32 @@ public interface InjectRegistrySpi extends InjectRegistry {
      *                        request scope
      * @return a new scoped registry that takes care of lifecycle of service instances with the scope
      */
-    ScopedRegistry createForScope(TypeName scope, String id, Map<ServiceInfo, Object> initialBindings);
+    ScopedRegistry createForScope(TypeName scope, String id, Map<ServiceDescriptor<?>, Object> initialBindings);
 
     /**
      * Create a registry managed scope.
      *
-     * @param scope scope annotation type
-     * @param id id of the scope
+     * @param scope           scope annotation type
+     * @param id              id of the scope
      * @param initialBindings initial bindings for the created scope
      * @return a new scope instance
      */
-    default Scope createScope(TypeName scope, String id, Map<ServiceInfo, Object> initialBindings) {
-        return createScope(scope, id, initialBindings, it -> {});
+    default Scope createScope(TypeName scope, String id, Map<ServiceDescriptor<?>, Object> initialBindings) {
+        return createScope(scope, id, initialBindings, it -> {
+        });
     }
 
     /**
      * Create a registry managed scope with a close action.
      *
-     * @param scope scope annotation type
-     * @param id id of the scope
+     * @param scope           scope annotation type
+     * @param id              id of the scope
      * @param initialBindings initial bindings for the created scope
-     * @param onCloseAction action to carry out when the scope is closed
+     * @param onCloseAction   action to carry out when the scope is closed
      * @return a new scope instance
      */
-    Scope createScope(TypeName scope, String id, Map<ServiceInfo, Object> initialBindings, Consumer<Scope> onCloseAction);
+    Scope createScope(TypeName scope,
+                      String id,
+                      Map<ServiceDescriptor<?>, Object> initialBindings,
+                      Consumer<Scope> onCloseAction);
 }

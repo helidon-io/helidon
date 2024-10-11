@@ -23,6 +23,7 @@ import io.helidon.service.inject.api.InjectRegistrySpi;
 import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.PerRequestScopeControl;
 import io.helidon.service.inject.api.Scope;
+import io.helidon.service.registry.ServiceDescriptor;
 import io.helidon.service.registry.ServiceInfo;
 
 @Injection.Singleton
@@ -42,7 +43,7 @@ class PerRequestScopeControlImpl implements PerRequestScopeControl, Injection.Sc
     }
 
     @Override
-    public Scope startRequestScope(String id, Map<ServiceInfo, Object> initialBindings) {
+    public Scope startRequestScope(String id, Map<ServiceDescriptor<?>, Object> initialBindings) {
         // no need to synchronize, this is per-thread
         Scope scope = REQUEST_SCOPES.get();
         if (scope != null) {

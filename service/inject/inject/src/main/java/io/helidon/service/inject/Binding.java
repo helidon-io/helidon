@@ -25,6 +25,8 @@ import io.helidon.service.registry.Service;
  * <p>
  * Implementations of this contract are normally code generated, although then can be programmatically written by the developer
  * for special cases.
+ * <p>
+ * Binding instances MUST NOT have injection points.
  */
 @Service.Contract
 public interface Binding {

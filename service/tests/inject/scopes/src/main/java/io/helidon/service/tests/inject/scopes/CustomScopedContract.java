@@ -21,4 +21,5 @@ import io.helidon.service.registry.Service;
 @Service.Contract
 interface CustomScopedContract {
     int id();
+    String message();
 }

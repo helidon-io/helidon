@@ -41,7 +41,10 @@ public class CustomScopeControl implements Injection.ScopeHandler<CustomScope> {
     }
 
     Scope startScope() {
-        Scope scope = registry.createScope(CustomScope.TYPE, "42", Map.of());
+        Scope scope = registry.createScope(CustomScope.TYPE,
+                                           "42",
+                                           Map.of(CustomScopeDescribedContract__ServiceDescriptor.INSTANCE,
+                                                  new CustomScopeDescribedContractImpl()));
         this.scope.set(scope);
         return scope;
     }

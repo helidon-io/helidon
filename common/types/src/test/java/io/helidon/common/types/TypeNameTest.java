@@ -17,6 +17,7 @@
 package io.helidon.common.types;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -60,6 +61,26 @@ class TypeNameTest {
         assertThat(name.className(), is(type.getSimpleName()));
         assertThat(name.name(), is(type.getTypeName()));
         assertThat(name.classNameWithEnclosingNames(), is("TestType.NestedType.DoubleNestedType"));
+    }
+
+    @Test
+    void testGenericInnerType() {
+        String resolved =
+                "io.helidon.service.inject.api.Injection.ScopeHandler<io.helidon.examples.inject.CustomScopeExample.MyScope>";
+
+        TypeName typeName = TypeName.builder()
+                .packageName("io.helidon.service.inject.api")
+                .className("ScopeHandler")
+                .addEnclosingName("Injection")
+                .addTypeArgument(TypeName.create("io.helidon.examples.inject.CustomScopeExample.MyScope"))
+                .build();
+
+        assertThat(typeName.resolvedName(), is(resolved));
+        assertThat(typeName.fqName(), is("io.helidon.service.inject.api.Injection.ScopeHandler"));
+
+        ResolvedType rt = ResolvedType.create(typeName);
+        assertThat(rt.resolvedName(), is(resolved));
+        assertThat(rt.fqName(), is("io.helidon.service.inject.api.Injection.ScopeHandler"));
     }
 
     @Test
