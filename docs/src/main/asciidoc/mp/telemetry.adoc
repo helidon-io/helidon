@@ -83,7 +83,7 @@ MicroProfile Telemetry {mp-telemetry-version} allows for the exportation of the 
 If possible, assign the following config setting in your application's `META-INF/microprofile-config.properties` file:
 [source,properties]
 ----
-mp.telemetry.span.name-includes-method = true
+telemetry.span.name-includes-method = true
 ----
 Earlier releases of Helidon 4 implemented MicroProfile Telemetry 1.0 which was based on OpenTelemetry semantic conventions 1.22.0-alpha.
 
