@@ -30,6 +30,12 @@ public class ZipkinDataPropagationProvider implements DataPropagationProvider<Zi
 
     private static final System.Logger LOGGER = System.getLogger(ZipkinDataPropagationProvider.class.getName());
 
+    /**
+     * Creates new provider; public for service loading.
+     */
+    public ZipkinDataPropagationProvider() {
+    }
+
     @Override
     public ZipkinContext data() {
         Tracer tracer = Contexts.context()
@@ -60,7 +66,7 @@ public class ZipkinDataPropagationProvider implements DataPropagationProvider<Zi
     /**
      * Zipkin-specific propagation context.
      */
-    public static class ZipkinContext {
+    static class ZipkinContext {
 
         private final Tracer tracer;
         private final Span span;
