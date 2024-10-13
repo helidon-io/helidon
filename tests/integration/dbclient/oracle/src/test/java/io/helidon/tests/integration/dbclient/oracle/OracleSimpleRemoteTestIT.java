@@ -282,6 +282,18 @@ final class OracleSimpleRemoteTestIT extends OracleRemoteTest implements SimpleT
 
     @Test
     @Override
+    public void testInsertNamedArgsReturnedKeys() {
+        remoteTest();
+    }
+
+    @Test
+    @Override
+    public void testInsertNamedArgsReturnedColumns() {
+        remoteTest();
+    }
+
+    @Test
+    @Override
     public void testCreateNamedQueryStrStrOrderArgs() {
         remoteTest();
     }
