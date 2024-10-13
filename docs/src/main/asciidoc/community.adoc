@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ creating issues, or submitting pull requests.
 
 Have a question?
 
-* Ask them in in Slack at http://slack.helidon.io[#helidon-user]
+* Ask them in in Slack at https://slack.helidon.io[#helidon-user]
 * Or on https://stackoverflow.com/questions/tagged/helidon[Stack Overflow] using the `helidon` tag
 * Read the https://github.com/oracle/helidon/wiki/FAQ[Helidon FAQ]
 

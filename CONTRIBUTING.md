@@ -5,7 +5,7 @@ We welcome your contributions! There are multiple ways to contribute.
 
 ## Discussion
 
-Join us at [#helidon-users](http://slack.helidon.io) and participate in discussions.
+Join us at [#helidon-users](https://slack.helidon.io) and participate in discussions.
 
 ## Issues
 
