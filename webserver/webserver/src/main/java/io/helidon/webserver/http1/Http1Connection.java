@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 import java.util.function.Supplier;
@@ -29,6 +30,9 @@ import io.helidon.common.ParserHelper;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.concurrency.limits.FixedLimit;
+import io.helidon.common.concurrency.limits.Limit;
+import io.helidon.common.concurrency.limits.LimitAlgorithm;
 import io.helidon.common.mapper.MapperException;
 import io.helidon.common.task.InterruptableTask;
 import io.helidon.common.tls.TlsUtils;
@@ -136,7 +140,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     }
 
     @Override
-    public void handle(Semaphore requestSemaphore) throws InterruptedException {
+    public void handle(Limit limit) throws InterruptedException {
         this.myThread = Thread.currentThread();
         try {
             // look for protocol data
@@ -183,21 +187,15 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                 }
                                 this.upgradeConnection = upgradeConnection;
                                 // this will block until the connection terminates
-                                upgradeConnection.handle(requestSemaphore);
+                                upgradeConnection.handle(limit);
                                 return;
                             }
                         }
                     }
                 }
-                if (requestSemaphore.tryAcquire()) {
-                    try {
-                        this.lastRequestTimestamp = DateTime.timestamp();
-                        route(prologue, headers);
-                        this.lastRequestTimestamp = DateTime.timestamp();
-                    } finally {
-                        requestSemaphore.release();
-                    }
-                } else {
+
+                Optional<LimitAlgorithm.Token> token = limit.tryAcquire();
+                if (token.isEmpty()) {
                     ctx.log(LOGGER, TRACE, "Too many concurrent requests, rejecting request and closing connection.");
                     throw RequestException.builder()
                             .setKeepAlive(false)
@@ -205,8 +203,19 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                             .type(EventType.OTHER)
                             .message("Too Many Concurrent Requests")
                             .build();
-                }
+                } else {
+                    LimitAlgorithm.Token permit = token.get();
 
+                    try {
+                        this.lastRequestTimestamp = DateTime.timestamp();
+                        route(prologue, headers);
+                        permit.success();
+                        this.lastRequestTimestamp = DateTime.timestamp();
+                    } catch (Throwable e) {
+                        permit.dropped();
+                        throw e;
+                    }
+                }
             }
         } catch (CloseConnectionException e) {
             throw e;
@@ -226,6 +235,12 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                            .cause(e)
                                            .build());
         }
+    }
+
+    @SuppressWarnings("removal")
+    @Override
+    public void handle(Semaphore requestSemaphore) throws InterruptedException {
+        handle(FixedLimit.create(requestSemaphore));
     }
 
     @Override

@@ -32,6 +32,7 @@ import javax.net.ssl.SSLSocket;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.common.socket.PlainSocket;
@@ -58,7 +59,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     private final ListenerContext listenerContext;
     // we must safely release the semaphore whenever this connection is finished, so other connections can be created!
     private final Semaphore connectionSemaphore;
-    private final Semaphore requestSemaphore;
+    private final Limit requestLimit;
     private final ConnectionProviders connectionProviders;
     private final List<ServerConnectionSelector> providerCandidates;
     private final Map<String, ServerConnection> activeConnections;
@@ -76,7 +77,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
 
     ConnectionHandler(ListenerContext listenerContext,
                       Semaphore connectionSemaphore,
-                      Semaphore requestSemaphore,
+                      Limit requestLimit,
                       ConnectionProviders connectionProviders,
                       Map<String, ServerConnection> activeConnections,
                       Socket socket,
@@ -85,7 +86,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
                       Tls tls) {
         this.listenerContext = listenerContext;
         this.connectionSemaphore = connectionSemaphore;
-        this.requestSemaphore = requestSemaphore;
+        this.requestLimit = requestLimit;
         this.connectionProviders = connectionProviders;
         this.providerCandidates = connectionProviders.providerCandidates();
         this.activeConnections = activeConnections;
@@ -165,7 +166,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
                 throw new CloseConnectionException("No suitable connection provider");
             }
             activeConnections.put(socketsId, connection);
-            connection.handle(requestSemaphore);
+            connection.handle(requestLimit);
         } catch (RequestException e) {
             helidonSocket.log(LOGGER, WARNING, "escaped Request exception", e);
         } catch (HttpException e) {

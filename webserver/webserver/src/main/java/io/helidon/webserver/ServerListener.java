@@ -43,6 +43,9 @@ import javax.net.ssl.SSLServerSocket;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
+import io.helidon.common.concurrency.limits.FixedLimit;
+import io.helidon.common.concurrency.limits.Limit;
+import io.helidon.common.concurrency.limits.NoopSemaphore;
 import io.helidon.common.context.Context;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.task.HelidonTaskExecutor;
@@ -85,7 +88,7 @@ class ServerListener implements ListenerContext {
     private final ContentEncodingContext contentEncodingContext;
     private final Context context;
     private final Semaphore connectionSemaphore;
-    private final Semaphore requestSemaphore;
+    private final Limit requestLimit;
     private final Map<String, ServerConnection> activeConnections = new ConcurrentHashMap<>();
 
     private volatile boolean running;
@@ -116,11 +119,18 @@ class ServerListener implements ListenerContext {
                 });
 
         this.connectionSemaphore = listenerConfig.maxTcpConnections() == -1
-                ? new NoopSemaphore()
+                ? NoopSemaphore.INSTANCE
                 : new Semaphore(listenerConfig.maxTcpConnections());
-        this.requestSemaphore = listenerConfig.maxConcurrentRequests() == -1
-                ? new NoopSemaphore()
-                : new Semaphore(listenerConfig.maxConcurrentRequests());
+
+        if (listenerConfig.maxConcurrentRequests() == -1) {
+            this.requestLimit = listenerConfig.concurrencyLimit()
+                    .orElseGet(FixedLimit::create); // unlimited unless configured
+        } else {
+            this.requestLimit = FixedLimit.builder()
+                    .permits(listenerConfig.maxConcurrentRequests())
+                    .build();
+        }
+
         this.connectionProviders = ConnectionProviders.create(selectors);
         this.socketName = socketName;
         this.listenerConfig = listenerConfig;
@@ -337,7 +347,7 @@ class ServerListener implements ListenerContext {
                     connectionOptions.configureSocket(socket);
                     ConnectionHandler handler = new ConnectionHandler(this,
                                                     connectionSemaphore,
-                                                    requestSemaphore,
+                                                    requestLimit,
                                                     connectionProviders,
                                                     activeConnections,
                                                     socket,
