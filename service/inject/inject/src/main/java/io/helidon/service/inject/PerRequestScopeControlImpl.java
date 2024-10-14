@@ -24,7 +24,6 @@ import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.PerRequestScopeControl;
 import io.helidon.service.inject.api.Scope;
 import io.helidon.service.registry.ServiceDescriptor;
-import io.helidon.service.registry.ServiceInfo;
 
 @Injection.Singleton
 class PerRequestScopeControlImpl implements PerRequestScopeControl, Injection.ScopeHandler<Injection.PerRequest> {

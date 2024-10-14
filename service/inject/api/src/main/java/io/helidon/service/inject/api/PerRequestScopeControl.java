@@ -20,7 +20,6 @@ import java.util.Map;
 
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceDescriptor;
-import io.helidon.service.registry.ServiceInfo;
 
 /**
  * Service for starting a request scope.
