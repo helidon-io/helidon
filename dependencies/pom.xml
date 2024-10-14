@@ -131,9 +131,9 @@
         <version.lib.ojdbc.family>21</version.lib.ojdbc.family>
         <!--
             UCP versions 21.10.0.0 and up throw NPEs. There is a test to catch them.
-            Until this bug is fixed do not upgrade past version 21.9.0.0.
+            This appears to be fixed in 21.15.0.0
         -->
-        <version.lib.ojdbc>${version.lib.ojdbc.family}.9.0.0</version.lib.ojdbc>
+        <version.lib.ojdbc>${version.lib.ojdbc.family}.15.0.0</version.lib.ojdbc>
         <version.lib.ojdbc8>${version.lib.ojdbc}</version.lib.ojdbc8>
         <!-- Force upgrade okio for CVE-2023-3635. When okhttp 4.12.0 is available we can remove this -->
         <version.lib.okio>3.4.0</version.lib.okio>
