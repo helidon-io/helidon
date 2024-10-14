@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,25 +16,25 @@
 
 package io.helidon.common.mapper;
 
-import java.util.concurrent.atomic.AtomicReference;
-
 import io.helidon.common.LazyValue;
+import io.helidon.common.context.ContextSingleton;
 
 final class GlobalManager {
     private static final LazyValue<MapperManager> DEFAULT_MAPPER = LazyValue.create(() -> MapperManager.builder()
             .useBuiltIn(true)
             .build());
-    private static final AtomicReference<MapperManager> MANAGER = new AtomicReference<>();
+    private static final ContextSingleton<MapperManager> CONTEXT_VALUE = ContextSingleton.create(GlobalManager.class,
+                                                                                                 MapperManager.class,
+                                                                                                 DEFAULT_MAPPER);
 
     private GlobalManager() {
     }
 
     public static void mapperManager(MapperManager manager) {
-        MANAGER.set(manager);
+        CONTEXT_VALUE.set(manager);
     }
 
     static MapperManager mapperManager() {
-        MapperManager mapperManager = MANAGER.get();
-        return mapperManager == null ? DEFAULT_MAPPER.get() : mapperManager;
+        return CONTEXT_VALUE.get();
     }
 }

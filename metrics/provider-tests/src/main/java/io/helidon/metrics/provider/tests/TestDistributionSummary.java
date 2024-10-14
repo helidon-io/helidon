@@ -26,6 +26,7 @@ import io.helidon.metrics.api.HistogramSnapshot;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.ValueAtPercentile;
+import io.helidon.testing.junit5.Testing;
 
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -39,6 +40,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
+@Testing.Test
 class TestDistributionSummary {
 
     private static MeterRegistry meterRegistry;

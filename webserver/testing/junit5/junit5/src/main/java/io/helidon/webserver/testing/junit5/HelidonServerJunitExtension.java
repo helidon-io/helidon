@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,18 +33,19 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.config.GlobalConfig;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
-import io.helidon.logging.common.LogConfig;
+import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.testing.TestConfig;
 import io.helidon.webserver.ListenerConfig;
 import io.helidon.webserver.Router;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.WebServerRegistryService;
 import io.helidon.webserver.testing.junit5.spi.ServerJunitExtension;
 
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.InvocationInterceptor;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
@@ -59,7 +60,6 @@ class HelidonServerJunitExtension extends JunitExtensionBase
         implements BeforeAllCallback,
                    AfterAllCallback,
                    AfterEachCallback,
-                   InvocationInterceptor,
                    ParameterResolver {
 
     private final Map<String, URI> uris = new ConcurrentHashMap<>();
@@ -73,39 +73,54 @@ class HelidonServerJunitExtension extends JunitExtensionBase
 
     @Override
     public void beforeAll(ExtensionContext context) {
-        LogConfig.configureRuntime();
+        super.beforeAll(context);
 
-        Class<?> testClass = context.getRequiredTestClass();
-        super.testClass(testClass);
-        ServerTest testAnnot = testClass.getAnnotation(ServerTest.class);
-        if (testAnnot == null) {
-            throw new IllegalStateException("Invalid test class for this extension: " + testClass);
-        }
+        run(context, () -> {
+            if (System.getProperty("helidon.config.profile") == null
+                    && System.getProperty("config.profile") == null) {
+                System.setProperty("helidon.config.profile", "test");
+            }
 
-        WebServerConfig.Builder builder = WebServer.builder()
-                .config(GlobalConfig.config().get("server"))
-                .host("localhost");
+            Class<?> testClass = context.getRequiredTestClass();
+            super.testClass(testClass);
+            ServerTest testAnnot = testClass.getAnnotation(ServerTest.class);
+            if (testAnnot == null) {
+                throw new IllegalStateException("Invalid test class for this extension: " + testClass);
+            }
 
-        extensions.forEach(it -> it.beforeAll(context));
-        extensions.forEach(it -> it.updateServerBuilder(builder));
+            WebServerConfig.Builder builder = WebServer.builder();
 
-        // port will be random
-        builder.port(0)
-                .shutdownHook(false);
+            builder.config(GlobalConfig.config().get("server"))
+                    .host("localhost");
 
-        setupServer(builder);
-        addRouting(builder);
+            registrySetup(builder);
 
-        server = builder.build().start();
-        if (server.hasTls()) {
-            uris.put(DEFAULT_SOCKET_NAME, URI.create("https://localhost:" + server.port() + "/"));
-        } else {
-            uris.put(DEFAULT_SOCKET_NAME, URI.create("http://localhost:" + server.port() + "/"));
-        }
+            extensions.forEach(it -> it.beforeAll(context));
+            extensions.forEach(it -> it.updateServerBuilder(builder));
+
+            // port will be random
+            builder.port(0)
+                    .shutdownHook(false);
+
+            setupServer(builder);
+            addRouting(builder);
+
+            server = builder
+                        .serverContext(super.context(context).orElseThrow()) // created above when we call super.beforeAll
+                        .build().start();
+            if (server.hasTls()) {
+                uris.put(DEFAULT_SOCKET_NAME, URI.create("https://localhost:" + server.port() + "/"));
+            } else {
+                uris.put(DEFAULT_SOCKET_NAME, URI.create("http://localhost:" + server.port() + "/"));
+            }
+
+            TestConfig.set("test.server.port", String.valueOf(server.port()));
+        });
     }
 
     @Override
     public void afterAll(ExtensionContext extensionContext) {
+        run(extensionContext, () -> {
         extensions.forEach(it -> it.afterAll(extensionContext));
 
         if (server != null) {
@@ -113,68 +128,87 @@ class HelidonServerJunitExtension extends JunitExtensionBase
         }
 
         super.afterAll(extensionContext);
+        });
     }
 
     @Override
     public void afterEach(ExtensionContext extensionContext) {
-        extensions.forEach(it -> it.afterEach(extensionContext));
+        run(extensionContext, () -> extensions.forEach(it -> it.afterEach(extensionContext)));
     }
 
     @Override
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
             throws ParameterResolutionException {
 
-        Class<?> paramType = parameterContext.getParameter().getType();
-        if (paramType.equals(WebServer.class)) {
-            return true;
-        }
-        if (paramType.equals(URI.class)) {
-            return true;
-        }
-
-        for (ServerJunitExtension extension : extensions) {
-            if (extension.supportsParameter(parameterContext, extensionContext)) {
+        return call(extensionContext, () -> {
+            Class<?> paramType = parameterContext.getParameter().getType();
+            if (paramType.equals(WebServer.class)) {
                 return true;
             }
-        }
+            if (paramType.equals(URI.class)) {
+                return true;
+            }
 
-        Context context;
-        if (server == null) {
-            context = Contexts.globalContext();
-        } else {
-            context = server.context();
-        }
-        return context.get(paramType).isPresent();
+            for (ServerJunitExtension extension : extensions) {
+                if (extension.supportsParameter(parameterContext, extensionContext)) {
+                    return true;
+                }
+            }
+
+            Context context;
+            if (server == null) {
+                context = Contexts.context().orElseGet(Contexts::globalContext);
+            } else {
+                context = server.context();
+            }
+            if (context.get(paramType).isPresent()) {
+                return true;
+            }
+            return super.supportsParameter(parameterContext, extensionContext);
+        });
     }
 
     @Override
     public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
             throws ParameterResolutionException {
 
-        Class<?> paramType = parameterContext.getParameter().getType();
-        if (paramType.equals(WebServer.class)) {
-            return server;
-        }
-        if (paramType.equals(URI.class)) {
-            return uri(parameterContext.getDeclaringExecutable(), Junit5Util.socketName(parameterContext.getParameter()));
-        }
-
-        for (ServerJunitExtension extension : extensions) {
-            if (extension.supportsParameter(parameterContext, extensionContext)) {
-                return extension.resolveParameter(parameterContext, extensionContext, paramType, server);
+        return call(extensionContext, () -> {
+            Class<?> paramType = parameterContext.getParameter().getType();
+            if (paramType.equals(WebServer.class)) {
+                return server;
             }
-        }
+            if (paramType.equals(URI.class)) {
+                return uri(parameterContext.getDeclaringExecutable(), Junit5Util.socketName(parameterContext.getParameter()));
+            }
 
-        Context context;
-        if (server == null) {
-            context = Contexts.globalContext();
-        } else {
-            context = server.context();
-        }
+            for (ServerJunitExtension extension : extensions) {
+                if (extension.supportsParameter(parameterContext, extensionContext)) {
+                    return extension.resolveParameter(parameterContext, extensionContext, paramType, server);
+                }
+            }
 
-        return context.get(paramType)
-                .orElseThrow(() -> new ParameterResolutionException("Failed to resolve parameter of type "
-                                                                            + paramType.getName()));
+            Context context;
+            if (server == null) {
+                context = Contexts.context().orElseGet(Contexts::globalContext);
+            } else {
+                context = server.context();
+            }
+
+            var fromContext = context.get(paramType);
+
+            if (fromContext.isPresent()) {
+                return fromContext;
+            }
+
+            return super.resolveParameter(parameterContext, extensionContext);
+        });
+    }
+
+    private void registrySetup(WebServerConfig.Builder builder) {
+        // there is a core service that is noop, there will be an injection service that will be op
+        GlobalServiceRegistry.registry()
+                .all(WebServerRegistryService.class)
+                .forEach(it -> it.updateBuilder(builder));
     }
 
     private URI uri(Executable declaringExecutable, String socketName) {
@@ -262,6 +296,7 @@ class HelidonServerJunitExtension extends JunitExtensionBase
         });
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private SetUpRouteHandler createRoutingMethodCall(Method method) {
         // @SetUpRoute may have parameters handled by different extensions
         List<ServerJunitExtension.ParamHandler> handlers = new ArrayList<>();

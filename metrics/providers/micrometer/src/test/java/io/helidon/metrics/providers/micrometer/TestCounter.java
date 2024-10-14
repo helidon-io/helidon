@@ -15,15 +15,11 @@
  */
 package io.helidon.metrics.providers.micrometer;
 
-import java.util.List;
-
 import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
-import io.helidon.metrics.api.MetricsConfig;
 
-import io.micrometer.core.instrument.Meter;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 

@@ -204,6 +204,9 @@ class MicrometerMetricsFactory implements MetricsFactory {
         registries.forEach(MMeterRegistry::close);
         meterRegistries.clear();
         globalMeterRegistry = null;
+        for (var registry : Metrics.globalRegistry.getRegistries()) {
+            Metrics.globalRegistry.remove(registry);
+        }
     }
 
     @Override

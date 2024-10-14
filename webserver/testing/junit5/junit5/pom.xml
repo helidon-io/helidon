@@ -43,6 +43,18 @@
             <artifactId>helidon-webclient</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-registry</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.testing</groupId>
+            <artifactId>helidon-testing</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.testing</groupId>
+            <artifactId>helidon-testing-junit5</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common.testing</groupId>
             <artifactId>helidon-common-testing-http-junit5</artifactId>
         </dependency>

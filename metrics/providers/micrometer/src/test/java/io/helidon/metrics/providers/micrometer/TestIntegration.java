@@ -23,6 +23,7 @@ import io.helidon.metrics.api.Metrics;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
@@ -45,6 +46,7 @@ class TestIntegration {
 
         io.micrometer.core.instrument.MeterRegistry mMeterRegistry = io.micrometer.core.instrument.Metrics.globalRegistry;
         io.micrometer.core.instrument.Counter mCounter = mMeterRegistry.counter("hCounter1", "scope", "application");
+        assertThat(unwrappedCounter, sameInstance(mCounter));
         assertThat("hCounter via Micrometer meter registry", mCounter.count(), equalTo(5D));
     }
 
@@ -57,6 +59,8 @@ class TestIntegration {
 
         // Should find the previously-registered counter.
         Counter hCounter = hMeterRegistry.getOrCreate(Counter.builder("mCounter1"));
+
+        assertThat(mCounter, sameInstance(hCounter.unwrap(io.micrometer.core.instrument.Counter.class)));
         assertThat("mCounter via Helidon with no explicit tag",
                    hCounter.count(),
                    equalTo(2L));

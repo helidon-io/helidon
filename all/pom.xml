@@ -444,6 +444,10 @@
             <artifactId>helidon-common-processor-class-model</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.testing</groupId>
+            <artifactId>helidon-testing</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common.testing</groupId>
             <artifactId>helidon-common-testing-junit5</artifactId>
         </dependency>
@@ -923,6 +927,10 @@
         <dependency>
             <groupId>io.helidon.http.media</groupId>
             <artifactId>helidon-http-media-multipart</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.testing</groupId>
+            <artifactId>helidon-testing-junit5</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
