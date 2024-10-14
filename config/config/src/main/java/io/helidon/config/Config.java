@@ -1638,7 +1638,7 @@ public interface Config extends io.helidon.common.config.Config {
             try {
                 MetaConfig.metaConfig()
                         .ifPresent(this::config);
-            } catch (Exception e) {
+            } catch (MetaConfigException e) {
                 System.getLogger(getClass().getName())
                         .log(System.Logger.Level.WARNING, "Failed to load SE meta-configuration,"
                                 + " please make sure it has correct format.", e);
