@@ -395,56 +395,47 @@ public class DataReader {
      */
     public int findNewLine(int max) throws IncorrectNewLineException {
         ensureAvailable();
-        int idx = 0;
         Node n = head;
-        int indexWithinNode = n.position;
+        int idx = 0;
+        int fromIndexNode = n.position;
 
         while (true) {
             byte[] barr = n.bytes;
-            int maxLength = Math.min(max - idx, barr.length - indexWithinNode);
-            int crIndex = Bytes.firstIndexOf(barr, indexWithinNode, indexWithinNode + maxLength, Bytes.CR_BYTE);
+            int maxLength = Math.min(max - idx, barr.length - fromIndexNode);
+            int crIndexNode = Bytes.firstIndexOf(barr, fromIndexNode, fromIndexNode + maxLength, Bytes.CR_BYTE);
 
-            if (crIndex == -1) {
-                int lfIndex = Bytes.firstIndexOf(barr, indexWithinNode, indexWithinNode + maxLength, Bytes.LF_BYTE);
-                if (lfIndex != -1) {
+            if (crIndexNode == -1) {
+                int lfIndexNode = Bytes.firstIndexOf(barr, fromIndexNode, fromIndexNode + maxLength, Bytes.LF_BYTE);
+                if (lfIndexNode != -1) {
                     if (!ignoreLoneEol) {
-                        throw new IncorrectNewLineException("Found LF (" + (idx + lfIndex - n.position)
+                        throw new IncorrectNewLineException("Found LF (" + (idx + lfIndexNode - n.position)
                                                                     + ") without preceding CR. :\n" + this.debugDataHex());
                     }
                 }
-                // not found, continue with next buffer
-                idx += maxLength;
-                if (idx >= max) {
-                    // not found and reached the limit
-                    return max;
-                }
-                n = n.next();
-                indexWithinNode = n.position;
-                continue;
             } else {
                 // found, next byte should be LF
-                if (crIndex == barr.length - 1) {
+                if (crIndexNode == barr.length - 1) {
                     // found CR as the last byte of the current node, peek next node
                     byte nextByte = n.next().peek();
                     if (nextByte == Bytes.LF_BYTE) {
-                        return idx + crIndex - n.position;
+                        return idx + crIndexNode - fromIndexNode;
                     }
                     if (!ignoreLoneEol) {
-                        throw new IncorrectNewLineException("Found CR (" + (idx + crIndex - n.position)
+                        throw new IncorrectNewLineException("Found CR (" + (idx + crIndexNode - n.position)
                                                                     + ") without following LF. :\n" + this.debugDataHex());
                     }
                 } else {
                     // found CR within the current array
-                    byte nextByte = barr[crIndex + 1];
+                    byte nextByte = barr[crIndexNode + 1];
                     if (nextByte == Bytes.LF_BYTE) {
-                        return idx + crIndex - n.position;
+                        return idx + crIndexNode - fromIndexNode;
                     }
                     if (!ignoreLoneEol) {
                         throw new IncorrectNewLineException("Found CR (" + idx
                                                                     + ") without following LF. :\n" + this.debugDataHex());
                     }
-                    indexWithinNode = crIndex + 1;
-                    idx += indexWithinNode;
+                    idx += (crIndexNode - fromIndexNode + 1);
+                    fromIndexNode = crIndexNode + 1;
                     if (idx >= max) {
                         return max;
                     }
@@ -452,12 +443,14 @@ public class DataReader {
                 }
             }
 
+            // not found, continue with next buffer
             idx += maxLength;
             if (idx >= max) {
+                // not found and reached the limit
                 return max;
             }
             n = n.next();
-            indexWithinNode = n.position;
+            fromIndexNode = n.position;
         }
     }
 
