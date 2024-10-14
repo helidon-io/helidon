@@ -16,6 +16,7 @@
 
 package io.helidon.common.buffers;
 
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.Test;
@@ -30,7 +31,7 @@ class DataReaderTest {
         // reading N bytes at a time until a new line is found
         // with data containing a lone CR
 
-        byte[] data = new byte[] {0, 0, (byte) '\r', 0, (byte) '\r', (byte) '\n'};
+        byte[] data = "00\r0\r\n".getBytes(StandardCharsets.US_ASCII);
         AtomicReference<byte[]> ref = new AtomicReference<>(data);
         DataReader dataReader = new DataReader(() -> ref.getAndSet(null), true);
 
@@ -40,5 +41,33 @@ class DataReaderTest {
         assertThat(dataReader.findNewLine(n), is(n));
         dataReader.skip(n);
         assertThat(dataReader.findNewLine(n), is(0));
+    }
+
+    @Test
+    void testFindNewLineWithMultipleLoneCR() {
+        // if the stream index is accumulated with the node index for each lone CR
+        // it may exceed max and the new line is ignored
+
+        byte[] data = "00\r\r\r\n".getBytes(StandardCharsets.US_ASCII);
+        AtomicReference<byte[]> ref = new AtomicReference<>(data);
+        DataReader dataReader = new DataReader(() -> ref.getAndSet(null), true);
+
+        int n = 5;
+        assertThat(dataReader.findNewLine(n), is(4));
+    }
+
+    @Test
+    void testFindNewLineWithMultipleLoneWithinMax() {
+        // if the stream index is not updated for each lone CR
+        // the computed search range is too big and a value greater than max is returned
+
+        byte[] data = "00\r00\r\n00".getBytes(StandardCharsets.US_ASCII);
+        AtomicReference<byte[]> ref = new AtomicReference<>(data);
+        DataReader dataReader = new DataReader(() -> ref.getAndSet(null), true);
+
+        int n = 4;
+        assertThat(dataReader.findNewLine(n), is(n));
+        dataReader.skip(n);
+        assertThat(dataReader.findNewLine(n), is(1));
     }
 }
