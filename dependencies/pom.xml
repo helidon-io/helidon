@@ -131,7 +131,7 @@
         <version.lib.ojdbc.family>21</version.lib.ojdbc.family>
         <!--
             UCP versions 21.10.0.0 and up throw NPEs. There is a test to catch them.
-            Until this bug is fixed do not upgrade past version 21.9.0.0.
+            This appears to be fixed in 21.15.0.0
         -->
         <version.lib.ojdbc>${version.lib.ojdbc.family}.15.0.0</version.lib.ojdbc>
         <version.lib.ojdbc8>${version.lib.ojdbc}</version.lib.ojdbc8>
