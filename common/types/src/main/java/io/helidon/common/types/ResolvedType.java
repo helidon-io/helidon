@@ -63,4 +63,11 @@ public interface ResolvedType extends TypeName {
         return new ResolvedTypeImpl(typeName);
     }
 
+    /**
+     * Get the underlying instance that behaves according to {@link io.helidon.common.types.TypeName} contract for
+     * equals and hashCode.
+     *
+     * @return underlying type name
+     */
+    TypeName unresolvedType();
 }

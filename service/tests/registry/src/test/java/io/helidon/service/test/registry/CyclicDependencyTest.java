@@ -20,10 +20,12 @@ import java.util.List;
 import java.util.Set;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 import io.helidon.service.registry.Dependency;
 import io.helidon.service.registry.DependencyContext;
 import io.helidon.service.registry.GeneratedService;
+import io.helidon.service.registry.ServiceDescriptor;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryException;
@@ -68,7 +70,7 @@ public class CyclicDependencyTest {
         }
     }
 
-    private static class Descriptor1 implements GeneratedService.Descriptor<Service1> {
+    private static class Descriptor1 implements ServiceDescriptor<Service1> {
         private static final TypeName TYPE = TypeName.create(Descriptor1.class);
 
         private static final Dependency DEP = Dependency.builder()
@@ -102,12 +104,12 @@ public class CyclicDependencyTest {
         }
 
         @Override
-        public Set<TypeName> contracts() {
-            return Set.of(SERVICE_1);
+        public Set<ResolvedType> contracts() {
+            return Set.of(ResolvedType.create(SERVICE_1));
         }
     }
 
-    private static class Descriptor2 implements GeneratedService.Descriptor<Service2> {
+    private static class Descriptor2 implements ServiceDescriptor<Service2> {
         private static final TypeName TYPE = TypeName.create(Descriptor2.class);
 
         private static final Dependency DEP = Dependency.builder()
@@ -141,8 +143,8 @@ public class CyclicDependencyTest {
         }
 
         @Override
-        public Set<TypeName> contracts() {
-            return Set.of(SERVICE_2);
+        public Set<ResolvedType> contracts() {
+            return Set.of(ResolvedType.create(SERVICE_2));
         }
     }
 }

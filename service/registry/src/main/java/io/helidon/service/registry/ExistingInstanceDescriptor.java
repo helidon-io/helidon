@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -28,18 +29,19 @@ import io.helidon.common.types.TypeName;
  * a code generated service descriptor, such as for testing.
  * <p>
  * Note that these instances cannot be used for creating code generated binding, as they do not exist as classes.
+ *
  * @param <T> type of the instance
  */
-public final class ExistingInstanceDescriptor<T> implements GeneratedService.Descriptor<T> {
+public final class ExistingInstanceDescriptor<T> implements ServiceDescriptor<T> {
     private static final TypeName DESCRIPTOR_TYPE = TypeName.create(ExistingInstanceDescriptor.class);
     private final T instance;
     private final TypeName serviceType;
-    private final Set<TypeName> contracts;
+    private final Set<ResolvedType> contracts;
     private final double weight;
 
     private ExistingInstanceDescriptor(T instance,
                                        TypeName serviceType,
-                                       Set<TypeName> contracts,
+                                       Set<ResolvedType> contracts,
                                        double weight) {
         this.instance = instance;
         this.serviceType = serviceType;
@@ -51,7 +53,7 @@ public final class ExistingInstanceDescriptor<T> implements GeneratedService.Des
      * Create a new instance.
      * The only place this can be used at is with
      * {@link
-     * io.helidon.service.registry.ServiceRegistryConfig.Builder#addServiceDescriptor(io.helidon.service.registry.GeneratedService.Descriptor)}.
+     * io.helidon.service.registry.ServiceRegistryConfig.Builder#addServiceDescriptor(io.helidon.service.registry.ServiceDescriptor)}.
      *
      * @param instance  service instance to use
      * @param contracts contracts of the service (the ones we want service registry to use)
@@ -63,8 +65,8 @@ public final class ExistingInstanceDescriptor<T> implements GeneratedService.Des
                                                            Collection<Class<? super T>> contracts,
                                                            double weight) {
         TypeName serviceType = TypeName.create(instance.getClass());
-        Set<TypeName> contractSet = contracts.stream()
-                .map(TypeName::create)
+        Set<ResolvedType> contractSet = contracts.stream()
+                .map(ResolvedType::create)
                 .collect(Collectors.toSet());
 
         return new ExistingInstanceDescriptor<>(instance, serviceType, contractSet, weight);
@@ -81,7 +83,7 @@ public final class ExistingInstanceDescriptor<T> implements GeneratedService.Des
     }
 
     @Override
-    public Set<TypeName> contracts() {
+    public Set<ResolvedType> contracts() {
         return contracts;
     }
 

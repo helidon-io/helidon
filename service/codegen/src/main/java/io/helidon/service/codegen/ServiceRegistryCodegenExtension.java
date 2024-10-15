@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import io.helidon.codegen.ClassCode;
 import io.helidon.codegen.CodegenContext;
@@ -35,6 +36,7 @@ import io.helidon.codegen.TypeHierarchy;
 import io.helidon.codegen.spi.CodegenExtension;
 import io.helidon.common.Weighted;
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -54,7 +56,6 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
     private final String module;
 
     private ServiceRegistryCodegenExtension(CodegenContext ctx,
-                                            TypeName generator,
                                             List<RegistryCodegenExtensionProvider> extensions) {
         this.ctx = RegistryCodegenContext.create(ctx);
         this.module = ctx.moduleName().orElse(null);
@@ -70,16 +71,21 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
     }
 
     static ServiceRegistryCodegenExtension create(CodegenContext ctx,
-                                                  TypeName generator,
                                                   List<RegistryCodegenExtensionProvider> extensions) {
-        return new ServiceRegistryCodegenExtension(ctx, generator, extensions);
+        return new ServiceRegistryCodegenExtension(ctx, extensions);
     }
 
     @Override
     public void process(io.helidon.codegen.RoundContext roundContext) {
+        List<DescriptorClassCode> descriptors = new ArrayList<>();
         Collection<TypeInfo> allTypes = roundContext.types();
         if (allTypes.isEmpty()) {
-            extensions.forEach(it -> it.extension().process(createRoundContext(roundContext, List.of(), it)));
+            extensions.forEach(it -> it.extension()
+                    .process(createRoundContext(
+                            roundContext,
+                            List.of(),
+                            it,
+                            descriptors)));
             return;
         }
 
@@ -91,19 +97,21 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
 
         // for each extension, create a RoundContext with just the stuff it wants
         for (var extension : extensions) {
-            extension.extension().process(createRoundContext(roundContext, annotatedTypes, extension));
+            extension.extension().process(createRoundContext(roundContext, annotatedTypes, extension, descriptors));
         }
 
-        writeNewTypes(roundContext);
+        writeNewTypes(descriptors);
 
         for (TypeInfo typeInfo : roundContext.annotatedTypes(SERVICE_ANNOTATION_DESCRIPTOR)) {
             // add each declared descriptor in source code
             Annotation descriptorAnnot = typeInfo.annotation(SERVICE_ANNOTATION_DESCRIPTOR);
 
             double weight = descriptorAnnot.doubleValue("weight").orElse(Weighted.DEFAULT_WEIGHT);
-            Set<TypeName> contracts = descriptorAnnot.typeValues("contracts")
-                    .map(Set::copyOf)
-                    .orElseGet(Set::of);
+            Set<ResolvedType> contracts = descriptorAnnot.typeValues("contracts")
+                    .stream()
+                    .flatMap(List::stream)
+                    .map(ResolvedType::create)
+                    .collect(Collectors.toUnmodifiableSet());
 
             String registryType = descriptorAnnot.stringValue("registryType").orElse("core");
 
@@ -111,7 +119,8 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
             generatedServiceDescriptors.add(DescriptorMetadata.create(registryType,
                                                                       typeInfo.typeName(),
                                                                       weight,
-                                                                      contracts));
+                                                                      contracts,
+                                                                      Set.of()));
         }
 
         if (roundContext.availableAnnotations().size() == 1 && roundContext.availableAnnotations()
@@ -132,9 +141,6 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
                 .stream()
                 .map(ExtensionInfo::extension)
                 .forEach(RegistryCodegenExtension::processingOver);
-
-        // if there was any type generated, write it out (will not trigger next round)
-        writeNewTypes(roundContext);
 
         if (!generatedServiceDescriptors.isEmpty()) {
             // re-check, maybe we run from a tool that does not generate anything except for the module component,
@@ -182,41 +188,20 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
         services.write();
     }
 
-    @SuppressWarnings("removal")
-    private void writeNewTypes(RoundContext roundContext) {
+    private void writeNewTypes(List<DescriptorClassCode> descriptors) {
         /*
-        This is not longer going to write the types, as it is now (correctly) delegated to
+        This is no longer going to write the types, as it is now (correctly) delegated to
         codegen round context
          */
         // generate all code
-        var descriptors = ctx.descriptors();
         for (var descriptor : descriptors) {
             ClassCode classCode = descriptor.classCode();
             generatedServiceDescriptors.add(DescriptorMetadata.create(descriptor.registryType(),
                                                                       classCode.newType(),
                                                                       descriptor.weight(),
-                                                                      descriptor.contracts()));
-            if (roundContext.generatedType(classCode.newType()).isEmpty()) {
-                // add the ones added through deprecated methods on context
-                roundContext.addGeneratedType(classCode.newType(),
-                                              classCode.classModel(),
-                                              classCode.mainTrigger(),
-                                              classCode.originatingElements());
-            }
+                                                                      descriptor.contracts(),
+                                                                      descriptor.factoryContracts()));
         }
-
-        for (ClassCode classCode : ctx.types()) {
-            // add the ones added through deprecated methods on context
-            if (roundContext.generatedType(classCode.newType()).isEmpty()) {
-                roundContext.addGeneratedType(classCode.newType(),
-                                              classCode.classModel(),
-                                              classCode.mainTrigger(),
-                                              classCode.originatingElements());
-            }
-        }
-
-        descriptors.clear();
-        ctx.types().clear();
     }
 
     private List<TypeInfoAndAnnotations> annotatedTypes(Collection<TypeInfo> allTypes) {
@@ -230,7 +215,8 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
 
     private RegistryRoundContext createRoundContext(RoundContext roundContext,
                                                     List<TypeInfoAndAnnotations> annotatedTypes,
-                                                    ExtensionInfo extension) {
+                                                    ExtensionInfo extension,
+                                                    List<DescriptorClassCode> newDescriptors) {
 
         Set<TypeName> availableAnnotations = new HashSet<>();
         Map<TypeName, List<TypeInfo>> annotationToTypes = new HashMap<>();
@@ -258,8 +244,8 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
         }
 
         return new RoundContextImpl(
-                this.ctx,
                 roundContext,
+                newDescriptors::add,
                 Set.copyOf(availableAnnotations),
                 Map.copyOf(annotationToTypes),
                 Map.copyOf(metaAnnotated),

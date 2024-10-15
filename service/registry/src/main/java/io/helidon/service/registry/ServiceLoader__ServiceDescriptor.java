@@ -24,6 +24,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -99,7 +100,7 @@ public abstract class ServiceLoader__ServiceDescriptor implements ServiceDescrip
 
     private static class ServiceProviderDescriptor extends ServiceLoader__ServiceDescriptor {
         private final TypeName providerInterface;
-        private final Set<TypeName> contracts;
+        private final Set<ResolvedType> contracts;
         private final TypeName providerImpl;
         private final double weight;
         private final LazyValue<Object> instance;
@@ -109,7 +110,7 @@ public abstract class ServiceLoader__ServiceDescriptor implements ServiceDescrip
                                           ServiceLoader.Provider<Object> provider,
                                           double weight) {
             this.providerInterface = providerInterface;
-            this.contracts = Set.of(providerInterface);
+            this.contracts = Set.of(ResolvedType.create(providerInterface));
             this.providerImpl = providerImpl;
             this.weight = weight;
             this.instance = LazyValue.create(provider);
@@ -128,7 +129,7 @@ public abstract class ServiceLoader__ServiceDescriptor implements ServiceDescrip
         }
 
         @Override
-        public Set<TypeName> contracts() {
+        public Set<ResolvedType> contracts() {
             return contracts;
         }
 

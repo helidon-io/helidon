@@ -326,44 +326,6 @@ public final class GeneratedService {
         return result;
     }
 
-    /**
-     * A descriptor of a service. In addition to providing service metadata, this also allows instantiation
-     * of the service instance, with dependent services as parameters.
-     *
-     * @param <T> type of the described service
-     * @deprecated use {@link io.helidon.service.registry.ServiceDescriptor} instead
-     */
-    @Deprecated(forRemoval = true, since = "4.2.0")
-    public interface Descriptor<T> extends ServiceInfo {
-        /**
-         * Create a new service instance.
-         *
-         * @param ctx dependency context with all dependencies of this service
-         * @return a new instance, must be of the type T or a subclass
-         */
-        // we cannot return T, as it does not allow us to correctly handle inheritance
-        default Object instantiate(DependencyContext ctx) {
-            throw new IllegalStateException("Cannot instantiate type " + serviceType().fqName() + ", as it is either abstract,"
-                                                    + " or an interface.");
-        }
-
-        /**
-         * Invoke {@link io.helidon.service.registry.Service.PostConstruct} annotated method(s).
-         *
-         * @param instance instance to use
-         */
-        default void postConstruct(T instance) {
-        }
-
-        /**
-         * Invoke {@link io.helidon.service.registry.Service.PreDestroy} annotated method(s).
-         *
-         * @param instance instance to use
-         */
-        default void preDestroy(T instance) {
-        }
-    }
-
     private record TypeAndName(String type, String name) {
     }
 

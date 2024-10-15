@@ -21,12 +21,12 @@ import java.util.Set;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.types.ElementKind;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 import io.helidon.service.inject.api.InjectServiceDescriptor;
 import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.InterceptionMetadata;
 import io.helidon.service.inject.api.Ip;
-import io.helidon.service.inject.api.ProviderType;
 import io.helidon.service.registry.DependencyContext;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryConfig;
@@ -107,8 +107,8 @@ public class CyclicDependencyInjectTest {
         }
 
         @Override
-        public Set<TypeName> contracts() {
-            return Set.of(SERVICE_1);
+        public Set<ResolvedType> contracts() {
+            return Set.of(ResolvedType.create(SERVICE_1));
         }
 
         @Override
@@ -152,8 +152,8 @@ public class CyclicDependencyInjectTest {
         }
 
         @Override
-        public Set<TypeName> contracts() {
-            return Set.of(SERVICE_2);
+        public Set<ResolvedType> contracts() {
+            return Set.of(ResolvedType.create(SERVICE_2));
         }
 
         @Override

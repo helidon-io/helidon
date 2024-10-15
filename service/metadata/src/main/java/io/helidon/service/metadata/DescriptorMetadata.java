@@ -17,7 +17,9 @@
 package io.helidon.service.metadata;
 
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 import io.helidon.metadata.hson.Hson;
 
@@ -38,9 +40,36 @@ public interface DescriptorMetadata {
      * @param weight       weight of the service descriptor
      * @param contracts    contracts the service implements
      * @return a new descriptor metadata instance
+     * @deprecated use {@link #create(String, io.helidon.common.types.TypeName, double, java.util.Set, java.util.Set)} instead
      */
+    @Deprecated(forRemoval = true, since = "4.2.0")
     static DescriptorMetadata create(String registryType, TypeName descriptor, double weight, Set<TypeName> contracts) {
-        return new DescriptorMetadataImpl(registryType, weight, descriptor, contracts);
+        return new DescriptorMetadataImpl(
+                registryType,
+                weight,
+                descriptor,
+                contracts.stream()
+                        .map(ResolvedType::create)
+                        .collect(Collectors.toUnmodifiableSet()),
+                Set.of());
+    }
+
+    /**
+     * Create a new instance from descriptor information, i.e. when code generating the descriptor metadata.
+     *
+     * @param registryType     type of registry, such as {@link #REGISTRY_TYPE_CORE}
+     * @param descriptor       type of the service descriptor (the generated file from {@code helidon-service-codegen})
+     * @param weight           weight of the service descriptor
+     * @param contracts        contracts the service implements
+     * @param factoryContracts factory contracts the service instance implements
+     * @return a new descriptor metadata instance
+     */
+    static DescriptorMetadata create(String registryType,
+                                     TypeName descriptor,
+                                     double weight,
+                                     Set<ResolvedType> contracts,
+                                     Set<ResolvedType> factoryContracts) {
+        return new DescriptorMetadataImpl(registryType, weight, descriptor, contracts, factoryContracts);
     }
 
     /**
@@ -62,7 +91,14 @@ public interface DescriptorMetadata {
      *
      * @return contracts the service implements/provides.
      */
-    Set<TypeName> contracts();
+    Set<ResolvedType> contracts();
+
+    /**
+     * Contracts of the factory service, if this describes a factory, empty otherwise.
+     *
+     * @return factory contracts
+     */
+    Set<ResolvedType> factoryContracts();
 
     /**
      * Weight of the service.

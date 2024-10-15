@@ -662,14 +662,14 @@ final class Activators {
 
             Set<Dependency> ips = Set.copyOf(injectionPlan.keySet());
 
-            Set<TypeName> contracts = driver.contracts();
+            Set<ResolvedType> contracts = driver.contracts();
 
             Map<Dependency, IpPlan<?>> updatedPlan = new HashMap<>(injectionPlan);
 
             for (Dependency dependency : ips) {
                 Ip ip = Ip.create(dependency);
                 // injection point for the driving instance
-                if (contracts.contains(ip.contract())
+                if (contracts.contains(ResolvedType.create(ip.contract()))
                         && ip.qualifiers().isEmpty()) {
                     if (ServiceInstance.TYPE.equals(ip.typeName())) {
                         // if the injection point has the same contract, no qualifiers, then it is the driving instance

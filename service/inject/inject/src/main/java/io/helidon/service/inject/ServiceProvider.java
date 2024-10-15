@@ -22,6 +22,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 import io.helidon.service.inject.api.ActivationRequest;
 import io.helidon.service.inject.api.InjectServiceDescriptor;
@@ -94,7 +95,7 @@ class ServiceProvider<T> {
         return interceptionMetadata;
     }
 
-    Set<TypeName> contracts(Lookup lookup) {
+    Set<ResolvedType> contracts(Lookup lookup) {
         return contracts.contracts(lookup);
     }
 

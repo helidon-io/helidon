@@ -51,21 +51,9 @@ public final class ServiceCodegenTypes {
     public static final TypeName SERVICE_ANNOTATION_DESCRIPTOR =
             TypeName.create("io.helidon.service.registry.Service.Descriptor");
     /**
-     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.ServiceInfo}.
-     */
-    public static final TypeName SERVICE_INFO = TypeName.create("io.helidon.service.registry.ServiceInfo");
-
-    /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.ServiceDescriptor}.
-     * @deprecated replaced with {@link #REGISTRY_SERVICE_DESCRIPTOR}, which should be used instead.
      */
-    @Deprecated(forRemoval = true, since = "4.2.0")
     public static final TypeName SERVICE_DESCRIPTOR =
-            TypeName.create("io.helidon.service.registry.GeneratedService.Descriptor");
-    /**
-     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.ServiceDescriptor}.
-     */
-    public static final TypeName REGISTRY_SERVICE_DESCRIPTOR =
             TypeName.create("io.helidon.service.registry.ServiceDescriptor");
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Dependency}.

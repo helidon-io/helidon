@@ -19,7 +19,7 @@ package io.helidon.service.codegen;
 import java.util.Set;
 
 import io.helidon.codegen.ClassCode;
-import io.helidon.common.types.TypeName;
+import io.helidon.common.types.ResolvedType;
 
 /**
  * New service descriptor metadata with its class code.
@@ -51,5 +51,12 @@ public interface DescriptorClassCode {
      *
      * @return contracts of the service
      */
-    Set<TypeName> contracts();
+    Set<ResolvedType> contracts();
+
+    /**
+     * Contracts of the class if it is a factory.
+     *
+     * @return factory contracts
+     */
+    Set<ResolvedType> factoryContracts();
 }

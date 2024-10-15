@@ -18,6 +18,7 @@ package io.helidon.service.inject.api;
 
 import java.util.Set;
 
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -37,7 +38,7 @@ public interface ServiceInstance<T> extends Injection.QualifiedInstance<T> {
      *
      * @return contracts the service instance implements
      */
-    Set<TypeName> contracts();
+    Set<ResolvedType> contracts();
 
     /**
      * Scope this instance was created in. Always the same as the scope of the associated service descriptor
@@ -51,7 +52,7 @@ public interface ServiceInstance<T> extends Injection.QualifiedInstance<T> {
     TypeName scope();
 
     /**
-     * Weight of this instance, inherited from {@link io.helidon.service.registry.GeneratedService.Descriptor#weight()}.
+     * Weight of this instance, inherited from {@link io.helidon.service.registry.ServiceDescriptor#weight()}.
      *
      * @return weight
      */
@@ -59,7 +60,7 @@ public interface ServiceInstance<T> extends Injection.QualifiedInstance<T> {
 
     /**
      * Service type responsible for creating this value, inherited from
-     * {@link io.helidon.service.registry.GeneratedService.Descriptor#serviceType()}.
+     * {@link io.helidon.service.registry.ServiceDescriptor#serviceType()}.
      *
      * @return service type
      */

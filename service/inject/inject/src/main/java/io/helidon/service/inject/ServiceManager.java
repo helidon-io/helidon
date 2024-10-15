@@ -19,6 +19,7 @@ package io.helidon.service.inject;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 import io.helidon.service.inject.api.Activator;
 import io.helidon.service.inject.api.InjectServiceDescriptor;
@@ -88,10 +89,10 @@ class ServiceManager<T> {
     private static final class ServiceInstanceImpl<T> implements ServiceInstance<T> {
         private final InjectServiceDescriptor<T> descriptor;
         private final QualifiedInstance<T> qualifiedInstance;
-        private final Set<TypeName> contracts;
+        private final Set<ResolvedType> contracts;
 
         private ServiceInstanceImpl(InjectServiceDescriptor<T> descriptor,
-                                    Set<TypeName> contracts,
+                                    Set<ResolvedType> contracts,
                                     QualifiedInstance<T> qualifiedInstance) {
             this.descriptor = descriptor;
             this.contracts = contracts;
@@ -109,7 +110,7 @@ class ServiceManager<T> {
         }
 
         @Override
-        public Set<TypeName> contracts() {
+        public Set<ResolvedType> contracts() {
             return contracts;
         }
 

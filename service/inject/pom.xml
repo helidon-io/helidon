@@ -37,6 +37,7 @@
     </description>
 
     <modules>
+        <module>codegen</module>
         <module>api</module>
         <module>inject</module>
     </modules>

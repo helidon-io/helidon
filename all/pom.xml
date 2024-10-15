@@ -1130,6 +1130,10 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.service.inject</groupId>
+            <artifactId>helidon-service-inject-codegen</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.service.inject</groupId>
             <artifactId>helidon-service-inject-api</artifactId>
         </dependency>
         <dependency>

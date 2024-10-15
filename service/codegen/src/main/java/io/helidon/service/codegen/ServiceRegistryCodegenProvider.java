@@ -102,6 +102,6 @@ public class ServiceRegistryCodegenProvider implements CodegenExtensionProvider 
 
     @Override
     public CodegenExtension create(CodegenContext ctx, TypeName generatorType) {
-        return ServiceRegistryCodegenExtension.create(ctx, generatorType, EXTENSIONS);
+        return ServiceRegistryCodegenExtension.create(ctx, EXTENSIONS);
     }
 }

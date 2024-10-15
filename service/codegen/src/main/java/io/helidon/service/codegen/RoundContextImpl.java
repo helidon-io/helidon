@@ -23,30 +23,32 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import io.helidon.codegen.ClassCode;
 import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.ClassModel;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
 
 class RoundContextImpl implements RegistryRoundContext {
-    private final RegistryCodegenContext ctx;
     private final RoundContext delegate;
     private final Map<TypeName, List<TypeInfo>> annotationToTypes;
     private final Map<TypeName, Set<TypeName>> metaAnnotated;
     private final List<TypeInfo> types;
+    private final Consumer<DescriptorClassCode> addDescriptorConsumer;
     private final Collection<TypeName> annotations;
 
-    RoundContextImpl(RegistryCodegenContext ctx,
-                     RoundContext delegate,
+    RoundContextImpl(RoundContext delegate,
+                     Consumer<DescriptorClassCode> addDescriptorConsumer,
                      Set<TypeName> annotations,
                      Map<TypeName, List<TypeInfo>> annotationToTypes,
                      Map<TypeName, Set<TypeName>> metaAnnotated,
                      List<TypeInfo> types) {
-        this.ctx = ctx;
         this.delegate = delegate;
+        this.addDescriptorConsumer = addDescriptorConsumer;
 
         this.annotations = annotations;
         this.annotationToTypes = annotationToTypes;
@@ -119,25 +121,22 @@ class RoundContextImpl implements RegistryRoundContext {
      * @param mainTrigger         a type that caused this, may be the processor itself, if not bound to any type
      * @param originatingElements possible originating elements  (such as Element in APT, or ClassInfo in classpath scanning)
      */
-    @SuppressWarnings("removal")
     @Override
     public void addGeneratedType(TypeName type,
                                  ClassModel.Builder newClass,
                                  TypeName mainTrigger,
                                  Object... originatingElements) {
-        // until we remove the method from context, we must use a single approach, then we can remove the next line
-        ctx.types().add(new ClassCode(type, newClass, mainTrigger, originatingElements));
         delegate.addGeneratedType(type, newClass, mainTrigger, originatingElements);
     }
 
-    @SuppressWarnings("removal")
     @Override
     public void addDescriptor(String registryType,
                               TypeName serviceType,
                               TypeName descriptorType,
                               ClassModel.Builder descriptor,
                               double weight,
-                              Set<TypeName> contracts,
+                              Set<ResolvedType> contracts,
+                              Set<ResolvedType> factoryContracts,
                               Object... originatingElements) {
         Objects.requireNonNull(registryType);
         Objects.requireNonNull(serviceType);
@@ -146,20 +145,13 @@ class RoundContextImpl implements RegistryRoundContext {
         Objects.requireNonNull(contracts);
         Objects.requireNonNull(originatingElements);
 
-        // until we remove the method from context, we must use a single approach, then we can have descriptors stored
-        // in the extension, and reset after each round
-        ctx.descriptors()
-                .add(new DescriptorClassCodeImpl(new ClassCode(descriptorType, descriptor, serviceType, originatingElements),
+        addDescriptorConsumer
+                .accept(new DescriptorClassCodeImpl(new ClassCode(descriptorType, descriptor, serviceType, originatingElements),
                                                     registryType,
                                                     weight,
-                                                    contracts));
+                                                    contracts,
+                                                    factoryContracts));
         delegate.addGeneratedType(descriptorType, descriptor, serviceType, originatingElements);
-    }
-
-    @SuppressWarnings("removal")
-    @Override
-    public List<DescriptorClassCode> descriptors() {
-        return ctx.descriptors();
     }
 
     @Override

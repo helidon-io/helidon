@@ -23,19 +23,32 @@ package io.helidon.service.registry;
  * @param <T> type of the described service
  */
 @SuppressWarnings("removal")
-public interface ServiceDescriptor<T> extends ServiceInfo, GeneratedService.Descriptor<T> {
-    @Override
+public interface ServiceDescriptor<T> extends ServiceInfo {
+    /**
+     * Create a new service instance.
+     *
+     * @param ctx dependency context with all dependencies of this service
+     * @return a new instance, must be of the type T or a subclass
+     */
+    // we cannot return T, as it does not allow us to correctly handle inheritance
     default Object instantiate(DependencyContext ctx) {
-        return GeneratedService.Descriptor.super.instantiate(ctx);
+        throw new IllegalStateException("Cannot instantiate type " + serviceType().fqName() + ", as it is either abstract,"
+                                                + " or an interface.");
     }
 
-    @Override
+    /**
+     * Invoke {@link io.helidon.service.registry.Service.PostConstruct} annotated method(s).
+     *
+     * @param instance instance to use
+     */
     default void postConstruct(T instance) {
-        GeneratedService.Descriptor.super.postConstruct(instance);
     }
 
-    @Override
+    /**
+     * Invoke {@link io.helidon.service.registry.Service.PreDestroy} annotated method(s).
+     *
+     * @param instance instance to use
+     */
     default void preDestroy(T instance) {
-        GeneratedService.Descriptor.super.preDestroy(instance);
     }
 }

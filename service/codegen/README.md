@@ -1,18 +1,16 @@
 Service Codegen
 ---------------
 
-Supported annotations:
+# Supported annotations
 
-| Annotation             | Processed by               | Description |
-|------------------------|----------------------------|-------------|
-| @Injection.Inject      | InjectionExtensionProvider |             |
-| @Injection.Main        | InjectionExtensionProvider |             |
-| @Injection.Describe    | InjectionExtensionProvider |             |
-| @Interception.Delegate | InjectionExtensionProvider |             |
+| Annotation        | Processed by     | Description                         |
+|-------------------|------------------|-------------------------------------|
+| @Service.Provider | ServiceExtension | Generates a core service descriptor |
 
 
-Supported meta-annotations:
+# Supported options
+Options can be configured as annotation processor options, when running via annotation processor.
 
-| Annotation              | Processed by               | Description |
-|-------------------------|----------------------------|-------------|
-| @Injection.Scope        | InjectionExtensionProvider |             |
+| Option                                          | Used by          | Description                                                                                                                                                              |
+|-------------------------------------------------|------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `helidon.registry.autoAddNonContractInterfaces` | ServiceExtension | If set to `true`, all implemented interfaces and super types are considered a contract; by default, `@Service.Contract` or `@Service.ExternalContracts` must be in place |

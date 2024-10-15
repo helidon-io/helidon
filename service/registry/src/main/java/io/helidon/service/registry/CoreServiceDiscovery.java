@@ -33,6 +33,7 @@ import java.util.stream.Stream;
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weighted;
 import io.helidon.common.Weights;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 import io.helidon.metadata.hson.Hson;
 import io.helidon.service.metadata.DescriptorMetadata;
@@ -42,7 +43,6 @@ import static io.helidon.service.metadata.Descriptors.SERVICE_REGISTRY_LOCATION;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.function.Predicate.not;
 
-@SuppressWarnings("removal")
 class CoreServiceDiscovery implements ServiceDiscovery {
     private static final System.Logger LOGGER = System.getLogger(CoreServiceDiscovery.class.getName());
 
@@ -87,13 +87,6 @@ class CoreServiceDiscovery implements ServiceDiscovery {
         return NoopServiceDiscovery.INSTANCE;
     }
 
-    static <T> ServiceDescriptor<T> doWrap(GeneratedService.Descriptor<T> descriptor) {
-        if (descriptor instanceof ServiceDescriptor<T> sd) {
-            return sd;
-        }
-        return new ServiceDescriptorWrapper<>(descriptor);
-    }
-
     @Override
     public List<DescriptorHandler> allMetadata() {
         return allDescriptors;
@@ -122,7 +115,7 @@ class CoreServiceDiscovery implements ServiceDiscovery {
             if (descriptorInstance instanceof ServiceDescriptor<?> sd) {
                 return sd;
             }
-            return new ServiceDescriptorWrapper((GeneratedService.Descriptor<?>) field.get(null));
+            return (ServiceDescriptor<?>) field.get(null);
         } catch (ReflectiveOperationException e) {
             throw new ServiceRegistryException("Could not obtain the instance of service descriptor "
                                                        + descriptorType.fqName(),
@@ -174,7 +167,8 @@ class CoreServiceDiscovery implements ServiceDiscovery {
         return new DescriptorHandlerImpl(DescriptorMetadata.create("core",
                                                                    descriptor.descriptorType(),
                                                                    weight,
-                                                                   descriptor.contracts()),
+                                                                   descriptor.contracts(),
+                                                                   descriptor.factoryContracts()),
                                          LazyValue.create(descriptor));
     }
 
@@ -229,8 +223,13 @@ class CoreServiceDiscovery implements ServiceDiscovery {
         }
 
         @Override
-        public Set<TypeName> contracts() {
+        public Set<ResolvedType> contracts() {
             return metadata.contracts();
+        }
+
+        @Override
+        public Set<ResolvedType> factoryContracts() {
+            return metadata.factoryContracts();
         }
 
         @Override
@@ -264,75 +263,6 @@ class CoreServiceDiscovery implements ServiceDiscovery {
         @Override
         public List<DescriptorHandler> allMetadata() {
             return List.of();
-        }
-    }
-
-    @SuppressWarnings({"removal", "rawtypes", "unchecked"})
-    private static class ServiceDescriptorWrapper<T> implements ServiceDescriptor<T> {
-        private final GeneratedService.Descriptor descriptor;
-
-        private ServiceDescriptorWrapper(GeneratedService.Descriptor<T> descriptor) {
-            this.descriptor = descriptor;
-        }
-
-        @Override
-        public TypeName serviceType() {
-            return descriptor.serviceType();
-        }
-
-        @Override
-        public TypeName descriptorType() {
-            return descriptor.descriptorType();
-        }
-
-        @Override
-        public Set<TypeName> contracts() {
-            return descriptor.contracts();
-        }
-
-        @Override
-        public List<? extends Dependency> dependencies() {
-            return descriptor.dependencies();
-        }
-
-        @Override
-        public boolean isAbstract() {
-            return descriptor.isAbstract();
-        }
-
-        @Override
-        public Object instantiate(DependencyContext ctx) {
-            return descriptor.instantiate(ctx);
-        }
-
-        @Override
-        public void preDestroy(Object instance) {
-            descriptor.preDestroy(instance);
-        }
-
-        @Override
-        public void postConstruct(Object instance) {
-            descriptor.postConstruct(instance);
-        }
-
-        @Override
-        public double weight() {
-            return descriptor.weight();
-        }
-
-        @Override
-        public int compareTo(Weighted o) {
-            return descriptor.compareTo(o);
-        }
-
-        @Override
-        public int hashCode() {
-            return descriptor.hashCode();
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            return descriptor.equals(obj);
         }
     }
 }

@@ -150,6 +150,11 @@ class ResolvedTypeImpl implements ResolvedType {
     }
 
     @Override
+    public TypeName unresolvedType() {
+        return typeName;
+    }
+
+    @Override
     public int hashCode() {
         return noTypes ? typeName.hashCode() : resolvedName.hashCode();
     }

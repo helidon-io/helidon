@@ -36,12 +36,13 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>service-lifecycle</module>
-        <module>lookup</module>
+        <module>codegen</module>
         <module>inject</module>
+        <module>lookup</module>
+        <module>service-lifecycle</module>
+        <module>scopes</module>
         <module>interception</module>
         <module>qualified-providers</module>
-        <module>scopes</module>
         <module>stacking</module>
         <module>toolbox</module>
     </modules>

@@ -31,9 +31,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.helidon.common.LazyValue;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypeNames;
-import io.helidon.service.registry.GeneratedService.Descriptor;
 
 /**
  * Basic implementation of the service registry with simple dependency support.
@@ -52,7 +51,7 @@ class CoreServiceRegistry implements ServiceRegistry {
     @SuppressWarnings({"rawtypes", "unchecked"})
     CoreServiceRegistry(ServiceRegistryConfig config, ServiceDiscovery serviceDiscovery) {
         List<ServiceProvider> allProviders = new ArrayList<>();
-        Map<TypeName, List<ServiceProvider>> providers = new HashMap<>();
+        Map<ResolvedType, List<ServiceProvider>> providers = new HashMap<>();
         Map<ServiceInfo, ServiceProvider> providersByService = new IdentityHashMap<>();
 
         // each just once
@@ -74,7 +73,7 @@ class CoreServiceRegistry implements ServiceRegistry {
         });
 
         // add configured descriptors
-        for (Descriptor descriptor : config.serviceDescriptors()) {
+        for (ServiceDescriptor descriptor : config.serviceDescriptors()) {
             BoundDescriptor bd = new BoundDescriptor(this, descriptor, LazyValue.create(() -> {
                 var instance = instance(descriptor);
                 instance.ifPresent(descriptor::postConstruct);
@@ -182,10 +181,10 @@ class CoreServiceRegistry implements ServiceRegistry {
         allProviders.forEach(ServiceProvider::close);
     }
 
-    private static void addContracts(Map<TypeName, List<ServiceProvider>> providers,
-                                     Set<TypeName> contracts,
+    private static void addContracts(Map<ResolvedType, List<ServiceProvider>> providers,
+                                     Set<ResolvedType> contracts,
                                      ServiceProvider provider) {
-        for (TypeName contract : contracts) {
+        for (ResolvedType contract : contracts) {
             providers.computeIfAbsent(contract, it -> new ArrayList<>())
                     .add(provider);
         }
@@ -194,17 +193,17 @@ class CoreServiceRegistry implements ServiceRegistry {
     @SuppressWarnings({"rawtypes", "unchecked"})
     private ServiceAndInstance instanceSupplier(DescriptorHandler descriptorMeta) {
         LazyValue<Optional<Object>> serviceInstance = LazyValue.create(() -> {
-            Descriptor descriptor = descriptorMeta.descriptor();
+            ServiceDescriptor descriptor = descriptorMeta.descriptor();
             var instance = instance(descriptor);
             instance.ifPresent(descriptor::postConstruct);
             return instance;
         });
 
-        if (descriptorMeta.contracts().contains(TypeNames.SUPPLIER)) {
+        if (descriptorMeta.factoryContracts().isEmpty()) {
+            return new ServiceAndInstance(serviceInstance);
+        } else {
             return new ServiceAndInstance(serviceInstance,
                                           () -> instanceFromSupplier(descriptorMeta.descriptor(), serviceInstance));
-        } else {
-            return new ServiceAndInstance(serviceInstance);
         }
     }
 
@@ -224,7 +223,7 @@ class CoreServiceRegistry implements ServiceRegistry {
         return List.copyOf(serviceProviders);
     }
 
-    private Optional<Object> instanceFromSupplier(Descriptor<?> descriptor, LazyValue<Optional<Object>> serviceInstanceSupplier) {
+    private Optional<Object> instanceFromSupplier(ServiceDescriptor<?> descriptor, LazyValue<Optional<Object>> serviceInstanceSupplier) {
         Optional<Object> serviceInstance = serviceInstanceSupplier.get();
         if (serviceInstance.isEmpty()) {
             return Optional.empty();
@@ -243,14 +242,14 @@ class CoreServiceRegistry implements ServiceRegistry {
         }
     }
 
-    private Optional<Object> instance(Descriptor<?> descriptor) {
+    private Optional<Object> instance(ServiceDescriptor<?> descriptor) {
         var dependencyContext = collectDependencies(descriptor);
 
         Object serviceInstance = descriptor.instantiate(dependencyContext);
         return Optional.of(serviceInstance);
     }
 
-    private DependencyContext collectDependencies(Descriptor<?> descriptor) {
+    private DependencyContext collectDependencies(ServiceDescriptor<?> descriptor) {
         List<? extends Dependency> dependencies = descriptor.dependencies();
         Map<Dependency, Object> collectedDependencies = new HashMap<>();
 
@@ -289,7 +288,7 @@ class CoreServiceRegistry implements ServiceRegistry {
     }
 
     private interface ServiceProvider {
-        Descriptor<?> descriptor();
+        ServiceDescriptor<?> descriptor();
 
         Optional<Object> instance();
 
@@ -300,7 +299,7 @@ class CoreServiceRegistry implements ServiceRegistry {
         void close();
     }
 
-    private record BoundInstance(Descriptor<?> descriptor, Optional<Object> instance) implements ServiceProvider {
+    private record BoundInstance(ServiceDescriptor<?> descriptor, Optional<Object> instance) implements ServiceProvider {
         @Override
         public double weight() {
             return descriptor.weight();
@@ -318,12 +317,12 @@ class CoreServiceRegistry implements ServiceRegistry {
     }
 
     private record BoundDescriptor(CoreServiceRegistry registry,
-                                   Descriptor<?> descriptor,
+                                   ServiceDescriptor<?> descriptor,
                                    LazyValue<Optional<Object>> lazyInstance,
                                    ReentrantLock lock) implements ServiceProvider {
 
         private BoundDescriptor(CoreServiceRegistry registry,
-                                Descriptor<?> descriptor,
+                                ServiceDescriptor<?> descriptor,
                                 LazyValue<Optional<Object>> lazyInstance) {
             this(registry, descriptor, lazyInstance, new ReentrantLock());
         }
@@ -360,7 +359,7 @@ class CoreServiceRegistry implements ServiceRegistry {
         @Override
         public void close() {
             if (lazyInstance.isLoaded()) {
-                lazyInstance.get().ifPresent(it -> ((Descriptor) descriptor).preDestroy(it));
+                lazyInstance.get().ifPresent(it -> ((ServiceDescriptor) descriptor).preDestroy(it));
             }
         }
     }
@@ -377,7 +376,7 @@ class CoreServiceRegistry implements ServiceRegistry {
         }
 
         @Override
-        public Descriptor<?> descriptor() {
+        public ServiceDescriptor<?> descriptor() {
             return metadata.descriptor();
         }
 
@@ -415,7 +414,7 @@ class CoreServiceRegistry implements ServiceRegistry {
         public void close() {
             var serviceSupplier = instances.serviceSupplier();
             if (serviceSupplier.isLoaded()) {
-                serviceSupplier.get().ifPresent(it -> ((Descriptor) metadata.descriptor()).preDestroy(it));
+                serviceSupplier.get().ifPresent(it -> ((ServiceDescriptor) metadata.descriptor()).preDestroy(it));
             }
         }
     }

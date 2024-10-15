@@ -71,11 +71,9 @@ class ServiceCodegenTypesTest {
         checkField(toCheck, checked, fields, "SERVICE_ANNOTATION_CONTRACT", Service.Contract.class);
         checkField(toCheck, checked, fields, "SERVICE_ANNOTATION_EXTERNAL_CONTRACTS", Service.ExternalContracts.class);
         checkField(toCheck, checked, fields, "SERVICE_ANNOTATION_DESCRIPTOR", Service.Descriptor.class);
-        checkField(toCheck, checked, fields, "SERVICE_INFO", ServiceInfo.class);
-        checkField(toCheck, checked, fields, "SERVICE_DESCRIPTOR", GeneratedService.Descriptor.class);
         checkField(toCheck, checked, fields, "SERVICE_DEPENDENCY", Dependency.class);
         checkField(toCheck, checked, fields, "SERVICE_DEPENDENCY_CONTEXT", DependencyContext.class);
-        checkField(toCheck, checked, fields, "REGISTRY_SERVICE_DESCRIPTOR", ServiceDescriptor.class);
+        checkField(toCheck, checked, fields, "SERVICE_DESCRIPTOR", ServiceDescriptor.class);
 
         checkField(toCheck, checked, fields, "BUILDER_BLUEPRINT", Prototype.Blueprint.class);
 

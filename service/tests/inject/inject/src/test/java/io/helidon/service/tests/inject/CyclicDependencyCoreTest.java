@@ -21,6 +21,7 @@ import java.util.Set;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.types.ElementKind;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 import io.helidon.service.inject.api.InjectServiceDescriptor;
 import io.helidon.service.inject.api.Injection;
@@ -107,8 +108,8 @@ public class CyclicDependencyCoreTest {
         }
 
         @Override
-        public Set<TypeName> contracts() {
-            return Set.of(SERVICE_1);
+        public Set<ResolvedType> contracts() {
+            return Set.of(ResolvedType.create(SERVICE_1));
         }
     }
 
@@ -152,8 +153,8 @@ public class CyclicDependencyCoreTest {
         }
 
         @Override
-        public Set<TypeName> contracts() {
-            return Set.of(SERVICE_2);
+        public Set<ResolvedType> contracts() {
+            return Set.of(ResolvedType.create(SERVICE_2));
         }
     }
 }

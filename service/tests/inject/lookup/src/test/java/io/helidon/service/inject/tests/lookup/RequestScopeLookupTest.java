@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import io.helidon.logging.common.LogConfig;
 import io.helidon.service.inject.InjectRegistryManager;
 import io.helidon.service.inject.api.InjectRegistry;
 import io.helidon.service.inject.api.InjectServiceInfo;
@@ -45,11 +46,13 @@ import static org.hamcrest.Matchers.hasSize;
  * Test all lookup methods for requestScope.
  */
 class RequestScopeLookupTest {
+    static {
+        LogConfig.initClass();
+    }
+
     private static final Lookup LOOKUP = Lookup.create(ContractRequestScope.class);
     private static final Class<ContractRequestScope> CONTRACT = ContractRequestScope.class;
-    private static final Lookup LOOKUP_NO_IP_PROVIDER = Lookup.builder()
-            .addContract(ContractRequestScopeNoIpProvider.class)
-            .build();
+
     private static InjectRegistryManager registryManager;
     private static InjectRegistry registry;
     private Scope requestScope;

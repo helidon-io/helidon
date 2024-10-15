@@ -59,21 +59,6 @@ public interface ServiceDiscovery {
     }
 
     /**
-     * Wrap the deprecated descriptor in the new descriptor.
-     *
-     * @param descriptor descriptor instance
-     * @param <T>        type of the descriptor
-     * @return the same instance if it implements {@link io.helidon.service.registry.ServiceDescriptor}, wrapped otherwise
-     * @deprecated this method exists only for backward compatibility and will be removed when
-     *         {@link io.helidon.service.registry.Service.Descriptor} is removed
-     */
-    @SuppressWarnings("removal")
-    @Deprecated(forRemoval = true, since = "4.2.0")
-    static <T> ServiceDescriptor<T> wrap(GeneratedService.Descriptor<T> descriptor) {
-        return CoreServiceDiscovery.doWrap(descriptor);
-    }
-
-    /**
      * All discovered metadata of this service discovery.
      *
      * @return all discovered metadata

@@ -16,11 +16,11 @@
 
 package io.helidon.service.codegen;
 
-import java.util.List;
 import java.util.Set;
 
 import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.ClassModel;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -37,6 +37,7 @@ public interface RegistryRoundContext extends RoundContext {
      * @param descriptor          descriptor class model
      * @param weight              weight of this service descriptor
      * @param contracts           contracts of this service descriptor
+     * @param factoryContracts    contracts of the service class if it is a factory
      * @param originatingElements possible originating elements (such as Element in APT, or ClassInfo in classpath scanning)
      * @throws java.lang.IllegalStateException if an attempt is done to register a new descriptor for the same type
      */
@@ -45,13 +46,7 @@ public interface RegistryRoundContext extends RoundContext {
                        TypeName descriptorType,
                        ClassModel.Builder descriptor,
                        double weight,
-                       Set<TypeName> contracts,
+                       Set<ResolvedType> contracts,
+                       Set<ResolvedType> factoryContracts,
                        Object... originatingElements);
-
-    /**
-     * All newly generated descriptors.
-     *
-     * @return list of descriptors and their source class model
-     */
-    List<DescriptorClassCode> descriptors();
 }

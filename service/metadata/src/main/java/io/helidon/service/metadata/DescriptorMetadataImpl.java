@@ -21,16 +21,23 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.helidon.common.Weighted;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 import io.helidon.metadata.hson.Hson;
 
 record DescriptorMetadataImpl(String registryType,
                               double weight,
                               TypeName descriptorType,
-                              Set<TypeName> contracts) implements DescriptorMetadata {
+                              Set<ResolvedType> contracts,
+                              Set<ResolvedType> factoryContracts) implements DescriptorMetadata {
 
     private static final int CURRENT_DESCRIPTOR_VERSION = 1;
     private static final int DEFAULT_DESCRIPTOR_VERSION = 1;
+    private static final String HSON_TYPE = "type";
+    private static final String HSON_WEIGHT = "weight";
+    private static final String HSON_DESCRIPTOR = "descriptor";
+    private static final String HSON_CONTRACTS = "contracts";
+    private static final String HSON_FACTORY_CONTRACTS = "factoryContracts";
 
     static DescriptorMetadata create(String moduleName, String location, Hson.Struct service) {
         int version = service.intValue("version", DEFAULT_DESCRIPTOR_VERSION);
@@ -40,24 +47,30 @@ record DescriptorMetadataImpl(String registryType,
                                                     + " loaded from \"" + location + "\", "
                                                     + "expected version: \"" + CURRENT_DESCRIPTOR_VERSION + "\","
                                                     + " descriptor (if available): "
-                                                    + service.stringValue("descriptor", "N/A"));
+                                                    + service.stringValue(HSON_DESCRIPTOR, "N/A"));
         }
 
-        String type = service.stringValue("type", REGISTRY_TYPE_CORE);
-        TypeName descriptor = service.stringValue("descriptor")
+        String type = service.stringValue(HSON_TYPE, REGISTRY_TYPE_CORE);
+        TypeName descriptor = service.stringValue(HSON_DESCRIPTOR)
                 .map(TypeName::create)
                 .orElseThrow(() -> new IllegalStateException("Could not parse service metadata "
                                                                      + " for module \"" + moduleName + "\""
                                                                      + " loaded from \"" + location + "\", "
                                                                      + "missing \"descriptor\" value"));
-        double weight = service.doubleValue("weight", Weighted.DEFAULT_WEIGHT);
-        Set<TypeName> contracts = service.stringArray("contracts")
+        double weight = service.doubleValue(HSON_WEIGHT, Weighted.DEFAULT_WEIGHT);
+        Set<ResolvedType> contracts = service.stringArray(HSON_CONTRACTS)
                 .orElseGet(List::of)
                 .stream()
-                .map(TypeName::create)
+                .map(ResolvedType::create)
+                .collect(Collectors.toUnmodifiableSet());
+
+        Set<ResolvedType> factoryContracts = service.stringArray(HSON_FACTORY_CONTRACTS)
+                .orElseGet(List::of)
+                .stream()
+                .map(ResolvedType::create)
                 .collect(Collectors.toSet());
 
-        return new DescriptorMetadataImpl(type, weight, descriptor, contracts);
+        return new DescriptorMetadataImpl(type, weight, descriptor, contracts, factoryContracts);
     }
 
     @Override
@@ -65,20 +78,18 @@ record DescriptorMetadataImpl(String registryType,
         var builder = Hson.structBuilder();
 
         if (!registryType.equals(REGISTRY_TYPE_CORE)) {
-            builder.set("type", registryType);
+            builder.set(HSON_TYPE, registryType);
         }
         if (weight != Weighted.DEFAULT_WEIGHT) {
-            builder.set("weight", weight);
+            builder.set(HSON_WEIGHT, weight);
         }
-        builder.set("descriptor", descriptorType.fqName());
-        if (registryType.equals(REGISTRY_TYPE_CORE)) {
-            builder.setStrings("contracts", contracts.stream()
-                    .map(TypeName::fqName)
-                    .sorted(String.CASE_INSENSITIVE_ORDER)
-                    .distinct()
-                    .collect(Collectors.toUnmodifiableList()));
-        } else {
-            builder.setStrings("contracts", contracts.stream()
+        builder.set(HSON_DESCRIPTOR, descriptorType.fqName());
+        builder.setStrings(HSON_CONTRACTS, contracts.stream()
+                .map(TypeName::resolvedName)
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .collect(Collectors.toUnmodifiableList()));
+        if (!factoryContracts.isEmpty()) {
+            builder.setStrings(HSON_FACTORY_CONTRACTS, factoryContracts.stream()
                     .map(TypeName::resolvedName)
                     .sorted(String.CASE_INSENSITIVE_ORDER)
                     .collect(Collectors.toUnmodifiableList()));

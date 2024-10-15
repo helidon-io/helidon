@@ -21,8 +21,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.helidon.common.types.ElementKind;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypeNames;
 import io.helidon.service.inject.api.InjectServiceDescriptor;
 import io.helidon.service.inject.api.InjectServiceInfo;
 import io.helidon.service.inject.api.Injection;
@@ -59,11 +59,9 @@ class CoreWrappers {
         private CoreServiceInfo(ServiceInfo delegate) {
             this.delegate = delegate;
             this.scope = scope(delegate);
-            if (contracts().contains(TypeNames.SUPPLIER)) {
-                this.providerType = ProviderType.SUPPLIER;
-            } else {
-                this.providerType = ProviderType.SERVICE;
-            }
+            this.providerType = delegate.factoryContracts().isEmpty()
+                    ? ProviderType.SERVICE
+                    : ProviderType.SUPPLIER;
         }
 
         @Override
@@ -87,7 +85,7 @@ class CoreWrappers {
         }
 
         @Override
-        public Set<TypeName> contracts() {
+        public Set<ResolvedType> contracts() {
             return delegate.contracts();
         }
 
@@ -104,9 +102,9 @@ class CoreWrappers {
         private static TypeName scope(ServiceInfo delegate) {
             // if the core service is a supplier, we expect to get a new instance each time
             // otherwise it is a de-facto singleton
-            return delegate.contracts().contains(TypeNames.SUPPLIER)
-                    ? Injection.PerLookup.TYPE
-                    : Injection.Singleton.TYPE;
+            return delegate.factoryContracts().isEmpty()
+                    ? Injection.Singleton.TYPE
+                    : Injection.PerLookup.TYPE;
         }
     }
 

@@ -20,10 +20,8 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypeNames;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.service.inject.api.InjectServiceInfo;
-import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.Lookup;
 
 /*
@@ -35,53 +33,43 @@ final class Contracts {
     }
 
     static ContractLookup create(InjectServiceInfo descriptor) {
-        Set<TypeName> contracts = descriptor.contracts();
+        Set<ResolvedType> contracts = descriptor.contracts();
 
         return switch (descriptor.providerType()) {
             case NONE, SERVICE -> new FixedContracts(contracts);
-            case SUPPLIER -> new ProviderContracts(contracts, TypeNames.SUPPLIER);
-            case SERVICES_PROVIDER -> new ProviderContracts(contracts, Injection.ServicesProvider.TYPE);
-            case IP_PROVIDER -> new ProviderContracts(contracts, Injection.InjectionPointProvider.TYPE);
-            case QUALIFIED_PROVIDER -> new ProviderContracts(contracts, Injection.QualifiedProvider.TYPE);
+            default -> new ProviderContracts(contracts, descriptor.factoryContracts());
         };
     }
 
     interface ContractLookup {
-        Set<TypeName> contracts(Lookup lookup);
+        Set<ResolvedType> contracts(Lookup lookup);
     }
 
     private static final class FixedContracts implements ContractLookup {
-        private final Set<TypeName> contracts;
+        private final Set<ResolvedType> contracts;
 
-        FixedContracts(Set<TypeName> contracts) {
+        FixedContracts(Set<ResolvedType> contracts) {
             this.contracts = contracts;
         }
 
         @Override
-        public Set<TypeName> contracts(Lookup lookup) {
+        public Set<ResolvedType> contracts(Lookup lookup) {
             return contracts;
         }
     }
 
     private static final class ProviderContracts implements ContractLookup {
-        private final Set<TypeName> all;
-        private final Set<TypeName> noProvider;
-        private final TypeName provider;
+        private final Set<ResolvedType> contracts;
+        private final Set<ResolvedType> factoryContracts;
 
-        ProviderContracts(Set<TypeName> contracts, TypeName provider) {
-            this.all = contracts;
-            this.provider = provider;
-            this.noProvider = contracts.stream()
-                    .filter(Predicate.not(provider::equals))
-                    .collect(Collectors.toUnmodifiableSet());
+        ProviderContracts(Set<ResolvedType> contracts, Set<ResolvedType> factoryContracts) {
+            this.contracts = contracts;
+            this.factoryContracts = factoryContracts;
         }
 
         @Override
-        public Set<TypeName> contracts(Lookup lookup) {
-            if (lookup.contracts().contains(provider)) {
-                return all;
-            }
-            return noProvider;
+        public Set<ResolvedType> contracts(Lookup lookup) {
+            return contracts;
         }
     }
 }

@@ -18,12 +18,12 @@ package io.helidon.service.inject.api;
 
 import java.util.Set;
 
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypeNames;
 
 /**
  * Service descriptor to enable injection of String name of a {@link io.helidon.service.inject.api.Injection.PerInstance}
- * service.
+ * service (using qualifier {@link io.helidon.service.inject.api.Injection.InstanceName}).
  * <p>
  * Not intended for direct use by users, implementation detail of the service registry, must be public,
  * as it may be used in generated binding.
@@ -36,7 +36,7 @@ public class InstanceName__ServiceDescriptor implements InjectServiceDescriptor<
     public static final InstanceName__ServiceDescriptor INSTANCE = new InstanceName__ServiceDescriptor();
 
     private static final TypeName INFO_TYPE = TypeName.create(InstanceName__ServiceDescriptor.class);
-    private static final Set<TypeName> CONTRACTS = Set.of(TypeNames.STRING);
+    private static final Set<ResolvedType> CONTRACTS = Set.of(ResolvedType.STRING);
 
     private InstanceName__ServiceDescriptor() {
     }
@@ -52,7 +52,7 @@ public class InstanceName__ServiceDescriptor implements InjectServiceDescriptor<
     }
 
     @Override
-    public Set<TypeName> contracts() {
+    public Set<ResolvedType> contracts() {
         return CONTRACTS;
     }
 

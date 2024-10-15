@@ -27,7 +27,6 @@ import io.helidon.common.config.Config;
 /**
  * Helidon service registry configuration.
  */
-@SuppressWarnings("removal")
 @Prototype.Blueprint
 @Prototype.Configured("registry")
 @Prototype.CustomMethods(ServiceRegistryConfigSupport.CustomMethods.class)
@@ -65,7 +64,7 @@ interface ServiceRegistryConfigBlueprint {
      * @return services to register
      */
     @Option.Singular
-    List<GeneratedService.Descriptor<?>> serviceDescriptors();
+    List<ServiceDescriptor<?>> serviceDescriptors();
 
     /**
      * Manually register initial bindings for some of the services in the registry.
@@ -74,7 +73,7 @@ interface ServiceRegistryConfigBlueprint {
      */
     @Option.Singular
     @Option.SameGeneric
-    Map<GeneratedService.Descriptor<?>, Object> serviceInstances();
+    Map<ServiceDescriptor<?>, Object> serviceInstances();
 
     /**
      * Config instance used to configure this registry configuration.

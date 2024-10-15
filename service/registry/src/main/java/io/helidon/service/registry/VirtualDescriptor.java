@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import io.helidon.common.Weighted;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -27,12 +28,12 @@ import io.helidon.common.types.TypeName;
  */
 public class VirtualDescriptor implements ServiceDescriptor<Object> {
     private static final TypeName TYPE = TypeName.create(VirtualDescriptor.class);
-    private final Set<TypeName> contracts;
+    private final Set<ResolvedType> contracts;
     private final TypeName serviceType;
     private final TypeName descriptorType;
 
     VirtualDescriptor(TypeName contract) {
-        this.contracts = Set.of(contract);
+        this.contracts = Set.of(ResolvedType.create(contract));
         this.serviceType = contract;
         this.descriptorType = TypeName.builder(TYPE)
                 .className(TYPE.className() + "_" + contract.className() + "__VirtualDescriptor")
@@ -50,7 +51,7 @@ public class VirtualDescriptor implements ServiceDescriptor<Object> {
     }
 
     @Override
-    public Set<TypeName> contracts() {
+    public Set<ResolvedType> contracts() {
         return contracts;
     }
 

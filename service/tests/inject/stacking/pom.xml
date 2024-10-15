@@ -82,8 +82,8 @@
                             <version>${helidon.version}</version>
                         </path>
                         <path>
-                            <groupId>io.helidon.service</groupId>
-                            <artifactId>helidon-service-codegen</artifactId>
+                            <groupId>io.helidon.service.inject</groupId>
+                            <artifactId>helidon-service-inject-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>
@@ -100,8 +100,8 @@
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
-                        <groupId>io.helidon.service</groupId>
-                        <artifactId>helidon-service-codegen</artifactId>
+                        <groupId>io.helidon.service.inject</groupId>
+                        <artifactId>helidon-service-inject-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>

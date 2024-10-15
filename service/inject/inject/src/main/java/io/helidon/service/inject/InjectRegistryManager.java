@@ -110,7 +110,7 @@ public class InjectRegistryManager implements ServiceRegistryManager {
                                                  : ServiceDiscovery.noop());
     }
 
-    @SuppressWarnings({"unchecked", "removal"})
+    @SuppressWarnings({"unchecked"})
     @Override
     public InjectRegistry registry() {
         Lock readLock = lifecycleLock.readLock();
@@ -153,9 +153,9 @@ public class InjectRegistryManager implements ServiceRegistryManager {
                         var descriptor = desc;
                         if (descriptor instanceof VirtualDescriptor) {
                             // maybe we have a real descriptor for this type
-                            descriptor = virtualDescriptor(config, discovery, ServiceDiscovery.wrap(descriptor));
+                            descriptor = virtualDescriptor(config, discovery, descriptor);
                         }
-                        Described described = toDescribed(descriptorToDescribed, ServiceDiscovery.wrap(descriptor));
+                        Described described = toDescribed(descriptorToDescribed, descriptor);
                         bind(bindings,
                              scopeHandlers,
                              servicesByType,
@@ -173,7 +173,7 @@ public class InjectRegistryManager implements ServiceRegistryManager {
                      servicesByContract,
                      qualifiedProvidersByQualifier,
                      typedQualifiedProviders,
-                     toDescribed(descriptorToDescribed, ServiceDiscovery.wrap(descriptor)));
+                     toDescribed(descriptorToDescribed, descriptor));
             }
 
             boolean logUnsupported = LOGGER.isLoggable(System.Logger.Level.TRACE);
@@ -190,7 +190,7 @@ public class InjectRegistryManager implements ServiceRegistryManager {
                 }
 
                 ServiceDescriptor<?> descriptor = descriptorMeta.descriptor();
-                if (descriptor.contracts().contains(Binding.TYPE)) {
+                if (contains(descriptor.contracts(), Binding.TYPE)) {
                     bindings.add((ServiceDescriptor<Binding>) descriptor);
                     // applications are not bound to the registry
                 } else {
@@ -273,7 +273,7 @@ public class InjectRegistryManager implements ServiceRegistryManager {
         }
     }
 
-    @SuppressWarnings({"rawtypes", "removal"})
+    @SuppressWarnings("rawtypes")
     private static ServiceDescriptor<?> virtualDescriptor(InjectConfig config,
                                                           ServiceDiscovery discovery,
                                                           ServiceDescriptor<?> descriptor) {
@@ -283,12 +283,12 @@ public class InjectRegistryManager implements ServiceRegistryManager {
                 .filter(registered -> registered.serviceType().equals(serviceType))
                 .findFirst();
         if (fromConfig.isPresent()) {
-            return ServiceDiscovery.wrap(fromConfig.get());
+            return fromConfig.get();
         }
 
         return discovery.allMetadata()
                 .stream()
-                .filter(handler -> handler.contracts().contains(serviceType))
+                .filter(handler -> contains(handler.contracts(), serviceType))
                 .map(DescriptorHandler::descriptor)
                 .filter(desc -> desc.serviceType().equals(serviceType))
                 .findFirst()
@@ -318,7 +318,7 @@ public class InjectRegistryManager implements ServiceRegistryManager {
 
         InjectServiceDescriptor<?> descriptor = described.injectDescriptor();
 
-        if (descriptor.contracts().contains(Binding.TYPE)) {
+        if (contains(descriptor.contracts(), Binding.TYPE)) {
             bindings.add((ServiceDescriptor<Binding>) described.coreDescriptor());
             // application is not bound to the registry
             return;
@@ -341,16 +341,16 @@ public class InjectRegistryManager implements ServiceRegistryManager {
                                            it -> new TreeSet<>(SERVICE_INFO_COMPARATOR))
                 .add(descriptor);
 
-        Set<TypeName> contracts = descriptor.contracts();
+        Set<ResolvedType> contracts = descriptor.contracts();
         // by contract
-        for (TypeName contract : contracts) {
-            servicesByContract.computeIfAbsent(ResolvedType.create(contract),
+        for (ResolvedType contract : contracts) {
+            servicesByContract.computeIfAbsent(contract,
                                                it -> new TreeSet<>(SERVICE_INFO_COMPARATOR))
                     .add(descriptor);
         }
 
         // scope handlers have a very specific meaning
-        if (contracts.contains(Injection.ScopeHandler.TYPE)) {
+        if (contains(contracts, Injection.ScopeHandler.TYPE)) {
             if (!Injection.Singleton.TYPE.equals(descriptor.scope())) {
                 throw new ServiceRegistryException("Services that provide ScopeHandler contract MUST be in Singleton scope, but "
                                                            + descriptor.serviceType().fqName() + " is in "
@@ -370,7 +370,7 @@ public class InjectRegistryManager implements ServiceRegistryManager {
             // a specific contract, or ANY contract
             if (descriptor instanceof GeneratedInjectService.QualifiedProviderDescriptor qpd) {
                 TypeName qualifierType = qpd.qualifierType();
-                if (contracts.contains(TypeNames.OBJECT)) {
+                if (contains(contracts, TypeNames.OBJECT)) {
                     // matches any contract
                     qualifiedProvidersByQualifier.computeIfAbsent(qualifierType, it -> new TreeSet<>(SERVICE_INFO_COMPARATOR))
                             .add(descriptor);
@@ -392,6 +392,10 @@ public class InjectRegistryManager implements ServiceRegistryManager {
                                                            + descriptor.descriptorType().fqName() + " does not.");
             }
         }
+    }
+
+    private static boolean contains(Set<ResolvedType> contracts, TypeName type) {
+        return contracts.stream().anyMatch(it -> it.genericTypeName().equals(type));
     }
 
     record TypedQualifiedProviderKey(TypeName qualifier, ResolvedType contract) {
