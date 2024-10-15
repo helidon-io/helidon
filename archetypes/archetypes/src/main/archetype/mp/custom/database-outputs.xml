@@ -362,11 +362,6 @@ For details on an Oracle Docker image, see https://github.com/oracle/docker-imag
                             <value key="artifactId">ojdbc</value>
                             <value key="scope">runtime</value>
                         </map>
-                        <map>
-                            <value key="groupId">com.oracle.database.jdbc</value>
-                            <value key="artifactId">ucp</value>
-                            <value key="scope">runtime</value>
-                        </map>
                     </list>
                     <value key="jdbcDataSource">oracle.jdbc.pool.OracleDataSource</value>
                     <value key="databaseUrl">jdbc:oracle:thin:@localhost:1521:XE</value>
