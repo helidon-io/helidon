@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.webserver</groupId>
         <artifactId>helidon-webserver-project</artifactId>
-        <version>4.1.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-webserver</artifactId>
@@ -79,6 +79,10 @@
         <dependency>
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common.concurrency</groupId>
+            <artifactId>helidon-common-concurrency-limits</artifactId>
         </dependency>
         <dependency>
             <!--

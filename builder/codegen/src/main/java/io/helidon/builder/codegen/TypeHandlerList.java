@@ -21,13 +21,16 @@ import java.util.Optional;
 import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.classmodel.Method;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.common.types.TypeNames.LIST;
 
 class TypeHandlerList extends TypeHandlerCollection {
 
-    TypeHandlerList(String name, String getterName, String setterName, TypeName declaredType) {
-        super(name, getterName, setterName, declaredType, LIST, "toList()", Optional.empty());
+    TypeHandlerList(TypeName blueprintType,
+                    TypedElementInfo annotatedMethod,
+                    String name, String getterName, String setterName, TypeName declaredType) {
+        super(blueprintType, annotatedMethod, name, getterName, setterName, declaredType, LIST, "toList()", Optional.empty());
     }
 
     static String isMutatedField(String propertyName) {

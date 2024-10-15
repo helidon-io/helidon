@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>4.1.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
     <packaging>pom</packaging>
     <artifactId>helidon-all</artifactId>
@@ -301,6 +301,10 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.grpc</groupId>
+            <artifactId>helidon-microprofile-grpc-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.grpc</groupId>
             <artifactId>helidon-microprofile-grpc-tracing</artifactId>
         </dependency>
         <dependency>
@@ -458,6 +462,10 @@
         <dependency>
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common.concurrency</groupId>
+            <artifactId>helidon-common-concurrency-limits</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.dbclient</groupId>
@@ -991,6 +999,10 @@
         <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver-service-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-concurrency-limits</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver.testing.junit5</groupId>

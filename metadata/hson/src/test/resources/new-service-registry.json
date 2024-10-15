@@ -1,0 +1,16 @@
+[
+    {
+        "module": "unnamed/io.helidon.metrics",
+        "services": [
+            {
+                "type": "inject",
+                "weight": 90.0,
+                "descriptor": "io.helidon.metrics.CountedInterceptor__ServiceDescriptor",
+                "contracts": [
+                    "io.helidon.metrics.CountedInterceptor",
+                    "io.helidon.service.inject.api.Interception.Interceptor"
+                ]
+            }
+        ]
+    }
+]

@@ -19,7 +19,6 @@ package io.helidon.webserver.http1;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
@@ -45,9 +44,12 @@ import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.MediaContext;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ServerConnectionException;
+import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.http.ServerResponseBase;
 import io.helidon.webserver.http.spi.Sink;
 import io.helidon.webserver.http.spi.SinkProvider;
+import io.helidon.webserver.http.spi.SinkProviderContext;
 
 /**
  * An HTTP/1 server response.
@@ -181,10 +183,12 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             dataWriter.write(bufferData);
             afterSend();
         } else {
-            try (OutputStream os = outputStream()) {
+            // we should skip encoders if no data is written (e.g. for GZIP)
+            boolean skipEncoders = (bytes.length == 0);
+            try (OutputStream os = outputStream(skipEncoders)) {
                 os.write(bytes);
             } catch (IOException e) {
-                throw new UncheckedIOException(e);
+                throw new ServerConnectionException("Failed to write response", e);
             }
         }
     }
@@ -196,41 +200,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
     @Override
     public OutputStream outputStream() {
-        if (isSent) {
-            throw new IllegalStateException("Response already sent");
-        }
-        if (streamingEntity) {
-            throw new IllegalStateException("OutputStream already obtained");
-        }
-        streamingEntity = true;
-
-        BlockingOutputStream bos = new BlockingOutputStream(headers,
-                                                     trailers,
-                                                     this::status,
-                                                     () -> streamResult,
-                                                     dataWriter,
-                                                     () -> {
-                                                         this.isSent = true;
-                                                         afterSend();
-                                                         request.reset();
-                                                     },
-                                                     ctx,
-                                                     sendListener,
-                                                     request,
-                                                     keepAlive,
-                                                     validateHeaders);
-
-        int writeBufferSize = ctx.listenerContext().config().writeBufferSize();
-        outputStream = new ClosingBufferedOutputStream(bos, writeBufferSize);
-
-        OutputStream encodedOutputStream = contentEncode(outputStream);
-        // Headers can be augmented by encoders
-        bos.checkResponseHeaders();
-        if (outputStreamFilter == null) {
-            return encodedOutputStream;
-        } else {
-            return outputStreamFilter.apply(encodedOutputStream);
-        }
+        return outputStream(false);
     }
 
     @Override
@@ -293,7 +263,31 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     public <X extends Sink<?>> X sink(GenericType<X> sinkType) {
         for (SinkProvider<?> p : SINK_PROVIDERS) {
             if (p.supports(sinkType, request)) {
-                return (X) p.create(this, this::handleSinkData, this::commit);
+                try {
+                    return (X) p.create(new SinkProviderContext() {
+                        @Override
+                        public ServerResponse serverResponse() {
+                            return Http1ServerResponse.this;
+                        }
+
+                        @Override
+                        public ConnectionContext connectionContext() {
+                            return Http1ServerResponse.this.ctx;
+                        }
+
+                        @Override
+                        public Runnable closeRunnable() {
+                            return () -> {
+                                Http1ServerResponse.this.isSent = true;
+                                afterSend();
+                                request.reset();
+                            };
+                        }
+                    });
+                } catch (UnsupportedOperationException e) {
+                    // deprecated - will be removed in 5.x
+                    return (X) p.create(this, this::handleSinkData, this::commit);
+                }
             }
         }
         // Request not acceptable if provider not found
@@ -339,7 +333,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                 }
             }
         } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            throw new ServerConnectionException("Failed to write sink data", e);
         }
     }
 
@@ -401,6 +395,42 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         return responseBuffer;
     }
 
+    private OutputStream outputStream(boolean skipEncoders) {
+        if (isSent) {
+            throw new IllegalStateException("Response already sent");
+        }
+        if (streamingEntity) {
+            throw new IllegalStateException("OutputStream already obtained");
+        }
+        streamingEntity = true;
+
+        BlockingOutputStream bos = new BlockingOutputStream(headers,
+                                                            trailers,
+                                                            this::status,
+                                                            () -> streamResult,
+                                                            dataWriter,
+                                                            () -> {
+                                                                this.isSent = true;
+                                                                afterSend();
+                                                                request.reset();
+                                                            },
+                                                            ctx,
+                                                            sendListener,
+                                                            request,
+                                                            keepAlive,
+                                                            validateHeaders);
+
+        int writeBufferSize = ctx.listenerContext().config().writeBufferSize();
+        outputStream = new ClosingBufferedOutputStream(bos, writeBufferSize);
+
+        OutputStream encodedOutputStream = outputStream;
+        if (!skipEncoders) {
+            encodedOutputStream = contentEncode(outputStream);
+            bos.checkResponseHeaders();     // headers can be augmented by encoders
+        }
+        return outputStreamFilter == null ? encodedOutputStream : outputStreamFilter.apply(encodedOutputStream);
+    }
+
     static class BlockingOutputStream extends OutputStream {
         private final ServerResponseHeaders headers;
         private final WritableHeaders<?> trailers;
@@ -449,10 +479,15 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             this.validateHeaders = validateHeaders;
         }
 
-        void checkResponseHeaders(){
-            this.isChunked = !headers.contains(HeaderNames.CONTENT_LENGTH);
-            this.forcedChunked = headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)
-                    || headers.contains(HeaderNames.TRAILER);
+        void checkResponseHeaders() {
+            if (headers.contains(HeaderNames.TRAILER)) {
+                headers.remove(HeaderNames.CONTENT_LENGTH);
+                isChunked = true;
+                forcedChunked = true;
+            } else {
+                isChunked = !headers.contains(HeaderNames.CONTENT_LENGTH);
+                forcedChunked = headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+            }
         }
 
         @Override
@@ -527,20 +562,20 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             }
 
             if (sendTrailers) {
-                    // not optimized, trailers enabled: we need to write trailers
-                    trailers.set(STREAM_RESULT_NAME, streamResult.get());
-                    BufferData buffer = BufferData.growing(128);
-                    writeHeaders(trailers, buffer, this.validateHeaders);
-                    buffer.write('\r');        // "\r\n" - empty line after headers
-                    buffer.write('\n');
-                    dataWriter.write(buffer);
+                // not optimized, trailers enabled: we need to write trailers
+                trailers.set(STREAM_RESULT_NAME, streamResult.get());
+                BufferData buffer = BufferData.growing(128);
+                writeHeaders(trailers, buffer, this.validateHeaders);
+                buffer.write('\r');        // "\r\n" - empty line after headers
+                buffer.write('\n');
+                dataWriter.write(buffer);
             }
 
             responseCloseRunnable.run();
             try {
                 super.close();
             } catch (IOException e) {
-                throw new UncheckedIOException(e);
+                throw new ServerConnectionException("Failed to close server response stream.", e);
             }
         }
 
@@ -723,57 +758,61 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
      * A special stream that provides buffering for a delegate and special handling
      * of close logic. Note that due to some locking issues in the JDK, this class
      * must use delegation with {@link BufferedOutputStream} instead of subclassing.
+     *
+     * <p>If the buffer size is less or equal to zero, it will not wrap the
+     * {@link io.helidon.webserver.http1.Http1ServerResponse.BlockingOutputStream}
+     * with a {@link java.io.BufferedOutputStream}.
      */
     static class ClosingBufferedOutputStream extends OutputStream {
 
-        private final BlockingOutputStream delegate;
-        private final BufferedOutputStream bufferedDelegate;
+        private final BlockingOutputStream closingDelegate;
+        private final OutputStream delegate;
 
         ClosingBufferedOutputStream(BlockingOutputStream out, int size) {
-            this.delegate = out;
-            this.bufferedDelegate = new BufferedOutputStream(out, size);
+            this.closingDelegate = out;
+            this.delegate = size <= 0 ? out : new BufferedOutputStream(out, size);
         }
 
         @Override
         public void write(int b) throws IOException {
-            bufferedDelegate.write(b);
+            delegate.write(b);
         }
 
         @Override
         public void write(byte[] b) throws IOException {
-            bufferedDelegate.write(b);
+            delegate.write(b);
         }
 
         @Override
         public void write(byte[] b, int off, int len) throws IOException {
-            bufferedDelegate.write(b, off, len);
+            delegate.write(b, off, len);
         }
 
         @Override
         public void flush() throws IOException {
-            bufferedDelegate.flush();
+            delegate.flush();
         }
 
         @Override
         public void close() {
-            delegate.closing();     // inform of imminent call to close for last flush
+            closingDelegate.closing();     // inform of imminent call to close for last flush
             try {
-                bufferedDelegate.close();
+                delegate.close();
             } catch (IOException e) {
-                throw new UncheckedIOException(e);
+                throw new ServerConnectionException("Failed to close server output stream", e);
             }
         }
 
         long totalBytesWritten() {
-            return delegate.totalBytesWritten();
+            return closingDelegate.totalBytesWritten();
         }
 
         void commit() {
             try {
                 flush();
-                delegate.commit();
+                closingDelegate.commit();
             } catch (IOException e) {
-                throw new UncheckedIOException(e);
+                throw new ServerConnectionException("Failed to flush server output stream", e);
             }
         }
     }

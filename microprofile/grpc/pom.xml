@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.microprofile</groupId>
         <artifactId>helidon-microprofile-project</artifactId>
-        <version>4.1.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
 
     <groupId>io.helidon.microprofile.grpc</groupId>
@@ -34,8 +34,8 @@
     <modules>
         <module>core</module>
         <module>server</module>
+        <module>client</module>
         <module>tracing</module>
-        <module>tests</module>
     </modules>
 
     <build>
@@ -70,4 +70,13 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>tests</id>
+            <modules>
+                <module>tests</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

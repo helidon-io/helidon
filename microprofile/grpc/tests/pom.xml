@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.microprofile.grpc</groupId>
         <artifactId>helidon-microprofile-grpc-project</artifactId>
-        <version>4.1.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-microprofile-grpc-tests</artifactId>
@@ -30,6 +30,8 @@
 
     <properties>
         <maven.javadoc.skip>true</maven.javadoc.skip>
+        <maven.deploy.skip>true</maven.deploy.skip>
+        <maven.sources.skip>true</maven.sources.skip>
     </properties>
 
     <dependencies>

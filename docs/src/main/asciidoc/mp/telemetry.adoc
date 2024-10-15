@@ -48,6 +48,28 @@ include::{rootdir}/includes/dependencies.adoc[]
 </dependency>
 ----
 
+[[otel-exporter-dependencies]]
+Also, add a dependency on an OpenTelemetry exporter.
+[source,xml]
+.Example dependency for the OpenTelemetry OTLP exporter
+----
+<dependency>
+    <groupId>io.opentelemetry</groupId>
+    <artifactId>opentelemetry-exporter-otlp</artifactId>
+</dependency>
+----
+[source,xml]
+.Example dependency for the OpenTelemetry Jaeger exporter
+----
+<dependency>
+    <groupId>io.opentelemetry</groupId>
+    <artifactId>opentelemetry-exporter-jaeger</artifactId>
+</dependency>
+----
+
+Typical applications use a single exporter but you can add dependencies on multiple exporters and then use configuration to choose which to use in any given execution.
+See the <<Configuration,configuration>> section for more details.
+
 == Usage
 
 link:https://opentelemetry.io/[OpenTelemetry] comprises a collection of APIs, SDKs, integration tools, and other software components intended to facilitate the generation and control of telemetry data, including traces, metrics, and logs. In an environment where distributed tracing is enabled via OpenTelemetry (which combines OpenTracing and OpenCensus), this specification establishes the necessary behaviors for MicroProfile applications to participate seamlessly.
@@ -61,7 +83,7 @@ MicroProfile Telemetry {mp-telemetry-version} allows for the exportation of the 
 If possible, assign the following config setting in your application's `META-INF/microprofile-config.properties` file:
 [source,properties]
 ----
-mp.telemetry.span.name-includes-method = true
+telemetry.span.name-includes-method = true
 ----
 Earlier releases of Helidon 4 implemented MicroProfile Telemetry 1.0 which was based on OpenTelemetry semantic conventions 1.22.0-alpha.
 
@@ -193,8 +215,10 @@ To configure OpenTelemetry, MicroProfile Config must be used, and the configurat
 
 Please consult with the links above for all configurations' properties usage.
 
-The property should be declared in `microprofile-config.properties` file to be processed correctly.
-
+For your application to report trace information be sure you add a dependency on an OpenTelemetry exporter as  <<otel-exporter-dependencies,described earlier>> and, as needed, configure its use.
+By default OpenTelemetry attempts to use the OTLP exporter so you do not need to add configuration to specify that choice.
+To use a different exporter set `otel.traces.exporter` in your configuration to the appropriate value: `jaeger`, `zipkin`, `prometheus`, etc.
+See the <<examples,examples>> section below.
 
 === OpenTelemetry Java Agent
 
@@ -204,6 +228,7 @@ The OpenTelemetry Java Agent may influence the work of MicroProfile Telemetry, o
 
 This way, Helidon will explicitly get all the configuration and objects from the Agent, thus allowing correct span hierarchy settings.
 
+[[examples]]
 == Examples
 
 This guide demonstrates how to incorporate MicroProfile Telemetry into Helidon and provides illustrations of how to view traces. Jaeger is employed in all the examples, and the Jaeger UI is used to view the traces.

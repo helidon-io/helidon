@@ -157,14 +157,14 @@ class TypeHandlerBuilderApi extends TypeHandlerBase implements TypeHandler {
         if (!ElementInfoPredicates.hasNoArgs(element)) {
             throw new CodegenException("Method " + element + " is annotated with @Configured, "
                                                + "yet it has a parameter. Interface methods must not have parameters.",
-                                       element.originatingElement().orElse(element.elementName()));
+                                       element.originatingElementValue());
         }
 
         TypeName returnType = element.typeName();
         if (ElementInfoPredicates.isVoid(element)) {
             throw new CodegenException("Method " + element + " is annotated with @Configured, "
                                                + "yet it is void. Interface methods must return the property type.",
-                                       element.originatingElement().orElse(element.elementName()));
+                                       element.originatingElementValue());
         }
 
         if (returnType.isOptional()) {

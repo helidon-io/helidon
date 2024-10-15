@@ -25,14 +25,17 @@ import io.helidon.codegen.classmodel.Javadoc;
 import io.helidon.codegen.classmodel.Method;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
+import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.builder.codegen.Types.CHAR_ARRAY;
 import static io.helidon.common.types.TypeNames.SUPPLIER;
 
 class TypeHandlerSupplier extends TypeHandler.OneTypeHandler {
 
-    TypeHandlerSupplier(String name, String getterName, String setterName, TypeName declaredType) {
-        super(name, getterName, setterName, declaredType);
+    TypeHandlerSupplier(TypeName blueprintType,
+                        TypedElementInfo annotatedMethod,
+                        String name, String getterName, String setterName, TypeName declaredType) {
+        super(blueprintType, annotatedMethod, name, getterName, setterName, declaredType);
     }
 
     @Override

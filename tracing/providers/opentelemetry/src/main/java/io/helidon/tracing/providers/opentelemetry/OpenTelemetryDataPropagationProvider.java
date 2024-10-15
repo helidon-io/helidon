@@ -62,7 +62,7 @@ public class OpenTelemetryDataPropagationProvider
     }
 
     /**
-     * OpenTelementry context.
+     * OpenTelemetry context.
      */
     public static class OpenTelemetryContext {
         private final Span span;

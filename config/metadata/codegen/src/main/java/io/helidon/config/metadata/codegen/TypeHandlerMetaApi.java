@@ -217,7 +217,7 @@ class TypeHandlerMetaApi extends TypeHandlerBase implements TypeHandler {
                 throw new CodegenException("Type " + typeName.fqName() + " is marked with @Configured"
                                                    + ", yet it has a static builder() method. Please mark the builder instead "
                                                    + "of this class.",
-                                           typeInfo.originatingElement().orElseGet(typeInfo::typeName));
+                                           typeInfo.originatingElementValue());
             }
         }
 
@@ -243,14 +243,14 @@ class TypeHandlerMetaApi extends TypeHandlerBase implements TypeHandler {
                                                            + validMethod
                                                            + " does not have value defined. It is mandatory on non-builder "
                                                            + "methods",
-                                                   typeInfo.originatingElement().orElseGet(typeInfo::typeName));
+                                                   typeInfo.originatingElementValue());
                     }
 
                     if (data.description() == null || data.description().isBlank()) {
                         throw new CodegenException("ConfiguredOption on " + typeName.fqName() + "." + validMethod
                                                            + " does not have description defined. It is mandatory on non-builder "
                                                            + "methods",
-                                                   typeInfo.originatingElement().orElseGet(typeInfo::typeName));
+                                                   typeInfo.originatingElementValue());
                     }
 
                     if (data.type() == null) {
@@ -281,7 +281,7 @@ class TypeHandlerMetaApi extends TypeHandlerBase implements TypeHandler {
                 throw new CodegenException("Type " + typeName.fqName() + " is marked as standalone configuration unit, "
                                                    + "yet it does have "
                                                    + "neither a builder method, nor a create method",
-                                           typeInfo.originatingElement().orElseGet(typeInfo::typeName));
+                                           typeInfo.originatingElementValue());
             }
 
             typeInfo.elementInfo()
@@ -342,7 +342,7 @@ class TypeHandlerMetaApi extends TypeHandlerBase implements TypeHandler {
                 throw new CodegenException("Method " + elementInfo.elementName()
                                                    + " is annotated with @ConfiguredOption, "
                                                    + "yet it does not have explicit type, or exactly one parameter",
-                                           typeInfo.originatingElement().orElseGet(typeInfo::typeName));
+                                           typeInfo.originatingElementValue());
             } else {
                 TypedElementInfo parameter = parameters.iterator().next();
                 TypeName paramType = parameter.typeName();

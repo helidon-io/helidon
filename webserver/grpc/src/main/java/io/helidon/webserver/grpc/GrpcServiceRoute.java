@@ -32,9 +32,9 @@ import io.grpc.stub.ServerCalls;
 class GrpcServiceRoute extends GrpcRoute {
 
     private final String serviceName;
-    private final List<Grpc<?, ?>> routes;
+    private final List<GrpcRouteHandler<?, ?>> routes;
 
-    private GrpcServiceRoute(String serviceName, List<Grpc<?, ?>> routes) {
+    private GrpcServiceRoute(String serviceName, List<GrpcRouteHandler<?, ?>> routes) {
         this.serviceName = serviceName;
         this.routes = routes;
     }
@@ -62,9 +62,9 @@ class GrpcServiceRoute extends GrpcRoute {
     static GrpcRoute create(BindableService service) {
         ServerServiceDefinition definition = service.bindService();
         String serviceName = definition.getServiceDescriptor().getName();
-        List<Grpc<?, ?>> routes = new LinkedList<>();
+        List<GrpcRouteHandler<?, ?>> routes = new LinkedList<>();
         service.bindService().getMethods().forEach(
-                method -> routes.add(Grpc.bindableMethod(service, method)));
+                method -> routes.add(GrpcRouteHandler.bindableMethod(service, method)));
         return new GrpcServiceRoute(serviceName, routes);
     }
 
@@ -82,8 +82,8 @@ class GrpcServiceRoute extends GrpcRoute {
     }
 
     @Override
-    Grpc<?, ?> toGrpc(HttpPrologue prologue) {
-        for (Grpc<?, ?> route : routes) {
+    GrpcRouteHandler<?, ?> handler(HttpPrologue prologue) {
+        for (GrpcRouteHandler<?, ?> route : routes) {
             PathMatchers.MatchResult accepts = route.accepts(prologue);
             if (accepts.accepted()) {
                 return route;
@@ -94,7 +94,7 @@ class GrpcServiceRoute extends GrpcRoute {
     }
 
     PathMatchers.MatchResult accepts(HttpPrologue prologue) {
-        for (Grpc<?, ?> route : routes) {
+        for (GrpcRouteHandler<?, ?> route : routes) {
             PathMatchers.MatchResult accepts = route.accepts(prologue);
             if (accepts.accepted()) {
                 return accepts;
@@ -104,7 +104,7 @@ class GrpcServiceRoute extends GrpcRoute {
     }
 
     static class Routing implements GrpcService.Routing {
-        private final List<Grpc<?, ?>> routes = new LinkedList<>();
+        private final List<GrpcRouteHandler<?, ?>> routes = new LinkedList<>();
         private final Descriptors.FileDescriptor proto;
         private final String serviceName;
 
@@ -115,27 +115,27 @@ class GrpcServiceRoute extends GrpcRoute {
 
         @Override
         public <ReqT, ResT> GrpcService.Routing unary(String methodName, ServerCalls.UnaryMethod<ReqT, ResT> method) {
-            routes.add(Grpc.unary(proto, serviceName, methodName, method));
+            routes.add(GrpcRouteHandler.unary(proto, serviceName, methodName, method));
             return this;
         }
 
         @Override
         public <ReqT, ResT> GrpcService.Routing bidi(String methodName, ServerCalls.BidiStreamingMethod<ReqT, ResT> method) {
-            routes.add(Grpc.bidi(proto, serviceName, methodName, method));
+            routes.add(GrpcRouteHandler.bidi(proto, serviceName, methodName, method));
             return this;
         }
 
         @Override
         public <ReqT, ResT> GrpcService.Routing serverStream(String methodName,
                                                              ServerCalls.ServerStreamingMethod<ReqT, ResT> method) {
-            routes.add(Grpc.serverStream(proto, serviceName, methodName, method));
+            routes.add(GrpcRouteHandler.serverStream(proto, serviceName, methodName, method));
             return this;
         }
 
         @Override
         public <ReqT, ResT> GrpcService.Routing clientStream(String methodName,
                                                              ServerCalls.ClientStreamingMethod<ReqT, ResT> method) {
-            routes.add(Grpc.clientStream(proto, serviceName, methodName, method));
+            routes.add(GrpcRouteHandler.clientStream(proto, serviceName, methodName, method));
             return this;
         }
 

@@ -19,7 +19,6 @@ package io.helidon.webserver.http;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,6 +41,7 @@ import io.helidon.http.media.InstanceWriter;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.UnsupportedTypeException;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ServerConnectionException;
 
 /**
  * Base class for common server response tasks that can be shared across HTTP versions.
@@ -214,7 +214,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
                 os.write(entity);
                 os.close();
             } catch (IOException e) {
-                throw new UncheckedIOException(e);
+                throw new ServerConnectionException("Failed to write response", e);
             }
             entity = baos.toByteArray();
             encoder.headers(headers());

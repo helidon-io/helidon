@@ -35,6 +35,10 @@ module io.helidon.webserver.grpc {
     requires io.helidon.tracing;
     requires io.helidon.common.config;
 
+    requires io.grpc;
+    requires io.grpc.stub;
+    requires com.google.protobuf;
+
     requires transitive io.helidon.grpc.core;
 
     requires static io.helidon.common.features.api;

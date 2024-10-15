@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 )
 @SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.microprofile.lra {
+    exports io.helidon.microprofile.lra;
 
     requires io.helidon.common.reactive;
     requires io.helidon.config;
@@ -46,6 +47,7 @@ module io.helidon.microprofile.lra {
 
     requires jakarta.cdi;
     requires transitive jersey.common;
+    requires io.helidon.config.mp;
 
     uses io.helidon.lra.coordinator.client.CoordinatorClient;
 

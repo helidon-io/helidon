@@ -25,7 +25,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-dependencies</artifactId>
-        <version>4.1.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
         <relativePath>./dependencies/pom.xml</relativePath>
     </parent>
     <artifactId>helidon-project</artifactId>
@@ -65,12 +65,12 @@
         <version.lib.arquillian>1.7.0.Final</version.lib.arquillian>
         <version.lib.asm>9.7</version.lib.asm>
         <version.lib.checkstyle>10.12.5</version.lib.checkstyle>
-        <version.lib.commons-io>2.11.0</version.lib.commons-io>
+        <version.lib.commons-io>2.14.0</version.lib.commons-io>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
         <version.lib.microprofile-core-profile>10.0.3</version.lib.microprofile-core-profile>
         <version.lib.sigtest>1.4</version.lib.sigtest>
         <version.lib.jsonp-tck>2.1.1</version.lib.jsonp-tck>
-        <version.lib.microprofile-cdi-tck>4.0.12</version.lib.microprofile-cdi-tck>
+        <version.lib.microprofile-cdi-tck>4.0.13</version.lib.microprofile-cdi-tck>
         <version.lib.microprofile-restful-tck>3.1.5</version.lib.microprofile-restful-tck>
         <!-- Silence javadoc error org.jboss.logging.annotations.Message$Format not found -->
         <version.lib.jboss-logging-annotations>2.2.1.Final</version.lib.jboss-logging-annotations>
@@ -117,8 +117,9 @@
         <version.plugin.exec>3.1.0</version.plugin.exec>
         <version.plugin.failsafe>3.1.2</version.plugin.failsafe>
         <version.plugin.glassfish-copyright>2.3</version.plugin.glassfish-copyright>
-        <version.plugin.helidon-build-tools>4.0.9</version.plugin.helidon-build-tools>
+        <version.plugin.helidon-build-tools>4.0.14</version.plugin.helidon-build-tools>
         <version.plugin.hibernate-enhance>${version.lib.hibernate}</version.plugin.hibernate-enhance>
+        <version.plugin.install>3.1.2</version.plugin.install>
         <version.plugin.jacoco>0.8.5</version.plugin.jacoco>
         <version.plugin.jandex>3.1.2</version.plugin.jandex>
         <version.plugin.jar>3.3.0</version.plugin.jar>
@@ -134,7 +135,7 @@
         <version.plugin.source>3.0.1</version.plugin.source>
         <version.plugin.spotbugs>4.7.3.5</version.plugin.spotbugs>
         <version.plugin.findsecbugs>1.12.0</version.plugin.findsecbugs>
-        <version.plugin.dependency-check>10.0.2</version.plugin.dependency-check>
+        <version.plugin.dependency-check>10.0.4</version.plugin.dependency-check>
         <version.plugin.surefire>3.1.0</version.plugin.surefire>
         <version.plugin.toolchains>1.1</version.plugin.toolchains>
         <version.plugin.version-plugin>2.3</version.plugin.version-plugin>
@@ -562,6 +563,11 @@
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-install-plugin</artifactId>
+                    <version>${version.plugin.install}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-scm-publish-plugin</artifactId>
                     <version>${version.plugin.scm-publish-plugin}</version>
                 </plugin>
@@ -843,6 +849,7 @@
                     </configuration>
                 </plugin>
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-antrun-plugin</artifactId>
                     <version>${version.plugin.ant}</version>
                 </plugin>
@@ -1170,12 +1177,12 @@
                 <groupId>org.testng</groupId>
                 <artifactId>testng</artifactId>
                 <version>${version.lib.testng}</version>
-                    <exclusions>
-                        <exclusion>
-                            <groupId>com.google.code.findbugs</groupId>
-                            <artifactId>jsr305</artifactId>
-                        </exclusion>
-                    </exclusions>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.google.code.findbugs</groupId>
+                        <artifactId>jsr305</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.junit.platform</groupId>
@@ -1318,44 +1325,6 @@
             </modules>
         </profile>
         <profile>
-            <id>examples</id>
-            <modules>
-                <!--suppress MavenModelInspection -->
-                <module>helidon-examples</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>archetypes</id>
-            <modules>
-                <module>archetypes</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>docs</id>
-            <modules>
-                <module>docs</module>
-            </modules>
-        </profile>
-        <profile>
-            <id>sources</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-source-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>attach-sources</id>
-                                <goals>
-                                    <goal>jar-no-fork</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
             <id>javadoc</id>
             <build>
                 <plugins>
@@ -1384,8 +1353,10 @@
                         <executions>
                             <execution>
                                 <goals>
-                                    <goal>check</goal>
+                                    <goal>spotbugs</goal>
+                                    <goal>verify</goal>
                                 </goals>
+                                <phase>verify</phase>
                             </execution>
                         </executions>
                     </plugin>
@@ -1458,29 +1429,12 @@
         </profile>
         <profile>
             <id>release</id>
+            <modules>
+                <module>archetypes</module>
+                <module>docs</module>
+            </modules>
             <build>
                 <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-enforcer-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>enforce-no-snapshots</id>
-                                <goals>
-                                    <goal>enforce</goal>
-                                </goals>
-                                <phase>validate</phase>
-                                <configuration>
-                                    <rules>
-                                        <requireReleaseDeps>
-                                            <message>No snapshots allowed during the release build!</message>
-                                        </requireReleaseDeps>
-                                    </rules>
-                                    <fail>true</fail>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-source-plugin</artifactId>
@@ -1502,6 +1456,34 @@
                                 <goals>
                                     <goal>jar</goal>
                                 </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>no-snapshots</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>enforce-no-snapshots</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <phase>validate</phase>
+                                <configuration>
+                                    <rules>
+                                        <requireReleaseDeps>
+                                            <message>No snapshots allowed during the release build!</message>
+                                        </requireReleaseDeps>
+                                    </rules>
+                                    <fail>true</fail>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>

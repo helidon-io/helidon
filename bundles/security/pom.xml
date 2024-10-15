@@ -22,8 +22,7 @@
     <parent>
         <groupId>io.helidon.bundles</groupId>
         <artifactId>helidon-bundles-project</artifactId>
-        <version>4.1.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-bundles-security</artifactId>

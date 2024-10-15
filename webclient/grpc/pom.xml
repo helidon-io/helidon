@@ -21,11 +21,15 @@
     <parent>
         <groupId>io.helidon.webclient</groupId>
         <artifactId>helidon-webclient-project</artifactId>
-        <version>4.1.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-webclient-grpc</artifactId>
     <name>Helidon WebClient gRPC</name>
+
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
 
     <dependencies>
         <dependency>

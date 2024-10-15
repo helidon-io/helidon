@@ -22,11 +22,11 @@
     <parent>
         <artifactId>helidon-tests-functional-project</artifactId>
         <groupId>io.helidon.tests.functional</groupId>
-        <version>4.1.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-tests-functional-request-scope-injection</artifactId>
-    <name>Helidon Tests Functional Helidon Request Scope Injection</name>
+    <name>Helidon Tests Functional Request Scope Injection</name>
 
     <dependencies>
         <dependency>

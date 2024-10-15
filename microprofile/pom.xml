@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>4.1.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
     <packaging>pom</packaging>
     <groupId>io.helidon.microprofile</groupId>
@@ -40,7 +40,6 @@
         <module>security</module>
         <module>fault-tolerance</module>
         <module>bundles</module>
-        <module>tests</module>
         <module>jwt-auth</module>
         <module>tracing</module>
         <module>openapi</module>
@@ -61,4 +60,13 @@
         <module>telemetry</module>
         <module>testing</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>tests</id>
+            <modules>
+                <module>tests</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

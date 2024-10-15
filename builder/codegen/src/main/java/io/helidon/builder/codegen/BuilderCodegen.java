@@ -255,7 +255,7 @@ class BuilderCodegen implements CodegenExtension {
         roundContext.addGeneratedType(prototype,
                                       classModel,
                                       blueprint.typeName(),
-                                      blueprint.originatingElement().orElse(blueprint.typeName()));
+                                      blueprint.originatingElementValue());
 
         if (typeContext.typeInfo().supportsServiceRegistry() && typeContext.propertyData().hasProvider()) {
             for (PrototypeProperty property : typeContext.propertyData().properties()) {

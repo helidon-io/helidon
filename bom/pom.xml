@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-parent</artifactId>
-        <version>4.1.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
     <artifactId>helidon-bom</artifactId>
@@ -31,7 +31,7 @@
     <name>Helidon BOM POM</name>
 
     <properties>
-        <helidon.version>4.1.0-SNAPSHOT</helidon.version>
+        <helidon.version>4.2.0-SNAPSHOT</helidon.version>
     </properties>
 
     <dependencyManagement>
@@ -113,6 +113,11 @@
             <dependency>
                 <groupId>io.helidon.microprofile.grpc</groupId>
                 <artifactId>helidon-microprofile-grpc-server</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.grpc</groupId>
+                <artifactId>helidon-microprofile-grpc-client</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -605,6 +610,11 @@
                 <artifactId>helidon-common-features</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.common.concurrency</groupId>
+                <artifactId>helidon-common-concurrency-limits</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
             <!-- db client -->
             <dependency>
@@ -774,6 +784,16 @@
             <dependency>
                 <groupId>io.helidon.lra</groupId>
                 <artifactId>helidon-lra-coordinator-narayana-client</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.lra</groupId>
+                <artifactId>helidon-lra-coordinator-server</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.lra</groupId>
+                <artifactId>helidon-microprofile-lra-testing</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 
@@ -1296,6 +1316,11 @@
             <dependency>
                 <groupId>io.helidon.webserver</groupId>
                 <artifactId>helidon-webserver-service-common</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-concurrency-limits</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>

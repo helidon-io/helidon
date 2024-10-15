@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import io.helidon.lra.coordinator.client.Participant;
 
@@ -150,9 +149,9 @@ class ParticipantImpl implements Participant {
     static Optional<Annotation> getLRAAnnotation(Method m) {
         List<Annotation> found = Arrays.stream(m.getDeclaredAnnotations())
                 .filter(a -> LRA_ANNOTATIONS.contains(a.annotationType()))
-                .collect(Collectors.toList());
+                .toList();
 
-        if (found.size() == 0) {
+        if (found.isEmpty()) {
             // LRA can be inherited from class or its predecessors
             var clazz = m.getDeclaringClass();
             do {

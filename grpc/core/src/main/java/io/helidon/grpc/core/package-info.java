@@ -15,6 +15,6 @@
  */
 
 /**
- * Core classes used by both the gRPC server API and gRPC client API.
+ * Core classes used by both the gRPC server and gRPC client.
  */
 package io.helidon.grpc.core;

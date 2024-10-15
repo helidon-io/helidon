@@ -16,7 +16,6 @@
 
 package io.helidon.webserver.http;
 
-import java.io.UncheckedIOException;
 import java.net.SocketException;
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -31,6 +30,7 @@ import io.helidon.http.InternalServerException;
 import io.helidon.http.RequestException;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ServerConnectionException;
 
 /**
  * Http routing Error handlers.
@@ -77,7 +77,7 @@ public final class ErrorHandlers {
             if (response.hasEntity()) {
                 response.commit();
             }
-        } catch (CloseConnectionException | UncheckedIOException e) {
+        } catch (CloseConnectionException e) {
             // these errors must "bubble up"
             throw e;
         } catch (RequestException e) {
@@ -119,7 +119,7 @@ public final class ErrorHandlers {
             handleError(ctx, request, response, e);
         } catch (Throwable e) {
             if (e.getCause() instanceof SocketException se) {
-                throw new UncheckedIOException(se);
+                throw new ServerConnectionException("SocketException during routing", se);
             }
             handleError(ctx, request, response, e);
         }

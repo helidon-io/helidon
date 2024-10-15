@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import io.helidon.common.buffers.DataWriter;
 class SocketWriterAsync extends SocketWriter implements DataWriter {
     private static final System.Logger LOGGER = System.getLogger(SocketWriterAsync.class.getName());
     private static final BufferData CLOSING_TOKEN = BufferData.empty();
+
     private final ExecutorService executor;
     private final ArrayBlockingQueue<BufferData> writeQueue;
     private final CountDownLatch cdl = new CountDownLatch(1);
@@ -40,6 +41,7 @@ class SocketWriterAsync extends SocketWriter implements DataWriter {
     private volatile Throwable caught;
     private volatile boolean run = true;
     private Thread thread;
+    private double avgQueueSize;
 
     /**
      * A new socket writer.
@@ -116,7 +118,8 @@ class SocketWriterAsync extends SocketWriter implements DataWriter {
                 CompositeBufferData toWrite = BufferData.createComposite(writeQueue.take());  // wait if the queue is empty
                 // we only want to read a certain amount of data, if somebody writes huge amounts
                 // we could spin here forever and run out of memory
-                for (int i = 0; i < 1000; i++) {
+                int queueSize = 1;
+                for (; queueSize <= 1000; queueSize++) {
                     BufferData newBuf = writeQueue.poll(); // drain ~all elements from the queue, don't wait.
                     if (newBuf == null) {
                         break;
@@ -124,6 +127,7 @@ class SocketWriterAsync extends SocketWriter implements DataWriter {
                     toWrite.add(newBuf);
                 }
                 writeNow(toWrite);
+                avgQueueSize = (avgQueueSize + queueSize) / 2.0;
             }
             cdl.countDown();
         } catch (Throwable e) {
@@ -140,5 +144,16 @@ class SocketWriterAsync extends SocketWriter implements DataWriter {
         if (!run) {
             throw new SocketWriterException(caught);
         }
+    }
+
+    void drainQueue() {
+        BufferData buffer;
+        while ((buffer = writeQueue.poll()) != null) {
+            writeNow(buffer);
+        }
+    }
+
+    double avgQueueSize() {
+        return avgQueueSize;
     }
 }
