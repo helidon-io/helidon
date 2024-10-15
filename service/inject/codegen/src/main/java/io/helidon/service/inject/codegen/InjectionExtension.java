@@ -357,7 +357,7 @@ class InjectionExtension implements RegistryCodegenExtension {
         serviceTypeMethod(classModel, service);
         descriptorTypeMethod(classModel, service);
         scopeMethod(classModel, service);
-        contractsMethod(classModel, contracts);
+        contractsMethod(classModel, service, contracts, Set.of());
 
         // annotations of the type
         annotationsField(classModel, serviceDescriptor.typeInfo());
@@ -443,10 +443,12 @@ class InjectionExtension implements RegistryCodegenExtension {
         Map<String, GenericTypeDeclaration> genericTypes = genericTypes(classModel, params, methods);
 
         var contracts = serviceDescriptor.contracts();
+        Set<ResolvedType> factoryContracts;
 
         if (service.isProvider()) {
             if (serviceTypeName.className().endsWith("__Interception_Wrapper")) {
                 contracts = service.providedDescriptor().contracts();
+                factoryContracts = service.serviceDescriptor().contracts();
             } else {
                 // check if contracts are intercepted
                 var providedElements = service.providedDescriptor().elements();
@@ -454,14 +456,18 @@ class InjectionExtension implements RegistryCodegenExtension {
                 if (providedElements.methodsIntercepted()) {
                     // remove contracts from the original service, service descriptor will only be used to instantiate provider
                     contracts = Set.of();
+                    factoryContracts = Set.of();
                     // generate delegate injection (unless already generated) in current package
                     TypeName delegateType = generateProvidedInterceptionDelegate(roundContext, service);
                     // then generate a service that injects the original service, and wraps provider method(s) using delegation
                     generateDelegationService(roundContext, service, delegateType);
                 } else {
                     contracts = service.providedDescriptor().contracts();
+                    factoryContracts = service.serviceDescriptor().contracts();
                 }
             }
+        } else {
+            factoryContracts = Set.of();
         }
 
         // declare the class
@@ -478,7 +484,7 @@ class InjectionExtension implements RegistryCodegenExtension {
         serviceTypeMethod(classModel, service);
         descriptorTypeMethod(classModel, service);
         scopeMethod(classModel, service);
-        contractsMethod(classModel, contracts);
+        contractsMethod(classModel, service, contracts, factoryContracts);
         qualifiersMethod(classModel, service);
 
         // Additional fields
@@ -526,14 +532,13 @@ class InjectionExtension implements RegistryCodegenExtension {
         providerType(classModel, service, service.providerType());
 
         // service type is an implicit contract
-        Set<ResolvedType> serviceContracts = new HashSet<>(contracts);
-        Set<ResolvedType> factoryContracts;
-        if (service.providedDescriptor() == null) {
-            serviceContracts.add(ResolvedType.create(serviceTypeName));
-            factoryContracts = Set.of();
+        Set<ResolvedType> metaInfServiceContracts = new HashSet<>(contracts);
+        Set<ResolvedType> metaInfFactoryContracts = new HashSet<>(factoryContracts);
+        if (service.providedDescriptor() == null || contracts.isEmpty()) {
+            // this is either NOT a factory, or it is delegated for interception
+            metaInfServiceContracts.add(ResolvedType.create(serviceTypeName));
         } else {
-            factoryContracts = new HashSet<>(service.providedDescriptor().contracts());
-            factoryContracts.add(ResolvedType.create(serviceTypeName));
+            metaInfFactoryContracts.add(ResolvedType.create(serviceTypeName));
         }
 
         roundContext.addDescriptor("inject",
@@ -541,8 +546,8 @@ class InjectionExtension implements RegistryCodegenExtension {
                                    service.descriptorType(),
                                    classModel,
                                    weight(typeInfo).orElse(Weighted.DEFAULT_WEIGHT),
-                                   serviceContracts,
-                                   factoryContracts,
+                                   metaInfServiceContracts,
+                                   metaInfFactoryContracts,
                                    typeInfo.originatingElementValue());
 
         if (serviceElements.methodsIntercepted()) {
@@ -1737,33 +1742,64 @@ class InjectionExtension implements RegistryCodegenExtension {
                 .addContentLine("return TYPE;"));
     }
 
-    private void contractsMethod(ClassModel.Builder classModel, Set<ResolvedType> contracts) {
-        if (contracts.isEmpty()) {
-            return;
-        }
-        classModel.addField(contractsField -> contractsField
-                .isStatic(true)
-                .isFinal(true)
-                .name("CONTRACTS")
-                .type(SET_OF_RESOLVED_TYPES)
-                .addContent(Set.class)
-                .addContent(".of(")
-                .update(it -> {
-                    Iterator<ResolvedType> iterator = contracts.iterator();
-                    while (iterator.hasNext()) {
-                        it.addContentCreate(iterator.next());
-                        if (iterator.hasNext()) {
-                            it.addContent(", ");
-                        }
-                    }
-                })
-                .addContent(")"));
+    private void contractsMethod(ClassModel.Builder classModel,
+                                 DescribedService service,
+                                 Set<ResolvedType> serviceContracts,
+                                 Set<ResolvedType> factoryContracts) {
+        var superType = service.superType();
 
-        // Set<Class<?>> contracts()
-        classModel.addMethod(method -> method.addAnnotation(Annotations.OVERRIDE)
-                .name("contracts")
-                .returnType(SET_OF_RESOLVED_TYPES)
-                .addContentLine("return CONTRACTS;"));
+        if (!serviceContracts.isEmpty() || superType.present()) {
+            classModel.addField(contractsField -> contractsField
+                    .isStatic(true)
+                    .isFinal(true)
+                    .name("CONTRACTS")
+                    .type(SET_OF_RESOLVED_TYPES)
+                    .addContent(Set.class)
+                    .addContent(".of(")
+                    .update(it -> {
+                        Iterator<ResolvedType> iterator = serviceContracts.iterator();
+                        while (iterator.hasNext()) {
+                            it.addContentCreate(iterator.next());
+                            if (iterator.hasNext()) {
+                                it.addContent(", ");
+                            }
+                        }
+                    })
+                    .addContent(")"));
+
+            // Set<Class<?>> contracts()
+            classModel.addMethod(method -> method.addAnnotation(Annotations.OVERRIDE)
+                    .name("contracts")
+                    .returnType(SET_OF_RESOLVED_TYPES)
+                    .addContentLine("return CONTRACTS;"));
+        }
+        if (!factoryContracts.isEmpty() || superType.present()) {
+            // we must declare the contracts method
+            classModel.addField(contractsField -> contractsField
+                    .isStatic(true)
+                    .isFinal(true)
+                    .name("FACTORY_CONTRACTS")
+                    .type(SET_OF_RESOLVED_TYPES)
+                    .addContent(Set.class)
+                    .addContent(".of(")
+                    .update(it -> {
+                        Iterator<ResolvedType> iterator = factoryContracts.iterator();
+                        while (iterator.hasNext()) {
+                            it.addContentCreate(iterator.next());
+                            if (iterator.hasNext()) {
+                                it.addContent(", ");
+                            }
+                        }
+                    })
+                    .addContent(")"));
+
+            // Set<Class<?>> factoryContracts()
+            classModel.addMethod(method -> method
+                    .addAnnotation(Annotations.OVERRIDE)
+                    .name("factoryContracts")
+                    .returnType(SET_OF_RESOLVED_TYPES)
+                    .addContentLine("return FACTORY_CONTRACTS;"));
+        }
     }
 
     private void dependenciesMethod(ClassModel.Builder classModel, DescribedService service, List<ParamDefinition> params) {

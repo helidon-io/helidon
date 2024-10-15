@@ -124,10 +124,10 @@ public interface ContentBuilder<T extends ContentBuilder<T>> {
      * @return updated builder instance
      */
     default T addContentCreate(ResolvedType type) {
-        addContent(ResolvedType.class)
-                .addContent(".create(");
-        ContentSupport.addCreateTypeName(this, type);
-        return addContent(")");
+        return addContent(ResolvedType.class)
+                .addContent(".create(\"")
+                .addContent(type.resolvedName())
+                .addContent("\")");
     }
 
     /**

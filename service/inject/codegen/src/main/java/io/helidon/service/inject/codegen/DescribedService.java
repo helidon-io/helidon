@@ -121,6 +121,7 @@ class DescribedService {
         var response = serviceContracts.analyseProvider(TypeNames.SUPPLIER);
         if (response.valid()) {
             providerType = ProviderType.SUPPLIER;
+            directContracts.add(ResolvedType.create(response.factoryType()));
             providedContracts.addAll(response.providedContracts());
             providedTypeName = response.providedType();
             providedTypeInfo = response.providedTypeInfo();
@@ -135,6 +136,7 @@ class DescribedService {
                                            serviceInfo.originatingElementValue());
             }
             providerType = ProviderType.SERVICES_PROVIDER;
+            directContracts.add(ResolvedType.create(response.providedType()));
             providedContracts.addAll(response.providedContracts());
             providedTypeName = response.providedType();
             providedTypeInfo = response.providedTypeInfo();
@@ -149,6 +151,7 @@ class DescribedService {
                                            serviceInfo.originatingElementValue());
             }
             providerType = ProviderType.IP_PROVIDER;
+            directContracts.add(ResolvedType.create(response.providedType()));
             providedContracts.addAll(response.providedContracts());
             providedTypeName = response.providedType();
             providedTypeInfo = response.providedTypeInfo();
@@ -163,6 +166,7 @@ class DescribedService {
                                            serviceInfo.originatingElementValue());
             }
             providerType = ProviderType.QUALIFIED_PROVIDER;
+            directContracts.add(ResolvedType.create(response.providedType()));
             providedContracts.addAll(response.providedContracts());
             qualifiedProviderQualifier = ServiceContracts
                     .requiredTypeArgument(implementedInterfaceTypes.remove(INJECTION_QUALIFIED_PROVIDER), 1);
@@ -178,6 +182,10 @@ class DescribedService {
                                           processedDirectContracts,
                                           typeInfo);
         });
+        // add contracts from super type(s)
+        serviceInfo.superTypeInfo().ifPresent(it -> serviceContracts.addContracts(directContracts,
+                                                                                  processedDirectContracts,
+                                                                                  it));
 
         DescribedType serviceDescriptor;
         DescribedType providedDescriptor;

@@ -18,6 +18,7 @@ package io.helidon.service.tests.inject;
 
 import java.util.List;
 
+import io.helidon.logging.common.LogConfig;
 import io.helidon.service.inject.InjectRegistryManager;
 import io.helidon.service.registry.ServiceRegistry;
 
@@ -31,6 +32,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 
 public class InjectRegistryTest {
+    static {
+        LogConfig.initClass();
+    }
     private static InjectRegistryManager registryManager;
     private static ServiceRegistry registry;
 

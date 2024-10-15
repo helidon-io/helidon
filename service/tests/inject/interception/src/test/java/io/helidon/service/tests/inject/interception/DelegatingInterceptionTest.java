@@ -16,6 +16,7 @@
 
 package io.helidon.service.tests.inject.interception;
 
+import io.helidon.logging.common.LogConfig;
 import io.helidon.service.inject.InjectRegistryManager;
 import io.helidon.service.inject.api.InjectRegistry;
 import io.helidon.service.inject.api.InterceptionException;
@@ -26,7 +27,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -42,6 +42,9 @@ Modifying
 Repeating
  */
 class DelegatingInterceptionTest {
+    static {
+        LogConfig.initClass();
+    }
     private static InjectRegistryManager registryManager;
     private static DelegatedContract service;
 
