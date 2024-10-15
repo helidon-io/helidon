@@ -22,7 +22,7 @@ import io.helidon.service.registry.ServiceInfo;
 /**
  * Responsible for registering the injection plan to the services in the service registry.
  * <p>
- * IMPORTANT: all methods must be called with {@link io.helidon.service.registry.GeneratedService.Descriptor} singleton
+ * IMPORTANT: all methods must be called with {@link io.helidon.service.registry.ServiceDescriptor} singleton
  * instances for {@link io.helidon.service.registry.ServiceInfo} parameter, as the registry depends on instance
  * equality. All generated code is done this way.
  */
