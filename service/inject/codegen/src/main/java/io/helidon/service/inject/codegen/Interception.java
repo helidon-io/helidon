@@ -28,17 +28,14 @@ import io.helidon.common.types.Annotated;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeNames;
-import io.helidon.service.codegen.RegistryCodegenContext;
 
 final class Interception {
     private static final Annotation RUNTIME_RETENTION = Annotation.create(Retention.class, RetentionPolicy.RUNTIME.name());
     private static final Annotation CLASS_RETENTION = Annotation.create(Retention.class, RetentionPolicy.CLASS.name());
 
-    private final RegistryCodegenContext ctx;
     private final InterceptionStrategy interceptionStrategy;
 
-    Interception(RegistryCodegenContext ctx, InterceptionStrategy interceptionStrategy) {
-        this.ctx = ctx;
+    Interception(InterceptionStrategy interceptionStrategy) {
         this.interceptionStrategy = interceptionStrategy;
     }
 

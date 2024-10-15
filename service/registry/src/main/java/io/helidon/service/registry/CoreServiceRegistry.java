@@ -207,13 +207,6 @@ class CoreServiceRegistry implements ServiceRegistry {
         }
     }
 
-    private record ServiceAndInstance(LazyValue<Optional<Object>> serviceSupplier,
-                                      Supplier<Optional<Object>> instanceSupplier) {
-        ServiceAndInstance(LazyValue<Optional<Object>> serviceSupplier) {
-            this(serviceSupplier, serviceSupplier);
-        }
-    }
-
     private List<ServiceProvider> allProviders(TypeName contract) {
         List<ServiceProvider> serviceProviders = providersByContract.get(contract);
         if (serviceProviders == null) {
@@ -223,7 +216,8 @@ class CoreServiceRegistry implements ServiceRegistry {
         return List.copyOf(serviceProviders);
     }
 
-    private Optional<Object> instanceFromSupplier(ServiceDescriptor<?> descriptor, LazyValue<Optional<Object>> serviceInstanceSupplier) {
+    private Optional<Object> instanceFromSupplier(ServiceDescriptor<?> descriptor,
+                                                  LazyValue<Optional<Object>> serviceInstanceSupplier) {
         Optional<Object> serviceInstance = serviceInstanceSupplier.get();
         if (serviceInstance.isEmpty()) {
             return Optional.empty();
@@ -297,6 +291,13 @@ class CoreServiceRegistry implements ServiceRegistry {
         TypeName descriptorType();
 
         void close();
+    }
+
+    private record ServiceAndInstance(LazyValue<Optional<Object>> serviceSupplier,
+                                      Supplier<Optional<Object>> instanceSupplier) {
+        ServiceAndInstance(LazyValue<Optional<Object>> serviceSupplier) {
+            this(serviceSupplier, serviceSupplier);
+        }
     }
 
     private record BoundInstance(ServiceDescriptor<?> descriptor, Optional<Object> instance) implements ServiceProvider {

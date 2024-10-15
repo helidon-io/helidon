@@ -112,7 +112,7 @@ class CoreService {
         Map<TypeName, TypeInfo> implementedInterfaceTypes = new HashMap<>();
         typeInfos.forEach(it -> implementedInterfaceTypes.put(it.typeName(), it));
 
-        var response = serviceContracts.analyseProvider(TypeNames.SUPPLIER);
+        var response = serviceContracts.analyseFactory(TypeNames.SUPPLIER);
         if (response.valid()) {
             factoryType = CoreFactoryType.SUPPLIER;
             directContracts.add(ResolvedType.create(response.factoryType()));

@@ -64,13 +64,13 @@ public interface InjectServiceInfo extends io.helidon.service.registry.ServiceIn
     TypeName scope();
 
     /**
-     * What provider type is the described service.
-     * Inject services can be any of the types in the {@link io.helidon.service.inject.api.ProviderType enum}.
+     * What factory type is the described service.
+     * Inject services can be any of the types in the {@link FactoryType enum}.
      *
-     * @return provider type
+     * @return factory type
      */
-    default ProviderType providerType() {
-        return ProviderType.SERVICE;
+    default FactoryType factoryType() {
+        return FactoryType.SERVICE;
     }
 
     /**

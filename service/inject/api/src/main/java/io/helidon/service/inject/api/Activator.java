@@ -42,7 +42,7 @@ public interface Activator<T> {
     Optional<List<Injection.QualifiedInstance<T>>> instances(Lookup lookup);
 
     /**
-     * Activate a managed service/provider.
+     * Activate a managed service/factory.
      *
      * @param activationRequest activation request
      * @return the result of activation

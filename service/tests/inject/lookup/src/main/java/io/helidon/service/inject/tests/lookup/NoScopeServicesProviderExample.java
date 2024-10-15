@@ -20,13 +20,12 @@ import java.util.List;
 
 import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.Injection.QualifiedInstance;
-import io.helidon.service.inject.api.Injection.ServicesProvider;
 import io.helidon.service.inject.api.Qualifier;
 
 @Injection.PerLookup
 @NoScopeServicesProviderExample.FirstQuali
 @NoScopeServicesProviderExample.SecondQuali
-class NoScopeServicesProviderExample implements ServicesProvider<ContractNoScopeNoIpProvider> {
+class NoScopeServicesProviderExample implements Injection.ServicesFactory<ContractNoScopeNoIpProvider> {
     static final Qualifier FIRST_QUALI = Qualifier.create(FirstQuali.class);
     static final Qualifier SECOND_QUALI = Qualifier.create(SecondQuali.class);
 

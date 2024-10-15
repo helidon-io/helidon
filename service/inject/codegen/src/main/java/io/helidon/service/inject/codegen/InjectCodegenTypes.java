@@ -64,25 +64,25 @@ public class InjectCodegenTypes {
      */
     public static final TypeName INJECTION_RUN_LEVEL = TypeName.create("io.helidon.service.inject.api.Injection.RunLevel");
     /**
-     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.InjectionPointProvider}.
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.InjectionPointFactory}.
      */
-    public static final TypeName INJECTION_POINT_PROVIDER = TypeName.create(
-            "io.helidon.service.inject.api.Injection.InjectionPointProvider");
+    public static final TypeName INJECTION_POINT_FACTORY = TypeName.create(
+            "io.helidon.service.inject.api.Injection.InjectionPointFactory");
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.ScopeHandler}.
      */
     public static final TypeName INJECTION_SCOPE_HANDLER =
             TypeName.create("io.helidon.service.inject.api.Injection.ScopeHandler");
     /**
-     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.ServicesProvider}.
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.ServicesFactory}.
      */
-    public static final TypeName INJECTION_SERVICES_PROVIDER =
-            TypeName.create("io.helidon.service.inject.api.Injection.ServicesProvider");
+    public static final TypeName INJECTION_SERVICES_FACTORY =
+            TypeName.create("io.helidon.service.inject.api.Injection.ServicesFactory");
     /**
-     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.QualifiedProvider}.
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.QualifiedFactory}.
      */
-    public static final TypeName INJECTION_QUALIFIED_PROVIDER =
-            TypeName.create("io.helidon.service.inject.api.Injection.QualifiedProvider");
+    public static final TypeName INJECTION_QUALIFIED_FACTORY =
+            TypeName.create("io.helidon.service.inject.api.Injection.QualifiedFactory");
 
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Interception.Intercepted}.
@@ -100,9 +100,9 @@ public class InjectCodegenTypes {
             TypeName.create("io.helidon.service.inject.api.Interception.ExternalDelegate");
 
     /**
-     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.ProviderType}.
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.FactoryType}.
      */
-    public static final TypeName INJECT_PROVIDER_TYPE = TypeName.create("io.helidon.service.inject.api.ProviderType");
+    public static final TypeName INJECT_FACTORY_TYPE = TypeName.create("io.helidon.service.inject.api.FactoryType");
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Qualifier}.
      */
@@ -143,10 +143,10 @@ public class InjectCodegenTypes {
             "io.helidon.service.inject.api.GeneratedInjectService.PerInstanceDescriptor");
     /**
      * {@link io.helidon.common.types.TypeName} for
-     * {@code io.helidon.service.inject.api.GeneratedInjectService.QualifiedProviderDescriptor}.
+     * {@code io.helidon.service.inject.api.GeneratedInjectService.QualifiedFactoryDescriptor}.
      */
-    public static final TypeName INJECT_G_QUALIFIED_PROVIDER_DESCRIPTOR = TypeName.create(
-            "io.helidon.service.inject.api.GeneratedInjectService.QualifiedProviderDescriptor");
+    public static final TypeName INJECT_G_QUALIFIED_FACTORY_DESCRIPTOR = TypeName.create(
+            "io.helidon.service.inject.api.GeneratedInjectService.QualifiedFactoryDescriptor");
     /**
      * {@link io.helidon.common.types.TypeName} for
      * {@code io.helidon.service.inject.api.GeneratedInjectService.ScopeHandlerDescriptor}.
@@ -160,28 +160,28 @@ public class InjectCodegenTypes {
             "io.helidon.service.inject.api.GeneratedInjectService.IpSupport");
     /**
      * {@link io.helidon.common.types.TypeName} for
-     * {@code io.helidon.service.inject.api.GeneratedInjectService.SupplierProviderInterceptionWrapper}.
+     * {@code io.helidon.service.inject.api.GeneratedInjectService.SupplierFactoryInterceptionWrapper}.
      */
-    public static final TypeName INTERCEPT_G_WRAPPER_SUPPLIER_PROVIDER =
-            TypeName.create("io.helidon.service.inject.api.GeneratedInjectService.SupplierProviderInterceptionWrapper");
+    public static final TypeName INTERCEPT_G_WRAPPER_SUPPLIER_FACTORY =
+            TypeName.create("io.helidon.service.inject.api.GeneratedInjectService.SupplierFactoryInterceptionWrapper");
     /**
      * {@link io.helidon.common.types.TypeName} for
-     * {@code io.helidon.service.inject.api.GeneratedInjectService.ServicesProviderInterceptionWrapper}.
+     * {@code io.helidon.service.inject.api.GeneratedInjectService.ServicesFactoryInterceptionWrapper}.
      */
-    public static final TypeName INTERCEPT_G_WRAPPER_SERVICES_PROVIDER =
-            TypeName.create("io.helidon.service.inject.api.GeneratedInjectService.ServicesProviderInterceptionWrapper");
+    public static final TypeName INTERCEPT_G_WRAPPER_SERVICES_FACTORY =
+            TypeName.create("io.helidon.service.inject.api.GeneratedInjectService.ServicesFactoryInterceptionWrapper");
     /**
      * {@link io.helidon.common.types.TypeName} for
-     * {@code io.helidon.service.inject.api.GeneratedInjectService.IpProviderInterceptionWrapper}.
+     * {@code io.helidon.service.inject.api.GeneratedInjectService.IpFactoryInterceptionWrapper}.
      */
-    public static final TypeName INTERCEPT_G_WRAPPER_IP_PROVIDER =
-            TypeName.create("io.helidon.service.inject.api.GeneratedInjectService.IpProviderInterceptionWrapper");
+    public static final TypeName INTERCEPT_G_WRAPPER_IP_FACTORY =
+            TypeName.create("io.helidon.service.inject.api.GeneratedInjectService.IpFactoryInterceptionWrapper");
     /**
      * {@link io.helidon.common.types.TypeName} for
-     * {@code io.helidon.service.inject.api.GeneratedInjectService.QualifiedProviderInterceptionWrapper}.
+     * {@code io.helidon.service.inject.api.GeneratedInjectService.QualifiedFactoryInterceptionWrapper}.
      */
-    public static final TypeName INTERCEPT_G_WRAPPER_QUALIFIED_PROVIDER =
-            TypeName.create("io.helidon.service.inject.api.GeneratedInjectService.QualifiedProviderInterceptionWrapper");
+    public static final TypeName INTERCEPT_G_WRAPPER_QUALIFIED_FACTORY =
+            TypeName.create("io.helidon.service.inject.api.GeneratedInjectService.QualifiedFactoryInterceptionWrapper");
 
     private InjectCodegenTypes() {
     }

@@ -68,7 +68,7 @@ interface LookupBlueprint {
 
     /**
      * A single {@link io.helidon.common.GenericType} can be defined if the lookup should also honor
-     * {@link Injection.QualifiedProvider} services that can handle any type.
+     * {@link io.helidon.service.inject.api.Injection.QualifiedFactory} services that can handle any type.
      * This would be the target type to convert to. If not specified, Object will be used.
      *
      * @return generic type of the contract, if only one contract is desired
@@ -91,7 +91,7 @@ interface LookupBlueprint {
     Optional<Double> weight();
 
     /**
-     * Whether to include abstract type service providers.
+     * Whether to include abstract type service descriptors.
      *
      * @return whether to include abstract classes and interfaces
      */
@@ -100,10 +100,10 @@ interface LookupBlueprint {
 
     /**
      * Optionally, the injection point search applies to.
-     * There are some service providers (such as
-     * {@link Injection.InjectionPointProvider}) that
+     * There are some service factories (such as
+     * {@link io.helidon.service.inject.api.Injection.InjectionPointFactory}) that
      * provide instances for a specific injection point.
-     * Such providers may require an injection point to be present, and may fail otherwise.
+     * Such factories may require an injection point to be present, and may fail otherwise.
      * <p>
      * Injection points of each service are generated as public constants on their respective service descriptors.
      *
@@ -113,29 +113,29 @@ interface LookupBlueprint {
     Optional<Ip> injectionPoint();
 
     /**
-     * If configured, the lookup will return service providers of the
+     * If configured, the lookup will return service factories of the
      * chosen types.
-     * If no provider types are defined, service instances are returned.
+     * If no factory types are defined, service instances are returned.
      * <p>
-     * Otherwise only service provider of the chosen types are returned, as follows:
+     * Otherwise only service factories of the chosen types are returned, as follows:
      * <ul>
-     *     <li>{@link io.helidon.service.inject.api.ProviderType#SERVICE} - only services that directly implement the
+     *     <li>{@link FactoryType#SERVICE} - only services that directly implement the
      *     contract</li>
-     *     <li>{@link io.helidon.service.inject.api.ProviderType#SUPPLIER} - only that are {@link java.util.function.Supplier}
+     *     <li>{@link FactoryType#SUPPLIER} - only that are {@link java.util.function.Supplier}
      *     of the contract</li>
-     *     <li>{@link io.helidon.service.inject.api.ProviderType#QUALIFIED_PROVIDER} - services that are
-     *     {@link io.helidon.service.inject.api.Injection.QualifiedProvider} of the contract</li>
-     *     <li>{@link io.helidon.service.inject.api.ProviderType#SERVICES_PROVIDER} - services that are
-     *     {@link io.helidon.service.inject.api.Injection.ServicesProvider} of the contract</li>
-     *     <li>{@link io.helidon.service.inject.api.ProviderType#IP_PROVIDER} - services that are
-     *     {@link io.helidon.service.inject.api.Injection.InjectionPointProvider} of the contract</li>
-     *     <li>{@link io.helidon.service.inject.api.ProviderType#NONE} - this has no effect and will not modify the lookup</li>
+     *     <li>{@link FactoryType#QUALIFIED} - services that are
+     *     {@link io.helidon.service.inject.api.Injection.QualifiedFactory} of the contract</li>
+     *     <li>{@link FactoryType#SERVICES} - services that are
+     *     {@link io.helidon.service.inject.api.Injection.ServicesFactory} of the contract</li>
+     *     <li>{@link FactoryType#INJECTION_POINT} - services that are
+     *     {@link io.helidon.service.inject.api.Injection.InjectionPointFactory} of the contract</li>
+     *     <li>{@link FactoryType#NONE} - this has no effect and will not modify the lookup</li>
      * </ul>
      *
-     * @return desired provider types
+     * @return desired factory types
      */
     @Option.Singular
-    Set<ProviderType> providerTypes();
+    Set<FactoryType> factoryTypes();
 
     /**
      * Determines whether this lookup matches the criteria for injection.
@@ -172,7 +172,7 @@ interface LookupBlueprint {
                     || this.contracts().contains(ResolvedType.create(serviceInfo.serviceType()));
         }
         return matches
-                && matchesProviderTypes(providerTypes(), serviceInfo.providerType())
+                && matchesProviderTypes(factoryTypes(), serviceInfo.factoryType())
                 && matchesAbstract(includeAbstract(), serviceInfo.isAbstract())
                 && (this.scopes().isEmpty() || this.scopes().contains(serviceInfo.scope()))
                 && Qualifiers.matchesQualifiers(serviceInfo.qualifiers(), this.qualifiers())
@@ -227,8 +227,8 @@ interface LookupBlueprint {
         return Objects.equals(src, criteria.get());
     }
 
-    private boolean matchesProviderTypes(Set<ProviderType> providerTypes, ProviderType providerType) {
-        if (providerTypes.isEmpty() || (providerTypes.size() == 1 && providerTypes.contains(ProviderType.NONE))) {
+    private boolean matchesProviderTypes(Set<FactoryType> providerTypes, FactoryType providerType) {
+        if (providerTypes.isEmpty() || (providerTypes.size() == 1 && providerTypes.contains(FactoryType.NONE))) {
             return true;
         }
         return providerTypes.contains(providerType);

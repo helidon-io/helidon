@@ -62,7 +62,7 @@ public class InstanceName__ServiceDescriptor implements InjectServiceDescriptor<
     }
 
     @Override
-    public ProviderType providerType() {
-        return ProviderType.NONE;
+    public FactoryType factoryType() {
+        return FactoryType.NONE;
     }
 }

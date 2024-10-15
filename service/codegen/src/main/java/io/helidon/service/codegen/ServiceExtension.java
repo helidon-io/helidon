@@ -18,7 +18,6 @@ package io.helidon.service.codegen;
 
 import java.util.Collection;
 
-import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.service.codegen.spi.RegistryCodegenExtension;

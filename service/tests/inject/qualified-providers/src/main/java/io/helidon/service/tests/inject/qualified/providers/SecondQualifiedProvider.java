@@ -21,13 +21,13 @@ import java.util.Optional;
 
 import io.helidon.common.GenericType;
 import io.helidon.service.inject.api.Injection;
+import io.helidon.service.inject.api.Injection.QualifiedFactory;
 import io.helidon.service.inject.api.Injection.QualifiedInstance;
-import io.helidon.service.inject.api.Injection.QualifiedProvider;
 import io.helidon.service.inject.api.Lookup;
 import io.helidon.service.inject.api.Qualifier;
 
 @Injection.Singleton
-class SecondQualifiedProvider implements QualifiedProvider<QualifiedContract, SecondQualifier> {
+class SecondQualifiedProvider implements QualifiedFactory<QualifiedContract, SecondQualifier> {
     private final Map<String, QualifiedContract> values = Map.of("first", new QualifiedContractImpl("first"),
                                                                  "second", new QualifiedContractImpl("second"));
 

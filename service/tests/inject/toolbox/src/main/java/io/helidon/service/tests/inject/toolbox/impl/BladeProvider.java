@@ -22,7 +22,7 @@ import java.util.Optional;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.service.inject.api.Injection;
-import io.helidon.service.inject.api.Injection.InjectionPointProvider;
+import io.helidon.service.inject.api.Injection.InjectionPointFactory;
 import io.helidon.service.inject.api.Injection.QualifiedInstance;
 import io.helidon.service.inject.api.Lookup;
 import io.helidon.service.inject.api.Qualifier;
@@ -33,7 +33,7 @@ import io.helidon.service.tests.inject.toolbox.AbstractBlade;
  */
 @Injection.Singleton
 @Injection.Named("*")
-public class BladeProvider implements InjectionPointProvider<AbstractBlade> {
+public class BladeProvider implements InjectionPointFactory<AbstractBlade> {
 
     static final Qualifier QUALIFIER_ALL = Qualifier.WILDCARD_NAMED;
     static final Qualifier QUALIFIER_COARSE = Qualifier.createNamed("coarse");

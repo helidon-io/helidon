@@ -68,7 +68,7 @@ final class InterceptionSupport {
      */
     static InterceptionSupport create(RegistryCodegenContext ctx) {
         return new InterceptionSupport(ctx,
-                                       new Interception(ctx, InjectOptions.INTERCEPTION_STRATEGY.value(ctx.options())));
+                                       new Interception(InjectOptions.INTERCEPTION_STRATEGY.value(ctx.options())));
     }
 
     /**

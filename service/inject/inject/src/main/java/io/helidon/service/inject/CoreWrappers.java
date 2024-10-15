@@ -23,12 +23,12 @@ import java.util.stream.Collectors;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
+import io.helidon.service.inject.api.FactoryType;
 import io.helidon.service.inject.api.InjectServiceDescriptor;
 import io.helidon.service.inject.api.InjectServiceInfo;
 import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.InterceptionMetadata;
 import io.helidon.service.inject.api.Ip;
-import io.helidon.service.inject.api.ProviderType;
 import io.helidon.service.registry.DependencyContext;
 import io.helidon.service.registry.ServiceDescriptor;
 import io.helidon.service.registry.ServiceInfo;
@@ -54,14 +54,14 @@ class CoreWrappers {
     static class CoreServiceInfo implements InjectServiceInfo {
         private final ServiceInfo delegate;
         private final TypeName scope;
-        private final ProviderType providerType;
+        private final FactoryType providerType;
 
         private CoreServiceInfo(ServiceInfo delegate) {
             this.delegate = delegate;
             this.scope = scope(delegate);
             this.providerType = delegate.factoryContracts().isEmpty()
-                    ? ProviderType.SERVICE
-                    : ProviderType.SUPPLIER;
+                    ? FactoryType.SERVICE
+                    : FactoryType.SUPPLIER;
         }
 
         @Override
@@ -95,7 +95,7 @@ class CoreWrappers {
         }
 
         @Override
-        public ProviderType providerType() {
+        public FactoryType factoryType() {
             return providerType;
         }
 

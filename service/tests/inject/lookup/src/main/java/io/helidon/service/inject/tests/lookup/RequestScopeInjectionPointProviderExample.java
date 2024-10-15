@@ -19,7 +19,6 @@ package io.helidon.service.inject.tests.lookup;
 import java.util.Optional;
 
 import io.helidon.service.inject.api.Injection;
-import io.helidon.service.inject.api.Injection.InjectionPointProvider;
 import io.helidon.service.inject.api.Injection.QualifiedInstance;
 import io.helidon.service.inject.api.Lookup;
 import io.helidon.service.inject.api.Qualifier;
@@ -27,7 +26,7 @@ import io.helidon.service.inject.api.Qualifier;
 @Injection.PerRequest
 @RequestScopeInjectionPointProviderExample.FirstQuali
 @RequestScopeInjectionPointProviderExample.SecondQuali
-class RequestScopeInjectionPointProviderExample implements InjectionPointProvider<ContractRequestScope> {
+class RequestScopeInjectionPointProviderExample implements Injection.InjectionPointFactory<ContractRequestScope> {
     static final Qualifier FIRST_QUALI = Qualifier.create(RequestScopeInjectionPointProviderExample.FirstQuali.class);
     static final Qualifier SECOND_QUALI = Qualifier.create(RequestScopeInjectionPointProviderExample.SecondQuali.class);
     static final QualifiedInstance<ContractRequestScope> FIRST =

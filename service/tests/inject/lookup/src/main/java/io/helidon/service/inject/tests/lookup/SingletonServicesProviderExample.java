@@ -20,13 +20,12 @@ import java.util.List;
 
 import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.Injection.QualifiedInstance;
-import io.helidon.service.inject.api.Injection.ServicesProvider;
 import io.helidon.service.inject.api.Qualifier;
 
 @Injection.Singleton
 @SingletonServicesProviderExample.FirstQuali // need to qualify, so lookups for specific qualifier match this provider
 @SingletonServicesProviderExample.SecondQuali
-class SingletonServicesProviderExample implements ServicesProvider<ContractSingletonNoIpProvider> {
+class SingletonServicesProviderExample implements Injection.ServicesFactory<ContractSingletonNoIpProvider> {
     static final Qualifier FIRST_QUALI = Qualifier.create(FirstQuali.class);
     static final Qualifier SECOND_QUALI = Qualifier.create(SecondQuali.class);
 

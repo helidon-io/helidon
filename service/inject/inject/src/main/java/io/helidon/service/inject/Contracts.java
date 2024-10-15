@@ -17,8 +17,6 @@
 package io.helidon.service.inject;
 
 import java.util.Set;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import io.helidon.common.types.ResolvedType;
 import io.helidon.service.inject.api.InjectServiceInfo;
@@ -35,7 +33,7 @@ final class Contracts {
     static ContractLookup create(InjectServiceInfo descriptor) {
         Set<ResolvedType> contracts = descriptor.contracts();
 
-        return switch (descriptor.providerType()) {
+        return switch (descriptor.factoryType()) {
             case NONE, SERVICE -> new FixedContracts(contracts);
             default -> new ProviderContracts(contracts, descriptor.factoryContracts());
         };

@@ -19,7 +19,7 @@ package io.helidon.service.inject.tests.lookup;
 import java.util.Optional;
 
 import io.helidon.service.inject.api.Injection;
-import io.helidon.service.inject.api.Injection.InjectionPointProvider;
+import io.helidon.service.inject.api.Injection.InjectionPointFactory;
 import io.helidon.service.inject.api.Injection.QualifiedInstance;
 import io.helidon.service.inject.api.Lookup;
 import io.helidon.service.inject.api.Qualifier;
@@ -27,7 +27,7 @@ import io.helidon.service.inject.api.Qualifier;
 @Injection.Singleton
 @SingletonInjectionPointProviderExample.FirstQuali
 @SingletonInjectionPointProviderExample.SecondQuali
-class SingletonInjectionPointProviderExample implements InjectionPointProvider<ContractSingleton> {
+class SingletonInjectionPointProviderExample implements InjectionPointFactory<ContractSingleton> {
     static final Qualifier FIRST_QUALI = Qualifier.create(FirstQuali.class);
     static final Qualifier SECOND_QUALI = Qualifier.create(SecondQuali.class);
     static final QualifiedInstance<ContractSingleton> FIRST = QualifiedInstance.create(new FirstClass(), FIRST_QUALI);

@@ -36,14 +36,14 @@ public final class GeneratedInjectService {
     }
 
     /**
-     * Each descriptor for s service that is implements {@link io.helidon.service.inject.api.Injection.QualifiedProvider}
+     * Each descriptor for s service that is implements {@link io.helidon.service.inject.api.Injection.QualifiedFactory}
      * implements this interface to provide information about the qualifier it supports.
      */
-    public interface QualifiedProviderDescriptor {
+    public interface QualifiedFactoryDescriptor {
         /**
-         * Type of qualifier a {@link io.helidon.service.inject.api.Injection.QualifiedProvider} provides.
+         * Type of qualifier a {@link io.helidon.service.inject.api.Injection.QualifiedFactory} provides.
          *
-         * @return type name of the qualifier this qualified provider can provide instances for
+         * @return type name of the qualifier this qualified factory can provide instances for
          */
         TypeName qualifierType();
     }
@@ -125,7 +125,7 @@ public final class GeneratedInjectService {
         /**
          * Wrap a qualified instance so the actual instance is correctly intercepted.
          *
-         * @param qualifiedInstance qualified instance created by appropriate provider
+         * @param qualifiedInstance qualified instance created by appropriate factory
          * @return qualified instance with wrapped instance
          */
         protected Injection.QualifiedInstance<T> wrapQualifiedInstance(Injection.QualifiedInstance<T> qualifiedInstance) {
@@ -143,11 +143,11 @@ public final class GeneratedInjectService {
     }
 
     /**
-     * Wrapper for generated Service providers that implement a {@link java.util.function.Supplier} of a service.
+     * Wrapper for generated Service factories that implement a {@link java.util.function.Supplier} of a service.
      *
      * @param <T> type of the provided contract
      */
-    public abstract static class SupplierProviderInterceptionWrapper<T> extends InterceptionWrapper<T>
+    public abstract static class SupplierFactoryInterceptionWrapper<T> extends InterceptionWrapper<T>
             implements Supplier<T> {
         private final Supplier<T> delegate;
 
@@ -156,7 +156,7 @@ public final class GeneratedInjectService {
          *
          * @param delegate used to obtain service instance that will be {@link #wrap(Object) wrapped} for interception
          */
-        protected SupplierProviderInterceptionWrapper(Supplier<T> delegate) {
+        protected SupplierFactoryInterceptionWrapper(Supplier<T> delegate) {
             this.delegate = delegate;
         }
 
@@ -167,21 +167,21 @@ public final class GeneratedInjectService {
     }
 
     /**
-     * Wrapper for generated Service providers that implement a
-     * {@link io.helidon.service.inject.api.Injection.ServicesProvider}.
+     * Wrapper for generated Service factories that implement a
+     * {@link io.helidon.service.inject.api.Injection.ServicesFactory}.
      *
      * @param <T> type of the provided contract
      */
-    public abstract static class ServicesProviderInterceptionWrapper<T> extends InterceptionWrapper<T>
-            implements Injection.ServicesProvider<T> {
-        private final Injection.ServicesProvider<T> delegate;
+    public abstract static class ServicesFactoryInterceptionWrapper<T> extends InterceptionWrapper<T>
+            implements Injection.ServicesFactory<T> {
+        private final Injection.ServicesFactory<T> delegate;
 
         /**
-         * Creates a new instance delegating service instantiation to the provided services provider.
+         * Creates a new instance delegating service instantiation to the provided services factory.
          *
          * @param delegate used to obtain service instances that will be {@link #wrap(Object) wrapped} for interception
          */
-        protected ServicesProviderInterceptionWrapper(Injection.ServicesProvider<T> delegate) {
+        protected ServicesFactoryInterceptionWrapper(Injection.ServicesFactory<T> delegate) {
             this.delegate = delegate;
         }
 
@@ -195,21 +195,21 @@ public final class GeneratedInjectService {
     }
 
     /**
-     * Wrapper for generated Service providers that implement a
-     * {@link io.helidon.service.inject.api.Injection.InjectionPointProvider}.
+     * Wrapper for generated Service factories that implement a
+     * {@link io.helidon.service.inject.api.Injection.InjectionPointFactory}.
      *
      * @param <T> type of the provided contract
      */
-    public abstract static class IpProviderInterceptionWrapper<T> extends InterceptionWrapper<T>
-            implements Injection.InjectionPointProvider<T> {
-        private final Injection.InjectionPointProvider<T> delegate;
+    public abstract static class IpFactoryInterceptionWrapper<T> extends InterceptionWrapper<T>
+            implements Injection.InjectionPointFactory<T> {
+        private final Injection.InjectionPointFactory<T> delegate;
 
         /**
-         * Creates a new instance delegating service instantiation to the provided injection point provider.
+         * Creates a new instance delegating service instantiation to the provided injection point factory.
          *
          * @param delegate used to obtain service instances that will be {@link #wrap(Object) wrapped} for interception
          */
-        protected IpProviderInterceptionWrapper(Injection.InjectionPointProvider<T> delegate) {
+        protected IpFactoryInterceptionWrapper(Injection.InjectionPointFactory<T> delegate) {
             this.delegate = delegate;
         }
 
@@ -229,22 +229,22 @@ public final class GeneratedInjectService {
     }
 
     /**
-     * Wrapper for generated Service providers that implement a
-     * {@link io.helidon.service.inject.api.Injection.QualifiedProvider}.
+     * Wrapper for generated Service factories that implement a
+     * {@link io.helidon.service.inject.api.Injection.QualifiedFactory}.
      *
      * @param <T> type of the provided contract
      * @param <A> type of the qualifier annotation
      */
-    public abstract static class QualifiedProviderInterceptionWrapper<T, A extends Annotation> extends InterceptionWrapper<T>
-            implements Injection.QualifiedProvider<T, A> {
-        private final Injection.QualifiedProvider<T, A> delegate;
+    public abstract static class QualifiedFactoryInterceptionWrapper<T, A extends Annotation> extends InterceptionWrapper<T>
+            implements Injection.QualifiedFactory<T, A> {
+        private final Injection.QualifiedFactory<T, A> delegate;
 
         /**
-         * Creates a new instance delegating service instantiation to the provided qualified provider.
+         * Creates a new instance delegating service instantiation to the provided qualified factory.
          *
          * @param delegate used to obtain service instances that will be {@link #wrap(Object) wrapped} for interception
          */
-        protected QualifiedProviderInterceptionWrapper(Injection.QualifiedProvider<T, A> delegate) {
+        protected QualifiedFactoryInterceptionWrapper(Injection.QualifiedFactory<T, A> delegate) {
             this.delegate = delegate;
         }
 

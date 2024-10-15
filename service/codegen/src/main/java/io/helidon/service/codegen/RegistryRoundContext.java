@@ -41,6 +41,8 @@ public interface RegistryRoundContext extends RoundContext {
      * @param originatingElements possible originating elements (such as Element in APT, or ClassInfo in classpath scanning)
      * @throws java.lang.IllegalStateException if an attempt is done to register a new descriptor for the same type
      */
+    // all parameters are needed, no sense in creating a builder
+    @SuppressWarnings("checkstyle:ParameterNumber")
     void addDescriptor(String registryType,
                        TypeName serviceType,
                        TypeName descriptorType,

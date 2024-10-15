@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 import io.helidon.common.types.TypeName;
+import io.helidon.service.inject.api.FactoryType;
 import io.helidon.service.inject.api.GeneratedInjectService;
 import io.helidon.service.inject.api.InjectServiceDescriptor;
 import io.helidon.service.inject.api.Injection;
@@ -32,7 +33,6 @@ import io.helidon.service.inject.api.InterceptionException;
 import io.helidon.service.inject.api.InterceptionInvoker;
 import io.helidon.service.inject.api.InterceptionMetadata;
 import io.helidon.service.inject.api.Ip;
-import io.helidon.service.inject.api.ProviderType;
 import io.helidon.service.inject.api.Qualifier;
 import io.helidon.service.inject.api.ServiceInstance;
 import io.helidon.service.inject.codegen.InjectCodegenTypes;
@@ -79,10 +79,10 @@ class InjectCodegenTypesTest {
         checkField(toCheck, checked, fields, "INJECTION_PER_LOOKUP", Injection.PerLookup.class);
         checkField(toCheck, checked, fields, "INJECTION_PER_INSTANCE", Injection.PerInstance.class);
         checkField(toCheck, checked, fields, "INJECTION_RUN_LEVEL", Injection.RunLevel.class);
-        checkField(toCheck, checked, fields, "INJECTION_POINT_PROVIDER", Injection.InjectionPointProvider.class);
+        checkField(toCheck, checked, fields, "INJECTION_POINT_FACTORY", Injection.InjectionPointFactory.class);
         checkField(toCheck, checked, fields, "INJECTION_SCOPE_HANDLER", Injection.ScopeHandler.class);
-        checkField(toCheck, checked, fields, "INJECTION_SERVICES_PROVIDER", Injection.ServicesProvider.class);
-        checkField(toCheck, checked, fields, "INJECTION_QUALIFIED_PROVIDER", Injection.QualifiedProvider.class);
+        checkField(toCheck, checked, fields, "INJECTION_SERVICES_FACTORY", Injection.ServicesFactory.class);
+        checkField(toCheck, checked, fields, "INJECTION_QUALIFIED_FACTORY", Injection.QualifiedFactory.class);
 
         // api.Interception.*
         checkField(toCheck, checked, fields, "INTERCEPTION_INTERCEPTED", Interception.Intercepted.class);
@@ -90,7 +90,7 @@ class InjectCodegenTypesTest {
         checkField(toCheck, checked, fields, "INTERCEPTION_EXTERNAL_DELEGATE", Interception.ExternalDelegate.class);
 
         // api.* except for interception types
-        checkField(toCheck, checked, fields, "INJECT_PROVIDER_TYPE", ProviderType.class);
+        checkField(toCheck, checked, fields, "INJECT_FACTORY_TYPE", FactoryType.class);
         checkField(toCheck, checked, fields, "INJECT_QUALIFIER", Qualifier.class);
         checkField(toCheck, checked, fields, "INJECT_INJECTION_POINT", Ip.class);
         checkField(toCheck, checked, fields, "INJECT_SERVICE_INSTANCE", ServiceInstance.class);
@@ -104,22 +104,22 @@ class InjectCodegenTypesTest {
         // generated inject service types
         checkField(toCheck, checked, fields, "INJECT_G_PER_INSTANCE_DESCRIPTOR",
                    GeneratedInjectService.PerInstanceDescriptor.class);
-        checkField(toCheck, checked, fields, "INJECT_G_QUALIFIED_PROVIDER_DESCRIPTOR",
-                   GeneratedInjectService.QualifiedProviderDescriptor.class);
+        checkField(toCheck, checked, fields, "INJECT_G_QUALIFIED_FACTORY_DESCRIPTOR",
+                   GeneratedInjectService.QualifiedFactoryDescriptor.class);
         checkField(toCheck, checked, fields, "INJECT_G_SCOPE_HANDLER_DESCRIPTOR",
                    GeneratedInjectService.ScopeHandlerDescriptor.class);
         checkField(toCheck, checked, fields, "INJECT_G_IP_SUPPORT",
                    GeneratedInjectService.IpSupport.class);
 
         // generated interception types
-        checkField(toCheck, checked, fields, "INTERCEPT_G_WRAPPER_SUPPLIER_PROVIDER",
-                   GeneratedInjectService.SupplierProviderInterceptionWrapper.class);
-        checkField(toCheck, checked, fields, "INTERCEPT_G_WRAPPER_SERVICES_PROVIDER",
-                   GeneratedInjectService.ServicesProviderInterceptionWrapper.class);
-        checkField(toCheck, checked, fields, "INTERCEPT_G_WRAPPER_IP_PROVIDER",
-                   GeneratedInjectService.IpProviderInterceptionWrapper.class);
-        checkField(toCheck, checked, fields, "INTERCEPT_G_WRAPPER_QUALIFIED_PROVIDER",
-                   GeneratedInjectService.QualifiedProviderInterceptionWrapper.class);
+        checkField(toCheck, checked, fields, "INTERCEPT_G_WRAPPER_SUPPLIER_FACTORY",
+                   GeneratedInjectService.SupplierFactoryInterceptionWrapper.class);
+        checkField(toCheck, checked, fields, "INTERCEPT_G_WRAPPER_SERVICES_FACTORY",
+                   GeneratedInjectService.ServicesFactoryInterceptionWrapper.class);
+        checkField(toCheck, checked, fields, "INTERCEPT_G_WRAPPER_IP_FACTORY",
+                   GeneratedInjectService.IpFactoryInterceptionWrapper.class);
+        checkField(toCheck, checked, fields, "INTERCEPT_G_WRAPPER_QUALIFIED_FACTORY",
+                   GeneratedInjectService.QualifiedFactoryInterceptionWrapper.class);
 
         assertThat("If the collection is not empty, please add appropriate checkField line to this test",
                    toCheck,

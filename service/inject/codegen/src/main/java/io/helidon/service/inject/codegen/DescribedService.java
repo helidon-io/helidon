@@ -36,13 +36,13 @@ import io.helidon.service.codegen.ServiceSuperType;
 
 import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECTION_NAMED;
 import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECTION_PER_INSTANCE;
-import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECTION_POINT_PROVIDER;
-import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECTION_QUALIFIED_PROVIDER;
-import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECTION_SERVICES_PROVIDER;
-import static io.helidon.service.inject.codegen.InjectCodegenTypes.INTERCEPT_G_WRAPPER_IP_PROVIDER;
-import static io.helidon.service.inject.codegen.InjectCodegenTypes.INTERCEPT_G_WRAPPER_QUALIFIED_PROVIDER;
-import static io.helidon.service.inject.codegen.InjectCodegenTypes.INTERCEPT_G_WRAPPER_SERVICES_PROVIDER;
-import static io.helidon.service.inject.codegen.InjectCodegenTypes.INTERCEPT_G_WRAPPER_SUPPLIER_PROVIDER;
+import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECTION_POINT_FACTORY;
+import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECTION_QUALIFIED_FACTORY;
+import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECTION_SERVICES_FACTORY;
+import static io.helidon.service.inject.codegen.InjectCodegenTypes.INTERCEPT_G_WRAPPER_IP_FACTORY;
+import static io.helidon.service.inject.codegen.InjectCodegenTypes.INTERCEPT_G_WRAPPER_QUALIFIED_FACTORY;
+import static io.helidon.service.inject.codegen.InjectCodegenTypes.INTERCEPT_G_WRAPPER_SERVICES_FACTORY;
+import static io.helidon.service.inject.codegen.InjectCodegenTypes.INTERCEPT_G_WRAPPER_SUPPLIER_FACTORY;
 
 /**
  * A service (as declared and annotated with a scope by the user).
@@ -59,7 +59,7 @@ class DescribedService {
      the following is only relevant on service itself (not on provided type)
      */
     // type of provider (if this is a provider at all)
-    private final ProviderType providerType;
+    private final FactoryType providerType;
     // qualifiers of provided type are inherited from service
     private final Set<Annotation> qualifiers;
     // provided type does not have a descriptor, only service does
@@ -77,7 +77,7 @@ class DescribedService {
                              TypeName scope,
                              TypeName descriptorType,
                              Set<Annotation> qualifiers,
-                             ProviderType providerType,
+                             FactoryType providerType,
                              TypeName qualifiedProviderQualifier) {
 
         this.serviceType = serviceType;
@@ -102,7 +102,7 @@ class DescribedService {
 
         Set<ResolvedType> directContracts = new HashSet<>();
         Set<ResolvedType> providedContracts = new HashSet<>();
-        ProviderType providerType = ProviderType.SERVICE;
+        FactoryType providerType = FactoryType.SERVICE;
         TypeName qualifiedProviderQualifier = null;
         TypeInfo providedTypeInfo = null;
         TypeName providedTypeName = null;
@@ -118,61 +118,61 @@ class DescribedService {
         /*
         For each service type we support, gather contracts
          */
-        var response = serviceContracts.analyseProvider(TypeNames.SUPPLIER);
+        var response = serviceContracts.analyseFactory(TypeNames.SUPPLIER);
         if (response.valid()) {
-            providerType = ProviderType.SUPPLIER;
+            providerType = FactoryType.SUPPLIER;
             directContracts.add(ResolvedType.create(response.factoryType()));
             providedContracts.addAll(response.providedContracts());
             providedTypeName = response.providedType();
             providedTypeInfo = response.providedTypeInfo();
             implementedInterfaceTypes.remove(TypeNames.SUPPLIER);
         }
-        response = serviceContracts.analyseProvider(INJECTION_SERVICES_PROVIDER);
+        response = serviceContracts.analyseFactory(INJECTION_SERVICES_FACTORY);
         if (response.valid()) {
             // if this is not a service type, throw
-            if (providerType != ProviderType.SERVICE) {
+            if (providerType != FactoryType.SERVICE) {
                 throw new CodegenException("Service implements more than one provider type: "
                                                    + providerType + ", and services provider.",
                                            serviceInfo.originatingElementValue());
             }
-            providerType = ProviderType.SERVICES_PROVIDER;
+            providerType = FactoryType.SERVICES;
             directContracts.add(ResolvedType.create(response.providedType()));
             providedContracts.addAll(response.providedContracts());
             providedTypeName = response.providedType();
             providedTypeInfo = response.providedTypeInfo();
-            implementedInterfaceTypes.remove(INJECTION_SERVICES_PROVIDER);
+            implementedInterfaceTypes.remove(INJECTION_SERVICES_FACTORY);
         }
-        response = serviceContracts.analyseProvider(INJECTION_POINT_PROVIDER);
+        response = serviceContracts.analyseFactory(INJECTION_POINT_FACTORY);
         if (response.valid()) {
             // if this is not a service type, throw
-            if (providerType != ProviderType.SERVICE) {
+            if (providerType != FactoryType.SERVICE) {
                 throw new CodegenException("Service implements more than one provider type: "
                                                    + providerType + ", and injection point provider.",
                                            serviceInfo.originatingElementValue());
             }
-            providerType = ProviderType.IP_PROVIDER;
+            providerType = FactoryType.INJECTION_POINT;
             directContracts.add(ResolvedType.create(response.providedType()));
             providedContracts.addAll(response.providedContracts());
             providedTypeName = response.providedType();
             providedTypeInfo = response.providedTypeInfo();
-            implementedInterfaceTypes.remove(INJECTION_POINT_PROVIDER);
+            implementedInterfaceTypes.remove(INJECTION_POINT_FACTORY);
         }
-        response = serviceContracts.analyseProvider(INJECTION_QUALIFIED_PROVIDER);
+        response = serviceContracts.analyseFactory(INJECTION_QUALIFIED_FACTORY);
         if (response.valid()) {
             // if this is not a service type, throw
-            if (providerType != ProviderType.SERVICE) {
+            if (providerType != FactoryType.SERVICE) {
                 throw new CodegenException("Service implements more than one provider type: "
                                                    + providerType + ", and qualified provider.",
                                            serviceInfo.originatingElementValue());
             }
-            providerType = ProviderType.QUALIFIED_PROVIDER;
+            providerType = FactoryType.QUALIFIED;
             directContracts.add(ResolvedType.create(response.providedType()));
             providedContracts.addAll(response.providedContracts());
             qualifiedProviderQualifier = ServiceContracts
-                    .requiredTypeArgument(implementedInterfaceTypes.remove(INJECTION_QUALIFIED_PROVIDER), 1);
+                    .requiredTypeArgument(implementedInterfaceTypes.remove(INJECTION_QUALIFIED_FACTORY), 1);
             providedTypeName = response.providedType();
             providedTypeInfo = response.providedTypeInfo();
-            implementedInterfaceTypes.remove(INJECTION_QUALIFIED_PROVIDER);
+            implementedInterfaceTypes.remove(INJECTION_QUALIFIED_FACTORY);
         }
 
         // add direct contracts
@@ -190,7 +190,7 @@ class DescribedService {
         DescribedType serviceDescriptor;
         DescribedType providedDescriptor;
 
-        if (providerType == ProviderType.SERVICE) {
+        if (providerType == FactoryType.SERVICE) {
             var serviceElements = DescribedElements.create(ctx, interception, directContracts, serviceInfo);
             serviceDescriptor = new DescribedType(serviceInfo,
                                                   serviceInfo.typeName(),
@@ -232,11 +232,11 @@ class DescribedService {
     TypeName interceptionWrapperSuperType() {
         return switch (providerType()) {
             case NONE, SERVICE -> serviceType.typeName();
-            case SUPPLIER -> createType(INTERCEPT_G_WRAPPER_SUPPLIER_PROVIDER, providedType.typeName());
-            case SERVICES_PROVIDER -> createType(INTERCEPT_G_WRAPPER_SERVICES_PROVIDER, providedType.typeName());
-            case IP_PROVIDER -> createType(INTERCEPT_G_WRAPPER_IP_PROVIDER, providedType.typeName());
-            case QUALIFIED_PROVIDER ->
-                    createType(INTERCEPT_G_WRAPPER_QUALIFIED_PROVIDER, providedType.typeName(), qualifiedProviderQualifier);
+            case SUPPLIER -> createType(INTERCEPT_G_WRAPPER_SUPPLIER_FACTORY, providedType.typeName());
+            case SERVICES -> createType(INTERCEPT_G_WRAPPER_SERVICES_FACTORY, providedType.typeName());
+            case INJECTION_POINT -> createType(INTERCEPT_G_WRAPPER_IP_FACTORY, providedType.typeName());
+            case QUALIFIED ->
+                    createType(INTERCEPT_G_WRAPPER_QUALIFIED_FACTORY, providedType.typeName(), qualifiedProviderQualifier);
         };
     }
 
@@ -244,15 +244,15 @@ class DescribedService {
         return switch (providerType()) {
             case NONE, SERVICE -> serviceType.typeName();
             case SUPPLIER -> createType(TypeNames.SUPPLIER, providedType.typeName());
-            case SERVICES_PROVIDER -> createType(INJECTION_SERVICES_PROVIDER, providedType.typeName());
-            case IP_PROVIDER -> createType(INJECTION_POINT_PROVIDER, providedType.typeName());
-            case QUALIFIED_PROVIDER ->
-                    createType(INJECTION_QUALIFIED_PROVIDER, providedType.typeName(), qualifiedProviderQualifier);
+            case SERVICES -> createType(INJECTION_SERVICES_FACTORY, providedType.typeName());
+            case INJECTION_POINT -> createType(INJECTION_POINT_FACTORY, providedType.typeName());
+            case QUALIFIED ->
+                    createType(INJECTION_QUALIFIED_FACTORY, providedType.typeName(), qualifiedProviderQualifier);
         };
     }
 
     boolean isProvider() {
-        return providerType() != ProviderType.SERVICE && providerType() != ProviderType.NONE;
+        return providerType() != FactoryType.SERVICE && providerType() != FactoryType.NONE;
     }
 
     DescribedType providedDescriptor() {
@@ -279,7 +279,7 @@ class DescribedService {
         return Set.copyOf(qualifiers);
     }
 
-    ProviderType providerType() {
+    FactoryType providerType() {
         return providerType;
     }
 

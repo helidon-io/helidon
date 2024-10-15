@@ -73,10 +73,10 @@ import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECTION_PER
 import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECTION_PER_LOOKUP;
 import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECTION_SCOPE_HANDLER;
 import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECTION_SINGLETON;
+import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECT_FACTORY_TYPE;
 import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECT_G_IP_SUPPORT;
-import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECT_G_QUALIFIED_PROVIDER_DESCRIPTOR;
+import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECT_G_QUALIFIED_FACTORY_DESCRIPTOR;
 import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECT_G_SCOPE_HANDLER_DESCRIPTOR;
-import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECT_PROVIDER_TYPE;
 import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECT_SERVICE_INSTANCE;
 import static io.helidon.service.inject.codegen.InjectCodegenTypes.INTERCEPTION_DELEGATE;
 import static io.helidon.service.inject.codegen.InjectCodegenTypes.INTERCEPTION_EXTERNAL_DELEGATE;
@@ -121,7 +121,7 @@ class InjectionExtension implements RegistryCodegenExtension {
         CodegenOptions options = codegenContext.options();
         this.autoAddContracts = ServiceOptions.AUTO_ADD_NON_CONTRACT_INTERFACES.value(options);
         this.assignments = new Assignments(ctx);
-        this.interception = new Interception(ctx, InjectOptions.INTERCEPTION_STRATEGY.value(options));
+        this.interception = new Interception(InjectOptions.INTERCEPTION_STRATEGY.value(options));
         this.interceptionSupport = InterceptionSupport.create(ctx);
         this.scopeMetaAnnotations = InjectOptions.SCOPE_META_ANNOTATIONS.value(options);
         this.observers = HelidonServiceLoader.create(ServiceLoader.load(InjectCodegenObserverProvider.class,
@@ -368,7 +368,7 @@ class InjectionExtension implements RegistryCodegenExtension {
         qualifiersMethod(classModel, service);
         weightMethod(classModel, service);
         runLevelMethod(classModel, service);
-        providerType(classModel, service, ProviderType.NONE);
+        factoryType(classModel, service, FactoryType.NONE);
 
         // service type is an implicit contract
         Set<ResolvedType> serviceContracts = new HashSet<>(contracts);
@@ -529,7 +529,7 @@ class InjectionExtension implements RegistryCodegenExtension {
         createForMethod(classModel, service);
         qualifiedProvider(classModel, service);
         scopeHandler(typeInfo, classModel, contracts);
-        providerType(classModel, service, service.providerType());
+        factoryType(classModel, service, service.providerType());
 
         // service type is an implicit contract
         Set<ResolvedType> metaInfServiceContracts = new HashSet<>(contracts);
@@ -627,20 +627,20 @@ class InjectionExtension implements RegistryCodegenExtension {
                                       service.serviceDescriptor().typeInfo().originatingElementValue());
     }
 
-    private void providerType(ClassModel.Builder classModel, DescribedService service, ProviderType providerType) {
-        if (service.superType().empty() && providerType == ProviderType.SERVICE) {
+    private void factoryType(ClassModel.Builder classModel, DescribedService service, FactoryType factoryType) {
+        if (service.superType().empty() && factoryType == FactoryType.SERVICE) {
             // default
             return;
         }
         classModel.addMethod(providerTypeMethod -> providerTypeMethod
-                .name("providerType")
+                .name("factoryType")
                 .accessModifier(AccessModifier.PUBLIC)
                 .addAnnotation(Annotations.OVERRIDE)
-                .returnType(INJECT_PROVIDER_TYPE)
+                .returnType(INJECT_FACTORY_TYPE)
                 .addContent("return ")
-                .addContent(INJECT_PROVIDER_TYPE)
+                .addContent(INJECT_FACTORY_TYPE)
                 .addContent(".")
-                .addContent(providerType.name())
+                .addContent(factoryType.name())
                 .addContentLine(";")
         );
     }
@@ -715,7 +715,7 @@ class InjectionExtension implements RegistryCodegenExtension {
             // QualifiedProvider
             return;
         }
-        classModel.addInterface(INJECT_G_QUALIFIED_PROVIDER_DESCRIPTOR);
+        classModel.addInterface(INJECT_G_QUALIFIED_FACTORY_DESCRIPTOR);
 
         classModel.addField(qpField -> qpField
                 .accessModifier(AccessModifier.PRIVATE)
@@ -784,7 +784,7 @@ class InjectionExtension implements RegistryCodegenExtension {
             return;
         }
         if (createFor.isPresent()) {
-            if (service.providerType() != ProviderType.SERVICE) {
+            if (service.providerType() != FactoryType.SERVICE) {
                 throw new CodegenException("Service " + serviceTypeName.classNameWithEnclosingNames()
                                                    + " is annotated with @"
                                                    + INJECTION_PER_INSTANCE.classNameWithEnclosingNames()

@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-package io.helidon.service.inject.api;
+package io.helidon.service.inject.codegen;
 
 /**
  * Described service type.
  * <p>
  * Core services (services defined for core service registry) can be only {@link #SERVICE} or {@link #SUPPLIER}.
+ * <p>
+ * This enum is duplicated in Inject API, as we do not want to have a common dependency.
  */
-public enum ProviderType {
+enum FactoryType {
     /**
-     * This service descriptor cannot provide an instance (such as service descriptors generated from interfaces,
-     * where we provide instances as part of creating a scope).
+     * This is just a descriptor that cannot instantiate anything.
      */
     NONE,
     /**
@@ -41,15 +42,15 @@ public enum ProviderType {
     /**
      * The service implements a provider of a list of contract instances.
      */
-    SERVICES_PROVIDER,
+    SERVICES,
     /**
      * The service implements a provider that satisfies a specific injection point (either a single contract,
      * or a list of contract instances).
      */
-    IP_PROVIDER,
+    INJECTION_POINT,
     /**
      * The service implements a provider that is called for specific qualifiers (either a single contract,
      * or a list of contract instances).
      */
-    QUALIFIED_PROVIDER
+    QUALIFIED
 }

@@ -26,10 +26,10 @@ import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
 import io.helidon.service.inject.InjectRegistryManager;
+import io.helidon.service.inject.api.FactoryType;
 import io.helidon.service.inject.api.InjectRegistry;
 import io.helidon.service.inject.api.InjectServiceInfo;
 import io.helidon.service.inject.api.Lookup;
-import io.helidon.service.inject.api.ProviderType;
 import io.helidon.service.tests.inject.toolbox.impl.BigHammer;
 import io.helidon.service.tests.inject.toolbox.impl.MainToolBox;
 
@@ -179,7 +179,7 @@ class ToolBoxTest {
     @Test
     void knownIpProviders() {
         List<InjectServiceInfo> services = this.registry.lookupServices(Lookup.builder()
-                                                                                .addProviderType(ProviderType.IP_PROVIDER)
+                                                                                .addFactoryType(FactoryType.INJECTION_POINT)
                                                                                 .build());
         List<String> desc = toSimpleTypes(services);
 

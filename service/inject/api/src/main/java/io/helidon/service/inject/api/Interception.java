@@ -48,7 +48,7 @@ public final class Interception {
 
     /**
      * Use this annotation to mark a class ready for interception delegation.
-     * The delegates are code generated automatically if a service provider (such as a {@link java.util.function.Supplier})
+     * The delegates are code generated automatically if a service factory (such as a {@link java.util.function.Supplier})
      * provides an instance of a class (or provides an interface implementation) that has methods
      * annotated with interception trigger(s).
      * <p>
@@ -73,10 +73,10 @@ public final class Interception {
 
     /**
      * Use this annotation to mark an external class ready for interception delegation.
-     * This annotations must be added to the service provider (such as a {@link java.util.function.Supplier})
+     * This annotations must be added to the service factory (such as a {@link java.util.function.Supplier})
      * that provides an instance of a class.
      * <p>
-     * If the provider provides an interface, this annotation is not needed, as interfaces are safe to delegate.
+     * If the factory provides an interface, this annotation is not needed, as interfaces are safe to delegate.
      *
      * @see io.helidon.service.inject.api.Interception.Delegate
      */
@@ -85,7 +85,7 @@ public final class Interception {
     @Target(ElementType.TYPE)
     public @interface ExternalDelegate {
         /**
-         * Type provided by this service provider that is a class and should support interception.
+         * Type provided by this service factory that is a class and should support interception.
          *
          * @return type that should be intercepted, see {@link io.helidon.service.inject.api.Interception.Delegate}
          */
@@ -113,7 +113,7 @@ public final class Interception {
         <V> V proceed(InterceptionContext ctx, Chain<V> chain, Object... args) throws Exception;
 
         /**
-         * Represents the next in line for interception, terminating with a call to the wrapped service provider.
+         * Represents the next in line for interception, terminating with a call to the service instance.
          *
          * @param <V> the return value
          */

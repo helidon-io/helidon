@@ -49,7 +49,7 @@ public interface InjectRegistry extends io.helidon.service.registry.ServiceRegis
      * @param <T>    type of the service, if you use any other than {@link java.lang.Object}, make sure
      *               you have configured appropriate contracts in the lookup, as we cannot infer this
      * @return the best service instance matching the lookup, cast to the expected type; please use a {@code Object} as the type
-     *         if the result may contain an unknown provider type
+     *         if the result may contain an unknown instance
      * @throws io.helidon.service.registry.ServiceRegistryException if there is no service that could satisfy the lookup, or the
      *                                                              resolution to instance failed
      */
@@ -62,7 +62,7 @@ public interface InjectRegistry extends io.helidon.service.registry.ServiceRegis
      * @param <T>    type of the service, if you use any other than {@link java.lang.Object}, make sure
      *               you have configured appropriate contracts in the lookup, as we cannot infer this
      * @return the best service instance matching the lookup, cast to the expected type; please use a {@code Object} as the type
-     *         if the result may contain an unknown provider type
+     *         if the result may contain an unknown instance
      */
     <T> Optional<T> first(Lookup lookup);
 
@@ -82,26 +82,26 @@ public interface InjectRegistry extends io.helidon.service.registry.ServiceRegis
      * {@link io.helidon.service.registry.ServiceRegistryException} in case the matching service cannot provide a value (either
      * because
      * of scope mismatch, or because there is no available instance, and we use a runtime resolution through
-     * {@link Injection.ServicesProvider},
-     * {@link Injection.InjectionPointProvider}, or similar).
+     * {@link io.helidon.service.inject.api.Injection.ServicesFactory},
+     * {@link io.helidon.service.inject.api.Injection.InjectionPointFactory}, or similar).
      *
      * @param lookup lookup criteria to find matching services
      * @param <T>    type of the service, if you use any other than {@link java.lang.Object}, make sure
      *               you have configured appropriate contracts in the lookup, as we cannot infer this
      * @return the best service supplier matching the lookup, cast to the expected type; please use a {@code Object} as the type
-     *         if the result may contain an unknown provider type
+     *         if the result may contain an unknown instance
      * @throws io.helidon.service.registry.ServiceRegistryException if there is no service that could satisfy the lookup
      */
     <T> Supplier<T> supply(Lookup lookup);
 
     /**
-     * Find the first service provider matching the lookup with the expectation that there may not be a match available.
+     * Find the first service matching the lookup with the expectation that there may not be a match available.
      *
      * @param lookup lookup criteria to find matching services
      * @param <T>    type of the service, if you use any other than {@link java.lang.Object}, make sure
      *               you have configured appropriate contracts in the lookup, as we cannot infer this
-     * @return the best service provider matching the lookup, cast to the expected type; please use a {@code Object} as the type
-     *         if the result may contain an unknown provider type
+     * @return the best service matching the lookup, cast to the expected type; please use a {@code Object} as the type
+     *         if the result may contain an unknown instance
      */
     <T> Supplier<Optional<T>> supplyFirst(Lookup lookup);
 

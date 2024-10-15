@@ -32,17 +32,16 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.service.inject.api.ActivationResult;
 import io.helidon.service.inject.api.Activator.Phase;
+import io.helidon.service.inject.api.FactoryType;
 import io.helidon.service.inject.api.GeneratedInjectService;
 import io.helidon.service.inject.api.InjectServiceDescriptor;
 import io.helidon.service.inject.api.Injection;
-import io.helidon.service.inject.api.Injection.InjectionPointProvider;
+import io.helidon.service.inject.api.Injection.QualifiedFactory;
 import io.helidon.service.inject.api.Injection.QualifiedInstance;
-import io.helidon.service.inject.api.Injection.QualifiedProvider;
-import io.helidon.service.inject.api.Injection.ServicesProvider;
+import io.helidon.service.inject.api.Injection.ServicesFactory;
 import io.helidon.service.inject.api.InterceptionMetadata;
 import io.helidon.service.inject.api.Ip;
 import io.helidon.service.inject.api.Lookup;
-import io.helidon.service.inject.api.ProviderType;
 import io.helidon.service.inject.api.Qualifier;
 import io.helidon.service.inject.api.ServiceInstance;
 import io.helidon.service.registry.Dependency;
@@ -113,7 +112,7 @@ final class ActivatorsPerLookup {
 
         @Override
         protected Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
-            if (requestedProvider(lookup, ProviderType.SUPPLIER)) {
+            if (requestedProvider(lookup, FactoryType.SUPPLIER)) {
                 if (serviceInstance == null) {
                     return Optional.empty();
                 }
@@ -144,12 +143,12 @@ final class ActivatorsPerLookup {
         private final Set<TypeName> supportedContracts;
         private final boolean anyMatch;
 
-        QualifiedProviderActivator(ServiceProvider<T> provider, GeneratedInjectService.QualifiedProviderDescriptor qpd) {
+        QualifiedProviderActivator(ServiceProvider<T> provider, GeneratedInjectService.QualifiedFactoryDescriptor qpd) {
             super(provider);
             this.supportedQualifier = qpd.qualifierType();
             this.supportedContracts = provider.descriptor().contracts()
                     .stream()
-                    .filter(not(QualifiedProvider.TYPE::equals))
+                    .filter(not(QualifiedFactory.TYPE::equals))
                     .collect(Collectors.toSet());
             this.anyMatch = this.supportedContracts.contains(TypeNames.OBJECT);
         }
@@ -185,7 +184,7 @@ final class ActivatorsPerLookup {
 
         @SuppressWarnings("unchecked")
         private List<QualifiedInstance<T>> targetInstances(Lookup lookup, Qualifier qualifier, GenericType<T> contract) {
-            var qProvider = (QualifiedProvider<T, ?>) serviceInstance.get(currentPhase);
+            var qProvider = (QualifiedFactory<T, ?>) serviceInstance.get(currentPhase);
 
             return qProvider.list(qualifier, lookup, contract);
         }
@@ -205,9 +204,9 @@ final class ActivatorsPerLookup {
             if (serviceInstance == null) {
                 return Optional.empty();
             }
-            var ipProvider = (InjectionPointProvider<T>) serviceInstance.get(currentPhase);
+            var ipProvider = (Injection.InjectionPointFactory<T>) serviceInstance.get(currentPhase);
 
-            if (requestedProvider(lookup, ProviderType.IP_PROVIDER)) {
+            if (requestedProvider(lookup, FactoryType.INJECTION_POINT)) {
                 // the user requested the provider, not the provided
                 T instance = (T) ipProvider;
                 return Optional.of(List.of(QualifiedInstance.create(instance, provider.descriptor().qualifiers())));
@@ -233,9 +232,9 @@ final class ActivatorsPerLookup {
         @SuppressWarnings("unchecked")
         @Override
         protected Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
-            ServicesProvider<T> instanceSupplier = (ServicesProvider<T>) serviceInstance.get(currentPhase);
+            ServicesFactory<T> instanceSupplier = (Injection.ServicesFactory<T>) serviceInstance.get(currentPhase);
 
-            if (requestedProvider(lookup, ProviderType.SERVICES_PROVIDER)) {
+            if (requestedProvider(lookup, FactoryType.SERVICES)) {
                 return Optional.of(List.of(QualifiedInstance.create((T) instanceSupplier, descriptor().qualifiers())));
             }
 

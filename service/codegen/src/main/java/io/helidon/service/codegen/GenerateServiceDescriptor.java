@@ -273,7 +273,7 @@ class GenerateServiceDescriptor {
         if (typeName.isSupplier()) {
             // this may be the interface itself, and then it does not have a type argument
             if (!typeName.typeArguments().isEmpty()) {
-                // provider must have a type argument (and the type argument is an automatic contract
+                // factory must have a type argument (and the type argument is an automatic contract
                 TypeName providedType = typeName.typeArguments().getFirst();
                 // and we support Supplier<Optional<X>> as well
                 if (!providedType.generic()) {
@@ -723,6 +723,8 @@ class GenerateServiceDescriptor {
     }
 
     private interface DescriptorConsumer {
+        // all parameters are needed, no sense in creating a builder
+        @SuppressWarnings("checkstyle:ParameterNumber")
         void addDescriptor(String registryType,
                            TypeName serviceType,
                            TypeName descriptorType,

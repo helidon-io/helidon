@@ -101,7 +101,7 @@ public final class Injection {
         /**
          * The name.
          *
-         * @return name this injection point requires, or this service provides, or a supplier provider
+         * @return name this injection point requires, or this service provides, or a factory provides
          */
         String value();
     }
@@ -146,7 +146,7 @@ public final class Injection {
      * <p>
      * Alternative to this annotation is {@link io.helidon.service.inject.api.Injection.PerLookup} (or no annotation on a type
      * that has {@link Injection.Inject} on its elements). Such a service would be injected
-     * every time its provider is invoked (each injection point, or on call to {@link java.util.function.Supplier#get()} if
+     * every time its factory is invoked (each injection point, or on call to {@link java.util.function.Supplier#get()} if
      * supplier is injected), and {@link io.helidon.service.inject.api.Injection.PerRequest} for request bound instances.
      */
     @Documented
@@ -253,8 +253,8 @@ public final class Injection {
      * There are a few restrictions on this type of services:
      * <ul>
      * <li>The service MUST NOT implement {@link java.util.function.Supplier}</li>
-     * <li>The service MUST NOT implement {@link Injection.InjectionPointProvider}</li>
-     * <li>The service MUST NOT implement {@link Injection.ServicesProvider}</li>
+     * <li>The service MUST NOT implement {@link io.helidon.service.inject.api.Injection.InjectionPointFactory}</li>
+     * <li>The service MUST NOT implement {@link io.helidon.service.inject.api.Injection.ServicesFactory}</li>
      * <li>All types that inherit from this service will also inherit the driven by</li>
      * <li>There MAY be an injection point of the type defined in {@link #value()}, without any qualifiers -
      * this injection point will be satisfied by the driving instance</li>
@@ -316,19 +316,19 @@ public final class Injection {
      *
      * @param <T> type of the provided services
      */
-    public interface ServicesProvider<T> {
+    public interface ServicesFactory<T> {
         /**
          * Type name of this interface.
          */
-        TypeName TYPE = TypeName.create(ServicesProvider.class);
+        TypeName TYPE = TypeName.create(ServicesFactory.class);
 
         /**
-         * List of service suppliers.
+         * List of service instances.
          * Each instance may have a different set of qualifiers.
          * <p>
-         * The following is inherited from this provider:
+         * The following is inherited from this factory:
          * <ul>
-         *     <li>Set of contracts, except for {@link Injection.ServicesProvider}</li>
+         *     <li>Set of contracts, except for {@link io.helidon.service.inject.api.Injection.ServicesFactory}</li>
          *     <li>Scope</li>
          *     <li>Run level</li>
          *     <li>Weight</li>
@@ -341,35 +341,30 @@ public final class Injection {
 
     /**
      * Provides ability to contextualize the injected service by the target receiver of the injection point dynamically
-     * at runtime. This API will provide service instances of type {@code T}. These services may be singleton, or created based
-     * upon
-     * scoping cardinality that is defined by the provider implementation of the given type. This is why the javadoc reads "get
-     * (or
-     * create)".
+     * at runtime. This API will provide service instances of type {@code T}.
      * <p>
      * The ordering of services, and the preferred service itself, is determined by the service registry implementation.
      * <p>
      * The service registry does not make any assumptions about qualifiers of the instances being created, though they should
-     * be either the same as the injection point provider itself, or a subset of it, so the service can be discovered through
-     * one of the lookup methods (i.e. the injection point provider may be annotated with a
+     * be either the same as the injection point factory itself, or a subset of it, so the service can be discovered through
+     * one of the lookup methods (i.e. the injection point factory may be annotated with a
      * {@link Named} with {@link Named#WILDCARD_NAME}
-     * value,
-     * and each instance provided may use a more specific name qualifier).
+     * value, and each instance provided may use a more specific name qualifier).
      *
-     * @param <T> the type that the provider produces
+     * @param <T> the type that the factory produces
      */
-    public interface InjectionPointProvider<T> {
+    public interface InjectionPointFactory<T> {
         /**
          * Type name of this interface.
          */
-        TypeName TYPE = TypeName.create(InjectionPointProvider.class);
+        TypeName TYPE = TypeName.create(InjectionPointFactory.class);
 
         /**
          * Get (or create) an instance of this service type for the given injection point context. This is logically the same
          * as using the first element of the result from calling {@link #list(io.helidon.service.inject.api.Lookup)}.
          *
          * @param lookup the service query
-         * @return the best service provider matching the criteria, if any matched, with qualifiers (if any)
+         * @return the best service instance matching the criteria, if any matched, with qualifiers (if any)
          */
         Optional<QualifiedInstance<T>> first(Lookup lookup);
 
@@ -377,7 +372,7 @@ public final class Injection {
          * Get (or create) a list of instances matching the criteria for the given injection point context.
          *
          * @param lookup the service query
-         * @return the resolved services matching criteria for the injection point in order of weight, or empty if none matching
+         * @return the service instances matching criteria for the lookup in order of weight, or empty if none matching
          */
         default List<QualifiedInstance<T>> list(Lookup lookup) {
             return first(lookup).map(List::of).orElseGet(List::of);
@@ -385,9 +380,9 @@ public final class Injection {
     }
 
     /**
-     * A provider to resolve qualified injection points of any type.
+     * A factory to resolve qualified injection points of any type.
      * <p>
-     * As compared to {@link InjectionPointProvider}, this type is capable of resolving ANY injection
+     * As compared to {@link io.helidon.service.inject.api.Injection.InjectionPointFactory}, this type is capable of resolving ANY injection
      * point as long as it is annotated by the qualifier. The contract of the injection point depends on how the implementation
      * service declares the type parameters of this interface. If you use any type other than {@link java.lang.Object}, that will
      * be the only supported contract, otherwise any type is expected to be supported.
@@ -395,15 +390,15 @@ public final class Injection {
      * A good practice is to create an accompanying codegen extension that validates injection points at build time.
      *
      * @param <T> type of the provided instance, the special case is {@link java.lang.Object} - if used, we consider this
-     *            provider to be capable of handling ANY type, and will allow injection points with any type as long as it is
+     *            factory to be capable of handling ANY type, and will allow injection points with any type as long as it is
      *            qualified by the qualifier
-     * @param <A> type of qualifier supported by this provider
+     * @param <A> type of qualifier supported by this factory
      */
-    public interface QualifiedProvider<T, A extends Annotation> {
+    public interface QualifiedFactory<T, A extends Annotation> {
         /**
          * Type name of this interface.
          */
-        TypeName TYPE = TypeName.create(QualifiedProvider.class);
+        TypeName TYPE = TypeName.create(QualifiedFactory.class);
 
         /**
          * Get the first instance (if any) matching the qualifier and type.
@@ -437,10 +432,10 @@ public final class Injection {
     /**
      * An instance with its qualifiers.
      * Some services are allowed to create more than one instance, and there may be a need
-     * to use different qualifiers than the provider service uses.
+     * to use different qualifiers than the factory service uses.
      *
      * @param <T> type of instance, as provided by the service
-     * @see Injection.ServicesProvider
+     * @see io.helidon.service.inject.api.Injection.ServicesFactory
      */
     public interface QualifiedInstance<T> extends Supplier<T> {
         /**
@@ -468,7 +463,8 @@ public final class Injection {
         }
 
         /**
-         * Get the instance that the registry manages (or an instance that is unmanaged, if the provider is not within a scope).
+         * Get the instance that the registry manages (or an instance that is unmanaged, if the provider is in
+         * {@link io.helidon.service.inject.api.Injection.PerLookup}, or if the instance is created by a factory).
          * The instance must be guaranteed to be constructed and if managed by the registry, and activation scope is not limited,
          * then injected as well.
          *

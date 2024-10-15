@@ -120,7 +120,7 @@ public class ServiceContracts {
                                        typeInfo.originatingElementValue());
         }
 
-        // provider must have a type argument (and the type argument is an automatic contract
+        // factory must have a type argument (and the type argument is an automatic contract
         TypeName contract = typeArguments.get(index);
         if (contract.generic()) {
             // probably just T (such as Supplier<T>)
@@ -151,25 +151,25 @@ public class ServiceContracts {
     }
 
     /**
-     * Analyse the service info if it is in fact a provider of the expected type.
+     * Analyse the service info if it is in fact a factory of the expected type.
      *
-     * @param providerInterface the provider we check, the provided contract must be the first type argument
+     * @param factoryInterface the provider we check, the provided contract must be the first type argument
      * @return result of the analysis
      */
-    public ProviderAnalysis analyseProvider(TypeName providerInterface) {
-        Optional<TypeInfo> implementedProvider = serviceInfo.interfaceTypeInfo()
+    public FactoryAnalysis analyseFactory(TypeName factoryInterface) {
+        Optional<TypeInfo> implementedFactory = serviceInfo.interfaceTypeInfo()
                 .stream()
-                .filter(it -> it.typeName().equals(providerInterface))
+                .filter(it -> it.typeName().equals(factoryInterface))
                 .findFirst();
 
-        if (implementedProvider.isEmpty()) {
-            // the provider interface is not implemented by the service
-            return new ProviderAnalysis();
+        if (implementedFactory.isEmpty()) {
+            // the factory interface is not implemented by the service
+            return FactoryAnalysis.create();
         }
 
         // it is implemented
-        TypeInfo typeInfo = implementedProvider.get();
-        TypeName contract = requiredTypeArgument(typeInfo);
+        TypeInfo typeInfo = implementedFactory.get();
+        TypeName contract = resolveOptional(typeInfo, requiredTypeArgument(typeInfo), factoryInterface);
         Set<ResolvedType> contracts = new HashSet<>();
         contracts.add(ResolvedType.create(contract));
 
@@ -178,10 +178,23 @@ public class ServiceContracts {
         addContracts(contracts,
                      new HashSet<>(),
                      contractInfo);
-        return new ProviderAnalysis(typeInfo.typeName(),
-                                    contract,
-                                    contractInfo,
-                                    contracts);
+        return FactoryAnalysis.create(typeInfo.typeName(),
+                                      contract,
+                                      contractInfo,
+                                      contracts);
+    }
+
+    private TypeName resolveOptional(TypeInfo typeInfo, TypeName typeName, TypeName factoryInterface) {
+        // for suppliers, we support optional, all other factory types can return optional by design
+        if (factoryInterface.equals(TypeNames.SUPPLIER) && typeName.isOptional()) {
+            // Supplier of optionals
+            if (typeName.typeArguments().isEmpty()) {
+                throw new CodegenException("Invalid declaration of Supplier<Optional>, Optional is missing type argument",
+                                           typeInfo.originatingElementValue());
+            }
+            return typeName.typeArguments().getFirst();
+        }
+        return typeName;
     }
 
     /**
@@ -332,38 +345,67 @@ public class ServiceContracts {
 
     /**
      * Result of analysis of provided contracts.
-     *
-     * @param valid             whether the provider is implemented
-     * @param factoryType       type of the factory implementation (such as {@code Supplier<String>})
-     * @param providedType      the contract provided (guard access by {@link #valid()})
-     * @param providedTypeInfo  type info of the provided contract (guard access by {@link #valid()})
-     * @param providedContracts all contracts transitively inherited from the provided type (guard access by {@link #valid()})
      */
-    public record ProviderAnalysis(boolean valid,
-                                   TypeName factoryType,
-                                   TypeName providedType,
-                                   TypeInfo providedTypeInfo,
-                                   Set<ResolvedType> providedContracts) {
+    public interface FactoryAnalysis {
+
         /**
-         * The requested provider is not valid and does not provide any contracts.
+         * Create a new result for cases where the service does not implement the factory interface.
+         *
+         * @return a new factory analysis that is not {@link #valid()}
          */
-        public ProviderAnalysis() {
-            this(false, null, null, null, null);
+        static FactoryAnalysis create() {
+            return new FactoryAnalysisImpl();
         }
 
         /**
-         * The requested provider is valid and provides one or more contracts.
+         * The requested factory interface is implemented and provides one or more contracts.
          *
          * @param factoryType       type of the factory implementation (such as {@code Supplier<String>})
          * @param providedType      the type provided (always a contract)
          * @param providedTypeInfo  type info of the provided type
          * @param providedContracts transitive contracts (includes the provided type as well)
+         * @return a new analysis result for a valid factory implementation
          */
-        public ProviderAnalysis(TypeName factoryType,
-                                TypeName providedType,
-                                TypeInfo providedTypeInfo,
-                                Set<ResolvedType> providedContracts) {
-            this(true, factoryType, providedType, providedTypeInfo, providedContracts);
+        static FactoryAnalysis create(TypeName factoryType,
+                                      TypeName providedType,
+                                      TypeInfo providedTypeInfo,
+                                      Set<ResolvedType> providedContracts) {
+            return new FactoryAnalysisImpl(factoryType, providedType, providedTypeInfo, providedContracts);
         }
+
+        /**
+         * whether the factory interface is implemented.
+         *
+         * @return if the factory interface is implemented by the service
+         */
+        boolean valid();
+
+        /**
+         * Type of the factory interface with type arguments (such as {@code Supplier×String>}, guard access by {@link #valid()}).
+         *
+         * @return factory type name
+         */
+        TypeName factoryType();
+
+        /**
+         * The contract provided (guard access by {@link #valid()}).
+         *
+         * @return provided type name
+         */
+        TypeName providedType();
+
+        /**
+         * Type info of the provided type.
+         *
+         * @return type info of the {@link #providedType()}
+         */
+        TypeInfo providedTypeInfo();
+
+        /**
+         * All contracts transitively inherited from the provided type (guard access by {@link #valid()}).
+         *
+         * @return provided contracts
+         */
+        Set<ResolvedType> providedContracts();
     }
 }

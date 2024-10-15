@@ -34,7 +34,7 @@ import io.helidon.service.inject.api.Qualifier;
 import io.helidon.service.registry.ServiceRegistry;
 
 @Injection.Singleton
-class ConfigValueProvider implements Injection.QualifiedProvider<Object, Configuration.Value> {
+class ConfigValueProvider implements Injection.QualifiedFactory<Object, Configuration.Value> {
     private final ServiceRegistry registry;
     private final Supplier<Config> config;
 

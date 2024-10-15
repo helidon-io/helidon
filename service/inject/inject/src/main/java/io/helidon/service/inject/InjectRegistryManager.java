@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
+import io.helidon.service.inject.api.FactoryType;
 import io.helidon.service.inject.api.GeneratedInjectService;
 import io.helidon.service.inject.api.InjectRegistry;
 import io.helidon.service.inject.api.InjectRegistrySpi__ServiceDescriptor;
@@ -39,7 +40,6 @@ import io.helidon.service.inject.api.InjectServiceDescriptor;
 import io.helidon.service.inject.api.InjectServiceInfo;
 import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.InterceptionMetadata__ServiceDescriptor;
-import io.helidon.service.inject.api.ProviderType;
 import io.helidon.service.metadata.DescriptorMetadata;
 import io.helidon.service.registry.DependencyContext;
 import io.helidon.service.registry.DescriptorHandler;
@@ -365,10 +365,10 @@ public class InjectRegistryManager implements ServiceRegistryManager {
             }
         }
 
-        if (descriptor.providerType() == ProviderType.QUALIFIED_PROVIDER) {
+        if (descriptor.factoryType() == FactoryType.QUALIFIED) {
             // a special kind of service that matches ANY qualifier instance of a specific type, and also may match
             // a specific contract, or ANY contract
-            if (descriptor instanceof GeneratedInjectService.QualifiedProviderDescriptor qpd) {
+            if (descriptor instanceof GeneratedInjectService.QualifiedFactoryDescriptor qpd) {
                 TypeName qualifierType = qpd.qualifierType();
                 if (contains(contracts, TypeNames.OBJECT)) {
                     // matches any contract
@@ -377,7 +377,7 @@ public class InjectRegistryManager implements ServiceRegistryManager {
                 } else {
                     // contract specific
                     Set<TypeName> realContracts = contracts.stream()
-                            .filter(Predicate.not(Injection.QualifiedProvider.TYPE::equals))
+                            .filter(Predicate.not(Injection.QualifiedFactory.TYPE::equals))
                             .collect(Collectors.toSet());
                     for (TypeName realContract : realContracts) {
                         TypedQualifiedProviderKey key = new TypedQualifiedProviderKey(qualifierType,
