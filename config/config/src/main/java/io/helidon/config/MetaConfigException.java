@@ -19,7 +19,7 @@ package io.helidon.config;
 /**
  * Exception is thrown if problems are found while processing meta config.
  */
-public class MetaConfigException extends RuntimeException {
+class MetaConfigException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 
