@@ -23,7 +23,7 @@ ifndef::attributes-included[]
 // functional attributes
 :imagesdir: {rootdir}/images
 
-:helidon-version: 4.0.12-SNAPSHOT
+:helidon-version: 4.0.12
 :helidon-version-is-release: true
 
 :sourcedir: {rootdir}/../java/io/helidon/docs
