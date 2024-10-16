@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,8 +33,8 @@ class JavaxCompletionListener implements CompletionListener {
 
     @Override
     public void onException(Message message, Exception exception) {
-        if (exception instanceof JMSException) {
-            delegate.onException(JakartaJms.create(message), ShimUtil.exception(((JMSException) exception)));
+        if (exception instanceof JMSException jmsException) {
+            delegate.onException(JakartaJms.create(message), ShimUtil.exception(jmsException));
         } else {
             delegate.onException(JakartaJms.create(message), exception);
         }

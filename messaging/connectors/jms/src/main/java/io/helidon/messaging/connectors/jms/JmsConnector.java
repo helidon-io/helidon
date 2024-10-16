@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -425,10 +425,10 @@ public class JmsConnector implements IncomingConnectorFactory, OutgoingConnector
                                           jakarta.jms.Message message,
                                           Executor executor,
                                           SessionMetadata sessionMetadata) {
-        if (message instanceof TextMessage) {
-            return new JmsTextMessage(nackHandler, (TextMessage) message, executor, sessionMetadata);
-        } else if (message instanceof BytesMessage) {
-            return new JmsBytesMessage(nackHandler, (BytesMessage) message, executor, sessionMetadata);
+        if (message instanceof TextMessage textMessage) {
+            return new JmsTextMessage(nackHandler, textMessage, executor, sessionMetadata);
+        } else if (message instanceof BytesMessage bytesMessage) {
+            return new JmsBytesMessage(nackHandler, bytesMessage, executor, sessionMetadata);
         } else {
             return new AbstractJmsMessage<jakarta.jms.Message>(nackHandler, executor, sessionMetadata) {
 
