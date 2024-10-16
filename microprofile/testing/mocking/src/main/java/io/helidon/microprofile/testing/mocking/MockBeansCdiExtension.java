@@ -68,23 +68,27 @@ public class MockBeansCdiExtension implements Extension {
         });
     }
 
-    void registerOtherBeans(@Observes AfterBeanDiscovery event, BeanManager beanManager) {
+    void registerMocks(@Observes AfterBeanDiscovery event, BeanManager beanManager) {
         // Register all mocks
         mocks.entrySet().forEach(entry -> {
+            Object eagerMock = Mockito.mock(entry.getKey(),
+                    Mockito.withSettings().defaultAnswer(entry.getValue().answer()));
             event.addBean()
                 .addType(entry.getKey())
                 .scope(ApplicationScoped.class)
                 .alternative(true)
                 .createWith(inst -> {
+                    Object mock;
                     Set<Bean<?>> beans = beanManager.getBeans(MockSettings.class);
                     if (!beans.isEmpty()) {
                         Bean<?> bean = beans.iterator().next();
                         MockSettings mockSettings = (MockSettings) beanManager.getReference(bean, MockSettings.class,
                                 beanManager.createCreationalContext(null));
-                        return Mockito.mock(entry.getKey(), mockSettings);
+                        mock = Mockito.mock(entry.getKey(), mockSettings);
                     } else {
-                        return Mockito.mock(entry.getKey(), Mockito.withSettings().defaultAnswer(entry.getValue().answer()));
+                        mock = eagerMock;
                     }
+                    return mock;
                 })
                 .priority(0);
         });
