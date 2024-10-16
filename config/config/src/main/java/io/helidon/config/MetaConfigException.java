@@ -28,7 +28,7 @@ class MetaConfigException extends RuntimeException {
      *
      * @param message the message
      */
-    public MetaConfigException(String message) {
+    MetaConfigException(String message) {
         super(message);
     }
 
@@ -38,7 +38,7 @@ class MetaConfigException extends RuntimeException {
      * @param message the message
      * @param cause   the cause
      */
-    public MetaConfigException(String message, Throwable cause) {
+    MetaConfigException(String message, Throwable cause) {
         super(message, cause);
     }
 }
