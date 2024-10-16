@@ -110,9 +110,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
         status = status == null ? Status.OK_200 : status;
 
-        if (status.code() == Status.NO_CONTENT_204.code()
-            || status.code() == Status.RESET_CONTENT_205.code()
-            || status.code() == Status.NOT_MODIFIED_304.code()) {
+        if (isNoEntityStatus(status)) {
             // https://www.rfc-editor.org/rfc/rfc9110#status.204
             // A 204 response is terminated by the end of the header section; it cannot contain content or trailers
             // ditto for 205, and 304
@@ -431,6 +429,13 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         return outputStreamFilter == null ? encodedOutputStream : outputStreamFilter.apply(encodedOutputStream);
     }
 
+    private static boolean isNoEntityStatus(Status status) {
+        int code = status.code();
+        return code == Status.NO_CONTENT_204.code()
+                || code == Status.RESET_CONTENT_205.code()
+                || code == Status.NOT_MODIFIED_304.code();
+    }
+
     static class BlockingOutputStream extends OutputStream {
         private final ServerResponseHeaders headers;
         private final WritableHeaders<?> trailers;
@@ -693,9 +698,15 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         }
 
         private void sendHeadersAndPrepare() {
+            Status usedStatus = status.get();
+
             if (headers.contains(HeaderNames.CONTENT_LENGTH)) {
                 contentLength = headers.contentLength().orElse(-1);
                 isChunked = false;
+            } else if (isNoEntityStatus(usedStatus)) {
+                // force content length to zero to prevent validation errors
+                headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
+                contentLength = 0;
             } else {
                 contentLength = -1;
                 // Add chunked encoding, if there is no other transfer-encoding headers
@@ -710,7 +721,6 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             }
 
             // at this moment, we must send headers
-            Status usedStatus = status.get();
             sendListener.status(ctx, usedStatus);
             sendListener.headers(ctx, headers);
             BufferData bufferData = BufferData.growing(256);
