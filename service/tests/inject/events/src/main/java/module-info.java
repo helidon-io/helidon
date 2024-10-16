@@ -20,6 +20,7 @@ module io.helidon.service.tests.inject.events {
     requires io.helidon.service.inject;
     requires io.helidon.http;
     requires io.helidon.common.context;
+    requires java.logging;
 
     exports io.helidon.service.tests.inject.events;
 }
