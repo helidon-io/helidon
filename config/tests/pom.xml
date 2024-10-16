@@ -59,6 +59,7 @@
         <module>test-mappers-1-common</module>
         <module>test-mappers-2-complex</module>
         <module>test-meta-source</module>
+        <module>test-meta-source-fail</module>
         <module>test-parsers-1-complex</module>
         <module>service-registry</module>
         <module>config-metadata-meta-api</module>
