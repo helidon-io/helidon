@@ -214,7 +214,7 @@ class ConfigMetadataHandler {
 
     @Retention(RetentionPolicy.CLASS)
     private @interface SuppressFBWarnings {
- 
+
         String[] value() default {};
 
         String justification() default "";
