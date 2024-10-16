@@ -71,10 +71,9 @@ runs:
         git config --global core.eol lf
     - name: Set up GraalVM
       if: ${{ inputs.native-image == 'true' }}
-      uses: graalvm/setup-graalvm@v1.2.1
+      uses: graalvm/setup-graalvm@v1.2.4
       with:
-        java-version: ${{ env.JAVA_VERSION }}
-        version: ${{ env.GRAALVM_VERSION }}
+        java-version: ${{ env.GRAALVM_VERSION || env.JAVA_VERSION }}
         components: ${{ env.GRAALVM_COMPONENTS }}
         check-for-updates: 'false'
         set-java-home: 'false'
