@@ -19,6 +19,8 @@ Java 21 is required to use Helidon 4
 
 ### CHANGES
 
+- Host header validation for server request [9361](https://github.com/helidon-io/helidon/pull/9361)
+
 ## [4.0.11]
 
 This release contains important bugfixes and is recommended for all users of Helidon 4. 
