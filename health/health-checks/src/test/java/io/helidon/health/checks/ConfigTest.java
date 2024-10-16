@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.config.DeprecatedConfig;
 import io.helidon.health.HealthSupport;
 import io.helidon.media.jsonp.JsonpSupport;
 import io.helidon.webclient.WebClient;
@@ -69,7 +70,7 @@ class ConfigTest {
 
     @Test
     void bothFail() throws InterruptedException, ExecutionException, TimeoutException {
-        JsonObject health = runWithConfig("bothFail", Http.Status.SERVICE_UNAVAILABLE_503.code());
+        JsonObject health = runWithConfig("bothFailWithDeprecatedPrefix.helidon.health", Http.Status.SERVICE_UNAVAILABLE_503.code());
         JsonObject diskSpace = getLivenessCheck(health, "diskSpace");
 
         assertThat("Disk space liveness return data", diskSpace, is(notNullValue()));
@@ -83,7 +84,7 @@ class ConfigTest {
 
     @Test
     void bothPass() throws InterruptedException, ExecutionException, TimeoutException {
-        JsonObject health = runWithConfig("bothPass", Http.Status.OK_200.code());
+        JsonObject health = runWithConfig("bothPassWithDeprecatedPrefix.helidon.health", Http.Status.OK_200.code());
         JsonObject diskSpace = getLivenessCheck(health, "diskSpace");
 
         assertThat("Disk space liveness return data", diskSpace, is(notNullValue()));
@@ -95,10 +96,25 @@ class ConfigTest {
         assertThat("Heap memory liveness check status", heapMemory.getString("status"), is("UP"));
     }
 
+    @Test
+    void testWithoutHelidonPrefix() throws ExecutionException, InterruptedException, TimeoutException {
+        JsonObject health = runWithConfig("bothFailWithoutDeprecatedHelidonPrefix.health.checks",
+                                          Http.Status.SERVICE_UNAVAILABLE_503.code());
+        JsonObject diskSpace = getLivenessCheck(health, "diskSpace");
+
+        assertThat("Disk space liveness return data", diskSpace, is(notNullValue()));
+        assertThat("Disk space liveness check status", diskSpace.getString("status"), is("DOWN"));
+
+        JsonObject heapMemory = getLivenessCheck(health, "heapMemory");
+
+        assertThat("Heap memory liveness return data", heapMemory, is(notNullValue()));
+        assertThat("Heap memory liveness check status", heapMemory.getString("status"), is("DOWN"));
+    }
+
     private JsonObject runWithConfig(String configKey, int expectedStatus) throws InterruptedException, ExecutionException,
             TimeoutException {
         HealthSupport healthSupport = HealthSupport.builder()
-                .addLiveness(HealthChecks.healthChecks(testConfig.get(configKey + ".helidon.health")))
+                .addLiveness(HealthChecks.healthChecks(testConfig.get(configKey)))
                 .build();
         WebServer webServer = null;
         try {

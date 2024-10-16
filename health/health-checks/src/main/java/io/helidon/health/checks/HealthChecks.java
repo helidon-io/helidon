@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,8 @@ import org.eclipse.microprofile.health.HealthCheck;
  */
 public final class HealthChecks {
 
-    static final String CONFIG_KEY_HEALTH_PREFIX = "helidon.health";
+    static final String CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX = "health.checks";
+    static final String DEPRECATED_CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX = "helidon.health";
 
     private HealthChecks() {
     }
@@ -114,9 +115,10 @@ public final class HealthChecks {
     }
 
     /**
-     * Built-in health checks, set up using "helidon.health" configuration.
+     * Built-in health checks, set up using configuration at {@value CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX} or the deprecated
+     * {@value DEPRECATED_CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX}.
      *
-     * @param config configuration rooted at "helidon.health"
+     * @param config configuration at the node containing health checks config
      * @return built-in health checks, set up using the provided configuration
      * @see io.helidon.health.HealthSupport.Builder#addLiveness(org.eclipse.microprofile.health.HealthCheck...)
      */
