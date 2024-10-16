@@ -15,7 +15,7 @@
  */
 
 /**
- * Http signature provider.
+ * Helidon JWT and JWK token implementation.
  */
 module io.helidon.security.jwt {
 
