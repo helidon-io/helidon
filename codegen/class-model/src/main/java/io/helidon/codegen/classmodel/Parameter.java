@@ -47,20 +47,6 @@ public final class Parameter extends AnnotatedComponent {
     }
 
     @Override
-    void writeComponent(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports, ClassType classType)
-            throws IOException {
-        for (Annotation annotation : annotations()) {
-            annotation.writeComponent(writer, declaredTokens, imports, classType);
-            writer.write(" ");
-        }
-        type().writeComponent(writer, declaredTokens, imports, classType);
-        if (vararg) {
-            writer.write("...");
-        }
-        writer.write(" " + name());
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -83,8 +69,27 @@ public final class Parameter extends AnnotatedComponent {
         return "Parameter{type=" + type().fqTypeName() + ", simpleType=" + type().simpleTypeName() + ", name=" + name() + "}";
     }
 
-    List<String> description() {
+    /**
+     * Description (javadoc lines) of this parameter.
+     *
+     * @return parameter description
+     */
+    public List<String> description() {
         return description;
+    }
+
+    @Override
+    void writeComponent(ModelWriter writer, Set<String> declaredTokens, ImportOrganizer imports, ClassType classType)
+            throws IOException {
+        for (Annotation annotation : annotations()) {
+            annotation.writeComponent(writer, declaredTokens, imports, classType);
+            writer.write(" ");
+        }
+        type().writeComponent(writer, declaredTokens, imports, classType);
+        if (vararg) {
+            writer.write("...");
+        }
+        writer.write(" " + name());
     }
 
     /**
@@ -92,8 +97,8 @@ public final class Parameter extends AnnotatedComponent {
      */
     public static final class Builder extends AnnotatedComponent.Builder<Builder, Parameter> {
 
-        private boolean vararg = false;
         private final List<String> description = new ArrayList<>();
+        private boolean vararg = false;
 
         private Builder() {
         }

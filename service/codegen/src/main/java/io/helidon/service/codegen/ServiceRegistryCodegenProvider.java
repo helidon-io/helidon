@@ -16,30 +16,60 @@
 
 package io.helidon.service.codegen;
 
+import java.util.List;
+import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.Option;
 import io.helidon.codegen.spi.CodegenExtension;
 import io.helidon.codegen.spi.CodegenExtensionProvider;
+import io.helidon.codegen.spi.CodegenProvider;
+import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
+import io.helidon.service.codegen.spi.RegistryCodegenExtensionProvider;
 
 /**
  * A {@link java.util.ServiceLoader} provider implementation for {@link io.helidon.codegen.spi.CodegenExtensionProvider}
  * that handles Helidon Service Registry code generation.
  */
+@Weight(Weighted.DEFAULT_WEIGHT - 10) // we want builders to be processed first
 public class ServiceRegistryCodegenProvider implements CodegenExtensionProvider {
-    private static final Set<Option<?>> SUPPORTED_OPTIONS = Set.of(
-            ServiceOptions.AUTO_ADD_NON_CONTRACT_INTERFACES
-    );
+    private static final List<RegistryCodegenExtensionProvider> EXTENSIONS =
+            HelidonServiceLoader.create(ServiceLoader.load(RegistryCodegenExtensionProvider.class,
+                                                           ServiceRegistryCodegenProvider.class.getClassLoader()))
+                    .asList();
 
-    private static final Set<TypeName> SUPPORTED_ANNOTATIONS = Set.of(
-            TypeNames.GENERATED,
-            ServiceCodegenTypes.SERVICE_ANNOTATION_DESCRIPTOR,
-            ServiceCodegenTypes.SERVICE_ANNOTATION_PROVIDER
-    );
-    private static final Set<String> SUPPORTED_ANNOTATION_PACKAGES = Set.of();
+    private static final Set<Option<?>> SUPPORTED_OPTIONS =
+            EXTENSIONS.stream()
+                    .map(CodegenProvider::supportedOptions)
+                    .flatMap(Set::stream)
+                    .collect(Collectors.toUnmodifiableSet());
+
+    private static final Set<TypeName> SUPPORTED_ANNOTATIONS =
+            Stream.concat(EXTENSIONS.stream()
+                                  .map(RegistryCodegenExtensionProvider::supportedAnnotations)
+                                  .flatMap(Set::stream),
+                          Stream.of(TypeNames.GENERATED,
+                                    ServiceCodegenTypes.SERVICE_ANNOTATION_DESCRIPTOR))
+                    .collect(Collectors.toUnmodifiableSet());
+
+    private static final Set<String> SUPPORTED_ANNOTATION_PACKAGES =
+            EXTENSIONS.stream()
+                    .map(RegistryCodegenExtensionProvider::supportedAnnotationPackages)
+                    .flatMap(Set::stream)
+                    .collect(Collectors.toUnmodifiableSet());
+
+    private static final Set<TypeName> SUPPORTED_META_ANNOTATIONS =
+            EXTENSIONS.stream()
+                    .map(RegistryCodegenExtensionProvider::supportedMetaAnnotations)
+                    .flatMap(Set::stream)
+                    .collect(Collectors.toUnmodifiableSet());
 
     /**
      * Required default constructor.
@@ -66,7 +96,12 @@ public class ServiceRegistryCodegenProvider implements CodegenExtensionProvider 
     }
 
     @Override
+    public Set<TypeName> supportedMetaAnnotations() {
+        return SUPPORTED_META_ANNOTATIONS;
+    }
+
+    @Override
     public CodegenExtension create(CodegenContext ctx, TypeName generatorType) {
-        return ServiceRegistryCodegenExtension.create(ctx, generatorType);
+        return ServiceRegistryCodegenExtension.create(ctx, EXTENSIONS);
     }
 }

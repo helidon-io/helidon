@@ -527,7 +527,7 @@ methods as described in xref:../config/hierarchical-features.adoc[Hierarchical C
 
 === Accessing Config Using Keys or Navigation
 
-The simplest way to access configuration data is using a key, as shown below in the `GreetService` class.  The
+The simplest way to access configuration data is using a key, as shown below in the `GreetFeature` class.  The
 key can be composite as shown below:
 
 [source,java]

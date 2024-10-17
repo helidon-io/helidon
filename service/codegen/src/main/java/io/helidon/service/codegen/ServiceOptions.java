@@ -21,13 +21,14 @@ import io.helidon.codegen.Option;
 /**
  * Supported options specific to Helidon Service Registry.
  */
-final class ServiceOptions {
+public final class ServiceOptions {
     /**
      * Treat all super types as a contract for a given service type being added.
      */
     public static final Option<Boolean> AUTO_ADD_NON_CONTRACT_INTERFACES =
             Option.create("helidon.registry.autoAddNonContractInterfaces",
-                          "Treat all super types as a contract for a given service type being added.",
+                          "Treat all super types and implemented types as a contract for a given service type "
+                                  + "being added.",
                           false);
 
     private ServiceOptions() {

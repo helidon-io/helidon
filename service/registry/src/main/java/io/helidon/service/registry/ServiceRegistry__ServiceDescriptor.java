@@ -18,20 +18,21 @@ package io.helidon.service.registry;
 
 import java.util.Set;
 
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 
 /**
  * Service descriptor to enable dependency on {@link io.helidon.service.registry.ServiceRegistry}.
  */
 @SuppressWarnings("checkstyle:TypeName") // matches pattern of generated descriptors
-public class ServiceRegistry__ServiceDescriptor implements GeneratedService.Descriptor<ServiceRegistry> {
+public class ServiceRegistry__ServiceDescriptor implements ServiceDescriptor<ServiceRegistry> {
     /**
      * Singleton instance to be referenced when building applications.
      */
     public static final ServiceRegistry__ServiceDescriptor INSTANCE = new ServiceRegistry__ServiceDescriptor();
 
     private static final TypeName DESCRIPTOR_TYPE = TypeName.create(ServiceRegistry__ServiceDescriptor.class);
-    private static final Set<TypeName> CONTRACTS = Set.of(ServiceRegistry.TYPE);
+    private static final Set<ResolvedType> CONTRACTS = Set.of(ResolvedType.create(ServiceRegistry.TYPE));
 
     private ServiceRegistry__ServiceDescriptor() {
     }
@@ -47,7 +48,7 @@ public class ServiceRegistry__ServiceDescriptor implements GeneratedService.Desc
     }
 
     @Override
-    public Set<TypeName> contracts() {
+    public Set<ResolvedType> contracts() {
         return CONTRACTS;
     }
 }

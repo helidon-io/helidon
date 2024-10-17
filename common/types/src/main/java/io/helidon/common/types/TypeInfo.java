@@ -86,6 +86,8 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         private String module;
         private String typeKind;
         private TypeInfo superTypeInfo;
+        private TypeName declaredType;
+        private TypeName rawType;
         private TypeName typeName;
 
         /**
@@ -102,6 +104,8 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          */
         public BUILDER from(TypeInfo prototype) {
             typeName(prototype.typeName());
+            rawType(prototype.rawType());
+            declaredType(prototype.declaredType());
             description(prototype.description());
             typeKind(prototype.typeKind());
             kind(prototype.kind());
@@ -144,6 +148,8 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          */
         public BUILDER from(TypeInfo.BuilderBase<?, ?> builder) {
             builder.typeName().ifPresent(this::typeName);
+            builder.rawType().ifPresent(this::rawType);
+            builder.declaredType().ifPresent(this::declaredType);
             builder.description().ifPresent(this::description);
             builder.typeKind().ifPresent(this::typeKind);
             builder.kind().ifPresent(this::kind);
@@ -200,6 +206,9 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
 
         /**
          * The type name.
+         * This type name represents the type usage of this type
+         * (obtained from {@link TypeInfo#superTypeInfo()} or {@link TypeInfo#interfaceTypeInfo()}).
+         * In case this is a type info created from {@link io.helidon.common.types.TypeName}, this will be the type name returned.
          *
          * @param typeName the type name
          * @return updated builder instance
@@ -213,6 +222,9 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
 
         /**
          * The type name.
+         * This type name represents the type usage of this type
+         * (obtained from {@link TypeInfo#superTypeInfo()} or {@link TypeInfo#interfaceTypeInfo()}).
+         * In case this is a type info created from {@link io.helidon.common.types.TypeName}, this will be the type name returned.
          *
          * @param consumer consumer of builder for
          *                 the type name
@@ -229,6 +241,9 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
 
         /**
          * The type name.
+         * This type name represents the type usage of this type
+         * (obtained from {@link TypeInfo#superTypeInfo()} or {@link TypeInfo#interfaceTypeInfo()}).
+         * In case this is a type info created from {@link io.helidon.common.types.TypeName}, this will be the type name returned.
          *
          * @param supplier supplier of
          *                 the type name
@@ -238,6 +253,107 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         public BUILDER typeName(Supplier<? extends TypeName> supplier) {
             Objects.requireNonNull(supplier);
             this.typeName(supplier.get());
+            return self();
+        }
+
+        /**
+         * The raw type name. This is a unique identification of a type, containing ONLY:
+         * <ul>
+         *  <li>{@link TypeName#packageName()}</li>
+         *  <li>{@link io.helidon.common.types.TypeName#className()}</li>
+         *  <li>if relevant: {@link io.helidon.common.types.TypeName#enclosingNames()}</li>
+         * </ul>
+         *
+         * @param rawType raw type of this type info
+         * @return updated builder instance
+         * @see #rawType()
+         */
+        public BUILDER rawType(TypeName rawType) {
+            Objects.requireNonNull(rawType);
+            this.rawType = rawType;
+            return self();
+        }
+
+        /**
+         * The raw type name. This is a unique identification of a type, containing ONLY:
+         * <ul>
+         *  <li>{@link TypeName#packageName()}</li>
+         *  <li>{@link io.helidon.common.types.TypeName#className()}</li>
+         *  <li>if relevant: {@link io.helidon.common.types.TypeName#enclosingNames()}</li>
+         * </ul>
+         *
+         * @param consumer consumer of builder for
+         *                 raw type of this type info
+         * @return updated builder instance
+         * @see #rawType()
+         */
+        public BUILDER rawType(Consumer<TypeName.Builder> consumer) {
+            Objects.requireNonNull(consumer);
+            var builder = TypeName.builder();
+            consumer.accept(builder);
+            this.rawType(builder.build());
+            return self();
+        }
+
+        /**
+         * The raw type name. This is a unique identification of a type, containing ONLY:
+         * <ul>
+         *  <li>{@link TypeName#packageName()}</li>
+         *  <li>{@link io.helidon.common.types.TypeName#className()}</li>
+         *  <li>if relevant: {@link io.helidon.common.types.TypeName#enclosingNames()}</li>
+         * </ul>
+         *
+         * @param supplier supplier of
+         *                 raw type of this type info
+         * @return updated builder instance
+         * @see #rawType()
+         */
+        public BUILDER rawType(Supplier<? extends TypeName> supplier) {
+            Objects.requireNonNull(supplier);
+            this.rawType(supplier.get());
+            return self();
+        }
+
+        /**
+         * The declared type name, including type parameters.
+         *
+         * @param declaredType type name with declared type parameters
+         * @return updated builder instance
+         * @see #declaredType()
+         */
+        public BUILDER declaredType(TypeName declaredType) {
+            Objects.requireNonNull(declaredType);
+            this.declaredType = declaredType;
+            return self();
+        }
+
+        /**
+         * The declared type name, including type parameters.
+         *
+         * @param consumer consumer of builder for
+         *                 type name with declared type parameters
+         * @return updated builder instance
+         * @see #declaredType()
+         */
+        public BUILDER declaredType(Consumer<TypeName.Builder> consumer) {
+            Objects.requireNonNull(consumer);
+            var builder = TypeName.builder();
+            consumer.accept(builder);
+            this.declaredType(builder.build());
+            return self();
+        }
+
+        /**
+         * The declared type name, including type parameters.
+         *
+         * @param supplier supplier of
+         *                 type name with declared type parameters
+         * @return updated builder instance
+         * @see #declaredType()
+         */
+        public BUILDER declaredType(Supplier<? extends TypeName> supplier) {
+            Objects.requireNonNull(supplier);
+            this.declaredType(supplier.get());
             return self();
         }
 
@@ -947,11 +1063,37 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
 
         /**
          * The type name.
+         * This type name represents the type usage of this type
+         * (obtained from {@link TypeInfo#superTypeInfo()} or {@link TypeInfo#interfaceTypeInfo()}).
+         * In case this is a type info created from {@link io.helidon.common.types.TypeName}, this will be the type name returned.
          *
          * @return the type name
          */
         public Optional<TypeName> typeName() {
             return Optional.ofNullable(typeName);
+        }
+
+        /**
+         * The raw type name. This is a unique identification of a type, containing ONLY:
+         * <ul>
+         *  <li>{@link TypeName#packageName()}</li>
+         *  <li>{@link io.helidon.common.types.TypeName#className()}</li>
+         *  <li>if relevant: {@link io.helidon.common.types.TypeName#enclosingNames()}</li>
+         * </ul>
+         *
+         * @return the raw type
+         */
+        public Optional<TypeName> rawType() {
+            return Optional.ofNullable(rawType);
+        }
+
+        /**
+         * The declared type name, including type parameters.
+         *
+         * @return the declared type
+         */
+        public Optional<TypeName> declaredType() {
+            return Optional.ofNullable(declaredType);
         }
 
         /**
@@ -1140,6 +1282,8 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         public String toString() {
             return "TypeInfoBuilder{"
                     + "typeName=" + typeName + ","
+                    + "rawType=" + rawType + ","
+                    + "declaredType=" + declaredType + ","
                     + "kind=" + kind + ","
                     + "elementInfo=" + elementInfo + ","
                     + "superTypeInfo=" + superTypeInfo + ","
@@ -1165,6 +1309,12 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             Errors.Collector collector = Errors.collector();
             if (typeName == null) {
                 collector.fatal(getClass(), "Property \"typeName\" is required, but not set");
+            }
+            if (rawType == null) {
+                collector.fatal(getClass(), "Property \"rawType\" must not be null, but not set");
+            }
+            if (declaredType == null) {
+                collector.fatal(getClass(), "Property \"declaredType\" must not be null, but not set");
             }
             if (typeKind == null) {
                 collector.fatal(getClass(), "Property \"typeKind\" is required, but not set");
@@ -1253,6 +1403,8 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             private final Set<Modifier> elementModifiers;
             private final Set<String> modifiers;
             private final String typeKind;
+            private final TypeName declaredType;
+            private final TypeName rawType;
             private final TypeName typeName;
 
             /**
@@ -1262,6 +1414,8 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
              */
             protected TypeInfoImpl(TypeInfo.BuilderBase<?, ?> builder) {
                 this.typeName = builder.typeName().get();
+                this.rawType = builder.rawType().get();
+                this.declaredType = builder.declaredType().get();
                 this.description = builder.description();
                 this.typeKind = builder.typeKind().get();
                 this.kind = builder.kind().get();
@@ -1284,6 +1438,16 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             @Override
             public TypeName typeName() {
                 return typeName;
+            }
+
+            @Override
+            public TypeName rawType() {
+                return rawType;
+            }
+
+            @Override
+            public TypeName declaredType() {
+                return declaredType;
             }
 
             @Override
@@ -1370,6 +1534,8 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             public String toString() {
                 return "TypeInfo{"
                         + "typeName=" + typeName + ","
+                        + "rawType=" + rawType + ","
+                        + "declaredType=" + declaredType + ","
                         + "kind=" + kind + ","
                         + "elementInfo=" + elementInfo + ","
                         + "superTypeInfo=" + superTypeInfo + ","
@@ -1390,6 +1556,8 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
                     return false;
                 }
                 return Objects.equals(typeName, other.typeName())
+                        && Objects.equals(rawType, other.rawType())
+                        && Objects.equals(declaredType, other.declaredType())
                         && Objects.equals(kind, other.kind())
                         && Objects.equals(elementInfo, other.elementInfo())
                         && Objects.equals(superTypeInfo, other.superTypeInfo())
@@ -1403,6 +1571,8 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             @Override
             public int hashCode() {
                 return Objects.hash(typeName,
+                                    rawType,
+                                    declaredType,
                                     kind,
                                     elementInfo,
                                     superTypeInfo,

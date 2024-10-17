@@ -134,9 +134,18 @@ class TypeHandlerMap extends TypeHandler {
 
     @Override
     TypeName argumentTypeName() {
+        TypeName firstType = declaredType().typeArguments().get(0);
+        if (!(TypeNames.STRING.equals(firstType) || toPrimitive(firstType).primitive() || firstType.array())) {
+            firstType = toWildcard(firstType);
+        }
+        TypeName secondType = declaredType().typeArguments().get(1);
+        if (!(TypeNames.STRING.equals(secondType) || toPrimitive(secondType).primitive() || secondType.array())) {
+            secondType = toWildcard(secondType);
+        }
+
         return TypeName.builder(MAP)
-                .addTypeArgument(toWildcard(declaredType().typeArguments().get(0)))
-                .addTypeArgument(toWildcard(declaredType().typeArguments().get(1)))
+                .addTypeArgument(firstType)
+                .addTypeArgument(secondType)
                 .build();
     }
 

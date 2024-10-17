@@ -191,8 +191,41 @@ public final class Method extends Executable {
         type().addImports(imports);
     }
 
-    boolean isStatic() {
+    /**
+     * Is this a static method.
+     *
+     * @return whether this method is static
+     */
+    public boolean isStatic() {
         return isStatic;
+    }
+
+    /**
+     * Is this a final method.
+     *
+     * @return whether this method is final
+     */
+    public boolean isFinal() {
+        return isFinal;
+    }
+
+    /**
+     * Is this an abstract method.
+     *
+     * @return whether this method is abstract
+     */
+    public boolean isAbstract() {
+        return isAbstract;
+    }
+
+    /**
+     * Is this a default method (of an interface).
+     *
+     * @return whether this method is default
+     */
+
+    public boolean isDefault() {
+        return isDefault;
     }
 
     @Override

@@ -40,12 +40,13 @@ final class GenerateBuilder {
                          TypeName prototype,
                          TypeName runtimeType,
                          List<TypeArgument> typeArguments,
+                         List<TypeName> typeArgumentNames,
                          boolean isFactory,
                          TypeContext typeContext) {
         classBuilder.addInnerClass(builder -> {
             TypeName builderType = TypeName.builder()
                     .from(TypeName.create(prototype.fqName() + ".Builder"))
-                    .addTypeArguments(typeArguments)
+                    .addTypeArguments(typeArgumentNames)
                     .build();
             typeArguments.forEach(builder::addGenericArgument);
             builder.name("Builder")
@@ -53,7 +54,7 @@ final class GenerateBuilder {
                     .description("Fluent API builder for {@link " + runtimeType.className() + "}.")
                     .superType(TypeName.builder()
                                          .from(TypeName.create(prototype.fqName() + ".BuilderBase"))
-                                         .addTypeArguments(typeArguments)
+                                         .addTypeArguments(typeArgumentNames)
                                          .addTypeArgument(builderType)
                                          .addTypeArgument(prototype)
                                          .build())

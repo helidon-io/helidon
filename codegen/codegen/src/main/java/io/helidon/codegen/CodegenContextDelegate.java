@@ -107,4 +107,9 @@ public abstract class CodegenContextDelegate implements CodegenContext {
     public Set<Option<?>> supportedOptions() {
         return delegate.supportedOptions();
     }
+
+    @Override
+    public String uniqueName(TypeInfo type, TypedElementInfo element) {
+        return delegate.uniqueName(type, element);
+    }
 }
