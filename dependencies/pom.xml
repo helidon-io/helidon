@@ -149,6 +149,7 @@
         <version.lib.prometheus>0.9.0</version.lib.prometheus>
         <version.lib.slf4j>2.0.9</version.lib.slf4j>
         <version.lib.smallrye-openapi>2.1.24</version.lib.smallrye-openapi>
+        <version.lib.smallrye-openapi-ui>3.13.0</version.lib.smallrye-openapi-ui>
         <version.lib.snakeyaml>2.2</version.lib.snakeyaml>
         <version.lib.typesafe-config>1.4.2</version.lib.typesafe-config>
         <version.lib.tyrus>2.1.5</version.lib.tyrus>
