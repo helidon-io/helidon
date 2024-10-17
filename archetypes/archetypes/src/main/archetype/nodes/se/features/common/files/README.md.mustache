@@ -1,0 +1,29 @@
+# {{artifactId}}
+
+{{readme-description}}
+
+## Build and run
+
+{{#readme-run-notes}}
+{{.}}
+{{/readme-run-notes}}
+
+{{#readme-run-commands}}
+{{.}}
+{{/readme-run-commands}}
+{{^readme-run-commands}}
+With JDK21
+```bash
+mvn package
+java -jar target/{{artifactId}}.jar
+```
+{{/readme-run-commands}}
+
+## Exercise the application
+{{#readme-exercise-the-application}}
+{{.}}
+{{/readme-exercise-the-application}}
+
+{{#readme-sections}}
+{{.}}
+{{/readme-sections}}

@@ -1,0 +1,672 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+    <methods>
+        <method name="security-oidc">
+            <output if="${security.atn} contains ['oidc']">
+                <model>
+                    <list key="providers-config-entries">
+                        <value><![CDATA[
+  - oidc:
+      client-id: "your-client-id"
+      client-secret: "changeit"
+      identity-uri: "https://your-tenant-id.identity.oracle.com"
+      # A prefix used for custom scopes
+      scope-audience: "http://localhost:7987/test-application"
+      proxy-host: ""
+      # Used as a base for redirects back to us (based on Host header now, so no need to explicitly define it)
+      # If explicitly defined, will override host header
+      # frontend-uri: "http://localhost:7987"
+      # support for non-public signature JWK (and maybe other IDCS specific handling)
+      server-type: "idcs"
+      logout-enabled: true
+      # Can define just a path, host will be taken from header
+      post-logout-uri: "/loggedout"
+      # We want to redirect to login page (and token can be received either through cookie or header)
+      redirect: true
+  - idcs-role-mapper:
+      multitenant: false
+      oidc-config:
+        # we must repeat IDCS configuration, as in this case
+        # IDCS serves both as open ID connect authenticator and
+        # as a role mapper. Using minimal configuration here
+        client-id: "your-client-id"
+        client-secret: "changeit"
+        identity-uri: "https://your-tenant-id.identity.oracle.com"]]>
+                        </value>
+                    </list>
+                    <list key="paths-config-entries">
+                        <value><![CDATA[   - path: "/rest/profile"
+             methods: ["get"]
+             authenticate: true
+             roles-allowed: ["my_admins"]]]>
+                        </value>
+                    </list>
+                    <list key="dependencies">
+                        <map>
+                            <value key="groupId">io.helidon.security.providers</value>
+                            <value key="artifactId">helidon-security-providers-oidc</value>
+                        </map>
+                        <map>
+                            <value key="groupId">io.helidon.security.providers</value>
+                            <value key="artifactId">helidon-security-providers-idcs-mapper</value>
+                        </map>
+                    </list>
+                    <list key="Main-java-imports">
+                        <value>java.util.Optional</value>
+                    </list>
+                    <list key="Main-helidon-imports">
+                        <value>io.helidon.common.context.Contexts</value>
+                        <value>io.helidon.http.HttpMediaTypes</value>
+                        <value>io.helidon.security.Security</value>
+                        <value>io.helidon.security.SecurityContext</value>
+                        <value>io.helidon.security.Subject</value>
+                        <value>io.helidon.security.providers.oidc.OidcFeature</value>
+                    </list>
+                    <list key="Main-main">
+                        <value><![CDATA[
+        Security security = Security.create(config.get("security"));
+        // this is needed for proper encryption/decryption of cookies
+        Contexts.globalContext().register(security);
+]]>
+                        </value>
+                    </list>
+                    <list key="Main-routing">
+                        <value><![CDATA[
+        if (Config.global().get("security.enabled").asBoolean().orElse(true)) {
+            // IDCS requires a web resource for redirects
+            routing.addFeature(OidcFeature.create(Config.global()));
+        }
+]]>
+                        </value>
+                    </list>
+                    <list key="Main-routing-builder">
+                        <value><![CDATA[// web server does not (yet) have possibility to configure routes in config files, so explicit...
+                        .get("/rest/profile", (req, res) -> {
+                            Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
+                            res.headers().contentType(HttpMediaTypes.PLAINTEXT_UTF_8);
+                            res.send("Response from config based service, you are: \n" + securityContext
+                                    .flatMap(SecurityContext::user)
+                                    .map(Subject::toString)
+                                    .orElse("Security context is null"));
+                        })
+                        .get("/loggedout", (req, res) -> res.send("You have been logged out"))]]>
+                        </value>
+                    </list>
+                    <list key="module-requires">
+                        <value>io.helidon.security</value>
+                        <value>io.helidon.security.providers.oidc</value>
+                    </list>
+                    <list key="readme-sections">
+                        <value><![CDATA[
+## Security integration with IDCS
+
+This example demonstrates integration with IDCS (Oracle identity service, integrated with Open ID Connect provider).
+
+### Code Configuration
+
+Edit application.yaml for IdcsMain.java or OidcConfig variable definition for IdcsBuilderMain.java sample
+
+ 1. idcs-uri  : Base URL of your idcs instance, usually something like https://idcs-<longnumber>.identity.oraclecloud.com
+ 2. idcs-client-id  : This is obtained from your IDCS application in the IDCS console
+ 3. idcs-client-secret   : This is obtained from your IDCS application in the IDCS console
+ 4. frontend-uri : This is the base URL of your application when run, e.g. `http://localhost:7987`
+ 5. proxy-host   : Your proxy server if needed
+ 6. scope-audience : This is the scope audience which MUST match the primary audience in the IDCS resource, recommendation is not to have a trailing slash (/)
+
+## Try the application
+
+Build and run the application and then try the endpoints:
+
+1. Open http://localhost:7987/rest/profile in your browser. This should present
+ you with a response highlighting your logged in role (null) correctly as you are not logged in
+2. Open `http://localhost:7987/oidc/logout` in your browser. This will log you out from your IDCS and Helidon sessions
+]]>
+                        </value>
+                    </list>
+                </model>
+            </output>
+        </method>
+        <method name="security-google">
+            <output if="${security.atn} contains ['google']">
+                <files>
+                    <directory>files</directory>
+                    <includes>
+                        <include>src/*/resources/**/static.js/google-app.js</include>
+                    </includes>
+                </files>
+                <file source="files/src/main/resources/WEB/google-login.html" target="src/main/resources/WEB/google-login.html"/>
+                <model>
+                    <list key="dependencies">
+                        <map>
+                            <value key="groupId">io.helidon.bundles</value>
+                            <value key="artifactId">helidon-bundles-config</value>
+                        </map>
+                        <map>
+                            <value key="groupId">io.helidon.webserver</value>
+                            <value key="artifactId">helidon-webserver-static-content</value>
+                        </map>
+                    </list>
+                    <list key="Main-helidon-imports">
+                        <value>java.util.Optional</value>
+                    </list>
+                    <list key="Main-helidon-imports">
+                        <value>io.helidon.http.HttpMediaTypes</value>
+                        <value>io.helidon.security.Security</value>
+                        <value>io.helidon.security.SecurityContext</value>
+                        <value>io.helidon.security.Subject</value>
+                        <value>io.helidon.security.providers.google.login.GoogleTokenProvider</value>
+                        <value>io.helidon.webserver.WebServer</value>
+                        <value>io.helidon.webserver.WebServerConfig</value>
+                        <value>io.helidon.webserver.context.ContextFeature</value>
+                        <value>io.helidon.webserver.security.SecurityFeature</value>
+                        <value>io.helidon.webserver.staticcontent.StaticContentService</value>
+                    </list>
+                    <list key="Main-main">
+                        <value><![CDATA[
+        Security security = Security.builder()
+                .addProvider(GoogleTokenProvider.builder()
+                        .clientId("your-client-id.apps.googleusercontent.com"))
+                .build();
+]]>
+                        </value>
+                    </list>
+                    <list key="Main-server-builder">
+                        <value><![CDATA[.featuresDiscoverServices(false)
+                .addFeature(ContextFeature.create())
+                .addFeature(SecurityFeature.builder()
+                                    .security(security)
+                                    .build())
+]]>
+                        </value>
+                    </list>
+                    <list key="Main-routing-builder">
+                        <value><![CDATA[.get("/rest/profile", SecurityFeature.authenticate(),
+                 (req, res) -> {
+                        Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
+                        res.headers().contentType(HttpMediaTypes.PLAINTEXT_UTF_8);
+                        res.send("Response from builder based service, you are: \n" + securityContext
+                                .flatMap(SecurityContext::user)
+                                .map(Subject::toString)
+                                .orElse("Security context is null"));
+                        res.next();
+                    })
+            .register(StaticContentService.create("/WEB"))
+]]>
+                        </value>
+                    </list>
+                    <list key="Main-logging">
+                        <value><![CDATA[
+            System.out.println("Check Google login http://localhost:" + server.port() + "/google-login.html");]]>
+                        </value>
+                    </list>
+                    <list key="security-properties">
+                        <value><![CDATA[    google-client-id: "your-app-id.apps.googleusercontent.com"
+    proxy-host: ""]]>
+                        </value>
+                    </list>
+                    <list key="providers-config-entries">
+                        <value><![CDATA[    - google-login:
+        # Create your own application in Google developer console
+        # Also update the client id configured in header of index.html
+        # Detailed how-to for login button (including links how to create an application):
+        # https://developers.google.com/identity/sign-in/web/sign-in
+        client-id: "your-app-id.apps.googleusercontent.com"
+        # Defaults for Helidon
+        # realm: "helidon"
+        # Configure proxy host if needed
+        proxy-host: ""
+        # proxy-port: 80
+
+        # This is the default for GoogleTokenProvider
+        #token:
+        #  header: "Authorization"
+        # or do not specify - then the whole header is considered to be the token value
+        #  prefix: "bearer "
+        # optional alternative - looking for first matching group
+        #  regexp: "bearer (.*)"
+        #}]]>
+                        </value>
+                    </list>
+                    <list key="readme-sections" >
+                        <value><![CDATA[
+## Try Google login
+
+There is a static web page in src/main/resources/WEB with a page to login to Google.
+
+This example requires a Google client id to run.
+Update the following files with your client id (it should support http://localhost:8080):
+1. src/main/resources/application.yaml - set security.properties.google-client-id or override it in a file in ~/helidon/examples.yaml
+2. src/main/resources/WEB/index.html - update the meta tag in header with name "google-signin-client_id"
+3. src/main/java/io/helidon/security/examples/google/GoogleMain.java - update the client id in builder of provider
+]]>
+                        </value>
+                    </list>
+                </model>
+            </output>
+        </method>
+        <method name="security-jwt">
+            <output if="${security.atn} contains ['jwt']">
+                <templates engine="mustache" transformations="mustache,packaged">
+                    <directory>files</directory>
+                    <includes>
+                        <include>src/*/java/**/JwtOverrideService.java.mustache</include>
+                    </includes>
+                </templates>
+                <files>
+                    <directory>files</directory>
+                    <includes>
+                        <include>src/*/resources/**/backend-service-jwt.yaml</include>
+                        <include>src/*/resources/**/client-service-jwt.yaml</include>
+                        <include>src/*/resources/**/signing-jwk.json</include>
+                        <include>src/*/resources/**/verifying-jwk.json</include>
+                    </includes>
+                </files>
+                <model>
+                    <list key="dependencies">
+                        <map>
+                            <value key="groupId">io.helidon.webclient</value>
+                            <value key="artifactId">helidon-webclient-security</value>
+                        </map>
+                        <map>
+                            <value key="groupId">io.helidon.security.providers</value>
+                            <value key="artifactId">helidon-security-providers-http-auth</value>
+                        </map>
+                        <map>
+                            <value key="groupId">io.helidon.security.providers</value>
+                            <value key="artifactId">helidon-security-providers-jwt</value>
+                        </map>
+                        <map>
+                            <value key="groupId">io.helidon.bundles</value>
+                            <value key="artifactId">helidon-bundles-config</value>
+                        </map>
+                    </list>
+                    <list key="Main-helidon-imports">
+                        <value>io.helidon.config.Config</value>
+                        <value>io.helidon.config.ConfigSources</value>
+                        <value>io.helidon.http.HeaderNames</value>
+                        <value>io.helidon.security.Principal</value>
+                        <value>io.helidon.security.SecurityContext</value>
+                        <value>io.helidon.security.Subject</value>
+                        <value>io.helidon.webserver.WebServer</value>
+                        <value>io.helidon.webserver.WebServerConfig</value>
+                        <value>io.helidon.webserver.security.SecurityHttpFeature</value>
+                    </list>
+                    <list key="Main-main">
+                        <value><![CDATA[
+        Config clientConfig = Config.create(ConfigSources.classpath("client-service-jwt.yaml"));
+        Config backendConfig = Config.create(ConfigSources.classpath("backend-service-jwt.yaml"));
+]]>
+                        </value>
+                    </list>
+                    <list key="Main-after-server">
+                        <value><![CDATA[
+        server.context().register(server);
+]]>
+                        </value>
+                    </list>
+                    <list key="Main-server-builder">
+                        <value><![CDATA[// backend that prints the current user
+                .putSocket("backend", socket -> socket
+                        .routing(routing -> routing
+                                .addFeature(SecurityHttpFeature.create(backendConfig.get("security.web-server")))
+                                .get("/hello", (req, res) -> {
+
+                                    // This is the token. It should be bearer <signed JWT base64 encoded>
+                                    req.headers().first(HeaderNames.AUTHORIZATION)
+                                            .ifPresent(System.out::println);
+
+                                    String username = req.context()
+                                            .get(SecurityContext.class)
+                                            .flatMap(SecurityContext::user)
+                                            .map(Subject::principal)
+                                            .map(Principal::getName)
+                                            .orElse("Anonymous");
+
+                                    res.send(username);
+                                })))
+]]>
+                        </value>
+                    </list>
+                    <list key="Main-routing-builder">
+                        <value><![CDATA[.addFeature(SecurityHttpFeature.create(clientConfig.get("security.web-server")))
+                .register(new JwtOverrideService())
+]]>
+                        </value>
+                    </list>
+                    <list key="Main-routing">
+                        <value><![CDATA[        Config clientConfig = Config.create(ConfigSources.classpath("client-service-jwt.yaml"));]]></value>
+                    </list>
+                    <list key="module-requires">
+                        <value>io.helidon.webclient.security</value>
+                        <value>io.helidon.security.providers.jwt</value>
+                        <value>io.helidon.webclient.http1</value>
+                    </list>
+                    <list key="readme-sections">
+                        <value><![CDATA[
+## Try JWT
+
+```bash
+curl -u "jack:changeit" http://localhost:8080/propagate
+curl -u "jack:changeit" http://localhost:8080/override
+curl -u "jill:changeit" http://localhost:8080/propagate
+curl -u "jill:changeit" http://localhost:8080/override
+```
+]]>
+                        </value>
+                    </list>
+                </model>
+            </output>
+        </method>
+        <method name="security-signature">
+            <output if="${security.atn} contains ['http-signature']">
+                <templates engine="mustache" transformations="mustache,packaged">
+                    <directory>files</directory>
+                    <includes>
+                        <include>src/*/java/**/Service1.java.mustache</include>
+                        <include>src/*/java/**/Service2.java.mustache</include>
+                    </includes>
+                </templates>
+                <files>
+                    <directory>files</directory>
+                    <includes>
+                        <include>src/main/resources/keystore.p12</include>
+                    </includes>
+                </files>
+                <model>
+                    <list key="dependencies">
+                        <map>
+                            <value key="groupId">io.helidon.webclient</value>
+                            <value key="artifactId">helidon-webclient-security</value>
+                        </map>
+                        <map>
+                            <value key="groupId">io.helidon.bundles</value>
+                            <value key="artifactId">helidon-bundles-security</value>
+                        </map>
+                        <map>
+                            <value key="groupId">io.helidon.config</value>
+                            <value key="artifactId">helidon-config-hocon</value>
+                        </map>
+                    </list>
+                    <list key="Main-java-imports">
+                        <value>java.util.Arrays</value>
+                        <value>java.util.Collection</value>
+                        <value>java.util.HashMap</value>
+                        <value>java.util.List</value>
+                        <value>java.util.Map</value>
+                        <value>java.util.Optional</value>
+                    </list>
+                    <list key="Main-helidon-imports">
+                        <value>io.helidon.common.configurable.Resource</value>
+                        <value>io.helidon.common.pki.Keys</value>
+                        <value>io.helidon.security.CompositeProviderFlag</value>
+                        <value>io.helidon.security.CompositeProviderSelectionPolicy</value>
+                        <value>io.helidon.security.Security</value>
+                        <value>io.helidon.security.providers.common.OutboundConfig</value>
+                        <value>io.helidon.security.providers.common.OutboundTarget</value>
+                        <value>io.helidon.security.providers.httpauth.HttpBasicAuthProvider</value>
+                        <value>io.helidon.security.providers.httpauth.SecureUserStore</value>
+                        <value>io.helidon.security.providers.httpsign.HttpSignProvider</value>
+                        <value>io.helidon.security.providers.httpsign.InboundClientDefinition</value>
+                        <value>io.helidon.security.providers.httpsign.OutboundTargetDefinition</value>
+                        <value>io.helidon.webserver.security.SecurityFeature</value>
+                        <value>io.helidon.webserver.security.SecurityHttpFeature</value>
+                    </list>
+                    <list key="main-class-fields">
+                        <value><![CDATA[
+    private static final Map<String, SecureUserStore.User> USERS = new HashMap<>();
+
+    static {
+        addUser("jack", "changeit", List.of("user", "admin"));
+        addUser("jill", "changeit", List.of("user"));
+        addUser("john", "changeit", List.of());
+    }
+
+    private static void addUser(String user, String password, List<String> roles) {
+        USERS.put(user, new SecureUserStore.User() {
+            @Override
+            public String login() {
+                return user;
+            }
+
+            char[] password() {
+                return password.toCharArray();
+            }
+
+            @Override
+            public boolean isPasswordValid(char[] password) {
+                return Arrays.equals(password(), password);
+            }
+
+            @Override
+            public Collection<String> roles() {
+                return roles;
+            }
+        });
+    }
+]]>
+                        </value>
+                    </list>
+                    <list key="Main-routing">
+                        <value><![CDATA[
+        SecurityHttpFeature security = SecurityHttpFeature.create(security1())
+                .securityDefaults(SecurityFeature.authenticate());
+]]>
+                        </value>
+                    </list>
+                    <list key="Main-routing-builder">
+                        <value><![CDATA[.addFeature(security)
+                .get("/service1*", SecurityFeature.rolesAllowed("user"))
+                .register(new Service1())
+]]>
+                        </value>
+                    </list>
+                    <list key="main-class-content">
+                        <value><![CDATA[
+private static void routing2(HttpRouting.Builder routing) {
+        SecurityHttpFeature security = SecurityHttpFeature.create(security2())
+                .securityDefaults(SecurityFeature.authenticate());
+
+        routing.addFeature(security)
+                .get("/service2*", SecurityFeature.rolesAllowed("user"))
+                .register(new Service2());
+    }
+
+    private static Security security2() {
+        return Security.builder()
+                .providerSelectionPolicy(CompositeProviderSelectionPolicy
+                        .builder()
+                        .addAuthenticationProvider("http-signatures", CompositeProviderFlag.OPTIONAL)
+                        .addAuthenticationProvider("basic-auth")
+                        .build())
+                .addProvider(HttpBasicAuthProvider
+                                .builder()
+                                .realm("mic")
+                                .userStore(users()),
+                        "basic-auth")
+                .addProvider(HttpSignProvider.builder()
+                                .addInbound(InboundClientDefinition
+                                        .builder("service1-hmac")
+                                        .principalName("Service1 - HMAC signature")
+                                        .hmacSecret("changeit")
+                                        .build())
+                                .addInbound(InboundClientDefinition
+                                        .builder("service1-rsa")
+                                        .principalName("Service1 - RSA signature")
+                                        .publicKeyConfig(Keys.builder()
+                                                .keystore(k -> k
+                                                        .keystore(Resource.create("keystore.p12"))
+                                                        .passphrase("changeit")
+                                                        .certAlias("service_cert")
+                                                        .build())
+                                                .build())
+                                        .build()),
+                        "http-signatures")
+                .build();
+    }
+
+    private static Security security1() {
+        return Security.builder()
+                .providerSelectionPolicy(CompositeProviderSelectionPolicy
+                        .builder()
+                        .addOutboundProvider("basic-auth")
+                        .addOutboundProvider("http-signatures")
+                        .build())
+                .addProvider(HttpBasicAuthProvider
+                                .builder()
+                                .realm("mic")
+                                .userStore(users())
+                                .addOutboundTarget(OutboundTarget.builder("propagate-all").build()),
+                        "basic-auth")
+                .addProvider(HttpSignProvider
+                                .builder()
+                                .outbound(OutboundConfig
+                                        .builder()
+                                        .addTarget(hmacTarget())
+                                        .addTarget(rsaTarget())
+                                        .build()),
+                        "http-signatures")
+                .build();
+    }
+
+    private static OutboundTarget rsaTarget() {
+        return OutboundTarget.builder("service2-rsa")
+                .addHost("localhost")
+                .addPath("/service2-rsa.*")
+                .customObject(OutboundTargetDefinition.class,
+                        OutboundTargetDefinition.builder("service1-rsa")
+                                .privateKeyConfig(Keys.builder()
+                                        .keystore(k -> k
+                                                .keystore(Resource.create("keystore.p12"))
+                                                .passphrase("changeit")
+                                                .keyAlias("myPrivateKey")
+                                                .build())
+                                        .build())
+                                .build())
+                .build();
+    }
+
+    private static OutboundTarget hmacTarget() {
+        return OutboundTarget.builder("service2")
+                .addHost("localhost")
+                .addPath("/service2")
+                .customObject(
+                        OutboundTargetDefinition.class,
+                        OutboundTargetDefinition
+                                .builder("service1-hmac")
+                                .hmacSecret("changeit")
+                                .build())
+                .build();
+    }
+
+    private static SecureUserStore users() {
+        return login -> Optional.ofNullable(USERS.get(login));
+    }
+]]>
+                        </value>
+                    </list>
+                    <list key="Main-server-builder">
+                        <value><![CDATA[.putSocket("service2", socket -> socket
+                        .routing(Main::routing2))]]>
+                        </value>
+                    </list>
+                    <list key="Main-after-server">
+                        <value><![CDATA[server.context().register(server);]]></value>
+                    </list>
+                    <list key="module-requires">
+                        <value>io.helidon.webclient.http1</value>
+                        <value>io.helidon.common.pki</value>
+                        <value>io.helidon.webserver.context</value>
+                        <value>io.helidon.security.providers.common</value>
+                        <value>io.helidon.security.providers.httpauth</value>
+                        <value>io.helidon.security.providers.httpsign</value>
+                    </list>
+                    <list key="readme-sections">
+                        <value><![CDATA[
+## Try Signature
+
+```bash
+curl -u "jack:changeit" http://localhost:8080/service1
+curl -u "jill:changeit" http://localhost:8080/service1-rsa
+curl -v -u "john:changeit" http://localhost:8080/service1
+```
+]]>
+                        </value>
+                    </list>
+                </model>
+            </output>
+        </method>
+        <method name="security-abac">
+            <output if="${security.atz} contains ['abac']">
+                <model>
+                    <list key="dependencies">
+                        <map>
+                            <value key="groupId">io.helidon.security.abac</value>
+                            <value key="artifactId">helidon-security-abac-scope</value>
+                        </map>
+                        <map>
+                            <value key="groupId">io.helidon.security.abac</value>
+                            <value key="artifactId">helidon-security-abac-role</value>
+                        </map>
+                    </list>
+                    <list key="providers-config-entries">
+                        <value><![CDATA[
+  - abac:
+      fail-on-unvalidated: true
+      fail-if-none-validated: true
+]]>
+                        </value>
+                    </list>
+                </model>
+            </output>
+        </method>
+    </methods>
+    <call method="security-abac"/>
+    <call method="security-oidc"/>
+    <call method="security-google"/>
+    <call method="security-jwt"/>
+    <call method="security-signature"/>
+    <output>
+        <model>
+            <list key="dependencies">
+                <map>
+                    <value key="groupId">io.helidon.webserver</value>
+                    <value key="artifactId">helidon-webserver-security</value>
+                </map>
+            </list>
+            <list key="application-test-yaml-entries">
+                <value><![CDATA[
+security:
+  enabled: false
+]]>
+                </value>
+            </list>
+            <list key="module-requires">
+                <value>io.helidon.security.integration.common</value>
+                <value>io.helidon.webserver.security</value>
+            </list>
+            <list key="application-yaml-entries"
+                  if="!(${security.atn} contains 'http-signature' || ${security.atn} contains 'jwt')">
+                <value template="mustache" file="files/application.yaml.mustache"/>
+            </list>
+        </model>
+    </output>
+</archetype-script>
