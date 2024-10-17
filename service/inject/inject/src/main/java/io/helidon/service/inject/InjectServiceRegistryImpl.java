@@ -566,7 +566,8 @@ class InjectServiceRegistryImpl implements InjectRegistry, Scopes {
             return scopeHandlerInstances.computeIfAbsent(scope, it -> {
                 InjectServiceInfo serviceInfo = scopeHandlerServices.get(scope);
                 if (serviceInfo == null) {
-                    throw new ServiceRegistryException("There is no scope handler service registered for scope: " + scope.fqName());
+                    throw new ServiceRegistryException("There is no scope handler service registered for scope: "
+                                                               + scope.fqName());
                 }
                 ServiceManager<?> serviceManager = servicesByDescriptor.get(serviceInfo.coreInfo());
                 return (Injection.ScopeHandler) serviceManager.activator()
