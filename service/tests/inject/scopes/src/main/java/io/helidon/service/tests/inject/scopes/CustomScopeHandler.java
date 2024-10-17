@@ -16,36 +16,26 @@
 
 package io.helidon.service.tests.inject.scopes;
 
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.helidon.service.inject.api.InjectRegistrySpi;
 import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.Scope;
 
 @Injection.Singleton
-public class CustomScopeControl implements Injection.ScopeHandler<CustomScope> {
+@Injection.NamedByType(CustomScope.class)
+public class CustomScopeHandler implements Injection.ScopeHandler {
 
-    private final InjectRegistrySpi registry;
-    private final AtomicReference<Scope> scope = new AtomicReference<>();
-
-    @Injection.Inject
-    CustomScopeControl(InjectRegistrySpi registry) {
-        this.registry = registry;
-    }
+    private final AtomicReference<Scope> currentScope = new AtomicReference<>();
 
     @Override
     public Optional<Scope> currentScope() {
-        return Optional.ofNullable(scope.get());
+        return Optional.ofNullable(currentScope.get());
     }
 
-    Scope startScope() {
-        Scope scope = registry.createScope(CustomScope.TYPE,
-                                           "42",
-                                           Map.of(CustomScopeDescribedContract__ServiceDescriptor.INSTANCE,
-                                                  new CustomScopeDescribedContractImpl()));
-        this.scope.set(scope);
-        return scope;
+    @Override
+    public void activate(Scope scope) {
+        currentScope.set(scope);
+        scope.registry().activate();
     }
 }

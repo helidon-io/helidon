@@ -24,8 +24,9 @@ import java.util.function.Supplier;
 import io.helidon.service.inject.InjectRegistryManager;
 import io.helidon.service.inject.api.InjectRegistry;
 import io.helidon.service.inject.api.InjectServiceInfo;
+import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.Lookup;
-import io.helidon.service.inject.api.PerRequestScopeControl;
+import io.helidon.service.inject.api.Scopes;
 import io.helidon.service.inject.api.Scope;
 
 import org.junit.jupiter.api.AfterAll;
@@ -69,8 +70,8 @@ class AllScopesLookupTest {
     @BeforeEach
     void startRequestScope() {
         // we need to have request scope active, so we can access providers from everywhere
-        requestScope = registry.get(PerRequestScopeControl.class)
-                .startRequestScope("unit-test", Map.of());
+        var scopes = registry.get(Scopes.class);
+        requestScope = scopes.createScope(Injection.PerRequest.TYPE, "unit-test", Map.of());
     }
 
     @AfterEach

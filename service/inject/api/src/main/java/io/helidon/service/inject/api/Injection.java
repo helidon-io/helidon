@@ -30,6 +30,7 @@ import java.util.function.Supplier;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.types.TypeName;
+import io.helidon.service.registry.Service;
 
 /**
  * Injection annotations. These annotations can extend support provided through
@@ -482,15 +483,15 @@ public final class Injection {
     }
 
     /**
-     * Extension point for the service registry.
-     * To support additional scope, a service implementing this interface must be available in the registry.
-     * It should be accompanied by a way to start and stop the scope (such as {@link PerRequestScopeControl} for
-     * request scope).
+     * Extension point for the service registry to support new scopes.
+     * <p>
+     * Implementation must be qualified with the fully qualified name of the corresponding scope annotation class.
      *
-     * @param <T> Type of the supported scope
+     * @see io.helidon.service.inject.api.Injection.Named
+     * @see io.helidon.service.inject.api.Injection.NamedByType
      */
-    @io.helidon.service.registry.Service.Contract
-    public interface ScopeHandler<T extends Annotation> {
+    @Service.Contract
+    public interface ScopeHandler {
         /**
          * Type name of this interface.
          * Service registry uses {@link io.helidon.common.types.TypeName} in its APIs.
@@ -503,5 +504,24 @@ public final class Injection {
          * @return current scope instance, or empty if the scope is not active
          */
         Optional<io.helidon.service.inject.api.Scope> currentScope();
+
+
+        /**
+         * Activate the given scope.
+         *
+         * @param scope scope to activate
+         */
+        default void activate(io.helidon.service.inject.api.Scope scope) {
+            scope.registry().activate();
+        }
+
+        /**
+         * De-activate the given scope.
+         *
+         * @param scope scope to de-activate
+         */
+        default void deactivate(io.helidon.service.inject.api.Scope scope) {
+            scope.registry().deactivate();
+        }
     }
 }

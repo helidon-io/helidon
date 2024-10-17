@@ -17,6 +17,7 @@
 package io.helidon.service.inject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -24,10 +25,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -48,8 +49,7 @@ import io.helidon.service.inject.ServiceSupplies.ServiceSupplyList;
 import io.helidon.service.inject.api.ActivationRequest;
 import io.helidon.service.inject.api.Activator;
 import io.helidon.service.inject.api.InjectRegistry;
-import io.helidon.service.inject.api.InjectRegistrySpi;
-import io.helidon.service.inject.api.InjectRegistrySpi__ServiceDescriptor;
+import io.helidon.service.inject.api.InjectRegistry__ServiceDescriptor;
 import io.helidon.service.inject.api.InjectServiceDescriptor;
 import io.helidon.service.inject.api.InjectServiceInfo;
 import io.helidon.service.inject.api.Injection;
@@ -62,6 +62,8 @@ import io.helidon.service.inject.api.Qualifier;
 import io.helidon.service.inject.api.Scope;
 import io.helidon.service.inject.api.ScopeNotActiveException;
 import io.helidon.service.inject.api.ScopedRegistry;
+import io.helidon.service.inject.api.Scopes;
+import io.helidon.service.inject.api.Scopes__ServiceDescriptor;
 import io.helidon.service.registry.ServiceDescriptor;
 import io.helidon.service.registry.ServiceInfo;
 import io.helidon.service.registry.ServiceRegistryException;
@@ -75,7 +77,7 @@ import static io.helidon.service.inject.LookupTrace.traceLookup;
  * This implementation re-implements even the core registry, as we want the services to be capable of interoperating
  * (i.e. core services can receive inject services and vice-versa).
  */
-class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
+class InjectServiceRegistryImpl implements InjectRegistry, Scopes {
     private static final System.Logger LOGGER = System.getLogger(InjectServiceRegistryImpl.class.getName());
     private static final AtomicInteger COUNTER = new AtomicInteger();
 
@@ -103,9 +105,13 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
     private final boolean cacheEnabled;
     private final LruCache<Lookup, List<InjectServiceInfo>> cache;
 
-    private final SingletonScopeHandler singletonScopeHandler;
-    private final DependentScopeHandler dependentScopeHandler;
-    private final Map<TypeName, Injection.ScopeHandler<?>> scopeHandlerInstances;
+    private final LazyValue<Scope> singletonScope = LazyValue
+            .create(() -> createScope(Injection.Singleton.TYPE, Optional::empty, id, Map.of()));
+
+    private final LazyValue<Scope> perLookupScope = LazyValue
+            .create(() -> createScope(Injection.PerLookup.TYPE, Optional::empty, id, Map.of()));
+    private final Map<TypeName, Injection.ScopeHandler> scopeHandlerInstances = new HashMap<>();
+    private final Lock scopeHandlerInstancesLock = new ReentrantLock();
     private final boolean interceptionEnabled;
     private final InterceptionMetadata interceptionMetadata;
 
@@ -134,7 +140,8 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
 
         // these must be bound here, as the instance exists now
         // (and we do not want to allow post-constructor binding)
-        explicitInstances.put(InjectRegistrySpi__ServiceDescriptor.INSTANCE, this);
+        explicitInstances.put(Scopes__ServiceDescriptor.INSTANCE, this);
+        explicitInstances.put(InjectRegistry__ServiceDescriptor.INSTANCE, this);
         explicitInstances.put(InterceptionMetadata__ServiceDescriptor.INSTANCE, interceptionMetadata);
 
         this.cacheEnabled = config.lookupCacheEnabled();
@@ -151,6 +158,7 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
             this.cacheHitCounter = null;
         }
 
+        this.scopeHandlerServices = scopeHandlers;
         this.servicesByType = servicesByType;
         this.servicesByContract = servicesByContract;
         this.qualifiedProvidersByQualifier = qualifiedProvidersByQualifier;
@@ -158,16 +166,6 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
         this.activationRequest = ActivationRequest.builder()
                 .targetPhase(config.limitRuntimePhase())
                 .build();
-
-        this.singletonScopeHandler = new SingletonScopeHandler(this);
-        this.dependentScopeHandler = new DependentScopeHandler(this);
-
-        Map<TypeName, Injection.ScopeHandler<?>> scopeHandlerInstances = new ConcurrentHashMap<>();
-        scopeHandlerInstances.put(Injection.Singleton.TYPE, singletonScopeHandler);
-        scopeHandlerInstances.put(Injection.PerLookup.TYPE, dependentScopeHandler);
-
-        this.scopeHandlerServices = scopeHandlers;
-        this.scopeHandlerInstances = scopeHandlerInstances;
 
         /*
         For each known service descriptor, create an appropriate service manager
@@ -191,9 +189,6 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
                                                               Activators.create(this, provider)));
             }
         });
-
-        singletonScopeHandler.activate();
-        dependentScopeHandler.activate();
 
         // make sure config is initialized as it should be
         if (config.limitRuntimePhase().ordinal() >= Activator.Phase.ACTIVE.ordinal()) {
@@ -318,22 +313,11 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
     }
 
     @Override
-    public ScopedRegistryImpl createForScope(TypeName scope, String id, Map<ServiceDescriptor<?>, Object> initialBindings) {
-        return new ScopedRegistryImpl(this,
-                                      scope,
-                                      id,
-                                      initialBindings);
-    }
-
-    @Override
-    public Scope createScope(TypeName scopeType,
-                             String id,
-                             Map<ServiceDescriptor<?>, Object> initialBindings,
-                             Consumer<Scope> onCloseAction) {
-        var registry = createForScope(scopeType, id, initialBindings);
-        var scope = new ScopeImpl(scopeType, onCloseAction, registry);
-        registry.activate();
-        return scope;
+    public Scope createScope(TypeName scopeType, String id, Map<ServiceDescriptor<?>, Object> initialBindings) {
+        return createScope(scopeType,
+                           scopeHandler(scopeType),
+                           id,
+                           initialBindings);
     }
 
     @Override
@@ -450,9 +434,8 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
     }
 
     void close() {
-        singletonScopeHandler.currentScope()
-                .map(Scope::registry)
-                .ifPresent(ScopedRegistry::deactivate);
+        singletonScope.get()
+                .close();
     }
 
     List<ServiceInfo> servicesByContract(ResolvedType contract) {
@@ -550,15 +533,25 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
         }
     }
 
+    private Scope createScope(TypeName scopeType,
+                              Injection.ScopeHandler scopeHandler,
+                              String id,
+                              Map<ServiceDescriptor<?>, Object> initialBindings) {
+        var registry = new ScopedRegistryImpl(this, scopeType, id, initialBindings);
+        var scope = new ScopeImpl(scopeType, scopeHandler, registry);
+        scopeHandler.activate(scope);
+        return scope;
+    }
+
     private Supplier<Scope> scopeSupplier(InjectServiceInfo descriptor) {
         TypeName scope = descriptor.scope();
         if (Injection.Singleton.TYPE.equals(scope)) {
-            return LazyValue.create(singletonScopeHandler.scope());
+            return singletonScope;
         } else if (Injection.PerLookup.TYPE.equals(scope)) {
-            return LazyValue.create(dependentScopeHandler.scope());
+            return perLookupScope;
         } else {
             // must be a lazy value, as the scope handler may not be available at the time this method is called
-            LazyValue<Injection.ScopeHandler<?>> scopeHandler = LazyValue.create(() -> scopeHandler(scope));
+            LazyValue<Injection.ScopeHandler> scopeHandler = LazyValue.create(() -> scopeHandler(scope));
             return () -> scopeHandler.get()
                     .currentScope() // must be called each time, as we must use the currently active scope, not a cached one
                     .orElseThrow(() -> new ScopeNotActiveException("Scope not active for service: "
@@ -567,20 +560,25 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
         }
     }
 
-    private Injection.ScopeHandler<?> scopeHandler(TypeName scope) {
-        return scopeHandlerInstances.computeIfAbsent(scope, it -> {
-            InjectServiceInfo serviceInfo = scopeHandlerServices.get(scope);
-            if (serviceInfo == null) {
-                throw new ServiceRegistryException("There is no scope handler service registered for scope: " + scope.fqName());
-            }
-            ServiceManager<?> serviceManager = servicesByDescriptor.get(serviceInfo.coreInfo());
-            return (Injection.ScopeHandler<?>) serviceManager.activator()
-                    .instances(Lookup.EMPTY)
-                    .orElseThrow(() -> new ServiceRegistryException("Scope handler service did not return any instance for: "
-                                                                            + scope.fqName()))
-                    .getFirst() // List.getFirst() - Qualified instance
-                    .get();
-        });
+    private Injection.ScopeHandler scopeHandler(TypeName scope) {
+        scopeHandlerInstancesLock.lock();
+        try {
+            return scopeHandlerInstances.computeIfAbsent(scope, it -> {
+                InjectServiceInfo serviceInfo = scopeHandlerServices.get(scope);
+                if (serviceInfo == null) {
+                    throw new ServiceRegistryException("There is no scope handler service registered for scope: " + scope.fqName());
+                }
+                ServiceManager<?> serviceManager = servicesByDescriptor.get(serviceInfo.coreInfo());
+                return (Injection.ScopeHandler) serviceManager.activator()
+                        .instances(Lookup.EMPTY)
+                        .orElseThrow(() -> new ServiceRegistryException("Scope handler service did not return any instance for: "
+                                                                                + scope.fqName()))
+                        .getFirst() // List.getFirst() - Qualified instance
+                        .get();
+            });
+        } finally {
+            scopeHandlerInstancesLock.unlock();
+        }
     }
 
     private static class RegistryCounter implements Counter {
@@ -637,26 +635,13 @@ class InjectServiceRegistryImpl implements InjectRegistry, InjectRegistrySpi {
         }
     }
 
-    private static class ScopeImpl implements Scope {
-        private final TypeName scopeType;
-        private final Consumer<Scope> onCloseAction;
-        private final ScopedRegistryImpl registry;
-
-        private ScopeImpl(TypeName scopeType, Consumer<Scope> onCloseAction, ScopedRegistryImpl registry) {
-            this.scopeType = scopeType;
-            this.onCloseAction = onCloseAction;
-            this.registry = registry;
-        }
+    private record ScopeImpl(TypeName scopeType,
+                             Injection.ScopeHandler handler,
+                             ScopedRegistry registry) implements Scope {
 
         @Override
         public void close() {
-            onCloseAction.accept(this);
-            registry.deactivate();
-        }
-
-        @Override
-        public ScopedRegistry registry() {
-            return registry;
+            handler.deactivate(this);
         }
 
         @Override

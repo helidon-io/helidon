@@ -31,6 +31,7 @@ import io.helidon.service.registry.Service;
  * This is the full service registry with injection support.
  */
 @Service.Contract
+@Injection.Describe
 public interface InjectRegistry extends io.helidon.service.registry.ServiceRegistry {
     /**
      * {@link io.helidon.service.metadata.DescriptorMetadata#registryType()} for inject services.

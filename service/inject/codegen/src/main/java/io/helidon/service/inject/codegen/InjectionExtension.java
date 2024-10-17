@@ -69,6 +69,7 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.BUILDER_BLUEPRINT;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_PROVIDER;
 import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECTION_DESCRIBE;
 import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECTION_INJECT;
+import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECTION_NAMED;
 import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECTION_PER_INSTANCE;
 import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECTION_PER_LOOKUP;
 import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECTION_SCOPE_HANDLER;
@@ -761,15 +762,11 @@ class InjectionExtension implements RegistryCodegenExtension {
     }
 
     private TypeName findHandledScope(TypeInfo typeInfo) {
-        for (TypeInfo info : typeInfo.interfaceTypeInfo()) {
-            // first level only
-            TypeName type = info.typeName();
-            if (type.equals(INJECTION_SCOPE_HANDLER) && !type.typeArguments().isEmpty()) {
-                return type.typeArguments().getFirst();
-            }
-        }
-        throw new CodegenException("Type implementing ScopeHandler did not declare the scope type: " + typeInfo.typeName()
-                                           + ", ScopeHandler<Type> must be directly implemented by the service.");
+        return typeInfo.findAnnotation(INJECTION_NAMED)
+                .flatMap(Annotation::value)
+                .map(TypeName::create)
+                .orElseThrow(() -> new CodegenException(
+                        "Type implementing ScopeHandler must be qualified with the scope type name: " + typeInfo.typeName()));
     }
 
     private void createForMethod(ClassModel.Builder classModel,

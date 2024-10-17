@@ -18,21 +18,28 @@ package io.helidon.service.inject.api;
 
 import java.util.Map;
 
+import io.helidon.common.types.TypeName;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceDescriptor;
 
 /**
- * Service for starting a request scope.
- * Do not forget to call {@link io.helidon.service.inject.api.Scope#close()} when the scope should finish.
+ * Service that provides support for creating {@link io.helidon.service.inject.api.Scope} instances.
  */
 @Service.Contract
-public interface PerRequestScopeControl {
+@Injection.Describe
+public interface Scopes {
     /**
-     * Start the request scope.
-     *
-     * @param id              id of the scope, should be something that allows us to map it to an external source
-     * @param initialBindings initial bindings for services (already known by the registry)
-     * @return a new request scope, that needs to be closed when the request is done
+     * Type name of this interface.
      */
-    Scope startRequestScope(String id, Map<ServiceDescriptor<?>, Object> initialBindings);
+    TypeName TYPE = TypeName.create(Scopes.class);
+
+    /**
+     * Create a registry managed scope.
+     *
+     * @param scope           scope annotation type
+     * @param id              id of the scope
+     * @param initialBindings initial bindings for the created scope
+     * @return a new scope instance
+     */
+    Scope createScope(TypeName scope, String id, Map<ServiceDescriptor<?>, Object> initialBindings);
 }
