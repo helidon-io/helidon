@@ -17,7 +17,6 @@
 package io.helidon.microprofile.testing.testng;
 
 import java.io.IOException;
-import java.io.Serial;
 import java.io.StringReader;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
@@ -47,18 +46,16 @@ import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
 import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
-import jakarta.enterprise.inject.spi.AnnotatedType;
-import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.enterprise.inject.spi.Extension;
+import jakarta.enterprise.inject.spi.InjectionPoint;
 import jakarta.enterprise.inject.spi.InjectionTarget;
-import jakarta.enterprise.inject.spi.InjectionTargetFactory;
+import jakarta.enterprise.inject.spi.ProcessInjectionTarget;
 import jakarta.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
 import jakarta.enterprise.util.AnnotationLiteral;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigBuilder;
@@ -76,31 +73,28 @@ import org.testng.annotations.Test;
  */
 public class HelidonTestNgListener implements IClassListener, ITestListener {
 
-    private static final Set<Class<? extends Annotation>> HELIDON_TEST_ANNOTATIONS =
-            Set.of(AddBean.class, AddConfig.class, AddExtension.class, Configuration.class, AddJaxRs.class);
-    private static final Map<Class<? extends Annotation>, Annotation> BEAN_DEFINING = new HashMap<>();
+    private static final Set<Class<? extends Annotation>> TEST_ANNOTATIONS = Set.of(
+            AddBean.class, AddConfig.class, AddExtension.class, Configuration.class, AddJaxRs.class);
 
-    static {
-        BEAN_DEFINING.put(ApplicationScoped.class, ApplicationScoped.Literal.INSTANCE);
-        BEAN_DEFINING.put(Singleton.class, ApplicationScoped.Literal.INSTANCE);
-        BEAN_DEFINING.put(RequestScoped.class, RequestScoped.Literal.INSTANCE);
-        BEAN_DEFINING.put(Dependent.class, Dependent.Literal.INSTANCE);
-    }
+    private static final Map<Class<? extends Annotation>, AnnotationLiteral<?>> BEAN_DEFINING = Map.of(
+            ApplicationScoped.class, ApplicationScoped.Literal.INSTANCE,
+            Singleton.class, ApplicationScoped.Literal.INSTANCE,
+            RequestScoped.class, RequestScoped.Literal.INSTANCE,
+            Dependent.class, Dependent.Literal.INSTANCE);
 
     private List<AddExtension> classLevelExtensions = new ArrayList<>();
     private List<AddBean> classLevelBeans = new ArrayList<>();
     private ConfigMeta classLevelConfigMeta = new ConfigMeta();
     private boolean classLevelDisableDiscovery = false;
     private boolean resetPerTest;
-
     private Class<?> testClass;
+    private Object testInstance;
     private ConfigProviderResolver configProviderResolver;
     private Config config;
     private SeContainer container;
 
     @Override
     public void onBeforeClass(ITestClass iTestClass) {
-
         testClass = iTestClass.getRealClass();
 
         AddConfig[] configs = getAnnotations(testClass, AddConfig.class);
@@ -143,18 +137,15 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
 
         configure(classLevelConfigMeta);
 
+        Object[] testInstances = iTestClass.getInstances(false);
+        if (testInstances != null && testInstances.length > 0) {
+            testInstance = testInstances[0];
+        }
+
         if (!classLevelConfigMeta.useExisting) {
             startContainer(classLevelBeans, classLevelExtensions, classLevelDisableDiscovery);
         }
-
-        //Injecting Instances to CDI
-        Object[] instances = iTestClass.getInstances(false);
-
-        for (Object instance : instances) {
-            injectTestToCdi(instance, iTestClass.getRealClass());
-        }
     }
-
 
     @Override
     public void onAfterClass(ITestClass testClass) {
@@ -166,7 +157,6 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
 
     @Override
     public void onTestStart(ITestResult result) {
-
         if (resetPerTest) {
             Method method = result.getMethod().getConstructorOrMethod().getMethod();
             AddConfig[] configs = method.getAnnotationsByType(AddConfig.class);
@@ -212,75 +202,16 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
         }
     }
 
-    /*
-     * Helper method to inject TestNG initialized classes into CDI Container.
-     */
-    private <T> void injectTestToCdi(Object bean, final Class<T> clazz) {
-        BeanManager beanManager = CDI.current().getBeanManager();
-
-        AnnotatedType<T> annotatedType = beanManager.createAnnotatedType(clazz);
-        InjectionTargetFactory<T> injectionTargetFactory = beanManager.getInjectionTargetFactory(annotatedType);
-        InjectionTarget<T> injectionTarget = injectionTargetFactory.createInjectionTarget(null);
-
-        CreationalContext<T> creationalContext = beanManager.createCreationalContext(null);
-        injectionTarget.inject((T) bean, creationalContext);
-    }
-
     private void validatePerClass() {
-        Method[] methods = testClass.getMethods();
-        for (Method method : methods) {
-            if (method.getAnnotation(Test.class) != null) {
-                // a test method
-                if (hasHelidonTestAnnotation(method)) {
-                    throw new RuntimeException("When a class is annotated with @HelidonTest, "
-                            + "there is a single CDI container used to invoke all "
-                            + "test methods on the class. Method " + method
-                            + " has an annotation that modifies container behavior.");
-                }
-            }
-        }
-
-        methods = testClass.getDeclaredMethods();
-        for (Method method : methods) {
-            if (method.getAnnotation(Test.class) != null) {
-                // a test method
-                if (hasHelidonTestAnnotation(method)) {
-                    throw new RuntimeException("When a class is annotated with @HelidonTest, "
-                            + "there is a single CDI container used to invoke all "
-                            + "test methods on the class. Method " + method
-                            + " has an annotation that modifies container behavior.");
-                }
-            }
-        }
-
-        Constructor<?>[] declaredConstructors = testClass.getDeclaredConstructors();
-        for (Constructor<?> constructor : declaredConstructors) {
-            if (constructor.getAnnotation(Inject.class) != null) {
-                if (hasHelidonTestAnnotation(constructor)) {
-                    throw new RuntimeException("When a class is annotated with @HelidonTest, "
-                            + "there is a single CDI container used to invoke all "
-                            + "test methods on the class. Do not use @Inject annotation"
-                            + "over constructor. Use it on each field.");
-                }
-            }
-        }
-
-
+        validateMethods(testClass.getMethods());
+        validateMethods(testClass.getDeclaredMethods());
+        validateConstructors(testClass.getDeclaredConstructors());
         AddJaxRs addJaxRsAnnotation = testClass.getAnnotation(AddJaxRs.class);
         if (addJaxRsAnnotation != null){
             if (testClass.getAnnotation(DisableDiscovery.class) == null){
                 throw new RuntimeException("@AddJaxRs annotation should be used only with @DisableDiscovery annotation.");
             }
         }
-    }
-
-    private boolean hasHelidonTestAnnotation(AnnotatedElement element) {
-        for (Class<? extends Annotation> aClass : HELIDON_TEST_ANNOTATIONS) {
-            if (element.getAnnotation(aClass) != null) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private void validatePerTest() {
@@ -296,26 +227,8 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
                         + " the class must have a no-arg constructor");
             }
         }
-
-        Field[] fields = testClass.getFields();
-        for (Field field : fields) {
-            if (field.getAnnotation(Inject.class) != null) {
-                throw new RuntimeException("When a class is annotated with @HelidonTest(resetPerTest=true),"
-                        + " injection into fields or constructor is not supported, as each"
-                        + " test method uses a different CDI container. Field " + field
-                        + " is annotated with @Inject");
-            }
-        }
-
-        fields = testClass.getDeclaredFields();
-        for (Field field : fields) {
-            if (field.getAnnotation(Inject.class) != null) {
-                throw new RuntimeException("When a class is annotated with @HelidonTest(resetPerTest=true),"
-                        + " injection into fields or constructor is not supported, as each"
-                        + " test method uses a different CDI container. Field " + field
-                        + " is annotated with @Inject");
-            }
-        }
+        validateFields(testClass.getFields());
+        validateFields(testClass.getDeclaredFields());
     }
 
     private void configure(ConfigMeta configMeta) {
@@ -355,7 +268,6 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
         if (configProviderResolver != null && config != null) {
             configProviderResolver.releaseConfig(config);
             config = null;
-
             classLevelExtensions = new ArrayList<>();
             classLevelBeans = new ArrayList<>();
             classLevelConfigMeta = new ConfigMeta();
@@ -369,17 +281,18 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
                                 List<AddExtension> extensionAnnotations,
                                 boolean disableDiscovery) {
 
-        // now let's prepare the CDI bootstrapping
         SeContainerInitializer initializer = SeContainerInitializer.newInstance();
 
         if (disableDiscovery) {
             initializer.disableDiscovery();
         }
 
-        initializer.addExtensions(new AddBeansExtension(testClass, beanAnnotations));
+        initializer.addExtensions(
+                new TestInstanceExtension(testInstance, testClass),
+                new AddBeansExtension(beanAnnotations));
 
         for (AddExtension addExtension : extensionAnnotations) {
-            var extensionClass = addExtension.value();
+            Class<? extends Extension> extensionClass = addExtension.value();
             if (Modifier.isPublic(extensionClass.getModifiers())) {
                 initializer.addExtensions(addExtension.value());
             } else {
@@ -389,6 +302,7 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
         }
 
         container = initializer.initialize();
+        container.select(testClass).get();
     }
 
     private void stopContainer() {
@@ -397,7 +311,6 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
             container = null;
         }
     }
-
 
     @SuppressWarnings("unchecked")
     private <T extends Annotation> T[] getAnnotations(Class<?> testClass, Class<T> annotClass) {
@@ -422,71 +335,142 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
         return (T[]) result;
     }
 
-    // this is not registered as a bean - we manually register an instance
-    @SuppressWarnings("CdiManagedBeanInconsistencyInspection")
-    private static class AddBeansExtension implements Extension {
-        private final Class<?> testClass;
-        private final List<AddBean> addBeans;
+    private static void validateMethods(Method[] methods) {
+        for (Method method : methods) {
+            if (method.getAnnotation(Test.class) != null) {
+                // a test method
+                if (hasAnnotation(method, TEST_ANNOTATIONS)) {
+                    throw new RuntimeException("When a class is annotated with @HelidonTest, "
+                                               + "there is a single CDI container used to invoke all "
+                                               + "test methods on the class. Method " + method
+                                               + " has an annotation that modifies container behavior.");
+                }
+            }
+        }
+    }
 
-        private AddBeansExtension(Class<?> testClass, List<AddBean> addBeans) {
-            this.testClass = testClass;
-            this.addBeans = addBeans;
+    private static void validateConstructors(Constructor<?>[] constructors) {
+        for (Constructor<?> constructor : constructors) {
+            if (constructor.getAnnotation(Inject.class) != null) {
+                if (hasAnnotation(constructor, TEST_ANNOTATIONS)) {
+                    throw new RuntimeException("When a class is annotated with @HelidonTest, "
+                                               + "there is a single CDI container used to invoke all "
+                                               + "test methods on the class. Do not use @Inject annotation"
+                                               + "over constructor. Use it on each field.");
+                }
+            }
+        }
+    }
+
+    private static void validateFields(Field[] fields) {
+        for (Field field : fields) {
+            if (field.getAnnotation(Inject.class) != null) {
+                throw new RuntimeException("When a class is annotated with @HelidonTest(resetPerTest=true),"
+                                           + " injection into fields or constructor is not supported, as each"
+                                           + " test method uses a different CDI container. Field " + field
+                                           + " is annotated with @Inject");
+            }
+        }
+    }
+
+    private static boolean hasAnnotation(AnnotatedElement element, Set<Class<? extends Annotation>> annotations) {
+        for (Class<? extends Annotation> aClass : annotations) {
+            if (element.getAnnotation(aClass) != null) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @SuppressWarnings("CdiManagedBeanInconsistencyInspection")
+    private record TestInstanceExtension(Object testInstance, Class<?> testClass) implements Extension {
+
+        void registerTestClass(@Observes BeforeBeanDiscovery event) {
+            event.addAnnotatedType(testClass, "testng-" + testClass.getName())
+                    .add(SingletonLiteral.INSTANCE);
         }
 
         @SuppressWarnings("unchecked")
-        void registerOtherBeans(@Observes AfterBeanDiscovery event) {
-            Client client = ClientBuilder.newClient();
+        <T> void registerTestInstances(@Observes ProcessInjectionTarget<T> pit) {
+            if (pit.getAnnotatedType().getJavaClass().equals(testClass)) {
+                pit.setInjectionTarget(new TestInjectionTarget<>(pit.getInjectionTarget(), (T) testInstance));
+            }
+        }
+    }
 
+    @SuppressWarnings("CdiManagedBeanInconsistencyInspection")
+    private record AddBeansExtension(List<AddBean> addBeans) implements Extension {
+
+        void registerOtherBeans(@Observes AfterBeanDiscovery event) {
             event.addBean()
                     .addType(jakarta.ws.rs.client.WebTarget.class)
                     .scope(ApplicationScoped.class)
-                    .createWith(context -> {
-                        try {
-                            Class<? extends Extension> extClass = (Class<? extends Extension>) Class
-                                    .forName("io.helidon.microprofile.server.ServerCdiExtension");
-                            Extension extension = CDI.current().getBeanManager().getExtension(extClass);
-                            Method m = extension.getClass().getMethod("port");
-                            int port = (int) m.invoke(extension);
-                            String uri = "http://localhost:" + port;
-                            return client.target(uri);
-                        } catch (ReflectiveOperationException e) {
-                            return client.target("http://localhost:7001");
-                        }
-                    });
+                    .produceWith(context -> ClientBuilder.newClient().target(clientUri()));
         }
 
         void registerAddedBeans(@Observes BeforeBeanDiscovery event) {
-            event.addAnnotatedType(testClass, "testng-" + testClass.getName())
-                    .add(ApplicationScoped.Literal.INSTANCE);
+            for (AddBean beanDef : addBeans) {
+                Class<?> beanType = beanDef.value();
+                Class<? extends Annotation> scopeType = beanDef.scope();
 
-            for (AddBean addBean : addBeans) {
-                Annotation scope;
-                Class<? extends Annotation> definedScope = addBean.scope();
-
-                scope = BEAN_DEFINING.get(definedScope);
-
+                AnnotationLiteral<?> scope = BEAN_DEFINING.get(scopeType);
                 if (scope == null) {
                     throw new IllegalStateException(
                             "Only on of " + BEAN_DEFINING.keySet() + " scopes are allowed in tests. Scope "
-                                    + definedScope.getName() + " is not allowed for bean " + addBean.value().getName());
+                                    + scopeType.getName() + " is not allowed for bean " + beanDef.value().getName());
                 }
 
-                AnnotatedTypeConfigurator<?> configurator = event
-                        .addAnnotatedType(addBean.value(), "testng-" + addBean.value().getName());
-                if (!hasBda(addBean.value())) {
+                AnnotatedTypeConfigurator<?> configurator = event.addAnnotatedType(beanType, "testng-" + beanType.getName());
+                if (!hasAnnotation(beanType, BEAN_DEFINING.keySet())) {
                     configurator.add(scope);
                 }
             }
         }
 
-        private boolean hasBda(Class<?> value) {
-            // does it have bean defining annotation?
-            for (Class<? extends Annotation> aClass : BEAN_DEFINING.keySet()) {
-                if (value.getAnnotation(aClass) != null) {
-                    return true;
-                }
+        @SuppressWarnings("unchecked")
+        static String clientUri() {
+            try {
+                Class<?> extClass = Class.forName("io.helidon.microprofile.server.ServerCdiExtension");
+                Extension extension = CDI.current().getBeanManager().getExtension((Class<? extends Extension>) extClass);
+                Method m = extension.getClass().getMethod("port");
+                int port = (int) m.invoke(extension);
+                return "http://localhost:" + port;
+            } catch (ReflectiveOperationException e) {
+                return "http://localhost:7001";
             }
-            return false;
+        }
+    }
+
+    record TestInjectionTarget<T>(InjectionTarget<T> delegate, T testInstance)
+            implements InjectionTarget<T> {
+
+        @Override
+        public void dispose(T i) {
+        }
+
+        @Override
+        public Set<InjectionPoint> getInjectionPoints() {
+            return delegate.getInjectionPoints();
+        }
+
+        @Override
+        public void inject(T testInstance, CreationalContext<T> cc) {
+            delegate.inject(testInstance, cc);
+        }
+
+        @Override
+        public void postConstruct(T testInstance) {
+            delegate.postConstruct(testInstance);
+        }
+
+        @Override
+        public void preDestroy(T testInstance) {
+            delegate.preDestroy(testInstance);
+        }
+
+        @Override
+        public T produce(CreationalContext<T> cc) {
+            return testInstance;
         }
     }
 
@@ -498,7 +482,7 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
         private boolean useExisting;
         private String profile;
 
-        private ConfigMeta() {
+        ConfigMeta() {
             // to allow SeContainerInitializer (forbidden by default because of native image)
             additionalKeys.put("mp.initializer.allow", "true");
             additionalKeys.put("mp.initializer.no-warn", "true");
@@ -510,13 +494,13 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
             additionalKeys.put("mp.config.profile", "test");
         }
 
-        private void addConfig(AddConfig[] configs) {
+        void addConfig(AddConfig[] configs) {
             for (AddConfig config : configs) {
                 additionalKeys.put(config.key(), config.value());
             }
         }
 
-        private void configuration(Configuration config) {
+        void configuration(Configuration config) {
             if (config == null) {
                 return;
             }
@@ -527,7 +511,7 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
             additionalKeys.put("mp.config.profile", profile);
         }
 
-        private void addConfigBlock(AddConfigBlock config) {
+        void addConfigBlock(AddConfigBlock config) {
             if (config == null) {
                 return;
             }
@@ -537,27 +521,18 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
 
         ConfigMeta nextMethod() {
             ConfigMeta methodMeta = new ConfigMeta();
-
             methodMeta.additionalKeys.putAll(this.additionalKeys);
             methodMeta.additionalSources.addAll(this.additionalSources);
             methodMeta.useExisting = this.useExisting;
             methodMeta.profile = this.profile;
-
             return methodMeta;
         }
     }
 
-
-
-    /**
-     * Add WeldRequestScope. Used with {@code AddJaxRs}.
-     */
+    @SuppressWarnings("ClassExplicitlyAnnotation")
     private static final class WeldRequestScopeLiteral extends AnnotationLiteral<AddBean> implements AddBean {
 
         static final WeldRequestScopeLiteral INSTANCE = new WeldRequestScopeLiteral();
-
-        @Serial
-        private static final long serialVersionUID = 1L;
 
         @Override
         public Class<?> value() {
@@ -571,15 +546,10 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
     }
 
 
-    /**
-     * Add ProcessAllAnnotatedTypes. Used with {@code AddJaxRs}.
-     */
+    @SuppressWarnings("ClassExplicitlyAnnotation")
     private static final class ProcessAllAnnotatedTypesLiteral extends AnnotationLiteral<AddExtension> implements AddExtension {
 
         static final ProcessAllAnnotatedTypesLiteral INSTANCE = new ProcessAllAnnotatedTypesLiteral();
-
-        @Serial
-        private static final long serialVersionUID = 1L;
 
         @Override
         public Class<? extends Extension> value() {
@@ -587,15 +557,10 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
         }
     }
 
-    /**
-     * Add ServerCdiExtension. Used with {@code AddJaxRs}.
-     */
+    @SuppressWarnings("ClassExplicitlyAnnotation")
     private static final class ServerCdiExtensionLiteral extends AnnotationLiteral<AddExtension> implements AddExtension {
 
         static final ServerCdiExtensionLiteral INSTANCE = new ServerCdiExtensionLiteral();
-
-        @Serial
-        private static final long serialVersionUID = 1L;
 
         @Override
         public Class<? extends Extension> value() {
@@ -603,15 +568,10 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
         }
     }
 
-    /**
-     * Add WeldRequestScope. Used with {@code AddJaxRs}.
-     */
+    @SuppressWarnings("ClassExplicitlyAnnotation")
     private static final class JaxRsCdiExtensionLiteral extends AnnotationLiteral<AddExtension> implements AddExtension {
 
         static final JaxRsCdiExtensionLiteral INSTANCE = new JaxRsCdiExtensionLiteral();
-
-        @Serial
-        private static final long serialVersionUID = 1L;
 
         @Override
         public Class<? extends Extension> value() {
@@ -619,15 +579,10 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
         }
     }
 
-    /**
-     * Add CdiComponentProvider. Used with {@code AddJaxRs}.
-     */
+    @SuppressWarnings("ClassExplicitlyAnnotation")
     private static final class CdiComponentProviderLiteral extends AnnotationLiteral<AddExtension> implements AddExtension {
 
         static final CdiComponentProviderLiteral INSTANCE = new CdiComponentProviderLiteral();
-
-        @Serial
-        private static final long serialVersionUID = 1L;
 
         @Override
         public Class<? extends Extension> value() {
@@ -635,4 +590,8 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
         }
     }
 
+    @SuppressWarnings("ClassExplicitlyAnnotation")
+    private static final class SingletonLiteral extends AnnotationLiteral<Singleton> implements Singleton {
+        static final SingletonLiteral INSTANCE = new SingletonLiteral();
+    }
 }
