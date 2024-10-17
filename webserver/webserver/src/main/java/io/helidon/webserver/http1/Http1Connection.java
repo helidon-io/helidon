@@ -66,6 +66,7 @@ import io.helidon.webserver.spi.ServerConnection;
 import static io.helidon.http.HeaderNames.X_FORWARDED_FOR;
 import static io.helidon.http.HeaderNames.X_FORWARDED_PORT;
 import static io.helidon.http.HeaderNames.X_HELIDON_CN;
+import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.TRACE;
 import static java.lang.System.Logger.Level.WARNING;
 
@@ -197,7 +198,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                             }
                         }
                     } else {
-                        ctx.log(LOGGER, WARNING, "Protocol upgrade for a request with a payload ignored");
+                        ctx.log(LOGGER, DEBUG, "Protocol upgrade for a request with a payload ignored");
                     }
                 }
 
