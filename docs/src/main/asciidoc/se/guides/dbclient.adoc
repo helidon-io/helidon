@@ -386,7 +386,7 @@ The application is ready to be built and run.
 mvn package
 ----
 
-Note that the tests are passing as the `GreetService` process was not modified. For the purposes of this demonstration,
+Note that the tests are passing as the `GreetFeature` process was not modified. For the purposes of this demonstration,
 we only added independent new content to the existing application.
 Make sure H2 is running and start the Helidon quickstart with this command:
 

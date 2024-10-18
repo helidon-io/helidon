@@ -26,5 +26,5 @@ public interface DescriptorHandler extends io.helidon.service.metadata.Descripto
      *
      * @return the descriptor
      */
-    GeneratedService.Descriptor<?> descriptor();
+    ServiceDescriptor<?> descriptor();
 }

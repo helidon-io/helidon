@@ -16,6 +16,7 @@
 
 package io.helidon.common.types;
 
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -23,9 +24,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.GenericType;
 
 final class TypeNameSupport {
     private static final TypeName PRIMITIVE_BOOLEAN = TypeName.create(boolean.class);
@@ -141,59 +144,57 @@ final class TypeNameSupport {
     @Prototype.PrototypeMethod
     @Prototype.Annotated("java.lang.Override") // defined on blueprint
     static String resolvedName(TypeName instance) {
-        String name = calcName(instance, ".");
-        boolean isObject = Object.class.getName().equals(name) || "?".equals(name);
-        StringBuilder nameBuilder = (isObject)
-                ? new StringBuilder(instance.wildcard() ? "?" : name)
-                : new StringBuilder(instance.wildcard() ? "? extends " + name : name);
-
-        if (!instance.typeArguments().isEmpty()) {
-            nameBuilder.append("<");
-            int i = 0;
-            for (TypeName param : instance.typeArguments()) {
-                if (i > 0) {
-                    nameBuilder.append(", ");
-                }
-                nameBuilder.append(param.resolvedName());
-                i++;
-            }
-            nameBuilder.append(">");
+        if (instance.generic() || instance.wildcard()) {
+            return resolveGenericName(instance);
         }
-
-        if (instance.array()) {
-            nameBuilder.append("[]");
-        }
-
-        return nameBuilder.toString();
+        return resolveClassName(instance);
     }
 
     /**
      * Update builder from the provided type.
      *
      * @param builder builder to update
-     * @param type type to get information (package name, class name, primitive, array)
+     * @param type    type to get information (package name, class name, primitive, array)
      */
     @Prototype.BuilderMethod
     static void type(TypeName.BuilderBase<?, ?> builder, Type type) {
         Objects.requireNonNull(type);
         if (type instanceof Class<?> classType) {
-            Class<?> componentType = classType.isArray() ? classType.getComponentType() : classType;
-            builder.packageName(componentType.getPackageName());
-            builder.className(componentType.getSimpleName());
-            builder.primitive(componentType.isPrimitive());
-            builder.array(classType.isArray());
-
-            Class<?> enclosingClass = classType.getEnclosingClass();
-            LinkedList<String> enclosingTypes = new LinkedList<>();
-            while (enclosingClass != null) {
-                enclosingTypes.addFirst(enclosingClass.getSimpleName());
-                enclosingClass = enclosingClass.getEnclosingClass();
-            }
-            builder.enclosingNames(enclosingTypes);
-        } else {
-            // todo
-            throw new IllegalArgumentException("Currently we only support class as a parameter, but got: " + type);
+            updateFromClass(builder, classType);
+            return;
         }
+        Type reflectGenericType = type;
+
+        if (type instanceof GenericType<?> gt) {
+            if (gt.isClass()) {
+                // simple case - just a class
+                updateFromClass(builder, gt.rawType());
+                return;
+            } else {
+                // complex case - has generic type arguments
+                reflectGenericType = gt.type();
+            }
+        }
+
+        // translate the generic type into type name
+        if (reflectGenericType instanceof ParameterizedType pt) {
+            Type raw = pt.getRawType();
+            if (raw instanceof Class<?> theClass) {
+                updateFromClass(builder, theClass);
+            } else {
+                throw new IllegalArgumentException("Raw type of a ParameterizedType is not a class: " + raw.getClass().getName()
+                                                           + ", for " + pt.getTypeName());
+            }
+
+            Type[] actualTypeArguments = pt.getActualTypeArguments();
+            for (Type actualTypeArgument : actualTypeArguments) {
+                builder.addTypeArgument(TypeName.create(actualTypeArgument));
+            }
+            return;
+        }
+
+        throw new IllegalArgumentException("We can only create a type from a class, GenericType, or a ParameterizedType,"
+                                                   + " but got: " + reflectGenericType.getClass().getName());
     }
 
     /**
@@ -309,6 +310,71 @@ final class TypeNameSupport {
                 .build();
     }
 
+    private static String resolveGenericName(TypeName instance) {
+        // ?, ? super Something; ? extends Something
+        String prefix = instance.wildcard() ? "?" : instance.className();
+        if (instance.upperBounds().isEmpty() && instance.lowerBounds().isEmpty()) {
+            return prefix;
+        }
+        if (instance.lowerBounds().isEmpty()) {
+            return prefix + " extends " + instance.upperBounds()
+                    .stream()
+                    .map(it -> {
+                        if (it.generic()) {
+                            return it.wildcard() ? "?" : it.className();
+                        }
+                        return it.resolvedName();
+                    })
+                    .collect(Collectors.joining(" & "));
+        }
+        TypeName lowerBound = instance.lowerBounds().getFirst();
+        if (lowerBound.generic()) {
+            return prefix + " super " + (lowerBound.wildcard() ? "?" : lowerBound.className());
+        }
+        return prefix + " super " + lowerBound.resolvedName();
+
+    }
+
+    private static String resolveClassName(TypeName instance) {
+        String name = calcName(instance, ".");
+        StringBuilder nameBuilder = new StringBuilder(name);
+
+        if (!instance.typeArguments().isEmpty()) {
+            nameBuilder.append("<");
+            int i = 0;
+            for (TypeName param : instance.typeArguments()) {
+                if (i > 0) {
+                    nameBuilder.append(", ");
+                }
+                nameBuilder.append(param.resolvedName());
+                i++;
+            }
+            nameBuilder.append(">");
+        }
+
+        if (instance.array()) {
+            nameBuilder.append("[]");
+        }
+
+        return nameBuilder.toString();
+    }
+
+    private static void updateFromClass(TypeName.BuilderBase<?, ?> builder, Class<?> classType) {
+        Class<?> componentType = classType.isArray() ? classType.getComponentType() : classType;
+        builder.packageName(componentType.getPackageName());
+        builder.className(componentType.getSimpleName());
+        builder.primitive(componentType.isPrimitive());
+        builder.array(classType.isArray());
+
+        Class<?> enclosingClass = classType.getEnclosingClass();
+        LinkedList<String> enclosingTypes = new LinkedList<>();
+        while (enclosingClass != null) {
+            enclosingTypes.addFirst(enclosingClass.getSimpleName());
+            enclosingClass = enclosingClass.getEnclosingClass();
+        }
+        builder.enclosingNames(enclosingTypes);
+    }
+
     private static String calcName(TypeName instance, String typeSeparator) {
         String className;
         if (instance.enclosingNames().isEmpty()) {
@@ -319,5 +385,39 @@ final class TypeNameSupport {
 
         return (instance.primitive() || instance.packageName().isEmpty())
                 ? className : instance.packageName() + "." + className;
+    }
+
+    static class Decorator implements Prototype.BuilderDecorator<TypeName.BuilderBase<?, ?>> {
+        @Override
+        public void decorate(TypeName.BuilderBase<?, ?> target) {
+            fixWildcards(target);
+        }
+
+        private void fixWildcards(TypeName.BuilderBase<?, ?> target) {
+            // handle wildcards correct
+            if (target.wildcard()) {
+                if (target.upperBounds().size() == 1 && target.lowerBounds().isEmpty()) {
+                    // backward compatible for (? extends X)
+                    TypeName upperBound = target.upperBounds().getFirst();
+                    target.className(upperBound.className());
+                    target.packageName(upperBound.packageName());
+                    target.enclosingNames(upperBound.enclosingNames());
+                }
+                // wildcard set, if package + class name as well, set them as upper bounds
+                if (target.className().isPresent()
+                        && !target.className().get().equals("?")
+                        && target.upperBounds().isEmpty()
+                        && target.lowerBounds().isEmpty()) {
+                    TypeName upperBound = TypeName.builder()
+                            .from(target)
+                            .wildcard(false)
+                            .build();
+                    if (!upperBound.equals(TypeNames.OBJECT)) {
+                        target.addUpperBound(upperBound);
+                    }
+                }
+                target.generic(true);
+            }
+        }
     }
 }

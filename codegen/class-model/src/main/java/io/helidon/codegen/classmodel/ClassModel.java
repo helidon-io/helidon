@@ -17,6 +17,9 @@ package io.helidon.codegen.classmodel;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.common.types.AccessModifier;
@@ -209,6 +212,49 @@ public final class ClassModel extends ClassBase {
             return this;
         }
 
-    }
+        /**
+         * Find if the provided type name is handled as part of this generated class.
+         *
+         * @param typeName type name to look for
+         * @return class base that matches the provided type name
+         */
+        public Optional<ClassBase> find(TypeName typeName) {
+            if (!typeName.packageName().equals(packageName)) {
+                return Optional.empty();
+            }
+            if (typeName.classNameWithEnclosingNames().equals(name())) {
+                return Optional.of(build());
+            }
 
+            List<String> enclosingNames = typeName.enclosingNames();
+            if (enclosingNames.isEmpty()) {
+                // did not hit above, will not hit below
+                return Optional.empty();
+            }
+            String topLevel = enclosingNames.getFirst();
+            if (!topLevel.equals(name())) {
+                // not an inner class of this class
+                return Optional.empty();
+            }
+
+            // look for inner classes, ignoring this class
+            Map<String, InnerClass> innerClasses = super.innerClasses();
+
+            InnerClass inProgress = null;
+            for (int i = 1; i < enclosingNames.size(); i++) {
+                 String enclosingName = enclosingNames.get(i);
+                 InnerClass found = innerClasses.get(enclosingName);
+                 if (found == null) {
+                     return Optional.empty();
+                 }
+                 inProgress = found;
+                 innerClasses = inProgress.innerClassesMap();
+            }
+            if (inProgress == null) {
+                return Optional.ofNullable(innerClasses.get(typeName.className()));
+            }
+            // we found an inner class that matches the full hierarchy
+            return Optional.ofNullable(inProgress.innerClassesMap().get(typeName.className()));
+        }
+    }
 }

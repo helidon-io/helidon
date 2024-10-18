@@ -153,6 +153,11 @@ class ConcreteType extends Type {
         return Objects.hash(isArray(), typeName.resolvedName());
     }
 
+    @Override
+    TypeName typeName() {
+        return typeName;
+    }
+
     static final class Builder extends ModelComponent.Builder<Builder, ConcreteType> {
         private final List<Type> typeParams = new ArrayList<>();
         private TypeName typeName;

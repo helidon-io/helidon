@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
@@ -94,13 +96,7 @@ final class MetaConfigFinder {
         return findSource(supportedMediaType, cl, CONFIG_PREFIX, "config source", supportedSuffixes);
     }
 
-    private static Optional<ConfigSource> findMetaConfigSource(Function<MediaType, Boolean> supportedMediaType,
-                                                               List<String> supportedSuffixes) {
-        ClassLoader cl = Thread.currentThread().getContextClassLoader();
-        Optional<ConfigSource> source;
-
-        // check if meta configuration is configured using system property
-        String metaConfigFile = System.getProperty(META_CONFIG_SYSTEM_PROPERTY);
+    static Optional<String> profile() {
         // check name of the profile
         String profileName = System.getenv(CONFIG_PROFILE_ENVIRONMENT_VARIABLE);
         if (profileName == null) {
@@ -109,6 +105,44 @@ final class MetaConfigFinder {
         if (profileName == null) {
             profileName = System.getProperty(CONFIG_PROFILE_SYSTEM_PROPERTY);
         }
+        return Optional.ofNullable(profileName);
+    }
+
+    static List<ConfigSource> configSources(List<String> supportedSuffixes,
+                                            String profileName) {
+        return supportedSuffixes.stream()
+                .flatMap(suffix -> configSources("application-" + profileName + "." + suffix))
+                .collect(Collectors.toUnmodifiableList());
+    }
+
+    static List<ConfigSource> configSources(List<String> supportedSuffixes) {
+        return supportedSuffixes.stream()
+                .flatMap(suffix -> configSources("application." + suffix))
+                .collect(Collectors.toUnmodifiableList());
+    }
+
+    static Stream<ConfigSource> configSources(String fileName) {
+        // we look on file system and on classpath, file system is more important
+        return Stream.concat(findFile(fileName, "default config source")
+                .stream(),
+                findAllClasspath(fileName));
+    }
+
+    private static Stream<ConfigSource> findAllClasspath(String fileName) {
+        return ConfigSources.classpathAll(fileName)
+                .stream()
+                .map(UrlConfigSource.Builder::build);
+    }
+
+    private static Optional<ConfigSource> findMetaConfigSource(Function<MediaType, Boolean> supportedMediaType,
+                                                               List<String> supportedSuffixes) {
+        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        Optional<ConfigSource> source;
+
+        // check if meta configuration is configured using system property
+        String metaConfigFile = System.getProperty(META_CONFIG_SYSTEM_PROPERTY);
+        // check name of the profile
+        String profileName = profile().orElse(null);
 
         if (metaConfigFile != null && profileName != null) {
             // we have both profile name and meta configuration file defined

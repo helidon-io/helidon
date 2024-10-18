@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,23 +40,29 @@ import io.helidon.config.spi.ConfigMapperProvider;
  *     </ul>
  *     These conversions are intended to maximize ease-of-use for authors of config sources so the values need not be
  *     upper-cased nor punctuated with underscores rather than the more conventional (in config at least) hyphen.
- * </p>
  * <p>
  *     The only hardship this imposes is if a confusingly-designed enum has values which differ only in case <em>and</em> the
  *     string in the config source does not exactly match one of the enum value names. In such cases
  *     the mapper will be unable to choose which enum value matches an ambiguous string. A developer faced with this
  *     problem can simply provide her own explicit config mapping for that enum, for instance as a function parameter to
  *     {@code Config#as}.
- * </p>
- *
  */
 @Weight(EnumMapperProvider.WEIGHT)
-class EnumMapperProvider implements ConfigMapperProvider {
+public class EnumMapperProvider implements ConfigMapperProvider {
 
     /**
      * Priority with which the enum mapper provider is added to the collection of providers (user- and Helidon-provided).
      */
     static final double WEIGHT = Weighted.DEFAULT_WEIGHT;
+
+    /**
+     * Required constructor for {@link java.util.ServiceLoader}.
+     */
+    public EnumMapperProvider() {
+        /*
+        This is now a "proper" service, to make this available also when using ServiceRegistry
+         */
+    }
 
     @Override
     public Map<Class<?>, Function<Config, ?>> mappers() {

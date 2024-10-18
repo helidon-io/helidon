@@ -34,8 +34,13 @@ abstract class AnnotatedComponent extends CommonComponent {
         annotations.forEach(annotation -> annotation.addImports(imports));
     }
 
-    List<Annotation> annotations() {
-        return annotations;
+    /**
+     * List of annotations on this component.
+     *
+     * @return annotations
+     */
+    public List<Annotation> annotations() {
+        return List.copyOf(annotations);
     }
 
     abstract static class Builder<B extends Builder<B, T>, T extends AnnotatedComponent> extends CommonComponent.Builder<B, T> {
@@ -67,11 +72,7 @@ abstract class AnnotatedComponent extends CommonComponent {
          * @return updated builder instance
          */
         public B addAnnotation(io.helidon.common.types.Annotation annotation) {
-            return addAnnotation(newAnnot -> {
-                newAnnot.type(annotation.typeName());
-                annotation.values()
-                        .forEach(newAnnot::addParameter);
-            });
+            return addAnnotation(Annotation.create(annotation));
         }
 
         /**

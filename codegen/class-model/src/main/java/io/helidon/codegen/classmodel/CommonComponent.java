@@ -33,7 +33,12 @@ abstract class CommonComponent extends DescribableComponent {
         this.javadoc = builder.javadocBuilder.build(builder);
     }
 
-    String name() {
+    /**
+     * Name of this component.
+     *
+     * @return component name
+     */
+    public String name() {
         return name;
     }
 
@@ -41,7 +46,12 @@ abstract class CommonComponent extends DescribableComponent {
         return javadoc;
     }
 
-    AccessModifier accessModifier() {
+    /**
+     * Access modifier of this component.
+     *
+     * @return access modifier
+     */
+    public AccessModifier accessModifier() {
         return accessModifier;
     }
 
@@ -216,6 +226,11 @@ abstract class CommonComponent extends DescribableComponent {
             return identity();
         }
 
+        /**
+         * Name of this component.
+         *
+         * @return component name
+         */
         String name() {
             return name;
         }

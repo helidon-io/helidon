@@ -20,6 +20,7 @@ import java.util.Collection;
 
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
+import io.helidon.service.codegen.spi.RegistryCodegenExtension;
 
 class ServiceExtension implements RegistryCodegenExtension {
     private static final TypeName GENERATOR = TypeName.create(ServiceExtension.class);
@@ -35,12 +36,18 @@ class ServiceExtension implements RegistryCodegenExtension {
         Collection<TypeInfo> descriptorsRequired = roundContext.types();
 
         for (TypeInfo typeInfo : descriptorsRequired) {
-            generateDescriptor(descriptorsRequired, typeInfo);
+            generateDescriptor(roundContext, descriptorsRequired, typeInfo);
         }
     }
 
-    private void generateDescriptor(Collection<TypeInfo> services,
+    private void generateDescriptor(RegistryRoundContext roundContext,
+                                    Collection<TypeInfo> descriptorsRequired,
                                     TypeInfo typeInfo) {
-        GenerateServiceDescriptor.generate(GENERATOR, ctx, services, typeInfo);
+
+        GenerateServiceDescriptor.generate(GENERATOR,
+                                           ctx,
+                                           roundContext,
+                                           descriptorsRequired,
+                                           typeInfo);
     }
 }
