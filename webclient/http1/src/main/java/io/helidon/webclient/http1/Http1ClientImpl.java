@@ -35,7 +35,7 @@ class Http1ClientImpl implements Http1Client, HttpClientSpi {
         Config config = GlobalConfig.config();
         return Http1ClientConfig.builder()
                 .servicesDiscoverServices(false)
-                .config(config.get("http1-client"))
+                .config(config.get("client"))
                 .buildPrototype();
     });
 
