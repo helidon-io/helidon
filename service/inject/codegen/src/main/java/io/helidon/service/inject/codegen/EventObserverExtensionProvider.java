@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2024 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.service.inject.codegen;
 
 import java.util.Collection;
@@ -25,11 +41,20 @@ import io.helidon.service.codegen.spi.RegistryCodegenExtensionProvider;
 import static io.helidon.service.inject.codegen.InjectCodegenTypes.EVENT_MANAGER;
 import static io.helidon.service.inject.codegen.InjectCodegenTypes.EVENT_OBSERVER;
 import static io.helidon.service.inject.codegen.InjectCodegenTypes.EVENT_OBSERVER_ASYNC;
-import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECT_G_EVENT_OBSERVER_REGISTRATION;
 import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECTION_INJECT;
 import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECTION_SINGLETON;
+import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECT_G_EVENT_OBSERVER_REGISTRATION;
 
+/**
+ * {@link java.util.ServiceLoader} provider implementation that adds support for generating event observer registrations.
+ */
 public class EventObserverExtensionProvider implements RegistryCodegenExtensionProvider {
+    /**
+     * Public constructor required by {@link java.util.ServiceLoader}.
+     */
+    public EventObserverExtensionProvider() {
+    }
+
     @Override
     public RegistryCodegenExtension create(RegistryCodegenContext codegenContext) {
         return new EventObserverExtension();
@@ -51,6 +76,24 @@ public class EventObserverExtensionProvider implements RegistryCodegenExtensionP
             process(roundContext, elements, "");
             elements = roundContext.annotatedElements(EVENT_OBSERVER_ASYNC);
             process(roundContext, elements, "Async");
+        }
+
+        private static TypeName registration(TypeName serviceType, TypeName eventObject, Set<Annotation> qualifiers) {
+            ResolvedType event = ResolvedType.create(eventObject);
+
+            var map = CACHE.computeIfAbsent(new ClassNameCacheKey(serviceType, event), k -> new ConcurrentHashMap<>());
+            return map.computeIfAbsent(qualifiers, it -> {
+                String className = serviceType.classNameWithEnclosingNames().replace('.', '_')
+                        + "__Observer";
+                var builder = TypeName.builder()
+                        .packageName(serviceType.packageName());
+                if (map.isEmpty()) {
+                    return builder.className(className)
+                            .build();
+                }
+                return builder.className(className + "_" + map.size())
+                        .build();
+            });
         }
 
         private void process(RegistryRoundContext roundContext, Collection<TypedElementInfo> elements, String suffix) {
@@ -81,24 +124,6 @@ public class EventObserverExtensionProvider implements RegistryCodegenExtensionP
                                                                 element.originatingElementValue()));
                 generateObserverRegistration(roundContext, owningType, element, qualifiers, eventObject, suffix);
             }
-        }
-
-        private static TypeName registration(TypeName serviceType, TypeName eventObject, Set<Annotation> qualifiers) {
-            ResolvedType event = ResolvedType.create(eventObject);
-
-            var map = CACHE.computeIfAbsent(new ClassNameCacheKey(serviceType, event), k -> new ConcurrentHashMap<>());
-            return map.computeIfAbsent(qualifiers, it -> {
-                String className = serviceType.classNameWithEnclosingNames().replace('.', '_')
-                        + "__Observer";
-                var builder = TypeName.builder()
-                        .packageName(serviceType.packageName());
-                if (map.isEmpty()) {
-                    return builder.className(className)
-                            .build();
-                }
-                return builder.className(className + "_" + map.size())
-                        .build();
-            });
         }
 
         private void generateObserverRegistration(RegistryRoundContext roundContext,
