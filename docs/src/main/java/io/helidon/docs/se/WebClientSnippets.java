@@ -15,16 +15,18 @@
  */
 package io.helidon.docs.se;
 
+import io.helidon.common.concurrency.limits.FixedLimit;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.http.Method;
 import io.helidon.http.media.MediaSupport;
 import io.helidon.webclient.api.ClientResponseTyped;
-import io.helidon.webclient.api.HttpClientRequest;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.Proxy;
 import io.helidon.webclient.api.WebClient;
+import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientProtocolConfig;
+import io.helidon.webclient.http1.Http1ConnectionCacheConfig;
 import io.helidon.webclient.metrics.WebClientMetrics;
 import io.helidon.webclient.spi.WebClientService;
 
@@ -174,6 +176,30 @@ class WebClientSnippets {
                 .fragment("someFragment") // <4>
                 .headers(headers -> headers.accept(MediaTypes.APPLICATION_JSON)); // <5>
         // end::snippet_12[]
+    }
+
+    void snippet_13() {
+        // tag::snippet_13[]
+        Http1ConnectionCacheConfig cacheConfig = Http1ConnectionCacheConfig.builder()
+                .connectionLimit(FixedLimit.builder().permits(100).build()) // <1>
+                .connectionPerHostLimit(FixedLimit.builder().permits(5).build()) // <2>
+                .addHostLimit(builder -> builder.host("some-host") // <3>
+                        .limit(FixedLimit.builder().permits(2).build()))
+                .build();
+
+        Http1Client client = Http1Client.builder()
+                .shareConnectionCache(false) // <4>
+                .connectionCacheConfig(cacheConfig)
+                .build();
+        // end::snippet_13[]
+    }
+
+    void snippet_14() {
+        // tag::snippet_14[]
+        Config config = Config.create();
+
+        Http1Client client = Http1Client.create(config.get("client"));
+        // end::snippet_14[]
     }
 
 }

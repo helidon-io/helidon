@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,12 @@
 
 package io.helidon.webclient.http1;
 
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
+
+import io.helidon.common.LazyValue;
+import io.helidon.common.config.Config;
+import io.helidon.common.config.GlobalConfig;
 import io.helidon.http.Method;
 import io.helidon.webclient.api.ClientRequest;
 import io.helidon.webclient.api.ClientUri;
@@ -24,6 +30,12 @@ import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.spi.HttpClientSpi;
 
 class Http1ClientImpl implements Http1Client, HttpClientSpi {
+    static final AtomicReference<Http1ClientConfig> GLOBAL_CONFIG = new AtomicReference<>();
+    private static final LazyValue<Http1ClientConfig> LAZY_GLOBAL_CONFIG = LazyValue.create(() -> {
+        Config config = GlobalConfig.config();
+        return Http1ClientConfig.create(config.get("client"));
+    });
+
     private final WebClient webClient;
     private final Http1ClientConfig clientConfig;
     private final Http1ClientProtocolConfig protocolConfig;
@@ -38,9 +50,14 @@ class Http1ClientImpl implements Http1Client, HttpClientSpi {
             this.connectionCache = Http1ConnectionCache.shared();
             this.clientCache = null;
         } else {
-            this.connectionCache = Http1ConnectionCache.create();
+            this.connectionCache = Http1ConnectionCache.create(clientConfig.connectionCacheConfig());
             this.clientCache = connectionCache;
         }
+    }
+
+    static Http1ClientConfig globalConfig() {
+        return Optional.ofNullable(Http1ClientImpl.GLOBAL_CONFIG.get())
+                .orElseGet(Http1ClientImpl.LAZY_GLOBAL_CONFIG);
     }
 
     @Override
