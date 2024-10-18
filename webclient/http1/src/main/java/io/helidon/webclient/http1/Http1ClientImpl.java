@@ -33,7 +33,10 @@ class Http1ClientImpl implements Http1Client, HttpClientSpi {
     static final AtomicReference<Http1ClientConfig> GLOBAL_CONFIG = new AtomicReference<>();
     private static final LazyValue<Http1ClientConfig> LAZY_GLOBAL_CONFIG = LazyValue.create(() -> {
         Config config = GlobalConfig.config();
-        return Http1ClientConfig.create(config.get("client"));
+        return Http1ClientConfig.builder()
+                .servicesDiscoverServices(false)
+                .config(config.get("http1-client"))
+                .buildPrototype();
     });
 
     private final WebClient webClient;
