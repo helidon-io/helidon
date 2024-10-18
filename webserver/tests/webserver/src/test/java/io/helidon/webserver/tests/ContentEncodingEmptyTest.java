@@ -48,6 +48,11 @@ class ContentEncodingEmptyTest {
             res.streamFilter(os -> os);     // forces filter codepath
             res.status(Status.NO_CONTENT_204);
             res.send();
+        }).post("hello_stream", (req, res) -> {
+            try (var out = res.outputStream()) {
+                res.status(Status.NO_CONTENT_204);
+                out.flush();
+            }
         });
     }
 
@@ -63,6 +68,15 @@ class ContentEncodingEmptyTest {
     @Test
     void gzipEncodeEmptyEntityFilter() {
         Http1ClientResponse res = client.post("hello_filter")
+                .header(HeaderNames.CONTENT_TYPE, "application/json")
+                .header(HeaderNames.ACCEPT_ENCODING, "gzip")
+                .request();
+        assertThat(res.status().code(), is(204));
+    }
+
+    @Test
+    void gzipEncodeEmptyEntityStream() {
+        Http1ClientResponse res = client.post("hello_stream")
                 .header(HeaderNames.CONTENT_TYPE, "application/json")
                 .header(HeaderNames.ACCEPT_ENCODING, "gzip")
                 .request();
