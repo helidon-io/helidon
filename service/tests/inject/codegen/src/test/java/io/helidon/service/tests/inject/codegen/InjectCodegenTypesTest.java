@@ -24,6 +24,8 @@ import java.util.Map;
 import java.util.Set;
 
 import io.helidon.common.types.TypeName;
+import io.helidon.service.inject.api.Event;
+import io.helidon.service.inject.api.EventManager;
 import io.helidon.service.inject.api.FactoryType;
 import io.helidon.service.inject.api.GeneratedInjectService;
 import io.helidon.service.inject.api.InjectServiceDescriptor;
@@ -101,6 +103,13 @@ class InjectCodegenTypesTest {
         checkField(toCheck, checked, fields, "INTERCEPT_METADATA", InterceptionMetadata.class);
         checkField(toCheck, checked, fields, "INTERCEPT_INVOKER", InterceptionInvoker.class);
 
+        // api.* event types
+        checkField(toCheck, checked, fields, "EVENT_OBSERVER", Event.Observer.class);
+        checkField(toCheck, checked, fields, "EVENT_OBSERVER_ASYNC", Event.AsyncObserver.class);
+        checkField(toCheck, checked, fields, "EVENT_EMITTER", Event.Emitter.class);
+        checkField(toCheck, checked, fields, "EVENT_MANAGER", EventManager.class);
+
+
         // generated inject service types
         checkField(toCheck, checked, fields, "INJECT_G_PER_INSTANCE_DESCRIPTOR",
                    GeneratedInjectService.PerInstanceDescriptor.class);
@@ -110,6 +119,8 @@ class InjectCodegenTypesTest {
                    GeneratedInjectService.ScopeHandlerDescriptor.class);
         checkField(toCheck, checked, fields, "INJECT_G_IP_SUPPORT",
                    GeneratedInjectService.IpSupport.class);
+        checkField(toCheck, checked, fields, "INJECT_G_EVENT_OBSERVER_REGISTRATION",
+                   GeneratedInjectService.EventObserverRegistration.class);
 
         // generated interception types
         checkField(toCheck, checked, fields, "INTERCEPT_G_WRAPPER_SUPPLIER_FACTORY",

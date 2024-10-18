@@ -183,6 +183,33 @@ public class InjectCodegenTypes {
     public static final TypeName INTERCEPT_G_WRAPPER_QUALIFIED_FACTORY =
             TypeName.create("io.helidon.service.inject.api.GeneratedInjectService.QualifiedFactoryInterceptionWrapper");
 
+    /**
+     * {@link io.helidon.common.types.TypeName} for
+     * {@code io.helidon.service.inject.api.Event.Observer}.
+     */
+    public static final TypeName EVENT_OBSERVER = TypeName.create("io.helidon.service.inject.api.Event.Observer");
+    /**
+     * {@link io.helidon.common.types.TypeName} for
+     * {@code io.helidon.service.inject.api.Event.AsyncObserver}.
+     */
+    public static final TypeName EVENT_OBSERVER_ASYNC = TypeName.create("io.helidon.service.inject.api.Event.AsyncObserver");
+    /**
+     * {@link io.helidon.common.types.TypeName} for
+     * {@code io.helidon.service.inject.api.Event.Emitter}.
+     */
+    public static final TypeName EVENT_EMITTER = TypeName.create("io.helidon.service.inject.api.Event.Emitter");
+    /**
+     * {@link io.helidon.common.types.TypeName} for
+     * {@code io.helidon.service.inject.api.EventManager}.
+     */
+    public static final TypeName EVENT_MANAGER = TypeName.create("io.helidon.service.inject.api.EventManager");
+    /**
+     * {@link io.helidon.common.types.TypeName} for
+     * {@code io.helidon.service.inject.api.GeneratedInjectService.EventObserverRegistration}.
+     */
+    public static final TypeName INJECT_G_EVENT_OBSERVER_REGISTRATION =
+            TypeName.create("io.helidon.service.inject.api.GeneratedInjectService.EventObserverRegistration");
+
     private InjectCodegenTypes() {
     }
 }

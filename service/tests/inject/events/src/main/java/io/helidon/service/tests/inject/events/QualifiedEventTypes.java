@@ -1,9 +1,9 @@
 package io.helidon.service.tests.inject.events;
 
+import io.helidon.service.inject.api.Event;
 import io.helidon.service.inject.api.Injection;
-import io.helidon.service.tests.inject.events.api.Event;
 
-public class QualifiedEventTypes {
+class QualifiedEventTypes {
     private QualifiedEventTypes() {
     }
 
@@ -13,15 +13,20 @@ public class QualifiedEventTypes {
 
     @Injection.Singleton
     static class EventEmitter {
+        private final Event.Emitter<EventObject> unqualifiedEvent;
         private final Event.Emitter<EventObject> event;
 
+
         @Injection.Inject
-        EventEmitter(@EventQualifier Event.Emitter<EventObject> event) {
+        EventEmitter(@EventQualifier Event.Emitter<EventObject> event,
+                     Event.Emitter<EventObject> unqualifiedEvent) {
             this.event = event;
+            this.unqualifiedEvent = unqualifiedEvent;
         }
 
         void emit(EventObject eventObject) {
             this.event.emit(eventObject);
+            this.unqualifiedEvent.emit(eventObject);
         }
     }
 
@@ -40,6 +45,7 @@ public class QualifiedEventTypes {
     @Injection.Singleton
     static class EventObserver {
         private volatile EventObject eventObject;
+        private volatile EventObject unqualifiedEventObject;
 
         @Event.Observer
         @EventQualifier
@@ -47,8 +53,17 @@ public class QualifiedEventTypes {
             this.eventObject = eventObject;
         }
 
+        @Event.Observer
+        void unqualifiedEvent(EventObject object) {
+            this.unqualifiedEventObject = object;
+        }
+
         EventObject eventObject() {
             return eventObject;
+        }
+
+        EventObject unqualifiedEventObject() {
+            return unqualifiedEventObject;
         }
     }
 }

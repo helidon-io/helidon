@@ -1,7 +1,7 @@
 package io.helidon.service.tests.inject.events;
 
+import io.helidon.service.inject.api.Event;
 import io.helidon.service.inject.api.Injection;
-import io.helidon.service.tests.inject.events.api.Event;
 
 class EventTypes {
     private EventTypes() {

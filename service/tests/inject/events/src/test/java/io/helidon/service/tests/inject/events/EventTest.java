@@ -53,6 +53,10 @@ class EventTest {
         var eventObject = eventObserver.eventObject();
         assertThat("Event should have been received in observer", eventObject, notNullValue());
         assertThat(eventObject.message(), is("unit-test-event"));
+
+        eventObject = eventObserver.unqualifiedEventObject();
+        assertThat("Event should have been received in observer", eventObject, notNullValue());
+        assertThat(eventObject.message(), is("unit-test-event"));
     }
 
     @Test

@@ -67,6 +67,7 @@ import io.helidon.service.inject.codegen.spi.InjectCodegenObserverProvider;
 
 import static io.helidon.codegen.CodegenUtil.toConstantName;
 import static io.helidon.service.codegen.ServiceCodegenTypes.BUILDER_BLUEPRINT;
+import static io.helidon.service.codegen.ServiceCodegenTypes.GENERATED_ANNOTATION;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_PROVIDER;
 import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECTION_DESCRIBE;
 import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECTION_INJECT;
@@ -143,9 +144,13 @@ class InjectionExtension implements RegistryCodegenExtension {
                 .addContent(List.class)
                 .addContent(".of(")
                 .update(it -> {
-                    Iterator<Annotation> iterator = service.annotations().iterator();
+                    Iterator<Annotation> iterator = service.annotations()
+                            .stream()
+                            .filter(annot -> !annot.typeName().equals(GENERATED_ANNOTATION))
+                            .iterator();
                     while (iterator.hasNext()) {
-                        it.addContentCreate(iterator.next());
+                        Annotation next = iterator.next();
+                        it.addContentCreate(next);
                         if (iterator.hasNext()) {
                             it.addContent(", ");
                         }
@@ -421,6 +426,8 @@ class InjectionExtension implements RegistryCodegenExtension {
                params,
                constructorInjectElement,
                fieldInjectElements);
+
+        notifyIpObservers(roundContext, service, params);
 
         ClassModel.Builder classModel = ClassModel.builder()
                 .copyright(CodegenUtil.copyright(GENERATOR,
@@ -1680,21 +1687,6 @@ class InjectionExtension implements RegistryCodegenExtension {
                 .addContent(")"));
     }
 
-    private void codeGenQualifier(Field.Builder field, Annotation qualifier) {
-        if (qualifier.value().isPresent()) {
-            field.addContent(InjectCodegenTypes.INJECT_QUALIFIER)
-                    .addContent(".create(")
-                    .addContentCreate(qualifier.typeName())
-                    .addContent(", \"" + qualifier.value().get() + "\")");
-            return;
-        }
-
-        field.addContent(InjectCodegenTypes.INJECT_QUALIFIER)
-                .addContent(".create(")
-                .addContentCreate(qualifier.typeName())
-                .addContent(")");
-    }
-
     private void methodFields(ClassModel.Builder classModel, List<MethodDefinition> methods) {
         for (MethodDefinition method : methods) {
             classModel.addField(methodField -> methodField
@@ -2266,23 +2258,7 @@ class InjectionExtension implements RegistryCodegenExtension {
     private void qualifiersMethod(ClassModel.Builder classModel, DescribedService service) {
         Set<Annotation> qualifiers = service.qualifiers();
         // qualifier field is always needed, as it is used for interception
-        classModel.addField(qualifiersField -> qualifiersField
-                .isStatic(true)
-                .isFinal(true)
-                .name("QUALIFIERS")
-                .type(SET_OF_QUALIFIERS)
-                .addContent(Set.class)
-                .addContent(".of(")
-                .update(it -> {
-                    Iterator<Annotation> iterator = qualifiers.iterator();
-                    while (iterator.hasNext()) {
-                        codeGenQualifier(it, iterator.next());
-                        if (iterator.hasNext()) {
-                            it.addContent(", ");
-                        }
-                    }
-                })
-                .addContent(")"));
+        Qualifiers.generateQualifiersConstant(classModel, qualifiers);
 
         if (qualifiers.isEmpty() && service.superType().empty()) {
             return;
@@ -2378,14 +2354,33 @@ class InjectionExtension implements RegistryCodegenExtension {
                 .flatMap(Annotation::doubleValue);
     }
 
-    private void notifyObservers(RegistryRoundContext roundContext, Collection<TypeInfo> descriptorsRequired) {
-        // we have correct classloader set in current thread context
-        if (!observers.isEmpty()) {
-            Set<TypedElementInfo> elements = descriptorsRequired.stream()
-                    .flatMap(it -> it.elementInfo().stream())
-                    .collect(Collectors.toSet());
-            observers.forEach(it -> it.onProcessingEvent(roundContext, elements));
+    private void notifyIpObservers(RegistryRoundContext roundContext, DescribedService service, List<ParamDefinition> params) {
+        if (observers.isEmpty()) {
+            return;
         }
+
+        for (ParamDefinition param : params) {
+            TypeInfo typeInfo = service.serviceDescriptor().typeInfo();
+            TypedElementInfo owningElement = param.owningElement();
+            TypedElementInfo ipElement = param.elementInfo();
+            observers.forEach(it -> it.onInjectionPoint(
+                    roundContext,
+                    typeInfo,
+                    owningElement,
+                    ipElement));
+        }
+    }
+
+    private void notifyObservers(RegistryRoundContext roundContext, Collection<TypeInfo> descriptorsRequired) {
+        if (observers.isEmpty()) {
+            return;
+        }
+
+        // we have correct classloader set in current thread context
+        Set<TypedElementInfo> elements = descriptorsRequired.stream()
+                .flatMap(it -> it.elementInfo().stream())
+                .collect(Collectors.toSet());
+        observers.forEach(it -> it.onProcessingEvent(roundContext, elements));
     }
 
     private InjectAssignment.Assignment translateParameter(TypeName typeName, String constantName) {

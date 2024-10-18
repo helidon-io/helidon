@@ -22,6 +22,7 @@ module io.helidon.service.inject.codegen {
     requires transitive io.helidon.codegen.classmodel;
     requires transitive io.helidon.codegen;
     requires transitive io.helidon.service.codegen;
+    requires jdk.jshell;
 
     exports io.helidon.service.inject.codegen;
     exports io.helidon.service.inject.codegen.spi;
@@ -30,8 +31,12 @@ module io.helidon.service.inject.codegen {
     uses io.helidon.service.inject.codegen.spi.InjectAssignmentProvider;
 
     provides io.helidon.service.codegen.spi.RegistryCodegenExtensionProvider
-            with io.helidon.service.inject.codegen.InjectionExtensionProvider;
+            with io.helidon.service.inject.codegen.InjectionExtensionProvider,
+                    io.helidon.service.inject.codegen.EventObserverExtensionProvider;
 
     provides io.helidon.codegen.spi.AnnotationMapperProvider
             with io.helidon.service.inject.codegen.MapNamedByTypeMapperProvider;
+
+    provides io.helidon.service.inject.codegen.spi.InjectCodegenObserverProvider
+            with io.helidon.service.inject.codegen.EventEmitterObserverProvider;
 }

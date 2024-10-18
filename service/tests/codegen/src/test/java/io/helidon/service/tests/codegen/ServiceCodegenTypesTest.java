@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Generated;
 import io.helidon.common.types.TypeName;
 import io.helidon.service.codegen.ServiceCodegenTypes;
 import io.helidon.service.registry.Dependency;
@@ -76,6 +77,7 @@ class ServiceCodegenTypesTest {
         checkField(toCheck, checked, fields, "SERVICE_DESCRIPTOR", ServiceDescriptor.class);
 
         checkField(toCheck, checked, fields, "BUILDER_BLUEPRINT", Prototype.Blueprint.class);
+        checkField(toCheck, checked, fields, "GENERATED_ANNOTATION", Generated.class);
 
         assertThat("If the collection is not empty, please add appropriate checkField line to this test",
                    toCheck,

@@ -1,4 +1,4 @@
-package io.helidon.service.tests.inject.events.api;
+package io.helidon.service.inject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,6 +16,9 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.common.types.ResolvedType;
+import io.helidon.service.inject.api.EventDispatchException;
+import io.helidon.service.inject.api.EventManager;
+import io.helidon.service.inject.api.GeneratedInjectService.EventObserverRegistration;
 import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.Qualifier;
 import io.helidon.service.registry.Service;
@@ -138,8 +141,11 @@ class EventManagerImpl implements EventManager {
             return;
         }
 
-        var exception = new EventDispatchException("Event dispatching failed, see suppressed exceptions");
-        thrown.forEach(exception::addSuppressed);
+        var exception = new EventDispatchException("Event dispatching failed, see suppressed exceptions", thrown.getFirst());
+        for (int i = 1; i < thrown.size(); i++) {
+            exception.addSuppressed(thrown.get(i));
+        }
+
         throw exception;
     }
 

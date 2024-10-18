@@ -4,10 +4,10 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.service.inject.api.Event;
 import io.helidon.service.inject.api.Injection;
-import io.helidon.service.tests.inject.events.api.Event;
 
-public class AsyncEventTypes {
+class AsyncEventTypes {
     private AsyncEventTypes() {
     }
 

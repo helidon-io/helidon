@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import io.helidon.common.GenericType;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
+import io.helidon.service.registry.Service;
 
 /**
  * All types in this class are used from generated code for services.
@@ -73,6 +74,20 @@ public final class GeneratedInjectService {
          * @return type of the scope handled (annotation)
          */
         TypeName handledScope();
+    }
+
+    /**
+     * For event observers an observer registration is generated, so it can be picked-up by the
+     * {@link io.helidon.service.inject.api.EventManager} implementation at runtime.
+     */
+    @Service.Contract
+    public interface EventObserverRegistration {
+        /**
+         * Register with the event manager.
+         *
+         * @param manager event manager
+         */
+        void register(EventManager manager);
     }
 
     /**

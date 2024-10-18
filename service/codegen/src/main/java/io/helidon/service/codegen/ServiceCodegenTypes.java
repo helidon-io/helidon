@@ -16,6 +16,7 @@
 
 package io.helidon.service.codegen;
 
+import io.helidon.common.Generated;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -67,6 +68,11 @@ public final class ServiceCodegenTypes {
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.builder.api.Prototype.Blueprint}.
      */
     public static final TypeName BUILDER_BLUEPRINT = TypeName.create("io.helidon.builder.api.Prototype.Blueprint");
+
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@link io.helidon.common.Generated}.
+     */
+    public static final TypeName GENERATED_ANNOTATION = TypeName.create(Generated.class);
 
     private ServiceCodegenTypes() {
     }

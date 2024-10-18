@@ -18,6 +18,7 @@ package io.helidon.service.inject.codegen.spi;
 
 import java.util.Set;
 
+import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.service.codegen.RegistryRoundContext;
 
@@ -32,5 +33,22 @@ public interface InjectCodegenObserver {
      * @param roundContext context of the current processing round
      * @param elements     all elements of interest
      */
-    void onProcessingEvent(RegistryRoundContext roundContext, Set<TypedElementInfo> elements);
+    default void onProcessingEvent(RegistryRoundContext roundContext, Set<TypedElementInfo> elements) {
+    }
+
+    /**
+     * Called for each injection point.
+     * In case the injection point is a field, the {@code element} and {@code argument} are the same instance.
+     *
+     * @param roundContext context of the current processing round
+     * @param service      the service being processed
+     * @param element      element that owns the injection point (constructor, method, field)
+     * @param argument     element that is the injection point (constructor/method parameter, field)
+     */
+    default void onInjectionPoint(RegistryRoundContext roundContext,
+                                  TypeInfo service,
+                                  TypedElementInfo element,
+                                  TypedElementInfo argument) {
+
+    }
 }
