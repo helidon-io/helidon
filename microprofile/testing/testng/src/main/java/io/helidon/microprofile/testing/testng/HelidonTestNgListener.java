@@ -57,6 +57,9 @@ import jakarta.enterprise.util.AnnotationLiteral;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.client.ClientBuilder;
+import jdk.jfr.consumer.RecordedEvent;
+import jdk.jfr.consumer.RecordedFrame;
+import jdk.jfr.consumer.RecordingStream;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
@@ -67,6 +70,8 @@ import org.testng.ITestClass;
 import org.testng.ITestListener;
 import org.testng.ITestResult;
 import org.testng.annotations.Test;
+
+import static org.testng.Assert.fail;
 
 /**
  * TestNG extension to support Helidon CDI container in tests.
@@ -85,8 +90,12 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
     private List<AddExtension> classLevelExtensions = new ArrayList<>();
     private List<AddBean> classLevelBeans = new ArrayList<>();
     private ConfigMeta classLevelConfigMeta = new ConfigMeta();
+    private List<EventWrapper> jfrVTPinned;
+    private RecordingStream recordingStream;
     private boolean classLevelDisableDiscovery = false;
     private boolean resetPerTest;
+    private boolean pinnedThreadValidation;
+
     private Class<?> testClass;
     private Object testInstance;
     private ConfigProviderResolver configProviderResolver;
@@ -96,6 +105,9 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
     @Override
     public void onBeforeClass(ITestClass iTestClass) {
         testClass = iTestClass.getRealClass();
+
+        pinnedThreadValidation = testClass.getAnnotation(PinnedThreadValidation.class) != null;
+        startRecordingStream();
 
         AddConfig[] configs = getAnnotations(testClass, AddConfig.class);
         classLevelConfigMeta.addConfig(configs);
@@ -147,16 +159,19 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
         }
     }
 
+
     @Override
     public void onAfterClass(ITestClass testClass) {
         if (!resetPerTest) {
             releaseConfig();
             stopContainer();
         }
+        closeRecordingStream();
     }
 
     @Override
     public void onTestStart(ITestResult result) {
+
         if (resetPerTest) {
             Method method = result.getMethod().getConstructorOrMethod().getMethod();
             AddConfig[] configs = method.getAnnotationsByType(AddConfig.class);
@@ -229,7 +244,7 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
         }
         validateFields(testClass.getFields());
         validateFields(testClass.getDeclaredFields());
-    }
+            }
 
     private void configure(ConfigMeta configMeta) {
         if (config != null) {
@@ -268,6 +283,7 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
         if (configProviderResolver != null && config != null) {
             configProviderResolver.releaseConfig(config);
             config = null;
+
             classLevelExtensions = new ArrayList<>();
             classLevelBeans = new ArrayList<>();
             classLevelConfigMeta = new ConfigMeta();
@@ -309,6 +325,32 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
         if (container != null) {
             container.close();
             container = null;
+        }
+    }
+
+    private void startRecordingStream() {
+        if (pinnedThreadValidation) {
+            jfrVTPinned = new ArrayList<>();
+            recordingStream = new RecordingStream();
+            recordingStream.enable("jdk.VirtualThreadPinned").withStackTrace();
+            recordingStream.onEvent("jdk.VirtualThreadPinned", event -> {
+                jfrVTPinned.add(new EventWrapper(event));
+            });
+            recordingStream.startAsync();
+        }
+    }
+
+    private void closeRecordingStream() {
+        if (pinnedThreadValidation) {
+            try {
+                // Flush ending events
+                recordingStream.stop();
+                if (!jfrVTPinned.isEmpty()) {
+                    fail("Some pinned virtual threads were detected:\n" + jfrVTPinned);
+                }
+            } finally {
+                recordingStream.close();
+            }
         }
     }
 
@@ -406,7 +448,7 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
                     .addType(jakarta.ws.rs.client.WebTarget.class)
                     .scope(ApplicationScoped.class)
                     .produceWith(context -> ClientBuilder.newClient().target(clientUri()));
-        }
+                        }
 
         void registerAddedBeans(@Observes BeforeBeanDiscovery event) {
             for (AddBean beanDef : addBeans) {
@@ -461,12 +503,12 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
         @Override
         public void postConstruct(T testInstance) {
             delegate.postConstruct(testInstance);
-        }
+                }
 
         @Override
         public void preDestroy(T testInstance) {
             delegate.preDestroy(testInstance);
-        }
+            }
 
         @Override
         public T produce(CreationalContext<T> cc) {
@@ -521,10 +563,12 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
 
         ConfigMeta nextMethod() {
             ConfigMeta methodMeta = new ConfigMeta();
+
             methodMeta.additionalKeys.putAll(this.additionalKeys);
             methodMeta.additionalSources.addAll(this.additionalSources);
             methodMeta.useExisting = this.useExisting;
             methodMeta.profile = this.profile;
+
             return methodMeta;
         }
     }
@@ -594,4 +638,30 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
     private static final class SingletonLiteral extends AnnotationLiteral<Singleton> implements Singleton {
         static final SingletonLiteral INSTANCE = new SingletonLiteral();
     }
+
+    private static class EventWrapper {
+
+        private final RecordedEvent recordedEvent;
+
+        private EventWrapper(RecordedEvent recordedEvent) {
+            this.recordedEvent = recordedEvent;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder builder = new StringBuilder(recordedEvent.toString());
+            if (recordedEvent.getStackTrace() != null) {
+                builder.append("full-stackTrace = [");
+                List<RecordedFrame> frames = recordedEvent.getStackTrace().getFrames();
+                for (RecordedFrame frame : frames) {
+                    builder.append("\n\t").append(frame.getMethod().getType().getName())
+                    .append("#").append(frame.getMethod().getName())
+                    .append("(").append(frame.getLineNumber()).append(")");
+                }
+                builder.append("\n]");
+            }
+            return builder.toString();
+        }
+    }
+
 }
