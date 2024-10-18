@@ -305,14 +305,16 @@ final class InterceptionSupport {
                 .addContent(" = ")
                 .addContent(DELEGATE_PARAM)
                 .addContentLine(";")
-                .update(it -> InterceptedTypeGenerator.createInvokers(it,
-                                                                      definitions,
-                                                                      false,
-                                                                      INTERCEPT_META_PARAM,
-                                                                      DESCRIPTOR_PARAM,
-                                                                      DESCRIPTOR_PARAM + ".qualifiers()",
-                                                                      TYPE_ANNOTATIONS_FIELD,
-                                                                      DELEGATE_PARAM)));
+                .update(it -> InterceptedTypeGenerator.createInvokers(
+                        it,
+                        DESCRIPTOR_TYPE,
+                        definitions,
+                        false,
+                        INTERCEPT_META_PARAM,
+                        DESCRIPTOR_PARAM,
+                        DESCRIPTOR_PARAM + ".qualifiers()",
+                        TYPE_ANNOTATIONS_FIELD,
+                        DELEGATE_PARAM)));
 
         // and finally the create method (to be invoked by user code)
         classModel.addMethod(create -> create
@@ -401,6 +403,7 @@ final class InterceptionSupport {
                 .addContent(DELEGATE_PARAM)
                 .addContentLine(";")
                 .update(it -> InterceptedTypeGenerator.createInvokers(it,
+                                                                      DESCRIPTOR_TYPE,
                                                                       definitions,
                                                                       false,
                                                                       INTERCEPT_META_PARAM,

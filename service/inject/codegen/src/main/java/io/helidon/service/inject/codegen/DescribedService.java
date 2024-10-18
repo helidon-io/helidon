@@ -251,7 +251,7 @@ class DescribedService {
         };
     }
 
-    boolean isProvider() {
+    boolean isFactory() {
         return providerType() != FactoryType.SERVICE && providerType() != FactoryType.NONE;
     }
 

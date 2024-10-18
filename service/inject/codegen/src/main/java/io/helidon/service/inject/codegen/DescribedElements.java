@@ -153,4 +153,5 @@ class DescribedElements {
     public boolean constructorIntercepted() {
         return constructorIntercepted;
     }
+
 }

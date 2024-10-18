@@ -144,10 +144,8 @@ final class Interception {
             // the method is declared with the annotation
             return true;
         }
-        for (TypedElements.DeclaredElement interfaceMethod : methodMeta.interfaceMethods()) {
-            if (hasInterceptTrigger(interfaceMethod.iface(), interfaceMethod.element())) {
-                return true;
-            }
+        for (TypedElements.DeclaredElement interfaceMethod : methodMeta.abstractMethods()) {
+            return hasInterceptTrigger(interfaceMethod.abstractType(), interfaceMethod.element());
         }
 
         return false;

@@ -149,17 +149,19 @@ class InterceptedTypeGenerator {
     /**
      * Create invokes for intercepted methods.
      *
-     * @param cModel model to add the invokers to (constructor)
-     * @param interceptedMethods list of intercepted methods
+     * @param cModel                model to add the invokers to (constructor)
+     * @param descriptorType        type of the descriptor we are processing
+     * @param interceptedMethods    list of intercepted methods
      * @param useDescriptorConstant whether to use descriptor constant, or local constant for method info
-     * @param interceptMetaName name of the interceptor meta parameter
-     * @param descriptorName name of the descriptor parameter
-     * @param qualifiersName name of the qualifiers parameter
-     * @param annotationsName name of the annotations parameter
-     * @param invocationTargetName name of the invocation target parameter
+     * @param interceptMetaName     name of the interceptor meta parameter
+     * @param descriptorName        name of the descriptor parameter
+     * @param qualifiersName        name of the qualifiers parameter
+     * @param annotationsName       name of the annotations parameter
+     * @param invocationTargetName  name of the invocation target parameter
      */
     @SuppressWarnings("checkstyle:ParameterNumber")
     static void createInvokers(Constructor.Builder cModel,
+                               TypeName descriptorType,
                                List<MethodDefinition> interceptedMethods,
                                boolean useDescriptorConstant,
                                String interceptMetaName,
@@ -185,7 +187,7 @@ class InterceptedTypeGenerator {
                     .addContentLine(",")
                     .update(it -> {
                         if (useDescriptorConstant) {
-                            it.addContent(descriptorName)
+                            it.addContent(descriptorType)
                                     .addContent(".");
                         }
                     })
@@ -276,6 +278,7 @@ class InterceptedTypeGenerator {
                 .update(this::addConstructorParameters)
                 .update(this::callSuperConstructor)
                 .update(it -> createInvokers(it,
+                                             descriptorType,
                                              interceptedMethods,
                                              true,
                                              INTERCEPT_META_PARAM,
@@ -322,7 +325,7 @@ class InterceptedTypeGenerator {
                 TypedElements.ElementMeta elementMeta = sortedMethods.get(i);
 
                 List<Annotation> elementAnnotations = new ArrayList<>(elementMeta.element().annotations());
-                addInterfaceAnnotations(elementAnnotations, elementMeta.interfaceMethods());
+                addInterfaceAnnotations(elementAnnotations, elementMeta.abstractMethods());
 
                 TypedElementInfo typedElementInfo = TypedElementInfo.builder()
                         .from(elementMeta.element())

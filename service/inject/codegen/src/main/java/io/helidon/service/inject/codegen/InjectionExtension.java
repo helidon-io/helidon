@@ -48,6 +48,7 @@ import io.helidon.common.types.Annotated;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
 import io.helidon.common.types.ElementKind;
+import io.helidon.common.types.ElementSignature;
 import io.helidon.common.types.Modifier;
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeInfo;
@@ -446,7 +447,7 @@ class InjectionExtension implements RegistryCodegenExtension {
         var contracts = serviceDescriptor.contracts();
         Set<ResolvedType> factoryContracts;
 
-        if (service.isProvider()) {
+        if (service.isFactory()) {
             if (serviceTypeName.className().endsWith("__Interception_Wrapper")) {
                 contracts = service.providedDescriptor().contracts();
                 factoryContracts = service.serviceDescriptor().contracts();
@@ -491,7 +492,7 @@ class InjectionExtension implements RegistryCodegenExtension {
         // Additional fields
 
         methodFields(classModel, methods);
-        methodElementFields(classModel, typeInfo);
+        methodElementFields(classModel, service);
 
         // public fields are last, so they do not intersect with private fields (it is not as nice to read)
         // they cannot be first, as they require some of the private fields
@@ -647,7 +648,40 @@ class InjectionExtension implements RegistryCodegenExtension {
     }
 
     private void methodElementFields(ClassModel.Builder classModel,
-                                     TypeInfo typeInfo) {
+                                     DescribedService service) {
+        Set<ElementSignature> elementSignatures = service.serviceDescriptor()
+                .elements()
+                .interceptedMethods();
+        List<TypedElements.ElementMeta> interceptedElements = service.serviceDescriptor()
+                .elements()
+                .interceptedElements()
+                .stream()
+                .filter(it -> elementSignatures.contains(it.element().signature()))
+                .collect(Collectors.toUnmodifiableList());
+        TypeInfo typeInfo = service.serviceDescriptor().typeInfo();
+
+        for (TypedElements.ElementMeta element : interceptedElements) {
+            var method = element.element();
+            String uniqueName = ctx.uniqueName(typeInfo, method);
+            String constantName = "METHOD_" + toConstantName(uniqueName);
+
+            // add inherited annotations from interfaces
+            List<Annotation> elementAnnotations = new ArrayList<>(method.annotations());
+            addInterfaceAnnotations(elementAnnotations, element.abstractMethods());
+            TypedElementInfo typedElementInfo = TypedElementInfo.builder()
+                    .from(method)
+                    .annotations(elementAnnotations)
+                    .build();
+            classModel.addField(constant -> constant
+                    .description("Element info for method: {@code " + method.signature() + "}.")
+                    .accessModifier(AccessModifier.PUBLIC)
+                    .isStatic(true)
+                    .isFinal(true)
+                    .type(TypeNames.TYPED_ELEMENT_INFO)
+                    .name(constantName)
+                    .addContentCreate(typedElementInfo));
+        }
+        /*
         TypedElements.gatherElements(typeInfo)
                 .stream()
                 .filter(element -> ElementInfoPredicates.isMethod(element.element()))
@@ -659,7 +693,7 @@ class InjectionExtension implements RegistryCodegenExtension {
 
                     // add inherited annotations from interfaces
                     List<Annotation> elementAnnotations = new ArrayList<>(method.annotations());
-                    addInterfaceAnnotations(elementAnnotations, element.interfaceMethods());
+                    addInterfaceAnnotations(elementAnnotations, element.abstractMethods());
                     TypedElementInfo typedElementInfo = TypedElementInfo.builder()
                             .from(method)
                             .annotations(elementAnnotations)
@@ -673,6 +707,7 @@ class InjectionExtension implements RegistryCodegenExtension {
                             .name(constantName)
                             .addContentCreate(typedElementInfo));
                 });
+         */
     }
 
     private void generateInterceptedType(RegistryRoundContext roundContext,

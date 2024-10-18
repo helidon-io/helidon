@@ -79,6 +79,16 @@ public final class ElementInfoPredicates {
     }
 
     /**
+     * Predicate for abstract modifier.
+     *
+     * @param element typed element info to test
+     * @return whether the element has abstract modifier
+     */
+    public static boolean isAbstract(TypedElementInfo element) {
+        return element.elementModifiers().contains(Modifier.ABSTRACT);
+    }
+
+    /**
      * Predicate for private modifier.
      *
      * @param element typed element info to test

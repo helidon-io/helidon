@@ -53,23 +53,23 @@ final class TypedElements {
                 .stream()
                 .toList();
 
-        for (TypedElementInfo declaredMethod : declaredElements) {
-            List<TypedElements.DeclaredElement> interfaceMethods = new ArrayList<>();
+        for (TypedElementInfo declaredElement : declaredElements) {
+            List<TypedElements.DeclaredElement> abstractMethods = new ArrayList<>();
 
-            if (declaredMethod.kind() == ElementKind.METHOD) {
+            if (declaredElement.kind() == ElementKind.METHOD) {
                 // now find the same method on any interface (if declared there)
                 for (TypeInfo info : typeInfo.interfaceTypeInfo()) {
-                    info.elementInfo()
-                            .stream()
-                            .filter(ElementInfoPredicates::isMethod)
-                            .filter(not(ElementInfoPredicates::isStatic))
-                            .filter(not(ElementInfoPredicates::isPrivate))
-                            .filter(it -> declaredMethod.signature().equals(it.signature()))
-                            .findFirst()
-                            .ifPresent(it -> interfaceMethods.add(new TypedElements.DeclaredElement(info, it)));
+                    findAbstractMethod(info, declaredElement, abstractMethods);
+                }
+                // and on any super class (must be abstract)
+                Optional<TypeInfo> superClass = typeInfo.superTypeInfo();
+                while (superClass.isPresent()) {
+                    TypeInfo superClassInfo = superClass.get();
+                    findAbstractMethod(superClassInfo, declaredElement, abstractMethods);
+                    superClass = superClassInfo.superTypeInfo();
                 }
             }
-            result.add(new TypedElements.ElementMeta(declaredMethod, interfaceMethods));
+            result.add(new TypedElements.ElementMeta(declaredElement, abstractMethods));
         }
 
         return result;
@@ -85,7 +85,7 @@ final class TypedElements {
                 .stream()
                 .filter(it -> it.kind() != ElementKind.CLASS)
                 .forEach(declaredElement -> {
-                    List<TypedElements.DeclaredElement> interfaceMethods = new ArrayList<>();
+                    List<TypedElements.DeclaredElement> abstractMethods = new ArrayList<>();
 
                     if (declaredElement.kind() == ElementKind.METHOD) {
                         // now find the same method on any interface (if declared there)
@@ -94,17 +94,19 @@ final class TypedElements {
                                 // only interested in contracts
                                 continue;
                             }
-                            info.elementInfo()
-                                    .stream()
-                                    .filter(ElementInfoPredicates::isMethod)
-                                    .filter(not(ElementInfoPredicates::isStatic))
-                                    .filter(not(ElementInfoPredicates::isPrivate))
-                                    .filter(it -> declaredElement.signature().equals(it.signature()))
-                                    .findFirst()
-                                    .ifPresent(it -> interfaceMethods.add(new TypedElements.DeclaredElement(info, it)));
+
+                            findAbstractMethod(info, declaredElement, abstractMethods);
+                        }
+
+                        // and on any super class (must be abstract)
+                        Optional<TypeInfo> superClass = typeInfo.superTypeInfo();
+                        while (superClass.isPresent()) {
+                            TypeInfo superClassInfo = superClass.get();
+                            findAbstractMethod(superClassInfo, declaredElement, abstractMethods);
+                            superClass = superClassInfo.superTypeInfo();
                         }
                     }
-                    result.add(new TypedElements.ElementMeta(declaredElement, interfaceMethods));
+                    result.add(new TypedElements.ElementMeta(declaredElement, abstractMethods));
                     processedSignatures.add(declaredElement.signature());
                 });
 
@@ -133,14 +135,42 @@ final class TypedElements {
         return result;
     }
 
+    private static void findAbstractMethod(TypeInfo info,
+                                           TypedElementInfo declaredElement,
+                                           List<DeclaredElement> abstractMethods) {
+        info.elementInfo()
+                .stream()
+                .filter(ElementInfoPredicates::isMethod)
+                .filter(not(ElementInfoPredicates::isStatic))
+                .filter(not(ElementInfoPredicates::isPrivate))
+                // we want all methods from interfaces, but only abstract methods from abstract classes
+                .filter(it -> ElementInfoPredicates.isAbstract(it) || ElementInfoPredicates.isDefault(it))
+                .filter(it -> declaredElement.signature().equals(it.signature()))
+                .findFirst()
+                .ifPresent(it -> abstractMethods.add(new TypedElements.DeclaredElement(info, it)));
+    }
+
+    /**
+     * Metadata of an element (field, constructor, method).
+     *
+     * @param element         element declared on a type
+     * @param abstractMethods if the element is a method, this list contains all interface / abstract class abstract methods that
+     *                        define the contract of the method
+     */
     record ElementMeta(TypedElementInfo element,
-                       List<DeclaredElement> interfaceMethods) {
+                       List<DeclaredElement> abstractMethods) {
         ElementMeta(TypedElementInfo element) {
             this(element, List.of());
         }
     }
 
-    record DeclaredElement(TypeInfo iface,
+    /**
+     * Who declares the method.
+     *
+     * @param abstractType interface or abstract class
+     * @param element element declared on that type
+     */
+    record DeclaredElement(TypeInfo abstractType,
                            TypedElementInfo element) {
     }
 }
