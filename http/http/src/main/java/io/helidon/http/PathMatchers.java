@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -110,7 +110,7 @@ public final class PathMatchers {
                     break;
                 case '{':
                     String name = parseParameter(iter, regexp, paramCounter);
-                    if (name.length() > 0) {
+                    if (!name.isEmpty()) {
                         paramToGroupName.put(name, PARAM_PREFIX + paramCounter);
                         paramCounter++;
                     }
@@ -210,13 +210,13 @@ public final class PathMatchers {
                                                             + ", index: " + (iter.index() - 1));
                 }
                 String r1 = name.toString().trim();
-                addParamRegexp(builder, r1.length() > 0 ? index : -1, parseParamRegexp(iter));
+                addParamRegexp(builder, !r1.isEmpty() ? index : -1, parseParamRegexp(iter));
                 return r1;
             }
             case '}' -> {
                 String r2 = name.toString().trim();
                 addParamRegexp(builder,
-                               r2.length() > 0 ? index : -1,
+                        !r2.isEmpty() ? index : -1,
                                greedy ? ".+" : "[^/]+");
                 return r2;
             }

@@ -646,7 +646,7 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
     String toCodegenQualifiers(Collection<Qualifier> qualifiers) {
         StringBuilder builder = new StringBuilder();
         for (Qualifier qualifier : qualifiers) {
-            if (builder.length() > 0) {
+            if (!builder.isEmpty()) {
                 builder.append("\n\t\t\t");
             }
             builder.append(".addQualifier(").append(toCodegenQualifiers(qualifier)).append(")");

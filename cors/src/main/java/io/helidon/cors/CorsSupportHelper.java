@@ -97,7 +97,7 @@ public class CorsSupportHelper<Q, R> {
         StringTokenizer tokenizer = new StringTokenizer(header, ",");
         while (tokenizer.hasMoreTokens()) {
             String value = tokenizer.nextToken().trim();
-            if (value.length() > 0) {
+            if (!value.isEmpty()) {
                 result.add(value);
             }
         }

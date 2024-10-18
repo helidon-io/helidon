@@ -151,11 +151,11 @@ public final class Errors extends LinkedList<Errors.ErrorMessage> {
 
                 logger.log(System.Logger.Level.ERROR, "Fatal issues found: " + fatals);
             } else {
-                if (warnings.length() > 0) {
+                if (!warnings.isEmpty()) {
                     logger.log(System.Logger.Level.WARNING, "Warnings found: \n" + warnings);
                 }
 
-                if (hints.length() > 0) {
+                if (!hints.isEmpty()) {
                     logger.log(System.Logger.Level.TRACE, "Hints found: \n" + hints);
                 }
             }
