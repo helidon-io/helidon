@@ -7,6 +7,9 @@
       "name": "org.eclipse.persistence.exceptions.i18n.ValidationExceptionResource"
     },
     {
+      "name": "org.eclipse.persistence.exceptions.i18n.ConversionExceptionResource"
+    },
+    {
       "name": "org.eclipse.persistence.internal.localization.i18n.EclipseLinkLocalizationResource"
     },
     {
