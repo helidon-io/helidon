@@ -279,13 +279,13 @@ class InjectionExtension implements RegistryCodegenExtension {
                                                + INTERCEPTION_EXTERNAL_DELEGATE.fqName()
                                                + "(" + typeInfo.typeName().classNameWithEnclosingNames()
                                                + ".class) if it is not under your control",
-                                       typeInfo.originatingElementValue());
+                                       service.serviceDescriptor().typeInfo().originatingElementValue());
         }
     }
 
     private boolean canDelegate(TypeInfo providerType, TypeInfo providedType) {
         // interfaces are always supported
-        if (providedType.kind() != ElementKind.INTERFACE) {
+        if (providedType.kind() == ElementKind.INTERFACE) {
             return true;
         }
         // it is itself marked as a delegate
