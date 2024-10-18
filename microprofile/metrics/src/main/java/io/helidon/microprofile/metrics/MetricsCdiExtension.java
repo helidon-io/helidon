@@ -866,7 +866,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
 
                 String explicitGaugeName = gaugeAnnotation.name();
                 String gaugeNameSuffix = (
-                        explicitGaugeName.length() > 0 ? explicitGaugeName
+                        !explicitGaugeName.isEmpty() ? explicitGaugeName
                                 : javaMethod.getName());
                 String gaugeName = (
                         gaugeAnnotation.absolute() ? gaugeNameSuffix

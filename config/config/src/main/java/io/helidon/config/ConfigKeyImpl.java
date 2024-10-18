@@ -47,7 +47,7 @@ class ConfigKeyImpl implements Config.Key {
             fullSB.append(parent.fullKey);
         }
         if (!name.isEmpty()) {
-            if (fullSB.length() > 0) {
+            if (!fullSB.isEmpty()) {
                 fullSB.append(".");
             }
             path.add(name);
