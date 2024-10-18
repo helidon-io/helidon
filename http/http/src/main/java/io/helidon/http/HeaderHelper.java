@@ -51,7 +51,7 @@ final class HeaderHelper {
                 token.append(ch);
             } else {
                 if (ch == separator) {
-                    if (token.length() > 0) {
+                    if (!token.isEmpty()) {
                         result.add(token.toString());
                     }
                     token.setLength(0);
@@ -64,7 +64,7 @@ final class HeaderHelper {
                 }
             }
         }
-        if (token.length() > 0) {
+        if (!token.isEmpty()) {
             result.add(token.toString());
         }
         return result;
