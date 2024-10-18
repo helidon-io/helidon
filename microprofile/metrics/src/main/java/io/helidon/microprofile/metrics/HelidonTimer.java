@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,10 +51,11 @@ final class HelidonTimer extends MetricImpl<io.helidon.metrics.api.Timer> implem
         return create(meterRegistry,
                       scope,
                       metadata,
-                      meterRegistry.getOrCreate(io.helidon.metrics.api.Timer.builder(metadata.getName())
-                                                        .description(metadata.getDescription())
-                                                        .baseUnit(sanitizeUnit(metadata.getUnit()))
-                                                        .tags(allTags(scope, tags))));
+                      meterRegistry.getOrCreate(DistributionCustomizations
+                                                        .apply(io.helidon.metrics.api.Timer.builder(metadata.getName())
+                                                                       .description(metadata.getDescription())
+                                                                       .baseUnit(sanitizeUnit(metadata.getUnit()))
+                                                                       .tags(allTags(scope, tags)))));
     }
 
     static HelidonTimer create(MeterRegistry meterRegistry,
@@ -64,6 +65,13 @@ final class HelidonTimer extends MetricImpl<io.helidon.metrics.api.Timer> implem
         return new HelidonTimer(meterRegistry,
                                 scope,
                                 metadata,
+                                delegate);
+    }
+
+    static HelidonTimer create(MeterRegistry meterRegistry, io.helidon.metrics.api.Timer delegate) {
+        return new HelidonTimer(meterRegistry,
+                                resolvedScope(delegate),
+                                Registry.metadata(delegate),
                                 delegate);
     }
 

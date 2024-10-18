@@ -167,4 +167,25 @@ interface TypedElementInfoBlueprint extends Annotated {
      */
     @Option.Redundant
     Optional<Object> originatingElement();
+
+    /**
+     * The element used to create this instance, or {@link io.helidon.common.types.TypedElementInfo#signature()}
+     * if none provided.
+     * The type of the object depends on the environment we are in - it may be an {@code TypeElement} in annotation processing,
+     * or a {@code MethodInfo} (and such) when using classpath scanning.
+     *
+     * @return originating element, or the signature of this element
+     */
+    default Object originatingElementValue() {
+        return originatingElement().orElseGet(this::signature);
+    }
+
+    /**
+     * Signature of this element.
+     *
+     * @return signature of this element
+     * @see io.helidon.common.types.ElementSignature
+     */
+    @Option.Access("")
+    ElementSignature signature();
 }

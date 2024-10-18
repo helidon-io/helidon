@@ -129,14 +129,18 @@ class BuilderCodegen implements CodegenExtension {
         if (lines.isEmpty()) {
             lines.add("# List of service contracts we want to support either from service registry, or from service loader");
         }
+        boolean modified = false;
         for (String serviceLoaderContract : this.serviceLoaderContracts) {
             if (!lines.contains(serviceLoaderContract)) {
+                modified = true;
                 lines.add(serviceLoaderContract);
             }
         }
 
-        serviceLoaderResource.lines(lines);
-        serviceLoaderResource.write();
+        if (modified) {
+            serviceLoaderResource.lines(lines);
+            serviceLoaderResource.write();
+        }
     }
 
     private void process(RoundContext roundContext, TypeInfo blueprint) {
@@ -232,7 +236,7 @@ class BuilderCodegen implements CodegenExtension {
         // static X create()
         addCreateDefaultMethod(blueprintDef, propertyData, classModel, prototype, ifaceName, typeArgumentString, typeArguments);
 
-        generateCustomMethods(customMethods, classModel);
+        generateCustomMethods(classModel, builderTypeName, prototype, customMethods);
 
         // abstract class BuilderBase...
         GenerateAbstractBuilder.generate(classModel,
@@ -251,7 +255,7 @@ class BuilderCodegen implements CodegenExtension {
         roundContext.addGeneratedType(prototype,
                                       classModel,
                                       blueprint.typeName(),
-                                      blueprint.originatingElement().orElse(blueprint.typeName()));
+                                      blueprint.originatingElementValue());
 
         if (typeContext.typeInfo().supportsServiceRegistry() && typeContext.propertyData().hasProvider()) {
             for (PrototypeProperty property : typeContext.propertyData().properties()) {
@@ -366,8 +370,26 @@ class BuilderCodegen implements CodegenExtension {
         }
     }
 
-    private static void generateCustomMethods(CustomMethods customMethods, ClassModel.Builder classModel) {
+    private static void generateCustomMethods(ClassModel.Builder classModel,
+                                              TypeName builderTypeName,
+                                              TypeName prototype,
+                                              CustomMethods customMethods) {
         for (CustomMethods.CustomMethod customMethod : customMethods.factoryMethods()) {
+            TypeName typeName = customMethod.declaredMethod().returnType();
+            // there is a chance the typeName does not have a package (if "forward referenced"),
+            // in that case compare just by classname (leap of faith...)
+            if (typeName.packageName().isBlank()) {
+                String className = typeName.className();
+                if (!(className.equals(prototype.className())
+                        || className.equals(builderTypeName.className()))) {
+                    // based on class names
+                    continue;
+                }
+            } else if (!(typeName.equals(prototype) || typeName.equals(builderTypeName))) {
+                // we only generate custom factory methods if they return prototype or builder
+                continue;
+            }
+
             // prototype definition - custom static factory methods
             // static TypeName create(Type type);
             CustomMethods.Method generated = customMethod.generatedMethod().method();

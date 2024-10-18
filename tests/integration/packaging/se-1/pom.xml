@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.helidon.applications</groupId>
+        <artifactId>helidon-se</artifactId>
+        <version>4.2.0-SNAPSHOT</version>
+        <relativePath>../../../../applications/se/pom.xml</relativePath>
+    </parent>
+    <groupId>io.helidon.tests.integration.packaging</groupId>
+    <artifactId>helidon-tests-integration-packaging-se-1</artifactId>
+    <name>Helidon Tests Integration Packaging SE1</name>
+
+    <properties>
+        <mainClass>io.helidon.tests.integration.packaging.se1.Se1Main</mainClass>
+        <redirectTestOutputToFile>true</redirectTestOutputToFile>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-static-content</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-websocket</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.http.media</groupId>
+            <artifactId>helidon-http-media-jsonp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.http.media</groupId>
+            <artifactId>helidon-http-media-jsonb</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-yaml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.tracing</groupId>
+            <artifactId>helidon-tracing</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.tracing.providers</groupId>
+            <artifactId>helidon-tracing-providers-zipkin</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.http.encoding</groupId>
+            <artifactId>helidon-http-encoding-gzip</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver.observe</groupId>
+            <artifactId>helidon-webserver-observe-health</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver.observe</groupId>
+            <artifactId>helidon-webserver-observe-tracing</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient</artifactId>
+        </dependency>
+        <dependency>
+            <artifactId>helidon-webclient-tracing</artifactId>
+            <groupId>io.helidon.webclient</groupId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-reactive</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.logging</groupId>
+            <artifactId>helidon-logging-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.tests.integration.packaging</groupId>
+            <artifactId>helidon-tests-integration-packaging-static-content</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.logging</groupId>
+            <artifactId>helidon-logging-jul</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.tests.integration</groupId>
+            <artifactId>helidon-tests-integration-harness</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-libs</id>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>**/*IT</exclude>
+                    </excludes>
+                    <systemPropertyVariables>
+                        <java.util.logging.config.file>
+                            ${project.build.outputDirectory}/logging.properties
+                        </java.util.logging.config.file>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <java.util.logging.config.file>
+                            ${project.build.outputDirectory}/logging.properties
+                        </java.util.logging.config.file>
+                    </systemPropertyVariables>
+                    <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>jar-image</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <includes combine.children="append">
+                                <include>**/*Jar*IT</include>
+                            </includes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>native-image</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <includes combine.children="append">
+                                <include>**/*Native*IT</include>
+                            </includes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>jlink-image</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.helidon.build-tools</groupId>
+                        <artifactId>helidon-maven-plugin</artifactId>
+                        <configuration>
+                            <defaultJvmOptions>-Dapp.static.path=../../web</defaultJvmOptions>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <includes combine.children="append">
+                                <include>**/*Jlink*IT</include>
+                            </includes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+</project>

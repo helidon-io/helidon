@@ -21,6 +21,7 @@ module io.helidon.metrics.providers.micrometer {
     requires io.helidon.metrics.api;
     requires micrometer.core;
     requires static micrometer.registry.prometheus;
+    requires static micrometer.registry.prometheus.simpleclient;
     requires io.helidon.common;
     requires io.helidon.common.media.type;
     requires io.helidon.config;

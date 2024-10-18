@@ -44,7 +44,8 @@ public interface RoundContext {
     Collection<TypeInfo> types();
 
     /**
-     * All types annotated with a specific annotation.
+     * All types annotated with a specific annotation (including types that inherit such annotation from super types or
+     * through interfaces).
      *
      * @param annotationType annotation to check
      * @return types that contain the annotation

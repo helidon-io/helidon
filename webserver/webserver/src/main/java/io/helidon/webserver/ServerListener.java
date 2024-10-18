@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ import java.util.Timer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -44,6 +43,9 @@ import javax.net.ssl.SSLServerSocket;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
+import io.helidon.common.concurrency.limits.FixedLimit;
+import io.helidon.common.concurrency.limits.Limit;
+import io.helidon.common.concurrency.limits.NoopSemaphore;
 import io.helidon.common.context.Context;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.task.HelidonTaskExecutor;
@@ -86,7 +88,7 @@ class ServerListener implements ListenerContext {
     private final ContentEncodingContext contentEncodingContext;
     private final Context context;
     private final Semaphore connectionSemaphore;
-    private final Semaphore requestSemaphore;
+    private final Limit requestLimit;
     private final Map<String, ServerConnection> activeConnections = new ConcurrentHashMap<>();
 
     private volatile boolean running;
@@ -117,11 +119,18 @@ class ServerListener implements ListenerContext {
                 });
 
         this.connectionSemaphore = listenerConfig.maxTcpConnections() == -1
-                ? new NoopSemaphore()
+                ? NoopSemaphore.INSTANCE
                 : new Semaphore(listenerConfig.maxTcpConnections());
-        this.requestSemaphore = listenerConfig.maxConcurrentRequests() == -1
-                ? new NoopSemaphore()
-                : new Semaphore(listenerConfig.maxConcurrentRequests());
+
+        if (listenerConfig.maxConcurrentRequests() == -1) {
+            this.requestLimit = listenerConfig.concurrencyLimit()
+                    .orElseGet(FixedLimit::create); // unlimited unless configured
+        } else {
+            this.requestLimit = FixedLimit.builder()
+                    .permits(listenerConfig.maxConcurrentRequests())
+                    .build();
+        }
+
         this.connectionProviders = ConnectionProviders.create(selectors);
         this.socketName = socketName;
         this.listenerConfig = listenerConfig;
@@ -143,12 +152,10 @@ class ServerListener implements ListenerContext {
                 .unstarted(this::listen);
 
         // to read requests and execute tasks
-        this.readerExecutor = ThreadPerTaskExecutor.create(Thread.ofVirtual()
-                                                                   .factory());
+        this.readerExecutor = ExecutorsFactory.newServerListenerReaderExecutor();
 
         // to do anything else (writers etc.)
-        this.sharedExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
-                                                                         .factory());
+        this.sharedExecutor = ExecutorsFactory.newServerListenerSharedExecutor();
 
         this.closeFuture = new CompletableFuture<>();
 
@@ -340,7 +347,7 @@ class ServerListener implements ListenerContext {
                     connectionOptions.configureSocket(socket);
                     ConnectionHandler handler = new ConnectionHandler(this,
                                                     connectionSemaphore,
-                                                    requestSemaphore,
+                                                    requestLimit,
                                                     connectionProviders,
                                                     activeConnections,
                                                     socket,

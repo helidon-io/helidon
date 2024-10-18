@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.integrations</groupId>
         <artifactId>helidon-integrations-micrometer-project</artifactId>
-        <version>4.1.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
 
     <groupId>io.helidon.integrations.micrometer</groupId>
@@ -77,6 +77,11 @@
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features-api</artifactId>
             <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.metrics</groupId>
+            <artifactId>helidon-microprofile-metrics</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

@@ -18,11 +18,13 @@ package io.helidon.webserver.grpc;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.webserver.spi.ProtocolConfig;
+import io.helidon.webserver.spi.ProtocolConfigProvider;
 
 @Prototype.Blueprint
-@Prototype.Configured
-@Prototype.Provides(ProtocolConfig.class)
+@Prototype.Configured(root = false, value = GrpcProtocolProvider.CONFIG_NAME)
+@Prototype.Provides(ProtocolConfigProvider.class)
 interface GrpcConfigBlueprint extends ProtocolConfig {
+
     /**
      * Protocol configuration type.
      *

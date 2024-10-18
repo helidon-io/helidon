@@ -29,6 +29,7 @@ import io.helidon.codegen.classmodel.Method;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
+import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.builder.codegen.Types.CHAR_ARRAY;
 import static io.helidon.codegen.CodegenUtil.capitalize;
@@ -67,8 +68,10 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
             BOXED_VOID, PRIMITIVE_VOID
     );
 
-    TypeHandlerOptional(String name, String getterName, String setterName, TypeName declaredType) {
-        super(name, getterName, setterName, declaredType);
+    TypeHandlerOptional(TypeName blueprintType,
+                        TypedElementInfo annotatedMethod,
+                        String name, String getterName, String setterName, TypeName declaredType) {
+        super(blueprintType, annotatedMethod, name, getterName, setterName, declaredType);
     }
 
     @Override

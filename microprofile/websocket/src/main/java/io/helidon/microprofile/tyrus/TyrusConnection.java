@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,12 @@ import java.util.concurrent.Semaphore;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
+import io.helidon.common.concurrency.limits.FixedLimit;
+import io.helidon.common.concurrency.limits.Limit;
+import io.helidon.common.concurrency.limits.LimitException;
+import io.helidon.common.socket.SocketContext;
 import io.helidon.http.DateTime;
+import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.spi.ServerConnection;
 import io.helidon.websocket.WsCloseCodes;
@@ -66,33 +71,45 @@ class TyrusConnection implements ServerConnection, WsSession {
     }
 
     @Override
-    public void handle(Semaphore requestSemaphore) {
+    public void handle(Limit limit) {
         myThread = Thread.currentThread();
         DataReader dataReader = ctx.dataReader();
-        listener.onOpen(this);
-        if (requestSemaphore.tryAcquire()) {
-            try {
-                while (canRun) {
-                    try {
-                        readingNetwork = true;
-                        BufferData buffer = dataReader.readBuffer();
-                        readingNetwork = false;
-                        lastRequestTimestamp = DateTime.timestamp();
-                        listener.onMessage(this, buffer, true);
-                        lastRequestTimestamp = DateTime.timestamp();
-                    } catch (Exception e) {
-                        listener.onError(this, e);
-                        listener.onClose(this, WsCloseCodes.UNEXPECTED_CONDITION, e.getMessage());
-                        return;
-                    }
-                }
-                listener.onClose(this, WsCloseCodes.NORMAL_CLOSE, "Idle timeout");
-            } finally {
-                requestSemaphore.release();
-            }
-        } else {
-            listener.onClose(this, WsCloseCodes.TRY_AGAIN_LATER, "Too Many Concurrent Requests");
+
+        try {
+            limit.invoke(() -> listener.onOpen(this));
+        } catch (LimitException e) {
+            listener.onError(this, e);
+            throw new CloseConnectionException("Too many concurrent requests");
+        } catch (Exception e) {
+            listener.onError(this, e);
+            listener.onClose(this, WsCloseCodes.UNEXPECTED_CONDITION, e.getMessage());
+            return;
         }
+
+        while (canRun) {
+            try {
+                readingNetwork = true;
+                BufferData buffer = dataReader.readBuffer();
+                readingNetwork = false;
+                lastRequestTimestamp = DateTime.timestamp();
+                limit.invoke(() -> listener.onMessage(this, buffer, true));
+                lastRequestTimestamp = DateTime.timestamp();
+            } catch (LimitException e) {
+                listener.onClose(this, WsCloseCodes.TRY_AGAIN_LATER, "Too Many Concurrent Requests");
+                return;
+            } catch (Exception e) {
+                listener.onError(this, e);
+                listener.onClose(this, WsCloseCodes.UNEXPECTED_CONDITION, e.getMessage());
+                return;
+            }
+        }
+        listener.onClose(this, WsCloseCodes.NORMAL_CLOSE, "Idle timeout");
+    }
+
+    @SuppressWarnings("removal")
+    @Override
+    public void handle(Semaphore requestSemaphore) {
+        handle(FixedLimit.create(requestSemaphore));
     }
 
     @Override
@@ -128,6 +145,11 @@ class TyrusConnection implements ServerConnection, WsSession {
     @Override
     public Optional<String> subProtocol() {
         return Optional.empty();
+    }
+
+    @Override
+    public SocketContext socketContext() {
+        return ctx;
     }
 
     @Override

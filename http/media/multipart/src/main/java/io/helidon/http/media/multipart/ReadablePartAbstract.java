@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.http.media.multipart;
 
 import java.util.Optional;
 
+import io.helidon.common.GenericType;
 import io.helidon.http.ContentDisposition;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
@@ -76,11 +77,18 @@ abstract class ReadablePartAbstract implements ReadablePart {
         return true;
     }
 
+
+    @Override
+    public <T> Optional<T> asOptional(GenericType<T> type) {
+        // there is always an entity (see #hasEntity())
+        return Optional.of(as(type));
+    }
+
     protected abstract void finish();
 
     private void contentDisposition() {
         if (headers.contains(HeaderNames.CONTENT_DISPOSITION)) {
-            this.contentDisposition = ContentDisposition.parse(headers.get(HeaderNames.CONTENT_DISPOSITION).value());
+            this.contentDisposition = ContentDisposition.parse(headers.get(HeaderNames.CONTENT_DISPOSITION).get());
         } else {
             this.contentDisposition = ContentDisposition.empty();
         }

@@ -63,6 +63,7 @@ class CoreServiceRegistryManager implements ServiceRegistryManager {
         Lock lock = lifecycleLock.writeLock();
         try {
             lock.lock();
+            registry.shutdown();
             registry = null;
         } finally {
             lock.unlock();

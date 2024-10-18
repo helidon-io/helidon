@@ -19,18 +19,16 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <parent>
         <groupId>io.helidon.tests</groupId>
         <artifactId>helidon-tests-project</artifactId>
-        <version>4.1.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
-
     <groupId>io.helidon.tests.integration</groupId>
-    <artifactId>helidon-tests-integration</artifactId>
+    <artifactId>helidon-tests-integration-project</artifactId>
     <packaging>pom</packaging>
 
-    <name>Helidon Tests Integration</name>
+    <name>Helidon Tests Integration Project</name>
 
     <properties>
         <version.lib.testcontainers.keycloak>2.3.0</version.lib.testcontainers.keycloak>
@@ -60,7 +58,7 @@
         <module>mp-graphql</module>
         <module>mp-security-client</module>
         <module>mp-ws-services</module>
-        <module>native-image</module>
+        <module>packaging</module>
         <module>oidc</module>
         <module>restclient</module>
         <module>restclient-connector</module>
@@ -87,5 +85,4 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-
 </project>

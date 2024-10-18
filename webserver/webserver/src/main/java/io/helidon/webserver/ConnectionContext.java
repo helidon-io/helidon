@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.concurrent.ExecutorService;
 
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.SocketContext;
 
 /**
@@ -58,7 +59,7 @@ public interface ConnectionContext extends SocketContext {
     /**
      * Router that may contain routings of different types (HTTP, WebSocket, grpc).
      *
-     * @return rouer
+     * @return the router
      */
     Router router();
 
@@ -70,5 +71,14 @@ public interface ConnectionContext extends SocketContext {
      */
     default Optional<ProxyProtocolData> proxyProtocolData() {
         return Optional.empty();
+    }
+
+    /**
+     * The underlying network socket for the connection.
+     *
+     * @return the socket
+     */
+    default HelidonSocket serverSocket() {
+        throw new UnsupportedOperationException("Not supported");
     }
 }

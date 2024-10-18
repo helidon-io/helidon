@@ -16,6 +16,8 @@
 
 package io.helidon.integrations.oci;
 
+import java.net.URI;
+
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.config.Config;
 
@@ -28,6 +30,8 @@ final class OciConfigSupport {
     // we do not use the constant, as it is marked as internal, and we only need the IP address anyway
     // see com.oracle.bmc.auth.AbstractFederationClientAuthenticationDetailsProviderBuilder.METADATA_SERVICE_BASE_URL
     static final String IMDS_HOSTNAME = "169.254.169.254";
+    @SuppressWarnings("HttpUrlsUsage") // this is a known endpoint available only on OCI instances
+    static final URI IMDS_URI = URI.create("http://" + IMDS_HOSTNAME + "/opc/v2/");
 
     private OciConfigSupport() {
     }

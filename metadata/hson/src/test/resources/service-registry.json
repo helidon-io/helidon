@@ -1,0 +1,29 @@
+{
+    "generated": {
+        "trigger": "io.helidon.service.codegen.ServiceRegistryCodegenExtension",
+        "value": "io.helidon.service.codegen.ServiceRegistryCodegenExtension",
+        "version": "1",
+        "comments": "Service descriptors in module unnamed/io.helidon.examples.quickstart.se"
+    },
+    "services": [
+        {
+            "version": 1.0,
+            "type": "inject",
+            "descriptor": "io.helidon.examples.quickstart.se.GreetEndpoint__HttpFeature__ServiceDescriptor",
+            "weight": 100.0,
+            "contracts": [
+                "io.helidon.examples.quickstart.se.GreetEndpoint__HttpFeature",
+                "io.helidon.webserver.http.HttpFeature",
+                "io.helidon.webserver.ServerLifecycle",
+                "java.util.function.Supplier"
+            ]
+        },
+        {
+            "type": "inject",
+            "descriptor": "io.helidon.examples.quickstart.se.GreetEndpoint__ServiceDescriptor",
+            "contracts": [
+                "io.helidon.examples.quickstart.se.GreetEndpoint"
+            ]
+        }
+    ]
+}

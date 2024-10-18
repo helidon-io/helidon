@@ -16,6 +16,7 @@
 
 package io.helidon.builder.codegen;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -31,6 +32,8 @@ final class Types {
     static final TypeName ARRAY_LIST = TypeName.create(ArrayList.class);
     static final TypeName LINKED_HASH_SET = TypeName.create(LinkedHashSet.class);
     static final TypeName CHAR_ARRAY = TypeName.create(char[].class);
+    static final TypeName PATH = TypeName.create(Path.class);
+    static final TypeName URI = TypeName.create(java.net.URI.class);
     static final TypeName SERVICE_REGISTRY = TypeName.create("io.helidon.service.registry.ServiceRegistry");
     static final TypeName GLOBAL_SERVICE_REGISTRY = TypeName.create("io.helidon.service.registry.GlobalServiceRegistry");
     static final TypeName GENERATED_SERVICE = TypeName.create("io.helidon.service.registry.GeneratedService");
@@ -43,6 +46,7 @@ final class Types {
     static final TypeName PROTOTYPE_ANNOTATED = TypeName.create("io.helidon.builder.api.Prototype.Annotated");
     static final TypeName PROTOTYPE_FACTORY = TypeName.create("io.helidon.builder.api.Prototype.Factory");
     static final TypeName PROTOTYPE_CONFIGURED = TypeName.create("io.helidon.builder.api.Prototype.Configured");
+    static final TypeName PROTOTYPE_PROVIDES = TypeName.create("io.helidon.builder.api.Prototype.Provides");
     static final TypeName PROTOTYPE_BUILDER = TypeName.create("io.helidon.builder.api.Prototype.Builder");
     static final TypeName PROTOTYPE_CONFIGURED_BUILDER = TypeName.create("io.helidon.builder.api.Prototype.ConfiguredBuilder");
     static final TypeName PROTOTYPE_CUSTOM_METHODS = TypeName.create("io.helidon.builder.api.Prototype.CustomMethods");

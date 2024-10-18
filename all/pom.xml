@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>4.1.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
     <packaging>pom</packaging>
     <artifactId>helidon-all</artifactId>
@@ -133,6 +133,16 @@
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-metadata-processor</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.config.metadata</groupId>
+            <artifactId>helidon-config-metadata-codegen</artifactId>
+        </dependency>
+        <!-- this module cannot be part of this pom file, as it is used to generate documentation of all modules
+        <dependency>
+            <groupId>io.helidon.config.metadata</groupId>
+            <artifactId>helidon-config-metadata-docs</artifactId>
+        </dependency>
+        -->
         <dependency>
             <groupId>io.helidon.security</groupId>
             <artifactId>helidon-security</artifactId>
@@ -280,6 +290,22 @@
         <dependency>
             <groupId>io.helidon.microprofile.service-common</groupId>
             <artifactId>helidon-microprofile-service-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.grpc</groupId>
+            <artifactId>helidon-microprofile-grpc-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.grpc</groupId>
+            <artifactId>helidon-microprofile-grpc-server</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.grpc</groupId>
+            <artifactId>helidon-microprofile-grpc-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.grpc</groupId>
+            <artifactId>helidon-microprofile-grpc-tracing</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.metrics</groupId>
@@ -438,6 +464,10 @@
             <artifactId>helidon-common-features</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.common.concurrency</groupId>
+            <artifactId>helidon-common-concurrency-limits</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.dbclient</groupId>
             <artifactId>helidon-dbclient</artifactId>
         </dependency>
@@ -510,6 +540,14 @@
             <artifactId>helidon-tracing-jersey</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.grpc</groupId>
+            <artifactId>helidon-grpc-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.grpc</groupId>
+            <artifactId>helidon-grpc-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.microprofile.tracing</groupId>
             <artifactId>helidon-microprofile-tracing</artifactId>
         </dependency>
@@ -564,6 +602,10 @@
         <dependency>
             <groupId>io.helidon.integrations.db</groupId>
             <artifactId>helidon-integrations-db-mysql</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.db</groupId>
+            <artifactId>helidon-integrations-db-pgsql</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.integrations.cdi</groupId>
@@ -640,6 +682,18 @@
         <dependency>
             <groupId>io.helidon.integrations.oci</groupId>
             <artifactId>helidon-integrations-oci</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.oci.authentication</groupId>
+            <artifactId>helidon-integrations-oci-authentication-instance</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.oci.authentication</groupId>
+            <artifactId>helidon-integrations-oci-authentication-resource</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.oci.authentication</groupId>
+            <artifactId>helidon-integrations-oci-authentication-oke-workload</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.integrations.oci.sdk</groupId>
@@ -947,6 +1001,10 @@
             <artifactId>helidon-webserver-service-common</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-concurrency-limits</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.webserver.testing.junit5</groupId>
             <artifactId>helidon-webserver-testing-junit5</artifactId>
         </dependency>
@@ -1060,11 +1118,19 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-metadata</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.service</groupId>
             <artifactId>helidon-service-registry</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.service</groupId>
             <artifactId>helidon-service-codegen</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.metadata</groupId>
+            <artifactId>helidon-metadata-hson</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.integrations.oci.sdk</groupId>
@@ -1076,16 +1142,4 @@
         </dependency>
     </dependencies>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <!--
-                    Work-around for https://github.com/helidon-io/helidon/issues/8172
-                 -->
-                <groupId>org.antlr</groupId>
-                <artifactId>antlr4-runtime</artifactId>
-                <version>4.10.1</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
 </project>

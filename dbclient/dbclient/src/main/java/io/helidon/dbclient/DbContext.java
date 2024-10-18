@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,15 @@ import io.helidon.common.mapper.MapperManager;
  * Database context.
  */
 public interface DbContext {
+
+    /**
+     * Configured missing values in named parameters {@link java.util.Map} handling.
+     *
+     * @return when set to {@code true}, named parameters value missing in the {@code Map} is considered
+     *         as {@code null}, when set to {@code false}, any parameter value missing in the {@code Map}
+     *         will cause an exception.
+     */
+    boolean missingMapParametersAsNull();
 
     /**
      * Configured statements.

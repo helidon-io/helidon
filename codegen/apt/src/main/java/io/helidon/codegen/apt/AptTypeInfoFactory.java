@@ -64,7 +64,13 @@ import static java.util.function.Predicate.not;
 
 /**
  * Factory to analyze processed types and to provide {@link io.helidon.common.types.TypeInfo} for them.
+ *
+ * @deprecated this is an internal API, all usage should be done through {@code helidon-codegen} APIs,
+ *         such as {@link io.helidon.codegen.CodegenContext#typeInfo(io.helidon.common.types.TypeName)};
+ *         this type will be package local in the future
  */
+@SuppressWarnings("removal")
+@Deprecated(forRemoval = true)
 public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
 
     // we expect that annotations themselves are not code generated, and can be cached
@@ -116,7 +122,10 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
      * @return type info for the type element
      * @throws IllegalArgumentException when the element cannot be resolved into type info (such as if you ask for
      *                                  a primitive type)
+     * @deprecated this is an internal API, all usage should be done through {@code helidon-codegen} APIs,
+     *         such as {@link io.helidon.codegen.CodegenContext#typeInfo(io.helidon.common.types.TypeName)}
      */
+    @Deprecated(forRemoval = true)
     public static Optional<TypeInfo> create(AptContext ctx,
                                             TypeElement typeElement) {
 
@@ -177,7 +186,8 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
 
         if (v instanceof ExecutableElement ee) {
             typeMirror = Objects.requireNonNull(ee.getReturnType());
-            params = ee.getParameters().stream()
+            params = ee.getParameters()
+                    .stream()
                     .map(it -> createTypedElementInfoFromElement(ctx, processedType, it, elements).orElseThrow(() -> {
                         return new CodegenException("Failed to create element info for parameter: " + it + ", either it uses "
                                                             + "invalid type, or it was removed by an element mapper. This would"
@@ -390,6 +400,19 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
             // Object is not to be analyzed
             return Optional.empty();
         }
+
+        if (elementPredicate == ElementInfoPredicates.ALL_PREDICATE) {
+            // we can safely cache
+            return ctx.cache(typeName, () -> createUncached(ctx, typeElement, elementPredicate, typeName));
+        }
+
+        return createUncached(ctx, typeElement, elementPredicate, typeName);
+    }
+
+    private static Optional<TypeInfo> createUncached(AptContext ctx,
+                                                     TypeElement typeElement,
+                                                     Predicate<TypedElementInfo> elementPredicate,
+                                                     TypeName typeName) {
         TypeName genericTypeName = typeName.genericTypeName();
         Set<TypeName> allInterestingTypeNames = new LinkedHashSet<>();
         allInterestingTypeNames.add(genericTypeName);
@@ -402,8 +425,13 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
 
         Elements elementUtils = ctx.aptEnv().getElementUtils();
         try {
+            TypeElement foundType = elementUtils.getTypeElement(genericTypeName.resolvedName());
+            if (foundType == null) {
+                // this is probably forward referencing a generated type, ignore
+                return Optional.empty();
+            }
             List<Annotation> annotations = createAnnotations(ctx,
-                                                             elementUtils.getTypeElement(genericTypeName.resolvedName()),
+                                                             foundType,
                                                              elementUtils);
             List<Annotation> inheritedAnnotations = createInheritedAnnotations(ctx, genericTypeName, annotations);
 
@@ -417,22 +445,11 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
             typeElement.getEnclosedElements()
                     .stream()
                     .flatMap(it -> createTypedElementInfoFromElement(ctx, genericTypeName, it, elementUtils).stream())
-                    .forEach(it -> {
-                        if (elementPredicate.test(it)) {
-                            elementsWeCareAbout.add(it);
-                        } else {
-                            otherElements.add(it);
-                        }
-                        annotationsOnTypeOrElements.addAll(it.annotations()
-                                                                   .stream()
-                                                                   .map(Annotation::typeName)
-                                                                   .collect(Collectors.toSet()));
-                        it.parameterArguments()
-                                .forEach(arg -> annotationsOnTypeOrElements.addAll(arg.annotations()
-                                                                                           .stream()
-                                                                                           .map(Annotation::typeName)
-                                                                                           .collect(Collectors.toSet())));
-                    });
+                    .forEach(it -> collectEnclosedElements(elementPredicate,
+                                                           elementsWeCareAbout,
+                                                           otherElements,
+                                                           annotationsOnTypeOrElements,
+                                                           it));
 
             Set<String> modifiers = toModifierNames(typeElement.getModifiers());
             TypeInfo.Builder builder = TypeInfo.builder()
@@ -528,6 +545,27 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
         } catch (Exception e) {
             throw new IllegalStateException("Failed to process: " + typeElement, e);
         }
+    }
+
+    private static void collectEnclosedElements(Predicate<TypedElementInfo> elementPredicate,
+                                                List<TypedElementInfo> elementsWeCareAbout,
+                                                List<TypedElementInfo> otherElements,
+                                                Set<TypeName> annotationsOnTypeOrElements,
+                                                TypedElementInfo enclosedElement) {
+        if (elementPredicate.test(enclosedElement)) {
+            elementsWeCareAbout.add(enclosedElement);
+        } else {
+            otherElements.add(enclosedElement);
+        }
+        annotationsOnTypeOrElements.addAll(enclosedElement.annotations()
+                                                   .stream()
+                                                   .map(Annotation::typeName)
+                                                   .collect(Collectors.toSet()));
+        enclosedElement.parameterArguments()
+                .forEach(arg -> annotationsOnTypeOrElements.addAll(arg.annotations()
+                                                                           .stream()
+                                                                           .map(Annotation::typeName)
+                                                                           .collect(Collectors.toSet())));
     }
 
     private static AccessModifier accessModifier(Set<String> stringModifiers) {

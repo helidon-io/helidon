@@ -194,6 +194,8 @@ class GenerateServiceDescriptor {
         dependenciesMethod(classModel, params, superType);
         isAbstractMethod(classModel, superType, isAbstractClass);
         instantiateMethod(classModel, serviceType, params, isAbstractClass);
+        postConstructMethod(typeInfo, classModel, serviceType);
+        preDestroyMethod(typeInfo, classModel, serviceType);
         weightMethod(typeInfo, classModel, superType);
 
         // service type is an implicit contract
@@ -419,20 +421,31 @@ class GenerateServiceDescriptor {
             if (!typeName.typeArguments().isEmpty()) {
                 // provider must have a type argument (and the type argument is an automatic contract
                 TypeName providedType = typeName.typeArguments().getFirst();
+                // and we support Supplier<Optional<X>> as well
                 if (!providedType.generic()) {
-                    Optional<TypeInfo> providedTypeInfo = ctx.typeInfo(providedType);
-                    if (providedTypeInfo.isPresent()) {
-                        contracts(providedTypeInfo.get(),
-                                  true,
-                                  collectedContracts,
-                                  collectedFullyQualified
-                        );
-                    } else {
-                        collectedContracts.add(providedType);
-                        if (!collectedFullyQualified.add(providedType.resolvedName())) {
-                            // let us go no further, this type was already processed
-                            return;
+                    // supplier is a contract
+                    collectedContracts.add(TypeNames.SUPPLIER);
+
+                    if (providedType.isOptional() && !providedType.typeArguments().isEmpty()) {
+                        providedType = providedType.typeArguments().getFirst();
+                        // we still have supplier as a contract
+                        collectedFullyQualified.add(TypeNames.SUPPLIER.fqName());
+                        collectedContracts.add(TypeNames.SUPPLIER);
+                        if (providedType.generic()) {
+                            providedType = null;
+                        } else {
+                            // and also optional
+                            collectedFullyQualified.add(TypeNames.OPTIONAL.fqName());
+                            collectedContracts.add(TypeNames.OPTIONAL);
+                            contractsFromProvidedType(collectedContracts, collectedFullyQualified, providedType);
                         }
+                    } else {
+                        contractsFromProvidedType(collectedContracts, collectedFullyQualified, providedType);
+                    }
+
+                    if (providedType != null && !collectedFullyQualified.add(providedType.resolvedName())) {
+                        // let us go no further, this type was already processed
+                        return;
                     }
                 }
             }
@@ -467,6 +480,21 @@ class GenerateServiceDescriptor {
                                                              collectedContracts,
                                                              collectedFullyQualified
         ));
+    }
+
+    private void contractsFromProvidedType(Set<TypeName> collectedContracts,
+                                           Set<String> collectedFullyQualified,
+                                           TypeName providedType) {
+        Optional<TypeInfo> providedTypeInfo = ctx.typeInfo(providedType);
+        if (providedTypeInfo.isPresent()) {
+            contracts(providedTypeInfo.get(),
+                      true,
+                      collectedContracts,
+                      collectedFullyQualified
+            );
+        } else {
+            collectedContracts.add(providedType);
+        }
     }
 
     private void singletonInstanceField(ClassModel.Builder classModel, TypeName serviceType, TypeName descriptorType) {
@@ -731,6 +759,62 @@ class GenerateServiceDescriptor {
                 .addParameter(ctxParam -> ctxParam.type(ServiceCodegenTypes.SERVICE_DEPENDENCY_CONTEXT)
                         .name("ctx__helidonRegistry"))
                 .update(it -> createInstantiateBody(serviceType, it, params)));
+    }
+
+    private void postConstructMethod(TypeInfo typeInfo, ClassModel.Builder classModel, TypeName serviceType) {
+        // postConstruct()
+        lifecycleMethod(typeInfo, ServiceCodegenTypes.SERVICE_ANNOTATION_POST_CONSTRUCT).ifPresent(method -> {
+            classModel.addMethod(postConstruct -> postConstruct.name("postConstruct")
+                    .addAnnotation(Annotations.OVERRIDE)
+                    .addParameter(instance -> instance.type(serviceType)
+                            .name("instance"))
+                    .addContentLine("instance." + method.elementName() + "();"));
+        });
+    }
+
+    private void preDestroyMethod(TypeInfo typeInfo, ClassModel.Builder classModel, TypeName serviceType) {
+        // preDestroy
+        lifecycleMethod(typeInfo, ServiceCodegenTypes.SERVICE_ANNOTATION_PRE_DESTROY).ifPresent(method -> {
+            classModel.addMethod(preDestroy -> preDestroy.name("preDestroy")
+                    .addAnnotation(Annotations.OVERRIDE)
+                    .addParameter(instance -> instance.type(serviceType)
+                            .name("instance"))
+                    .addContentLine("instance." + method.elementName() + "();"));
+        });
+    }
+
+    private Optional<TypedElementInfo> lifecycleMethod(TypeInfo typeInfo, TypeName annotationType) {
+        List<TypedElementInfo> list = typeInfo.elementInfo()
+                .stream()
+                .filter(ElementInfoPredicates.hasAnnotation(annotationType))
+                .toList();
+        if (list.isEmpty()) {
+            return Optional.empty();
+        }
+        if (list.size() > 1) {
+            throw new IllegalStateException("There is more than one method annotated with " + annotationType.fqName()
+                                                    + ", which is not allowed on type " + typeInfo.typeName().fqName());
+        }
+        TypedElementInfo method = list.getFirst();
+        if (method.accessModifier() == AccessModifier.PRIVATE) {
+            throw new CodegenException("Method annotated with " + annotationType.fqName()
+                                                    + ", is private, which is not supported: " + typeInfo.typeName().fqName()
+                                                    + "#" + method.elementName(),
+                                       method.originatingElement().orElseGet(method::elementName));
+        }
+        if (!method.parameterArguments().isEmpty()) {
+            throw new CodegenException("Method annotated with " + annotationType.fqName()
+                                                    + ", has parameters, which is not supported: " + typeInfo.typeName().fqName()
+                                                    + "#" + method.elementName(),
+                                       method.originatingElement().orElseGet(method::elementName));
+        }
+        if (!method.typeName().equals(TypeNames.PRIMITIVE_VOID)) {
+            throw new CodegenException("Method annotated with " + annotationType.fqName()
+                                                    + ", is not void, which is not supported: " + typeInfo.typeName().fqName()
+                                                    + "#" + method.elementName(),
+                                       method.originatingElement().orElseGet(method::elementName));
+        }
+        return Optional.of(method);
     }
 
     private void createInstantiateBody(TypeName serviceType,

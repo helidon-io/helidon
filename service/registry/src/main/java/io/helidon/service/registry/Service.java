@@ -58,7 +58,8 @@ public final class Service {
      *     <li>Direct implementation of interface (or extending an abstract class)</li>
      *     <li>Implementing a {@link java.util.function.Supplier} of the contract; when using supplier, service registry
      *     supports the capability to return {@link java.util.Optional} in case the service cannot provide a value; such
-     *     a service will be ignored and only other implementations (with lower weight) would be used</li>
+     *     a service will be ignored and only other implementations (with lower weight) would be used. Supplier will be
+     *     called each time the dependency is used, or each time a method on registry is called to request an instance</li>
      * </ul>
      */
     @Documented
@@ -69,6 +70,36 @@ public final class Service {
          * Type name of this annotation.
          */
         TypeName TYPE = TypeName.create(Provider.class);
+    }
+
+    /**
+     * A method annotated with this annotation will be invoked after the constructor is finished
+     * and all dependencies are satisfied.
+     * <p>
+     * The method must not have any parameters and must be accessible (not {@code private}).
+     */
+    @Documented
+    @Retention(RetentionPolicy.CLASS)
+    @Target(ElementType.METHOD)
+    public @interface PostConstruct {
+    }
+
+    /**
+     * A method annotated with this annotation will be invoked when the service registry shuts down.
+     * <p>
+     * Behavior of this annotation may differ based on the service registry implementation used. For example
+     * when using Helidon Service Inject (to be introduced), a pre-destroy method would be used when the scope
+     * a service is created in is finished. The core service registry behaves similar like a singleton scope - instance
+     * is created once, and pre-destroy is called when the registry is shut down.
+     * This also implies that instances that are NOT created within a scope cannot have their pre-destroy methods
+     * invoked, as we do not control their lifecycle.
+     * <p>
+     * The method must not have any parameters and must be accessible (not {@code private}).
+     */
+    @Documented
+    @Retention(RetentionPolicy.CLASS)
+    @Target(ElementType.METHOD)
+    public @interface PreDestroy {
     }
 
     /**
@@ -130,12 +161,12 @@ public final class Service {
 
         /**
          * Type of service registry that should read this descriptor. Defaults to
-         * {@value DescriptorMetadata#REGISTRY_TYPE_CORE}, so the descriptor must only implement
+         * {@value DescriptorHandler#REGISTRY_TYPE_CORE}, so the descriptor must only implement
          * {@link io.helidon.service.registry.GeneratedService.Descriptor}.
          *
          * @return type of registry this descriptor supports
          */
-        String registryType() default DescriptorMetadata.REGISTRY_TYPE_CORE;
+        String registryType() default DescriptorHandler.REGISTRY_TYPE_CORE;
 
         /**
          * The weight of the service. This is required for predefined descriptors, as we do not want

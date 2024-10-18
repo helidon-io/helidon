@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.integrations.oci</groupId>
         <artifactId>helidon-integrations-oci-project</artifactId>
-        <version>4.1.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-integrations-oci</artifactId>
     <name>Helidon Integrations OCI</name>
@@ -44,17 +44,38 @@
             <artifactId>helidon-config</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-yaml</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
             <groupId>com.oracle.oci.sdk</groupId>
             <artifactId>oci-java-sdk-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-yaml</artifactId>
-            <scope>test</scope>
+            <groupId>jakarta.json</groupId>
+            <artifactId>jakarta.json-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.http.media</groupId>
+            <artifactId>helidon-http-media-jsonp</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.testing</groupId>
             <artifactId>helidon-common-testing-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver.testing.junit5</groupId>
+            <artifactId>helidon-webserver-testing-junit5</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -70,6 +91,11 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-jdk14</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -102,8 +128,8 @@
                             <version>${helidon.version}</version>
                         </path>
                         <path>
-                            <groupId>io.helidon.config</groupId>
-                            <artifactId>helidon-config-metadata-processor</artifactId>
+                            <groupId>io.helidon.config.metadata</groupId>
+                            <artifactId>helidon-config-metadata-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>
@@ -130,8 +156,8 @@
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
-                        <groupId>io.helidon.config</groupId>
-                        <artifactId>helidon-config-metadata-processor</artifactId>
+                        <groupId>io.helidon.config.metadata</groupId>
+                        <artifactId>helidon-config-metadata-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                 </dependencies>

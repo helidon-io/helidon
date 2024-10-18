@@ -35,7 +35,7 @@ import io.helidon.common.Reflected;
 import io.helidon.common.features.HelidonFeatures;
 import io.helidon.common.types.TypeName;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.service.registry.DescriptorMetadata;
+import io.helidon.service.registry.DescriptorHandler;
 import io.helidon.service.registry.ServiceDiscovery;
 import io.helidon.service.registry.ServiceLoader__ServiceDescriptor;
 import io.helidon.service.registry.ServiceRegistryConfig;
@@ -190,7 +190,7 @@ public class HelidonReflectionFeature implements Feature {
 
         sd.allMetadata()
                 .stream()
-                .map(DescriptorMetadata::descriptor)
+                .map(DescriptorHandler::descriptor)
                 .filter(it -> it instanceof ServiceLoader__ServiceDescriptor)
                 .map(it -> (ServiceLoader__ServiceDescriptor) it)
                 .map(ServiceLoader__ServiceDescriptor::serviceType)

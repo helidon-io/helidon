@@ -40,6 +40,9 @@ class EchoService implements WsListener {
         if (subProtocol != null && !subProtocol.equals(p)) {
             throw new InternalError("Invalid sub-protocol in session");
         }
+        if (session.socketContext().remotePeer() == null) {
+            throw new InternalError("Unable to access remote peer info");
+        }
     }
 
     @Override

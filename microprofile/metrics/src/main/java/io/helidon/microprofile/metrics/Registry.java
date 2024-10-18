@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,6 +78,15 @@ class Registry implements MetricRegistry {
 
     static Registry create(String scope, MeterRegistry meterRegistry) {
         return new Registry(scope, meterRegistry);
+    }
+
+    static Metadata metadata(Meter meter) {
+
+        MetadataBuilder builder = Metadata.builder().withName(meter.id().name());
+        meter.baseUnit().ifPresent(builder::withUnit);
+        meter.description().ifPresent(builder::withDescription);
+
+        return builder.build();
     }
 
     protected static String sanitizeUnit(String unit) {
@@ -396,7 +405,7 @@ class Registry implements MetricRegistry {
 
         Errors.Collector collector = Errors.collector();
 
-        MetricID newMetricID = metricIDWithoutSystemTags(collector, meter.id());
+        MetricID newMetricID = metricIDWithoutSystemTags(meter.id());
 
         lock.lock();
 
@@ -431,14 +440,16 @@ class Registry implements MetricRegistry {
 
             HelidonMetric<?> newMetric = metric(collector, existingInfo == null ? newMetadata : existingInfo.metadata, meter);
 
-            // Now update the data structures.
-            InfoPerName info = infoByName.computeIfAbsent(newMetricID.getName(),
-                                                          n -> InfoPerName.create(newMetadata, newMetricID));
+            // Now update the data structures if the meter is enabled.
+            if (meterRegistry.isMeterEnabled(meter.id().name(), meter.id().tagsMap(), meter.scope())) {
+                InfoPerName info = infoByName.computeIfAbsent(newMetricID.getName(),
+                                                              n -> InfoPerName.create(newMetadata, newMetricID));
 
-            // Inside info, metric IDs are stored in a set, so adding the first ID again does no harm.
-            info.add(newMetricID);
-            metricsById.put(newMetricID, newMetric);
-            metricsByDelegate.put(meter, newMetric);
+                // Inside info, metric IDs are stored in a set, so adding the first ID again does no harm.
+                info.add(newMetricID);
+                metricsById.put(newMetricID, newMetric);
+                metricsByDelegate.put(meter, newMetric);
+            }
 
             collector.collect().log(LOGGER);
 
@@ -573,21 +584,16 @@ class Registry implements MetricRegistry {
         }
     }
 
-    private static Metadata metadata(Meter meter) {
-
-        MetadataBuilder builder = Metadata.builder().withName(meter.id().name());
-        meter.baseUnit().ifPresent(builder::withUnit);
-        meter.description().ifPresent(builder::withDescription);
-
-        return builder.build();
-    }
-
     private static Map<String, String> tagsWithoutSystemOrScopeTags(Iterable<io.helidon.metrics.api.Tag> tags) {
         Map<String, String> result = new TreeMap<>();
 
         SystemTagsManager.instance().withoutSystemOrScopeTags(tags).forEach(t -> result.put(t.key(), t.value()));
 
         return result;
+    }
+
+    private boolean isMeterEnabled(Meter meter) {
+        return meterRegistry.isMeterEnabled(meter.id().name(), meter.id().tagsMap(), meter.scope());
     }
 
     private static Tag[] tags(Map<String, String> tags) {
@@ -605,9 +611,7 @@ class Registry implements MetricRegistry {
     }
 
     private HelidonCounter createCounter(io.helidon.metrics.api.Counter.Builder counterBuilder) {
-        io.helidon.metrics.api.Counter delegate = meterRegistry.getOrCreate(counterBuilder);
-        HelidonCounter result = (HelidonCounter) metricsByDelegate.get(delegate);
-        return result;
+        return createMeter(counterBuilder, HelidonCounter::create);
     }
 
     @SuppressWarnings("unchecked")
@@ -634,17 +638,15 @@ class Registry implements MetricRegistry {
 
     @SuppressWarnings("unchecked")
     private <N extends Number> HelidonGauge<N> createGauge(io.helidon.metrics.api.Gauge.Builder<N> gBuilder) {
-        io.helidon.metrics.api.Gauge<?> delegate = meterRegistry.getOrCreate(gBuilder);
-        return (HelidonGauge<N>) metricsByDelegate.get(delegate);
+        return createMeter(gBuilder, HelidonGauge::create);
     }
 
     @SuppressWarnings("unchecked")
     private <T> HelidonGauge<Long> createFunctionalCounter(io.helidon.metrics.api.FunctionalCounter.Builder<T> fcBuilder) {
-        io.helidon.metrics.api.Gauge<?> delegate = meterRegistry
-                .getOrCreate(io.helidon.metrics.api.Gauge.builder(fcBuilder.name(),
-                                                                  () -> fcBuilder.fn()
-                                                                          .apply(fcBuilder.stateObject())));
-        return (HelidonGauge<Long>) metricsByDelegate.get(delegate);
+        return createMeter(io.helidon.metrics.api.Gauge.builder(fcBuilder.name(),
+                                                                () -> fcBuilder.fn()
+                                                                        .apply(fcBuilder.stateObject())),
+                           HelidonGauge::create);
     }
 
     private HelidonHistogram createHistogram(Metadata metadata, Tag... tags) {
@@ -657,8 +659,7 @@ class Registry implements MetricRegistry {
     }
 
     private HelidonHistogram createHistogram(io.helidon.metrics.api.DistributionSummary.Builder sBuilder) {
-        io.helidon.metrics.api.DistributionSummary delegate = meterRegistry.getOrCreate(sBuilder);
-        return (HelidonHistogram) metricsByDelegate.get(delegate);
+        return createMeter(DistributionCustomizations.apply(sBuilder), HelidonHistogram::create);
     }
 
     private HelidonTimer createTimer(Metadata metadata, Tag... tags) {
@@ -670,8 +671,19 @@ class Registry implements MetricRegistry {
     }
 
     private HelidonTimer createTimer(io.helidon.metrics.api.Timer.Builder tBuilder) {
-        io.helidon.metrics.api.Timer delegate = meterRegistry.getOrCreate(tBuilder);
-        return (HelidonTimer) metricsByDelegate.get(delegate);
+        return createMeter(DistributionCustomizations.apply(tBuilder), d -> HelidonTimer.create(meterRegistry, d));
+    }
+
+    private <HM extends HelidonMetric<M>,
+            M extends Meter,
+            B extends Meter.Builder<B, M>> HM createMeter(B builder,
+                                                          Function<M, HM> factory) {
+        M delegate = meterRegistry.getOrCreate(builder);
+        // Disabled metrics are not in the data structures supporting our registry, so we cannot find those via metricsByDelegate.
+        // Instead just create a new wrapper around the delegate.
+        return isMeterEnabled(delegate)
+                ? (HM) metricsByDelegate.get(delegate)
+                : factory.apply(delegate);
     }
 
     private boolean removeMatchingWithResult(MetricFilter filter) {
@@ -726,6 +738,11 @@ class Registry implements MetricRegistry {
         if (!reservedTagNamesUsed.isEmpty()) {
             collector.fatal(reservedTagNamesUsed, "illegal use of reserved tag names");
         }
+        return new MetricID(meterId.name(), tags(tagsWithoutScope));
+    }
+
+    private MetricID metricIDWithoutSystemTags(Meter.Id meterId) {
+        Map<String, String> tagsWithoutScope = tagsWithoutSystemOrScopeTags(meterId.tags());
         return new MetricID(meterId.name(), tags(tagsWithoutScope));
     }
 

@@ -22,7 +22,7 @@
     <parent>
         <artifactId>helidon-microprofile-project</artifactId>
         <groupId>io.helidon.microprofile</groupId>
-        <version>4.1.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.microprofile.telemetry</groupId>
     <artifactId>helidon-microprofile-telemetry</artifactId>
@@ -35,6 +35,7 @@
     <properties>
         <!-- The default for the following is 5000 ms. Reducing it speeds up tests significantly. -->
         <otel.bsp.schedule.delay>100</otel.bsp.schedule.delay>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
     </properties>
 
     <dependencies>

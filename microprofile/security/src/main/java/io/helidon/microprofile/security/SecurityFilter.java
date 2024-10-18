@@ -26,11 +26,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.config.Config;
 import io.helidon.common.context.Contexts;
+import io.helidon.common.uri.UriPath;
 import io.helidon.jersey.common.InvokedResource;
 import io.helidon.security.AuditEvent;
 import io.helidon.security.Security;
@@ -80,7 +81,11 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
      * sharing among them, the caching for security definitions is first keyed on the
      * application class.
      */
-    private final Map<Class<?>, CacheEntry> applicationClassCache = new ConcurrentHashMap<>();
+    private final Map<Class<?>, CacheEntry> applicationClassCache = new HashMap<>();
+    private final ReentrantLock applicationClassCacheLock = new ReentrantLock();
+    private final ReentrantLock resourceClassSecurityLock = new ReentrantLock();
+    private final ReentrantLock resourceMethodSecurityLock = new ReentrantLock();
+    private final ReentrantLock subResourceMethodSecurityLock = new ReentrantLock();
 
     private final SecurityContext securityContext;
     private final List<AnnotationAnalyzer> analyzers = new LinkedList<>();
@@ -151,9 +156,9 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
              * Authentication
              */
             authenticate(filterContext, securityContext, tracing.atnTracing());
-            LOGGER.log(Level.TRACE, () -> "Filter after authentication. Should finish: " + filterContext.isShouldFinish());
+            LOGGER.log(Level.TRACE, () -> "Filter after authentication. Should finish: " + filterContext.shouldFinish());
             // authentication failed
-            if (filterContext.isShouldFinish()) {
+            if (filterContext.shouldFinish()) {
                 return;
             }
 
@@ -199,7 +204,7 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         SecurityDefinition methodSecurity = jerseySecurityContext.methodSecurity();
         SecurityContext securityContext = jerseySecurityContext.securityContext();
 
-        if (fc.isExplicitAtz() && !securityContext.isAuthorized()) {
+        if (fc.explicitAtz() && !securityContext.isAuthorized()) {
             // now we have an option that the response code is already an error (e.g. BadRequest)
             // in such a case we return the original error, as we may have never reached the method code
             switch (responseContext.getStatusInfo().getFamily()) {
@@ -219,11 +224,11 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
                         responseContext.setEntity("");
                     }
                     responseContext.setStatus(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode());
-                    LOGGER.log(Level.ERROR, "Authorization failure. Request for" + fc.getResourcePath()
+                    LOGGER.log(Level.ERROR, "Authorization failure. Request for" + fc.resourcePath()
                             + " has failed, as it was marked"
                             + "as explicitly authorized, yet authorization was never called on security context. The "
                             + "method was invoked and may have changed data. Marking as internal server error");
-                    fc.setShouldFinish(true);
+                    fc.shouldFinish(true);
                     break;
             }
         }
@@ -231,26 +236,26 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         ResponseTracing responseTracing = SecurityTracing.get().responseTracing();
 
         try {
-            if (methodSecurity.isAudited()) {
+            if (methodSecurity.audited()) {
                 AuditEvent.AuditSeverity auditSeverity;
                 if (responseContext.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
-                    auditSeverity = methodSecurity.getAuditOkSeverity();
+                    auditSeverity = methodSecurity.auditOkSeverity();
                 } else {
-                    auditSeverity = methodSecurity.getAuditErrorSeverity();
+                    auditSeverity = methodSecurity.auditErrorSeverity();
                 }
 
                 SecurityAuditEvent auditEvent = SecurityAuditEvent
-                        .audit(auditSeverity, methodSecurity.getAuditEventType(), methodSecurity.getAuditMessageFormat())
-                        .addParam(AuditEvent.AuditParam.plain("method", fc.getMethod()))
-                        .addParam(AuditEvent.AuditParam.plain("path", fc.getResourcePath()))
+                        .audit(auditSeverity, methodSecurity.auditEventType(), methodSecurity.auditMessageFormat())
+                        .addParam(AuditEvent.AuditParam.plain("method", fc.method()))
+                        .addParam(AuditEvent.AuditParam.plain("path", fc.resourcePath()))
                         .addParam(AuditEvent.AuditParam.plain("status", String.valueOf(responseContext.getStatus())))
                         .addParam(AuditEvent.AuditParam.plain("subject",
                                 securityContext.user()
                                                .or(securityContext::service)
                                                .orElse(SecurityContext.ANONYMOUS)))
                         .addParam(AuditEvent.AuditParam.plain("transport", "http"))
-                        .addParam(AuditEvent.AuditParam.plain("resourceType", fc.getResourceName()))
-                        .addParam(AuditEvent.AuditParam.plain("targetUri", fc.getTargetUri()));
+                        .addParam(AuditEvent.AuditParam.plain("resourceType", fc.resourceName()))
+                        .addParam(AuditEvent.AuditParam.plain("targetUri", fc.targetUri()));
 
                 securityContext.audit(auditEvent);
             }
@@ -267,16 +272,16 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         return invokedResource
                 .definitionMethod()
                 .map(definitionMethod -> {
-                    context.setMethodSecurity(getMethodSecurity(invokedResource,
-                            definitionMethod,
-                            (ExtendedUriInfo) requestContext.getUriInfo()));
-                    context.setResourceName(definitionMethod.getDeclaringClass().getSimpleName());
+                    context.methodSecurity(getMethodSecurity(invokedResource,
+                                                             definitionMethod,
+                                                             (ExtendedUriInfo) requestContext.getUriInfo()));
+                    context.resourceName(definitionMethod.getDeclaringClass().getSimpleName());
 
                     return configureContext(context, requestContext, requestContext.getUriInfo());
                 })
                 .orElseGet(() -> {
                     // this will end in 404, just let it on
-                    context.setShouldFinish(true);
+                    context.shouldFinish(true);
                     return context;
                 });
     }
@@ -321,7 +326,7 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         SecurityLevel securityLevel = SecurityLevel.create(realClass.getName())
                                                    .withClassAnnotations(customAnnotsMap)
                                                    .build();
-        definition.getSecurityLevels().add(securityLevel);
+        definition.securityLevels().add(securityLevel);
 
         for (AnnotationAnalyzer analyzer : analyzers) {
             AnnotationAnalyzer.AnalyzerResponse analyzerResponse;
@@ -338,20 +343,6 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
             logger().log(Level.TRACE, "Security definition for resource {0}: {1}", theClass.getName(), definition);
         }
         return definition;
-    }
-
-    /**
-     * Returns the real class of this object, skipping proxies.
-     *
-     * @param object The object.
-     * @return Its class.
-     */
-    private static Class<?> getRealClass(Class<?> object) {
-        Class<?> result = object;
-        while (result.isSynthetic()) {
-            result = result.getSuperclass();
-        }
-        return result;
     }
 
     private SecurityDefinition getMethodSecurity(InvokedResource invokedResource,
@@ -409,8 +400,13 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
 
             String fullPath = fullPathBuilder.toString();
             // now full path can be used as a cache
-            if (subResourceMethodSecurity(appRealClass).containsKey(fullPath)) {
-                return subResourceMethodSecurity(appRealClass).get(fullPath);
+            try {
+                subResourceMethodSecurityLock.lock();
+                if (subResourceMethodSecurity(appRealClass).containsKey(fullPath)) {
+                    return subResourceMethodSecurity(appRealClass).get(fullPath);
+                }
+            } finally {
+                subResourceMethodSecurityLock.unlock();
             }
 
             // now process each definition method and class
@@ -418,9 +414,9 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
             for (Method method : methodsToProcess) {
                 Class<?> clazz = method.getDeclaringClass();
                 current = securityForClass(clazz, current);
-                SecurityDefinition methodDef = processMethod(current.copyMe(), method);
+                SecurityDefinition methodDef = processMethod(current.copyMe(), uriInfo.getPath(), method);
 
-                SecurityLevel currentSecurityLevel = methodDef.getSecurityLevels().get(methodDef.getSecurityLevels().size() - 1);
+                SecurityLevel currentSecurityLevel = methodDef.securityLevels().get(methodDef.securityLevels().size() - 1);
 
                 Map<Class<? extends Annotation>, List<Annotation>> methodAnnotations = new HashMap<>();
                 addCustomAnnotations(methodAnnotations, method);
@@ -428,7 +424,7 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
                                                               .withMethodName(method.getName())
                                                               .withMethodAnnotations(methodAnnotations)
                                                               .build();
-                methodDef.getSecurityLevels().set(methodDef.getSecurityLevels().size() - 1, newSecurityLevel);
+                methodDef.securityLevels().set(methodDef.securityLevels().size() - 1, newSecurityLevel);
                 for (AnnotationAnalyzer analyzer : analyzers) {
                     AnnotationAnalyzer.AnalyzerResponse analyzerResponse = analyzer.analyze(method,
                             current.analyzerResponse(analyzer));
@@ -438,31 +434,42 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
                 current = methodDef;
             }
 
-            subResourceMethodSecurity(appRealClass).put(fullPath, current);
+            try {
+                subResourceMethodSecurityLock.lock();
+                subResourceMethodSecurity(appRealClass).put(fullPath, current);
+            } finally {
+                subResourceMethodSecurityLock.unlock();
+            }
             return current;
         }
 
-        if (resourceMethodSecurity(appRealClass).containsKey(definitionMethod)) {
-            return resourceMethodSecurity(appRealClass).get(definitionMethod);
+        try {
+            resourceMethodSecurityLock.lock();
+            if (resourceMethodSecurity(appRealClass).containsKey(definitionMethod)) {
+                return resourceMethodSecurity(appRealClass).get(definitionMethod);
+            }
+        } finally {
+            resourceMethodSecurityLock.unlock();
         }
 
-        SecurityDefinition resClassSecurity = resourceClassSecurity(appRealClass)
-                .computeIfAbsent(definitionClass, aClass -> securityForClass(definitionClass, appClassSecurity));
+        SecurityDefinition resClassSecurity = obtainClassSecurityDefinition(appRealClass, appClassSecurity, definitionClass);
+        SecurityDefinition methodDef = processMethod(resClassSecurity, uriInfo.getRequestUri().getPath(), definitionMethod);
 
-
-        SecurityDefinition methodDef = processMethod(resClassSecurity, definitionMethod);
-
-        int index = methodDef.getSecurityLevels().size() - 1;
-        SecurityLevel currentSecurityLevel = methodDef.getSecurityLevels().get(index);
+        int index = methodDef.securityLevels().size() - 1;
+        SecurityLevel currentSecurityLevel = methodDef.securityLevels().get(index);
         Map<Class<? extends Annotation>, List<Annotation>> methodLevelAnnotations = new HashMap<>();
         addCustomAnnotations(methodLevelAnnotations, definitionMethod);
 
-        methodDef.getSecurityLevels().set(index, SecurityLevel.create(currentSecurityLevel)
+        methodDef.securityLevels().set(index, SecurityLevel.create(currentSecurityLevel)
                                                               .withMethodName(definitionMethod.getName())
                                                               .withMethodAnnotations(methodLevelAnnotations)
                                                               .build());
-
-        resourceMethodSecurity(appRealClass).put(definitionMethod, methodDef);
+        try {
+            resourceMethodSecurityLock.lock();
+            resourceMethodSecurity(appRealClass).put(definitionMethod, methodDef);
+        } finally {
+            resourceMethodSecurityLock.unlock();
+        }
 
         for (AnnotationAnalyzer analyzer : analyzers) {
             AnnotationAnalyzer.AnalyzerResponse analyzerResponse = analyzer.analyze(definitionMethod,
@@ -472,6 +479,18 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         }
 
         return methodDef;
+    }
+
+    private SecurityDefinition obtainClassSecurityDefinition(Class<?> appRealClass, SecurityDefinition appClassSecurity,
+                                                             Class<?> definitionClass) {
+        Map<Class<?>, SecurityDefinition> classSecurityDefinitionMap = resourceClassSecurity(appRealClass);
+        try {
+            resourceClassSecurityLock.lock();
+            return classSecurityDefinitionMap.computeIfAbsent(definitionClass,
+                                                              aClass -> securityForClass(definitionClass, appClassSecurity));
+        } finally {
+            resourceClassSecurityLock.unlock();
+        }
     }
 
     private void addCustomAnnotations(Map<Class<? extends Annotation>, List<Annotation>> customAnnotsMap, Class<?> theClass) {
@@ -499,14 +518,19 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         return this.analyzers;
     }
 
-    private static SecurityDefinition processMethod(SecurityDefinition current, Method method) {
-        Authenticated atn = method.getAnnotation(Authenticated.class);
-        Authorized atz = method.getAnnotation(Authorized.class);
-        Audited audited = method.getAnnotation(Audited.class);
+    private SecurityDefinition processMethod(SecurityDefinition current, String path, Method method) {
         SecurityDefinition methodDef = current.copyMe();
-        methodDef.add(atn);
-        methodDef.add(atz);
-        methodDef.add(audited);
+        findMethodConfig(UriPath.create(path))
+                .asNode()
+                .ifPresentOrElse(methodDef::fromConfig,
+                                 () -> {
+                                     Authenticated atn = method.getAnnotation(Authenticated.class);
+                                     Authorized atz = method.getAnnotation(Authorized.class);
+                                     Audited audited = method.getAnnotation(Audited.class);
+                                     methodDef.add(atn);
+                                     methodDef.add(atz);
+                                     methodDef.add(audited);
+                                 });
         return methodDef;
     }
 
@@ -516,18 +540,23 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
      */
     private static class CacheEntry {
         private SecurityDefinition appClassSecurity;
-        private final Map<Class<?>, SecurityDefinition> resourceClassSecurity = new ConcurrentHashMap<>();
-        private final Map<Method, SecurityDefinition> resourceMethodSecurity = new ConcurrentHashMap<>();
-        private final Map<String, SecurityDefinition> subResourceMethodSecurity = new ConcurrentHashMap<>();
+        private final Map<Class<?>, SecurityDefinition> resourceClassSecurity = new HashMap<>();
+        private final Map<Method, SecurityDefinition> resourceMethodSecurity = new HashMap<>();
+        private final Map<String, SecurityDefinition> subResourceMethodSecurity = new HashMap<>();
     }
 
     private CacheEntry appClassCacheEntry(Class<?> appClass) {
-        return applicationClassCache.computeIfAbsent(appClass, c -> {
-            SecurityDefinition appClassSecurity = securityForClass(c, null);
-            CacheEntry entry = new CacheEntry();
-            entry.appClassSecurity = appClassSecurity;
-            return entry;
-        });
+        try {
+            applicationClassCacheLock.lock();
+            return applicationClassCache.computeIfAbsent(appClass, c -> {
+                SecurityDefinition appClassSecurity = securityForClass(c, null);
+                CacheEntry entry = new CacheEntry();
+                entry.appClassSecurity = appClassSecurity;
+                return entry;
+            });
+        } finally {
+            applicationClassCacheLock.unlock();
+        }
     }
 
     private SecurityDefinition appClassSecurity(Class<?> appClass) {

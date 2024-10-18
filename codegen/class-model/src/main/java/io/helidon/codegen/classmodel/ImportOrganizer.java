@@ -59,11 +59,12 @@ class ImportOrganizer {
         }
         Type checkedType = type.declaringClass().orElse(type);
         String fullTypeName = checkedType.fqTypeName();
-        String simpleTypeName = checkedType.simpleTypeName();
 
         if (!includedImport) {
             return fullTypeName;
         }
+
+        String simpleTypeName = checkedType.simpleTypeName();
         if (forcedFullImports.contains(fullTypeName)) {
             return type.fqTypeName();
         } else if (noImport.contains(fullTypeName) || imports.contains(fullTypeName)) {

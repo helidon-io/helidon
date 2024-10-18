@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.webserver.tests</groupId>
         <artifactId>helidon-webserver-tests-project</artifactId>
-        <version>4.1.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-weserver-tests-webserver</artifactId>
@@ -61,6 +61,11 @@
         <dependency>
             <groupId>io.helidon.logging</groupId>
             <artifactId>helidon-logging-jul</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.http.encoding</groupId>
+            <artifactId>helidon-http-encoding-gzip</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

@@ -1635,8 +1635,14 @@ public interface Config extends io.helidon.common.config.Config {
          * @see #config(Config)
          */
         default Builder metaConfig() {
-            MetaConfig.metaConfig()
-                    .ifPresent(this::config);
+            try {
+                MetaConfig.metaConfig()
+                        .ifPresent(this::config);
+            } catch (MetaConfigException e) {
+                System.getLogger(getClass().getName())
+                        .log(System.Logger.Level.WARNING, "Failed to load SE meta-configuration,"
+                                + " please make sure it has correct format.", e);
+            }
 
             return this;
         }

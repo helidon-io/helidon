@@ -351,7 +351,7 @@ curl -v http://localhost:8080/health/ready
 }
 ----
 
-Full example code is available link:{helidon-github-tree-url}/examples/microprofile[here].
+Full example code is available link:{helidon-github-examples-url}/microprofile[here].
 
 === Custom Startup Health Checks
 
@@ -459,7 +459,7 @@ curl http://localhost:8080/health
 }
 ----
 
-Full example code is available link:{helidon-github-tree-url}/examples/microprofile[here].
+Full example code is available link:{helidon-github-examples-url}/microprofile[here].
 
 == Reference
 

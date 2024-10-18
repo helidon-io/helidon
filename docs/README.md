@@ -19,6 +19,11 @@ Build just the javadocs:
 mvn package -Pjavadoc -Dhelidon.sitegen.skip=true
 ```
 
+Build docs and also update config reference docs:
+```bash
+mvn package -Pconfigdoc
+```
+
 ## Serve
 
 ```bash

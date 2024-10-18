@@ -1,0 +1,53 @@
+[
+  {
+    "name": "io.helidon.integrations.cdi.eclipselink.CDISEPlatform",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.eclipse.persistence.sessions.DatabaseSession"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "io.helidon.integrations.cdi.eclipselink.CDISEPlatform$TransactionController",
+    "methods": [
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.eclipse.persistence.logging.JavaLog",
+    "methods": [
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.eclipse.persistence.platform.database.H2Platform",
+    "methods": [
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.eclipse.persistence.platform.database.MySQLPlatform",
+    "methods": [
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.eclipse.persistence.platform.database.PostgreSQLPlatform",
+    "methods": [
+      {
+        "name": "<init>"
+      }
+    ]
+  }
+]

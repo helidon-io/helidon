@@ -17,9 +17,11 @@
 package io.helidon.codegen.apt;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.lang.model.element.Element;
@@ -40,8 +42,12 @@ import static io.helidon.common.types.TypeName.createFromGenericDeclaration;
 
 /**
  * Factory for types.
+ *
+ * @deprecated this is intended for internal use. This will be a package private type in the future.
  */
+@Deprecated(forRemoval = true, since = "4.2.0")
 public final class AptTypeFactory {
+    private static final Pattern NESTED_TYPES = Pattern.compile("(?<!\\$)\\$(?!\\$)");
     private AptTypeFactory() {
     }
 
@@ -172,6 +178,14 @@ public final class AptTypeFactory {
         List<String> classNames = new ArrayList<>();
         String simpleName = type.getSimpleName().toString();
 
+        // if there is a single $, we consider that to be an inner class
+        String[] split = NESTED_TYPES.split(simpleName);
+        if (split.length > 1) {
+            classNames.addAll(Arrays.asList(split)
+                                      .subList(0, split.length - 1));
+            simpleName = split[split.length - 1];
+        }
+
         Element enclosing = type.getEnclosingElement();
         while (enclosing != null && ElementKind.PACKAGE != enclosing.getKind()) {
             if (enclosing.getKind() == ElementKind.CLASS
@@ -182,6 +196,7 @@ public final class AptTypeFactory {
             }
             enclosing = enclosing.getEnclosingElement();
         }
+
         Collections.reverse(classNames);
 
         // try to find the package

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,6 +82,12 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl<io.helidon.metr
                                                      io.helidon.metrics.api.Gauge<N> delegate) {
         return new HelidonGauge.DelegateBased<>(scope,
                                                 metadata,
+                                                delegate);
+    }
+
+    static <N extends Number> HelidonGauge<N> create(io.helidon.metrics.api.Gauge<N> delegate) {
+        return new HelidonGauge.DelegateBased<>(resolvedScope(delegate),
+                                                Registry.metadata(delegate),
                                                 delegate);
     }
 

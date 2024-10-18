@@ -1,66 +1,161 @@
-# Notes
-# - cannot run on Windows, as we use shell scripts
+#
+# Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 name: "Release"
 
 on:
   push:
-    branches:
-      - 'release-*'
+    branches: [ 'release-*' ]
+
 env:
   JAVA_VERSION: '21'
   JAVA_DISTRO: 'oracle'
-  MAVEN_HTTP_ARGS: '-Dmaven.wagon.httpconnectionManager.ttlSeconds=60 -Dmaven.wagon.http.retryHandler.count=3'
+  MAVEN_ARGS: |
+    -B -e
+    -Dmaven.wagon.httpconnectionManager.ttlSeconds=60
+    -Dmaven.wagon.http.retryHandler.count=3
+    -Djdk.toolchain.version=${JAVA_VERSION}
+    -Dcache.enabled=true
 
 concurrency:
   group: release-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  copyright:
-    timeout-minutes: 10
+  create-tag:
     runs-on: ubuntu-20.04
+    environment: release
+    outputs:
+      version: ${{ steps.create-tag.outputs.version }}
+      tag: ${{ steps.create-tag.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4.1.0
-        with:
-          distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_VERSION }}
-          cache: maven
-      - name: Copyright
-        run: etc/scripts/copyright.sh
-  release:
-    timeout-minutes: 60
+          fetch-depth: '0'
+          token: ${{ secrets.SERVICE_ACCOUNT_TOKEN }}
+      - id: create-tag
+        run: ./etc/scripts/release.sh create_tag >> "${GITHUB_OUTPUT}"
+  validate:
+    needs: create-tag
+    uses: ./.github/workflows/validate.yml
+    with:
+      ref: ${{ needs.create-tag.outputs.tag }}
+  stage:
+    needs: [ create-tag, validate ]
+    strategy:
+      matrix:
+        moduleSet: [ core, integrations, others ]
     runs-on: ubuntu-20.04
+    timeout-minutes: 30
     environment: release
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.SERVICE_ACCOUNT_TOKEN }}
           fetch-depth: '0'
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4.1.0
+          ref: ${{ needs.create-tag.outputs.tag }}
+      - uses: actions/download-artifact@v4
         with:
-          distribution: ${{ env.JAVA_DISTRO }}
-          java-version: ${{ env.JAVA_VERSION }}
-          cache: maven
-      - name: Release
+          pattern: "{javadoc-jars-${{ matrix.moduleSet }},docs}"
+          merge-multiple: true
+      - shell: bash
         env:
           GPG_PASSPHRASE: ${{ secrets.HELIDON_GPG_PASSPHRASE }}
           GPG_PRIVATE_KEY: ${{ secrets.HELIDON_GPG_PRIVATE_KEY }}
-          GPG_PUBLIC_KEY: ${{ secrets.HELIDON_GPG_PUBLIC_KEY }}
-          MAVEN_SETTINGS: ${{ secrets.MAVEN_SETTINGS }}
-          RELEASE_WORKFLOW: "true"
-        run: |
-          git config user.email "helidon-robot_ww@oracle.com"
-          git config user.name "Helidon Robot"
-          etc/scripts/release.sh release_build
-      - name: Upload Staged Artifacts
-        uses: actions/upload-artifact@v4
+        run: etc/scripts/setup-gpg.sh
+      - uses: ./.github/actions/common
         with:
-          name: io-helidon-artifacts-${{ github.ref_name }}
-          path: parent/target/nexus-staging/
-          retention-days: 90
+          build-cache: read-only
+          artifact-name: io-helidon-artifacts-part-${{ matrix.moduleSet }}
+          artifact-path: staging
+          run: |
+            mvn ${MAVEN_ARGS} \
+              -DreactorRule=default \
+              -DmoduleSet=${{ matrix.moduleSet }} \
+              -Dcache.loadSuffixes=javadoc,docs \
+              -Prelease,no-snapshots \
+              -DskipTests \
+              -DaltDeploymentRepository=":::file://${PWD}/staging" \
+              deploy
+  deploy:
+    needs: [ create-tag, stage ]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: release
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+          ref: ${{ needs.create-tag.outputs.tag }}
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: io-helidon-artifacts-part-*
+          path: staging
+          merge-multiple: true
+      - shell: bash
+        env:
+          NEXUS_USER: ${{ secrets.NEXUS_USER }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+        run: |
+          etc/scripts/nexus.sh deploy_release \
+            --dir="staging" \
+            --description="Helidon v%{version}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: io-helidon-artifacts-${{ needs.create-tag.outputs.version }}
+          path: staging
+  resolve-all:
+    needs: [ create-tag, deploy ]
+    timeout-minutes: 30
+    runs-on: ubuntu-20.04
+    name: resolve-all
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+          ref: ${{ needs.create-tag.outputs.tag }}
+      - uses: ./.github/actions/common
+        with:
+          run: |
+            mvn ${MAVEN_ARGS} -N \
+              -Possrh-staging \
+              -Dartifact=io.helidon:helidon-all:${{ needs.create-tag.outputs.version }}:pom \
+              dependency:get
+  smoketest:
+    needs: [ create-tag, deploy ]
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        archetype:
+          - bare-se
+          - bare-mp
+          - quickstart-se
+          - quickstart-mp
+          - database-se
+          - database-mp
+    runs-on: ubuntu-20.04
+    name: smoketest/${{ matrix.archetype }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+          ref: ${{ needs.create-tag.outputs.tag }}
+      - uses: ./.github/actions/common
+        with:
+          run: |
+            ./etc/scripts/smoketest.sh \
+              --clean \
+              --staged \
+              --version=${{ needs.create-tag.outputs.version }} \
+              --archetype=${{ matrix.archetype }}

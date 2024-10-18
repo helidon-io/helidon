@@ -30,6 +30,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -452,7 +453,11 @@ class MpConfigImpl implements Config {
         if (Enum.class.isAssignableFrom(type)) {
             return Optional.of(value -> {
                 Class<? extends Enum> enumClass = (Class<? extends Enum>) type;
-                return (T) Enum.valueOf(enumClass, value);
+                try {
+                    return (T) Enum.valueOf(enumClass, value);
+                } catch (Exception e) {
+                    return (T) Enum.valueOf(enumClass, value.toUpperCase(Locale.ROOT));
+                }
             });
         }
         // any class that has a "public static T method()"

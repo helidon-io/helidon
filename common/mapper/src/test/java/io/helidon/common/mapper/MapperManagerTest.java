@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -242,5 +242,35 @@ class MapperManagerTest {
         assertThat(doubleValue.isEmpty(), is(true));
 
         assertThrows(MapperException.class, () -> doubleValue.as(Integer.class));
+    }
+
+    @Test
+    void testCacheWorks() {
+        MapperManagerImpl mm = new MapperManagerImpl(MapperManager.builder()
+                                                             .addMapperProvider(new TestProvider()));
+        assertThat(mm.classCacheSize(), is(0));
+        assertThat(mm.typeCacheSize(), is(0));
+
+        mm.map("value", String.class, String.class, "value");
+        mm.map("value", String.class, String.class, "value");
+        mm.map("value", String.class, String.class, "value");
+        assertThat(mm.classCacheSize(), is(1));
+
+        mm.map("value", GenericType.STRING, GenericType.STRING, "value");
+        mm.map("value", GenericType.STRING, GenericType.STRING, "value");
+        mm.map("value", GenericType.STRING, GenericType.STRING, "value");
+        assertThat(mm.typeCacheSize(), is(1));
+    }
+
+    private static class TestProvider implements MapperProvider {
+        @Override
+        public ProviderResponse mapper(Class<?> sourceClass, Class<?> targetClass, String qualifier) {
+            return new ProviderResponse(Support.SUPPORTED, req -> req);
+        }
+
+        @Override
+        public ProviderResponse mapper(GenericType<?> sourceType, GenericType<?> targetType, String qualifier) {
+            return MapperProvider.super.mapper(sourceType, targetType, qualifier);
+        }
     }
 }

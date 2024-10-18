@@ -235,4 +235,4 @@ This will create a Vault docker image, run it in background and open it on `loca
 
 == References
 
-* link:{helidon-github-tree-url}/examples/integrations/vault[Hashicorp Vault Usage Examples]
+* link:{helidon-github-examples-url}/integrations/vault[Hashicorp Vault Usage Examples]

@@ -20,11 +20,14 @@
 module io.helidon.grpc.core {
 
     requires io.helidon.common;
+    requires io.helidon.http;
+    requires io.helidon.common.context;
+    requires io.helidon.tracing;
+
     requires transitive io.grpc;
     requires transitive io.grpc.stub;
     requires transitive com.google.protobuf;
     requires transitive io.grpc.protobuf;
-    requires transitive io.grpc.protobuf.lite;
 
     exports io.helidon.grpc.core;
 }

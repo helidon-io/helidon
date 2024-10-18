@@ -44,7 +44,7 @@ include::{rootdir}/config/io_helidon_security_providers_abac_AbacProvider.adoc[l
 
 ==== Example code
 
-See the link:{helidon-github-tree-url}/examples/security/attribute-based-access-control[example] on GitHub.
+See the link:{helidon-github-examples-url}/security/attribute-based-access-control[example] on GitHub.
 
 [source,yaml]
 .Configuration example
@@ -195,4 +195,16 @@ security:
 .JAX-RS example
 ----
 include::{sourcedir}/includes/security/providers/AbacSnippets.java[tag=snippet_4, indent=0]
+----
+
+[source,yaml]
+.Configuration example for `JAX-RS` over the configuration
+----
+server:
+  features:
+    security:
+      endpoints:
+        - path: "/somePath"
+          config:
+            abac.policy-validator.statement: "${env.time.year >= 2017}"
 ----

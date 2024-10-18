@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,34 +16,39 @@
 package io.helidon.dbclient.mongodb;
 
 import java.lang.System.Logger.Level;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.function.Consumer;
 
+import io.helidon.dbclient.DbClientService;
+import io.helidon.dbclient.DbClientServiceContext;
 import io.helidon.dbclient.DbExecute;
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
+import org.bson.Document;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-public class MongoDbClientTest {
+@SuppressWarnings("resource")
+class MongoDbClientTest {
 
     private static final System.Logger LOGGER = System.getLogger(MongoDbClientTest.class.getName());
     private static MongoDbClient dbClient;
 
     @BeforeAll
     static void setup() {
-        MongoClient client = Mockito.mock(MongoClient.class);
-        MongoDatabase db = Mockito.mock(MongoDatabase.class);
-        when(db.runCommand(any())).thenReturn(MongoDbStatement.EMPTY);
-        dbClient = new MongoDbClient(new MongoDbClientBuilder(), client, db);
+        dbClient = createClient(null);
     }
 
     @Test
@@ -85,4 +90,70 @@ public class MongoDbClientTest {
         exec.query("{\"operation\": \"command\", \"query\": { ping: 1 }}");
     }
 
+    @Test
+    void testDbClientServiceQuery() {
+        TestDbClientService service = new TestDbClientService();
+        MongoDbClient dbClient = createClient(builder -> builder.addService(service));
+        DbExecute exec = dbClient.execute();
+        long ignored = exec.query("{\"operation\": \"command\", \"query\": { ping: 1 }}").count();
+        assertThat(service.resultFuture.isDone(), is(true));
+        assertThat(service.resultFuture.isCompletedExceptionally(), is(false));
+        assertThat(service.statementFuture.isDone(), is(true));
+        assertThat(service.statementFuture.isCompletedExceptionally(), is(false));
+    }
+
+    @Test
+    void testDbClientServiceDml() {
+        TestDbClientService service = new TestDbClientService();
+        MongoDbClient dbClient = createClient(builder -> builder.addService(service));
+        DbExecute exec = dbClient.execute();
+        long ignored = exec.insert("{"
+                                + "\"collection\": \"foo\","
+                                + "\"operation\": \"insert\","
+                                + "\"value\": { \"name\": \"bar\" }"
+                                + "}");
+        assertThat(service.resultFuture.isDone(), is(true));
+        assertThat(service.resultFuture.isCompletedExceptionally(), is(false));
+        assertThat(service.statementFuture.isDone(), is(true));
+        assertThat(service.statementFuture.isCompletedExceptionally(), is(false));
+    }
+
+    @SuppressWarnings("unchecked")
+    static MongoDbClient createClient(Consumer<MongoDbClientBuilder> consumer) {
+        MongoClient client = Mockito.mock(MongoClient.class);
+        MongoDatabase db = Mockito.mock(MongoDatabase.class);
+        MongoCollection<Document> collection = Mockito.mock(MongoCollection.class);
+        when(db.getCollection(any())).thenReturn(collection);
+        when(db.runCommand(any())).thenReturn(MongoDbStatement.EMPTY);
+        MongoDbClientBuilder builder = new MongoDbClientBuilder();
+        if (consumer != null) {
+            consumer.accept(builder);
+        }
+        return new MongoDbClient(builder, client, db);
+    }
+
+    record TestDbClientService(CompletableFuture<Long> resultFuture,
+                               CompletableFuture<Void> statementFuture) implements DbClientService {
+
+        TestDbClientService() {
+            this(new CompletableFuture<>(), new CompletableFuture<>());
+        }
+
+        @Override
+        public DbClientServiceContext statement(DbClientServiceContext context) {
+            setup(context.resultFuture(), resultFuture);
+            setup(context.statementFuture(), statementFuture);
+            return context;
+        }
+
+        static <T> void setup(CompletionStage<T> stage, CompletableFuture<T> future) {
+            stage.whenComplete((v, ex) -> {
+                if (ex != null) {
+                    future.completeExceptionally(ex);
+                } else {
+                    future.complete(v);
+                }
+            });
+        }
+    }
 }

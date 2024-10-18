@@ -182,4 +182,4 @@ include::{sourcedir}/se/grpc/ServerSnippets.java[tag=snippet_3, indent=0]
 
 The following gRPC examples for Helidon SE are available:
 
-* link:{helidon-github-tree-url}/examples/webserver/protocols[Multiple protocols on a single WebServer]
+* link:{helidon-github-examples-url}/webserver/protocols[Multiple protocols on a single WebServer]

@@ -24,12 +24,18 @@
     <parent>
         <groupId>io.helidon.microprofile.tests.tck</groupId>
         <artifactId>helidon-microprofile-tests-tck-project</artifactId>
-        <version>4.1.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
     <packaging>pom</packaging>
     <artifactId>helidon-microprofile-tests-tck-jsonb</artifactId>
     <name>Helidon Microprofile Tests TCK JSONB</name>
+
+    <properties>
+        <tck.filename>jakarta-jsonb-tck-${version.lib.jakarta.jsonb-tck}</tck.filename>
+        <tck.url>https://download.eclipse.org/ee4j/jakartaee-tck/jakartaee10/promoted/eftl/${tck.filename}.zip</tck.url>
+        <tck.artifact>jakarta.json.bind-tck-${version.lib.jakarta.jsonb-tck}</tck.artifact>
+        <stage.dir>${project.build.directory}/tck</stage.dir>
+    </properties>
 
     <modules>
         <module>tck-jsonb-test</module>
@@ -38,7 +44,9 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
+                <inherited>false</inherited>
                 <executions>
                     <execution>
                         <phase>validate</phase>
@@ -48,13 +56,32 @@
                         <configuration>
                             <target>
                                 <!-- If you use proxy you need to set it as a system properties -->
-                                <get skipexisting="true" src="https://download.eclipse.org/ee4j/jakartaee-tck/jakartaee10/promoted/eftl/jakarta-jsonb-tck-${version.lib.jakarta.jsonb-api}.zip" dest="jakarta-jsonb-tck-${version.lib.jakarta.jsonb-api}.zip"/>
-                                <unzip src="jakarta-jsonb-tck-${version.lib.jakarta.jsonb-api}.zip" dest="./target"/>
-                                <chmod file="target/jsonb-tck/artifacts/artifact-install.sh" perm="+x"/>
-                                <exec dir="target/jsonb-tck/artifacts" executable="sh">
-                                    <arg line="artifact-install.sh"/>
-                                </exec>
+                                <get skipexisting="true" src="${tck.url}" dest="${project.build.directory}/${tck.filename}.zip"/>
+                                <unzip src="${project.build.directory}/${tck.filename}.zip" dest="${stage.dir}">
+                                    <patternset>
+                                        <include name="**/${tck.artifact}*"/>
+                                    </patternset>
+                                    <mapper type="flatten"/>
+                                </unzip>
                             </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-install-plugin</artifactId>
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>install-file</goal>
+                        </goals>
+                        <configuration>
+                            <file>${stage.dir}/${tck.artifact}.jar</file>
+                            <pomFile>${stage.dir}/${tck.artifact}.pom</pomFile>
+                            <sources>${stage.dir}/${tck.artifact}-sources.jar</sources>
                         </configuration>
                     </execution>
                 </executions>

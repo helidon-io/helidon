@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.webclient</groupId>
         <artifactId>helidon-webclient-project</artifactId>
-        <version>4.1.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-webclient-api</artifactId>
     <name>Helidon WebClient API</name>
@@ -127,8 +127,8 @@
                             <version>${helidon.version}</version>
                         </path>
                         <path>
-                            <groupId>io.helidon.config</groupId>
-                            <artifactId>helidon-config-metadata-processor</artifactId>
+                            <groupId>io.helidon.config.metadata</groupId>
+                            <artifactId>helidon-config-metadata-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>
@@ -140,8 +140,8 @@
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
-                        <groupId>io.helidon.config</groupId>
-                        <artifactId>helidon-config-metadata-processor</artifactId>
+                        <groupId>io.helidon.config.metadata</groupId>
+                        <artifactId>helidon-config-metadata-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>

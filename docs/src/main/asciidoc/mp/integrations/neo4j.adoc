@@ -142,7 +142,7 @@ Movies can now be returned as JSON objects:
 include::{sourcedir}/mp/integrations/Neo4jSnippets.java[tag=snippet_3, indent=0]
 ----
 
-Now build and run with JDK17+
+Now build and run.
 [source,bash]
 ----
 mvn package

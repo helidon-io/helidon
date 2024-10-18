@@ -16,23 +16,25 @@
 
 package io.helidon.service.codegen;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenFiler;
-import io.helidon.codegen.FilerTextResource;
-import io.helidon.common.types.Annotation;
-import io.helidon.common.types.TypeName;
+import io.helidon.codegen.FilerResource;
+import io.helidon.metadata.hson.Hson;
+import io.helidon.service.metadata.DescriptorMetadata;
+import io.helidon.service.metadata.Descriptors;
 
-import static io.helidon.codegen.CodegenUtil.generatedAnnotation;
+import static io.helidon.service.metadata.Descriptors.SERVICE_REGISTRY_LOCATION;
 
 /**
  * Support for reading and writing Helidon services to the resource.
@@ -45,18 +47,13 @@ import static io.helidon.codegen.CodegenUtil.generatedAnnotation;
  * The service descriptor is then discoverable at runtime through our own resource in {@value #SERVICES_RESOURCE}.
  */
 class HelidonMetaInfServices {
-    /**
-     * Location of the Helidon meta services file.
-     */
-    static final String SERVICES_RESOURCE = "META-INF/helidon/service.registry";
+    private final FilerResource services;
+    private final String moduleName;
+    private final Set<DescriptorMetadata> descriptors;
 
-    private final FilerTextResource services;
-    private final List<String> comments;
-    private final Set<DescriptorMeta> descriptors;
-
-    private HelidonMetaInfServices(FilerTextResource services, List<String> comments, Set<DescriptorMeta> descriptors) {
+    private HelidonMetaInfServices(FilerResource services, String moduleName, Set<DescriptorMetadata> descriptors) {
         this.services = services;
-        this.comments = comments;
+        this.moduleName = moduleName;
         this.descriptors = descriptors;
     }
 
@@ -64,39 +61,23 @@ class HelidonMetaInfServices {
      * Create new instance from the current filer.
      *
      * @param filer      filer to find the file, and to write it
-     * @param generator  generator used in generated comment if we are creating a new file
-     * @param trigger    trigger that caused this file to be created (can be same as generator)
      * @param moduleName module that is being built
      * @return a new instance of the service metadata manager
      */
-    static HelidonMetaInfServices create(CodegenFiler filer, TypeName generator, TypeName trigger, String moduleName) {
-        FilerTextResource services = filer.textResource(SERVICES_RESOURCE);
+    static HelidonMetaInfServices create(CodegenFiler filer, String moduleName) {
+        FilerResource serviceRegistryMetadata = filer.resource(SERVICE_REGISTRY_LOCATION);
+        byte[] bytes = serviceRegistryMetadata.bytes();
 
-        List<String> comments = new ArrayList<>();
-        Set<DescriptorMeta> descriptors = new TreeSet<>(Comparator.comparing(DescriptorMeta::descriptor));
+        Set<DescriptorMetadata> descriptors = new TreeSet<>(Comparator.comparing(DescriptorMetadata::descriptorType));
 
-        for (String line : services.lines()) {
-            String trimmedLine = line.trim();
-            if (trimmedLine.startsWith("#")) {
-                comments.add(line);
-            } else if (trimmedLine.isEmpty()) {
-                // ignore empty lines
-                continue;
-            } else {
-                descriptors.add(DescriptorMeta.parse(trimmedLine));
-            }
+        if (bytes.length != 0) {
+            Hson.Array moduleRegistry = Hson.parse(new ByteArrayInputStream(bytes))
+                    .asArray();
+            descriptors.addAll(Descriptors.descriptors("helidon-service-codegen for " + moduleName,
+                                                       moduleRegistry));
         }
 
-        if (comments.isEmpty()) {
-            // @Generated
-            comments.add("# Generated list of service descriptors in module " + moduleName);
-            comments.add("# " + toAnnotationText(generatedAnnotation(generator,
-                                                                     trigger,
-                                                                     TypeName.create("io.helidon.services.ServicesMeta"),
-                                                                     "1",
-                                                                     "")));
-        }
-        return new HelidonMetaInfServices(services, comments, descriptors);
+        return new HelidonMetaInfServices(serviceRegistryMetadata, moduleName, descriptors);
     }
 
     /**
@@ -105,7 +86,7 @@ class HelidonMetaInfServices {
      *
      * @param services service descriptor metadata to add
      */
-    void addAll(Collection<DescriptorMeta> services) {
+    void addAll(Collection<DescriptorMetadata> services) {
         services.forEach(this::add);
     }
 
@@ -115,9 +96,9 @@ class HelidonMetaInfServices {
      *
      * @param service service descriptor metadata to add
      */
-    void add(DescriptorMeta service) {
+    void add(DescriptorMetadata service) {
         // if it is the same descriptor class, remove it
-        descriptors.removeIf(it -> it.descriptor().equals(service.descriptor()));
+        descriptors.removeIf(it -> it.descriptorType().equals(service.descriptorType()));
 
         // always add the new descriptor (either it does not exist, or it was deleted)
         descriptors.add(service);
@@ -127,60 +108,23 @@ class HelidonMetaInfServices {
      * Write the file to output.
      */
     void write() {
-        List<String> lines = new ArrayList<>(comments);
+        var root = Hson.structBuilder()
+                .set("module", moduleName);
+        List<Hson.Struct> servicesHson = new ArrayList<>();
+
         descriptors.stream()
-                .map(DescriptorMeta::toLine)
-                .forEach(lines::add);
-        services.lines(lines);
+                .map(DescriptorMetadata::toHson)
+                .forEach(servicesHson::add);
+
+        root.setStructs("services", servicesHson);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (var pw = new PrintWriter(new OutputStreamWriter(baos, StandardCharsets.UTF_8))) {
+            Hson.Array.create(List.of(root.build()))
+                    .write(pw);
+        }
+
+        services.bytes(baos.toByteArray());
         services.write();
-    }
-
-    private static String toAnnotationText(Annotation annotation) {
-        List<String> valuePairs = new ArrayList<>();
-        Map<String, Object> annotationValues = annotation.values();
-        annotationValues.forEach((key, value) -> valuePairs.add(key + "=\"" + value + "\""));
-        return "@" + annotation.typeName().fqName() + "(" + String.join(", ", valuePairs) + ")";
-    }
-
-    /**
-     * Metadata of a single service descriptor.
-     * This information is stored within the Helidon specific {code META-INF} services file.
-     *
-     * @param registryType type of registry, such as {@code core}
-     * @param descriptor   descriptor type
-     * @param weight       weight of the service
-     * @param contracts    contracts the service implements/provides
-     */
-    record DescriptorMeta(String registryType, TypeName descriptor, double weight, Set<TypeName> contracts) {
-        private static DescriptorMeta parse(String line) {
-            String[] elements = line.split(":");
-            if (elements.length < 4) {
-                throw new CodegenException("Failed to parse line from existing META-INF/helidon/service.registry: "
-                                                   + line + ", expecting registry-type:serviceDescriptor:weight:contracts");
-            }
-            Set<TypeName> contracts = Stream.of(elements[3].split(","))
-                    .map(String::trim)
-                    .map(TypeName::create)
-                    .collect(Collectors.toSet());
-
-            try {
-                return new DescriptorMeta(elements[0],
-                                          TypeName.create(elements[1]),
-                                          Double.parseDouble(elements[2]),
-                                          contracts);
-            } catch (NumberFormatException e) {
-                throw new CodegenException("Unexpected line structure in service.registry. Third element should be weight "
-                                                   + "(double). Got: " + line + ", message: " + e.getMessage(), e);
-            }
-        }
-
-        private String toLine() {
-            return registryType + ":"
-                    + descriptor.fqName() + ":"
-                    + weight + ":"
-                    + contracts.stream()
-                    .map(TypeName::fqName)
-                    .collect(Collectors.joining(","));
-        }
     }
 }

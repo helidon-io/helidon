@@ -142,14 +142,14 @@ class WsClientImpl implements WsClient {
                                                     + responseHeaders);
             }
             ClientConnection connection = upgradeResponse.connection();
-            String secWsAccept = responseHeaders.get(HEADER_WS_ACCEPT).value();
+            String secWsAccept = responseHeaders.get(HEADER_WS_ACCEPT).get();
             if (!hash(connection.helidonSocket(), secWsKey).equals(secWsAccept)) {
                 throw new WsClientException("Failed to upgrade to WebSocket, expected valid secWsKey. Headers: "
                                                     + responseHeaders);
             }
             // we are upgraded, let's switch to web socket
             if (headers.contains(HEADER_WS_PROTOCOL)) {
-                session = new ClientWsConnection(connection, listener, headers.get(HEADER_WS_PROTOCOL).value());
+                session = new ClientWsConnection(connection, listener, headers.get(HEADER_WS_PROTOCOL).get());
             } else {
                 session = new ClientWsConnection(connection, listener);
             }

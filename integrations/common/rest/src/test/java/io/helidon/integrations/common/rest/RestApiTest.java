@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -158,7 +158,7 @@ class RestApiTest {
             ServerRequestHeaders headers = req.headers();
             if (headers.size() > 0) {
                 JsonObjectBuilder headersBuilder = JSON.createObjectBuilder();
-                headers.forEach(header -> headersBuilder.add(header.name(), header.value()));
+                headers.forEach(header -> headersBuilder.add(header.name(), header.get()));
                 objectBuilder.add("headers", headersBuilder);
             }
 

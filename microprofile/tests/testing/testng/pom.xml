@@ -21,8 +21,7 @@
     <parent>
         <groupId>io.helidon.microprofile.tests.testing</groupId>
         <artifactId>helidon-microprofile-tests-testing-project</artifactId>
-        <version>4.1.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-microprofile-tests-testing-testng</artifactId>
