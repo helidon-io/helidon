@@ -63,7 +63,8 @@ class Http1ConnectionCache extends ClientConnectionCache {
     private static final Duration QUEUE_TIMEOUT = Duration.ofMillis(10);
     private static final Http1ConnectionCacheConfig EMPTY_CONFIG = Http1ConnectionCacheConfig.create();
     private static final Http1ConnectionCache SHARED = new Http1ConnectionCache(true,
-                                                                                Http1ClientImpl.globalConfig().connectionCacheConfig());
+                                                                                Http1ClientImpl.globalConfig()
+                                                                                        .connectionCacheConfig());
     private final ConnectionCreationStrategy connectionCreationStrategy;
     private final Duration keepAliveWaiting;
     private final Map<ConnectionKey, LinkedBlockingDeque<TcpClientConnection>> cache = new ConcurrentHashMap<>();
@@ -186,7 +187,8 @@ class Http1ConnectionCache extends ClientConnectionCache {
                     throw new RuntimeException(e);
                 }
                 if (connection == null) {
-                    throw new IllegalStateException("Could not make a new HTTP connection. Maximum number of connections reached.");
+                    throw new IllegalStateException("Could not make a new HTTP connection. "
+                                                            + "Maximum number of connections reached.");
                 } else {
                     if (LOGGER.isLoggable(DEBUG)) {
                         LOGGER.log(DEBUG, String.format("[%s] client connection obtained %s",
@@ -236,7 +238,8 @@ class Http1ConnectionCache extends ClientConnectionCache {
         if (conn.isConnected()) {
             try {
                 //Connection needs to be marked as idle here.
-                //This prevents race condition where another thread takes it out of the connection before setting it to idle state.
+                //This prevents race condition where another thread takes it out of the connection before setting it to
+                //idle state.
                 conn.helidonSocket().idle(); // mark it as idle to stay blocked at read for closed conn detection
                 if (connectionQueue.offer(conn, QUEUE_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)) {
                     if (LOGGER.isLoggable(DEBUG)) {
@@ -427,10 +430,10 @@ class Http1ConnectionCache extends ClientConnectionCache {
             try {
                 hostsConnectionLimitLock.lock();
                 hostLimit = connectionLimitsPerHost.computeIfAbsent(hostKey,
-                                                                    key -> Optional.ofNullable(proxyConfigs.get(proxyIdent))
-                                                                            .flatMap(Http1ProxyLimitConfigBlueprint::connectionPerHostLimit)
-                                                                            .orElse(connectionPerHostLimit)
-                                                                            .copy());
+                                                        key -> Optional.ofNullable(proxyConfigs.get(proxyIdent))
+                                                                .flatMap(Http1ProxyLimitConfigBlueprint::connectionPerHostLimit)
+                                                                .orElse(connectionPerHostLimit)
+                                                                .copy());
             } finally {
                 hostsConnectionLimitLock.unlock();
             }
