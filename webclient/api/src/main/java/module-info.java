@@ -28,7 +28,6 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.webclient.api {
 
     requires io.helidon.builder.api; // @Builder - interfaces are a runtime dependency
-    requires io.helidon.common.concurrency.limits;
 
     requires static io.helidon.common.features.api; // @Feature
     requires static io.helidon.config.metadata; // @ConfiguredOption etc
@@ -52,6 +51,5 @@ module io.helidon.webclient.api {
     uses io.helidon.webclient.spi.WebClientServiceProvider;
     uses io.helidon.webclient.spi.ProtocolConfigProvider;
     uses io.helidon.webclient.spi.HttpClientSpiProvider;
-    uses io.helidon.common.concurrency.limits.spi.LimitProvider;
 
 }
