@@ -32,7 +32,7 @@ include::{rootdir}/includes/mp.adoc[]
 :wls-jaxrs-link: {wls-jaxrs-url}[Developing and Securing RESTful Web Services for Oracle WebLogic Server]
 
 :wls-jaxrs-client-url: {wls-root-url}/restf/develop-restful-client.html#GUID-F50F4FB3-8A25-439F-8554-484F1C58315C
-:wls-jaxrs-client-link: {wls-jaxrs-url}[Developing RESTful Web Service Clients for Oracle WebLogic Server]
+:wls-jaxrs-client-link: {wls-jaxrs-client-url}[Developing RESTful Web Service Clients for Oracle WebLogic Server]
 
 :wls-jms-url: {wls-root-url}/wlshe/integrating-oracle-weblogic-server-jms-helidon.html#GUID-8E1A4C48-D7C9-4599-B0C1-89E1FEA823B2
 :wls-jms-link: {wls-jms-url}[Integrating WebLogic JMS with Helidon]
@@ -52,6 +52,9 @@ include::{rootdir}/includes/mp.adoc[]
 :jersey-url: https://eclipse-ee4j.github.io/jersey.github.io/documentation/latest
 :jersey-link: {jersey-url}[Eclipse Jersey]
 
+:wls-jakarta-clients-download-url: {wls-root-url}/wlshe/oracle-weblogic-server-helidon-integration.html#GUID-04000E52-2BD8-4C32-B183-107751EA9CE4
+:wls-jakarta-clients-download-link: {wls-jakarta-clients-download-url}[Downloading the WebLogic Server Java Clients with Jakarta Package Names]
+
 == Contents
 
 - <<Overview, Overview>>
@@ -66,13 +69,14 @@ The Oracle WebLogic Server (WebLogic Server) and Helidon integration enables int
 
 The following integrations are explained in this document:
 
-* The REST integration allows WebLogic Server applications and Helidon microservices to communicate through RESTful Web Service invocations.
+* The REST services integration allows WebLogic Server applications and Helidon microservices to communicate through RESTful Web Service invocations.
 * The JMS integration allows Helidon microservices to publish and consume messages from WebLogic JMS Server.
 * The WebLogic Web Services integration allows Helidon microservices to interact with WebLogic Server applications through SOAP (Simple Object Access Protocol) Web Service calls from Helidon to WebLogic Server.
 * The WebLogic Server and Helidon integration allows communication between a WebLogic cluster-hosted application and a Helidon microservice application by implementing Single Sign-on (SSO) authentication using Oracle Identity Cloud Service (IDCS).
 
-Integration between Helidon and WebLogic Server is possible over numerous protocols, most notably RESTful Web Services,
-SOAP Web Services, and JMS. Both Helidon and WebLogic Server support Single Sign-on (SSO) authentication using Oracle Identity Cloud Service (IDCS).
+Integration between Helidon and WebLogic Server is possible over numerous protocols, most notably RESTful Web Services, SOAP Web Services, and JMS. Both Helidon and WebLogic Server support Single Sign-on (SSO) authentication using Oracle Identity Cloud Service (IDCS).
+
+The WebLogic Server 14.1.1.0 Java clients with Jakarta packages 
 
 == REST Services Integration [[REST-Services]]
 
@@ -190,6 +194,8 @@ Previous versions of the thin client can be found in the server/lib directory (`
 WARNING: Helidon supports {jakarta-version}. Legacy versions of `javax` based thin T3 client will not work correctly if it is on the Helidon classpath. The legacy thin T3 clients must be used with specialized xref:../../mp/reactivemessaging/weblogic.adoc[WebLogic JMS Connector] to work.
 
 An updated version of the thin T3 client compatible with modern Jakarta runtimes is available at {osdc-link} as `wlthint3client.jakarta`. After you download the client, install the thin T3 client artifact in the Maven repository accessible from the application build.
+
+For instructions to download the WebLogic Server Jakarta thin clients, see {wls-jakarta-clients-download-link}.
 
 [source, shell]
 .Example of Installing the Thin T3 Client Artifact to the Local Maven Repository
@@ -342,6 +348,8 @@ Helidon MP and WebLogic Server Web Services integration enables the Helidon micr
 An updated client compatible with modern Jakarta runtimes is available at {osdc-link} as `com.oracle.webservices.wls.jaxws-wlswss-client.jakarta.jar`.
 After you download the client, install the client artifact in the Maven repository accessible from the application build.
 
+For instructions to download the WebLogic Server Jakarta thin clients, see {wls-jakarta-clients-download-link}.
+
 [source, shell]
 .Example of Installing the Client Artifact to the Local Maven Repository
 ----
@@ -431,8 +439,7 @@ Use `build-helper-maven-plugin` to add `/target/generated-sources` with generate
 </plugin>
 ----
 
-Because the client classes are generating to the folder recognized by Maven as additional sources, client classes can
-be used directly from Oracle's business code.
+Because the client classes are generating to the folder recognized by Maven as additional sources, client classes can be used directly from your business code.
 
 === Example [[Web-Services-Integration-Example]]
 
