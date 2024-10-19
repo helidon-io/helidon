@@ -98,7 +98,7 @@ You can also define any request parameters the endpoint expects, although this
 endpoint uses none.
 
 This excerpt shows only a few annotations for illustration. The
-link:{helidon-github-examples-url}/microprofile/openapi[Helidon MP OpenAPI example] illustrates more,
+link:{helidon-github-examples-url}/microprofile/openapi/basic[Helidon MP OpenAPI basic example] illustrates more,
 and the link:{microprofile-open-api-spec-url}[MicroProfile OpenAPI spec] describes them all.
 
 ===== A static OpenAPI file
@@ -175,37 +175,69 @@ endif::[]
 
 A Jandex index stores information about the classes and methods in your app and
 what annotations they have. It allows CDI to process annotations faster during your
-application's start-up.
+application's start-up, and OpenAPI uses the Jandex index to discover details about the types in your resource method signatures.
 
-Add the link:https://github.com/smallrye/jandex/tree/main/maven-plugin[Jandex maven plug-in] to the `<build><plugins>`
-section of your `pom.xml`:
+==== Indexing your project
+Add an invocation of the link:https://github.com/smallrye/jandex/tree/main/maven-plugin[Jandex maven plug-in] to the `<build><plugins>`
+section of your `pom.xml` if it is not already there:
 
 [source,xml,subs="attributes+"]
 ----
 <plugin>
     <groupId>io.smallrye</groupId>
     <artifactId>jandex-maven-plugin</artifactId>
-    <version>{jandex-plugin-version}</version>
-    <executions>
+   <executions>
       <execution>
         <id>make-index</id>
-        <goals>
-          <goal>jandex</goal>
-        </goals>
       </execution>
     </executions>
 </plugin>
 ----
-When you build your app `maven` should include the index `META-INF/jandex.idx` in
-the JAR.
+When you build your app the plug-in generates the Jandex index `META-INF/jandex.idx` and `maven` adds it to
+the application JAR.
+
+==== Indexing dependencies
+Invoking the Jandex plug-in as described above indexes only the types in your project. Some dependencies might include their own Jandex index and, in that case, OpenAPI finds information about the types in the dependency as well.
+
+But if the signatures of your resource methods refer to types from dependencies that do not have their own indexes then you should customize how you use the plug-in.
+
+The example below tailors the Jandex plug-in configuration to scan not only the current project but another dependency and to index a specific type from it.
+[source,xml]
+----
+<execution>
+    <id>make-index</id>
+    <configuration> <!--1-->
+        <fileSets>
+            <fileSet>
+                <dependency> <!--2-->
+                    <groupId>jakarta.ws.rs</groupId>
+                    <artifactId>jakarta.ws.rs-api</artifactId>
+                </dependency>
+                <includes> <!--3-->
+                    <include>**/MediaType.class</include>
+                </includes>
+            </fileSet>
+        </fileSets>
+    </configuration>
+</execution>
+
+----
+<1> Augments the default configuration.
+<2> Adds a `fileSet` in the form of a `dependency` that is already declared in your project.
+<3> Selects the type or types from the `fileSet` you want to include in the generated index.
+
+You can add more than one dependency and scan for more than a single type. See the link:{helidon-github-examples-url}/microprofile/openapi/expanded-jandex[Helidon MP OpenAPI expanded Jandex example] for more information and a complete project that indexes a dependency.
 
 [NOTE]
+.Importance of Jandex Indexing
 ====
-If you _do not_ modify your build to create
-the index then the Helidon MP OpenAPI runtime automatically creates one in memory during
+If your `pom.xml` _does not_ create
+the Jandex index then the Helidon MP OpenAPI runtime automatically creates one in memory during
 app start-up. This slows down your app start-up and, depending on how CDI is
 configured, might inadvertently miss information.
 
 We _strongly recommend_ using the Jandex plug-in to build the index into your app.
+
+Further, if your resource method signatures refer to types from outside your project we _strongly recommend_ that you augment the Jandex plug-in invocation to include the dependencies and types your API uses. If you do not do so the resulting generated OpenAPI document is correct, but types that cannot be found are declared as `object` in the resulting OpenAPI model. This means your OpenAPI document contains less information about the types in your API than it otherwise could.
 ====
 // end::additional-building-jandex[]
