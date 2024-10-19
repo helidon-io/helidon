@@ -152,6 +152,21 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
    <packageUrl regex="true">^pkg:maven/org\.graalvm\.sdk/graal-sdk@.*$</packageUrl>
    <vulnerabilityName>CVE-2024-21138</vulnerabilityName>
 </suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: graal-sdk-22.3.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\.sdk/graal-sdk@.*$</packageUrl>
+   <vulnerabilityName>CVE-2024-21235</vulnerabilityName>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: graal-sdk-22.3.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\.sdk/graal-sdk@.*$</packageUrl>
+   <vulnerabilityName>CVE-2024-21211</vulnerabilityName>
+</suppress>
+
 
 <!-- 
     This CVE is being disputed by the Jackson project and the community seems in agreement that this
