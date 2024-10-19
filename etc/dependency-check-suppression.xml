@@ -100,6 +100,13 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
    <packageUrl regex="true">^pkg:maven/org\.graalvm\.compiler/compiler@.*$</packageUrl>
    <vulnerabilityName>CVE-2024-21138</vulnerabilityName>
 </suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: compiler-23.1.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\.compiler/compiler@.*$</packageUrl>
+   <vulnerabilityName>CVE-2024-21235</vulnerabilityName>
+</suppress>
 
 <!--
     This is a FP. We have upgrade jgit to a fixed version, but it is still getting flagged.
