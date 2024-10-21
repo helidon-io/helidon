@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -183,20 +183,20 @@ public final class JakartaJms {
      * @return shimmed jakarta namespace instance
      */
     public static Message create(javax.jms.Message delegate) {
-        if (delegate instanceof javax.jms.TextMessage) {
-            return create((javax.jms.TextMessage) delegate);
+        if (delegate instanceof javax.jms.TextMessage textMessage) {
+            return create(textMessage);
         }
-        if (delegate instanceof javax.jms.MapMessage) {
-            return create((javax.jms.MapMessage) delegate);
+        if (delegate instanceof javax.jms.MapMessage mapMessage) {
+            return create(mapMessage);
         }
-        if (delegate instanceof javax.jms.BytesMessage) {
-            return create((javax.jms.BytesMessage) delegate);
+        if (delegate instanceof javax.jms.BytesMessage bytesMessage) {
+            return create(bytesMessage);
         }
-        if (delegate instanceof javax.jms.StreamMessage) {
-            return create((javax.jms.StreamMessage) delegate);
+        if (delegate instanceof javax.jms.StreamMessage streamMessage) {
+            return create(streamMessage);
         }
-        if (delegate instanceof javax.jms.ObjectMessage) {
-            return create((javax.jms.ObjectMessage) delegate);
+        if (delegate instanceof javax.jms.ObjectMessage objectMessage) {
+            return create(objectMessage);
         }
         if (delegate == null) {
             return null;
