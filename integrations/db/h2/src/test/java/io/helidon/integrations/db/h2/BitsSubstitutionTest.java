@@ -20,7 +20,9 @@ import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Unit tests for the BitsSubstitution class.
@@ -35,10 +37,10 @@ class BitsSubstitutionTest {
         char[] data1 = {'a', 'b', 'c'};
         char[] data2 = {'a', 'b', 'c'};
         char[] data3 = {'a', 'b', 'd', 'e'};
-        assertEquals(0, BitsSubstitution.compareNotNull(data1, data2));
-        assertEquals(-1, BitsSubstitution.compareNotNull(data1, data3));
-        assertEquals(1, BitsSubstitution.compareNotNull(data3, data1));
-        assertEquals(-1, BitsSubstitution.compareNotNull(data2, data3));
+        assertThat(BitsSubstitution.compareNotNull(data1, data2), is(0));
+        assertThat(BitsSubstitution.compareNotNull(data1, data3), is(-1));
+        assertThat(BitsSubstitution.compareNotNull(data3, data1), is(1));
+        assertThat(BitsSubstitution.compareNotNull(data2, data3), is(-1));
     }
 
     /**
@@ -49,9 +51,9 @@ class BitsSubstitutionTest {
         byte[] data1 = {1, 2, 3};
         byte[] data2 = {1, 2, 3};
         byte[] data3 = {1, 2, 4};
-        assertEquals(0, BitsSubstitution.compareNotNullSigned(data1, data2));
-        assertEquals(-1, BitsSubstitution.compareNotNullSigned(data1, data3));
-        assertEquals(1, BitsSubstitution.compareNotNullSigned(data3, data1));
+        assertThat(BitsSubstitution.compareNotNullSigned(data1, data2), is(0));
+        assertThat(BitsSubstitution.compareNotNullSigned(data1, data3), is(-1));
+        assertThat(BitsSubstitution.compareNotNullSigned(data3, data1), is(1));
     }
 
     /**
@@ -62,9 +64,9 @@ class BitsSubstitutionTest {
         byte[] data1 = {1, 2, 3};
         byte[] data2 = {1, 2, 3};
         byte[] data3 = {1, 2, 4};
-        assertEquals(0, BitsSubstitution.compareNotNullUnsigned(data1, data2));
-        assertEquals(-1, BitsSubstitution.compareNotNullUnsigned(data1, data3));
-        assertEquals(1, BitsSubstitution.compareNotNullUnsigned(data3, data1));
+        assertThat(BitsSubstitution.compareNotNullUnsigned(data1, data2), is(0));
+        assertThat(BitsSubstitution.compareNotNullUnsigned(data1, data3), is(-1));
+        assertThat(BitsSubstitution.compareNotNullUnsigned(data3, data1), is(1));
     }
 
     /**
@@ -73,7 +75,7 @@ class BitsSubstitutionTest {
     @Test
     void testReadInt() {
         byte[] data = {0, 0, 0, 1};
-        assertEquals(1, BitsSubstitution.readInt(data, 0));
+        assertThat(BitsSubstitution.readInt(data, 0), is(1));
     }
 
     /**
@@ -82,7 +84,7 @@ class BitsSubstitutionTest {
     @Test
     void testReadIntLE() {
         byte[] data = {1, 0, 0, 0};
-        assertEquals(1, BitsSubstitution.readIntLE(data, 0));
+        assertThat(BitsSubstitution.readIntLE(data, 0), is(1));
     }
 
     /**
@@ -93,7 +95,7 @@ class BitsSubstitutionTest {
         UUID uuid = UUID.randomUUID();
         byte[] bytes = BitsSubstitution.uuidToBytes(uuid);
         assertNotNull(bytes);
-        assertEquals(16, bytes.length);
+        assertThat(bytes.length, is(16));
     }
 
     /**
@@ -103,7 +105,7 @@ class BitsSubstitutionTest {
     void testWriteInt() {
         byte[] data = new byte[4];
         BitsSubstitution.writeInt(data, 0, 1);
-        assertArrayEquals(new byte[]{0, 0, 0, 1}, data);
+        assertThat(data, is(new byte[]{0, 0, 0, 1}));
     }
 
     /**
@@ -113,7 +115,7 @@ class BitsSubstitutionTest {
     void testWriteLong() {
         byte[] data = new byte[8];
         BitsSubstitution.writeLong(data, 0, 1L);
-        assertArrayEquals(new byte[]{0, 0, 0, 0, 0, 0, 0, 1}, data);
+        assertThat(data, is(new byte[]{0, 0, 0, 0, 0, 0, 0, 1}));
     }
 
     /**
@@ -123,6 +125,6 @@ class BitsSubstitutionTest {
     void testWriteDouble() {
         byte[] data = new byte[8];
         BitsSubstitution.writeDouble(data, 0, 1.0);
-        assertArrayEquals(new byte[]{63, -16, 0, 0, 0, 0, 0, 0}, data);
+        assertThat(data, is(new byte[]{63, -16, 0, 0, 0, 0, 0, 0}));
     }
 }
