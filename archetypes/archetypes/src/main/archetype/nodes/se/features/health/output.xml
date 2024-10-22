@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+    <methods>
+        <method name="health">
+            <output>
+                <model>
+                    <value key="health" if="${health}">true</value>
+                </model>
+            </output>
+        </method>
+    </methods>
+    <call method="health"/>
+    <output if="${health}">
+        <model if="${health.builtin}">
+            <value key="health.builtin">${health.builtin}</value>
+            <list key="dependencies" if="${flavor} == 'se'">
+                <map order="800">
+                    <value key="groupId">io.helidon.webserver.observe</value>
+                    <value key="artifactId">helidon-webserver-observe-health</value>
+                </map>
+                <map order="800">
+                    <value key="groupId">io.helidon.health</value>
+                    <value key="artifactId">helidon-health-checks</value>
+                </map>
+            </list>
+            <list key="MainTest-static-imports" if="${flavor} == 'se'">
+                <value>org.hamcrest.CoreMatchers.containsString</value>
+            </list>
+            <list key="Abstract-test" if="${flavor} == 'se'">
+                <value><![CDATA[
+    @Test
+    void testHealth() {
+        try (Http1ClientResponse response = client.get("/observe/health").request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), containsString("status\":\"UP"));
+        }
+    }
+]]>
+                </value>
+            </list>
+            <list key="readme-sections" if="${flavor} == 'se'">
+                <value><![CDATA[
+## Try health
+
+This example shows the basics of using Helidon SE Health. It uses the
+set of built-in health checks that Helidon provides plus defines a
+custom health check.
+
+Note the port number reported by the application.
+
+Probe the health endpoints:
+
+```bash
+curl -X GET http://localhost:8080/observe/health
+curl -X GET http://localhost:8080/observe/health/ready
+```
+
+]]>
+                </value>
+            </list>
+            <list key="module-requires" if="${flavor} == 'se'">
+                <value>io.helidon.webserver.observe.health</value>
+                <value>io.helidon.health.checks</value>
+            </list>
+        </model>
+    </output>
+</archetype-script>

@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<!--suppress GrazieInspection -->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+    <exec src="/features/includes/multi-module-output.xml"/>
+    <output>
+        <transformation id="mustache">
+            <replace regex="\.mustache$" replacement=""/>
+        </transformation>
+        <transformation id="packaged">
+            <replace regex="__pkg__" replacement="${package/\./\/}"/>
+        </transformation>
+        <transformation id="json-mustache">
+            <replace regex="\.json.mustache$" replacement=""/>
+        </transformation>
+        <transformation id="jsonp-mustache">
+            <replace regex="\.jsonp.mustache$" replacement=""/>
+        </transformation>
+        <transformation id="multipart-mustache">
+            <replace regex="\.multipart.mustache$" replacement=""/>
+        </transformation>
+        <transformation id="native-image">
+            <replace regex="groupid" replacement="${groupId/\./\/}"/>
+            <replace regex="artifactid" replacement="${artifactId/\./\/}"/>
+        </transformation>
+        <templates engine="mustache" transformations="mustache,packaged">
+            <directory>files</directory>
+            <includes>
+                <include>src/*/java/**/*.java.mustache</include>
+            </includes>
+        </templates>
+        <templates engine="mustache" transformations="mustache">
+            <directory>files</directory>
+            <includes>
+                <include>src/*/resources/**/*.mustache</include>
+            </includes>
+        </templates>
+        <files>
+            <directory>files</directory>
+            <includes>
+                <include>src/*/resources/**</include>
+            </includes>
+            <excludes>
+                <exclude>**/*.mustache</exclude>
+            </excludes>
+        </files>
+        <templates engine="mustache" transformations="mustache,packaged">
+            <directory>files</directory>
+            <includes>
+                <include>.helidon.mustache</include>
+                <include>README.md.mustache</include>
+                <include>.gitignore.mustache</include>
+                <include>.idea/runConfigurations/configuration.xml.mustache</include>
+            </includes>
+        </templates>
+        <model>
+            <value key="parent-artifactId">helidon-mp</value>
+            <value key="dot-helidon-schema-version">1.1.0</value>
+            <list key="dependencies">
+                <map>
+                    <value key="groupId">io.helidon.logging</value>
+                    <value key="artifactId">helidon-logging-jul</value>
+                    <value key="scope">runtime</value>
+                </map>
+                <map>
+                    <value key="groupId">io.smallrye</value>
+                    <value key="artifactId">jandex</value>
+                    <value key="scope">runtime</value>
+                </map>
+                <map order="0">
+                    <value key="groupId">org.junit.jupiter</value>
+                    <value key="artifactId">junit-jupiter-api</value>
+                    <value key="scope">test</value>
+                </map>
+                <map order="0">
+                    <value key="groupId">io.helidon.microprofile.testing</value>
+                    <value key="artifactId">helidon-microprofile-testing-junit5</value>
+                    <value key="scope">test</value>
+                </map>
+                <map order="0">
+                    <value key="groupId">org.hamcrest</value>
+                    <value key="artifactId">hamcrest-all</value>
+                    <value key="scope">test</value>
+                </map>
+            </list>
+            <list key="maven-plugins">
+                <value><![CDATA[            <plugin>
+                <groupId>io.smallrye</groupId>
+                <artifactId>jandex-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>make-index</id>
+                    </execution>
+                </executions>
+            </plugin>]]>
+                </value>
+            </list>
+            <list key="MainTest-java-imports">
+                <value>jakarta.inject.Inject</value>
+                <value>jakarta.ws.rs.client.WebTarget</value>
+                <value>jakarta.ws.rs.core.Response</value>
+            </list>
+            <list key="MainTest-helidon-imports">
+                <value>io.helidon.microprofile.testing.junit5.HelidonTest</value>
+            </list>
+            <list key="MainTest-other-imports">
+                <value>org.junit.jupiter.api.Test</value>
+            </list>
+            <list key="MainTest-static-imports">
+                <value>static org.hamcrest.MatcherAssert.assertThat</value>
+                <value>static org.hamcrest.Matchers.is</value>
+            </list>
+        </model>
+    </output>
+</archetype-script>

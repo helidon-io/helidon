@@ -1,0 +1,438 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+    <methods>
+        <method name="h2">
+            <output if="${db.server} == 'h2'">
+                <model>
+                    <value key="readme-description">Helidon SE application that uses the dbclient API with an in-memory H2 database.</value>
+                    <value key="integration-artifactId">h2</value>
+                    <value key="db">H2</value>
+                    <list key="dependencies">
+                        <map>
+                            <value key="groupId">io.helidon.integrations.db</value>
+                            <value key="artifactId">h2</value>
+                        </map>
+                    </list>
+                    <value key="db-health-check-stmt" if="${health}">SELECT 0</value>
+                    <list key="db-connection">
+                        <value><![CDATA[    url: "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE"
+    username: sa
+    password:]]>
+                        </value>
+                    </list>
+                    <value key="start-db"><![CDATA[
+H2:
+```
+docker run --rm --name h2 -p 9092:9082 -p 8082:8082 nemerosa/h2
+```
+For details, see https://www.h2database.com/html/cheatSheet.html
+]]>
+                    </value>
+                </model>
+            </output>
+        </method>
+        <method name="mysql">
+            <output if="${db.server} == 'mysql'">
+                <model>
+                    <value key="helidon-test">false</value>
+                    <value key="readme-description">Helidon SE application that uses the dbclient API with MySQL database.</value>
+                    <value key="integration-artifactId">helidon-integrations-db-mysql</value>
+                    <value key="db">MySQL</value>
+                    <list key="dependencies">
+                        <map>
+                            <value key="groupId">io.helidon.integrations.db</value>
+                            <value key="artifactId">helidon-integrations-db-mysql</value>
+                        </map>
+                        <map>
+                            <value key="groupId">com.mysql</value>
+                            <value key="artifactId">mysql-connector-j</value>
+                        </map>
+                    </list>
+                    <value key="db-health-check-stmt" if="${health}">SELECT 0</value>
+                    <list key="db-connection">
+                        <value><![CDATA[    url: jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false
+    username: user
+    password: changeit]]>
+                        </value>
+                    </list>
+                    <value key="start-db"><![CDATA[
+MySQL:
+```
+docker run --rm --name mysql -p 3306:3306 \
+    -e MYSQL_ROOT_PASSWORD=root \
+    -e MYSQL_DATABASE=pokemon \
+    -e MYSQL_USER=user \
+    -e MYSQL_PASSWORD=changeit \
+    mysql:5.7
+```
+]]>
+                    </value>
+                </model>
+            </output>
+        </method>
+        <method name="oracle">
+            <output if="${db.server} == 'oracledb'">
+                <model>
+                    <value key="helidon-test">false</value>
+                    <value key="readme-description">Helidon se application that uses the dbclient API with OracleDB database.</value>
+                    <value key="integration-artifactId">ojdbc</value>
+                    <value key="db">OracleDB</value>
+                    <list key="dependencies">
+                        <map>
+                            <value key="groupId">io.helidon.integrations.db</value>
+                            <value key="artifactId">ojdbc</value>
+                        </map>
+                    </list>
+                    <value key="db-health-check-stmt" if="${health}">SELECT 1 FROM DUAL</value>
+                    <list key="db-connection">
+                        <value><![CDATA[    url: jdbc:oracle:thin:@localhost:1521/XE
+    username: system
+    password: oracle]]>
+                        </value>
+                    </list>
+                    <value key="start-db"><![CDATA[
+Oracle:
+```
+docker run --rm --name xe -p 1521:1521 -p 8888:8080 wnameless/oracle-xe-11g-r2
+```
+For details on an Oracle Docker image, see https://github.com/oracle/docker-images/tree/master/OracleDatabase/SingleInstance
+]]>
+                    </value>
+                </model>
+            </output>
+        </method>
+        <method name="mongo">
+            <output if="${db.server} == 'mongodb'">
+                <model>
+                    <list key="dependencies">
+                        <map>
+                            <value key="groupId">io.helidon.dbclient</value>
+                            <value key="artifactId">helidon-dbclient-mongodb</value>
+                        </map>
+                        <map>
+                            <value key="groupId">io.helidon.common</value>
+                            <value key="artifactId">helidon-common</value>
+                        </map>
+                        <map>
+                            <value key="groupId">io.helidon.common</value>
+                            <value key="artifactId">helidon-common-mapper</value>
+                        </map>
+                        <map>
+                            <value key="groupId">io.helidon.dbclient</value>
+                            <value key="artifactId">helidon-dbclient-jdbc</value>
+                            <value key="scope">test</value>
+                        </map>
+                        <map>
+                            <value key="groupId">io.helidon.dbclient</value>
+                            <value key="artifactId">helidon-dbclient-hikari</value>
+                            <value key="scope">test</value>
+                        </map>
+                    </list>
+                    <list key="Main-helidon-imports">
+                        <value>io.helidon.dbclient.DbClient</value>
+                    </list>
+                    <list key="application-yaml-entries">
+                        <value file="files/application-mongo.yaml.mustache" template="mustache"/>
+                    </list>
+                    <list key="application-test-yaml-entries">
+                        <value file="files/application-test-mongo.yaml.mustache" template="mustache"/>
+                    </list>
+                    <value key="start-db"><![CDATA[
+Mongodb:
+```
+docker run --rm --name mongo -p 27017:27017 mongo
+```
+]]>
+                    </value>
+                </model>
+            </output>
+        </method>
+        <method name="jdbc">
+            <output if="${db.server} != 'mongodb'">
+                <model>
+                    <list key="dependencies">
+                        <map>
+                            <value key="groupId">io.helidon.dbclient</value>
+                            <value key="artifactId">helidon-dbclient-jdbc</value>
+                        </map>
+                        <map>
+                            <value key="groupId">io.helidon.dbclient</value>
+                            <value key="artifactId">helidon-dbclient-hikari</value>
+                        </map>
+                        <map>
+                            <value key="groupId">io.helidon.dbclient</value>
+                            <value key="artifactId">helidon-dbclient-metrics-hikari</value>
+                        </map>
+                    </list>
+                    <list key="application-yaml-entries">
+                        <value file="files/application-jdbc.yaml.mustache" template="mustache"/>
+                    </list>
+                    <list key="application-test-yaml-entries">
+                        <value file="files/application-test-jdbc.yaml.mustache" template="mustache"/>
+                    </list>
+                </model>
+            </output>
+        </method>
+        <method name="health">
+            <output if="${health}">
+                <model>
+                    <list key="dependencies">
+                        <map>
+                            <value key="groupId">io.helidon.dbclient</value>
+                            <value key="artifactId">helidon-dbclient-health</value>
+                        </map>
+                    </list>
+                    <value key="db-health-check">true</value>
+                    <list key="Main-helidon-imports">
+                        <value>io.helidon.webserver.observe.ObserveFeature</value>
+                        <value>io.helidon.webserver.observe.health.HealthObserver</value>
+                        <value>io.helidon.dbclient.health.DbClientHealthCheck</value>
+                    </list>
+                    <list key="Main-main">
+                        <value><![CDATA[ObserveFeature observe = ObserveFeature.builder()
+        .addObserver(HealthObserver.builder()
+                             .addCheck(DbClientHealthCheck.create(dbClient, config.get("db.health-check")))
+                             .build())
+        .build();]]>
+                        </value>
+                    </list>
+                    <list key="Main-server-builder">
+                        <value>.addFeature(observe)</value>
+                    </list>
+                </model>
+            </output>
+        </method>
+    </methods>
+    <call method="h2" />
+    <call method="mysql" />
+    <call method="oracle" />
+    <call method="mongo" />
+    <call method="jdbc" />
+    <call method="health" />
+    <output>
+        <templates engine="mustache" transformations="mustache,packaged">
+            <directory>files</directory>
+            <includes>
+                <include>src/main/**</include>
+            </includes>
+        </templates>
+        <model>
+            <value key="database">true</value>
+            <value key="server">${db.server}</value>
+            <value key="readme-native-docker" template="mustache">{{start-db-docker}}</value>
+            <list key="dependencies">
+                <map>
+                    <value key="groupId">io.helidon.dbclient</value>
+                    <value key="artifactId">helidon-dbclient-jsonp</value>
+                </map>
+                <map>
+                    <value key="groupId">io.helidon.dbclient</value>
+                    <value key="artifactId">helidon-dbclient</value>
+                </map>
+                <map if="${tracing}">
+                    <value key="groupId">io.helidon.dbclient</value>
+                    <value key="artifactId">helidon-dbclient-tracing</value>
+                </map>
+                <map if="${metrics}">
+                    <value key="groupId">io.helidon.dbclient</value>
+                    <value key="artifactId">helidon-dbclient-metrics</value>
+                </map>
+                <map if="${media.json-lib} != 'jsonp'">
+                    <value key="groupId">io.helidon.http.media</value>
+                    <value key="artifactId">helidon-http-media-jsonp</value>
+                </map>
+                <map if="${media.json-lib} != 'jsonb'">
+                    <value key="groupId">io.helidon.http.media</value>
+                    <value key="artifactId">helidon-http-media-jsonb</value>
+                </map>
+                <map if="${media.json-lib} != 'jsonp' &amp;&amp; !(${media} contains 'multipart')">
+                    <value key="groupId">jakarta.json</value>
+                    <value key="artifactId">jakarta.json-api</value>
+                </map>
+                <map>
+                    <value key="groupId">org.slf4j</value>
+                    <value key="artifactId">slf4j-jdk14</value>
+                </map>
+                <map if="${db.server} != 'h2'">
+                    <value key="groupId">com.h2database</value>
+                    <value key="artifactId">h2</value>
+                    <value key="scope">test</value>
+                </map>
+            </list>
+            <list key="Main-helidon-imports" >
+                <value>io.helidon.common.context.Contexts</value>
+                <value>io.helidon.dbclient.DbClient</value>
+            </list>
+            <list key="Main-main">
+                <value order="200"><![CDATA[
+        DbClient dbClient = DbClient.create(config.get("db"));
+        Contexts.globalContext().register(dbClient);
+]]>
+                </value>
+            </list>
+            <list key="Main-routing-builder">
+                <value>.register("/db", new PokemonService())</value>
+            </list>
+            <list key="MainTest-java-imports">
+                <value>java.util.List</value>
+                <value>java.util.Map</value>
+            </list>
+            <list key="MainTest-other-imports">
+                <value>jakarta.json.Json</value>
+                <value>jakarta.json.JsonArray</value>
+                <value if="${media} contains 'json' &amp;&amp; ${media.json-lib} != 'jsonp'">jakarta.json.JsonObject</value>
+                <value>jakarta.json.JsonBuilderFactory</value>
+                <value>jakarta.json.JsonReader</value>
+            </list>
+            <list key="MainTest-static-fields">
+                <value>JsonBuilderFactory JSON_FACTORY = Json.createBuilderFactory(Map.of())</value>
+            </list>
+            <list key="Abstract-tests">
+                <value><![CDATA[
+    @Test
+    void testListAllPokemons() {
+        ClientResponseTyped<JsonArray> response = client.get("/db/pokemon").request(JsonArray.class);
+        assertThat(response.status(), is(Status.OK_200));
+        List<String> names = response.entity().stream().map(e -> e.asJsonObject().getString("NAME")).toList();
+        assertThat(names, is(pokemonNames()));
+    }
+
+    @Test
+    void testListAllPokemonTypes() {
+        ClientResponseTyped<JsonArray> response = client.get("/db/type").request(JsonArray.class);
+        assertThat(response.status(), is(Status.OK_200));
+        List<String> names = response.entity().stream().map(e -> e.asJsonObject().getString("NAME")).toList();
+        assertThat(names, is(pokemonTypes()));
+    }
+
+    @Test
+    void testGetPokemonById() {
+        ClientResponseTyped<JsonObject> response = client.get("/db/pokemon/2").request(JsonObject.class);
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity().getString("NAME"), is("Charmander"));
+    }
+
+    @Test
+    void testGetPokemonByName() {
+        ClientResponseTyped<JsonObject> response = client.get("/db/pokemon/name/Squirtle").request(JsonObject.class);
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity().getInt("ID"), is(3));
+    }
+
+    @Test
+    void testAddUpdateDeletePokemon() {
+        JsonObject pokemon;
+        ClientResponseTyped<String> response;
+
+        // add a new Pokémon Rattata
+        pokemon = JSON_FACTORY.createObjectBuilder()
+                .add("id", 7)
+                .add("name", "Rattata")
+                .add("idType", 1)
+                .build();
+        response = client.post("/db/pokemon").submit(pokemon, String.class);
+        assertThat(response.status(), is(Status.CREATED_201));
+
+        // rename Pokémon with id 7 to Raticate
+        pokemon = JSON_FACTORY.createObjectBuilder()
+                .add("id", 7)
+                .add("name", "Raticate")
+                .add("idType", 2)
+                .build();
+
+        response = client.put("/db/pokemon").submit(pokemon, String.class);
+        assertThat(response.status(), is(Status.OK_200));
+
+        // delete Pokémon with id 7
+        response = client.delete("/db/pokemon/7").request(String.class);
+        assertThat(response.status(), is(Status.NO_CONTENT_204));
+
+        response = client.get("/db/pokemon/7").request(String.class);
+        assertThat(response.status(), is(Status.NOT_FOUND_404));
+    }
+]]>
+                </value>
+                <value order="50"><![CDATA[
+    private static List<String> pokemonNames() {
+        try (JsonReader reader = Json.createReader(PokemonService.class.getResourceAsStream("/pokemons.json"))) {
+            return reader.readArray().stream().map(e -> e.asJsonObject().getString("name")).toList();
+        }
+    }
+
+    private static List<String> pokemonTypes() {
+        try (JsonReader reader = Json.createReader(PokemonService.class.getResourceAsStream("/pokemon-types.json"))) {
+            return reader.readArray().stream().map(e -> e.asJsonObject().getString("name")).toList();
+        }
+    }
+]]>
+                </value>
+            </list>
+            <list key="module-requires">
+                <value>io.helidon.dbclient</value>
+                <value>io.helidon.dbclient.metrics</value>
+                <value>io.helidon.dbclient.tracing</value>
+                <value if="${media.json-lib} == 'jackson'">jakarta.json</value>
+            </list>
+            <list key="readme-exercise-the-application">
+                <value><![CDATA[
+Database:
+```
+# List all Pokémon
+curl http://localhost:8080/db/pokemon
+
+# List all Pokémon types
+curl http://localhost:8080/db/type
+
+# Get a single Pokémon by id
+curl http://localhost:8080/db/pokemon/2
+
+# Get a single Pokémon by name
+curl http://localhost:8080/db/pokemon/name/Squirtle
+
+# Add a new Pokémon Rattata
+curl -i -X POST -d '{"id":7,"name":"Rattata","idType":1}' http://localhost:8080/db/pokemon
+
+# Rename Pokémon with id 7 to Raticate
+curl -i -X PUT -d '{"id":7,"name":"Raticate","idType":2}' http://localhost:8080/db/pokemon
+
+# Delete Pokémon with id 7
+curl -i -X DELETE http://localhost:8080/db/pokemon/7
+```
+]]>
+                </value>
+            </list>
+            <list key="readme-run-notes">
+                <value><![CDATA[
+This example requires a database, see [Database Setup](#database-setup).
+]]>
+                </value>
+            </list>
+            <list key="readme-sections">
+                <value template="mustache" file="files/README.md.mustache"/>
+            </list>
+            <list key="gitignore">
+                <value>ObjectStore/</value>
+                <value>PutObjectStoreDirHere/</value>
+            </list>
+        </model>
+    </output>
+</archetype-script>

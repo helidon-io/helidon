@@ -1,0 +1,19 @@
+
+## Building the Docker Image
+
+```
+docker build -t {{artifactId}} .
+```
+
+## Running the Docker Image
+
+{{#docker-run-readme-section}}
+{{.}}
+{{/docker-run-readme-section}}
+{{^docker-run-readme-section}}
+```
+docker run --rm -p 8080:8080 {{artifactId}}:latest
+```
+{{/docker-run-readme-section}}
+
+Exercise the application as described above.
