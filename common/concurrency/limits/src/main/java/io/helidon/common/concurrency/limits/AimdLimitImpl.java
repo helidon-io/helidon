@@ -176,18 +176,27 @@ class AimdLimitImpl {
 
         @Override
         public void dropped() {
-            updateWithSample(startTime, clock.get(), currentRequests, false);
+            try {
+                updateWithSample(startTime, clock.get(), currentRequests, false);
+            } finally {
+                AimdLimitImpl.this.semaphore.release();
+            }
         }
 
         @Override
         public void ignore() {
             concurrentRequests.decrementAndGet();
+            AimdLimitImpl.this.semaphore.release();
         }
 
         @Override
         public void success() {
-            updateWithSample(startTime, clock.get(), currentRequests, true);
-            concurrentRequests.decrementAndGet();
+            try {
+                updateWithSample(startTime, clock.get(), currentRequests, true);
+                concurrentRequests.decrementAndGet();
+            } finally {
+                AimdLimitImpl.this.semaphore.release();
+            }
         }
     }
 }
