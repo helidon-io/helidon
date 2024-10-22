@@ -128,7 +128,7 @@ but a couple are handy to use on your desktop to verify your changes.
 * Ask questions on Stack Overflow using the [helidon tag](https://stackoverflow.com/tags/helidon)
 * Join us on Slack: [#helidon-users](http://slack.helidon.io)
 
-## Get Involved
+## Contributing
 
 * Learn how to [contribute](CONTRIBUTING.md)
 * See [issues](https://github.com/oracle/helidon/issues) for issues you can help with
