@@ -255,7 +255,13 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
                 .throwsChecked(thrownChecked)
                 .parameterArguments(params)
                 .originatingElement(v);
-        AptTypeFactory.createTypeName(v.getEnclosingElement()).ifPresent(builder::enclosingType);
+
+        // To be failure-tolerant, as the ECJ may not provide an enclosing element for a VariableElement.
+        Element enclosingElement = v.getEnclosingElement();
+        if (enclosingElement != null) {
+            AptTypeFactory.createTypeName(enclosingElement).ifPresent(builder::enclosingType);
+        }
+
         Optional.ofNullable(defaultValue).ifPresent(builder::defaultValue);
 
         return mapElement(ctx, builder.build());
