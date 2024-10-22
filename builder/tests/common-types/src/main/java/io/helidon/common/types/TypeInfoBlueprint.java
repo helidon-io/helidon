@@ -16,10 +16,13 @@
 
 package io.helidon.common.types;
 
+import java.util.ArrayDeque;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.Set;
 
 import io.helidon.builder.api.Option;
@@ -58,7 +61,7 @@ interface TypeInfoBlueprint extends Annotated {
      *
      * @return the type element kind.
      * @see io.helidon.common.types.TypeValues#KIND_CLASS and other constants on this class prefixed with {@code TYPE}
-     * @deprecated use {@link #kind()} instead
+     * @deprecated use {@link io.helidon.common.types.TypeInfo#kind()} instead
      */
     @Option.Required
     @Option.Deprecated("kind")
@@ -186,7 +189,7 @@ interface TypeInfoBlueprint extends Annotated {
      *
      * @return element modifiers
      * @see io.helidon.common.types.TypeValues#MODIFIER_PUBLIC and other constants prefixed with {@code MODIFIER}
-     * @deprecated use {@link #elementModifiers()} instead
+     * @deprecated use {@link io.helidon.common.types.TypeInfo#elementModifiers()} instead
      */
     @Option.Singular
     @Option.Redundant
@@ -229,7 +232,56 @@ interface TypeInfoBlueprint extends Annotated {
     Optional<Object> originatingElement();
 
     /**
-     * Uses {@link #referencedModuleNames()} to determine if the module name is known for the given type.
+     * The element used to create this instance, or {@link io.helidon.common.types.TypeInfo#typeName()} if none provided.
+     * The type of the object depends on the environment we are in - it may be an {@code TypeElement} in annotation processing,
+     * or a {@code ClassInfo} when using classpath scanning.
+     *
+     * @return originating element, or the type of this type info
+     */
+    default Object originatingElementValue() {
+        return originatingElement().orElseGet(this::typeName);
+    }
+
+    /**
+     * Checks if the current type implements, or extends the provided type.
+     * This method analyzes the whole dependency tree of the current type.
+     *
+     * @param typeName type of interface to check
+     * @return the super type info, or interface type info matching the provided type, with appropriate generic declarations
+     */
+    default Optional<TypeInfo> findInHierarchy(TypeName typeName) {
+        if (typeName.equals(typeName())) {
+            return Optional.of((TypeInfo) this);
+        }
+        // scan super types
+        Optional<TypeInfo> superClass = superTypeInfo();
+        if (superClass.isPresent() && !superClass.get().typeName().equals(TypeNames.OBJECT)) {
+            var superType = superClass.get();
+            var foundInSuper = superType.findInHierarchy(typeName);
+            if (foundInSuper.isPresent()) {
+                return foundInSuper;
+            }
+        }
+        // nope, let's try interfaces
+        Queue<TypeInfo> interfaces = new ArrayDeque<>(interfaceTypeInfo());
+        Set<TypeName> processed = new HashSet<>();
+
+        while (!interfaces.isEmpty()) {
+            TypeInfo type = interfaces.remove();
+            // make sure we process each type only once
+            if (processed.add(type.typeName())) {
+                if (typeName.equals(type.typeName())) {
+                    return Optional.of(type);
+                }
+                interfaces.addAll(type.interfaceTypeInfo());
+            }
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Uses {@link io.helidon.common.types.TypeInfo#referencedModuleNames()} to determine if the module name is known for the
+     * given type.
      *
      * @param typeName the type name to lookup
      * @return the module name if it is known

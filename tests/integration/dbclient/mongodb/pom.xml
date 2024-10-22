@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,110 +16,45 @@
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon.tests.integration.dbclient</groupId>
-        <artifactId>helidon-tests-integration-dbclient-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
+        <artifactId>helidon-tests-integration-dbclient-parent</artifactId>
+        <version>4.2.0-SNAPSHOT</version>
+        <relativePath>../parent/pom.xml</relativePath>
     </parent>
     <artifactId>helidon-tests-integration-dbclient-mongodb</artifactId>
-    <name>Helidon Tests Integration Database Client MongoDB</name>
-
-    <properties>
-        <mongo.port>27017</mongo.port>
-        <mongo.host>127.0.0.1</mongo.host>
-        <mongo.database>test</mongo.database>
-        <mongo.user>helidon</mongo.user>
-        <mongo.password>h3l1d0n</mongo.password>
-        <mongo.root-user>root</mongo.root-user>
-        <mongo.root-password>I4mGr00t</mongo.root-password>
-        <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
-    </properties>
+    <name>Helidon Tests Integration DbClient MongoDB</name>
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.tests.integration.dbclient</groupId>
-            <artifactId>helidon-tests-integration-dbclient-common</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-yaml</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.dbclient</groupId>
             <artifactId>helidon-dbclient-mongodb</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.tests.integration</groupId>
-            <artifactId>helidon-tests-integration-harness</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 
     <build>
-        <testResources>
-            <testResource>
-                <directory>src/test/resources</directory>
-                <filtering>true</filtering>
-            </testResource>
-        </testResources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <excludes>
-                        <exclude>**/*IT</exclude>
-                    </excludes>
-                </configuration>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-libs</id>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <configuration>
-                    <redirectTestOutputToFile>${maven.test.redirectTestOutputToFile}</redirectTestOutputToFile>
-                    <parallel>methods</parallel>
-                    <threadCount>10</threadCount>
-                    <systemPropertyVariables>
-                        <junit.jupiter.extensions.autodetection.enabled>true</junit.jupiter.extensions.autodetection.enabled>
-                    </systemPropertyVariables>
-                </configuration>
                 <executions>
                     <execution>
-                        <id>test</id>
-                        <phase>integration-test</phase>
                         <goals>
                             <goal>integration-test</goal>
                             <goal>verify</goal>
                         </goals>
-                        <configuration>
-                            <includes>
-                                <include>**/*SuiteIT</include>
-                            </includes>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>

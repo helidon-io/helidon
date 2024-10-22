@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -69,6 +69,12 @@ This will mount `~/.oci` as a volume in the running docker container.
                 <include>src/main/resources/**</include>
             </includes>
             <model>
+                <list key="dependencies">
+                    <map>
+                        <value key="groupId">org.slf4j</value>
+                        <value key="artifactId">slf4j-jdk14</value>
+                    </map>
+                </list>
                 <list key="microprofile-config-entries">
                     <value template="mustache"><![CDATA[
 # Application properties. This is the default greeting
@@ -82,7 +88,7 @@ oci.monitoring.namespace=<your monitoring namespace e.g. helidon_oci>
 oci.logging.id=<your oci custom log id>
 
 # OCI Authentication strategy
-oci.auth-strategy=config_file,instance_principals,resource_principal
+oci.auth-strategy=config-file,instance-principals,resource-principal
                     ]]></value>
                 </list>
                 <list key="yaml-config-entries">
@@ -336,7 +342,7 @@ principal when running it in an oci compute instance.
 
 ### Run the application
 
-1. Default with no profile will use `config_file,instance_principals,resource_principal` authentication strategy
+1. Default with no profile will use `config-file,instance-principals,resource-principal` authentication strategy
      ```bash
      java -jar server/target/{{artifactId}}.jar
      ```

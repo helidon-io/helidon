@@ -30,6 +30,7 @@ import io.helidon.codegen.classmodel.Method;
 import io.helidon.codegen.classmodel.TypeArgument;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
+import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.codegen.CodegenUtil.capitalize;
 import static io.helidon.common.types.TypeNames.LIST;
@@ -43,8 +44,10 @@ class TypeHandlerMap extends TypeHandler {
     private final TypeName implTypeName;
     private final boolean sameGeneric;
 
-    TypeHandlerMap(String name, String getterName, String setterName, TypeName declaredType, boolean sameGeneric) {
-        super(name, getterName, setterName, declaredType);
+    TypeHandlerMap(TypeName blueprintType,
+                   TypedElementInfo annotatedMethod,
+                   String name, String getterName, String setterName, TypeName declaredType, boolean sameGeneric) {
+        super(blueprintType, annotatedMethod, name, getterName, setterName, declaredType);
         this.sameGeneric = sameGeneric;
 
         this.implTypeName = collectionImplType(MAP);

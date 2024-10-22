@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.webclient.http1;
 
 import java.io.InputStream;
+import java.lang.System.Logger.Level;
 import java.util.List;
 import java.util.OptionalLong;
 import java.util.ServiceLoader;
@@ -27,6 +28,7 @@ import io.helidon.common.GenericType;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.buffers.DataReader;
 import io.helidon.common.media.type.ParserMode;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
@@ -153,7 +155,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
                 if (headers().contains(HeaderValues.CONNECTION_CLOSE)) {
                     connection.closeResource();
                 } else {
-                    if (entityFullyRead || entityLength == 0) {
+                    if (entityFullyRead || entityLength == 0 || consumeUnreadEntity()) {
                         connection.releaseResource();
                     } else {
                         connection.closeResource();
@@ -184,6 +186,32 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
 
     ClientConnection connection() {
         return connection;
+    }
+
+    /**
+     * Attempts to consume an unread entity for the purpose of re-using a cached
+     * connection. Only works for length-prefixed responses and when the entity
+     * has been loaded and has not been partially read. This method shall never
+     * block on a read operation.
+     *
+     * @return {@code true} if consumed, {@code false} otherwise
+     */
+    private boolean consumeUnreadEntity() {
+        if (entityLength == ENTITY_LENGTH_CHUNKED) {
+            return false;
+        }
+        DataReader reader = connection.reader();
+        if (reader.available() != entityLength) {
+            return false;
+        }
+        try {
+            reader.skip((int) entityLength);
+            entityFullyRead = true;
+            return true;
+        } catch (RuntimeException e) {
+            LOGGER.log(Level.DEBUG, "Exception while consuming entity", e);
+            return false;
+        }
     }
 
     private ReadableEntity entity(ClientRequestHeaders requestHeaders,

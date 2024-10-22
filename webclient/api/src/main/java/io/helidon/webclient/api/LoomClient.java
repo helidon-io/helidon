@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,27 +27,24 @@ import java.util.concurrent.Executors;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
+import io.helidon.common.configurable.LruCache;
+import io.helidon.common.tls.Tls;
 import io.helidon.http.Method;
-import io.helidon.inject.configdriven.api.ConfigDriven;
 import io.helidon.webclient.spi.ClientProtocolProvider;
 import io.helidon.webclient.spi.HttpClientSpi;
 import io.helidon.webclient.spi.HttpClientSpiProvider;
 import io.helidon.webclient.spi.Protocol;
 import io.helidon.webclient.spi.ProtocolConfig;
 
-import jakarta.inject.Inject;
-
 /**
  * Base class for HTTP implementations of {@link WebClient}.
  */
 @SuppressWarnings("rawtypes")
-@ConfigDriven(WebClientConfigBlueprint.class)
 class LoomClient implements WebClient {
-    static final LazyValue<ExecutorService> EXECUTOR = LazyValue.create(() -> {
-        return Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
-                                                          .name("helidon-client-", 0)
-                                                          .factory());
-    });
+    static final LazyValue<ExecutorService> EXECUTOR =
+            LazyValue.create(() -> Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
+                                                                            .name("helidon-client-", 0)
+                                                                            .factory()));
     private static final List<HttpClientSpiProvider> PROVIDERS =
             HelidonServiceLoader.create(ServiceLoader.load(HttpClientSpiProvider.class))
                     .asList();
@@ -68,6 +65,7 @@ class LoomClient implements WebClient {
     private final ProtocolConfigs protocolConfigs;
     private final List<String> tcpProtocolIds;
     private final WebClientCookieManager cookieManager;
+    private final LruCache<EndpointKey, HttpClientSpi> clientSpiLruCache = LruCache.create();
 
     /**
      * Construct this instance from a subclass of builder.
@@ -75,7 +73,6 @@ class LoomClient implements WebClient {
      * @param config builder the subclass is built from
      */
     @SuppressWarnings({"rawtypes", "unchecked"})
-    @Inject
     protected LoomClient(WebClientConfig config) {
         this.config = config;
         this.protocolConfigs = ProtocolConfigs.create(config.protocolConfigs());
@@ -148,7 +145,8 @@ class LoomClient implements WebClient {
                                      clientSpiByProtocol,
                                      protocols,
                                      tcpProtocols,
-                                     tcpProtocolIds);
+                                     tcpProtocolIds,
+                                     clientSpiLruCache);
     }
 
     @Override
@@ -187,5 +185,11 @@ class LoomClient implements WebClient {
     }
 
     record ProtocolSpi(String id, HttpClientSpi spi) {
+    }
+
+    record EndpointKey(String scheme, // http/https
+                       String authority, // myserver:80
+                       Tls tlsConfig, // TLS configuration (may be disabled, never null)
+                       Proxy proxy) { // proxy, never null
     }
 }

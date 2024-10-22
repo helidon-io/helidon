@@ -19,9 +19,12 @@ package io.helidon.codegen.apt;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -40,11 +43,14 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
 
+@SuppressWarnings("removal")
 class AptContextImpl extends CodegenContextBase implements AptContext {
     private static final Pattern SCOPE_PATTERN = Pattern.compile("(\\w+).*classes");
 
     private final ProcessingEnvironment env;
     private final ModuleInfo moduleInfo;
+    private final Map<TypeName, Optional<TypeInfo>> safeTypeCache = new HashMap<>();
+    private final Map<TypeName, Optional<TypeInfo>> typeCache = new HashMap<>();
 
     AptContextImpl(ProcessingEnvironment env,
                    CodegenOptions options,
@@ -59,7 +65,7 @@ class AptContextImpl extends CodegenContextBase implements AptContext {
         this.moduleInfo = moduleInfo;
     }
 
-    static AptContext create(ProcessingEnvironment env, Set<Option<?>> supportedOptions) {
+    static AptContextImpl create(ProcessingEnvironment env, Set<Option<?>> supportedOptions) {
         CodegenOptions options = AptOptions.create(env);
 
         CodegenScope scope = guessScope(env, options);
@@ -81,17 +87,55 @@ class AptContextImpl extends CodegenContextBase implements AptContext {
 
     @Override
     public Optional<TypeInfo> typeInfo(TypeName typeName) {
+        if (typeCache.containsKey(typeName)) {
+            return typeCache.get(typeName);
+        }
+        // cached by the factory
         return AptTypeInfoFactory.create(this, typeName);
     }
 
     @Override
     public Optional<TypeInfo> typeInfo(TypeName typeName, Predicate<TypedElementInfo> elementPredicate) {
+        // cannot be cached
         return AptTypeInfoFactory.create(this, typeName, elementPredicate);
     }
 
     @Override
     public Optional<ModuleInfo> module() {
         return Optional.ofNullable(moduleInfo);
+    }
+
+    @Override
+    public Optional<TypeInfo> cache(TypeName typeName, Supplier<Optional<TypeInfo>> typeInfoSupplier) {
+        if (typeName.generic() || !typeName.typeArguments().isEmpty() || !typeName.typeParameters().isEmpty()) {
+            // generic types cannot be cached
+            return typeInfoSupplier.get();
+        }
+
+        if (typeName.packageName().startsWith("java.")
+                || typeName.packageName().startsWith("javax.")
+                || typeName.packageName().startsWith("sun.")
+                || typeName.packageName().startsWith("com.sun")) {
+            Optional<TypeInfo> typeInfo = safeTypeCache.get(typeName);
+            if (typeInfo != null) {
+                return typeInfo;
+            }
+            typeInfo = typeInfoSupplier.get();
+            safeTypeCache.put(typeName, typeInfo);
+            return typeInfo;
+        }
+
+        Optional<TypeInfo> typeInfo = typeCache.get(typeName);
+        if (typeInfo != null) {
+            return typeInfo;
+        }
+        typeInfo = typeInfoSupplier.get();
+        typeCache.put(typeName, typeInfo);
+        return typeInfo;
+    }
+
+    void resetCache() {
+        typeCache.clear();
     }
 
     private static Optional<ModuleInfo> findModule(Filer filer) {

@@ -24,8 +24,7 @@
     <parent>
         <groupId>io.helidon.config.tests</groupId>
         <artifactId>helidon-config-tests-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-config-tests-config-metadata-builder-api</artifactId>
     <name>Helidon Config Tests Config Meta-Data Meta API</name>
@@ -73,26 +72,36 @@
                 <configuration>
                     <annotationProcessorPaths>
                         <path>
-                            <groupId>io.helidon.config</groupId>
-                            <artifactId>helidon-config-metadata-processor</artifactId>
+                            <groupId>io.helidon.config.metadata</groupId>
+                            <artifactId>helidon-config-metadata-codegen</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.codegen</groupId>
+                            <artifactId>helidon-codegen-apt</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>
                             <groupId>io.helidon.builder</groupId>
-                            <artifactId>helidon-builder-processor</artifactId>
+                            <artifactId>helidon-builder-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
                 <dependencies>
                     <dependency>
-                        <groupId>io.helidon.config</groupId>
-                        <artifactId>helidon-config-metadata-processor</artifactId>
+                        <groupId>io.helidon.config.metadata</groupId>
+                        <artifactId>helidon-config-metadata-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-apt</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
                         <groupId>io.helidon.builder</groupId>
-                        <artifactId>helidon-builder-processor</artifactId>
+                        <artifactId>helidon-builder-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                 </dependencies>

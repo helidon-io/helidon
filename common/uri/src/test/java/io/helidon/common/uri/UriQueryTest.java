@@ -16,7 +16,6 @@
 
 package io.helidon.common.uri;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
 
@@ -41,9 +40,15 @@ class UriQueryTest {
     }
 
     @Test
-    void testEncoded() throws UnsupportedEncodingException {
+    void testEncoded() {
         UriQuery uriQuery = UriQuery.create("a=" + URLEncoder.encode("1&b=2", US_ASCII));
         assertThat(uriQuery.get("a"), is("1&b=2"));
+    }
+
+    @Test
+    void testEncodedWithinBrackets() {
+        UriQuery uriQuery = UriQuery.create("msg=[Hello%20World]");
+        assertThat(uriQuery.get("msg"), is("[Hello World]"));
     }
 
     @Test
@@ -57,7 +62,7 @@ class UriQueryTest {
         assertThat(uriQuery.get("h"), is("xc#e<"));
         assertThat(uriQuery.get("a"), is("b&c=d"));
     }
-    
+
     @Test
     void testEmptyQueryString() {
         UriQuery uriQuery = UriQuery.create("");
@@ -80,10 +85,23 @@ class UriQueryTest {
         UriQuery uriQuery = UriQuery.create(URI.create("http://foo/bar?a&b=c"));
         OptionalValue<String> optional = uriQuery.first("a");
         assertThat(optional.isEmpty(), is(true));
-        
+
         assertThat(uriQuery.all("a"), hasItems());
         assertThat(uriQuery.all("b"), hasItems("c"));
         assertThat(uriQuery.getRaw("a"), is(""));
+    }
+
+    @Test
+    void testFromQueryString() {
+        UriQueryWriteable query = UriQueryWriteable.create();
+        query.fromQueryString("p1=v1&p2=v2&p3=%2F%2Fv3%2F%2F&p4=a%20b%20c");
+        assertThat(query.get("p1"), is("v1"));
+        assertThat(query.get("p2"), is("v2"));
+        assertThat(query.get("p3"), is("//v3//"));
+        // make sure the encoded value is correct
+        assertThat(query.getRaw("p3"), is("%2F%2Fv3%2F%2F"));
+        assertThat(query.get("p4"), is("a b c"));
+        assertThat(query.getRaw("p4"), is("a%20b%20c"));
     }
 
 }

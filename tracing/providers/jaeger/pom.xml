@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.tracing.providers</groupId>
         <artifactId>helidon-tracing-providers-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-tracing-providers-jaeger</artifactId>
@@ -99,11 +99,6 @@
             <artifactId>helidon-config-metadata</artifactId>
             <optional>true</optional>
         </dependency>
-        <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-metadata-processor</artifactId>
-            <optional>true</optional>
-        </dependency>
 
         <!--
          - Test dependencies
@@ -154,12 +149,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <!-- Separate the baggage prop test to avoid interference with other tests -->
+                <!-- Separate some of the tests to avoid interference with other tests -->
                 <executions>
                     <execution>
                         <id>default-test</id>
                         <configuration>
-                            <excludes>**/JaegerBaggagePropagationTest.java</excludes>
+                            <excludes>**/JaegerBaggagePropagationTest.java,**/JaegerTracerBuilderTest.java</excludes>
                         </configuration>
                     </execution>
                     <execution>
@@ -176,6 +171,20 @@
                             <includes>**/JaegerBaggagePropagationTest.java</includes>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>tracer-builder-tests</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <properties>
+                                <configurationParameters>
+                                    junit.jupiter.extensions.autodetection.enabled = true
+                                </configurationParameters>
+                            </properties>
+                            <includes>**/JaegerTracerBuilderTest.java</includes>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -184,17 +193,39 @@
                 <configuration>
                     <annotationProcessorPaths>
                         <path>
+                            <groupId>io.helidon.codegen</groupId>
+                            <artifactId>helidon-codegen-apt</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
                             <groupId>io.helidon.common.features</groupId>
                             <artifactId>helidon-common-features-processor</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>
-                            <groupId>io.helidon.config</groupId>
-                            <artifactId>helidon-config-metadata-processor</artifactId>
+                            <groupId>io.helidon.config.metadata</groupId>
+                            <artifactId>helidon-config-metadata-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-apt</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.common.features</groupId>
+                        <artifactId>helidon-common-features-processor</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.config.metadata</groupId>
+                        <artifactId>helidon-config-metadata-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>

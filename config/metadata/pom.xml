@@ -24,29 +24,40 @@
     <parent>
         <groupId>io.helidon.config</groupId>
         <artifactId>helidon-config-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
-    <artifactId>helidon-config-metadata</artifactId>
-    <name>Helidon Config Metadata</name>
-
-    <properties>
-        <helidon.services.skip>true</helidon.services.skip>
-    </properties>
+    <!-- normally we would use io.helidon.config.metadata group id, but this would introduce backward incompatibility -->
+    <artifactId>helidon-config-metadata-project</artifactId>
+    <name>Helidon Config Metadata Project</name>
+    <packaging>pom</packaging>
 
     <description>
-        Configuration Metadata annotations and processing.
+        Configuration Metadata annotations and codegen.
     </description>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
+    <properties>
+        <javadoc.fail-on-warnings>true</javadoc.fail-on-warnings>
+    </properties>
+
+    <modules>
+        <module>metadata</module>
+        <module>codegen</module>
+        <module>processor</module>
+        <module>docs</module>
+    </modules>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>check-dependencies</id>
+                        <phase>verify</phase>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-docs</artifactId>
     <packaging>site</packaging>
@@ -43,7 +43,16 @@
             <type>pom</type>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.config.metadata</groupId>
+            <artifactId>helidon-config-metadata-docs</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+        </dependency>
         <!-- snippets dependencies -->
+        <!--suppress VulnerableLibrariesLocal -->
         <dependency>
             <groupId>org.apache.activemq</groupId>
             <artifactId>activemq-client</artifactId>
@@ -72,24 +81,71 @@
             <version>${version.lib.jbatch.container}</version>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.lra</groupId>
+            <artifactId>helidon-microprofile-lra-testing</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.testing</groupId>
+            <artifactId>helidon-microprofile-testing-junit5</artifactId>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
-
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <!--
-                    Work-around for https://github.com/helidon-io/helidon/issues/8172
-                 -->
-                <groupId>org.antlr</groupId>
-                <artifactId>antlr4-runtime</artifactId>
-                <version>4.10.1</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
 
     <build>
         <finalName>${project.artifactId}</finalName>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-clean</id>
+                        <configuration>
+                            <filesets>
+                                <fileset>
+                                    <directory>src/main/asciidoc/config</directory>
+                                    <includes>
+                                        <include>**/*</include>
+                                    </includes>
+                                </fileset>
+                            </filesets>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>config-docs</id>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <phase>generate-sources</phase>
+                        <configuration>
+                            <commandlineArgs>${project.basedir}/src/main/asciidoc/config</commandlineArgs>
+                            <mainClass>io.helidon.config.metadata.docs.Main</mainClass>
+                            <classpathFilenameExclusions>
+                                <exclusion>helidon-logging-slf4j-${helidon.version}.jar</exclusion>
+                                <exclusion>helidon-logging-log4j-${helidon.version}.jar</exclusion>
+                            </classpathFilenameExclusions>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>io.helidon.build-tools</groupId>
                 <artifactId>sitegen-maven-plugin</artifactId>
@@ -106,6 +162,9 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <proc>none</proc>
+                    <compilerArgs>
+                        <arg>-Xlint:-removal</arg>
+                    </compilerArgs>
                 </configuration>
                 <executions>
                     <execution>
@@ -117,6 +176,22 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <phase>none</phase>
+                    </execution>
+                </executions>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
@@ -125,19 +200,6 @@
             <id>javadoc</id>
             <build>
                 <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>attach-javadocs</id>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                                <phase>none</phase>
-                            </execution>
-                        </executions>
-                    </plugin>
                     <plugin>
                         <groupId>io.helidon.build-tools</groupId>
                         <artifactId>helidon-javadoc-maven-plugin</artifactId>
@@ -163,6 +225,7 @@
                             </dependencyIncludes>
                             <dependencyExcludes>
                                 <exclude>*:*-tests</exclude>
+                                <exclude>io.helidon.config.metadata:helidon-config-metadata-docs</exclude>
                             </dependencyExcludes>
                             <sourceExcludes>
                                 <exclude>**/src/main/templates</exclude>
@@ -170,6 +233,11 @@
                                 <exclude>**/generated-test-sources</exclude>
                                 <exclude>**/extracted-sources/**</exclude>
                             </sourceExcludes>
+                            <fileExcludes>
+                                <!-- exclude generated files that are not public API -->
+                                <exclude>*__*.java</exclude>
+                                <exclude>*_.java</exclude>
+                            </fileExcludes>
                             <moduleIncludes>
                                 <include>io.helidon*</include>
                                 <!-- See https://github.com/helidon-io/helidon/issues/8163 -->
@@ -179,6 +247,9 @@
                                 <!-- Unsupported modules -->
                                 <exclude>io.helidon.inject*</exclude>
                                 <exclude>*.processor*</exclude>
+                                <exclude>io.helidon.integrations.oci.authentication.instance</exclude>
+                                <exclude>io.helidon.integrations.oci.authentication.resource</exclude>
+                                <exclude>io.helidon.integrations.oci.authentication.okeworkload</exclude>
                             </moduleExcludes>
                             <packageIncludes>
                                 <include>io.helidon*</include>

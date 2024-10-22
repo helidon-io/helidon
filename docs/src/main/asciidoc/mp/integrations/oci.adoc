@@ -129,4 +129,4 @@ Once you have injected an ObjectStorage client you can use it as described in:
 == References
 
 * link:{integration-oci-sdk-cdi-javadoc-base-url}/io/helidon/integrations/oci/sdk/cdi/OciExtension.html[OciExtension] Javadocs
-* link:{helidon-github-tree-url}/examples/integrations/oci[OCI SDK Usage Examples]
+* link:{helidon-github-examples-url}/integrations/oci[OCI SDK Usage Examples]

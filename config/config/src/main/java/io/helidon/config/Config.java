@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.MergingStrategy;
 import io.helidon.config.spi.OverrideSource;
+import io.helidon.service.registry.Service;
 
 /**
  * <h2>Configuration</h2>
@@ -232,7 +233,6 @@ import io.helidon.config.spi.OverrideSource;
  * throws {@link ConfigMappingException}, unless you use the config beans support,
  * that can handle classes that fulfill some requirements (see documentation), such as a public constructor,
  * static "create(Config)" method etc.
- * <p>
  * <h3><a id="multipleSources">Handling Multiple Configuration
  * Sources</a></h3>
  * A {@code Config} instance, including the default {@code Config} returned by
@@ -240,6 +240,7 @@ import io.helidon.config.spi.OverrideSource;
  * config system merges these together so that values from config sources with higher {@link io.helidon.common.Weight weight}
  * have priority over values from config sources with lower weight.
  */
+@Service.Contract
 public interface Config extends io.helidon.common.config.Config {
     /**
      * Generic type of configuration.
@@ -1634,8 +1635,14 @@ public interface Config extends io.helidon.common.config.Config {
          * @see #config(Config)
          */
         default Builder metaConfig() {
-            MetaConfig.metaConfig()
-                    .ifPresent(this::config);
+            try {
+                MetaConfig.metaConfig()
+                        .ifPresent(this::config);
+            } catch (MetaConfigException e) {
+                System.getLogger(getClass().getName())
+                        .log(System.Logger.Level.WARNING, "Failed to load SE meta-configuration,"
+                                + " please make sure it has correct format.", e);
+            }
 
             return this;
         }

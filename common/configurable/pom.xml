@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.common</groupId>
         <artifactId>helidon-common-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
     <name>Helidon Common Configurable</name>
     <artifactId>helidon-common-configurable</artifactId>
@@ -95,13 +95,13 @@
                     <forceJavacCompilerUse>true</forceJavacCompilerUse>
                     <annotationProcessorPaths>
                         <path>
-                            <groupId>io.helidon.config</groupId>
-                            <artifactId>helidon-config-metadata-processor</artifactId>
+                            <groupId>io.helidon.codegen</groupId>
+                            <artifactId>helidon-codegen-apt</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>
-                            <groupId>io.helidon.codegen</groupId>
-                            <artifactId>helidon-codegen-apt</artifactId>
+                            <groupId>io.helidon.config.metadata</groupId>
+                            <artifactId>helidon-config-metadata-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>
@@ -116,15 +116,27 @@
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>default-testCompile</id>
+                        <configuration>
+                            <!-- We use JUL from tests, need this for compilation -->
+                            <compilerArgs>
+                                <compilerArg>--add-modules</compilerArg>
+                                <compilerArg>java.logging</compilerArg>
+                            </compilerArgs>
+                        </configuration>
+                    </execution>
+                </executions>
                 <dependencies>
-                    <dependency>
-                        <groupId>io.helidon.config</groupId>
-                        <artifactId>helidon-config-metadata-processor</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
                     <dependency>
                         <groupId>io.helidon.codegen</groupId>
                         <artifactId>helidon-codegen-apt</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.config.metadata</groupId>
+                        <artifactId>helidon-config-metadata-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>

@@ -22,8 +22,7 @@
     <parent>
         <groupId>io.helidon.dbclient</groupId>
         <artifactId>helidon-dbclient-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-dbclient-hikari</artifactId>
     <name>Helidon Database Client Hikari Connection Pool</name>
@@ -91,8 +90,8 @@
                             <version>${helidon.version}</version>
                         </path>
                         <path>
-                            <groupId>io.helidon.config</groupId>
-                            <artifactId>helidon-config-metadata-processor</artifactId>
+                            <groupId>io.helidon.config.metadata</groupId>
+                            <artifactId>helidon-config-metadata-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>
@@ -114,8 +113,8 @@
                 </configuration>
                 <dependencies>
                     <dependency>
-                        <groupId>io.helidon.config</groupId>
-                        <artifactId>helidon-config-metadata-processor</artifactId>
+                        <groupId>io.helidon.config.metadata</groupId>
+                        <artifactId>helidon-config-metadata-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>

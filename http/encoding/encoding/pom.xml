@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.http.encoding</groupId>
         <artifactId>helidon-http-encoding-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-http-encoding</artifactId>
@@ -80,8 +80,8 @@
                             <version>${helidon.version}</version>
                         </path>
                         <path>
-                            <groupId>io.helidon.config</groupId>
-                            <artifactId>helidon-config-metadata-processor</artifactId>
+                            <groupId>io.helidon.config.metadata</groupId>
+                            <artifactId>helidon-config-metadata-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>
@@ -103,8 +103,8 @@
                 </configuration>
                 <dependencies>
                     <dependency>
-                        <groupId>io.helidon.config</groupId>
-                        <artifactId>helidon-config-metadata-processor</artifactId>
+                        <groupId>io.helidon.config.metadata</groupId>
+                        <artifactId>helidon-config-metadata-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>

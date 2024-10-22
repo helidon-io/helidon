@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,14 @@ final class BuildTimeInitializer {
     static {
         // need to initialize logging as soon as possible
         LogConfig.initClass();
-        createContainer();
+
+        try {
+            createContainer();
+        } catch (Throwable e) {
+            System.getLogger(BuildTimeInitializer.class.getName())
+                    .log(System.Logger.Level.ERROR, "Failed to initialize CDI container", e);
+            throw e;
+        }
     }
 
     private BuildTimeInitializer() {

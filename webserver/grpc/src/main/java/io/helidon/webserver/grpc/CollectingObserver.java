@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,82 +25,107 @@ import java.util.stream.Collector;
 import io.grpc.stub.StreamObserver;
 
 /**
- * A {@link StreamObserver}.
+ * Utility {@link io.grpc.stub.StreamObserver} mostly used for testing.
  *
- * @param <T> ToDo: Add JavaDoc
- * @param <V> ToDo: Add JavaDoc
- * @param <U> ToDo: Add JavaDoc
- * @param <A> ToDo: Add JavaDoc
- * @param <R> ToDo: Add JavaDoc
+ * @param <T> the type of input elements to the reduction operation
+ * @param <A> the mutable accumulation type of the reduction operation
+ * @param <R> the result type of the reduction operation
+ * @param <U> the type of values observed
+ * @param <V> the request type before conversion
+ *
+ * @deprecated use {@code io.helidon.grpc.core.CollectingObserver} instead.
  */
+@Deprecated(forRemoval = true, since = "4.1.0")
 public class CollectingObserver<T, V, U, A, R> implements StreamObserver<V> {
+
     private final Collector<T, A, R> collector;
     private final StreamObserver<U> responseObserver;
     private final Function<V, T> requestConverter;
     private final Function<R, U> responseConverter;
     private final Consumer<Throwable> errorHandler;
-
     private final A accumulator;
 
     /**
-     * ToDo: Add JavaDoc.
+     * Creates collecting observer from a collector and another observer.
      *
-     * @param collector        ToDo: Add JavaDoc
-     * @param responseObserver ToDo: Add JavaDoc
+     * @param collector the collector
+     * @param observer the observer
+     * @return new collecting observer
+     * @param <T> the type of input elements to the reduction operation
+     * @param <A> the mutable accumulation type of the reduction operation
+     * @param <R> the result type of the reduction operation
+     * @param <U> the type of values observed
+     * @param <V> the request type before conversion
      */
-    public CollectingObserver(Collector<T, A, R> collector, StreamObserver<U> responseObserver) {
-        this(collector, responseObserver, null, null, null);
+    public static <T, V, U, A, R> CollectingObserver<T, V, U, A, R> create(Collector<T, A, R> collector,
+                                                                           StreamObserver<U> observer) {
+        return new CollectingObserver<>(collector, observer, null, null, null);
     }
 
     /**
-     * ToDo: Add JavaDoc.
+     * Creates collecting observer from a collector, another observer and an error handler.
      *
-     * @param collector        ToDo: Add JavaDoc
-     * @param responseObserver ToDo: Add JavaDoc
-     * @param errorHandler     ToDo: Add JavaDoc
+     * @param collector the collector
+     * @param observer the observer
+     * @param errorHandler the error handler
+     * @return new collecting observer
+     * @param <T> the type of input elements to the reduction operation
+     * @param <A> the mutable accumulation type of the reduction operation
+     * @param <R> the result type of the reduction operation
+     * @param <U> the type of values observed
+     * @param <V> the request type before conversion
      */
-    public CollectingObserver(Collector<T, A, R> collector,
-                              StreamObserver<U> responseObserver,
-                              Consumer<Throwable> errorHandler) {
-        this(collector, responseObserver, null, null, errorHandler);
+    public static <T, V, U, A, R> CollectingObserver<T, V, U, A, R> create(Collector<T, A, R> collector,
+                                                                           StreamObserver<U> observer,
+                                                                           Consumer<Throwable> errorHandler) {
+        Objects.requireNonNull(errorHandler);
+        return new CollectingObserver<>(collector, observer, null, null, errorHandler);
     }
 
     /**
-     * ToDo: Add JavaDoc.
+     * Creates collecting observer from a collector, another observer and converters.
      *
-     * @param collector         ToDo: Add JavaDoc
-     * @param responseObserver  ToDo: Add JavaDoc
-     * @param requestConverter  ToDo: Add JavaDoc
-     * @param responseConverter ToDo: Add JavaDoc
+     * @param collector the collector
+     * @param observer the observer
+     * @param requestConverter request converter
+     * @param responseConverter response converter
+     * @return new collecting observer
+     * @param <T> the type of input elements to the reduction operation
+     * @param <A> the mutable accumulation type of the reduction operation
+     * @param <R> the result type of the reduction operation
+     * @param <U> the type of values observed
+     * @param <V> the request type before conversion
+     *
      */
-    public CollectingObserver(Collector<T, A, R> collector,
-                              StreamObserver<U> responseObserver,
-                              Function<V, T> requestConverter,
-                              Function<R, U> responseConverter) {
-        this(collector, responseObserver, requestConverter, responseConverter, null);
+    public static <T, V, U, A, R> CollectingObserver<T, V, U, A, R> create(Collector<T, A, R> collector,
+                                                                           StreamObserver<U> observer,
+                                                                           Function<V, T> requestConverter,
+                                                                           Function<R, U> responseConverter) {
+        Objects.requireNonNull(requestConverter);
+        Objects.requireNonNull(responseConverter);
+        return new CollectingObserver<>(collector, observer, requestConverter, responseConverter, null);
     }
 
     /**
-     * ToDo: Add JavaDoc.
+     * Private constructor.
      *
-     * @param collector         ToDo: Add JavaDoc
-     * @param observer          ToDo: Add JavaDoc
-     * @param requestConverter  ToDo: Add JavaDoc
-     * @param responseConverter ToDo: Add JavaDoc
-     * @param errorHandler      ToDo: Add JavaDoc
+     * @param collector the collector
+     * @param observer the observer
+     * @param requestConverter the request converter
+     * @param responseConverter the response converter
+     * @param errorHandler the error handler
      */
     @SuppressWarnings("unchecked")
-    public CollectingObserver(Collector<T, A, R> collector,
-                              StreamObserver<U> observer,
-                              Function<V, T> requestConverter,
-                              Function<R, U> responseConverter,
-                              Consumer<Throwable> errorHandler) {
+    private CollectingObserver(Collector<T, A, R> collector,
+                               StreamObserver<U> observer,
+                               Function<V, T> requestConverter,
+                               Function<R, U> responseConverter,
+                               Consumer<Throwable> errorHandler) {
         this.collector = Objects.requireNonNull(collector, "The collector parameter cannot be null");
         this.responseObserver = Objects.requireNonNull(observer, "The observer parameter cannot be null");
         this.requestConverter = Optional.ofNullable(requestConverter).orElse(v -> (T) v);
         this.responseConverter = Optional.ofNullable(responseConverter).orElse(r -> (U) r);
-        this.errorHandler = Optional.ofNullable(errorHandler).orElse(t -> {
-        });
+        this.errorHandler = Optional.ofNullable(errorHandler).orElse(t -> {});
         this.accumulator = collector.supplier().get();
     }
 

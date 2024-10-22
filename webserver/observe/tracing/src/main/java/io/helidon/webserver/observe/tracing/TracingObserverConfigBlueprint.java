@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import io.helidon.webserver.observe.spi.ObserveProvider;
  * @see io.helidon.webserver.observe.tracing.TracingObserver#builder()
  */
 @Prototype.Blueprint(decorator = TracingObserverSupport.TracingObserverDecorator.class)
-@Prototype.Configured
+@Prototype.Configured(root = false, value = "tracing")
 @Prototype.Provides(ObserveProvider.class)
 interface TracingObserverConfigBlueprint extends ObserverConfigBase, Prototype.Factory<TracingObserver> {
     @Option.Default("tracing")
@@ -60,6 +60,7 @@ interface TracingObserverConfigBlueprint extends ObserverConfigBase, Prototype.F
      *
      * By default we disable both the SE-style paths ({@code /observe/health}) and the MP-style paths ({@code /health}).
      */
+
     /**
      * Path specific configuration of tracing.
      *

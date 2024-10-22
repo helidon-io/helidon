@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.metrics.providers</groupId>
         <artifactId>helidon-metrics-providers-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-metrics-providers-micrometer</artifactId>
     <name>Helidon Metrics Providers Micrometer</name>
@@ -46,6 +46,10 @@
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus-simpleclient</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>

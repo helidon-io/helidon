@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.tracing.providers</groupId>
         <artifactId>helidon-tracing-providers-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-tracing-providers-zipkin</artifactId>
@@ -56,6 +56,10 @@
         <dependency>
             <groupId>io.opentracing.brave</groupId>
             <artifactId>brave-opentracing</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-context</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.features</groupId>
@@ -103,8 +107,13 @@
                 <configuration>
                     <annotationProcessorPaths>
                         <path>
-                            <groupId>io.helidon.config</groupId>
-                            <artifactId>helidon-config-metadata-processor</artifactId>
+                            <groupId>io.helidon.codegen</groupId>
+                            <artifactId>helidon-codegen-apt</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.config.metadata</groupId>
+                            <artifactId>helidon-config-metadata-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>
@@ -114,6 +123,52 @@
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-apt</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.config.metadata</groupId>
+                        <artifactId>helidon-config-metadata-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.common.features</groupId>
+                        <artifactId>helidon-common-features-processor</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+            <!--
+               The propagation test expects the global tracer to be enabled. Other tests run with their own explicit config which
+               might have disabled the global tracer, so run the propagation test separately.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-test</id>
+                        <configuration>
+                            <excludes>
+                                <exclude>io.helidon.tracing.providers.tests.TestTracerAndSpanPropagation.java</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>zipkin-propagation-test</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>io.helidon.tracing.providers.tests.TestTracerAndSpanPropagation.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

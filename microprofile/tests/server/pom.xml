@@ -23,8 +23,7 @@
     <parent>
         <groupId>io.helidon.microprofile.tests</groupId>
         <artifactId>helidon-microprofile-tests-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>helidon-microprofile-tests-server</artifactId>
@@ -64,6 +63,11 @@
         <dependency>
             <groupId>io.helidon.logging</groupId>
             <artifactId>helidon-logging-jul</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient-http1</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

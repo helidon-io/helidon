@@ -111,11 +111,22 @@ public class WebClientSecurity implements WebClientService {
             context = createContext(request);
         }
 
-        Span span = context.tracer()
-                .spanBuilder("security:outbound")
-                .parent(context.tracingSpan())
-                .start();
+        Tracer tracer = context.tracer();
+        Span span;
+        if (tracer == null) {
+            span = null;
+        } else {
+            SpanContext parentSpanContext = context.tracingSpan();
+            span = tracer.spanBuilder("security:outbound")
+                    .update(builder -> {
+                                if (parentSpanContext != null) {
+                                    builder.parent(parentSpanContext);
+                                }
+                            }
+                    )
+                    .start();
 
+        }
         String explicitProvider = request.properties().get(PROVIDER_NAME);
 
         OutboundSecurityClientBuilder clientBuilder;
@@ -194,7 +205,9 @@ public class WebClientSecurity implements WebClientService {
                 HeaderName headerName = HeaderNames.create(entry.getKey());
                 clientHeaders.set(headerName, entry.getValue().toArray(new String[0]));
             }
-            span.end();
+            if (span != null) {
+                span.end();
+            }
             return chain.proceed(request);
         } catch (Exception e) {
             traceError(span, e, null);
@@ -216,6 +229,9 @@ public class WebClientSecurity implements WebClientService {
 
     static void traceError(Span span, Throwable throwable, String description) {
         // failed
+        if (span == null) {
+            return;
+        }
         span.status(Span.Status.ERROR);
 
         if (throwable == null) {

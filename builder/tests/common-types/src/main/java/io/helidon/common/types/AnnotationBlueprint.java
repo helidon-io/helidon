@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,6 +58,9 @@ import io.helidon.builder.api.Prototype;
 @Prototype.Implement("java.lang.Comparable<Annotation>")
 interface AnnotationBlueprint {
 
+    /**
+     * The "{@code value}" property name.
+     */
     String VALUE_PROPERTY = "value";
 
     /**
@@ -77,6 +80,15 @@ interface AnnotationBlueprint {
     Map<String, Object> values();
 
     /**
+     * A list of inherited annotations (from the whole hierarchy).
+     *
+     * @return list of all annotations declared on the annotation type, or inherited from them
+     */
+    @Option.Redundant
+    @Option.Singular
+    List<Annotation> metaAnnotations();
+
+    /**
      * The value property.
      *
      * @return the string value of value property
@@ -88,11 +100,11 @@ interface AnnotationBlueprint {
     /**
      * Get a value of an annotation property.
      *
-     * @param name name of the annotation property
+     * @param property name of the annotation property
      * @return string value of the property
      */
-    default Optional<String> getValue(String name) {
-        return AnnotationSupport.asString(typeName(), values(), name);
+    default Optional<String> getValue(String property) {
+        return AnnotationSupport.asString(typeName(), values(), property);
     }
 
     /**
@@ -111,6 +123,7 @@ interface AnnotationBlueprint {
      * The type can be either String, or any primitive type, or {@link io.helidon.common.types.Annotation},
      * or list of these.
      *
+     * @param property name of the annotation property
      * @return object value
      */
     default Optional<Object> objectValue(String property) {
@@ -129,6 +142,7 @@ interface AnnotationBlueprint {
     /**
      * Typed value of a named property.
      *
+     * @param property name of the annotation property
      * @return value if present
      */
     default Optional<String> stringValue(String property) {
@@ -149,6 +163,7 @@ interface AnnotationBlueprint {
      * Typed values of a property that is defined as an array.
      * This will also work for a single values property.
      *
+     * @param property name of the annotation property
      * @return list of defined values if present
      */
     default Optional<List<String>> stringValues(String property) {
@@ -167,6 +182,7 @@ interface AnnotationBlueprint {
     /**
      * Typed value of a named property.
      *
+     * @param property name of the annotation property
      * @return value if present
      */
     default Optional<Integer> intValue(String property) {
@@ -187,6 +203,7 @@ interface AnnotationBlueprint {
      * Typed values of a property that is defined as an array.
      * This will also work for a single values property.
      *
+     * @param property name of the annotation property
      * @return list of defined values if present
      */
     default Optional<List<Integer>> intValues(String property) {
@@ -205,6 +222,7 @@ interface AnnotationBlueprint {
     /**
      * Typed value of a named property.
      *
+     * @param property name of the annotation property
      * @return value if present
      */
     default Optional<Long> longValue(String property) {
@@ -225,6 +243,7 @@ interface AnnotationBlueprint {
      * Typed values of a property that is defined as an array.
      * This will also work for a single values property.
      *
+     * @param property name of the annotation property
      * @return list of defined values if present
      */
     default Optional<List<Long>> longValues(String property) {
@@ -243,6 +262,7 @@ interface AnnotationBlueprint {
     /**
      * Typed value of a named property.
      *
+     * @param property name of the annotation property
      * @return value if present
      */
     default Optional<Boolean> booleanValue(String property) {
@@ -263,6 +283,7 @@ interface AnnotationBlueprint {
      * Typed values of a property that is defined as an array.
      * This will also work for a single values property.
      *
+     * @param property name of the annotation property
      * @return list of defined values if present
      */
     default Optional<List<Boolean>> booleanValues(String property) {
@@ -281,6 +302,7 @@ interface AnnotationBlueprint {
     /**
      * Typed value of a named property.
      *
+     * @param property name of the annotation property
      * @return value if present
      */
     default Optional<Byte> byteValue(String property) {
@@ -301,6 +323,7 @@ interface AnnotationBlueprint {
      * Typed values of a property that is defined as an array.
      * This will also work for a single values property.
      *
+     * @param property name of the annotation property
      * @return list of defined values if present
      */
     default Optional<List<Byte>> byteValues(String property) {
@@ -319,6 +342,7 @@ interface AnnotationBlueprint {
     /**
      * Typed value of a named property.
      *
+     * @param property name of the annotation property
      * @return value if present
      */
     default Optional<Character> charValue(String property) {
@@ -339,6 +363,7 @@ interface AnnotationBlueprint {
      * Typed values of a property that is defined as an array.
      * This will also work for a single values property.
      *
+     * @param property name of the annotation property
      * @return list of defined values if present
      */
     default Optional<List<Character>> charValues(String property) {
@@ -357,6 +382,7 @@ interface AnnotationBlueprint {
     /**
      * Typed value of a named property.
      *
+     * @param property name of the annotation property
      * @return value if present
      */
     default Optional<Short> shortValue(String property) {
@@ -377,6 +403,7 @@ interface AnnotationBlueprint {
      * Typed values of a property that is defined as an array.
      * This will also work for a single values property.
      *
+     * @param property name of the annotation property
      * @return list of defined values if present
      */
     default Optional<List<Short>> shortValues(String property) {
@@ -395,6 +422,7 @@ interface AnnotationBlueprint {
     /**
      * Typed value of a named property.
      *
+     * @param property name of the annotation property
      * @return value if present
      */
     default Optional<Float> floatValue(String property) {
@@ -415,6 +443,7 @@ interface AnnotationBlueprint {
      * Typed values of a property that is defined as an array.
      * This will also work for a single values property.
      *
+     * @param property name of the annotation property
      * @return list of defined values if present
      */
     default Optional<List<Float>> floatValues(String property) {
@@ -433,6 +462,7 @@ interface AnnotationBlueprint {
     /**
      * Typed value of a named property.
      *
+     * @param property name of the annotation property
      * @return value if present
      */
     default Optional<Double> doubleValue(String property) {
@@ -453,6 +483,7 @@ interface AnnotationBlueprint {
      * Typed values of a property that is defined as an array.
      * This will also work for a single values property.
      *
+     * @param property name of the annotation property
      * @return list of defined values if present
      */
     default Optional<List<Double>> doubleValues(String property) {
@@ -471,6 +502,7 @@ interface AnnotationBlueprint {
     /**
      * Typed value of a named property.
      *
+     * @param property name of the annotation property
      * @return value if present
      */
     default Optional<Class<?>> classValue(String property) {
@@ -491,6 +523,7 @@ interface AnnotationBlueprint {
      * Typed values of a property that is defined as an array.
      * This will also work for a single values property.
      *
+     * @param property name of the annotation property
      * @return list of defined values if present
      */
     default Optional<List<Class<?>>> classValues(String property) {
@@ -511,6 +544,7 @@ interface AnnotationBlueprint {
      * Typed value of a named property.
      * Alternative for {@link #classValue(String)}.
      *
+     * @param property name of the annotation property
      * @return value if present
      */
     default Optional<TypeName> typeValue(String property) {
@@ -533,6 +567,7 @@ interface AnnotationBlueprint {
      * This will also work for a single values property.
      * Alternative for {@link #classValues(String)}.
      *
+     * @param property name of the annotation property
      * @return list of defined values if present
      */
     default Optional<List<TypeName>> typeValues(String property) {
@@ -551,6 +586,7 @@ interface AnnotationBlueprint {
     /**
      * Typed value of a named property.
      *
+     * @param property name of the annotation property
      * @return value if present
      */
     default Optional<Annotation> annotationValue(String property) {
@@ -571,6 +607,7 @@ interface AnnotationBlueprint {
      * Typed values of a property that is defined as an array.
      * This will also work for a single values property.
      *
+     * @param property name of the annotation property
      * @return list of defined values if present
      */
     default Optional<List<Annotation>> annotationValues(String property) {
@@ -591,8 +628,9 @@ interface AnnotationBlueprint {
     /**
      * Typed value of a named property.
      *
-     * @param type class of the enumeration
-     * @param <T>  type of the enumeration
+     * @param property name of the annotation property
+     * @param type     class of the enumeration
+     * @param <T>      type of the enumeration
      * @return value if present
      */
     default <T extends Enum<T>> Optional<T> enumValue(String property, Class<T> type) {
@@ -615,12 +653,28 @@ interface AnnotationBlueprint {
      * Typed values of a property that is defined as an array.
      * This will also work for a single values property.
      *
-     * @param type class of the enumeration
-     * @param <T>  type of the enumeration
+     * @param property name of the annotation property
+     * @param type     class of the enumeration
+     * @param <T>      type of the enumeration
      * @return list of defined values if present
      */
     default <T extends Enum<T>> Optional<List<T>> enumValues(String property, Class<T> type) {
         return AnnotationSupport.asEnums(typeName(), values(), property, type);
     }
 
+    /**
+     * Check if {@link io.helidon.common.types.Annotation#metaAnnotations()} contains an annotation of the provided type.
+     * <p>
+     * Note: we ignore {@link java.lang.annotation.Target}, {@link java.lang.annotation.Inherited},
+     * {@link java.lang.annotation.Documented}, and {@link java.lang.annotation.Retention}.
+     *
+     * @param annotationType type of annotation
+     * @return {@code true} if the annotation is declared on this annotation, or is inherited from a declared annotation
+     */
+    default boolean hasMetaAnnotation(TypeName annotationType) {
+        return metaAnnotations()
+                .stream()
+                .map(Annotation::typeName)
+                .anyMatch(annotationType::equals);
+    }
 }

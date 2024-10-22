@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -107,13 +108,18 @@ class MpConfigImpl implements Config {
 
     @Override
     public ConfigValue getConfigValue(String key) {
+
+        ConfigValue value = findConfigValue(key)
+                .orElse(new ConfigValueImpl(key, null, null, null, 0));
+
         if (configProfile == null) {
-            return findConfigValue(key)
-                    .orElseGet(() -> new ConfigValueImpl(key, null, null, null, 0));
+            return value;
         }
-        return findConfigValue("%" + configProfile + "." + key)
-                .or(() -> findConfigValue(key))
-                .orElseGet(() -> new ConfigValueImpl(key, null, null, null, 0));
+
+        ConfigValue profileValue = findConfigValue("%" + configProfile + "." + key)
+                .orElse(value);
+
+        return value.getSourceOrdinal() > profileValue.getSourceOrdinal() ? value : profileValue;
     }
 
     @Override
@@ -126,12 +132,7 @@ class MpConfigImpl implements Config {
     @SuppressWarnings("unchecked")
     @Override
     public <T> Optional<T> getOptionalValue(String propertyName, Class<T> propertyType) {
-        if (configProfile == null) {
-            return optionalValue(propertyName, propertyType);
-        }
-
-        return optionalValue("%" + configProfile + "." + propertyName, propertyType)
-                .or(() -> optionalValue(propertyName, propertyType));
+        return optionalValue(propertyName, propertyType);
     }
 
     @SuppressWarnings("unchecked")
@@ -187,9 +188,9 @@ class MpConfigImpl implements Config {
                 return Optional.empty();
             }
         } else {
-            return findConfigValue(propertyName)
-                    .map(ConfigValue::getValue)
-                    .map(it -> convert(propertyName, propertyType, it));
+            Optional<ConfigValue> value = Optional.of(getConfigValue(propertyName));
+            return value.map(ConfigValue::getValue)
+                 .map(it -> convert(propertyName, propertyType, it));
         }
     }
 
@@ -314,6 +315,7 @@ class MpConfigImpl implements Config {
     }
 
     private Optional<ConfigValue> findConfigValue(String propertyName) {
+
         for (ConfigSource source : sources) {
             String value = source.getValue(propertyName);
 
@@ -341,7 +343,7 @@ class MpConfigImpl implements Config {
                         .map(it -> new ConfigValueImpl(propertyName, it, rawValue, source.getName(), source.getOrdinal()));
             } catch (NoSuchElementException e) {
                 // Property expression does not resolve
-                return Optional.empty();
+                return Optional.of(new ConfigValueImpl(propertyName, null, rawValue, source.getName(), source.getOrdinal()));
             }
         }
 
@@ -451,7 +453,11 @@ class MpConfigImpl implements Config {
         if (Enum.class.isAssignableFrom(type)) {
             return Optional.of(value -> {
                 Class<? extends Enum> enumClass = (Class<? extends Enum>) type;
-                return (T) Enum.valueOf(enumClass, value);
+                try {
+                    return (T) Enum.valueOf(enumClass, value);
+                } catch (Exception e) {
+                    return (T) Enum.valueOf(enumClass, value.toUpperCase(Locale.ROOT));
+                }
             });
         }
         // any class that has a "public static T method()"

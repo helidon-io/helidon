@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.integrations.cdi</groupId>
         <artifactId>helidon-integrations-cdi-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-integrations-cdi-hibernate</artifactId>
     <name>Helidon CDI Integrations Hibernate</name>
@@ -72,6 +72,11 @@
         <dependency>
             <groupId>jakarta.transaction</groupId>
             <artifactId>jakarta.transaction-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.graalvm.nativeimage</groupId>
+            <artifactId>svm</artifactId>
             <scope>provided</scope>
         </dependency>
 

@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.microprofile</groupId>
         <artifactId>helidon-microprofile-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
 
     <groupId>io.helidon.microprofile.websocket</groupId>
@@ -75,6 +75,10 @@
         <dependency>
             <groupId>jakarta.websocket</groupId>
             <artifactId>jakarta.websocket-client-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common.concurrency</groupId>
+            <artifactId>helidon-common-concurrency-limits</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.features</groupId>

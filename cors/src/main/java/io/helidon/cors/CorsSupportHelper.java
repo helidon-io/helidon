@@ -26,7 +26,6 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
-import java.util.logging.Logger;
 
 import io.helidon.common.config.Config;
 import io.helidon.common.uri.UriInfo;
@@ -59,7 +58,7 @@ public class CorsSupportHelper<Q, R> {
     static final String METHOD_NOT_IN_ALLOWED_LIST = "CORS method is not in allowed list";
     static final String HEADERS_NOT_IN_ALLOWED_LIST = "CORS headers not in allowed list";
 
-    static final Logger LOGGER = Logger.getLogger(CorsSupportHelper.class.getName());
+    static final System.Logger LOGGER = System.getLogger(CorsSupportHelper.class.getName());
 
     static final String OPAQUE_ORIGIN = "null"; // browsers might send this as Origin header if origin info is untrusted
 
@@ -240,7 +239,8 @@ public class CorsSupportHelper<Q, R> {
 
             CorsSupportHelper<Q, R>  result = new CorsSupportHelper<>(this);
 
-            LOGGER.config(() -> String.format("CorsSupportHelper configured as: %s", result.toString()));
+            LOGGER.log(System.Logger.Level.INFO,
+                    () -> String.format("CorsSupportHelper configured as: %s", result.toString()));
 
             return result;
         }

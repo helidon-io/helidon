@@ -33,12 +33,14 @@ class RoundContextImpl implements RoundContext {
     private final Map<TypeName, ClassCode> newTypes = new HashMap<>();
     private final Map<TypeName, List<TypeInfo>> annotationToTypes;
     private final List<TypeInfo> types;
+    private final CodegenContext ctx;
     private final Collection<TypeName> annotations;
 
-    RoundContextImpl(Set<TypeName> annotations,
+    RoundContextImpl(CodegenContext ctx,
+                     Set<TypeName> annotations,
                      Map<TypeName, List<TypeInfo>> annotationToTypes,
                      List<TypeInfo> types) {
-
+        this.ctx = ctx;
         this.annotations = annotations;
         this.annotationToTypes = annotationToTypes;
         this.types = types;
@@ -83,7 +85,9 @@ class RoundContextImpl implements RoundContext {
         List<TypeInfo> result = new ArrayList<>();
 
         for (TypeInfo typeInfo : typeInfos) {
-            if (typeInfo.hasAnnotation(annotationType)) {
+            if (typeInfo.hasAnnotation(annotationType) || TypeHierarchy.hierarchyAnnotations(ctx, typeInfo)
+                    .stream()
+                    .anyMatch(it -> it.typeName().equals(annotationType))) {
                 result.add(typeInfo);
             }
         }

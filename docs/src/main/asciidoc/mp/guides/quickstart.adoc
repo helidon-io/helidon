@@ -29,13 +29,13 @@ This guide describes a basic example of an Helidon MP application using Docker a
 
 For this 5 minute tutorial, you will need the following:
 
-include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites]
+include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites-cli]
 
 == Generate the Project
 
-Generate the project sources using one (or both) of the Helidon Maven
- archetypes. The result is a simple project that shows the basics of configuring
- the WebServer and implementing basic routing rules.
+Generate the project sources using the Helidon Maven archetype.
+The result is a simple project that shows the basics of
+a MicroProfile application.
 
 [source,bash,subs="attributes+"]
 .Run the Maven archetype
@@ -47,6 +47,17 @@ mvn -U archetype:generate -DinteractiveMode=false \
     -DgroupId=io.helidon.examples \
     -DartifactId=helidon-quickstart-mp \
     -Dpackage=io.helidon.examples.quickstart.mp
+----
+
+TIP: If you are using an earlier version of Helidon and the above command
+fails with `java.lang.NoSuchMethodError` then you can work-around the error
+by replacing `archetype:generate` with `org.apache.maven.plugins:maven-archetype-plugin:3.2.1:generate`.
+Or use the helidon CLI.
+
+[source,bash]
+.Or alternatively run the helidon CLI
+----
+helidon init --batch -Dflavor=mp -Dapp-type=quickstart
 ----
 
 The archetype generates a Maven project in your current directory

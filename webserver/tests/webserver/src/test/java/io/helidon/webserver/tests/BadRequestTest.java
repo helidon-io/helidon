@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+
 @ServerTest
 class BadRequestTest {
     public static final String CUSTOM_REASON_PHRASE = "Custom-bad-request";
@@ -71,13 +72,10 @@ class BadRequestTest {
                                        .build());
     }
 
-    // no need to try with resources when reading as string
-    @SuppressWarnings("resource")
     @Test
     void testOk() {
         String response = client.method(Method.GET)
-                .request()
-                .as(String.class);
+                .requestEntity(String.class);
 
         assertThat(response, is("Hi"));
     }
@@ -145,6 +143,39 @@ class BadRequestTest {
         String response = socketClient.receive();
 
         assertThat(response, containsString("400 " + CUSTOM_REASON_PHRASE));
+        assertThat(response, containsString(CUSTOM_ENTITY));
+    }
+
+    @Test
+    void testCrWithoutLf() {
+        socketClient.requestRaw("GET / HTTP/1.1\r\nhost: localhost:8080\rcustom: value\r\n");
+
+        String response = socketClient.receive();
+        assertThat(response, containsString("400 " + CUSTOM_REASON_PHRASE));
+        assertThat(response, containsString(CUSTOM_ENTITY));
+    }
+
+    @Test
+    void testLfWithoutCr() {
+        socketClient.requestRaw("GET / HTTP/1.1\r\nhost: localhost:8080\ncustom: value\r\n");
+
+        String response = socketClient.receive();
+        assertThat(response, containsString("400 " + CUSTOM_REASON_PHRASE));
+        assertThat(response, containsString(CUSTOM_ENTITY));
+    }
+
+    @Test
+    void testKeepAliveAndMissingLf() {
+        socketClient.request(Method.GET, "/", null, List.of("Accept: text/plain", "Connection: keep-alive"));
+        String response = socketClient.receive();
+        assertThat(response, containsString("200 OK"));
+        assertThat(response, containsString("Hi"));
+
+        socketClient.requestRaw("GET / HTTP/1.1\r\nhost: localhost:8080\rcustom: value\r\n");
+
+        response = socketClient.receive();
+        assertThat(response, containsString("400 " + CUSTOM_REASON_PHRASE));
+        assertThat(response, containsString("Connection: close"));
         assertThat(response, containsString(CUSTOM_ENTITY));
     }
 

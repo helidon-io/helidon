@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.tracing</groupId>
         <artifactId>helidon-tracing-tests</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-tracing-tests-it1</artifactId>
@@ -70,6 +70,11 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.logging</groupId>
+            <artifactId>helidon-logging-jul</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

@@ -66,3 +66,5 @@ persistence_3_0.xsd
 src/test/resources/static/classpath/index.html
 ._java_
 ._inject_
+service.loader
+.repo

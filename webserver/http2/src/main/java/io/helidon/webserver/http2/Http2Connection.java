@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,8 @@ import java.util.concurrent.Semaphore;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
+import io.helidon.common.concurrency.limits.FixedLimit;
+import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.task.InterruptableTask;
 import io.helidon.common.tls.TlsUtils;
 import io.helidon.http.DateTime;
@@ -172,9 +174,9 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     }
 
     @Override
-    public void handle(Semaphore requestSemaphore) throws InterruptedException {
+    public void handle(Limit limit) throws InterruptedException {
         try {
-            doHandle(requestSemaphore);
+            doHandle(limit);
         } catch (Http2Exception e) {
             if (state == State.FINISHED) {
                 // already handled
@@ -207,6 +209,12 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             state = State.FINISHED;
             throw e;
         }
+    }
+
+    @SuppressWarnings("removal")
+    @Override
+    public void handle(Semaphore requestSemaphore) throws InterruptedException {
+        handle(FixedLimit.create(requestSemaphore));
     }
 
     /**
@@ -321,7 +329,12 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         return serverSettings;
     }
 
-    private void doHandle(Semaphore requestSemaphore) throws InterruptedException {
+    // jUnit Http2Settings pkg only visible test accessor.
+    Http2Settings clientSettings() {
+        return clientSettings;
+    }
+
+    private void doHandle(Limit limit) throws InterruptedException {
         myThread = Thread.currentThread();
         while (canRun && state != State.FINISHED) {
             if (expectPreface && state != State.WRITE_SERVER_SETTINGS) {
@@ -336,10 +349,9 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                     // no data to read -> connection is closed
                     throw new CloseConnectionException("Connection closed by client", e);
                 }
-                dispatchHandler(requestSemaphore);
-            } else {
-                dispatchHandler(requestSemaphore);
             }
+
+            dispatchHandler(limit);
         }
         if (state != State.FINISHED) {
             Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.NO_ERROR, "Idle timeout");
@@ -347,7 +359,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         }
     }
 
-    private void dispatchHandler(Semaphore requestSemaphore) {
+    private void dispatchHandler(Limit limit) {
         switch (state) {
         case CONTINUATION -> doContinuation();
         case WRITE_SERVER_SETTINGS -> writeServerSettings();
@@ -355,7 +367,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         case SETTINGS -> doSettings();
         case ACK_SETTINGS -> ackSettings();
         case DATA -> dataFrame();
-        case HEADERS -> doHeaders(requestSemaphore);
+        case HEADERS -> doHeaders(limit);
         case PRIORITY -> doPriority();
         case READ_PUSH_PROMISE -> throw new Http2Exception(Http2ErrorCode.REFUSED_STREAM, "Push promise not supported");
         case PING -> pingFrame();
@@ -601,7 +613,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         state = State.READ_FRAME;
     }
 
-    private void doHeaders(Semaphore requestSemaphore) {
+    private void doHeaders(Limit limit) {
         int streamId = frameHeader.streamId();
         StreamContext streamContext = stream(streamId);
 
@@ -670,7 +682,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                                                         path,
                                                         http2Config.validatePath());
         stream.prologue(httpPrologue);
-        stream.requestSemaphore(requestSemaphore);
+        stream.requestLimit(limit);
         stream.headers(headers, endOfStream);
         state = State.READ_FRAME;
 

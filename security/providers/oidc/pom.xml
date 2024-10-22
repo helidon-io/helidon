@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.security.providers</groupId>
         <artifactId>helidon-security-providers-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>helidon-security-providers-oidc</artifactId>
@@ -88,11 +88,6 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-metadata-processor</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.bundles</groupId>
             <artifactId>helidon-bundles-config</artifactId>
             <scope>test</scope>
@@ -117,6 +112,11 @@
             <artifactId>jakarta.inject-api</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.logging</groupId>
+            <artifactId>helidon-logging-jul</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -127,21 +127,31 @@
                 <configuration>
                     <annotationProcessorPaths>
                         <path>
+                            <groupId>io.helidon.codegen</groupId>
+                            <artifactId>helidon-codegen-apt</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
                             <groupId>io.helidon.common.features</groupId>
                             <artifactId>helidon-common-features-processor</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>
-                            <groupId>io.helidon.config</groupId>
-                            <artifactId>helidon-config-metadata-processor</artifactId>
+                            <groupId>io.helidon.config.metadata</groupId>
+                            <artifactId>helidon-config-metadata-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
                 <dependencies>
                     <dependency>
-                        <groupId>io.helidon.config</groupId>
-                        <artifactId>helidon-config-metadata-processor</artifactId>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-apt</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.config.metadata</groupId>
+                        <artifactId>helidon-config-metadata-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>

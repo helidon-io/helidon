@@ -16,6 +16,8 @@
 
 package io.helidon.builder.codegen;
 
+import java.net.URI;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -24,6 +26,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import io.helidon.codegen.CodegenValidator;
 import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.codegen.classmodel.Field;
 import io.helidon.codegen.classmodel.InnerClass;
@@ -32,39 +35,57 @@ import io.helidon.codegen.classmodel.Method;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
+import io.helidon.common.types.TypedElementInfo;
+
+import static io.helidon.builder.codegen.Types.OPTION_DEFAULT;
 
 class TypeHandler {
+    private final TypeName enclosingType;
+    private final TypedElementInfo annotatedMethod;
     private final String name;
     private final String getterName;
     private final String setterName;
     private final TypeName declaredType;
 
-    TypeHandler(String name, String getterName, String setterName, TypeName declaredType) {
+    TypeHandler(TypeName enclosingType,
+                TypedElementInfo annotatedMethod,
+                String name,
+                String getterName,
+                String setterName,
+                TypeName declaredType) {
+        this.enclosingType = enclosingType;
+        this.annotatedMethod = annotatedMethod;
         this.name = name;
         this.getterName = getterName;
         this.setterName = setterName;
         this.declaredType = declaredType;
     }
 
-    static TypeHandler create(String name, String getterName, String setterName, TypeName returnType, boolean sameGeneric) {
+    static TypeHandler create(TypeName blueprintType,
+                              TypedElementInfo annotatedMethod,
+                              String name,
+                              String getterName,
+                              String setterName,
+                              TypeName returnType,
+                              boolean sameGeneric) {
         if (TypeNames.OPTIONAL.equals(returnType)) {
-            return new TypeHandlerOptional(name, getterName, setterName, returnType);
+            return new TypeHandlerOptional(blueprintType, annotatedMethod, name, getterName, setterName, returnType);
         }
         if (TypeNames.SUPPLIER.equals(returnType)) {
-            return new TypeHandlerSupplier(name, getterName, setterName, returnType);
+            return new TypeHandlerSupplier(blueprintType, annotatedMethod, name, getterName, setterName, returnType);
         }
         if (TypeNames.SET.equals(returnType)) {
-            return new TypeHandlerSet(name, getterName, setterName, returnType);
+            return new TypeHandlerSet(blueprintType, annotatedMethod, name, getterName, setterName, returnType);
         }
 
         if (TypeNames.LIST.equals(returnType)) {
-            return new TypeHandlerList(name, getterName, setterName, returnType);
+            return new TypeHandlerList(blueprintType, annotatedMethod, name, getterName, setterName, returnType);
         }
         if (TypeNames.MAP.equals(returnType)) {
-            return new TypeHandlerMap(name, getterName, setterName, returnType, sameGeneric);
+            return new TypeHandlerMap(blueprintType, annotatedMethod, name, getterName, setterName, returnType, sameGeneric);
         }
 
-        return new TypeHandler(name, getterName, setterName, returnType);
+        return new TypeHandler(blueprintType, annotatedMethod, name, getterName, setterName, returnType);
     }
 
     static AccessModifier setterAccessModifier(AnnotationDataOption configured) {
@@ -158,6 +179,8 @@ class TypeHandler {
                     .addContent("\"");
         }
         if (TypeNames.DURATION.equals(typeName)) {
+
+            CodegenValidator.validateDuration(enclosingType, annotatedMethod, OPTION_DEFAULT, "value", defaultValue);
             return content -> content.addContent(Duration.class)
                     .addContent(".parse(\"")
                     .addContent(defaultValue)
@@ -167,6 +190,19 @@ class TypeHandler {
             return content -> content.addContent("\"")
                     .addContent(defaultValue)
                     .addContent("\".toCharArray()");
+        }
+        if (Types.PATH.equals(typeName)) {
+            return content -> content.addContent(Paths.class)
+                    .addContent(".get(\"")
+                    .addContent(defaultValue)
+                    .addContent("\")");
+        }
+        if (Types.URI.equals(typeName)) {
+            CodegenValidator.validateUri(enclosingType, annotatedMethod, OPTION_DEFAULT, "value", defaultValue);
+            return content -> content.addContent(URI.class)
+                    .addContent(".create(\"")
+                    .addContent(defaultValue)
+                    .addContent("\")");
         }
         if (typeName.primitive()) {
             if (typeName.fqName().equals("char")) {
@@ -614,8 +650,13 @@ class TypeHandler {
     static class OneTypeHandler extends TypeHandler {
         private final TypeName actualType;
 
-        OneTypeHandler(String name, String getterName, String setterName, TypeName declaredType) {
-            super(name, getterName, setterName, declaredType);
+        OneTypeHandler(TypeName enclosingType,
+                       TypedElementInfo annotatedMethod,
+                       String name,
+                       String getterName,
+                       String setterName,
+                       TypeName declaredType) {
+            super(enclosingType, annotatedMethod, name, getterName, setterName, declaredType);
 
             if (declaredType.typeArguments().isEmpty()) {
                 this.actualType = TypeNames.STRING;

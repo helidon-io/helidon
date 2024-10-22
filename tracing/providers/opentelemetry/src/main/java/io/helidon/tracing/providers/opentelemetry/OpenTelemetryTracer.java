@@ -16,6 +16,7 @@
 package io.helidon.tracing.providers.opentelemetry;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -40,6 +41,7 @@ import io.opentelemetry.context.propagation.TextMapPropagator;
 import io.opentelemetry.context.propagation.TextMapSetter;
 
 class OpenTelemetryTracer implements Tracer {
+
     private static final TextMapGetter GETTER = new Getter();
     private static final TextMapSetter SETTER = new Setter();
 
@@ -74,8 +76,8 @@ class OpenTelemetryTracer implements Tracer {
     public Span.Builder<?> spanBuilder(String name) {
         OpenTelemetrySpanBuilder builder = new OpenTelemetrySpanBuilder(delegate.spanBuilder(name),
                                                                         spanListeners);
+        Span.current().map(Span::context).ifPresent(builder::parent);
         tags.forEach(builder::tag);
-        Span.current().ifPresent(it -> builder.parent(it.context()));
         return builder;
     }
 
@@ -97,6 +99,10 @@ class OpenTelemetryTracer implements Tracer {
         if (tracerClass.isAssignableFrom(delegate.getClass())) {
             return tracerClass.cast(delegate);
         }
+        if (tracerClass.isInstance(this)) {
+            return tracerClass.cast(this);
+        }
+
         throw new IllegalArgumentException("Cannot provide an instance of " + tracerClass.getName()
                                                    + ", telemetry tracer is: " + delegate.getClass().getName());
     }
@@ -105,6 +111,10 @@ class OpenTelemetryTracer implements Tracer {
     public Tracer register(SpanListener listener) {
         spanListeners.add(listener);
         return this;
+    }
+
+    List<SpanListener> spanListeners() {
+        return Collections.unmodifiableList(spanListeners);
     }
 
     static class Builder implements TracerBuilder<Builder> {

@@ -20,24 +20,29 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon.inject</groupId>
         <artifactId>helidon-inject-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
-
     <groupId>io.helidon.inject.configdriven</groupId>
     <artifactId>helidon-inject-configdriven-project</artifactId>
-    <name>Helidon Injection Config-Driven Project</name>
+    <name>Helidon Injection ConfigDriven Project</name>
     <packaging>pom</packaging>
 
     <modules>
         <module>api</module>
         <module>processor</module>
         <module>runtime</module>
-        <module>tests</module>
     </modules>
 
+    <profiles>
+        <profile>
+            <id>tests</id>
+            <modules>
+                <module>tests</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

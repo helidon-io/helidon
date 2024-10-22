@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.common</groupId>
         <artifactId>helidon-common-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-common-tls</artifactId>
@@ -32,20 +32,9 @@
 
     <properties>
         <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
-        <!--
-        Once we remove dependency on Jakarta inject, this can be removed. Current warning:
-        The code being documented uses modules but the packages defined in
-         https://jakarta.ee/specifications/dependency-injection/2.0/apidocs/ are in the unnamed module.
-        -->
-        <javadoc.fail-on-warnings>false</javadoc.fail-on-warnings>
     </properties>
 
     <dependencies>
-        <dependency>
-            <artifactId>helidon-inject-api</artifactId>
-            <groupId>io.helidon.inject</groupId>
-            <optional>true</optional>
-        </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common</artifactId>
@@ -61,6 +50,10 @@
         <dependency>
             <groupId>io.helidon.builder</groupId>
             <artifactId>helidon-builder-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-registry</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
@@ -88,13 +81,13 @@
                 <configuration>
                     <annotationProcessorPaths>
                         <path>
-                            <groupId>io.helidon.config</groupId>
-                            <artifactId>helidon-config-metadata-processor</artifactId>
+                            <groupId>io.helidon.codegen</groupId>
+                            <artifactId>helidon-codegen-apt</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>
-                            <groupId>io.helidon.codegen</groupId>
-                            <artifactId>helidon-codegen-apt</artifactId>
+                            <groupId>io.helidon.config.metadata</groupId>
+                            <artifactId>helidon-config-metadata-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>
@@ -111,13 +104,13 @@
                 </configuration>
                 <dependencies>
                     <dependency>
-                        <groupId>io.helidon.config</groupId>
-                        <artifactId>helidon-config-metadata-processor</artifactId>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-apt</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
-                        <groupId>io.helidon.codegen</groupId>
-                        <artifactId>helidon-codegen-apt</artifactId>
+                        <groupId>io.helidon.config.metadata</groupId>
+                        <artifactId>helidon-config-metadata-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>

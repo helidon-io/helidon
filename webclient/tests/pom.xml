@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.webclient</groupId>
         <artifactId>helidon-webclient-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
 
     <groupId>io.helidon.webclient.tests</groupId>
@@ -37,6 +37,7 @@
         <module>http1</module>
         <module>http2</module>
         <module>webclient</module>
+        <module>grpc</module>
     </modules>
 
     <properties>

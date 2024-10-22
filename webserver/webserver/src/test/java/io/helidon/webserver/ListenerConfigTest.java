@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ public class ListenerConfigTest {
         Config config = Config.create();
         var webServerConfig = WebServer.builder().config(config.get("server")).buildPrototype();
         assertThat(webServerConfig.writeQueueLength(), is(0));         // default
-        assertThat(webServerConfig.writeBufferSize(), is(512));        // default
+        assertThat(webServerConfig.writeBufferSize(), is(4096));       // default
         assertThat(webServerConfig.shutdownGracePeriod().toMillis(), is(500L));   // default
         ListenerConfig listenerConfig2 = webServerConfig.sockets().get("other");
         assertThat(listenerConfig2.writeQueueLength(), is(64));

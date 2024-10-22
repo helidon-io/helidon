@@ -21,8 +21,7 @@
     <parent>
         <groupId>io.helidon.microprofile.tests.tck</groupId>
         <artifactId>helidon-microprofile-tests-tck-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -34,11 +33,6 @@
             <groupId>io.helidon.microprofile.tests</groupId>
             <artifactId>helidon-arquillian</artifactId>
             <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.arquillian.testng</groupId>
-            <artifactId>arquillian-testng-container</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -56,7 +50,22 @@
             <artifactId>microprofile-telemetry-tracing-tck</artifactId>
             <scope>test</scope>
         </dependency>
-         <dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.rest-client</groupId>
+            <artifactId>helidon-microprofile-rest-client</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.tracing.providers</groupId>
+            <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.server</groupId>
+            <artifactId>helidon-microprofile-server</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
             <scope>test</scope>
@@ -73,6 +82,18 @@
                         --add-opens=java.base/java.lang=ALL-UNNAMED
                         --add-opens=java.base/java.lang.invoke=ALL-UNNAMED
                     </argLine>
+                    <!--
+                       @Deprecated(forRemoval = true) Remove the  systemPropertyVariable setting for name-includes-method
+                       in 5.x. The property will no longer be supported.
+                    -->
+                    <systemPropertyVariables>
+                        <!--
+                            The TCK expects the current REST span names (which include the HTTP method name). But for backward
+                            compatibility Helidon 4.x defaults to use the previous REST span name format which excludes the
+                            HTTP method name. So override that default for running the TCK.
+                        -->
+                        <mp.telemetry.span.name-includes-method>true</mp.telemetry.span.name-includes-method>
+                    </systemPropertyVariables>
                     <suiteXmlFiles>
                         <suiteXmlFile>src/test/tck-suite.xml</suiteXmlFile>
                     </suiteXmlFiles>

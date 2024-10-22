@@ -22,11 +22,11 @@
     <parent>
         <artifactId>helidon-tests-functional-project</artifactId>
         <groupId>io.helidon.tests.functional</groupId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-tests-functional-request-scope-injection</artifactId>
-    <name>Helidon Tests Functional Helidon Request Scope Injection</name>
+    <name>Helidon Tests Functional Request Scope Injection</name>
 
     <dependencies>
         <dependency>
@@ -55,6 +55,11 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-params</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.logging</groupId>
+            <artifactId>helidon-logging-jul</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

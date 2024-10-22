@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.annotation.Counted;
-import org.eclipse.microprofile.metrics.annotation.RegistryType;
+import org.eclipse.microprofile.metrics.annotation.RegistryScope;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
 /**
@@ -102,9 +102,8 @@ public class HelloWorldResource {
     @Inject
     MetricRegistry metricRegistry;
 
-    // TODO change to RegistryScope once MP makes it a qualifier
     @Inject
-    @RegistryType(type = MetricRegistry.Type.VENDOR)
+    @RegistryScope(scope = MetricRegistry.VENDOR_SCOPE)
     private MetricRegistry vendorRegistry;
 
     public HelloWorldResource() {

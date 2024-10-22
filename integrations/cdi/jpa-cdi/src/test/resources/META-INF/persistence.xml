@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -53,9 +53,10 @@
     </persistence-unit>
 
     <persistence-unit name="test-resource-local" transaction-type="RESOURCE_LOCAL">
-        <description>A resource local persistence unit for use by unit tests.</description>
+      <description>A resource local persistence unit for use by unit tests.</description>
+        <exclude-unlisted-classes>true</exclude-unlisted-classes>
         <properties>
-            <property name="jakarta.persistence.jdbc.url" value="jdbc:h2:mem:test;INIT=SET TRACE_LEVEL_FILE=4"/>
+            <property name="jakarta.persistence.jdbc.url" value="jdbc:h2:mem:test-resource-local;INIT=SET TRACE_LEVEL_FILE=4"/>
             <property name="jakarta.persistence.jdbc.driver" value="org.h2.Driver"/>
             <property name="jakarta.persistence.jdbc.user" value="sa"/>
             <property name="jakarta.persistence.jdbc.password" value=""/>

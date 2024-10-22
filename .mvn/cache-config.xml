@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<cacheConfig>
+    <enabled>false</enabled>
+    <lifecycleConfig>
+        <project path="docs/pom.xml">
+            <projectFilesExcludes>
+                <exclude>src/main/asciidoc/config/*</exclude>
+            </projectFilesExcludes>
+        </project>
+        <project glob="**/*">
+            <projectFilesExcludes>
+                <exclude>.*/**</exclude>
+                <exclude>etc/**</exclude>
+            </projectFilesExcludes>
+        </project>
+        <executionsExcludes>
+            <!-- exclude target/libs -->
+            <exclude>*@copy-libs</exclude>
+        </executionsExcludes>
+    </lifecycleConfig>
+    <reactorRules>
+        <reactorRule name="tests">
+            <profiles>
+                <profile>tests</profile>
+            </profiles>
+            <moduleSets>
+                <moduleSet name="core">
+                    <includes>
+                        <include>webserver/**</include>
+                        <include>webclient/**</include>
+                        <include>common/**</include>
+                        <include>config/**</include>
+                        <include>security/**</include>
+                    </includes>
+                </moduleSet>
+                <moduleSet name="jpa-oracle">
+                    <includes>
+                        <include>tests/integration/jpa/oracle/**</include>
+                    </includes>
+                </moduleSet>
+                <moduleSet name="jpa">
+                    <includes>
+                        <include>tests/integration/jpa/**</include>
+                    </includes>
+                </moduleSet>
+                <moduleSet name="dbclient-oracle">
+                    <includes>
+                        <include>tests/integration/dbclient/oracle/**</include>
+                    </includes>
+                </moduleSet>
+                <moduleSet name="dbclient">
+                    <includes>
+                        <include>tests/integration/dbclient/**</include>
+                    </includes>
+                </moduleSet>
+                <moduleSet name="packaging">
+                    <includes>
+                        <include>tests/integration/packaging/**</include>
+                    </includes>
+                </moduleSet>
+                <moduleSet name="it">
+                    <includes>
+                        <include>tests/integration/**</include>
+                    </includes>
+                </moduleSet>
+                <moduleSet name="others">
+                    <includes>
+                        <include>**/*</include>
+                    </includes>
+                    <excludes>
+                        <exclude>tests/benchmark/**</exclude>
+                    </excludes>
+                </moduleSet>
+            </moduleSets>
+        </reactorRule>
+        <reactorRule name="tck">
+            <profiles>
+                <profile>tests</profile>
+                <profile>tck</profile>
+            </profiles>
+            <moduleSets>
+                <moduleSet name="cdi">
+                    <includes>
+                        <include>microprofile/tests/tck/tck-cdi*/**</include>
+                    </includes>
+                </moduleSet>
+                <moduleSet name="rest">
+                    <includes>
+                        <include>microprofile/tests/tck/tck-rest*/**</include>
+                    </includes>
+                </moduleSet>
+                <moduleSet name="others">
+                    <includes>
+                        <include>microprofile/tests/tck/**</include>
+                    </includes>
+                </moduleSet>
+            </moduleSets>
+        </reactorRule>
+        <reactorRule name="default">
+            <moduleSets>
+                <moduleSet name="core">
+                    <includes>
+                        <include>webserver/**</include>
+                        <include>webclient/**</include>
+                        <include>common/**</include>
+                        <include>config/**</include>
+                        <include>security/**</include>
+                    </includes>
+                </moduleSet>
+                <moduleSet name="integrations">
+                    <includes>
+                        <include>integrations/**</include>
+                    </includes>
+                </moduleSet>
+                <moduleSet name="others">
+                    <includes>
+                        <include>**/*</include>
+                    </includes>
+                </moduleSet>
+            </moduleSets>
+        </reactorRule>
+    </reactorRules>
+</cacheConfig>

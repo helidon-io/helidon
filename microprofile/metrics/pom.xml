@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.microprofile</groupId>
         <artifactId>helidon-microprofile-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.microprofile.metrics</groupId>
     <artifactId>helidon-microprofile-metrics</artifactId>
@@ -103,6 +103,11 @@
             <artifactId>helidon-common-testing-junit5</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.logging</groupId>
+            <artifactId>helidon-logging-jul</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -123,6 +128,7 @@
                                 <exclude>**/HelloWorldAsyncResponseTest.java</exclude>
                                 <exclude>**/TestMetricsOnOwnSocket.java</exclude>
                                 <exclude>**/TestDisabledMetrics.java</exclude>
+                                <exclude>**/TestSelectivelyDisabledMetrics.java</exclude>
                                 <exclude>**/TestConfigProcessing.java</exclude>
                             </excludes>
                             <systemPropertyVariables>
@@ -163,6 +169,17 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <id>test-selectively-disabled-metrics</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/TestSelectivelyDisabledMetric.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>test-config-with-top-level-tags</id>
                         <goals>
                             <goal>test</goal>
@@ -196,23 +213,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>pipeline</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <systemPropertyVariables>
-                                <helidon.microprofile.metrics.perfTest.enabled>false</helidon.microprofile.metrics.perfTest.enabled>
-                            </systemPropertyVariables>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>

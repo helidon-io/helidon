@@ -18,7 +18,6 @@ import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.common.features.api.Preview;
 
-
 /**
  * Helidon WebServer gRPC Support.
  */
@@ -28,20 +27,21 @@ import io.helidon.common.features.api.Preview;
          in = HelidonFlavor.SE,
          path = {"WebServer", "GRPC"}
 )
-@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
+@SuppressWarnings({ "requires-automatic"})
 module io.helidon.webserver.grpc {
 
-    requires io.grpc.protobuf.lite;
     requires io.helidon.builder.api;
     requires io.helidon.webserver.http2;
-    requires java.logging;
+    requires io.helidon.tracing;
+    requires io.helidon.common.config;
+
+    requires io.grpc;
+    requires io.grpc.stub;
+    requires com.google.protobuf;
+
+    requires transitive io.helidon.grpc.core;
 
     requires static io.helidon.common.features.api;
-
-    requires transitive com.google.protobuf;
-    requires transitive io.grpc;
-    requires transitive io.grpc.stub;
-    requires transitive io.helidon.common.config;
 
     exports io.helidon.webserver.grpc;
 
@@ -49,5 +49,4 @@ module io.helidon.webserver.grpc {
             with io.helidon.webserver.grpc.GrpcProtocolProvider;
     provides io.helidon.webserver.spi.ProtocolConfigProvider
             with io.helidon.webserver.grpc.GrpcProtocolConfigProvider;
-
 }

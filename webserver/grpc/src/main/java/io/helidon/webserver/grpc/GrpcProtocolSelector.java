@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import io.helidon.webserver.http2.spi.SubProtocolResult;
  * Sub-protocol selector for HTTP/2.
  */
 public class GrpcProtocolSelector implements Http2SubProtocolSelector {
+
     private GrpcProtocolSelector() {
     }
 
@@ -65,19 +66,19 @@ public class GrpcProtocolSelector implements Http2SubProtocolSelector {
         Headers httpHeaders = headers.httpHeaders();
 
         if (httpHeaders.contains(HeaderNames.CONTENT_TYPE)) {
-            String contentType = httpHeaders.get(HeaderNames.CONTENT_TYPE).value();
+            String contentType = httpHeaders.get(HeaderNames.CONTENT_TYPE).get();
 
             if (contentType.startsWith("application/grpc")) {
                 GrpcRouting routing = router.routing(GrpcRouting.class, GrpcRouting.empty());
 
-                Grpc<?, ?> route = routing.findRoute(prologue);
+                GrpcRouteHandler<?, ?> route = routing.findRoute(prologue);
 
                 if (route == null) {
                     return new SubProtocolResult(true,
                                                  new GrpcProtocolHandlerNotFound(streamWriter, streamId, currentStreamState));
                 }
                 return new SubProtocolResult(true,
-                                             new GrpcProtocolHandler(prologue,
+                                             new GrpcProtocolHandler<>(prologue,
                                                                      headers,
                                                                      streamWriter,
                                                                      streamId,

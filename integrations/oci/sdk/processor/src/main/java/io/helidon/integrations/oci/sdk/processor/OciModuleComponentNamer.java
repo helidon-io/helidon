@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,10 @@ import static java.util.function.Predicate.not;
 
 /**
  * Avoids using any OCI SDK package name(s) as the {@link ModuleComponent} name that is code-generated.
+ *
+ * @deprecated replaced with {@code helidon-integrations-oci} module
  */
+@Deprecated(forRemoval = true, since = "4.1.0")
 public class OciModuleComponentNamer implements ModuleComponentNamer {
 
     /**

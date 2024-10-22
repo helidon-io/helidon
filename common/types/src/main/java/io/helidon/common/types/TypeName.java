@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -130,6 +130,9 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         private final List<String> typeParameters = new ArrayList<>();
         private boolean array = false;
         private boolean generic = false;
+        private boolean isEnclosingNamesMutated;
+        private boolean isTypeArgumentsMutated;
+        private boolean isTypeParametersMutated;
         private boolean primitive = false;
         private boolean wildcard = false;
         private String className;
@@ -142,7 +145,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
-         * Update this builder from an existing prototype instance.
+         * Update this builder from an existing prototype instance. This method disables automatic service discovery.
          *
          * @param prototype existing prototype to update this builder from
          * @return updated builder instance
@@ -150,12 +153,21 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         public BUILDER from(TypeName prototype) {
             packageName(prototype.packageName());
             className(prototype.className());
+            if (!isEnclosingNamesMutated) {
+                enclosingNames.clear();
+            }
             addEnclosingNames(prototype.enclosingNames());
             primitive(prototype.primitive());
             array(prototype.array());
             generic(prototype.generic());
             wildcard(prototype.wildcard());
+            if (!isTypeArgumentsMutated) {
+                typeArguments.clear();
+            }
             addTypeArguments(prototype.typeArguments());
+            if (!isTypeParametersMutated) {
+                typeParameters.clear();
+            }
             addTypeParameters(prototype.typeParameters());
             return self();
         }
@@ -169,13 +181,34 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         public BUILDER from(TypeName.BuilderBase<?, ?> builder) {
             packageName(builder.packageName());
             builder.className().ifPresent(this::className);
-            addEnclosingNames(builder.enclosingNames());
+            if (isEnclosingNamesMutated) {
+                if (builder.isEnclosingNamesMutated) {
+                    addEnclosingNames(builder.enclosingNames);
+                }
+            } else {
+                enclosingNames.clear();
+                addEnclosingNames(builder.enclosingNames);
+            }
             primitive(builder.primitive());
             array(builder.array());
             generic(builder.generic());
             wildcard(builder.wildcard());
-            addTypeArguments(builder.typeArguments());
-            addTypeParameters(builder.typeParameters());
+            if (isTypeArgumentsMutated) {
+                if (builder.isTypeArgumentsMutated) {
+                    addTypeArguments(builder.typeArguments);
+                }
+            } else {
+                typeArguments.clear();
+                addTypeArguments(builder.typeArguments);
+            }
+            if (isTypeParametersMutated) {
+                if (builder.isTypeParametersMutated) {
+                    addTypeParameters(builder.typeParameters);
+                }
+            } else {
+                typeParameters.clear();
+                addTypeParameters(builder.typeParameters);
+            }
             return self();
         }
 
@@ -227,6 +260,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          */
         public BUILDER enclosingNames(List<? extends String> enclosingNames) {
             Objects.requireNonNull(enclosingNames);
+            isEnclosingNamesMutated = true;
             this.enclosingNames.clear();
             this.enclosingNames.addAll(enclosingNames);
             return self();
@@ -243,6 +277,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          */
         public BUILDER addEnclosingNames(List<? extends String> enclosingNames) {
             Objects.requireNonNull(enclosingNames);
+            isEnclosingNamesMutated = true;
             this.enclosingNames.addAll(enclosingNames);
             return self();
         }
@@ -259,6 +294,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         public BUILDER addEnclosingName(String enclosingName) {
             Objects.requireNonNull(enclosingName);
             this.enclosingNames.add(enclosingName);
+            isEnclosingNamesMutated = true;
             return self();
         }
 
@@ -319,6 +355,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          */
         public BUILDER typeArguments(List<? extends TypeName> typeArguments) {
             Objects.requireNonNull(typeArguments);
+            isTypeArgumentsMutated = true;
             this.typeArguments.clear();
             this.typeArguments.addAll(typeArguments);
             return self();
@@ -333,6 +370,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          */
         public BUILDER addTypeArguments(List<? extends TypeName> typeArguments) {
             Objects.requireNonNull(typeArguments);
+            isTypeArgumentsMutated = true;
             this.typeArguments.addAll(typeArguments);
             return self();
         }
@@ -348,6 +386,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         public BUILDER addTypeArgument(TypeName typeArgument) {
             Objects.requireNonNull(typeArgument);
             this.typeArguments.add(typeArgument);
+            isTypeArgumentsMutated = true;
             return self();
         }
 
@@ -378,6 +417,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          */
         public BUILDER typeParameters(List<? extends String> typeParameters) {
             Objects.requireNonNull(typeParameters);
+            isTypeParametersMutated = true;
             this.typeParameters.clear();
             this.typeParameters.addAll(typeParameters);
             return self();
@@ -394,6 +434,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          */
         public BUILDER addTypeParameters(List<? extends String> typeParameters) {
             Objects.requireNonNull(typeParameters);
+            isTypeParametersMutated = true;
             this.typeParameters.addAll(typeParameters);
             return self();
         }
@@ -410,6 +451,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         public BUILDER addTypeParameter(String typeParameter) {
             Objects.requireNonNull(typeParameter);
             this.typeParameters.add(typeParameter);
+            isTypeParametersMutated = true;
             return self();
         }
 

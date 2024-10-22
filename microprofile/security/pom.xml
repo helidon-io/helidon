@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.microprofile</groupId>
         <artifactId>helidon-microprofile-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-microprofile-security</artifactId>
     <name>Helidon Microprofile Security Integration</name>
@@ -97,6 +97,11 @@
         <dependency>
             <groupId>io.helidon.security.providers</groupId>
             <artifactId>helidon-security-providers-http-auth</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.logging</groupId>
+            <artifactId>helidon-logging-jul</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

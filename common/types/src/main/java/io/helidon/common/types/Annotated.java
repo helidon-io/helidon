@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.common.types;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -27,13 +28,39 @@ import io.helidon.builder.api.Option;
  */
 public interface Annotated {
     /**
-     * The list of known annotations for this element. Note that "known" implies that the annotation is visible, which depends
-     * upon the context in which it was build.
+     * List of declared and known annotations for this element.
+     * Note that "known" implies that the annotation is visible, which depends
+     * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
      *
-     * @return the list of annotations on this element
+     * @return the list of annotations declared on this element
      */
     @Option.Singular
     List<Annotation> annotations();
+
+    /**
+     * List of all inherited annotations for this element. Inherited annotations are annotations declared
+     * on annotations of this element that are also marked as {@link java.lang.annotation.Inherited}.
+     * <p>
+     * The returned list does not contain {@link #annotations()}. If a meta-annotation is present on multiple
+     * annotations, it will be returned once for each such declaration.
+     * <p>
+     * This method does not return annotations on super types or interfaces!
+     *
+     * @return list of all meta annotations of this element
+     */
+    @Option.Singular
+    List<Annotation> inheritedAnnotations();
+
+    /**
+     * List of all annotations - both {@link #annotations()} and {@link #inheritedAnnotations()}.
+     *
+     * @return list of all annotations valid for this element
+     */
+    default List<Annotation> allAnnotations() {
+        List<Annotation> result = new ArrayList<>(annotations());
+        result.addAll(inheritedAnnotations());
+        return List.copyOf(result);
+    }
 
     /**
      * Find an annotation on this annotated type.
@@ -60,11 +87,10 @@ public interface Annotated {
      * @see #findAnnotation(TypeName)
      */
     default Annotation annotation(TypeName annotationType) {
-        return findAnnotation(annotationType).orElseThrow(() -> new NoSuchElementException("Annotation " + annotationType + " "
-                                                                                                   + "is not present. Guard "
-                                                                                                   + "with hasAnnotation(), or "
-                                                                                                   + "use findAnnotation() "
-                                                                                                   + "instead"));
+        return findAnnotation(annotationType)
+                .orElseThrow(() -> new NoSuchElementException("Annotation " + annotationType + " is not present. "
+                                                                      + "Guard with hasAnnotation(), "
+                                                                      + "or use findAnnotation() instead"));
     }
 
     /**

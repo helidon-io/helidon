@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.Errors;
 import io.helidon.common.LazyValue;
@@ -42,7 +40,7 @@ import org.reactivestreams.Subscriber;
 
 class ProcessorMethod extends AbstractMessagingMethod implements OutgoingMember, IncomingMember {
 
-    private static final Logger LOGGER = Logger.getLogger(ProcessorMethod.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ProcessorMethod.class.getName());
 
     private final LazyValue<Boolean> compatibilityMode = LazyValue.create(() ->
             ConfigProvider.getConfig().getOptionalValue("mp.messaging.helidon.propagate-errors", Boolean.class)
@@ -137,7 +135,7 @@ class ProcessorMethod extends AbstractMessagingMethod implements OutgoingMember,
         if (compatibilityMode.get()) {
             return ReactiveStreams.failed(t);
         }
-        LOGGER.log(Level.SEVERE, "Error intercepted in processor method "
+        LOGGER.log(System.Logger.Level.ERROR, "Error intercepted in processor method "
                 + this.getMethod().getDeclaringClass().getSimpleName() + "#" + this.getMethod().getName()
                 + " incoming channel: " + this.getIncomingChannelName()
                 + " outgoing channel: " + this.getOutgoingChannelName(), t);

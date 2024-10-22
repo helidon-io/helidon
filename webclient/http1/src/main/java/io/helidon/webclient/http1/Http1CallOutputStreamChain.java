@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -130,7 +130,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
         if (originalRequest().followRedirects()
                 && RedirectionProcessor.redirectionStatusCode(responseStatus)) {
             checkRedirectHeaders(responseHeaders);
-            URI newUri = URI.create(responseHeaders.get(HeaderNames.LOCATION).value());
+            URI newUri = URI.create(responseHeaders.get(HeaderNames.LOCATION).get());
             ClientUri redirectUri = ClientUri.create(newUri);
             if (newUri.getHost() == null) {
                 UriInfo resolvedUri = cos.lastRequest.resolvedUri();
@@ -440,7 +440,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
         }
 
         private void redirect(Status lastStatus, WritableHeaders<?> headerValues) {
-            String redirectedUri = headerValues.get(HeaderNames.LOCATION).value();
+            String redirectedUri = headerValues.get(HeaderNames.LOCATION).get();
             ClientUri lastUri = originalRequest.uri();
             Method method;
             boolean sendEntity;
@@ -492,7 +492,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                             method = Method.GET;
                             sendEntity = false;
                         }
-                        redirectedUri = response.headers().get(HeaderNames.LOCATION).value();
+                        redirectedUri = response.headers().get(HeaderNames.LOCATION).get();
                     }
                 } else {
                     if (!sendEntity) {

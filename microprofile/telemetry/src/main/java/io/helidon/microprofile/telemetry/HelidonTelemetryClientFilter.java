@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,24 +15,31 @@
  */
 package io.helidon.microprofile.telemetry;
 
-import io.opentelemetry.api.OpenTelemetry;
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.SpanKind;
-import io.opentelemetry.api.trace.Tracer;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
+import io.helidon.tracing.HeaderConsumer;
+import io.helidon.tracing.HeaderProvider;
+import io.helidon.tracing.Scope;
+import io.helidon.tracing.Span;
+
+import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.context.Context;
-import io.opentelemetry.context.Scope;
-import io.opentelemetry.context.propagation.TextMapSetter;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.ClientRequestContext;
 import jakarta.ws.rs.client.ClientRequestFilter;
 import jakarta.ws.rs.client.ClientResponseContext;
 import jakarta.ws.rs.client.ClientResponseFilter;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 
 import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_METHOD;
 import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_SCHEME;
 import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_STATUS_CODE;
-
+import static io.opentelemetry.semconv.trace.attributes.SemanticAttributes.NET_PEER_NAME;
+import static io.opentelemetry.semconv.trace.attributes.SemanticAttributes.NET_PEER_PORT;
 
 /**
  * Filter to process Client request and Client response. Starts a new {@link io.opentelemetry.api.trace.Span} on request and
@@ -42,22 +49,17 @@ import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_S
 class HelidonTelemetryClientFilter implements ClientRequestFilter, ClientResponseFilter {
     private static final System.Logger LOGGER = System.getLogger(HelidonTelemetryContainerFilter.class.getName());
     private static final String HTTP_URL = "http.url";
-    private static final String OTEL_CLIENT_SCOPE = "otel.span.client.scope";
-    private static final String OTEL_CLIENT_SPAN = "otel.span.client.span";
-    private static final String OTEL_CLIENT_CONTEXT = "otel.span.client.context";
+    private static final String SPAN_SCOPE = Scope.class.getName();
+    private static final String SPAN = Span.class.getName();
+    private static final Set<Response.Status.Family> ERROR_STATUS_FAMILIES = Set.of(
+            Response.Status.Family.CLIENT_ERROR,
+            Response.Status.Family.SERVER_ERROR);
 
-    // Extract the current OpenTelemetry Context. Required for a parent/child relationship
-    // to be correctly rebuilt in the next filter.
-    private static final TextMapSetter<ClientRequestContext> CONTEXT_HEADER_EXTRACTOR =
-            (carrier, key, value) -> carrier.getHeaders().add(key, value);
-
-    private final Tracer tracer;
-    private final OpenTelemetry openTelemetry;
+    private final io.helidon.tracing.Tracer helidonTracer;
 
     @Inject
-    HelidonTelemetryClientFilter(Tracer tracer, OpenTelemetry openTelemetry) {
-        this.tracer = tracer;
-        this.openTelemetry = openTelemetry;
+    HelidonTelemetryClientFilter(io.helidon.tracing.Tracer helidonTracer) {
+        this.helidonTracer = helidonTracer;
     }
 
 
@@ -69,22 +71,32 @@ class HelidonTelemetryClientFilter implements ClientRequestFilter, ClientRespons
         }
 
         //Start new span for Client request.
-        Span span = tracer.spanBuilder("HTTP " + clientRequestContext.getMethod())
-                .setParent(Context.current())
-                .setSpanKind(SpanKind.CLIENT)
-                .setAttribute(HTTP_METHOD, clientRequestContext.getMethod())
-                .setAttribute(HTTP_SCHEME, clientRequestContext.getUri().getScheme())
-                .setAttribute(HTTP_URL, clientRequestContext.getUri().toString())
-                .startSpan();
+        // Use the Helidon wrappers so registered span listeners are notified.
+        Span helidonSpan = helidonTracer.spanBuilder("HTTP " + clientRequestContext.getMethod())
+                .kind(Span.Kind.CLIENT)
+                .tag(HTTP_METHOD, clientRequestContext.getMethod())
+                .tag(HTTP_SCHEME, clientRequestContext.getUri().getScheme())
+                .tag(HTTP_URL, clientRequestContext.getUri().toString())
+                .tag(NET_PEER_NAME.getKey(), clientRequestContext.getUri().getHost())
+                .tag(NET_PEER_PORT.getKey(), clientRequestContext.getUri().getPort())
+                .update(builder -> Span.current()
+                        .map(Span::context)
+                        .ifPresent(builder::parent))
+                .start();
 
-        Scope scope = span.makeCurrent();
-        clientRequestContext.setProperty(OTEL_CLIENT_SCOPE, scope);
-        clientRequestContext.setProperty(OTEL_CLIENT_SPAN, span);
-        clientRequestContext.setProperty(OTEL_CLIENT_CONTEXT, Context.current());
+        Baggage.fromContext(Context.current())
+                .forEach((key, baggageEntry) ->
+                                 helidonSpan.baggage().set(key,
+                                                           baggageEntry.getValue(),
+                                                           baggageEntry.getMetadata().getValue()));
+        Scope helidonScope = helidonSpan.activate();
 
-        // Propagate OpenTelemetry context to next filter
-        openTelemetry.getPropagators().getTextMapPropagator().inject(Context.current(), clientRequestContext,
-                CONTEXT_HEADER_EXTRACTOR);
+        clientRequestContext.setProperty(SPAN_SCOPE, helidonScope);
+        clientRequestContext.setProperty(SPAN, helidonSpan);
+
+        helidonTracer.inject(helidonSpan.context(),
+                             HeaderProvider.empty(),
+                             new RequestContextHeaderInjector(clientRequestContext.getHeaders()));
     }
 
 
@@ -95,22 +107,64 @@ class HelidonTelemetryClientFilter implements ClientRequestFilter, ClientRespons
             LOGGER.log(System.Logger.Level.TRACE, "Closing Span in a Client Response");
         }
 
-        // End span for Client request.
-        Context context = (Context) clientRequestContext.getProperty(OTEL_CLIENT_CONTEXT);
-        if (context == null) {
+        Span span = (Span) clientRequestContext.getProperty(SPAN);
+        if (span == null) {
             return;
         }
-
-        Span span = (Span) clientRequestContext.getProperty(OTEL_CLIENT_SPAN);
-        span.setAttribute(HTTP_STATUS_CODE, clientResponseContext.getStatus());
-        span.end();
-
-        Scope scope = (Scope) clientRequestContext.getProperty(OTEL_CLIENT_SCOPE);
+        Scope scope = (Scope) clientRequestContext.getProperty(SPAN_SCOPE);
         scope.close();
 
-        clientRequestContext.removeProperty(OTEL_CLIENT_SPAN);
-        clientRequestContext.removeProperty(OTEL_CLIENT_SCOPE);
-        clientRequestContext.removeProperty(OTEL_CLIENT_CONTEXT);
+        span.tag(HTTP_STATUS_CODE, clientResponseContext.getStatus());
+
+        // OpenTelemetry semantic conventions dictate what the span status should be.
+        // https://opentelemetry.io/docs/specs/semconv/http/http-spans/#status
+        if (ERROR_STATUS_FAMILIES.contains(clientResponseContext.getStatusInfo().getFamily())) {
+            span.status(Span.Status.ERROR);
+        }
+
+        span.end();
+
+        clientRequestContext.removeProperty(SPAN);
+        clientRequestContext.removeProperty(SPAN_SCOPE);
+    }
+
+    private static class RequestContextHeaderInjector implements HeaderConsumer {
+
+        private final MultivaluedMap<String, Object> requestHeaders;
+
+        private RequestContextHeaderInjector(MultivaluedMap<String, Object> headers) {
+            requestHeaders = headers;
+        }
+
+        @Override
+        public void setIfAbsent(String key, String... values) {
+            requestHeaders.computeIfAbsent(key, k -> List.of(values));
+        }
+
+        @Override
+        public void set(String key, String... values) {
+            requestHeaders.put(key, List.of(values));
+        }
+
+        @Override
+        public Iterable<String> keys() {
+            return requestHeaders.keySet();
+        }
+
+        @Override
+        public Optional<String> get(String key) {
+            return Optional.ofNullable((String) requestHeaders.getFirst(key));
+        }
+
+        @Override
+        public Iterable<String> getAll(String key) {
+            return requestHeaders.get(key).stream().map(o -> (String) o).toList();
+        }
+
+        @Override
+        public boolean contains(String key) {
+            return requestHeaders.containsKey(key);
+        }
     }
 
 }

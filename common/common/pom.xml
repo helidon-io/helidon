@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.common</groupId>
         <artifactId>helidon-common-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-common</artifactId>
     <name>Helidon Common</name>
@@ -42,18 +42,28 @@
     </dependencies>
 
     <build>
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-            </resource>
-            <resource>
-                <directory>src/main/templates</directory>
-                <filtering>true</filtering>
-                <targetPath>${project.build.directory}/generated-sources/templates</targetPath>
-            </resource>
-        </resources>
-
         <plugins>
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-resources</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/generated-sources/templates</outputDirectory>
+                            <resources>          
+                                <resource>
+                                    <directory>src/main/templates</directory>
+                                    <filtering>true</filtering>
+                                </resource>
+                            </resources>              
+                        </configuration>            
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
@@ -72,6 +82,6 @@
                     </execution>
                 </executions>
             </plugin>
-        </plugins>
+      </plugins>
     </build>
 </project>

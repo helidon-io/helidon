@@ -22,7 +22,7 @@
     <parent>
         <artifactId>helidon-microprofile-project</artifactId>
         <groupId>io.helidon.microprofile</groupId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.microprofile.tracing</groupId>
     <artifactId>helidon-microprofile-tracing</artifactId>
@@ -99,6 +99,11 @@
             <groupId>org.eclipse.microprofile.rest.client</groupId>
             <artifactId>microprofile-rest-client-api</artifactId>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.logging</groupId>
+            <artifactId>helidon-logging-jul</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

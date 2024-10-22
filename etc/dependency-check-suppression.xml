@@ -2,6 +2,22 @@
 <suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
 <!-- For information see https://jeremylong.github.io/DependencyCheck/general/suppression.html -->
 
+
+<!-- False Positive
+     This CVE is against the GlassFish application server, but is mistakenly being
+     identified in various org.glassfish artifacts
+https://github.com/jeremylong/DependencyCheck/issues/7021
+https://github.com/jeremylong/DependencyCheck/issues/7020
+https://github.com/jeremylong/DependencyCheck/issues/7019
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: jakarta.el-4.0.2.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.glassfish.*/(jakarta\.el|jaxb-core|jaxb-runtime|osgi-resource-locator|txw2)@.*$</packageUrl>
+   <cve>CVE-2024-9329</cve>
+</suppress>
+
 <!-- This CVE is against the etcd server. We use the Java client
 -->
 <suppress>
@@ -23,65 +39,6 @@
    <cve>CVE-2022-45868</cve>
 </suppress>
 
-<!-- okhttp is a transitive fourth party dependency of Jaeger client. This CVE is considered
-     by the okhttp team as not exploitable unless the class in question is used
-     directly by an application (highly unlikely). See https://github.com/square/okhttp/issues/6724
-     They have only fixed this in 4.9.3 and newer. We can't force upgrade due to a tangle of
-     dependencies, compatibility, and issues with dependency convergence.
--->
-<suppress>
-   <notes><![CDATA[
-   file name: okhttp-3.14.9.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/com\.squareup\.okhttp3/okhttp@.*$</packageUrl>
-   <vulnerabilityName>CVE-2021-0341</vulnerabilityName>
-</suppress>
-
-<!-- False Positive. This CVE is against graphql-java, not the microprofile-graphql-api
--->
-<suppress>
-   <notes><![CDATA[
-   file name: microprofile-graphql-api-2.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.eclipse\.microprofile\.graphql/microprofile\-graphql\-api@.*$</packageUrl>
-   <cve>CVE-2022-37734</cve>
-</suppress>
-
-<!-- False Positive. This CVE is against graphql-java, not graphql-java-dataloader
-     See https://github.com/jeremylong/DependencyCheck/issues/5641
--->
-<suppress>
-   <notes><![CDATA[
-   file name: java-dataloader-3.1.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/com\.graphql\-java/java\-dataloader@.*$</packageUrl>
-   <cve>CVE-2023-28867</cve>
-</suppress>
-
-<!-- False Postives. CVE CVE-2022-45129 is against Payara not jakarta.resource-api nor microprofile
- -->
-<suppress>
-   <notes><![CDATA[
-   file name: jakarta.resource-api-2.0.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/jakarta\.resource/jakarta\.resource\-api@.*$</packageUrl>
-   <cve>CVE-2022-45129</cve>
-</suppress>
-<suppress>
-   <notes><![CDATA[
-   file name: microprofile-config-api-3.0.1.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.eclipse\.microprofile\.config/microprofile\-config\-api@.*$</packageUrl>
-   <cve>CVE-2022-45129</cve>
-</suppress>
-<suppress>
-   <notes><![CDATA[
-   file name: microprofile-jwt-auth-api-2.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.eclipse\.microprofile\.jwt/microprofile\-jwt\-auth\-api@.*$</packageUrl>
-   <cve>CVE-2022-45129</cve>
-</suppress>
-
 <!-- False Positive. This CVE is against H2 1.x.
 -->
 <suppress>
@@ -90,17 +47,6 @@
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/com\.h2database/h2@.*$</packageUrl>
    <vulnerabilityName>CVE-2018-14335</vulnerabilityName>
-</suppress>
-
-<!-- This is a low priority CVE against a deprecated method in Guava. We don't use guava directly.
-     This CVE bounces in and out of being "fixed" in version 30 and later.
--->
-<suppress>
-   <notes><![CDATA[
-   file name: guava-31.1-jre.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/com\.google\.guava/guava@.*$</packageUrl>
-   <vulnerabilityName>CVE-2020-8908</vulnerabilityName>
 </suppress>
 
 <!-- False Positive. This CVE is against the Maven plugins listed here:
@@ -145,17 +91,21 @@
    <vulnerabilityName>CVE-2023-22006</vulnerabilityName>
 </suppress>
 
-<!--
-    This CVE is is concerning proper use of Netty's hostname verification. Helidon enables hostname
-    verification by default and therefore this CVE does not apply. Some more info on the CVE here:
-    https://github.com/jeremylong/DependencyCheck/issues/5912
+<!-- This low priority CVE does not apply to our use of the graalvm compiler.
 -->
 <suppress>
    <notes><![CDATA[
-   file name: netty-handler-4.1.94.Final.jar
+   file name: compiler-23.1.0.jar
    ]]></notes>
-   <packageUrl regex="true">^pkg:maven/io\.netty/netty\-.*@.*$</packageUrl>
-   <vulnerabilityName>CVE-2023-4586</vulnerabilityName>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\.compiler/compiler@.*$</packageUrl>
+   <vulnerabilityName>CVE-2024-21138</vulnerabilityName>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: compiler-23.1.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\.compiler/compiler@.*$</packageUrl>
+   <vulnerabilityName>CVE-2024-21235</vulnerabilityName>
 </suppress>
 
 <!--
@@ -227,7 +177,8 @@
    <cve>CVE-2023-28360</cve>
 </suppress>
 
-<!-- False Positives. This was identifying Helidon's dbclient mongodb support artifact with MongoDB itself -->
+<!-- False Positives. This was identifying Helidon's dbclient mongodb support artifact with MongoDB itself
+-->
 <suppress>
    <notes><![CDATA[
    file name: io.helidon.dbclient:helidon-dbclient-mongodb:4.0.0-SNAPSHOT
@@ -236,15 +187,32 @@
    <cpe>cpe:/a:mongodb:mongodb</cpe>
 </suppress>
 
-
-
-<!-- False Positives. This was identifying Helidon's mysql support artifact with MySQL itself -->
+<!-- False Positives. This was identifying Helidon's mysql support artifact with MySQL itself
+ -->
 <suppress>
    <notes><![CDATA[
    file name: io.helidon.integrations.db:helidon-integrations-db-mysql:4.0.0-SNAPSHOT
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/io\.helidon\.integrations\.db/helidon\-integrations\-db\-mysql@.*$</packageUrl>
    <cpe>cpe:/a:mysql:mysql</cpe>
+</suppress>
+
+<!-- False Positive.
+     This is against an old version of prometheusa (not prometheus metrics nor micrometer)
+ -->
+<suppress>
+   <notes><![CDATA[
+   file name: micrometer-registry-prometheus-simpleclient-1.13.4.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.micrometer/micrometer-registry-prometheus-simpleclient@.*$</packageUrl>
+   <cve>CVE-2019-3826</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: prometheus-metrics-core-1.2.1.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.prometheus/prometheus-metrics-(.*)@.*$</packageUrl>
+   <cve>CVE-2019-3826</cve>
 </suppress>
 
 </suppressions>

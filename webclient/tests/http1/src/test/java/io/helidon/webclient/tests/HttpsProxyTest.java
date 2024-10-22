@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.Keys;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.Status;
+import io.helidon.webclient.api.ClientRequest;
+import io.helidon.webclient.api.ClientRequestBase;
 import io.helidon.webclient.api.HttpClient;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.Proxy;
@@ -44,6 +46,8 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.http.Method.GET;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ServerTest
 class HttpsProxyTest {
@@ -182,10 +186,17 @@ class HttpsProxyTest {
     }
 
     private void successVerify(Proxy proxy, HttpClient<?> client) {
-        try (HttpClientResponse response = client.get("/get").proxy(proxy).request()) {
+        ClientRequest<?> request = client.get("/get").proxy(proxy);
+        try (HttpClientResponse response = request.request()) {
             assertThat(response.status(), is(Status.OK_200));
             String entity = response.entity().as(String.class);
             assertThat(entity, is("Hello"));
+        }
+        boolean proxyConnection = request.headers().contains(ClientRequestBase.PROXY_CONNECTION);
+        if (client == clientHttp1) {
+            assertTrue(proxyConnection, "HTTP1 requires Proxy-Connection header");
+        } else {
+            assertFalse(proxyConnection, "HTTP2 does not allow Proxy-Connection header");
         }
     }
 

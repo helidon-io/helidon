@@ -78,7 +78,7 @@ class TypesCodegenTest {
                               .putValue("float", 49.0F)
                               .putValue("class", @io.helidon.common.types.TypeName@.create("io.helidon.codegen.classmodel.TypesCodegenTest"))
                               .putValue("type", @io.helidon.common.types.TypeName@.create("io.helidon.codegen.classmodel.TypesCodegenTest"))
-                              .putValue("enum", @java.lang.annotation.ElementType@.FIELD)
+                              .putValue("enum", @io.helidon.common.types.EnumValue@.create(@io.helidon.common.types.TypeName@.create("java.lang.annotation.ElementType"),"FIELD"))
                               .putValue("lstring", @java.util.List@.of("value1","value2"))
                               .putValue("lboolean", @java.util.List@.of(true,false))
                               .putValue("llong", @java.util.List@.of(49L,50L))
@@ -90,7 +90,7 @@ class TypesCodegenTest {
                               .putValue("lfloat", @java.util.List@.of(49.0F,50.0F))
                               .putValue("lclass", @java.util.List@.of(@io.helidon.common.types.TypeName@.create("io.helidon.codegen.classmodel.TypesCodegenTest"),@io.helidon.common.types.TypeName@.create("io.helidon.codegen.classmodel.TypesCodegenTest")))
                               .putValue("ltype", @java.util.List@.of(@io.helidon.common.types.TypeName@.create("io.helidon.codegen.classmodel.TypesCodegenTest"),@io.helidon.common.types.TypeName@.create("io.helidon.codegen.classmodel.TypesCodegenTest")))
-                              .putValue("lenum", @java.util.List@.of(@java.lang.annotation.ElementType@.FIELD,@java.lang.annotation.ElementType@.MODULE))
+                              .putValue("lenum", @java.util.List@.of(@io.helidon.common.types.EnumValue@.create(@io.helidon.common.types.TypeName@.create("java.lang.annotation.ElementType"),"FIELD"),@io.helidon.common.types.EnumValue@.create(@io.helidon.common.types.TypeName@.create("java.lang.annotation.ElementType"),"MODULE")))
                               .build()"""));
     }
 }

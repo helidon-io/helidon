@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,6 @@
 
 package io.helidon.microprofile.messaging;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import org.eclipse.microprofile.reactive.messaging.Message;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -30,7 +27,7 @@ import org.reactivestreams.Subscription;
  */
 class ProxySubscriber implements Subscriber<Object> {
 
-    private static final Logger LOGGER = Logger.getLogger(ProxySubscriber.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ProxySubscriber.class.getName());
 
     private final IncomingMethod method;
     private final Subscriber<Object> originalSubscriber;
@@ -69,7 +66,7 @@ class ProxySubscriber implements Subscriber<Object> {
             ackCtx.postAck();
         } catch (Throwable t) {
             ackCtx.postNack(t);
-            LOGGER.log(Level.SEVERE, "Error thrown by subscriber on channel " + method.getIncomingChannelName(), t);
+            LOGGER.log(System.Logger.Level.ERROR, "Error thrown by subscriber on channel " + method.getIncomingChannelName(), t);
         }
     }
 

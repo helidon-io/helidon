@@ -23,10 +23,10 @@
     <parent>
         <groupId>io.helidon.integrations.cdi</groupId>
         <artifactId>helidon-integrations-cdi-common-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-integrations-cdi-reference-counted-context</artifactId>
-    <name>Helidon CDI Integrations Common Reference Counted Context</name>
+    <name>Helidon Integrations CDI Common Ref Counted Context</name>
 
     <dependencies>
 

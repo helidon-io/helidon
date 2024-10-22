@@ -30,6 +30,7 @@ import io.helidon.tracing.SpanListener;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.Tracer;
 
 import static io.opentelemetry.context.Context.current;
@@ -50,6 +51,7 @@ public final class HelidonOpenTelemetry {
     public static final String IO_OPENTELEMETRY_JAVAAGENT = "io.opentelemetry.javaagent";
 
     static final String UNSUPPORTED_OPERATION_MESSAGE = "Span listener attempted to invoke an illegal operation";
+    static final String USE_EXISTING_OTEL = "io.helidon.telemetry.otel.use-existing-instance";
 
     private static final System.Logger LOGGER = System.getLogger(HelidonOpenTelemetry.class.getName());
     private static final LazyValue<List<SpanListener>> SPAN_LISTENERS =
@@ -92,6 +94,19 @@ public final class HelidonOpenTelemetry {
     }
 
     /**
+     * Wrap an open telemetry span builder.
+     *
+     * @param spanBuilder open telemetry span builder
+     * @param helidonTracer Helidon {@link io.helidon.tracing.Tracer} to use in creating the wrapping span builder
+     * @return Helidon {@link io.helidon.tracing.Span.Builder}
+     */
+    public static io.helidon.tracing.Span.Builder<?> create(SpanBuilder spanBuilder,
+                                                            io.helidon.tracing.Tracer helidonTracer) {
+
+        return new OpenTelemetrySpanBuilder(spanBuilder, helidonTracer.unwrap(OpenTelemetryTracer.class).spanListeners());
+    }
+
+    /**
      * Check if OpenTelemetry is present by indirect properties.
      * This class does best explicit check if OTEL_AGENT_PRESENT_PROPERTY config property is set and uses its
      * value to set the behaviour of OpenTelemetry producer.
@@ -128,6 +143,18 @@ public final class HelidonOpenTelemetry {
                 return true;
             }
             return false;
+        }
+
+        /**
+         * Return whether the user has requested that Helidon use an existing global OpenTelemetry instance rather than
+         * creating one itself; specifying that the OpenTelemetry agent is present automatically implies using the agent's
+         * existing instance.
+         *
+         * @param config configuration potentially containing the setting
+         * @return true if Helidon is configured to use an existing global OpenTelemetry instance; false otherwise
+         */
+        public static boolean useExistingGlobalOpenTelemetry(Config config) {
+            return isAgentPresent(config) || config.get(USE_EXISTING_OTEL).asBoolean().orElse(false);
         }
 
         private static boolean checkSystemProperties() {

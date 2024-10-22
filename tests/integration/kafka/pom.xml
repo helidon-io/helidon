@@ -21,8 +21,8 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon.tests.integration</groupId>
-        <artifactId>helidon-tests-integration</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <artifactId>helidon-tests-integration-project</artifactId>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
 
     <groupId>io.helidon.tests.integration.kafka</groupId>
@@ -133,6 +133,11 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-jdk14</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.logging</groupId>
+            <artifactId>helidon-logging-jul</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

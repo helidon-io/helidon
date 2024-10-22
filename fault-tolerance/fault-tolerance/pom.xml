@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.fault-tolerance</groupId>
         <artifactId>helidon-fault-tolerance-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-fault-tolerance</artifactId>
@@ -43,23 +43,6 @@
         </dependency>
         <dependency>
             <!--
-            must be in compile & runtime dependencies
-            as we provide services that are in API
-            -->
-            <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject-api</artifactId>
-        </dependency>
-        <dependency>
-            <!--
-            must be in compile dependencies, as it is used by generated classes
-            optional for runtime - if injection is used, it will be loaded
-            -->
-            <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject-runtime</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <!--
             Generating config driven beans with builders
             -->
             <groupId>io.helidon.builder</groupId>
@@ -71,23 +54,6 @@
             -->
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features-api</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <!--
-            Marks singletons driven by configuration
-            -->
-            <groupId>io.helidon.inject.configdriven</groupId>
-            <artifactId>helidon-inject-configdriven-api</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <!--
-            must be in compile dependencies, as it is used by generated classes
-            optional for runtime - if injection is used, it will be loaded
-            -->
-            <groupId>io.helidon.inject.configdriven</groupId>
-            <artifactId>helidon-inject-configdriven-runtime</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
@@ -125,13 +91,8 @@
                             <version>${helidon.version}</version>
                         </path>
                         <path>
-                            <groupId>io.helidon.config</groupId>
-                            <artifactId>helidon-config-metadata-processor</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                        <path>
-                            <groupId>io.helidon.inject.configdriven</groupId>
-                            <artifactId>helidon-inject-configdriven-processor</artifactId>
+                            <groupId>io.helidon.config.metadata</groupId>
+                            <artifactId>helidon-config-metadata-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>
@@ -153,13 +114,8 @@
                 </configuration>
                 <dependencies>
                     <dependency>
-                        <groupId>io.helidon.config</groupId>
-                        <artifactId>helidon-config-metadata-processor</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>io.helidon.inject.configdriven</groupId>
-                        <artifactId>helidon-inject-configdriven-processor</artifactId>
+                        <groupId>io.helidon.config.metadata</groupId>
+                        <artifactId>helidon-config-metadata-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>

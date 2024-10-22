@@ -91,6 +91,7 @@ backend:
                   - "security-oidc.adoc"
                   - "tracing.adoc"
                   - "mp-tutorial.adoc"
+                  - "upgrade_4x.adoc"
                   - "maven-build.adoc"
                   - "gradle-build.adoc"
                   - "graalnative.adoc"
@@ -245,6 +246,12 @@ backend:
                 glyph:
                   type: "icon"
                   value: "access_alarm"
+              - type: "PAGE"
+                title: "Threading"
+                source: "threading.adoc"
+                glyph:
+                  type: "icon"
+                  value: "clear_all"
               - type: "MENU"
                 title: "Security"
                 dir: "security"
@@ -270,6 +277,7 @@ backend:
                   value: "analytics"
               - type: "MENU"
                 title: "Testing"
+                dir: "testing"
                 glyph:
                   type: "icon"
                   value: "thumbs_up_down"
@@ -312,8 +320,6 @@ backend:
                   - "metrics.adoc"
                   - "security-oidc.adoc"
                   - "tracing.adoc"
-                  - "upgrade.adoc"
-                  - "upgrade_3x.adoc"
                   - "upgrade_4x.adoc"
                   - "maven-build.adoc"
                   - "gradle-build.adoc"

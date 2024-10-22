@@ -20,9 +20,8 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon.tests.integration</groupId>
-        <artifactId>helidon-tests-integration</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
+        <artifactId>helidon-tests-integration-project</artifactId>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-tests-integration-mp-graphql</artifactId>

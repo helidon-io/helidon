@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -69,7 +67,7 @@ import static jakarta.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
  * scope), and adds support for invoking Micronaut interceptors.
  */
 public class MicronautCdiExtension implements Extension {
-    private static final Logger LOGGER = Logger.getLogger(MicronautCdiExtension.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(MicronautCdiExtension.class.getName());
     private static final String MICRONAUT_BEAN_PREFIX = "micronaut-";
 
     private final AtomicReference<ApplicationContext> micronautContext = new AtomicReference<>();
@@ -340,8 +338,8 @@ public class MicronautCdiExtension implements Extension {
         try {
             return Stream.of(serviceDef.load());
         } catch (Throwable e) {
-            if (LOGGER.isLoggable(Level.FINEST)) {
-                LOGGER.log(Level.FINEST,
+            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                LOGGER.log(System.Logger.Level.TRACE,
                            "Failed to load Micronaut service, probably something missing from classpath. Definition: "
                                    + serviceDef,
                            e);

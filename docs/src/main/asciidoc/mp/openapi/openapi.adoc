@@ -94,7 +94,7 @@ Further, Helidon OpenAPI supports the MicroProfile OpenAPI settings described in
 
 == Examples
 
-Helidon MP includes a link:{helidon-github-tree-url}/examples/microprofile/openapi[complete OpenAPI example]
+Helidon MP includes a link:{helidon-github-examples-url}/microprofile/openapi[complete OpenAPI example]
 based on the MP quick-start sample app. The rest of this section shows, step-by-step, how one might change the original QuickStart service to adopt OpenAPI.
 
 === Helidon MP OpenAPI Example
@@ -167,7 +167,7 @@ curl -X GET http://localhost:8080/openapi
 The output describes not only then endpoints from `GreetResource` but
 also one contributed by the `SimpleAPIModelReader`.
 
-Full example is available link:{helidon-github-tree-url}/examples/microprofile/openapi[in our official repository]
+Full example is available link:{helidon-github-examples-url}/microprofile/openapi[in our official repository]
 
 
 == Additional Information

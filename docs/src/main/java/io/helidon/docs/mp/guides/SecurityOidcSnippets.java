@@ -36,12 +36,12 @@ import static org.hamcrest.Matchers.is;
 class SecurityOidcSnippets {
 
     // stub
-    static JsonObject createResponse(String str) {
+    static GreetingMessage createResponse(String str) {
         return null;
     }
 
     // stub
-    record Message() {
+    record GreetingMessage() {
         String getMessage() {
             return "";
         }
@@ -51,14 +51,14 @@ class SecurityOidcSnippets {
     @Authenticated
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public JsonObject getDefaultMessage() {
+    public GreetingMessage getDefaultMessage() {
         return createResponse("World");
     }
     // end::snippet_1[]
 
     // tag::snippet_2[]
     @Test
-    void testHellowWorld() {
+    void testHelloWorld() {
     }
     // end::snippet_2[]
 
@@ -75,12 +75,12 @@ class SecurityOidcSnippets {
 
     void snippet_6(WebTarget target) {
         // tag::snippet_4[]
-        String encoding = Base64.getEncoder().encodeToString("jack:jackIsGreat".getBytes());
-        Message jsonMessage = target
+        String encoding = Base64.getEncoder().encodeToString("jack:changeit".getBytes());
+        GreetingMessage jsonMessage = target
                 .path("greet")
                 .request()
                 .header(HttpHeaders.AUTHORIZATION, "Basic " + encoding)
-                .get(Message.class);
+                .get(GreetingMessage.class);
 
         assertThat(jsonMessage.getMessage(), is("Hello World!"));
         // end::snippet_4[]
@@ -90,14 +90,14 @@ class SecurityOidcSnippets {
 
         // tag::snippet_5[]
         @RolesAllowed("admin")
-        class MyResource {
+        class GreetResource {
         }
         // end::snippet_5[]
     }
 
     void snippet_9(WebTarget target) {
         // tag::snippet_6[]
-        String encoding = Base64.getEncoder().encodeToString("john:johnPassword".getBytes());
+        String encoding = Base64.getEncoder().encodeToString("john:changeit".getBytes());
 
         try (Response r = target
                 .path("greet")

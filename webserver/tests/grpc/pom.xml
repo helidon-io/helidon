@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.webserver.tests</groupId>
         <artifactId>helidon-webserver-tests-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-webserver-tests-grpc</artifactId>
@@ -63,6 +63,11 @@
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-netty</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.logging</groupId>
+            <artifactId>helidon-logging-jul</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

@@ -24,12 +24,18 @@
     <parent>
         <groupId>io.helidon.microprofile.tests.tck</groupId>
         <artifactId>helidon-microprofile-tests-tck-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
     <packaging>pom</packaging>
     <artifactId>helidon-microprofile-tests-tck-core-profile</artifactId>
     <name>Helidon Microprofile Tests TCK Core Profile</name>
+
+    <properties>
+        <tck.filename>jakarta-core-profile-tck-${version.lib.microprofile-core-profile}</tck.filename>
+        <tck.url>https://download.eclipse.org/ee4j/jakartaee-tck/jakartaee10/staged/eftl/${tck.filename}.zip</tck.url>
+        <tck.artifact>core-profile-tck-impl-${version.lib.microprofile-core-profile}</tck.artifact>
+        <stage.dir>${project.build.directory}/tck</stage.dir>
+    </properties>
 
     <modules>
         <module>tck-core-profile-test</module>
@@ -38,7 +44,9 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
+                <inherited>false</inherited>
                 <executions>
                     <execution>
                         <phase>validate</phase>
@@ -48,13 +56,51 @@
                         <configuration>
                             <target>
                                 <!-- If you use proxy you need to set it as a system properties -->
-                                <get skipexisting="true" src="https://download.eclipse.org/ee4j/jakartaee-tck/jakartaee10/staged/eftl/jakarta-core-profile-tck-${version.lib.microprofile-core-profile}.zip" dest="jakarta-core-profile-tck-${version.lib.microprofile-core-profile}.zip"/>
-                                <unzip src="jakarta-core-profile-tck-${version.lib.microprofile-core-profile}.zip" dest="./target"/>
-                                <chmod file="artifact-install.sh" perm="+x"/>
-                                <exec executable="sh">
-                                    <arg line="artifact-install.sh ${version.lib.microprofile-core-profile}"/>
-                                </exec>
+                                <get skipexisting="true" src="${tck.url}" dest="${project.build.directory}/${tck.filename}.zip"/>
+                                <unzip src="${project.build.directory}/${tck.filename}.zip" dest="${stage.dir}">
+                                    <patternset>
+                                        <include name="**/${tck.artifact}*"/>
+                                        <include name="**/*.pom"/>
+                                    </patternset>
+                                    <mapper type="flatten"/>
+                                </unzip>
+                                <unzip src="${stage.dir}/${tck.artifact}.jar" dest="${stage.dir}">
+                                    <patternset>
+                                        <include name="META-INF/maven/**/pom.xml"/>
+                                        <include name="**/*.pom"/>
+                                    </patternset>
+                                    <mapper type="regexp" from=".*/pom.xml" to="${tck.artifact}.pom"/>
+                                </unzip>
                             </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-install-plugin</artifactId>
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <id>parent</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>install-file</goal>
+                        </goals>
+                        <configuration>
+                            <file>${stage.dir}/core-tck-parent-${version.lib.microprofile-core-profile}.pom</file>
+                            <pomFile>${stage.dir}/core-tck-parent-${version.lib.microprofile-core-profile}.pom</pomFile>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>install-file</goal>
+                        </goals>
+                        <configuration>
+                            <file>${stage.dir}/${tck.artifact}.jar</file>
+                            <pomFile>${stage.dir}/${tck.artifact}.pom</pomFile>
+                            <sources>${stage.dir}/${tck.artifact}-sources.jar</sources>
                         </configuration>
                     </execution>
                 </executions>

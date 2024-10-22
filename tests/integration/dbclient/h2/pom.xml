@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,27 +16,26 @@
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon.tests.integration.dbclient</groupId>
-        <artifactId>helidon-tests-integration-dbclient-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
+        <artifactId>helidon-tests-integration-dbclient-parent</artifactId>
+        <version>4.2.0-SNAPSHOT</version>
+        <relativePath>../parent/pom.xml</relativePath>
     </parent>
     <artifactId>helidon-tests-integration-dbclient-h2</artifactId>
-    <name>Helidon Tests Integration Database Client H2</name>
-
-    <properties>
-        <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
-    </properties>
+    <name>Helidon Tests Integration DbClient H2</name>
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.tests.integration.dbclient</groupId>
-            <artifactId>helidon-tests-integration-dbclient-common</artifactId>
-            <version>${project.version}</version>
+            <groupId>io.helidon.dbclient</groupId>
+            <artifactId>helidon-dbclient-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.dbclient</groupId>
+            <artifactId>helidon-dbclient-metrics-hikari</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.integrations.db</groupId>
@@ -46,126 +45,31 @@
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-yaml</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.dbclient</groupId>
-            <artifactId>helidon-dbclient</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-mapper</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.dbclient</groupId>
-            <artifactId>helidon-dbclient-jdbc</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.dbclient</groupId>
-            <artifactId>helidon-dbclient-hikari</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-jdk14</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.tests.integration</groupId>
-            <artifactId>helidon-tests-integration-harness</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>
-        <testResources>
-            <testResource>
-                <directory>src/test/resources</directory>
-                <filtering>true</filtering>
-            </testResource>
-        </testResources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <excludes>
-                        <exclude>**/*IT</exclude>
-                    </excludes>
-                </configuration>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-libs</id>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <configuration>
-                    <redirectTestOutputToFile>${maven.test.redirectTestOutputToFile}</redirectTestOutputToFile>
-                    <parallel>methods</parallel>
-                    <threadCount>10</threadCount>
-                    <systemPropertyVariables>
-                        <junit.jupiter.extensions.autodetection.enabled>true</junit.jupiter.extensions.autodetection.enabled>
-                    </systemPropertyVariables>
-                    <dependenciesToScan>
-                        <dependency>io.helidon.tests.integration.dbclient:helidon-tests-integration-dbclient-common</dependency>
-                    </dependenciesToScan>
-                    <includes>
-                        <include>io.helidon.tests.integration.dbclient.common.tests.*IT</include>
-                    </includes>
-                </configuration>
                 <executions>
                     <execution>
-                        <id>test</id>
-                        <phase>integration-test</phase>
-                        <goals>
-                            <goal>integration-test</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <!--plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-failsafe-plugin</artifactId>
-                <configuration>
-                    <redirectTestOutputToFile>${maven.test.redirectTestOutputToFile}</redirectTestOutputToFile>
-                    <parallel>methods</parallel>
-                    <threadCount>10</threadCount>
-                    <systemPropertyVariables>
-                        <junit.jupiter.extensions.autodetection.enabled>true</junit.jupiter.extensions.autodetection.enabled>
-                    </systemPropertyVariables>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>test</id>
-                        <phase>integration-test</phase>
                         <goals>
                             <goal>integration-test</goal>
                             <goal>verify</goal>
                         </goals>
-                        <configuration>
-                            <includes>
-                                <include>**/*SuiteIT</include>
-                            </includes>
-                        </configuration>
                     </execution>
                 </executions>
-            </plugin-->
+            </plugin>
         </plugins>
     </build>
 </project>

@@ -18,6 +18,7 @@ package io.helidon.docs.mp.guides;
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.testing.junit5.AddBean;
 import io.helidon.microprofile.testing.junit5.AddConfig;
+import io.helidon.microprofile.testing.junit5.AddConfigBlock;
 import io.helidon.microprofile.testing.junit5.AddExtension;
 import io.helidon.microprofile.testing.junit5.DisableDiscovery;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
@@ -102,6 +103,28 @@ class TestingJunit5Snippets {
 
                 String message = jsonObject.getString("message");
                 assertThat(message, is("Message in JSON"));
+            }
+        }
+
+        @HelidonTest
+        @AddConfigBlock("""
+                some.key1=some.value1
+                some.key2=some.value2
+            """)
+        class AddConfigBlockTest {
+
+            @Inject
+            @ConfigProperty(name = "some.key1")
+            private String value1;
+
+            @Inject
+            @ConfigProperty(name = "some.key2")
+            private String value2;
+
+            @Test
+            void testValue() {
+                assertThat(value1, is("some.value1"));
+                assertThat(value2, is("some.value2"));
             }
         }
         // end::snippet_3[]

@@ -354,6 +354,7 @@ class NoOpMeter implements Meter, NoOpWrapper {
 
             private io.helidon.metrics.api.DistributionStatisticsConfig.Builder distributionStatisticsConfigBuilder;
             private Double scale;
+            private boolean publishPercentileHistogram;
 
             private Builder(String name) {
                 super(name, Type.DISTRIBUTION_SUMMARY);
@@ -378,6 +379,12 @@ class NoOpMeter implements Meter, NoOpWrapper {
             }
 
             @Override
+            public io.helidon.metrics.api.DistributionSummary.Builder publishPercentileHistogram(boolean value) {
+                this.publishPercentileHistogram = value;
+                return identity();
+            }
+
+            @Override
             public Optional<Double> scale() {
                 return Optional.ofNullable(scale);
             }
@@ -386,6 +393,12 @@ class NoOpMeter implements Meter, NoOpWrapper {
             public Optional<io.helidon.metrics.api.DistributionStatisticsConfig.Builder> distributionStatisticsConfig() {
                 return Optional.ofNullable(distributionStatisticsConfigBuilder);
             }
+
+            @Override
+            public Optional<Boolean> publishPercentileHistogram() {
+                return Optional.ofNullable(publishPercentileHistogram);
+            }
+
         }
     }
 
@@ -628,6 +641,7 @@ class NoOpMeter implements Meter, NoOpWrapper {
             private Duration[] buckets;
             private Duration min;
             private Duration max;
+            private Boolean publishPercentileHistogram;
 
             private Builder(String name) {
                 super(name, Type.TIMER);
@@ -663,6 +677,12 @@ class NoOpMeter implements Meter, NoOpWrapper {
             }
 
             @Override
+            public io.helidon.metrics.api.Timer.Builder publishPercentileHistogram(boolean value) {
+                publishPercentileHistogram = value;
+                return identity();
+            }
+
+            @Override
             public Iterable<Double> percentiles() {
                 return Arrays.stream(percentiles)
                         .boxed().toList();
@@ -681,6 +701,11 @@ class NoOpMeter implements Meter, NoOpWrapper {
             @Override
             public Optional<Duration> maximumExpectedValue() {
                 return Optional.ofNullable(max);
+            }
+
+            @Override
+            public Optional<Boolean> publishPercentileHistogram() {
+                return Optional.ofNullable(publishPercentileHistogram);
             }
 
         }

@@ -24,8 +24,7 @@
     <parent>
         <groupId>io.helidon.microprofile.tests.tck</groupId>
         <artifactId>helidon-microprofile-tests-tck-inject</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-microprofile-tests-tck-inject-test</artifactId>
     <name>Helidon Microprofile Tests TCK Inject</name>
@@ -49,19 +48,13 @@
         <dependency>
             <groupId>jakarta.inject</groupId>
             <artifactId>jakarta.inject-tck</artifactId>
-            <version>${version.lib.jakarta.inject}</version>
+            <version>${version.lib.jakarta-inject-tck}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
 
     <build>
         <plugins>
-            <plugin>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -83,8 +76,7 @@
                         </goals>
                         <configuration>
                             <sources>
-                                <source>src/test/java</source>
-                                <source>../target/jakarta.inject-tck-2.0.2/example/src/test/java</source>
+                                <source>${project.basedir}/../target/tck-sources</source>
                             </sources>
                         </configuration>
                     </execution>

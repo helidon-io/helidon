@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,6 @@ package io.helidon.security;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.config.Config;
 import io.helidon.security.spi.AuditProvider;
@@ -29,32 +27,32 @@ import io.helidon.security.spi.AuditProvider;
  * Default implementation of audit provider.
  */
 final class DefaultAuditProvider implements AuditProvider {
-    private final Logger auditLogger;
-    private final Level failureLevel;
-    private final Level successLevel;
-    private final Level infoLevel;
-    private final Level warnLevel;
-    private final Level errorLevel;
-    private final Level auditFailureLevel;
+    private final System.Logger auditLogger;
+    private final System.Logger.Level failureLevel;
+    private final System.Logger.Level successLevel;
+    private final System.Logger.Level infoLevel;
+    private final System.Logger.Level warnLevel;
+    private final System.Logger.Level errorLevel;
+    private final System.Logger.Level auditFailureLevel;
 
     private DefaultAuditProvider(Config config) {
         // config node is already located on the security node
-        this.auditLogger = Logger.getLogger(config.get("audit.defaultProvider.logger")
+        this.auditLogger = System.getLogger(config.get("audit.defaultProvider.logger")
                                                     .asString()
                                                     .orElse("AUDIT"));
 
-        this.failureLevel = level(config, "failure", Level.FINEST);
-        this.successLevel = level(config, "success", Level.FINEST);
-        this.infoLevel = level(config, "info", Level.FINEST);
-        this.warnLevel = level(config, "warn", Level.WARNING);
-        this.errorLevel = level(config, "error", Level.SEVERE);
-        this.auditFailureLevel = level(config, "audit-failure", Level.SEVERE);
+        this.failureLevel = level(config, "failure", System.Logger.Level.TRACE);
+        this.successLevel = level(config, "success", System.Logger.Level.TRACE);
+        this.infoLevel = level(config, "info", System.Logger.Level.TRACE);
+        this.warnLevel = level(config, "warn", System.Logger.Level.WARNING);
+        this.errorLevel = level(config, "error", System.Logger.Level.ERROR);
+        this.auditFailureLevel = level(config, "audit-failure", System.Logger.Level.ERROR);
     }
 
-    private Level level(Config config, String auditSeverity, Level defaultLevel) {
+    private System.Logger.Level level(Config config, String auditSeverity, System.Logger.Level defaultLevel) {
         return config.get("audit.defaultProvider.level." + auditSeverity)
                 .asString()
-                .map(Level::parse)
+                .map(s -> System.Logger.Level.valueOf(s))
                 .orElse(defaultLevel);
     }
 
@@ -68,7 +66,7 @@ final class DefaultAuditProvider implements AuditProvider {
     }
 
     private void audit(TracedAuditEvent event) {
-        Level level;
+        System.Logger.Level level;
 
         switch (event.severity()) {
         case FAILURE:
@@ -96,7 +94,7 @@ final class DefaultAuditProvider implements AuditProvider {
         logEvent(event, level);
     }
 
-    private void logEvent(TracedAuditEvent event, Level level) {
+    private void logEvent(TracedAuditEvent event, System.Logger.Level level) {
         if (!auditLogger.isLoggable(level)) {
             // no need to create the message when the message would not be logged
             return;

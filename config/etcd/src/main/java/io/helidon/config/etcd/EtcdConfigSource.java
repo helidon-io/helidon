@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,6 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
@@ -51,7 +49,7 @@ import io.helidon.config.spi.WatchableSource;
 public class EtcdConfigSource extends AbstractConfigSource
         implements PollableSource<Long>, WatchableSource<EtcdEndpoint>, ParsableSource {
 
-    private static final Logger LOGGER = Logger.getLogger(EtcdConfigSource.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(EtcdConfigSource.class.getName());
 
     private final EtcdEndpoint endpoint;
     private final List<EtcdEndpoint> endpoints;
@@ -119,7 +117,7 @@ public class EtcdConfigSource extends AbstractConfigSource
         try {
             content = etcdClient().get(endpoint.key());
         } catch (EtcdClientException e) {
-            LOGGER.log(Level.FINEST, "Get operation threw an exception.", e);
+            LOGGER.log(System.Logger.Level.TRACE, "Get operation threw an exception.", e);
             throw new ConfigException(String.format("Could not get data for key '%s'", endpoint.key()), e);
         }
 

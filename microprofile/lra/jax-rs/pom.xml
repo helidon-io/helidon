@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.microprofile.lra</groupId>
         <artifactId>helidon-microprofile-lra-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-microprofile-lra</artifactId>
@@ -97,6 +97,11 @@
             <groupId>io.helidon.webclient</groupId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.logging</groupId>
+            <artifactId>helidon-logging-jul</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -107,12 +112,29 @@
                 <configuration>
                     <annotationProcessorPaths>
                         <path>
+                            <groupId>io.helidon.codegen</groupId>
+                            <artifactId>helidon-codegen-apt</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
                             <groupId>io.helidon.common.features</groupId>
                             <artifactId>helidon-common-features-processor</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-apt</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.common.features</groupId>
+                        <artifactId>helidon-common-features-processor</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>

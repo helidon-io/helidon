@@ -16,16 +16,22 @@
 
 package io.helidon.codegen.apt;
 
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import javax.annotation.processing.ProcessingEnvironment;
 
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.Option;
+import io.helidon.common.types.TypeInfo;
+import io.helidon.common.types.TypeName;
 
 /**
  * Annotation processing code generation context.
+ * @deprecated this API will be package local in the future, use through Helidon codegen only
  */
+@Deprecated(forRemoval = true, since = "4.1.0")
 public interface AptContext extends CodegenContext {
     /**
      * Create context from the processing environment, and a set of additional supported options.
@@ -44,4 +50,14 @@ public interface AptContext extends CodegenContext {
      * @return environment
      */
     ProcessingEnvironment aptEnv();
+
+    /**
+     * Get a cached instance of the type info, and if not cached, cache the provided one.
+     * Only type infos known not to be modified during this build are cached.
+     *
+     * @param typeName type name
+     * @param typeInfoSupplier supplier of value if it is not yet cached
+     * @return type info for that name, in case the type info cannot be created, an empty optional
+     */
+    Optional<TypeInfo> cache(TypeName typeName, Supplier<Optional<TypeInfo>> typeInfoSupplier);
 }

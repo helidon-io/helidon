@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.webserver.testing</groupId>
         <artifactId>helidon-webserver-testing-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
 
     <groupId>io.helidon.webserver.testing.junit5</groupId>
@@ -37,6 +37,7 @@
         <module>junit5</module>
         <module>websocket</module>
         <module>http2</module>
+        <module>grpc</module>
     </modules>
 
 </project>

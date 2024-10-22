@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,17 +20,16 @@ import java.util.Locale;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.helidon.grpc.core.CollectingObserver;
 import io.helidon.webserver.grpc.strings.StringServiceGrpc;
 import io.helidon.webserver.grpc.strings.Strings;
-import io.helidon.webserver.grpc.CollectingObserver;
 
 import io.grpc.stub.StreamObserver;
 
-import static io.helidon.webserver.grpc.ResponseHelper.complete;
-import static io.helidon.webserver.grpc.ResponseHelper.stream;
+import static io.helidon.grpc.core.ResponseHelper.complete;
+import static io.helidon.grpc.core.ResponseHelper.stream;
 
-public class BindableStringService
-        extends StringServiceGrpc.StringServiceImplBase {
+public class BindableStringService extends StringServiceGrpc.StringServiceImplBase {
 
     @Override
     public void upper(Strings.StringMessage request, StreamObserver<Strings.StringMessage> observer) {
@@ -56,7 +55,7 @@ public class BindableStringService
 
     @Override
     public StreamObserver<Strings.StringMessage> join(StreamObserver<Strings.StringMessage> observer) {
-        return new CollectingObserver<>(
+        return CollectingObserver.create(
                 Collectors.joining(" "),
                 observer,
                 Strings.StringMessage::getText,

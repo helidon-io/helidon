@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,29 +78,29 @@ final class ShimUtil {
     }
 
     static javax.jms.Destination destination(Destination destination) {
-        if (destination instanceof JakartaDestination) {
-            return ((JakartaDestination) destination).unwrap();
+        if (destination instanceof JakartaDestination jakartaDestination) {
+            return jakartaDestination.unwrap();
         }
-        if (destination instanceof javax.jms.Destination) {
-            return (javax.jms.Destination) destination;
+        if (destination instanceof javax.jms.Destination javaxDestination) {
+            return javaxDestination;
         }
         throw new RuntimeException("Destination was not created correctly, cannot convert to javax.jms.Destination: "
                                            + destination);
     }
 
     static Topic topic(jakarta.jms.Topic topic) {
-        if (topic instanceof JakartaTopic) {
-            return ((JakartaTopic) topic).unwrap();
+        if (topic instanceof JakartaTopic jakartaTopic) {
+            return jakartaTopic.unwrap();
         }
-        if (topic instanceof javax.jms.Topic) {
-            return (javax.jms.Topic) topic;
+        if (topic instanceof javax.jms.Topic javaxTopic) {
+            return javaxTopic;
         }
         throw new RuntimeException("Topic was not created correctly, cannot convert to javax.jms.Topic: " + topic);
     }
 
     static Queue queue(jakarta.jms.Queue queue) {
-        if (queue instanceof JakartaQueue) {
-            return ((JakartaQueue) queue).unwrap();
+        if (queue instanceof JakartaQueue jakartaQueue) {
+            return jakartaQueue.unwrap();
         }
         if (queue instanceof javax.jms.Topic) {
             return (javax.jms.Queue) queue;
@@ -109,11 +109,11 @@ final class ShimUtil {
     }
 
     static javax.jms.Message message(Message message) {
-        if (message instanceof JakartaMessage) {
-            return ((JakartaMessage) message).unwrap();
+        if (message instanceof JakartaMessage jakartaMessage) {
+            return jakartaMessage.unwrap();
         }
-        if (message instanceof javax.jms.Message) {
-            return (javax.jms.Message) message;
+        if (message instanceof javax.jms.Message javaxMessage) {
+            return javaxMessage;
         }
         throw new RuntimeException("Message was not created correctly, cannot convert to javax.jms.Message: " + message);
     }

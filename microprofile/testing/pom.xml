@@ -24,8 +24,7 @@
     <parent>
         <groupId>io.helidon.microprofile</groupId>
         <artifactId>helidon-microprofile-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
     <packaging>pom</packaging>
     <groupId>io.helidon.microprofile.testing</groupId>
@@ -35,5 +34,6 @@
     <modules>
         <module>junit5</module>
         <module>testng</module>
+        <module>mocking</module>
     </modules>
 </project>

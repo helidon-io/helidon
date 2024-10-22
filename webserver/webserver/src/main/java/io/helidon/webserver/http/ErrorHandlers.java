@@ -16,7 +16,6 @@
 
 package io.helidon.webserver.http;
 
-import java.io.UncheckedIOException;
 import java.net.SocketException;
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -31,6 +30,7 @@ import io.helidon.http.InternalServerException;
 import io.helidon.http.RequestException;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ServerConnectionException;
 
 /**
  * Http routing Error handlers.
@@ -67,6 +67,7 @@ public final class ErrorHandlers {
      * @param response HTTP server response
      * @param task     task to execute
      */
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public void runWithErrorHandling(ConnectionContext ctx,
                                      RoutingRequest request,
                                      RoutingResponse response,
@@ -76,7 +77,7 @@ public final class ErrorHandlers {
             if (response.hasEntity()) {
                 response.commit();
             }
-        } catch (CloseConnectionException | UncheckedIOException e) {
+        } catch (CloseConnectionException e) {
             // these errors must "bubble up"
             throw e;
         } catch (RequestException e) {
@@ -116,9 +117,9 @@ public final class ErrorHandlers {
             }
         } catch (RuntimeException e) {
             handleError(ctx, request, response, e);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             if (e.getCause() instanceof SocketException se) {
-                throw new UncheckedIOException(se);
+                throw new ServerConnectionException("SocketException during routing", se);
             }
             handleError(ctx, request, response, e);
         }
@@ -176,6 +177,7 @@ public final class ErrorHandlers {
         response.commit();
     }
 
+    @SuppressWarnings("unchecked")
     private void handleError(ConnectionContext ctx, RoutingRequest request, RoutingResponse response, Throwable e) {
         errorHandler(e.getClass())
                 .ifPresentOrElse(it -> handleError(ctx, request, response, e, (ErrorHandler<Throwable>) it),

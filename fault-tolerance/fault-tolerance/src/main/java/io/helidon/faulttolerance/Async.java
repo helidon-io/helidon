@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,11 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.builder.api.RuntimeType;
-import io.helidon.inject.api.Contract;
 
 /**
  * Runs synchronous suppliers asynchronously using virtual threads. Includes
  * convenient static method to avoid creating instances of this class.
  */
-@Contract
 @RuntimeType.PrototypedBy(AsyncConfig.class)
 public interface Async extends RuntimeType.Api<AsyncConfig> {
 
@@ -47,7 +45,7 @@ public interface Async extends RuntimeType.Api<AsyncConfig> {
      * @return a default async instance
      */
     static Async create(AsyncConfig config) {
-        return new AsyncImpl(config, true);
+        return new AsyncImpl(config);
     }
 
     /**

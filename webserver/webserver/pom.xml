@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.webserver</groupId>
         <artifactId>helidon-webserver-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-webserver</artifactId>
@@ -81,6 +81,10 @@
             <artifactId>helidon-common-features</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.common.concurrency</groupId>
+            <artifactId>helidon-common-concurrency-limits</artifactId>
+        </dependency>
+        <dependency>
             <!--
             This dependency is not required, yet a lot of examples depend on it. Kept in for backward compatibility.
             This used to be a transitive dependency of another module.
@@ -135,11 +139,6 @@
             <groupId>io.helidon.common.testing</groupId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>io.helidon.inject</groupId>
-            <artifactId>helidon-inject-testing</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>
@@ -155,8 +154,8 @@
                             <version>${helidon.version}</version>
                         </path>
                         <path>
-                            <groupId>io.helidon.config</groupId>
-                            <artifactId>helidon-config-metadata-processor</artifactId>
+                            <groupId>io.helidon.config.metadata</groupId>
+                            <artifactId>helidon-config-metadata-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>
@@ -178,8 +177,8 @@
                 </configuration>
                 <dependencies>
                     <dependency>
-                        <groupId>io.helidon.config</groupId>
-                        <artifactId>helidon-config-metadata-processor</artifactId>
+                        <groupId>io.helidon.config.metadata</groupId>
+                        <artifactId>helidon-config-metadata-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>

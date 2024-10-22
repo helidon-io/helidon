@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import io.helidon.http.ServerResponseTrailers;
 import io.helidon.http.Status;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.http.ServerResponseBase;
 
 class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
@@ -74,51 +75,55 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
 
     @Override
     public void send(byte[] entityBytes) {
-        if (outputStreamFilter != null) {
-            // in this case we must honor user's request to filter the stream
-            try (OutputStream os = outputStream()) {
-                os.write(entityBytes);
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
+        try {
+            if (outputStreamFilter != null) {
+                // in this case we must honor user's request to filter the stream
+                try (OutputStream os = outputStream()) {
+                    os.write(entityBytes);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+                return;
             }
-            return;
+
+            if (isSent) {
+                throw new IllegalStateException("Response already sent");
+            }
+            if (streamingEntity) {
+                throw new IllegalStateException("When output stream is used, response is completed by closing the output stream"
+                                                        + ", do not call send().");
+            }
+            isSent = true;
+
+            // handle content encoding
+            byte[] bytes = entityBytes(entityBytes);
+
+            headers.setIfAbsent(HeaderValues.create(HeaderNames.CONTENT_LENGTH,
+                                                    true,
+                                                    false,
+                                                    String.valueOf(bytes.length)));
+            headers.setIfAbsent(HeaderValues.create(HeaderNames.DATE, true, false, DateTime.rfc1123String()));
+
+            Http2Headers http2Headers = Http2Headers.create(headers);
+            http2Headers.status(status());
+            headers.remove(Http2Headers.STATUS_NAME, it -> ctx.log(LOGGER,
+                                                                   System.Logger.Level.WARNING,
+                                                                   "Status must be configured on response, "
+                                                                           + "do not set HTTP/2 pseudo headers"));
+
+            boolean sendTrailers = request.headers().contains(HeaderValues.TE_TRAILERS) || headers.contains(HeaderNames.TRAILER);
+
+            http2Headers.validateResponse();
+            bytesWritten += stream.writeHeadersWithData(http2Headers, bytes.length, BufferData.create(bytes), !sendTrailers);
+
+            if (sendTrailers) {
+                bytesWritten += stream.writeTrailers(Http2Headers.create(trailers));
+            }
+
+            afterSend();
+        } catch (UncheckedIOException e) {
+            throw new ServerConnectionException("Failed writing entity", e);
         }
-
-        if (isSent) {
-            throw new IllegalStateException("Response already sent");
-        }
-        if (streamingEntity) {
-            throw new IllegalStateException("When output stream is used, response is completed by closing the output stream"
-                                                    + ", do not call send().");
-        }
-        isSent = true;
-
-        // handle content encoding
-        byte[] bytes = entityBytes(entityBytes);
-
-        headers.setIfAbsent(HeaderValues.create(HeaderNames.CONTENT_LENGTH,
-                                                true,
-                                                false,
-                                                String.valueOf(bytes.length)));
-        headers.setIfAbsent(HeaderValues.create(HeaderNames.DATE, true, false, DateTime.rfc1123String()));
-
-        Http2Headers http2Headers = Http2Headers.create(headers);
-        http2Headers.status(status());
-        headers.remove(Http2Headers.STATUS_NAME, it -> ctx.log(LOGGER,
-                                                               System.Logger.Level.WARNING,
-                                                               "Status must be configured on response, "
-                                                                       + "do not set HTTP/2 pseudo headers"));
-
-        boolean sendTrailers = request.headers().contains(HeaderValues.TE_TRAILERS) || headers.contains(HeaderNames.TRAILER);
-
-        http2Headers.validateResponse();
-        bytesWritten += stream.writeHeadersWithData(http2Headers, bytes.length, BufferData.create(bytes), !sendTrailers);
-
-        if (sendTrailers) {
-            bytesWritten += stream.writeTrailers(Http2Headers.create(trailers));
-        }
-
-        afterSend();
     }
 
     @Override

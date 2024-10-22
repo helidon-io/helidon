@@ -22,8 +22,7 @@
     <parent>
         <groupId>io.helidon.microprofile.testing</groupId>
         <artifactId>helidon-microprofile-testing-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-microprofile-testing-junit5</artifactId>
@@ -67,7 +66,6 @@
             <artifactId>hamcrest-core</artifactId>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
 
 </project>

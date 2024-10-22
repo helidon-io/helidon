@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,12 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.Reflected;
 import io.helidon.common.features.HelidonFeatures;
+import io.helidon.common.types.TypeName;
 import io.helidon.logging.common.LogConfig;
+import io.helidon.service.registry.DescriptorHandler;
+import io.helidon.service.registry.ServiceDiscovery;
+import io.helidon.service.registry.ServiceLoader__ServiceDescriptor;
+import io.helidon.service.registry.ServiceRegistryConfig;
 
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ScanResult;
@@ -51,6 +56,7 @@ public class HelidonReflectionFeature implements Feature {
 
     private static final String AT_ENTITY = "jakarta.persistence.Entity";
     private static final String AT_MAPPED_SUPERCLASS = "jakarta.persistence.MappedSuperclass";
+    private static final String REGISTRY_DESCRIPTOR = "io.helidon.service.registry.GeneratedService$Descriptor";
 
     private final NativeTrace tracer = new NativeTrace();
     private NativeUtil util;
@@ -108,6 +114,9 @@ public class HelidonReflectionFeature implements Feature {
         config.fullHierarchy().forEach(it -> processFullClassHierarchy(context, it));
         // process each configured class
         config.classes().forEach(it -> addSingleClass(context, it));
+
+        // Service descriptors
+        processServiceDescriptors(context);
 
         // JPA Entity registration
         processEntity(context);
@@ -171,6 +180,65 @@ public class HelidonReflectionFeature implements Feature {
         Set<Class<?>> subclasses = util.findSubclasses(aClass.getName());
 
         processClasses(context, subclasses);
+    }
+
+    private void processServiceDescriptors(BeforeAnalysisContext context) {
+        ServiceDiscovery sd = ServiceDiscovery.create(ServiceRegistryConfig.builder()
+                                                              .discoverServices(false)
+                                                              .discoverServicesFromServiceLoader(true)
+                                                              .build());
+
+        sd.allMetadata()
+                .stream()
+                .map(DescriptorHandler::descriptor)
+                .filter(it -> it instanceof ServiceLoader__ServiceDescriptor)
+                .map(it -> (ServiceLoader__ServiceDescriptor) it)
+                .map(ServiceLoader__ServiceDescriptor::serviceType)
+                .forEach(it -> processServiceLoaderDescriptor(context, it));
+
+        Class<?> classByName = context.access().findClassByName(REGISTRY_DESCRIPTOR);
+        tracer.parsing(() -> "Discovering service descriptors. Top level type: " + classByName);
+        if (classByName != null) {
+            processServiceDescriptors(context, classByName);
+        }
+    }
+
+    private void processServiceLoaderDescriptor(BeforeAnalysisContext context, TypeName serviceImpl) {
+        Class<?> classByName = context.access().findClassByName(serviceImpl.fqName());
+        if (classByName == null) {
+            tracer.parsing(() -> "    " + serviceImpl.fqName());
+            tracer.parsing(() -> "        service implementation is not on classpath");
+            return;
+        }
+        tracer.parsing(() -> "    " + classByName.getName());
+        tracer.parsing(() -> "        Added for registration");
+
+        try {
+            Constructor<?> constructor = classByName.getConstructor();
+            context.register(classByName).add(constructor);
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException("Cannot find default constructor for provider implementation class " + classByName,
+                                       e);
+        }
+    }
+
+    private void processServiceDescriptors(BeforeAnalysisContext context, Class<?> clazz) {
+        Set<Class<?>> subclasses = util.findSubclasses(clazz.getName());
+
+        for (Class<?> aClass : subclasses) {
+            if (context.process(aClass)) {
+                tracer.parsing(() -> "    " + aClass.getName());
+                tracer.parsing(() -> "        Added for registration");
+
+                try {
+                    Field field = aClass.getDeclaredField("INSTANCE");
+                    context.register(aClass).add(field);
+                } catch (NoSuchFieldException ignored) {
+                    // do not register, as this is not accessible via reflection
+                }
+                processServiceDescriptors(context, aClass);
+            }
+        }
     }
 
     private void addSingleClass(BeforeAnalysisContext context,
@@ -240,8 +308,6 @@ public class HelidonReflectionFeature implements Feature {
             }
         });
     }
-
-
 
     private void registerForReflection(BeforeAnalysisContext context) {
         Collection<Register> toRegister = context.toRegister();

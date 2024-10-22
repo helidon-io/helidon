@@ -22,13 +22,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import io.helidon.builder.codegen.ValidationTask.ValidateConfiguredType;
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenEvent;
 import io.helidon.codegen.CodegenException;
+import io.helidon.codegen.CodegenFiler;
 import io.helidon.codegen.CodegenUtil;
+import io.helidon.codegen.FilerTextResource;
 import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.Javadoc;
@@ -51,6 +54,8 @@ class BuilderCodegen implements CodegenExtension {
     private final Set<TypeName> runtimeTypes = new HashSet<>();
     // all blueprint types (for validation)
     private final Set<TypeName> blueprintTypes = new HashSet<>();
+    // all types from service loader that should be supported by ServiceRegistry
+    private final Set<String> serviceLoaderContracts = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
 
     private final CodegenContext ctx;
 
@@ -83,6 +88,9 @@ class BuilderCodegen implements CodegenExtension {
     public void processingOver(RoundContext roundContext) {
         process(roundContext);
 
+        // now create service.loader
+        updateServiceLoaderResource();
+
         // we must collect validation information after all types are generated - so
         // we also listen on @Generated, so there is another round of annotation processing where we have all
         // types nice and ready
@@ -111,6 +119,27 @@ class BuilderCodegen implements CodegenExtension {
 
                 ctx.logger().log(builder.build());
             }
+        }
+    }
+
+    private void updateServiceLoaderResource() {
+        CodegenFiler filer = ctx.filer();
+        FilerTextResource serviceLoaderResource = filer.textResource("META-INF/helidon/service.loader");
+        List<String> lines = new ArrayList<>(serviceLoaderResource.lines());
+        if (lines.isEmpty()) {
+            lines.add("# List of service contracts we want to support either from service registry, or from service loader");
+        }
+        boolean modified = false;
+        for (String serviceLoaderContract : this.serviceLoaderContracts) {
+            if (!lines.contains(serviceLoaderContract)) {
+                modified = true;
+                lines.add(serviceLoaderContract);
+            }
+        }
+
+        if (modified) {
+            serviceLoaderResource.lines(lines);
+            serviceLoaderResource.write();
         }
     }
 
@@ -207,7 +236,7 @@ class BuilderCodegen implements CodegenExtension {
         // static X create()
         addCreateDefaultMethod(blueprintDef, propertyData, classModel, prototype, ifaceName, typeArgumentString, typeArguments);
 
-        generateCustomMethods(customMethods, classModel);
+        generateCustomMethods(classModel, builderTypeName, prototype, customMethods);
 
         // abstract class BuilderBase...
         GenerateAbstractBuilder.generate(classModel,
@@ -226,7 +255,15 @@ class BuilderCodegen implements CodegenExtension {
         roundContext.addGeneratedType(prototype,
                                       classModel,
                                       blueprint.typeName(),
-                                      blueprint.originatingElement().orElse(blueprint.typeName()));
+                                      blueprint.originatingElementValue());
+
+        if (typeContext.typeInfo().supportsServiceRegistry() && typeContext.propertyData().hasProvider()) {
+            for (PrototypeProperty property : typeContext.propertyData().properties()) {
+                if (property.configuredOption().provider()) {
+                    this.serviceLoaderContracts.add(property.configuredOption().providerType().genericTypeName().fqName());
+                }
+            }
+        }
     }
 
     private static void addCreateDefaultMethod(AnnotationDataBlueprint blueprintDef,
@@ -333,8 +370,26 @@ class BuilderCodegen implements CodegenExtension {
         }
     }
 
-    private static void generateCustomMethods(CustomMethods customMethods, ClassModel.Builder classModel) {
+    private static void generateCustomMethods(ClassModel.Builder classModel,
+                                              TypeName builderTypeName,
+                                              TypeName prototype,
+                                              CustomMethods customMethods) {
         for (CustomMethods.CustomMethod customMethod : customMethods.factoryMethods()) {
+            TypeName typeName = customMethod.declaredMethod().returnType();
+            // there is a chance the typeName does not have a package (if "forward referenced"),
+            // in that case compare just by classname (leap of faith...)
+            if (typeName.packageName().isBlank()) {
+                String className = typeName.className();
+                if (!(className.equals(prototype.className())
+                        || className.equals(builderTypeName.className()))) {
+                    // based on class names
+                    continue;
+                }
+            } else if (!(typeName.equals(prototype) || typeName.equals(builderTypeName))) {
+                // we only generate custom factory methods if they return prototype or builder
+                continue;
+            }
+
             // prototype definition - custom static factory methods
             // static TypeName create(Type type);
             CustomMethods.Method generated = customMethod.generatedMethod().method();

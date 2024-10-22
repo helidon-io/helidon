@@ -208,7 +208,7 @@ managed]
 [source,xml]
 ----
 <dependency>
-    <groupId>com.h2database</groupId>
+    <groupId>io.helidon.integrations.db</groupId>
     <artifactId>h2</artifactId>
     <scope>runtime</scope> <!--1-->
 </dependency>
@@ -240,19 +240,12 @@ managed]
 [source,xml]
 ----
 <dependency>
-    <groupId>com.oracle.database.jdbc</groupId> <!--1-->
-    <artifactId>ojdbc11</artifactId> <!--2-->
-    <scope>runtime</scope> <!--3-->
+    <groupId>io.helidon.integrations.db</groupId>
+    <artifactId>ojdbc</artifactId>
+    <scope>runtime</scope> <!--1-->
 </dependency>
 ----
-<1> See
-    https://www.oracle.com/database/technologies/maven-central-guide.html[Developer's
-    Guide For Oracle JDBC 21c on Maven Central] for more details.
-<2> The `ojdbc11` artifact
-    https://www.oracle.com/database/technologies/maven-central-guide.html#:~:text=ojdbc11.jar,JDK14%20and%20JDK15[implements
-    relevant parts of the JDBC 4.3 specification], which forms part of
-    Java 21, which is the Java version targeted by Helidon 4.
-<3> The `scope` is `runtime`, indicating that the Oracle
+<1> The `scope` is `runtime`, indicating that the Oracle
     JDBC driver classes will be available on the runtime classpath.
 
 === Configuration [[DS-Configuration]]
@@ -334,7 +327,7 @@ the `test` data source's associated connection pool or vendor-specific
 
 [source,properties]
 ----
-javax.sql.DataSource.test.foo.bar=baz # <1> <2> <3>
+javax.sql.DataSource.test.foo.bar=baz# <1><2><3>
 ----
 <1> The *_objecttype_* portion of the configuration property name is
     `javax.sql.DataSource`.
@@ -441,8 +434,8 @@ a service name of `XE`, a `user` of `scott`, and a `password` of
 
 [source,properties]
 ----
-javax.sql.DataSource.main.connectionFactoryClassName = oracle.jdbc.pool.OracleDataSource # <1>
-javax.sql.DataSource.main.url = jdbc:oracle:thin://@localhost:1521/XE # <2>
+javax.sql.DataSource.main.connectionFactoryClassName = oracle.jdbc.pool.OracleDataSource# <1>
+javax.sql.DataSource.main.URL = jdbc:oracle:thin:@//localhost:1521/XE# <2>
 javax.sql.DataSource.main.user = scott
 javax.sql.DataSource.main.password = tiger
 ----
@@ -495,8 +488,8 @@ password:
 
 [source,properties]
 ----
-javax.sql.DataSource.test.dataSourceClassName = org.h2.jdbcx.JdbcDataSource # <1>
-javax.sql.DataSource.test.dataSource.url = jdbc:h2:mem:unit-testing;DB_CLOSE_DELAY=-1 # <2> <3>
+javax.sql.DataSource.test.dataSourceClassName = org.h2.jdbcx.JdbcDataSource# <1>
+javax.sql.DataSource.test.dataSource.url = jdbc:h2:mem:unit-testing;DB_CLOSE_DELAY=-1# <2><3>
 javax.sql.DataSource.test.dataSource.user = sa
 javax.sql.DataSource.test.dataSource.password =
 ----
@@ -1356,7 +1349,7 @@ relational database tables, and how to perform other related tasks.
 
 === Examples [[JPA-Examples]]
 
-* link:{helidon-github-tree-url}/examples/integrations/cdi/pokemons[JPA
+* link:{helidon-github-examples-url}/integrations/cdi/pokemons[JPA
   Pokemons Example]
 
 == References [[References]]
