@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,8 @@ public interface Http1Client extends HttpClient<Http1ClientRequest>, RuntimeType
      * @return fluent API builder
      */
     static Http1ClientConfig.Builder builder() {
-        return Http1ClientConfig.builder();
+        return Http1ClientConfig.builder()
+                .update(it -> it.from(Http1ClientImpl.globalConfig()));
     }
 
     /**
@@ -65,8 +66,7 @@ public interface Http1Client extends HttpClient<Http1ClientRequest>, RuntimeType
      * @return a new client
      */
     static Http1Client create(Consumer<Http1ClientConfig.Builder> consumer) {
-        return Http1ClientConfig.builder()
-                .update(consumer)
+        return builder().update(consumer)
                 .build();
     }
 
@@ -88,4 +88,15 @@ public interface Http1Client extends HttpClient<Http1ClientRequest>, RuntimeType
     static Http1Client create(Config config) {
         return create(it -> it.config(config));
     }
+
+    /**
+     * Configure the default Http1 client configuration.
+     * Note: This method needs to be used before Helidon is started to have the full effect.
+     *
+     * @param clientConfig global client config
+     */
+    static void configureDefaults(Http1ClientConfig clientConfig) {
+        Http1ClientImpl.GLOBAL_CONFIG.compareAndSet(null, clientConfig);
+    }
+
 }

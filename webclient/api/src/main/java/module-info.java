@@ -51,5 +51,5 @@ module io.helidon.webclient.api {
     uses io.helidon.webclient.spi.WebClientServiceProvider;
     uses io.helidon.webclient.spi.ProtocolConfigProvider;
     uses io.helidon.webclient.spi.HttpClientSpiProvider;
-	
+
 }
