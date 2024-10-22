@@ -193,7 +193,7 @@ public final class GeneratedService {
                             "Service provider configuration defined as a list must have a single node that is the type, "
                                     + "with children containing the provider configuration. Failed on: " + serviceConfig.key());
                 }
-                usedConfig = configs.get(0);
+                usedConfig = configs.getFirst();
                 name = usedConfig.name();
                 type = usedConfig.get(KEY_SERVICE_TYPE).asString().orElse(name);
                 enabled = usedConfig.get(KEY_SERVICE_ENABLED).asBoolean().orElse(enabled);

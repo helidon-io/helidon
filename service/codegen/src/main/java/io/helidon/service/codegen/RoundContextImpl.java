@@ -34,6 +34,7 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
 
 class RoundContextImpl implements RegistryRoundContext {
+    private final RegistryCodegenContext ctx;
     private final RoundContext delegate;
     private final Map<TypeName, List<TypeInfo>> annotationToTypes;
     private final Map<TypeName, Set<TypeName>> metaAnnotated;
@@ -41,12 +42,14 @@ class RoundContextImpl implements RegistryRoundContext {
     private final Consumer<DescriptorClassCode> addDescriptorConsumer;
     private final Collection<TypeName> annotations;
 
-    RoundContextImpl(RoundContext delegate,
+    RoundContextImpl(RegistryCodegenContext ctx,
+                     RoundContext delegate,
                      Consumer<DescriptorClassCode> addDescriptorConsumer,
                      Set<TypeName> annotations,
                      Map<TypeName, List<TypeInfo>> annotationToTypes,
                      Map<TypeName, Set<TypeName>> metaAnnotated,
                      List<TypeInfo> types) {
+        this.ctx = ctx;
         this.delegate = delegate;
         this.addDescriptorConsumer = addDescriptorConsumer;
 
@@ -152,6 +155,13 @@ class RoundContextImpl implements RegistryRoundContext {
                                                     contracts,
                                                     factoryContracts));
         delegate.addGeneratedType(descriptorType, descriptor, serviceType, originatingElements);
+    }
+
+    @Override
+    public ServiceContracts serviceContracts(TypeInfo serviceInfo) {
+        return ServiceContracts.create(ctx.options(),
+                                       this::typeInfo,
+                                       serviceInfo);
     }
 
     @Override

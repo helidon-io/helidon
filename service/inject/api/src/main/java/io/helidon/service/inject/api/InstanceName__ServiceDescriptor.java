@@ -20,6 +20,7 @@ import java.util.Set;
 
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
 
 /**
  * Service descriptor to enable injection of String name of a {@link io.helidon.service.inject.api.Injection.PerInstance}
@@ -36,7 +37,7 @@ public class InstanceName__ServiceDescriptor implements InjectServiceDescriptor<
     public static final InstanceName__ServiceDescriptor INSTANCE = new InstanceName__ServiceDescriptor();
 
     private static final TypeName INFO_TYPE = TypeName.create(InstanceName__ServiceDescriptor.class);
-    private static final Set<ResolvedType> CONTRACTS = Set.of(ResolvedType.STRING);
+    private static final Set<ResolvedType> CONTRACTS = Set.of(ResolvedType.create(TypeNames.STRING));
 
     private InstanceName__ServiceDescriptor() {
     }

@@ -30,7 +30,6 @@ import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.ElementSignature;
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeInfo;
-import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 
@@ -111,8 +110,8 @@ final class TypedElements {
                 });
 
         // we have gathered all the declared elements, now let's gather inherited elements (default methods etc.)
-        for (TypeName contract : contracts) {
-            Optional<TypeInfo> contractTypeInfo = ctx.typeInfo(contract);
+        for (ResolvedType contract : contracts) {
+            Optional<TypeInfo> contractTypeInfo = ctx.typeInfo(contract.type());
             if (contractTypeInfo.isPresent()) {
                 TypeInfo inheritedContract = contractTypeInfo.get();
                 inheritedContract.elementInfo()
@@ -168,7 +167,7 @@ final class TypedElements {
      * Who declares the method.
      *
      * @param abstractType interface or abstract class
-     * @param element element declared on that type
+     * @param element      element declared on that type
      */
     record DeclaredElement(TypeInfo abstractType,
                            TypedElementInfo element) {

@@ -244,6 +244,7 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
         }
 
         return new RoundContextImpl(
+                ctx,
                 roundContext,
                 newDescriptors::add,
                 Set.copyOf(availableAnnotations),

@@ -117,7 +117,8 @@ public final class Service {
      * consider using {@link ExternalContracts} instead - this annotation can be placed on the
      * implementation class implementing the given {@code Contract} interface(s).
      * <p>
-     * Default behavior of the service registry is to only provide support lookup based on contracts.
+     * Default behavior of the service registry is to assume any super type and implemented interface is a contract. This can
+     * be changed through annotation processor/codegen configuration.
      */
     @Documented
     @Retention(RetentionPolicy.CLASS)

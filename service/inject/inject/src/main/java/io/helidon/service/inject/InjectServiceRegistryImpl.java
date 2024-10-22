@@ -40,6 +40,7 @@ import io.helidon.common.config.GlobalConfig;
 import io.helidon.common.configurable.LruCache;
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
@@ -78,7 +79,6 @@ import static io.helidon.service.inject.LookupTrace.traceLookup;
  * (i.e. core services can receive inject services and vice-versa).
  */
 class InjectServiceRegistryImpl implements InjectRegistry, Scopes {
-    private static final System.Logger LOGGER = System.getLogger(InjectServiceRegistryImpl.class.getName());
     private static final AtomicInteger COUNTER = new AtomicInteger();
 
     private final String id = String.valueOf(COUNTER.incrementAndGet());
@@ -331,7 +331,7 @@ class InjectServiceRegistryImpl implements InjectRegistry, Scopes {
                                                                + Injection.InstanceName.class.getName()
                                                                + " must be the only qualifier used.");
                 }
-                if (!lookup.contracts().contains(ResolvedType.STRING)) {
+                if (!lookup.contracts().contains(ResolvedType.create(TypeNames.STRING))) {
                     throw new ServiceRegistryException("Invalid injection lookup. @"
                                                                + Injection.InstanceName.class.getName()
                                                                + " must use String contract.");
@@ -446,10 +446,6 @@ class InjectServiceRegistryImpl implements InjectRegistry, Scopes {
         return serviceInfos.stream()
                 .map(InjectServiceInfo::coreInfo)
                 .collect(Collectors.toList());
-    }
-
-    String id() {
-        return id;
     }
 
     <T> List<ServiceManager<T>> lookupManagers(Lookup lookup) {

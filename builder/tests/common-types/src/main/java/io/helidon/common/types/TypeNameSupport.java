@@ -319,10 +319,19 @@ final class TypeNameSupport {
         if (instance.lowerBounds().isEmpty()) {
             return prefix + " extends " + instance.upperBounds()
                     .stream()
-                    .map(TypeName::resolvedName)
+                    .map(it -> {
+                        if (it.generic()) {
+                            return it.wildcard() ? "?" : it.className();
+                        }
+                        return it.resolvedName();
+                    })
                     .collect(Collectors.joining(" & "));
         }
-        return prefix + " super " + instance.lowerBounds().getFirst().resolvedName();
+        TypeName lowerBound = instance.lowerBounds().getFirst();
+        if (lowerBound.generic()) {
+            return prefix + " super " + (lowerBound.wildcard() ? "?" : lowerBound.className());
+        }
+        return prefix + " super " + lowerBound.resolvedName();
 
     }
 

@@ -20,10 +20,7 @@ obtained from a `ServiceRegistryManager`.
 ## Declare a service
 
 Use `io.helidon.service.registry.Service.Provider` annotation on your service provider type (implementation of a contract).
-Use `io.helidon.service.registry.Service.Contract` on your contract interface (if not annotated, such an interface would not be
-considered a contract and will not be discoverable using the registry - configurable).
-Use `io.helidon.service.registry.Service.ExternalContracts` on your service provider type to
-add other types as contracts, even if not annotated with `Contract` (i.e. to support third party libraries). Alternatively, 
+ Alternatively, 
 `java.util.function.Supplier` can also be used in this scenario.
 
 Use `io.helidon.service.registry.Service.Descriptor` to create a hand-crafted service descriptor (see below "Behind the scenes")
@@ -84,6 +81,63 @@ class MyService3 implements Supplier<Optional<com.foo.bar.MyContract3>> {
          return Optional.of(MyContract3.builder().message("MyService3").build());
     }
 }
+```
+
+## Annotation processor setup
+
+To use Service registry code generator, you need to add the Helidon annotation processor and the service registry code generator to your annotation processor path.
+
+For Maven:
+```xml
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+                <annotationProcessorPaths>
+                    <path>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-apt</artifactId>
+                        <version>${helidon.version}</version>
+                    </path>
+                    <path>
+                        <groupId>io.helidon.service</groupId>
+                        <artifactId>helidon-service-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </path>
+                </annotationProcessorPaths>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+```
+
+Additional options can be configured to customize the behavior. For example the default approach is that all contracts
+are auto-discovered. We can switch contract discovery to annotated only, in such a case the following annotations are available:
+Use `io.helidon.service.registry.Service.Contract` on your contract interface (if not annotated, such an interface would not be
+considered a contract and will not be discoverable using the registry - configurable).
+Use `io.helidon.service.registry.Service.ExternalContracts` on your service provider type to
+add other types as contracts, even if not annotated with `Contract` (i.e. to support third party libraries).
+
+There is also an option to exclude specific types from being contracts (such as `Closeable` could be excluded).
+
+To enable this (Maven):
+
+```xml
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-compiler-plugin</artifactId>
+    <configuration>
+        <compilerArgs>
+            <!-- Disable automatic adding of contracts -->
+            <arg>-Ahelidon.registry.autoAddNonContractInterfaces=false</arg>
+            <!-- Add contract exclusion (not needed if above is set to true) -->
+            <arg>-Ahelidon.registry.nonContractTypes=java.io.Serializable,java.lang.AutoCloseable,java.io.Closeable</arg>
+        </compilerArgs>
+        <!-- Annotation processor setup etc. -->
+    </configuration>
+</plugin>
 ```
 
 ## Behind the scenes

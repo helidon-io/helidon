@@ -58,7 +58,6 @@ import io.helidon.common.types.TypedElementInfo;
 import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.RegistryRoundContext;
 import io.helidon.service.codegen.ServiceCodegenTypes;
-import io.helidon.service.codegen.ServiceOptions;
 import io.helidon.service.codegen.ServiceSuperType;
 import io.helidon.service.codegen.spi.RegistryCodegenExtension;
 import io.helidon.service.inject.codegen.spi.InjectAssignment;
@@ -112,7 +111,6 @@ class InjectionExtension implements RegistryCodegenExtension {
             .build();
 
     private final RegistryCodegenContext ctx;
-    private final boolean autoAddContracts;
     private final Assignments assignments;
     private final Interception interception;
     private final InterceptionSupport interceptionSupport;
@@ -121,12 +119,13 @@ class InjectionExtension implements RegistryCodegenExtension {
 
     InjectionExtension(RegistryCodegenContext codegenContext) {
         this.ctx = codegenContext;
+
         CodegenOptions options = codegenContext.options();
-        this.autoAddContracts = ServiceOptions.AUTO_ADD_NON_CONTRACT_INTERFACES.value(options);
-        this.assignments = new Assignments(ctx);
         this.interception = new Interception(InjectOptions.INTERCEPTION_STRATEGY.value(options));
-        this.interceptionSupport = InterceptionSupport.create(ctx);
         this.scopeMetaAnnotations = InjectOptions.SCOPE_META_ANNOTATIONS.value(options);
+
+        this.interceptionSupport = InterceptionSupport.create(ctx);
+        this.assignments = new Assignments(ctx);
         this.observers = HelidonServiceLoader.create(ServiceLoader.load(InjectCodegenObserverProvider.class,
                                                                         InjectionExtension.class.getClassLoader()))
                 .stream()
@@ -332,8 +331,7 @@ class InjectionExtension implements RegistryCodegenExtension {
                                                            interception,
                                                            serviceInfo,
                                                            ServiceSuperType.create(),
-                                                           describeAnnotation.typeValue().orElse(INJECTION_SINGLETON),
-                                                           autoAddContracts);
+                                                           describeAnnotation.typeValue().orElse(INJECTION_SINGLETON));
 
         DescribedType serviceDescriptor = service.serviceDescriptor();
         TypeName serviceTypeName = serviceDescriptor.typeName();
@@ -408,8 +406,7 @@ class InjectionExtension implements RegistryCodegenExtension {
                                                            interception,
                                                            typeInfo,
                                                            superType(typeInfo, services),
-                                                           scope,
-                                                           autoAddContracts);
+                                                           scope);
         DescribedType serviceDescriptor = service.serviceDescriptor();
         DescribedElements serviceElements = serviceDescriptor.elements();
         TypeName serviceTypeName = serviceDescriptor.typeName();
@@ -780,7 +777,7 @@ class InjectionExtension implements RegistryCodegenExtension {
 
     private void scopeHandler(TypeInfo typeInfo, ClassModel.Builder classModel, Set<ResolvedType> contracts) {
         if (contracts.stream()
-                .noneMatch(it -> it.genericTypeName().equals(INJECTION_SCOPE_HANDLER))) {
+                .noneMatch(it -> it.type().equals(INJECTION_SCOPE_HANDLER))) {
             return;
         }
 

@@ -21,6 +21,7 @@ import java.util.Set;
 import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.common.types.ResolvedType;
+import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -51,4 +52,12 @@ public interface RegistryRoundContext extends RoundContext {
                        Set<ResolvedType> contracts,
                        Set<ResolvedType> factoryContracts,
                        Object... originatingElements);
+
+    /**
+     * Create service contracts for the provided service that honor configuration of contract discovery.
+     *
+     * @param serviceInfo type info of the analyzed service
+     * @return service contracts
+     */
+    ServiceContracts serviceContracts(TypeInfo serviceInfo);
 }

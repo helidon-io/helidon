@@ -44,7 +44,7 @@ class CoreServiceRegistry implements ServiceRegistry {
             Comparator.comparing(ServiceProvider::weight).reversed()
                     .thenComparing(ServiceProvider::descriptorType);
 
-    private final Map<TypeName, List<ServiceProvider>> providersByContract;
+    private final Map<ResolvedType, List<ServiceProvider>> providersByContract;
     private final Map<ServiceInfo, ServiceProvider> providersByService;
     private final List<ServiceProvider> allProviders;
 
@@ -169,7 +169,7 @@ class CoreServiceRegistry implements ServiceRegistry {
 
     @Override
     public List<ServiceInfo> allServices(TypeName contract) {
-        return Optional.ofNullable(providersByContract.get(contract))
+        return Optional.ofNullable(providersByContract.get(ResolvedType.create(contract)))
                 .orElseGet(List::of)
                 .stream()
                 .map(ServiceProvider::descriptor)
@@ -208,7 +208,7 @@ class CoreServiceRegistry implements ServiceRegistry {
     }
 
     private List<ServiceProvider> allProviders(TypeName contract) {
-        List<ServiceProvider> serviceProviders = providersByContract.get(contract);
+        List<ServiceProvider> serviceProviders = providersByContract.get(ResolvedType.create(contract));
         if (serviceProviders == null) {
             return List.of();
         }

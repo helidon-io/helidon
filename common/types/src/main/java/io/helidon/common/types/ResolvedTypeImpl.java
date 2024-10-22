@@ -16,9 +16,7 @@
 
 package io.helidon.common.types;
 
-import java.util.List;
-
-class ResolvedTypeImpl implements ResolvedType {
+class ResolvedTypeImpl implements ResolvedType, Comparable<ResolvedType> {
     private final TypeName typeName;
     private final String resolvedName;
     private final boolean noTypes;
@@ -30,128 +28,13 @@ class ResolvedTypeImpl implements ResolvedType {
     }
 
     @Override
+    public TypeName type() {
+        return typeName;
+    }
+
+    @Override
     public String resolvedName() {
         return resolvedName;
-    }
-
-    @Override
-    public TypeName boxed() {
-        return typeName.boxed();
-    }
-
-    @Override
-    public TypeName genericTypeName() {
-        return typeName.genericTypeName();
-    }
-
-    @Override
-    public String packageName() {
-        return typeName.packageName();
-    }
-
-    @Override
-    public String className() {
-        return typeName.className();
-    }
-
-    @Override
-    public List<String> enclosingNames() {
-        return typeName.enclosingNames();
-    }
-
-    @Override
-    public boolean primitive() {
-        return typeName.primitive();
-    }
-
-    @Override
-    public boolean array() {
-        return typeName.array();
-    }
-
-    @Override
-    public boolean generic() {
-        return typeName.generic();
-    }
-
-    @Override
-    public boolean wildcard() {
-        return typeName.wildcard();
-    }
-
-    @Override
-    public List<TypeName> typeArguments() {
-        return typeName.typeArguments();
-    }
-
-    @Override
-    public List<String> typeParameters() {
-        return typeName.typeParameters();
-    }
-
-    @Override
-    public List<TypeName> lowerBounds() {
-        return typeName.lowerBounds();
-    }
-
-    @Override
-    public List<TypeName> upperBounds() {
-        return typeName.upperBounds();
-    }
-
-    @Override
-    public String declaredName() {
-        return typeName.declaredName();
-    }
-
-    @Override
-    public String classNameWithEnclosingNames() {
-        return typeName.classNameWithEnclosingNames();
-    }
-
-    @Override
-    public boolean isList() {
-        return typeName.isList();
-    }
-
-    @Override
-    public boolean isSet() {
-        return typeName.isSet();
-    }
-
-    @Override
-    public boolean isMap() {
-        return typeName.isMap();
-    }
-
-    @Override
-    public boolean isOptional() {
-        return typeName.isOptional();
-    }
-
-    @Override
-    public boolean isSupplier() {
-        return typeName.isSupplier();
-    }
-
-    @Override
-    public String classNameWithTypes() {
-        return typeName.classNameWithTypes();
-    }
-
-    @Override
-    public String name() {
-        return typeName.name();
-    }
-
-    @Override
-    public String fqName() {
-        return typeName.fqName();
-    }
-
-    @Override
-    public TypeName unresolvedType() {
-        return typeName;
     }
 
     @Override
@@ -164,34 +47,27 @@ class ResolvedTypeImpl implements ResolvedType {
         if (o == this) {
             return true;
         }
-        if (!(o instanceof TypeName other)) {
+        if (!(o instanceof ResolvedType other)) {
             return false;
         }
         if (other instanceof ResolvedTypeImpl rti) {
             return resolvedName.equals(rti.resolvedName);
-        } else {
-            if (noTypes && other.typeArguments().isEmpty()) {
-                return typeName.equals(other);
-            }
-            if (noTypes || other.typeArguments().isEmpty()) {
-                return false;
-            }
-            return resolvedName.equals(other.resolvedName());
         }
+        return other.type().resolvedName().equals(resolvedName);
     }
 
     @Override
-    public int compareTo(TypeName o) {
-        int diff = resolvedName.compareTo(o.resolvedName());
+    public int compareTo(ResolvedType o) {
+        int diff = resolvedName.compareTo(o.type().resolvedName());
         if (diff != 0) {
             // different name
             return diff;
         }
-        diff = Boolean.compare(typeName.primitive(), o.primitive());
+        diff = Boolean.compare(typeName.primitive(), o.type().primitive());
         if (diff != 0) {
             return diff;
         }
-        return Boolean.compare(typeName.array(), o.array());
+        return Boolean.compare(typeName.array(), o.type().array());
     }
 
     @Override

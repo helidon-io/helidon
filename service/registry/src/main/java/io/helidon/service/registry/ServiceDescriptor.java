@@ -22,7 +22,6 @@ package io.helidon.service.registry;
  *
  * @param <T> type of the described service
  */
-@SuppressWarnings("removal")
 public interface ServiceDescriptor<T> extends ServiceInfo {
     /**
      * Create a new service instance.

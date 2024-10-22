@@ -501,17 +501,18 @@ final class Activators {
         static final GenericType<?> OBJECT_GENERIC_TYPE = GenericType.create(Object.class);
 
         private final TypeName supportedQualifier;
-        private final Set<TypeName> supportedContracts;
+        private final Set<ResolvedType> supportedContracts;
         private final boolean anyMatch;
 
         QualifiedProviderActivator(ServiceProvider<T> provider, QualifiedFactoryDescriptor qpd) {
             super(provider);
             this.supportedQualifier = qpd.qualifierType();
-            this.supportedContracts = provider.descriptor().contracts()
+            this.supportedContracts = provider.descriptor()
+                    .contracts()
                     .stream()
-                    .filter(not(QualifiedFactory.TYPE::equals))
+                    .filter(it -> !QualifiedFactory.TYPE.equals(it.type()))
                     .collect(Collectors.toSet());
-            this.anyMatch = this.supportedContracts.contains(TypeNames.OBJECT);
+            this.anyMatch = this.supportedContracts.contains(ResolvedType.create(TypeNames.OBJECT));
         }
 
         @Override
@@ -619,7 +620,7 @@ final class Activators {
         @Override
         protected Optional<List<QualifiedInstance<T>>> targetInstances(Lookup lookup) {
             if (requestedProvider(lookup, FactoryType.SERVICES)) {
-                return Optional.of(List.of(QualifiedInstance.create((T) serviceInstance.get(), descriptor().qualifiers())));
+                return Optional.of(List.of(QualifiedInstance.create(serviceInstance.get(), descriptor().qualifiers())));
             }
 
             if (targetInstances == null) {

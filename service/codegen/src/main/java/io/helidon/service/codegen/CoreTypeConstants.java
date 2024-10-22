@@ -44,7 +44,7 @@ class CoreTypeConstants {
     List<Constant> genericConstants() {
         List<Constant> result = new ArrayList<>();
 
-        genericConstants.forEach((type, constantName) -> result.add(new Constant(type, constantName)));
+        genericConstants.forEach((type, constantName) -> result.add(new Constant(type.type(), constantName)));
 
         return result;
     }
@@ -52,7 +52,7 @@ class CoreTypeConstants {
     List<Constant> typeNameConstants() {
         List<Constant> result = new ArrayList<>();
 
-        typeNameConstants.forEach((type, constantName) -> result.add(new Constant(type, constantName)));
+        typeNameConstants.forEach((type, constantName) -> result.add(new Constant(type.type(), constantName)));
 
         return result;
     }

@@ -382,6 +382,7 @@ public class InjectRegistryManager implements ServiceRegistryManager {
                 } else {
                     // contract specific
                     Set<TypeName> realContracts = contracts.stream()
+                            .map(ResolvedType::type)
                             .filter(Predicate.not(Injection.QualifiedFactory.TYPE::equals))
                             .collect(Collectors.toSet());
                     for (TypeName realContract : realContracts) {
@@ -400,7 +401,7 @@ public class InjectRegistryManager implements ServiceRegistryManager {
     }
 
     private static boolean contains(Set<ResolvedType> contracts, TypeName type) {
-        return contracts.stream().anyMatch(it -> it.genericTypeName().equals(type));
+        return contracts.stream().anyMatch(it -> it.type().equals(type));
     }
 
     record TypedQualifiedProviderKey(TypeName qualifier, ResolvedType contract) {

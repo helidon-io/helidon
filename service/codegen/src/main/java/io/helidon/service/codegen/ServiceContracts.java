@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 import io.helidon.codegen.CodegenException;
+import io.helidon.codegen.CodegenOptions;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
@@ -69,28 +70,33 @@ public class ServiceContracts {
     /**
      * Create new eligible contracts.
      *
-     * @param typeInfoFactory    function to obtain a type info (if possible) based on type name
-     * @param serviceInfo        service info to analyze
-     * @param autAddNonContracts whether to auto add non-contract interfaces (and super classes) as contracts
+     * @param options         codegen options
+     * @param typeInfoFactory function to obtain a type info (if possible) based on type name
+     * @param serviceInfo     service info to analyze
      * @return a new instance to check if an implemented interface or a super type is a contract or not
      */
-    public static ServiceContracts create(Function<TypeName, Optional<TypeInfo>> typeInfoFactory,
-                                          TypeInfo serviceInfo,
-                                          boolean autAddNonContracts) {
+    public static ServiceContracts create(CodegenOptions options,
+                                          Function<TypeName, Optional<TypeInfo>> typeInfoFactory,
+                                          TypeInfo serviceInfo) {
         Set<TypeName> eligibleExternalContracts = new HashSet<>();
         // gather eligible external contracts
         eligibleContracts(eligibleExternalContracts,
                           new HashSet<>(),
                           serviceInfo);
 
+        boolean onlyAnnotatedContracts = !ServiceOptions.AUTO_ADD_NON_CONTRACT_INTERFACES.value(options);
+        var nonContractTypes = ServiceOptions.NON_CONTRACT_TYPES.value(options);
+
         Function<TypeInfo, Boolean> isEligibleInfo = typeInfo -> isEligible(
-                !autAddNonContracts,
+                nonContractTypes,
+                onlyAnnotatedContracts,
                 eligibleExternalContracts,
                 typeInfo);
 
         Function<TypeName, Boolean> isEligibleType = typeName -> isEligible(
                 typeInfoFactory,
-                !autAddNonContracts,
+                nonContractTypes,
+                onlyAnnotatedContracts,
                 eligibleExternalContracts,
                 typeName);
 
@@ -184,19 +190,6 @@ public class ServiceContracts {
                                       contracts);
     }
 
-    private TypeName resolveOptional(TypeInfo typeInfo, TypeName typeName, TypeName factoryInterface) {
-        // for suppliers, we support optional, all other factory types can return optional by design
-        if (factoryInterface.equals(TypeNames.SUPPLIER) && typeName.isOptional()) {
-            // Supplier of optionals
-            if (typeName.typeArguments().isEmpty()) {
-                throw new CodegenException("Invalid declaration of Supplier<Optional>, Optional is missing type argument",
-                                           typeInfo.originatingElementValue());
-            }
-            return typeName.typeArguments().getFirst();
-        }
-        return typeName;
-    }
-
     /**
      * Add contracts from the type (from its implemented interfaces and super types).
      *
@@ -215,7 +208,7 @@ public class ServiceContracts {
             return;
         }
 
-        if (!resolvedType.typeArguments().isEmpty()) {
+        if (!resolvedType.type().typeArguments().isEmpty()) {
             // we also need to add a contract for the type it implements
             // i.e. if this is Circle<Green>, we may want to add Circle<Color> as well
             typeInfoFactory.apply(withGenerics.genericTypeName())
@@ -285,23 +278,31 @@ public class ServiceContracts {
     }
 
     private static boolean isEligible(Function<TypeName, Optional<TypeInfo>> typeInfoFactory,
+                                      Set<TypeName> nonContractTypes,
                                       boolean onlyAnnotatedAreEligible,
                                       Set<TypeName> eligibleExternalContracts,
                                       TypeName toCheck) {
         if (eligibleExternalContracts.contains(toCheck)) {
             return true;
         }
+        if (nonContractTypes.contains(toCheck)) {
+            return false;
+        }
         // if the type info does not exist on classpath, and is not an external contract, return false
         return typeInfoFactory.apply(toCheck)
-                .map(it -> isEligible(onlyAnnotatedAreEligible, eligibleExternalContracts, it))
+                .map(it -> isEligible(nonContractTypes, onlyAnnotatedAreEligible, eligibleExternalContracts, it))
                 .orElse(false);
     }
 
-    private static boolean isEligible(boolean onlyAnnotatedAreEligible,
+    private static boolean isEligible(Set<TypeName> nonContractTypes,
+                                      boolean onlyAnnotatedAreEligible,
                                       Set<TypeName> eligibleExternalContracts,
                                       TypeInfo toCheck) {
         if (eligibleExternalContracts.contains(toCheck.typeName())) {
             return true;
+        }
+        if (nonContractTypes.contains(toCheck.typeName())) {
+            return false;
         }
         if (toCheck.hasAnnotation(SERVICE_ANNOTATION_CONTRACT)) {
             return true;
@@ -341,6 +342,19 @@ public class ServiceContracts {
         typeInfo.findAnnotation(SERVICE_ANNOTATION_EXTERNAL_CONTRACTS)
                 .flatMap(Annotation::typeValues)
                 .ifPresent(eligibleContracts::addAll);
+    }
+
+    private TypeName resolveOptional(TypeInfo typeInfo, TypeName typeName, TypeName factoryInterface) {
+        // for suppliers, we support optional, all other factory types can return optional by design
+        if (factoryInterface.equals(TypeNames.SUPPLIER) && typeName.isOptional()) {
+            // Supplier of optionals
+            if (typeName.typeArguments().isEmpty()) {
+                throw new CodegenException("Invalid declaration of Supplier<Optional>, Optional is missing type argument",
+                                           typeInfo.originatingElementValue());
+            }
+            return typeName.typeArguments().getFirst();
+        }
+        return typeName;
     }
 
     /**

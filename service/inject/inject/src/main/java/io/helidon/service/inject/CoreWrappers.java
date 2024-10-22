@@ -37,13 +37,6 @@ class CoreWrappers {
     private CoreWrappers() {
     }
 
-    static InjectServiceInfo create(ServiceInfo serviceInfo) {
-        if (serviceInfo instanceof InjectServiceInfo inj) {
-            return inj;
-        }
-        return new CoreServiceInfo(serviceInfo);
-    }
-
     static <T> InjectServiceDescriptor<T> create(ServiceDescriptor<T> serviceInfo) {
         if (serviceInfo instanceof InjectServiceDescriptor<T> inj) {
             return inj;

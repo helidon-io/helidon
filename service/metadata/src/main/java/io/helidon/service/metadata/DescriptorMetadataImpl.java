@@ -85,12 +85,12 @@ record DescriptorMetadataImpl(String registryType,
         }
         builder.set(HSON_DESCRIPTOR, descriptorType.fqName());
         builder.setStrings(HSON_CONTRACTS, contracts.stream()
-                .map(TypeName::resolvedName)
+                .map(ResolvedType::resolvedName)
                 .sorted(String.CASE_INSENSITIVE_ORDER)
                 .collect(Collectors.toUnmodifiableList()));
         if (!factoryContracts.isEmpty()) {
             builder.setStrings(HSON_FACTORY_CONTRACTS, factoryContracts.stream()
-                    .map(TypeName::resolvedName)
+                    .map(ResolvedType::resolvedName)
                     .sorted(String.CASE_INSENSITIVE_ORDER)
                     .collect(Collectors.toUnmodifiableList()));
         }

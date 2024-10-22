@@ -140,7 +140,7 @@ final class ActivatorsPerLookup {
      */
     static class QualifiedProviderActivator<T> extends SingleServiceActivator<T> {
         private final TypeName supportedQualifier;
-        private final Set<TypeName> supportedContracts;
+        private final Set<ResolvedType> supportedContracts;
         private final boolean anyMatch;
 
         QualifiedProviderActivator(ServiceProvider<T> provider, GeneratedInjectService.QualifiedFactoryDescriptor qpd) {
@@ -148,9 +148,9 @@ final class ActivatorsPerLookup {
             this.supportedQualifier = qpd.qualifierType();
             this.supportedContracts = provider.descriptor().contracts()
                     .stream()
-                    .filter(not(QualifiedFactory.TYPE::equals))
+                    .filter(it -> !QualifiedFactory.TYPE.equals(it.type()))
                     .collect(Collectors.toSet());
-            this.anyMatch = this.supportedContracts.contains(TypeNames.OBJECT);
+            this.anyMatch = this.supportedContracts.contains(ResolvedType.create(TypeNames.OBJECT));
         }
 
         @Override

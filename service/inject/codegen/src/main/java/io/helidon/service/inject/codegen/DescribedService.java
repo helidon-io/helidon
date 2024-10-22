@@ -95,8 +95,7 @@ class DescribedService {
                                    Interception interception,
                                    TypeInfo serviceInfo,
                                    ServiceSuperType superType,
-                                   TypeName scope,
-                                   boolean autoAddNonContracts) {
+                                   TypeName scope) {
         TypeName serviceType = serviceInfo.typeName();
         TypeName descriptorType = ctx.descriptorType(serviceType);
 
@@ -107,7 +106,7 @@ class DescribedService {
         TypeInfo providedTypeInfo = null;
         TypeName providedTypeName = null;
 
-        ServiceContracts serviceContracts = ServiceContracts.create(roundContext::typeInfo, serviceInfo, autoAddNonContracts);
+        ServiceContracts serviceContracts = roundContext.serviceContracts(serviceInfo);
 
         // now we know which contracts are OK to use, and we can check the service types and real contracts
         // service is a factory only if it implements the interface directly; this is never inherited

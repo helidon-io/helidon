@@ -19,17 +19,12 @@ package io.helidon.common.types;
 import java.lang.reflect.Type;
 
 /**
- * A special case of {@link io.helidon.common.types.TypeName} that defines equals method based on
- * {@link io.helidon.common.types.ResolvedType#resolvedName()} (i.e. including all type arguments).
- * This can be used in {@link java.util.HashSet} or {@link java.util.HashMap} as a key that
- * is only equal if both the {@link #fqName()} and {@link #typeArguments()} are the same.
+ * A wrapper for {@link io.helidon.common.types.TypeName} that uses the resolved name for equals and hashCode.
+ * This allows us to collect interfaces including type arguments.
+ *
+ * @see TypeName#resolvedName()
  */
-public interface ResolvedType extends TypeName {
-    /**
-     * String as a resolved type.
-     */
-    ResolvedType STRING = ResolvedType.create(TypeNames.STRING);
-
+public interface ResolvedType {
     /**
      * Create a type name from a type (such as class).
      *
@@ -63,4 +58,10 @@ public interface ResolvedType extends TypeName {
         return new ResolvedTypeImpl(typeName);
     }
 
+    /**
+     * Provides the underlying type name that backs this resolved type.
+     *
+     * @return the type name this resolved type represents
+     */
+    TypeName type();
 }

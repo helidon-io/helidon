@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import io.helidon.codegen.CodegenException;
@@ -92,10 +91,9 @@ class CoreService {
     }
 
     static CoreService create(RegistryCodegenContext ctx,
-                              Function<TypeName, Optional<TypeInfo>> typeInfoFactory,
+                              RegistryRoundContext roundContext,
                               TypeInfo serviceInfo,
-                              Collection<TypeInfo> allServices,
-                              boolean autoAddNonContracts) {
+                              Collection<TypeInfo> allServices) {
 
         TypeName serviceType = serviceInfo.typeName();
         TypeName descriptorType = ctx.descriptorType(serviceType);
@@ -104,7 +102,7 @@ class CoreService {
         Set<ResolvedType> providedContracts = new HashSet<>();
         CoreFactoryType factoryType = CoreFactoryType.SERVICE;
 
-        ServiceContracts serviceContracts = ServiceContracts.create(typeInfoFactory, serviceInfo, autoAddNonContracts);
+        ServiceContracts serviceContracts = roundContext.serviceContracts(serviceInfo);
 
         // now we know which contracts are OK to use, and we can check the service types and real contracts
         // service is a factory only if it implements the interface directly; this is never inherited

@@ -22,7 +22,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import io.helidon.codegen.CodegenException;
@@ -64,25 +63,20 @@ class GenerateServiceDescriptor {
 
     private final TypeName generator;
     private final RegistryCodegenContext ctx;
+    private final RegistryRoundContext roundCtx;
     private final Collection<TypeInfo> services;
     private final TypeInfo typeInfo;
-    private final boolean autoAddContracts;
-    private final Function<TypeName, Optional<TypeInfo>> typeInfoFactory;
-    private final DescriptorConsumer descriptorConsumer;
 
     private GenerateServiceDescriptor(TypeName generator,
                                       RegistryCodegenContext ctx,
+                                      RegistryRoundContext roundCtx,
                                       Collection<TypeInfo> allServices,
-                                      TypeInfo service,
-                                      Function<TypeName, Optional<TypeInfo>> typeInfoFactory,
-                                      DescriptorConsumer descriptorConsumer) {
+                                      TypeInfo service) {
         this.generator = generator;
         this.ctx = ctx;
+        this.roundCtx = roundCtx;
         this.services = allServices;
         this.typeInfo = service;
-        this.autoAddContracts = ServiceOptions.AUTO_ADD_NON_CONTRACT_INTERFACES.value(ctx.options());
-        this.typeInfoFactory = typeInfoFactory;
-        this.descriptorConsumer = descriptorConsumer;
     }
 
     /**
@@ -96,16 +90,15 @@ class GenerateServiceDescriptor {
      * @return class model builder of the service descriptor
      */
     static ClassModel.Builder generate(TypeName generator,
-                                              RegistryCodegenContext ctx,
-                                              RegistryRoundContext roundContext,
-                                              Collection<TypeInfo> allServices,
-                                              TypeInfo service) {
+                                       RegistryCodegenContext ctx,
+                                       RegistryRoundContext roundContext,
+                                       Collection<TypeInfo> allServices,
+                                       TypeInfo service) {
         return new GenerateServiceDescriptor(generator,
                                              ctx,
+                                             roundContext,
                                              allServices,
-                                             service,
-                                             roundContext::typeInfo,
-                                             roundContext::addDescriptor)
+                                             service)
                 .generate();
     }
 
@@ -130,7 +123,7 @@ class GenerateServiceDescriptor {
                                        typeInfo.originatingElementValue());
         }
 
-        CoreService service = CoreService.create(ctx, typeInfoFactory, typeInfo, services, autoAddContracts);
+        CoreService service = CoreService.create(ctx, roundCtx, typeInfo, services);
         TypeName serviceType = service.serviceType();
         TypeName descriptorType = service.descriptorType();
 
@@ -192,14 +185,14 @@ class GenerateServiceDescriptor {
             factoryContracts.add(ResolvedType.create(serviceType));
         }
 
-        descriptorConsumer.addDescriptor("core",
-                                         serviceType,
-                                         descriptorType,
-                                         classModel,
-                                         weight(typeInfo).orElse(Weighted.DEFAULT_WEIGHT),
-                                         serviceContracts,
-                                         factoryContracts,
-                                         typeInfo.originatingElementValue());
+        roundCtx.addDescriptor("core",
+                               serviceType,
+                               descriptorType,
+                               classModel,
+                               weight(typeInfo).orElse(Weighted.DEFAULT_WEIGHT),
+                               serviceContracts,
+                               factoryContracts,
+                               typeInfo.originatingElementValue());
 
         return classModel;
     }
@@ -720,18 +713,5 @@ class GenerateServiceDescriptor {
         return TypeName.builder(descriptorType)
                 .addTypeArgument(serviceType)
                 .build();
-    }
-
-    private interface DescriptorConsumer {
-        // all parameters are needed, no sense in creating a builder
-        @SuppressWarnings("checkstyle:ParameterNumber")
-        void addDescriptor(String registryType,
-                           TypeName serviceType,
-                           TypeName descriptorType,
-                           ClassModel.Builder descriptor,
-                           double weight,
-                           Set<ResolvedType> contracts,
-                           Set<ResolvedType> factoryContracts,
-                           Object... originatingElements);
     }
 }

@@ -17,7 +17,6 @@
 package io.helidon.common.types;
 
 import java.lang.reflect.Method;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -79,8 +78,8 @@ class TypeNameTest {
         assertThat(typeName.fqName(), is("io.helidon.service.inject.api.Injection.ScopeHandler"));
 
         ResolvedType rt = ResolvedType.create(typeName);
-        assertThat(rt.resolvedName(), is(resolved));
-        assertThat(rt.fqName(), is("io.helidon.service.inject.api.Injection.ScopeHandler"));
+        assertThat(rt.type().resolvedName(), is(resolved));
+        assertThat(rt.type().fqName(), is("io.helidon.service.inject.api.Injection.ScopeHandler"));
     }
 
     @Test
