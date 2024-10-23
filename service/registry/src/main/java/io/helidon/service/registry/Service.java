@@ -18,6 +18,7 @@ package io.helidon.service.registry;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -59,12 +60,15 @@ public final class Service {
      *     <li>Implementing a {@link java.util.function.Supplier} of the contract; when using supplier, service registry
      *     supports the capability to return {@link java.util.Optional} in case the service cannot provide a value; such
      *     a service will be ignored and only other implementations (with lower weight) would be used. Supplier will be
-     *     called each time the dependency is used, or each time a method on registry is called to request an instance</li>
+     *     called each time the dependency is used, or each time a method on registry is called to request an instance. If the
+     *     provided instance should be singleton-like as well, use {@link io.helidon.common.LazyValue} or
+     *     similar approach to create it once and return the same instance every time</li>
      * </ul>
      */
     @Documented
     @Retention(RetentionPolicy.CLASS)
-    @Target(ElementType.TYPE)
+    @Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE})
+    @Inherited
     public @interface Provider {
         /**
          * Type name of this annotation.
@@ -113,12 +117,14 @@ public final class Service {
      * consider using {@link ExternalContracts} instead - this annotation can be placed on the
      * implementation class implementing the given {@code Contract} interface(s).
      * <p>
-     * Default behavior of the service registry is to only provide support lookup based on contracts.
+     * Default behavior of the service registry is to assume any super type and implemented interface is a contract. This can
+     * be changed through annotation processor/codegen configuration.
      */
     @Documented
     @Retention(RetentionPolicy.CLASS)
     @Target(ElementType.TYPE)
     public @interface Contract {
+        // contract should not be @Inherited, as we do not want types implementing a contract inherit this trait
     }
 
     /**
@@ -162,7 +168,7 @@ public final class Service {
         /**
          * Type of service registry that should read this descriptor. Defaults to
          * {@value DescriptorHandler#REGISTRY_TYPE_CORE}, so the descriptor must only implement
-         * {@link io.helidon.service.registry.GeneratedService.Descriptor}.
+         * {@link io.helidon.service.registry.ServiceDescriptor}.
          *
          * @return type of registry this descriptor supports
          */

@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Set;
 
 import io.helidon.common.Weighted;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -41,11 +42,21 @@ public interface ServiceInfo extends Weighted {
     TypeName descriptorType();
 
     /**
-     * Set of contracts the described service implements.
+     * Set of contracts the described service implements or provides through a factory method.
      *
      * @return set of contracts
      */
-    default Set<TypeName> contracts() {
+    default Set<ResolvedType> contracts() {
+        return Set.of();
+    }
+
+    /**
+     * Set of contracts the described service implements directly. If the service is not a factory,
+     * this set is empty.
+     *
+     * @return set of factory contracts
+     */
+    default Set<ResolvedType> factoryContracts() {
         return Set.of();
     }
 

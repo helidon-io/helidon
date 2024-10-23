@@ -55,8 +55,13 @@ class TypeHandlerSupplier extends TypeHandler.OneTypeHandler {
 
     @Override
     TypeName argumentTypeName() {
+        TypeName type = actualType();
+        if (TypeNames.STRING.equals(type) || toPrimitive(type).primitive() || type.array()) {
+            return declaredType();
+        }
+
         return TypeName.builder(SUPPLIER)
-                .addTypeArgument(toWildcard(actualType()))
+                .addTypeArgument(toWildcard(type))
                 .build();
     }
 

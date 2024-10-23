@@ -66,7 +66,8 @@ public interface CodegenContext {
     CodegenLogger logger();
 
     /**
-     * Current code generation scope. Usually guessed from the environment, can be overridden using {@link CodegenOptions#CODEGEN_SCOPE}
+     * Current code generation scope. Usually guessed from the environment, can be overridden using
+     * {@link CodegenOptions#CODEGEN_SCOPE}
      *
      * @return scope
      */
@@ -80,10 +81,12 @@ public interface CodegenContext {
     CodegenOptions options();
 
     /**
-     * Discover information about the provided type.
+     * Discover information about the provided type. This method only checks existing classes in the
+     * system, and ignored classes created as part of the current processing round.
      *
      * @param typeName type name to discover
      * @return discovered type information, or empty if the type cannot be discovered
+     * @see io.helidon.codegen.RoundContext#typeInfo(io.helidon.common.types.TypeName)
      */
     Optional<TypeInfo> typeInfo(TypeName typeName);
 
@@ -144,4 +147,13 @@ public interface CodegenContext {
      * @return set of supported options
      */
     Set<Option<?>> supportedOptions();
+
+    /**
+     * Get the unique name for the element within the provided type.
+     *
+     * @param type    type that owns the element
+     * @param element the element
+     * @return unique name for the element (will always start with the element name)
+     */
+    String uniqueName(TypeInfo type, TypedElementInfo element);
 }

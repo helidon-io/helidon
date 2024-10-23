@@ -33,11 +33,11 @@ import java.util.stream.Stream;
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weighted;
 import io.helidon.common.Weights;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 import io.helidon.metadata.hson.Hson;
 import io.helidon.service.metadata.DescriptorMetadata;
 import io.helidon.service.metadata.Descriptors;
-import io.helidon.service.registry.GeneratedService.Descriptor;
 
 import static io.helidon.service.metadata.Descriptors.SERVICE_REGISTRY_LOCATION;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -106,12 +106,16 @@ class CoreServiceDiscovery implements ServiceDiscovery {
         }
     }
 
-    private static Descriptor<?> getDescriptorInstance(TypeName descriptorType) {
+    private static ServiceDescriptor<?> getDescriptorInstance(TypeName descriptorType) {
         Class<?> clazz = toClass(descriptorType);
 
         try {
             Field field = clazz.getField("INSTANCE");
-            return (Descriptor<?>) field.get(null);
+            Object descriptorInstance = field.get(null);
+            if (descriptorInstance instanceof ServiceDescriptor<?> sd) {
+                return sd;
+            }
+            return (ServiceDescriptor<?>) field.get(null);
         } catch (ReflectiveOperationException e) {
             throw new ServiceRegistryException("Could not obtain the instance of service descriptor "
                                                        + descriptorType.fqName(),
@@ -159,11 +163,12 @@ class CoreServiceDiscovery implements ServiceDiscovery {
                                                                                            weight));
         }
 
-        Descriptor<Object> descriptor = ServiceLoader__ServiceDescriptor.create(providerType, provider, weight);
+        ServiceDescriptor<Object> descriptor = ServiceLoader__ServiceDescriptor.create(providerType, provider, weight);
         return new DescriptorHandlerImpl(DescriptorMetadata.create("core",
                                                                    descriptor.descriptorType(),
                                                                    weight,
-                                                                   descriptor.contracts()),
+                                                                   descriptor.contracts(),
+                                                                   descriptor.factoryContracts()),
                                          LazyValue.create(descriptor));
     }
 
@@ -196,14 +201,14 @@ class CoreServiceDiscovery implements ServiceDiscovery {
     }
 
     private record DescriptorHandlerImpl(DescriptorMetadata metadata,
-                                         LazyValue<Descriptor<?>> descriptorSupplier) implements DescriptorHandler {
+                                         LazyValue<ServiceDescriptor<?>> descriptorSupplier) implements DescriptorHandler {
 
         DescriptorHandlerImpl(DescriptorMetadata metadata) {
             this(metadata, LazyValue.create(() -> getDescriptorInstance(metadata.descriptorType())));
         }
 
         @Override
-        public Descriptor<?> descriptor() {
+        public ServiceDescriptor<?> descriptor() {
             return descriptorSupplier.get();
         }
 
@@ -218,8 +223,13 @@ class CoreServiceDiscovery implements ServiceDiscovery {
         }
 
         @Override
-        public Set<TypeName> contracts() {
+        public Set<ResolvedType> contracts() {
             return metadata.contracts();
+        }
+
+        @Override
+        public Set<ResolvedType> factoryContracts() {
+            return metadata.factoryContracts();
         }
 
         @Override

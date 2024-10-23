@@ -44,6 +44,8 @@ public interface CodegenProvider {
      * Annotations that are supported.
      *
      * @return set of annotation types
+     * @see io.helidon.codegen.RoundContext#annotatedTypes(io.helidon.common.types.TypeName)
+     * @see io.helidon.codegen.RoundContext#annotatedElements(io.helidon.common.types.TypeName)
      */
     default Set<TypeName> supportedAnnotations() {
         return Set.of();
@@ -55,6 +57,17 @@ public interface CodegenProvider {
      * @return set of annotation packages
      */
     default Set<String> supportedAnnotationPackages() {
+        return Set.of();
+    }
+
+    /**
+     * Inherited annotations that are supported.
+     * If an annotation is annotated with this "meta" annotation, it is considered supported.
+     *
+     * @return set of meta annotation types
+     * @see io.helidon.codegen.RoundContext#annotatedAnnotations(io.helidon.common.types.TypeName)
+     */
+    default Set<TypeName> supportedMetaAnnotations() {
         return Set.of();
     }
 }

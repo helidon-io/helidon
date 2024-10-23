@@ -72,6 +72,10 @@ public final class AnnotationParameter extends CommonComponent {
         writer.write(resolveValueToString(imports, type(), objectValue));
     }
 
+    Object value() {
+        return objectValue;
+    }
+
     private static Set<TypeName> resolveImports(Object value) {
         Set<TypeName> imports = new HashSet<>();
 

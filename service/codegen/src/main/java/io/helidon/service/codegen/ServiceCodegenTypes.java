@@ -16,6 +16,7 @@
 
 package io.helidon.service.codegen;
 
+import io.helidon.common.Generated;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -51,9 +52,10 @@ public final class ServiceCodegenTypes {
     public static final TypeName SERVICE_ANNOTATION_DESCRIPTOR =
             TypeName.create("io.helidon.service.registry.Service.Descriptor");
     /**
-     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.GeneratedService.Descriptor}.
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.ServiceDescriptor}.
      */
-    public static final TypeName SERVICE_DESCRIPTOR = TypeName.create("io.helidon.service.registry.GeneratedService.Descriptor");
+    public static final TypeName SERVICE_DESCRIPTOR =
+            TypeName.create("io.helidon.service.registry.ServiceDescriptor");
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Dependency}.
      */
@@ -62,6 +64,15 @@ public final class ServiceCodegenTypes {
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.DependencyContext}.
      */
     public static final TypeName SERVICE_DEPENDENCY_CONTEXT = TypeName.create("io.helidon.service.registry.DependencyContext");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.builder.api.Prototype.Blueprint}.
+     */
+    public static final TypeName BUILDER_BLUEPRINT = TypeName.create("io.helidon.builder.api.Prototype.Blueprint");
+
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@link io.helidon.common.Generated}.
+     */
+    public static final TypeName GENERATED_ANNOTATION = TypeName.create(Generated.class);
 
     private ServiceCodegenTypes() {
     }
