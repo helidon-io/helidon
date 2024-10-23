@@ -26,9 +26,12 @@ import java.lang.management.ThreadMXBean;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
+import io.helidon.metrics.api.BuiltInMeterNameFormat;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
@@ -42,12 +45,15 @@ public class SystemMetersProvider implements MetersProvider {
     private static final String BYTES = "bytes";
     private static final String SECONDS = "seconds";
     private static final String SCOPE = Meter.Scope.BASE;
-    private static final Metadata MEMORY_USED_HEAP = Metadata.builder()
+
+    // Maps camelCase names to snake_case, but only for those names that are actually different in the two cases.
+    private static final Map<String, String> CAMEL_TO_SNAKE_CASE_METER_NAMES = initMeterNames();
+
+    private static final Metadata.Builder MEMORY_USED_HEAP = Metadata.builder()
             .withName("memory.usedHeap")
             .withDescription("Displays the amount of used heap memory in bytes.")
-            .withUnit(BYTES)
-            .build();
-    private static final Metadata MEMORY_COMMITTED_HEAP = Metadata.builder()
+            .withUnit(BYTES);
+    private static final Metadata.Builder MEMORY_COMMITTED_HEAP = Metadata.builder()
             .withName("memory.committedHeap")
             .withDescription(
                     "Displays the amount of memory in bytes that is "
@@ -55,9 +61,8 @@ public class SystemMetersProvider implements MetersProvider {
                             + "machine to use. This amount of memory is "
                             + "guaranteed for the Java virtual "
                             + "machine to use.")
-            .withUnit(BYTES)
-            .build();
-    private static final Metadata MEMORY_MAX_HEAP = Metadata.builder()
+            .withUnit(BYTES);
+    private static final Metadata.Builder MEMORY_MAX_HEAP = Metadata.builder()
             .withName("memory.maxHeap")
             .withDescription(
                     "Displays the maximum amount of heap memory in bytes that can"
@@ -72,9 +77,8 @@ public class SystemMetersProvider implements MetersProvider {
                             + " to allocate memory "
                             + "even if the amount of used memory does not exceed "
                             + "this maximum size.")
-            .withUnit(BYTES)
-            .build();
-    private static final Metadata JVM_UPTIME = Metadata.builder()
+            .withUnit(BYTES);
+    private static final Metadata.Builder JVM_UPTIME = Metadata.builder()
             .withName("jvm.uptime")
             .withDescription(
                     "Displays the start time of the Java virtual machine in "
@@ -82,47 +86,39 @@ public class SystemMetersProvider implements MetersProvider {
                             + "attribute displays the approximate time when the Java "
                             + "virtual machine "
                             + "started.")
-            .withUnit(SECONDS)
-            .build();
-    private static final Metadata THREAD_COUNT = Metadata.builder()
+            .withUnit(SECONDS);
+    private static final Metadata.Builder THREAD_COUNT = Metadata.builder()
             .withName("thread.count")
             .withDescription("Displays the current number of live threads including both "
-                                     + "daemon and nondaemon threads")
-            .build();
-    private static final Metadata THREAD_DAEMON_COUNT = Metadata.builder()
+                                     + "daemon and nondaemon threads");
+    private static final Metadata.Builder THREAD_DAEMON_COUNT = Metadata.builder()
             .withName("thread.daemon.count")
-            .withDescription("Displays the current number of live daemon threads.")
-            .build();
-    private static final Metadata THREAD_MAX_COUNT = Metadata.builder()
+            .withDescription("Displays the current number of live daemon threads.");
+    private static final Metadata.Builder THREAD_MAX_COUNT = Metadata.builder()
             .withName("thread.max.count")
             .withDescription("Displays the peak live thread count since the Java "
                                      + "virtual machine started or "
                                      + "peak was reset. This includes daemon and "
-                                     + "non-daemon threads.")
-            .build();
-    private static final Metadata CL_LOADED_COUNT = Metadata.builder()
+                                     + "non-daemon threads.");
+    private static final Metadata.Builder CL_LOADED_COUNT = Metadata.builder()
             .withName("classloader.loadedClasses.count")
             .withDescription("Displays the number of classes that are currently loaded in "
-                                     + "the Java virtual machine.")
-            .build();
-    private static final Metadata CL_LOADED_TOTAL = Metadata.builder()
+                                     + "the Java virtual machine.");
+    private static final Metadata.Builder CL_LOADED_TOTAL = Metadata.builder()
             .withName("classloader.loadedClasses.total")
             .withDescription("Displays the total number of classes that have been loaded "
-                                     + "since the Java virtual machine has started execution.")
-            .build();
-    private static final Metadata CL_UNLOADED_COUNT = Metadata.builder()
+                                     + "since the Java virtual machine has started execution.");
+    private static final Metadata.Builder CL_UNLOADED_COUNT = Metadata.builder()
             .withName("classloader.unloadedClasses.total")
             .withDescription("Displays the total number of classes unloaded since the Java "
-                                     + "virtual machine has started execution.")
-            .build();
-    private static final Metadata OS_AVAILABLE_CPU = Metadata.builder()
+                                     + "virtual machine has started execution.");
+    private static final Metadata.Builder OS_AVAILABLE_CPU = Metadata.builder()
             .withName("cpu.availableProcessors")
             .withDescription("Displays the number of processors available to the Java "
                                      + "virtual machine. This "
                                      + "value may change during a particular invocation of"
-                                     + " the virtual machine.")
-            .build();
-    private static final Metadata OS_LOAD_AVERAGE = Metadata.builder()
+                                     + " the virtual machine.");
+    private static final Metadata.Builder OS_LOAD_AVERAGE = Metadata.builder()
             .withName("cpu.systemLoadAverage")
             .withDescription("Displays the system load average for the last minute. The "
                                      + "system load average "
@@ -141,9 +137,8 @@ public class SystemMetersProvider implements MetersProvider {
                                      + "and may be queried frequently. The load average may"
                                      + " be unavailable on some "
                                      + "platforms where it is expensive to implement this "
-                                     + "method.")
-            .build();
-    private static final Metadata GC_TIME = Metadata.builder()
+                                     + "method.");
+    private static final Metadata.Builder GC_TIME = Metadata.builder()
             .withName("gc.time")
             .withDescription(
                     "Displays the approximate accumulated collection elapsed time in seconds. "
@@ -152,14 +147,12 @@ public class SystemMetersProvider implements MetersProvider {
                             + "timer to measure the elapsed time. This attribute may display the same value "
                             + "even if the collection count has been incremented if the collection elapsed "
                             + "time is very short.")
-            .withUnit("seconds")
-            .build();
-    private static final Metadata GC_COUNT = Metadata.builder()
+            .withUnit("seconds");
+    private static final Metadata.Builder GC_COUNT = Metadata.builder()
             .withName("gc.total")
             .withDescription(
                     "Displays the total number of collections that have occurred. This attribute lists "
-                            + "-1 if the collection count is undefined for this collector.")
-            .build();
+                            + "-1 if the collection count is undefined for this collector.");
 
     private MetricsFactory metricsFactory;
 
@@ -170,6 +163,19 @@ public class SystemMetersProvider implements MetersProvider {
      */
     @Deprecated
     public SystemMetersProvider() {
+    }
+
+    private static Map<String, String> initMeterNames() {
+        Map<String, String> result = new HashMap<>();
+        result.put("memory.usedHeap", "memory.used_heap");
+        result.put("memory.committedHeap", "memory.committed_heap");
+        result.put("memory.maxHeap", "memory.max_heap");
+        result.put("classloader.loadedClasses.count", "classloader.loaded_classes.count");
+        result.put("classloader.loadedClasses.total", "classloader.loaded_classes.total");
+        result.put("classloader.unloadedClasses.total", "classloader.unloaded_classes.total");
+        result.put("cpu.availableProcessors", "cpu.available_processors");
+        result.put("cpu.systemLoadAverage", "cpu.system_load_average");
+        return result;
     }
 
     @Override
@@ -193,6 +199,18 @@ public class SystemMetersProvider implements MetersProvider {
         return main -> valueFn.apply(getSubBeanFn.apply(main));
     }
 
+    private Metadata metadata(Metadata.Builder metadataBuilderWithCamelCaseName) {
+        String camelCaseName = metadataBuilderWithCamelCaseName.name;
+        Metadata.Builder builder = metadataBuilderWithCamelCaseName;
+        if (metricsFactory.metricsConfig().builtInMeterNameFormat() == BuiltInMeterNameFormat.SNAKE) {
+            builder = Metadata.builder()
+                    .withName(CAMEL_TO_SNAKE_CASE_METER_NAMES.getOrDefault(camelCaseName, camelCaseName))
+                    .withDescription(metadataBuilderWithCamelCaseName.description)
+                    .withUnit(metadataBuilderWithCamelCaseName.baseUnit);
+        }
+        return builder.build();
+    }
+
     private <B extends Meter.Builder<B, M>,
             M extends Meter>
     Collection<Meter.Builder<?, ?>> prepareMeterBuilders() {
@@ -202,40 +220,43 @@ public class SystemMetersProvider implements MetersProvider {
 
         // load all base metrics
         registerGauge(result,
-                      MEMORY_USED_HEAP,
+                      metadata(MEMORY_USED_HEAP),
                       memoryBean,
                       typedFn(MemoryMXBean::getHeapMemoryUsage, MemoryUsage::getUsed));
         registerGauge(result,
-                      MEMORY_COMMITTED_HEAP,
+                      metadata(MEMORY_COMMITTED_HEAP),
                       memoryBean,
                       typedFn(MemoryMXBean::getHeapMemoryUsage, MemoryUsage::getCommitted));
         registerGauge(result,
-                      MEMORY_MAX_HEAP,
+                      metadata(MEMORY_MAX_HEAP),
                       memoryBean,
                       typedFn(MemoryMXBean::getHeapMemoryUsage, MemoryUsage::getMax));
 
         RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
-        registerGauge(result, JVM_UPTIME, runtimeBean, rtBean -> rtBean.getUptime() / 1000.0D);
+        registerGauge(result,
+                      metadata(JVM_UPTIME),
+                      runtimeBean,
+                      rtBean -> rtBean.getUptime() / 1000.0D);
 
         ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
-        registerGauge(result, THREAD_COUNT, threadBean, ThreadMXBean::getThreadCount);
-        registerGauge(result, THREAD_DAEMON_COUNT, threadBean, ThreadMXBean::getDaemonThreadCount);
-        registerGauge(result, THREAD_MAX_COUNT, threadBean, ThreadMXBean::getPeakThreadCount);
+        registerGauge(result, metadata(THREAD_COUNT), threadBean, ThreadMXBean::getThreadCount);
+        registerGauge(result, metadata(THREAD_DAEMON_COUNT), threadBean, ThreadMXBean::getDaemonThreadCount);
+        registerGauge(result, metadata(THREAD_MAX_COUNT), threadBean, ThreadMXBean::getPeakThreadCount);
 
         ClassLoadingMXBean clBean = ManagementFactory.getClassLoadingMXBean();
-        registerGauge(result, CL_LOADED_COUNT, clBean, ClassLoadingMXBean::getLoadedClassCount);
-        registerFunctionalCounter(result, CL_LOADED_TOTAL, clBean, ClassLoadingMXBean::getTotalLoadedClassCount);
-        registerFunctionalCounter(result, CL_UNLOADED_COUNT, clBean, ClassLoadingMXBean::getUnloadedClassCount);
+        registerGauge(result, metadata(CL_LOADED_COUNT), clBean, ClassLoadingMXBean::getLoadedClassCount);
+        registerFunctionalCounter(result, metadata(CL_LOADED_TOTAL), clBean, ClassLoadingMXBean::getTotalLoadedClassCount);
+        registerFunctionalCounter(result, metadata(CL_UNLOADED_COUNT), clBean, ClassLoadingMXBean::getUnloadedClassCount);
 
         OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
-        registerGauge(result, OS_AVAILABLE_CPU, osBean, OperatingSystemMXBean::getAvailableProcessors);
-        registerGauge(result, OS_LOAD_AVERAGE, osBean, OperatingSystemMXBean::getSystemLoadAverage);
+        registerGauge(result, metadata(OS_AVAILABLE_CPU), osBean, OperatingSystemMXBean::getAvailableProcessors);
+        registerGauge(result, metadata(OS_LOAD_AVERAGE), osBean, OperatingSystemMXBean::getSystemLoadAverage);
 
         List<GarbageCollectorMXBean> gcBeans = ManagementFactory.getGarbageCollectorMXBeans();
         for (GarbageCollectorMXBean gcBean : gcBeans) {
             String poolName = gcBean.getName();
             registerFunctionalCounter(result,
-                          GC_COUNT,
+                          metadata(GC_COUNT),
                           gcBean,
                           GarbageCollectorMXBean::getCollectionCount,
                           Tag.create("name", poolName));
@@ -244,13 +265,13 @@ public class SystemMetersProvider implements MetersProvider {
             // type of meter to register.
             if (isGcTimeGauge()) {
                 registerGauge(result,
-                              GC_TIME,
+                              metadata(GC_TIME),
                               gcBean,
                               bean -> (long) (bean.getCollectionTime() / 1000.0D),
                               Tag.create("name", poolName));
             } else {
                 registerFunctionalCounter(result,
-                                          GC_TIME,
+                                          metadata(GC_TIME),
                                           gcBean,
                                           bean -> (long) (bean.getCollectionTime() / 1000.0D),
                                           Tag.create("name", poolName));
