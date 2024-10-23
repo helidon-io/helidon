@@ -1066,7 +1066,7 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
         String objArrayArgs = "";
         String typedElementArgs = "";
         String untypedElementArgs = "";
-        boolean hasArgs = (args.length() > 0);
+        boolean hasArgs = (!args.isEmpty());
         if (hasArgs) {
             argDecls = mi.parameterInfo().stream()
                     .map(InterceptorCreatorDefault::toDecl)

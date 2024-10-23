@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ final class HeaderHelper {
                 token.append(ch);
             } else {
                 if (ch == separator) {
-                    if (token.length() > 0) {
+                    if (!token.isEmpty()) {
                         result.add(token.toString());
                     }
                     token.setLength(0);
@@ -64,7 +64,7 @@ final class HeaderHelper {
                 }
             }
         }
-        if (token.length() > 0) {
+        if (!token.isEmpty()) {
             result.add(token.toString());
         }
         return result;
