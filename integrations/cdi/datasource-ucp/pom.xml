@@ -41,13 +41,8 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.integrations.db</groupId>
-            <artifactId>ojdbc</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
             <groupId>com.oracle.database.jdbc</groupId>
-            <artifactId>ucp</artifactId>
+            <artifactId>ucp11</artifactId>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -75,10 +70,9 @@
 
         <!-- Runtime-scoped dependencies. -->
         <dependency>
-            <groupId>io.smallrye</groupId>
-            <artifactId>jandex</artifactId>
+            <groupId>io.helidon.integrations.db</groupId>
+            <artifactId>ojdbc</artifactId>
             <scope>runtime</scope>
-            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.config</groupId>
@@ -86,6 +80,13 @@
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>io.smallrye</groupId>
+            <artifactId>jandex</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+
         <!-- Test-scoped dependencies. -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
