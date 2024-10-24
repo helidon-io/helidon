@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.common.features</groupId>
         <artifactId>helidon-common-features-project</artifactId>
-        <version>4.1.3-SNAPSHOT</version>
+        <version>4.1.4-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-common-features-processor</artifactId>
     <name>Helidon Common Features Annotation Processor</name>
