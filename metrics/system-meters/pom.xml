@@ -47,6 +47,17 @@
             <artifactId>helidon-common</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- We need a full metrics implementation to test that config affects system meter names correctly. -->
+        <dependency>
+            <groupId>io.helidon.metrics.providers</groupId>
+            <artifactId>helidon-metrics-providers-micrometer</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common.testing</groupId>
             <artifactId>helidon-common-testing-junit5</artifactId>
             <scope>test</scope>

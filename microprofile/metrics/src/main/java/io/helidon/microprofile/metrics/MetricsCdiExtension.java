@@ -42,6 +42,7 @@ import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.ConfigValue;
+import io.helidon.metrics.api.BuiltInMeterNameFormat;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
@@ -125,13 +126,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
     static final String SYNTHETIC_TIMER_METRIC_NAME = "REST.request";
     static final String SYNTHETIC_TIMER_METRIC_UNMAPPED_EXCEPTION_NAME =
             SYNTHETIC_TIMER_METRIC_NAME + ".unmappedException.total";
-    static final Metadata SYNTHETIC_TIMER_UNMAPPED_EXCEPTION_METADATA = Metadata.builder()
-            .withName(SYNTHETIC_TIMER_METRIC_UNMAPPED_EXCEPTION_NAME)
-            .withDescription("""
-                                     The total number of unmapped exceptions that occur from this RESTful resouce method since \
-                                     the start of the server.""")
-            .withUnit(MetricUnits.NONE)
-            .build();
     static final Metadata SYNTHETIC_TIMER_METADATA = Metadata.builder()
             .withName(SYNTHETIC_TIMER_METRIC_NAME)
             .withDescription("""
@@ -155,6 +149,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
                 }
             };
     private static final boolean REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE = false;
+    private static Metadata syntheticTimerUnmappedExceptionMetadata;
     private final Map<MetricID, AnnotatedMethod<?>> annotatedGaugeSites = new HashMap<>();
     private final List<RegistrationPrep> annotatedSites = new ArrayList<>();
     private final Map<Class<?>, Set<Method>> methodsWithRestRequestMetrics = new HashMap<>();
@@ -170,6 +165,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
     private final Map<Class<?>, StereotypeMetricsInfo> stereotypeMetricsInfo = new HashMap<>();
     private boolean restEndpointsMetricsEnabled = REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE;
     private Errors.Collector errors = Errors.collector();
+    private String syntheticTimerMetricUnmappedExceptionName;
 
     /**
      * Creates a new extension instance.
@@ -226,7 +222,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
                    () -> String.format("Registering synthetic Counter for %s#%s", method.getDeclaringClass().getName(),
                                        method.getName()));
         return getRegistryForSyntheticRestRequestMetrics()
-                .counter(SYNTHETIC_TIMER_UNMAPPED_EXCEPTION_METADATA, syntheticRestRequestMetricTags(method));
+                .counter(syntheticTimerUnmappedExceptionMetadata, syntheticRestRequestMetricTags(method));
     }
 
     /**
@@ -245,8 +241,8 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
      * @param method Java method of interest
      * @return {@code MetricID} for the counter for this Java method
      */
-    static MetricID restEndpointCounterMetricID(Method method) {
-        return new MetricID(SYNTHETIC_TIMER_METRIC_UNMAPPED_EXCEPTION_NAME, syntheticRestRequestMetricTags(method));
+    MetricID restEndpointCounterMetricID(Method method) {
+        return new MetricID(syntheticTimerMetricUnmappedExceptionName, syntheticRestRequestMetricTags(method));
     }
 
     /**
@@ -559,6 +555,17 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension {
 
         Contexts.globalContext().register(metricsFactory);
         MetricsConfig metricsConfig = metricsFactory.metricsConfig();
+        syntheticTimerMetricUnmappedExceptionName =
+                metricsConfig.builtInMeterNameFormat() == BuiltInMeterNameFormat.CAMEL
+                ? SYNTHETIC_TIMER_METRIC_UNMAPPED_EXCEPTION_NAME
+                        : SYNTHETIC_TIMER_METRIC_NAME + ".unmapped_exception.total";
+        syntheticTimerUnmappedExceptionMetadata = Metadata.builder()
+                .withName(syntheticTimerMetricUnmappedExceptionName)
+                .withDescription("""
+                                     The total number of unmapped exceptions that occur from this RESTful resouce method since \
+                                     the start of the server.""")
+                .withUnit(MetricUnits.NONE)
+                .build();
         MeterRegistry meterRegistry = metricsFactory.globalRegistry(metricsConfig);
         return builder.metricsConfig(metricsConfig)
                 .meterRegistry(meterRegistry)
