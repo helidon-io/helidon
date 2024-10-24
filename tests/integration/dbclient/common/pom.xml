@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.tests.integration.dbclient</groupId>
         <artifactId>helidon-tests-integration-dbclient-project</artifactId>
-        <version>4.1.3-SNAPSHOT</version>
+        <version>4.1.3</version>
     </parent>
     <artifactId>helidon-tests-integration-dbclient-common</artifactId>
     <name>Helidon Tests Integration DbClient Common</name>

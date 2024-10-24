@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.integrations</groupId>
         <artifactId>helidon-integrations-project</artifactId>
-        <version>4.1.3-SNAPSHOT</version>
+        <version>4.1.3</version>
     </parent>
 
     <groupId>io.helidon.integrations.openapi-ui</groupId>
