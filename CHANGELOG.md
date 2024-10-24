@@ -11,6 +11,32 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [4.1.3]
+
+This release contains important bugfixes and enhancements and is recommended for all users of Helidon 4.
+
+A minimum of Java 21 is required to use Helidon 4.
+
+### CHANGES
+
+- Jersey Client: Adds support to control 100-Continue requests in the Helidon connector [9371](https://github.com/helidon-io/helidon/pull/9371)
+- Metrics: Allow config to set camel (default) or snake case for built-in meter names [9434](https://github.com/helidon-io/helidon/pull/9434)
+- Tracing: Add context propagation to the Zipkin tracing provider (#9119) [9385](https://github.com/helidon-io/helidon/pull/9385)
+- WebServer: AIMD limit now correctly releases permits when token is used [9425](https://github.com/helidon-io/helidon/pull/9425)
+- WebServer: Concurrency limits module, and support in Helidon WebServer [9384](https://github.com/helidon-io/helidon/pull/9384)
+- WebServer: Ensures chunked encoding is enabled in all cases when there are trailers [9370](https://github.com/helidon-io/helidon/pull/9370)
+- WebServer: Explicitly sets the content length to zero when a 204 or related status code is returned [9433](https://github.com/helidon-io/helidon/pull/9433)
+- WebServer: Fix DataReader.findNewLine with multiple lone EOL character  [9391](https://github.com/helidon-io/helidon/pull/9391)
+- WebServer: Host header validation for server request [9369](https://github.com/helidon-io/helidon/pull/9369)
+- WebServer: Ignore protocol upgrades when initial request contains a payload [9412](https://github.com/helidon-io/helidon/pull/9412)
+- Dependencies: Upgrade jersey to 3.1.9 [9426](https://github.com/helidon-io/helidon/pull/9426)
+- Dependencies: Upgrades Oracle Database artifacts to 21.15.0.0 [9387](https://github.com/helidon-io/helidon/pull/9387)
+- Dependencies: Uptake build-tools 4.0.14  [9386](https://github.com/helidon-io/helidon/pull/9386)
+- Docs: Correct doc error: incorrect config key for compatibility of OTel span names [9374](https://github.com/helidon-io/helidon/pull/9374)
+- Docs: Ensures there is no trailing whitespace in Java properties lines in persistence.adoc with Asciidoctor callouts at the expense of visual cleanliness [9372](https://github.com/helidon-io/helidon/pull/9372)
+- Tests: Use a fixed version of GraalVM [9407](https://github.com/helidon-io/helidon/pull/9407)
+
+
 ## [4.1.2]
 
 This release contains important bugfixes and enhancements and is recommended for all users of Helidon 4. 
@@ -1459,6 +1485,7 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/oracle/helidon/pull/4737)
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
+[4.1.3]: https://github.com/oracle/helidon/compare/4.1.2...4.1.3
 [4.1.2]: https://github.com/oracle/helidon/compare/4.1.1...4.1.2
 [4.1.1]: https://github.com/oracle/helidon/compare/4.1.0...4.1.1
 [4.1.0]: https://github.com/oracle/helidon/compare/4.0.11...4.1.0
