@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+
+    <output>
+        <templates engine="mustache" transformations="mustache,module-dir">
+            <directory>../../features/security/files</directory>
+            <includes>
+                <include>src/*/resources/**/application.yaml.mustache</include>
+            </includes>
+        </templates>
+        <templates engine="mustache" transformations="mustache,packaged">
+            <directory>files</directory>
+            <includes>
+                <include>**/*.mustache</include>
+            </includes>
+            <excludes>
+                <exclude>README*.mustache</exclude>
+                <exclude>maven-*.mustache</exclude>
+            </excludes>
+        </templates>
+        <templates engine="mustache" transformations="mustache,packaged,module-dir">
+            <directory>../../features/common/files</directory>
+            <includes>
+                <include>src/main/resources/**</include>
+            </includes>
+            <model>
+                <list key="dependencies">
+                    <map>
+                        <value key="groupId">org.slf4j</value>
+                        <value key="artifactId">slf4j-jdk14</value>
+                    </map>
+                </list>
+                <list key="microprofile-config-entries">
+                    <value><![CDATA[
+# Application properties. This is the default greeting
+app.greeting=Hello
+
+# OCI Monitoring configuration
+oci.monitoring.compartmentId=<your monitoring compartment id>
+oci.monitoring.namespace=<your monitoring namespace e.g. helidon_oci>
+
+# OCI Logging configuration
+oci.logging.id=<your oci custom log id>
+
+# OCI Authentication strategy
+oci.auth-strategy=config-file,instance-principals,resource-principal
+]]></value>
+                </list>
+                <list key="yaml-config-entries">
+                    <value><![CDATA[
+# Helidon Metrics to OCI parameters
+ocimetrics:
+  # OCI compartment ID where the metrics will be sent
+  compartmentId: <your monitoring compartment id>
+  # OCI metric namespace
+  namespace: <your monitoring namespace e.g. helidon_oci>
+  # Delay in seconds before the 1st metrics transmission to OCI takes place.  Defaults to 1 second if not specified.
+  initialDelay: 10
+  # Interval in seconds between metrics transmission to OCI. Defaults to 60 seconds if not specified.
+  delay: 180
+  # Filter only the scopes that will be sent to OCI. This is optional and will default to all scopes if not specified.
+  scopes: [base, vendor, application]
+  # Enable or disable metric transmission to OCI. Defaults to true if not specified.
+  enabled: true
+]]>
+                    </value>
+                </list>
+                <list key="oci-logging-entries">
+                    <value template="mustache"><![CDATA[
+# If testing with the Unified Monitoring Agent, add java.util.logging.FileHandler in the handlers parameter and also
+# set java.util.logging.FileHandler.pattern to specify the filename where the logs will be saved and where the agent
+# will pull from and sent to the OCI Logging Service. For example, to save the logs in ${HOME}/helidon_log/helidon.log
+# file path, set java.util.logging.FileHandler.pattern like:
+# java.util.logging.FileHandler.pattern=%h/helidon_log/helidon.log
+#
+# Check https://docs.oracle.com/en-us/iaas/Content/Logging/Concepts/custom_logs.htm for more information on how to
+# set up Custom Logs that uses the Unified monitoring agent.
+]]>
+                    </value>
+                </list>
+            </model>
+        </templates>
+        <file source="../../features/common/files/src/main/resources/META-INF/beans.xml"
+              target="client/src/main/resources/META-INF/beans.xml" />
+        <files>
+            <directory>files</directory>
+            <includes>
+                <include>server/src/main/resources</include>
+                <include>spec</include>
+            </includes>
+        </files>
+        <model>
+            <value key="parent-artifactId">${artifactId}-parent</value>
+            <value key="client-artifactId">${artifactId}-client</value>
+            <value key="artifactId">${artifactId}-server</value>
+            <value key="parent-groupId">${groupId}</value>
+            <value key="parent-version">${version}</value>
+            <value key="mainClass">io.helidon.microprofile.cdi.Main</value>
+            <list key="dependencies">
+                <map>
+                    <value key="groupId">io.helidon.microprofile.bundles</value>
+                    <value key="artifactId">helidon-microprofile-core</value>
+                </map>
+                <map>
+                    <value key="groupId">io.helidon.microprofile.cdi</value>
+                    <value key="artifactId">helidon-microprofile-cdi</value>
+                </map>
+                <map>
+                    <value key="groupId">jakarta.enterprise</value>
+                    <value key="artifactId">jakarta.enterprise.cdi-api</value>
+                </map>
+                <map>
+                    <value key="groupId">jakarta.ws.rs</value>
+                    <value key="artifactId">jakarta.ws.rs-api</value>
+                </map>
+                <map>
+                    <value key="groupId">org.openapitools</value>
+                    <value key="artifactId">jackson-databind-nullable</value>
+                </map>
+                <map>
+                    <value key="groupId">com.fasterxml.jackson.core</value>
+                    <value key="artifactId">jackson-annotations</value>
+                </map>
+                <map>
+                    <value key="groupId">com.fasterxml.jackson.core</value>
+                    <value key="artifactId">jackson-databind</value>
+                </map>
+                <map>
+                    <value key="groupId">org.glassfish.jersey.media</value>
+                    <value key="artifactId">jersey-media-json-jackson</value>
+                </map>
+                <map>
+                    <value key="groupId">com.fasterxml.jackson.datatype</value>
+                    <value key="artifactId">jackson-datatype-jsr310</value>
+                </map>
+                <map>
+                    <value key="groupId">io.helidon.microprofile.health</value>
+                    <value key="artifactId">helidon-microprofile-health</value>
+                </map>
+                <map>
+                    <value key="groupId">io.helidon.microprofile.metrics</value>
+                    <value key="artifactId">helidon-microprofile-metrics</value>
+                </map>
+                <map>
+                    <value key="groupId">io.helidon.integrations.oci.sdk</value>
+                    <value key="artifactId">helidon-integrations-oci-sdk-cdi</value>
+                </map>
+                <map>
+                    <value key="groupId">com.oracle.oci.sdk</value>
+                    <value key="artifactId">oci-java-sdk-common</value>
+                </map>
+                <map>
+                    <value key="groupId">com.oracle.oci.sdk</value>
+                    <value key="artifactId">oci-java-sdk-loggingingestion</value>
+                </map>
+                <map>
+                    <value key="groupId">com.oracle.oci.sdk</value>
+                    <value key="artifactId">oci-java-sdk-monitoring</value>
+                </map>
+                <map>
+                    <value key="groupId">io.helidon.integrations.oci.metrics</value>
+                    <value key="artifactId">helidon-integrations-oci-metrics-cdi</value>
+                    <value key="scope">runtime</value>
+                </map>
+                <map>
+                    <value key="groupId">io.smallrye</value>
+                    <value key="artifactId">jandex</value>
+                    <value key="scope">runtime</value>
+                </map>
+                <map order="0">
+                    <value key="groupId">org.junit.jupiter</value>
+                    <value key="artifactId">junit-jupiter-api</value>
+                    <value key="scope">test</value>
+                </map>
+                <map order="0">
+                    <value key="groupId">org.hamcrest</value>
+                    <value key="artifactId">hamcrest-all</value>
+                    <value key="scope">test</value>
+                </map>
+                <map order="0">
+                    <value key="groupId">io.helidon.microprofile.testing</value>
+                    <value key="artifactId">helidon-microprofile-testing-junit5</value>
+                    <value key="scope">test</value>
+                </map>
+                <map order="0">
+                    <value key="groupId">${groupId}</value>
+                    <value key="artifactId">${artifactId}-client</value>
+                    <value key="version">${version}</value>
+                </map>
+            </list>
+            <list key="maven-plugins">
+                <value template="mustache" file="files/maven-plugins.xml.mustache"/>
+            </list>
+            <list key="maven-profiles">
+                <value template="mustache" file="files/maven-profiles.xml.mustache"/>
+            </list>
+            <value key="readme-description" file="files/README-Description.md"/>
+            <value key="readme-run-commands"
+                   template="mustache"
+                   file="files/README.md.run-commands.mustache"/>
+            <list key="readme-exercise-the-application">
+                <value><![CDATA[
+1. Use curl to access the client application
+   ```
+   curl -X GET http://localhost:8080/greet
+   {"message":"Hello World!","date":[2022,4,1]}
+
+   curl -X GET http://localhost:8080/greet/Joe
+   {"message":"Hello Joe!","date":[2022,4,1]}
+
+   curl -X PUT -H "Content-Type: application/json" -d '{"greeting" : "Ola"}' http://localhost:8080/greet/greeting
+   curl -X GET http://localhost:8080/greet
+   {"message":"Ola World!","date":[2022,4,8]}
+   ```
+2. Use curl to access the health checks:
+   ```
+   $ curl -X GET  http://localhost:8080/health/live
+   {"outcome":"UP","status":"UP","checks":[{"name":"CustomLivenessCheck","state":"UP","status":"UP","data":{"time":1646361485815}}]}
+   $ curl -X GET  http://localhost:8080/health/ready
+   {"outcome":"UP","status":"UP","checks":[{"name":"CustomReadinessCheck","state":"UP","status":"UP","data":{"time":1646361474774}}]}
+   ```
+]]>
+                </value>
+            </list>
+            <list key="k8s-readme-sections">
+                <value><![CDATA[
+### Configure the application
+
+Make sure, your application has access to your OCI setup. One way, you can do so, if your kubernetes cluster is running locally, is by volume.
+
+Create a volume pointing to your OCI configuration file
+```yaml
+      volumes:
+        - name: oci-config
+          hostPath:
+            # directory location on host
+            path: <Directory with oci config file>
+```
+
+Mount this volume as part of your application containers specification
+```yaml
+        volumeMounts:
+        - mountPath: /root/.oci
+          name: oci-config
+```
+]]>
+                </value>
+            </list>
+            <list key="poms">
+                <value>ADD pom.xml pom.xml</value>
+                <value>ADD client/pom.xml client/pom.xml</value>
+                <value>ADD server/pom.xml server/pom.xml</value>
+            </list>
+            <list key="src-dirs">
+                <value>ADD client/src client/src</value>
+                <value>ADD server/src server/src</value>
+                <value>ADD spec/api.yaml spec/api.yaml</value>
+            </list>
+        </model>
+    </output>
+</archetype-script>

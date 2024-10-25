@@ -1,0 +1,10 @@
+
+    security:
+      defaults:
+        authenticate: true
+      web-server:
+        # protected paths on the web server - do not include paths served by Jersey, as those are protected directly
+        paths:
+        {{#paths-config-entries}}
+        {{.}}
+        {{/paths-config-entries}}
