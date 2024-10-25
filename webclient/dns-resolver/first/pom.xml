@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.webclient.dns.resolver</groupId>
         <artifactId>helidon-webclient-dns-resolver-project</artifactId>
-        <version>4.1.3-SNAPSHOT</version>
+        <version>4.1.4-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-webclient-dns-resolver-first</artifactId>

@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.jersey.tests</groupId>
         <artifactId>helidon-jersey-tests-project</artifactId>
-        <version>4.1.3-SNAPSHOT</version>
+        <version>4.1.4-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-jersey-tests-connector</artifactId>
