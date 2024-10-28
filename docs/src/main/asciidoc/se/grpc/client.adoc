@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -27,10 +27,173 @@ include::{rootdir}/includes/se.adoc[]
 == Contents
 
 - <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
+** <<Generated Stubs, Generated Stubs>>
+** <<Service Descriptors, Service Descriptors>>
+** <<Client URI Suppliers, Client URI Suppliers>>
+** <<gRPC Interceptors, gRPC Interceptors>>
+- <<Configuration, Configuration>>
 
 == Overview
 
-gRPC client is temporarily removed from Helidon, please follow issue
-https://github.com/helidon-io/helidon/issues/5418
+The Helidon gRPC client API is part of the WebClient API, but with specific support to
+invoke remote procedures and to register handlers for responses. All four types of gRPC
+calls are supported: unary, bi-directional, client stream and server stream. A
+Helidon gRPC client can be configured either using generated stubs (the most popular
+option) or using manually crafted service descriptors.
 
-If you require gRPC client, either stay with a previous version of Helidon, or allow us to finish fixing the issue above.
+include::{rootdir}/includes/dependencies.adoc[]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient-grpc</artifactId>
+</dependency>
+----
+
+== Usage
+
+=== Generated Stubs
+
+A Helidon gRPC client can be configured from generated protobuf stubs. In what follows,
+we shall use the following proto file and the corresponding stubs generated using
+the `protoc` command:
+
+[source, proto]
+----
+syntax = "proto3";
+option java_package = "my.package";
+
+service StringService {
+  rpc Upper (StringMessage) returns (StringMessage) {}
+  rpc Split (StringMessage) returns (stream StringMessage) {}
+}
+
+message StringMessage {
+  string text = 1;
+}
+----
+
+The gRPC protocol runs on top of HTTP/2, and as such requires TLS configuration to
+establish a connection. Thus, the first step is to configure TLS as shown next:
+
+[source,java]
+----
+include::{sourcedir}/se/grpc/ClientSnippets.java[tag=snippet_1, indent=0]
+----
+
+After creating a `Tls` instance, a `WebClient` can be created as follows:
+
+[source,java]
+----
+include::{sourcedir}/se/grpc/ClientSnippets.java[tag=snippet_2, indent=0]
+----
+
+So far, this is all the same as for accessing any protected REST endpoint; the
+next step is to obtain a gRPC client stub using our newly created client.
+This can be accomplished by _switching_ the client protocol to gRPC, and
+using its channel to create a stub:
+
+[source,java]
+----
+include::{sourcedir}/se/grpc/ClientSnippets.java[tag=snippet_3, indent=0]
+----
+
+Once a stub is created, it can be used to invoke any of its declared
+methods, such as `upper` to uppercase a string:
+
+[source,java]
+----
+include::{sourcedir}/se/grpc/ClientSnippets.java[tag=snippet_4, indent=0]
+----
+
+When it comes to invoking a method that can return more than one value,
+there are two options: it can block (we are using virtual theads after all!)
+and return back an `Iterator` or you can provide a `StreamObserver` as it
+is more commonly done when using gRPC. Let's consider the case of the
+`split` method that breaks up a sentence into individual words, and
+can thus return multiple string messages.
+
+Using an iterator as a result:
+[source,java]
+----
+include::{sourcedir}/se/grpc/ClientSnippets.java[tag=snippet_5, indent=0]
+----
+
+Passing a stream observer and collecting all the messages into a `Future`
+that returns an iterator:
+[source,java]
+----
+include::{sourcedir}/se/grpc/ClientSnippets.java[tag=snippet_6, indent=0]
+----
+
+=== Service Descriptors
+
+Service descriptors are an alternative to using generated stubs and the
+`protoc` compiler. A service descriptor provides service meta-data to the
+WebClient for the purpose of carrying out invocations. The descriptor
+includes, the service name, and a description of each service method,
+including its type, what it accepts and what it returns.
+
+The following is a descriptor for a service that includes the methods
+called in the previous section using a stub:
+[source,java]
+----
+include::{sourcedir}/se/grpc/ClientSnippets.java[tag=snippet_7, indent=0]
+----
+
+Configuring a `WebClient` with `Tls` is done in the same manner as shown
+above for the stub case. Once the gRPC client is created, a service
+descriptor can be provided, and a method invoked using the methods
+`unary`, `clientStream`, `serverStream` or `bidi`. For example,
+
+[source,java]
+----
+include::{sourcedir}/se/grpc/ClientSnippets.java[tag=snippet_8, indent=0]
+----
+
+=== Client URI Suppliers
+
+A `ClientURISupplier` can be used to dynamically obtain a sequence of `ClientUri`
+instances to access when executing a gRPC request. If a client URI supplier is
+configured, the Helidon gRPC implementation will attempt to connect to each
+endpoint one by one, in the order provided, until a connection is successfully
+established. This feature is useful in certain environments in which more than one
+identical server is available, but with some potentially unavailable or unreachable.
+
+A few common implementations are provided in `ClientUriSuppliers`. These include
+suppliers for strategies such as random, round-robin, among others. Applications
+can either use one of the built-in suppliers or create their own.
+
+The following example configures a round-robin supplier using a collection
+of known servers:
+
+[source,java]
+----
+include::{sourcedir}/se/grpc/ClientSnippets.java[tag=snippet_9, indent=0]
+----
+
+If both a base URI and a client URI supplier are configured, the latter will
+take precendence over the former.
+
+=== gRPC Interceptors
+
+The gRPC API supports the notion of an interceptor on a channel. Interceptors are
+useful to implement cross-cutting concerns that apply to many or all invocations.
+These may include security, logging, metrics, etc. They can be specified directly
+on the channel returned by a `GrpcClient`, effectively _wrapping_ that channel
+with a list of interceptors to execute on every invocation.
+
+[source,java]
+----
+include::{sourcedir}/se/grpc/ClientSnippets.java[tag=snippet_10, indent=0]
+----
+
+== Configuration
+
+TLS can be configured externally, just like it is done when using the
+WebClient to access an HTTP endpoint. For more information see
+https://helidon.io/docs/v4/se/webclient#_configuring_the_webclient[Configuring the WebClient].
+
