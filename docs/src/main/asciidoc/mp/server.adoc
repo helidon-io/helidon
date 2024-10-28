@@ -204,32 +204,42 @@ Helidon MP can expose multiple ports, with the following limitations:
 - Other ports (in this example we configure one "admin" port) can be assigned endpoints that are exposed by Helidon components,
 currently supported by MP Health and MP Metrics
 
-For this example, we will use a `YAML` file:
+You can set the configuration in either  `application.yaml` or `META-INF/microprofile-config.properties`:
 
 - The port `7011` is the default port and will serve your application
 - The port `8011` is named "admin" (this is an arbitrary name)
-- MP Metrics are configured to use the "admin" port through the `routing` configuration (reference is by name)
-- MP Health is configured the same way to reference the "admin" port
+- Observability endpoints, such as metrics and health, use the "admin" port through the `features.observe.sockets` setting.
 
 [source,yaml]
-.application.yaml - Server configuration
+.Server configuration using `application.yaml`
 ----
 server:
   port: 7011
-  host: "some.host"
+  host: "localhost"
   sockets:
     admin:
       port: 8011
-      bind-address: "some.host"
+      bind-address: "localhost"
+  features:
+    observe:
+      sockets: "admin"
 
-metrics:
-  routing: "admin"
 
-health:
-  routing: "admin"
 ----
 
-=== Configuring A WebServer Route [[
+[source,properties]
+.Server configuration using `META-INF/microprofile-config.properties`
+----
+server.port=7011
+server.host=localhost
+server.sockets.0.name=admin
+server.sockets.0.port=8011
+server.sockets.0.bind-address=localhost
+server.features.observe.sockets=admin
+
+----
+
+=== Configuring A WebServer Route
 
 Helidon MP Server will pick up CDI beans that implement the `io.helidon.webserver.HttpService`
 interface and configure them with the underlying WebServer.
