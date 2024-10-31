@@ -197,3 +197,9 @@ TLS can be configured externally, just like it is done when using the
 WebClient to access an HTTP endpoint. For more information see
 https://helidon.io/docs/v4/se/webclient#_configuring_the_webclient[Configuring the WebClient].
 
+There are a few configuration options (see table below) that are specific to a `GrpcClient` and
+can be configured using a `GrpcClientProtocolConfig` instance. See
+https://github.com/helidon-io/helidon-examples/blob/dev-4.x/examples/webserver/grpc-random/src/test/java/io/helidon/examples/webserver/grpc/random/RandomServiceTest.java[RandomServiceTest] for an example.
+
+include::{rootdir}/config/io_helidon_webclient_grpc_GrpcClientProtocolConfig.adoc[leveloffset=+1,tag=config]
+
