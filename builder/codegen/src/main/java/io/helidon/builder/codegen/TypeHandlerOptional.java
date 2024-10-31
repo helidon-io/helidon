@@ -17,7 +17,6 @@
 package io.helidon.builder.codegen;
 
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -27,46 +26,17 @@ import io.helidon.codegen.classmodel.InnerClass;
 import io.helidon.codegen.classmodel.Javadoc;
 import io.helidon.codegen.classmodel.Method;
 import io.helidon.common.types.AccessModifier;
+import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.builder.codegen.Types.CHAR_ARRAY;
 import static io.helidon.codegen.CodegenUtil.capitalize;
-import static io.helidon.common.types.TypeNames.BOXED_BOOLEAN;
-import static io.helidon.common.types.TypeNames.BOXED_BYTE;
-import static io.helidon.common.types.TypeNames.BOXED_CHAR;
-import static io.helidon.common.types.TypeNames.BOXED_DOUBLE;
-import static io.helidon.common.types.TypeNames.BOXED_FLOAT;
-import static io.helidon.common.types.TypeNames.BOXED_INT;
-import static io.helidon.common.types.TypeNames.BOXED_LONG;
-import static io.helidon.common.types.TypeNames.BOXED_SHORT;
-import static io.helidon.common.types.TypeNames.BOXED_VOID;
 import static io.helidon.common.types.TypeNames.OPTIONAL;
-import static io.helidon.common.types.TypeNames.PRIMITIVE_BOOLEAN;
-import static io.helidon.common.types.TypeNames.PRIMITIVE_BYTE;
-import static io.helidon.common.types.TypeNames.PRIMITIVE_CHAR;
-import static io.helidon.common.types.TypeNames.PRIMITIVE_DOUBLE;
-import static io.helidon.common.types.TypeNames.PRIMITIVE_FLOAT;
-import static io.helidon.common.types.TypeNames.PRIMITIVE_INT;
-import static io.helidon.common.types.TypeNames.PRIMITIVE_LONG;
-import static io.helidon.common.types.TypeNames.PRIMITIVE_SHORT;
-import static io.helidon.common.types.TypeNames.PRIMITIVE_VOID;
 
 // declaration in builder is always non-generic, so no need to modify default values
 class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
-
-    private static final Map<TypeName, TypeName> BOXED_TO_PRIMITIVE = Map.of(
-            BOXED_BOOLEAN, PRIMITIVE_BOOLEAN,
-            BOXED_BYTE, PRIMITIVE_BYTE,
-            BOXED_SHORT, PRIMITIVE_SHORT,
-            BOXED_INT, PRIMITIVE_INT,
-            BOXED_LONG, PRIMITIVE_LONG,
-            BOXED_CHAR, PRIMITIVE_CHAR,
-            BOXED_FLOAT, PRIMITIVE_FLOAT,
-            BOXED_DOUBLE, PRIMITIVE_DOUBLE,
-            BOXED_VOID, PRIMITIVE_VOID
-    );
 
     TypeHandlerOptional(TypeName blueprintType,
                         TypedElementInfo annotatedMethod,
@@ -98,14 +68,12 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
     @Override
     TypeName argumentTypeName() {
         TypeName type = actualType();
-        if (TypeNames.STRING.equals(type) || toPrimitive(type).primitive()) {
-            return TypeName.builder(OPTIONAL)
-                    .addTypeArgument(type)
-                    .build();
+        if (TypeNames.STRING.equals(type) || toPrimitive(type).primitive() || type.array()) {
+            return declaredType();
         }
 
         return TypeName.builder(OPTIONAL)
-                .addTypeArgument(toWildcard(actualType()))
+                .addTypeArgument(toWildcard(type))
                 .build();
     }
 
@@ -238,8 +206,14 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
     private void declaredSetter(InnerClass.Builder classBuilder,
                                 TypeName returnType,
                                 Javadoc blueprintJavadoc) {
+        boolean generic = !actualType().typeArguments().isEmpty();
         // declared setter - optional is package local, field is never optional in builder
         classBuilder.addMethod(builder -> builder.name(setterName())
+                .update(it -> {
+                    if (generic) {
+                        it.addAnnotation(Annotation.create(SuppressWarnings.class, "unchecked"));
+                    }
+                })
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .description(blueprintJavadoc.content())
                 .returnType(returnType, "updated builder instance")
@@ -282,10 +256,5 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
             return ".orElse(null)";
         }
         return "";
-    }
-
-    private TypeName toPrimitive(TypeName typeName) {
-        return Optional.ofNullable(BOXED_TO_PRIMITIVE.get(typeName))
-                .orElse(typeName);
     }
 }

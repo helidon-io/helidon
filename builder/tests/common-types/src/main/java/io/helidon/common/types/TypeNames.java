@@ -172,6 +172,10 @@ public final class TypeNames {
      */
     public static final TypeName TYPE_NAME = TypeName.create(TypeName.class);
     /**
+     * Type name of the resolved type name.
+     */
+    public static final TypeName RESOLVED_TYPE_NAME = TypeName.create(ResolvedType.class);
+    /**
      * Type name of typed element info.
      */
     public static final TypeName TYPED_ELEMENT_INFO = TypeName.create(TypedElementInfo.class);

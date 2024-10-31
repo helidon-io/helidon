@@ -44,7 +44,7 @@ import io.helidon.builder.api.Prototype;
  * <li>{@link #declaredName()} and {@link #resolvedName()}.</li>
  * </ul>
  */
-@Prototype.Blueprint
+@Prototype.Blueprint(decorator = TypeNameSupport.Decorator.class)
 @Prototype.CustomMethods(TypeNameSupport.class)
 @Prototype.Implement("java.lang.Comparable<TypeName>")
 interface TypeNameBlueprint {
@@ -137,10 +137,38 @@ interface TypeNameBlueprint {
      * if {@link #typeArguments()} exist, this list MUST exist and have the same size and order (it maps the name to the type).
      *
      * @return type parameter names as declared on this type, or names that represent the {@link #typeArguments()}
+     * @deprecated the {@link io.helidon.common.types.TypeName#typeArguments()} will contain all required information
      */
     @Option.Singular
     @Option.Redundant
+    @Deprecated(forRemoval = true, since = "4.2.0")
     List<String> typeParameters();
+
+    /**
+     * Generic types that provide keyword {@code extends} will have a lower bound defined.
+     * Each lower bound may be a real type, or another generic type.
+     * <p>
+     * This list may only have value if this is a generic type.
+     *
+     * @return list of lower bounds of this type
+     * @see io.helidon.common.types.TypeName#generic()
+     */
+    @Option.Singular
+    @Option.Redundant
+    List<TypeName> lowerBounds();
+
+    /**
+     * Generic types that provide keyword {@code super} will have an upper bound defined.
+     * Upper bound may be a real type, or another generic type.
+     * <p>
+     * This list may only have value if this is a generic type.
+     *
+     * @return list of upper bounds of this type
+     * @see io.helidon.common.types.TypeName#generic()
+     */
+    @Option.Singular
+    @Option.Redundant
+    List<TypeName> upperBounds();
 
     /**
      * Indicates whether this type is a {@code java.util.List}.

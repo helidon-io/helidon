@@ -19,17 +19,15 @@ package io.helidon.service.codegen;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.ElementInfoPredicates;
+import io.helidon.codegen.TypeHierarchy;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.Javadoc;
 import io.helidon.codegen.classmodel.Method;
@@ -40,21 +38,18 @@ import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
 import io.helidon.common.types.ElementKind;
-import io.helidon.common.types.Modifier;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 
-import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_PROVIDER;
-import static java.util.function.Predicate.not;
-
 /**
  * Generates a service descriptor.
  */
 class GenerateServiceDescriptor {
-    static final TypeName SET_OF_TYPES = TypeName.builder(TypeNames.SET)
-            .addTypeArgument(TypeNames.TYPE_NAME)
+    static final TypeName SET_OF_RESOLVED_TYPES = TypeName.builder(TypeNames.SET)
+            .addTypeArgument(TypeNames.RESOLVED_TYPE_NAME)
             .build();
     private static final TypeName LIST_OF_DEPENDENCIES = TypeName.builder(TypeNames.LIST)
             .addTypeArgument(ServiceCodegenTypes.SERVICE_DEPENDENCY)
@@ -62,85 +57,75 @@ class GenerateServiceDescriptor {
     private static final TypeName DESCRIPTOR_TYPE = TypeName.builder(ServiceCodegenTypes.SERVICE_DESCRIPTOR)
             .addTypeArgument(TypeName.create("T"))
             .build();
-    private static final TypedElementInfo DEFAULT_CONSTRUCTOR = TypedElementInfo.builder()
-            .typeName(TypeNames.OBJECT)
-            .accessModifier(AccessModifier.PUBLIC)
-            .kind(ElementKind.CONSTRUCTOR)
-            .build();
     private static final TypeName ANY_GENERIC_TYPE = TypeName.builder(TypeNames.GENERIC_TYPE)
             .addTypeArgument(TypeName.create("?"))
             .build();
 
     private final TypeName generator;
     private final RegistryCodegenContext ctx;
+    private final RegistryRoundContext roundCtx;
     private final Collection<TypeInfo> services;
     private final TypeInfo typeInfo;
-    private final boolean autoAddContracts;
 
     private GenerateServiceDescriptor(TypeName generator,
                                       RegistryCodegenContext ctx,
+                                      RegistryRoundContext roundCtx,
                                       Collection<TypeInfo> allServices,
                                       TypeInfo service) {
         this.generator = generator;
         this.ctx = ctx;
+        this.roundCtx = roundCtx;
         this.services = allServices;
         this.typeInfo = service;
-        this.autoAddContracts = ServiceOptions.AUTO_ADD_NON_CONTRACT_INTERFACES.value(ctx.options());
     }
 
     /**
      * Generate a service descriptor for the provided service type info.
      *
-     * @param generator   type of the generator responsible for this event
-     * @param ctx         context of code generation
-     * @param allServices all services processed in this round of processing
-     * @param service     service to create a descriptor for
+     * @param generator    type of the generator responsible for this event
+     * @param ctx          context of code generation
+     * @param roundContext current round context
+     * @param allServices  all services processed in this round of processing
+     * @param service      service to create a descriptor for
      * @return class model builder of the service descriptor
      */
     static ClassModel.Builder generate(TypeName generator,
                                        RegistryCodegenContext ctx,
+                                       RegistryRoundContext roundContext,
                                        Collection<TypeInfo> allServices,
                                        TypeInfo service) {
-        return new GenerateServiceDescriptor(generator, ctx, allServices, service)
+        return new GenerateServiceDescriptor(generator,
+                                             ctx,
+                                             roundContext,
+                                             allServices,
+                                             service)
                 .generate();
     }
 
-    static List<ParamDefinition> declareCtrParamsAndGetThem(Method.Builder method, List<ParamDefinition> params) {
-        List<ParamDefinition> constructorParams = params.stream()
-                .filter(it -> it.kind() == ElementKind.CONSTRUCTOR)
-                .toList();
-
+    static void declareConstructorParams(Method.Builder method, List<CoreDependency> params) {
         // for each parameter, obtain its value from context
-        for (ParamDefinition param : constructorParams) {
-            method.addContent(param.declaredType())
+        for (CoreDependency param : params) {
+            method.addContent(param.typeName())
                     .addContent(" ")
-                    .addContent(param.ipParamName())
-                    .addContent(" = ")
-                    .update(it -> param.assignmentHandler().accept(it))
-                    .addContentLine(";");
+                    .addContent(param.name())
+                    .addContent(" = ctx__helidonRegistry.dependency(")
+                    .addContent(param.dependencyConstant())
+                    .addContentLine(");");
         }
         if (!params.isEmpty()) {
             method.addContentLine("");
         }
-        return constructorParams;
     }
 
     private ClassModel.Builder generate() {
-        TypeName serviceType = typeInfo.typeName();
-
         if (typeInfo.kind() == ElementKind.INTERFACE) {
-            throw new CodegenException("We can only generated service descriptors for classes, interface was requested: ",
-                                       typeInfo.originatingElement().orElse(serviceType));
+            throw new CodegenException("We can only generate service descriptors for classes, interface was requested: ",
+                                       typeInfo.originatingElementValue());
         }
-        boolean isAbstractClass = typeInfo.elementModifiers().contains(Modifier.ABSTRACT)
-                && typeInfo.kind() == ElementKind.CLASS;
 
-        SuperType superType = superType(typeInfo, services);
-
-        // this must result in generating a service descriptor file
-        TypeName descriptorType = ctx.descriptorType(serviceType);
-
-        List<ParamDefinition> params = params(typeInfo, constructor(typeInfo));
+        CoreService service = CoreService.create(ctx, roundCtx, typeInfo, services);
+        TypeName serviceType = service.serviceType();
+        TypeName descriptorType = service.descriptorType();
 
         ClassModel.Builder classModel = ClassModel.builder()
                 .copyright(CodegenUtil.copyright(generator,
@@ -160,204 +145,61 @@ class GenerateServiceDescriptor {
                 // we need to keep insertion order, as constants may depend on each other
                 .sortStaticFields(false);
 
-        Map<String, GenericTypeDeclaration> genericTypes = genericTypes(classModel, params);
-        Set<TypeName> contracts = new HashSet<>();
-        Set<String> collectedFullyQualifiedContracts = new HashSet<>();
-        contracts(typeInfo, autoAddContracts, contracts, collectedFullyQualifiedContracts);
-
         // declare the class
 
-        if (superType.hasSupertype()) {
-            classModel.superType(superType.superDescriptorType());
+        if (service.superType().present()) {
+            classModel.superType(service.superType().descriptorType());
         } else {
             classModel.addInterface(DESCRIPTOR_TYPE);
         }
 
-        // Fields
         singletonInstanceField(classModel, serviceType, descriptorType);
-        serviceTypeFields(classModel, serviceType, descriptorType);
+
+        serviceTypeMethod(classModel, service);
+        descriptorTypeMethod(classModel, service);
+        contractsMethod(classModel, service);
 
         // public fields are last, so they do not intersect with private fields (it is not as nice to read)
         // they cannot be first, as they require some of the private fields
-        dependencyFields(classModel, typeInfo, genericTypes, params);
+        dependencyFields(classModel, service);
         // dependencies require IP IDs, so they really must be last
-        dependenciesField(classModel, params);
+        dependenciesMethod(classModel, service);
 
         // add protected constructor
         classModel.addConstructor(constructor -> constructor.description("Constructor with no side effects")
                 .accessModifier(AccessModifier.PROTECTED));
 
         // methods (some methods define fields as well)
-        serviceTypeMethod(classModel);
-        descriptorTypeMethod(classModel);
-        contractsMethod(classModel, contracts);
-        dependenciesMethod(classModel, params, superType);
-        isAbstractMethod(classModel, superType, isAbstractClass);
-        instantiateMethod(classModel, serviceType, params, isAbstractClass);
-        postConstructMethod(typeInfo, classModel, serviceType);
-        preDestroyMethod(typeInfo, classModel, serviceType);
-        weightMethod(typeInfo, classModel, superType);
+        isAbstractMethod(classModel, service);
+        instantiateMethod(classModel, service);
+        postConstructMethod(classModel, service);
+        preDestroyMethod(classModel, service);
+        weightMethod(classModel, service);
 
         // service type is an implicit contract
-        Set<TypeName> allContracts = new HashSet<>(contracts);
-        allContracts.add(serviceType);
+        Set<ResolvedType> serviceContracts = new HashSet<>(service.contracts());
+        Set<ResolvedType> factoryContracts = new HashSet<>(service.factoryContracts());
+        if (factoryContracts.isEmpty()) {
+            serviceContracts.add(ResolvedType.create(serviceType));
+        } else {
+            factoryContracts.add(ResolvedType.create(serviceType));
+        }
 
-        ctx.addDescriptor("core",
-                          serviceType,
-                          descriptorType,
-                          classModel,
-                          weight(typeInfo).orElse(Weighted.DEFAULT_WEIGHT),
-                          allContracts,
-                          typeInfo.originatingElement().orElseGet(typeInfo::typeName));
+        roundCtx.addDescriptor("core",
+                               serviceType,
+                               descriptorType,
+                               classModel,
+                               weight(typeInfo).orElse(Weighted.DEFAULT_WEIGHT),
+                               serviceContracts,
+                               factoryContracts,
+                               typeInfo.originatingElementValue());
 
         return classModel;
     }
 
-    private SuperType superType(TypeInfo typeInfo, Collection<TypeInfo> services) {
-        // find super type if it is also a service (or has a service descriptor)
-
-        // check if the super type is part of current annotation processing
-        Optional<TypeInfo> superTypeInfoOptional = typeInfo.superTypeInfo();
-        if (superTypeInfoOptional.isEmpty()) {
-            return SuperType.noSuperType();
-        }
-        TypeInfo superType = superTypeInfoOptional.get();
-        TypeName expectedSuperDescriptor = ctx.descriptorType(superType.typeName());
-        TypeName superTypeToExtend = TypeName.builder(expectedSuperDescriptor)
-                .addTypeArgument(TypeName.create("T"))
-                .build();
-        boolean isCore = superType.hasAnnotation(SERVICE_ANNOTATION_PROVIDER);
-        if (!isCore) {
-            throw new CodegenException("Service annotated with @Service.Provider extends invalid supertype,"
-                                               + " the super type must also be a @Service.Provider. Type: "
-                                               + typeInfo.typeName().fqName() + ", super type: "
-                                               + superType.typeName().fqName());
-        }
-        for (TypeInfo service : services) {
-            if (service.typeName().equals(superType.typeName())) {
-                return new SuperType(true, superTypeToExtend, service, true);
-            }
-        }
-        // if not found in current list, try checking existing types
-        return ctx.typeInfo(expectedSuperDescriptor)
-                .map(it -> new SuperType(true, superTypeToExtend, superType, true))
-                .orElseGet(SuperType::noSuperType);
-    }
-
-    // there must be none, or one non-private constructor (actually there may be more, we just use the first)
-    private TypedElementInfo constructor(TypeInfo typeInfo) {
-        return typeInfo.elementInfo()
-                .stream()
-                .filter(it -> it.kind() == ElementKind.CONSTRUCTOR)
-                .filter(not(ElementInfoPredicates::isPrivate))
-                .findFirst()
-                // or default constructor
-                .orElse(DEFAULT_CONSTRUCTOR);
-    }
-
-    private List<ParamDefinition> params(
-            TypeInfo service,
-            TypedElementInfo constructor) {
-        AtomicInteger paramCounter = new AtomicInteger();
-
-        return constructor.parameterArguments()
-                .stream()
-                .map(param -> {
-                    String constantName = "PARAM_" + paramCounter.getAndIncrement();
-                    RegistryCodegenContext.Assignment assignment = translateParameter(param.typeName(), constantName);
-                    return new ParamDefinition(constructor,
-                                               null,
-                                               param,
-                                               constantName,
-                                               param.typeName(),
-                                               assignment.usedType(),
-                                               assignment.codeGenerator(),
-                                               ElementKind.CONSTRUCTOR,
-                                               constructor.elementName(),
-                                               param.elementName(),
-                                               param.elementName(),
-                                               false,
-                                               param.annotations(),
-                                               Set.of(),
-                                               contract(service.typeName()
-                                                                .fqName() + " Constructor parameter: " + param.elementName(),
-                                                        assignment.usedType()),
-                                               constructor.accessModifier(),
-                                               "<init>");
-                })
-                .toList();
-    }
-
-    private TypeName contract(String description, TypeName typeName) {
-        /*
-         get the contract expected for this dependency
-         IP may be:
-          - Optional
-          - List
-          - ServiceProvider
-          - Supplier
-          - Optional<ServiceProvider>
-          - Optional<Supplier>
-          - List<ServiceProvider>
-          - List<Supplier>
-         */
-
-        if (typeName.isOptional()) {
-            if (typeName.typeArguments().isEmpty()) {
-                throw new IllegalArgumentException("Dependency with Optional type must have a declared type argument: "
-                                                           + description);
-            }
-            return contract(description, typeName.typeArguments().getFirst());
-        }
-        if (typeName.isList()) {
-            if (typeName.typeArguments().isEmpty()) {
-                throw new IllegalArgumentException("Dependency with List type must have a declared type argument: "
-                                                           + description);
-            }
-            return contract(description, typeName.typeArguments().getFirst());
-        }
-        if (typeName.isSupplier()) {
-            if (typeName.typeArguments().isEmpty()) {
-                throw new IllegalArgumentException("Dependency with Supplier type must have a declared type argument: "
-                                                           + description);
-            }
-            return contract(description, typeName.typeArguments().getFirst());
-        }
-
-        return typeName;
-    }
-
-    private Map<String, GenericTypeDeclaration> genericTypes(ClassModel.Builder classModel,
-                                                             List<ParamDefinition> params) {
-        // we must use map by string (as type name is equal if the same class, not full generic declaration)
-        Map<String, GenericTypeDeclaration> result = new LinkedHashMap<>();
-        AtomicInteger counter = new AtomicInteger();
-
-        for (ParamDefinition param : params) {
-            result.computeIfAbsent(param.translatedType().resolvedName(),
-                                   type -> {
-                                       var response =
-                                               new GenericTypeDeclaration("TYPE_" + counter.getAndIncrement(),
-                                                                          param.declaredType());
-                                       addTypeConstant(classModel, param.translatedType(), response);
-                                       return response;
-                                   });
-            result.computeIfAbsent(param.contract().fqName(),
-                                   type -> {
-                                       var response =
-                                               new GenericTypeDeclaration("TYPE_" + counter.getAndIncrement(),
-                                                                          param.declaredType());
-                                       addTypeConstant(classModel, param.contract(), response);
-                                       return response;
-                                   });
-        }
-
-        return result;
-    }
-
     private void addTypeConstant(ClassModel.Builder classModel,
                                  TypeName typeName,
-                                 GenericTypeDeclaration generic) {
+                                 String constantName) {
         String stringType = typeName.resolvedName();
         // constants for dependency parameter types (used by next section)
         classModel.addField(field -> field
@@ -365,7 +207,7 @@ class GenerateServiceDescriptor {
                 .isStatic(true)
                 .isFinal(true)
                 .type(TypeNames.TYPE_NAME)
-                .name(generic.constantName())
+                .name(constantName)
                 .update(it -> {
                     if (stringType.indexOf('.') < 0) {
                         // there is no package, we must use class (if this is a generic type, we have a problem)
@@ -377,12 +219,17 @@ class GenerateServiceDescriptor {
                         it.addContentCreate(typeName);
                     }
                 }));
+    }
+
+    private void addGenericTypeConstant(ClassModel.Builder classModel,
+                                        TypeName typeName,
+                                        String constantName) {
         classModel.addField(field -> field
                 .accessModifier(AccessModifier.PRIVATE)
                 .isStatic(true)
                 .isFinal(true)
                 .type(ANY_GENERIC_TYPE)
-                .name("G" + generic.constantName())
+                .name(constantName)
                 .update(it -> {
                     if (typeName.primitive()) {
                         it.addContent(TypeNames.GENERIC_TYPE)
@@ -419,7 +266,7 @@ class GenerateServiceDescriptor {
         if (typeName.isSupplier()) {
             // this may be the interface itself, and then it does not have a type argument
             if (!typeName.typeArguments().isEmpty()) {
-                // provider must have a type argument (and the type argument is an automatic contract
+                // factory must have a type argument (and the type argument is an automatic contract
                 TypeName providedType = typeName.typeArguments().getFirst();
                 // and we support Supplier<Optional<X>> as well
                 if (!providedType.generic()) {
@@ -461,8 +308,10 @@ class GenerateServiceDescriptor {
         }
 
         // add contracts from interfaces and types annotated as @Contract
-        typeInfo.findAnnotation(ServiceCodegenTypes.SERVICE_ANNOTATION_CONTRACT)
-                .ifPresent(it -> collectedContracts.add(typeInfo.typeName()));
+        if (Annotations.findFirst(ServiceCodegenTypes.SERVICE_ANNOTATION_CONTRACT,
+                                  TypeHierarchy.hierarchyAnnotations(ctx, typeInfo)).isPresent()) {
+            collectedContracts.add(typeInfo.typeName());
+        }
 
         // add contracts from @ExternalContracts
         typeInfo.findAnnotation(ServiceCodegenTypes.SERVICE_ANNOTATION_EXTERNAL_CONTRACTS)
@@ -508,112 +357,59 @@ class GenerateServiceDescriptor {
                 .defaultValueContent("new " + descriptorType.className() + "<>()"));
     }
 
-    private void serviceTypeFields(ClassModel.Builder classModel, TypeName serviceType, TypeName descriptorType) {
-        classModel.addField(field -> field
-                .isStatic(true)
-                .isFinal(true)
-                .accessModifier(AccessModifier.PRIVATE)
-                .type(TypeNames.TYPE_NAME)
-                .name("SERVICE_TYPE")
-                .addContentCreate(serviceType.genericTypeName()));
+    private void dependencyFields(ClassModel.Builder classModel, CoreService service) {
 
-        classModel.addField(field -> field
-                .isStatic(true)
-                .isFinal(true)
-                .accessModifier(AccessModifier.PRIVATE)
-                .type(TypeNames.TYPE_NAME)
-                .name("DESCRIPTOR_TYPE")
-                .addContentCreate(descriptorType.genericTypeName()));
-    }
+        // first add all types
+        for (var genericConstant : service.constants().genericConstants()) {
+            addGenericTypeConstant(classModel, genericConstant.type(), genericConstant.constantName());
+        }
+        for (var typeNameConstant : service.constants().typeNameConstants()) {
+            addTypeConstant(classModel, typeNameConstant.type(), typeNameConstant.constantName());
+        }
 
-    private void dependencyFields(ClassModel.Builder classModel,
-                                  TypeInfo service,
-                                  Map<String, GenericTypeDeclaration> genericTypes,
-                                  List<ParamDefinition> params) {
-        // constant for dependency
-        for (ParamDefinition param : params) {
+        // and then add all dependencies (these use the types created above)
+        for (CoreDependency dependency : service.dependencies()) {
             classModel.addField(field -> field
+                    // must be public, used in generated Injection__Binding to bind services
                     .accessModifier(AccessModifier.PUBLIC)
                     .isStatic(true)
                     .isFinal(true)
                     .type(ServiceCodegenTypes.SERVICE_DEPENDENCY)
-                    .name(param.constantName())
-                    .description(dependencyDescription(service, param))
-                    .update(it -> {
-                        it.addContent(ServiceCodegenTypes.SERVICE_DEPENDENCY)
-                                .addContentLine(".builder()")
-                                .increaseContentPadding()
-                                .increaseContentPadding()
-                                .addContent(".typeName(")
-                                .addContent(genericTypes.get(param.translatedType().resolvedName()).constantName())
-                                .addContentLine(")")
-                                .update(maybeElementKind -> {
-                                    if (param.kind() != ElementKind.CONSTRUCTOR) {
-                                        // constructor is default and does not need to be defined
-                                        maybeElementKind.addContent(".elementKind(")
-                                                .addContent(TypeNames.ELEMENT_KIND)
-                                                .addContent(".")
-                                                .addContent(param.kind().name())
-                                                .addContentLine(")");
-                                    }
-                                })
-                                .update(maybeMethod -> {
-                                    if (param.kind() == ElementKind.METHOD) {
-                                        maybeMethod.addContent(".method(")
-                                                .addContent(param.methodConstantName())
-                                                .addContentLine(")");
-                                    }
-                                })
-                                .addContent(".name(\"")
-                                .addContent(param.fieldId())
-                                .addContentLine("\")")
-                                .addContentLine(".service(SERVICE_TYPE)")
-                                .addContentLine(".descriptor(DESCRIPTOR_TYPE)")
-                                .addContent(".descriptorConstant(\"")
-                                .addContent(param.constantName())
-                                .addContentLine("\")")
-                                .addContent(".contract(")
-                                .addContent(genericTypes.get(param.contract().fqName()).constantName())
-                                .addContentLine(")")
-                                .addContent(".contractType(G")
-                                .addContent(genericTypes.get(param.contract().fqName()).constantName())
-                                .addContentLine(")");
-                        if (param.access() != AccessModifier.PACKAGE_PRIVATE) {
-                            it.addContent(".access(")
-                                    .addContent(TypeNames.ACCESS_MODIFIER)
-                                    .addContent(".")
-                                    .addContent(param.access().name())
-                                    .addContentLine(")");
-                        }
-
-                        if (param.isStatic()) {
-                            it.addContentLine(".isStatic(true)");
-                        }
-
-                        if (!param.qualifiers().isEmpty()) {
-                            for (Annotation qualifier : param.qualifiers()) {
-                                it.addContent(".addQualifier(qualifier -> qualifier.typeName(")
-                                        .addContentCreate(qualifier.typeName().genericTypeName())
-                                        .addContent(")");
-                                qualifier.value().ifPresent(q -> it.addContent(".value(\"")
-                                        .addContent(q)
-                                        .addContent("\")"));
-                                it.addContentLine(")");
-                            }
-                        }
-
-                        it.addContent(".build()")
-                                .decreaseContentPadding()
-                                .decreaseContentPadding();
-                    }));
+                    .name(dependency.dependencyConstant())
+                    .description(dependencyDescription(service, dependency))
+                    .addContent(ServiceCodegenTypes.SERVICE_DEPENDENCY)
+                    .addContentLine(".builder()")
+                    .increaseContentPadding()
+                    .increaseContentPadding()
+                    .addContent(".typeName(")
+                    .addContent(dependency.typeNameConstant())
+                    .addContentLine(")")
+                    .addContent(".name(\"")
+                    .addContent(dependency.name())
+                    .addContentLine("\")")
+                    .addContentLine(".service(SERVICE_TYPE)")
+                    .addContentLine(".descriptor(DESCRIPTOR_TYPE)")
+                    .addContent(".descriptorConstant(\"")
+                    .addContent(dependency.dependencyConstant())
+                    .addContentLine("\")")
+                    .addContent(".contract(")
+                    .addContent(dependency.contractTypeConstant())
+                    .addContentLine(")")
+                    .addContent(".contractType(")
+                    .addContent(dependency.genericTypeConstant())
+                    .addContentLine(")")
+                    .addContent(".build()")
+                    .decreaseContentPadding()
+                    .decreaseContentPadding());
         }
     }
 
-    private String dependencyDescription(TypeInfo service, ParamDefinition param) {
-        TypeName serviceType = service.typeName();
+    private String dependencyDescription(CoreService service, CoreDependency dependency) {
+        TypedElementInfo constructor = dependency.constructor();
+        TypeName serviceType = service.serviceType();
         StringBuilder result = new StringBuilder("Dependency for ");
-        boolean servicePublic = service.accessModifier() == AccessModifier.PUBLIC;
-        boolean elementPublic = param.owningElement().accessModifier() == AccessModifier.PUBLIC;
+        boolean servicePublic = typeInfo.accessModifier() == AccessModifier.PUBLIC;
+        boolean elementPublic = constructor.accessModifier() == AccessModifier.PUBLIC;
 
         if (servicePublic) {
             result.append("{@link ")
@@ -631,19 +427,19 @@ class GenerateServiceDescriptor {
                     .append("#")
                     .append(serviceType.className())
                     .append("(")
-                    .append(toDescriptionSignature(param.owningElement(), true))
+                    .append(toDescriptionSignature(constructor, true))
                     .append(")")
                     .append("}");
         } else {
             // just text
             result.append("(")
-                    .append(toDescriptionSignature(param.owningElement(), false))
+                    .append(toDescriptionSignature(constructor, false))
                     .append(")");
         }
 
         result
                 .append(", parameter ")
-                .append(param.elementInfo().elementName())
+                .append(dependency.name())
                 .append(".");
         return result.toString();
     }
@@ -662,7 +458,7 @@ class GenerateServiceDescriptor {
         }
     }
 
-    private void dependenciesField(ClassModel.Builder classModel, List<ParamDefinition> params) {
+    private void dependenciesMethod(ClassModel.Builder classModel, CoreService service) {
         classModel.addField(dependencies -> dependencies
                 .isStatic(true)
                 .isFinal(true)
@@ -671,48 +467,9 @@ class GenerateServiceDescriptor {
                 .addContent(List.class)
                 .addContent(".of(")
                 .update(it -> {
-                    Iterator<ParamDefinition> iterator = params.iterator();
+                    var iterator = service.dependencies().iterator();
                     while (iterator.hasNext()) {
-                        it.addContent(iterator.next().constantName());
-                        if (iterator.hasNext()) {
-                            it.addContent(", ");
-                        }
-                    }
-                })
-                .addContent(")"));
-    }
-
-    private void serviceTypeMethod(ClassModel.Builder classModel) {
-        // TypeName serviceType()
-        classModel.addMethod(method -> method.addAnnotation(Annotations.OVERRIDE)
-                .returnType(TypeNames.TYPE_NAME)
-                .name("serviceType")
-                .addContentLine("return SERVICE_TYPE;"));
-    }
-
-    private void descriptorTypeMethod(ClassModel.Builder classModel) {
-        // TypeName descriptorType()
-        classModel.addMethod(method -> method.addAnnotation(Annotations.OVERRIDE)
-                .returnType(TypeNames.TYPE_NAME)
-                .name("descriptorType")
-                .addContentLine("return DESCRIPTOR_TYPE;"));
-    }
-
-    private void contractsMethod(ClassModel.Builder classModel, Set<TypeName> contracts) {
-        if (contracts.isEmpty()) {
-            return;
-        }
-        classModel.addField(contractsField -> contractsField
-                .isStatic(true)
-                .isFinal(true)
-                .name("CONTRACTS")
-                .type(SET_OF_TYPES)
-                .addContent(Set.class)
-                .addContent(".of(")
-                .update(it -> {
-                    Iterator<TypeName> iterator = contracts.iterator();
-                    while (iterator.hasNext()) {
-                        it.addContentCreate(iterator.next().genericTypeName());
+                        it.addContent(iterator.next().dependencyConstant());
                         if (iterator.hasNext()) {
                             it.addContent(", ");
                         }
@@ -720,17 +477,9 @@ class GenerateServiceDescriptor {
                 })
                 .addContent(")"));
 
-        // Set<Class<?>> contracts()
-        classModel.addMethod(method -> method.addAnnotation(Annotations.OVERRIDE)
-                .name("contracts")
-                .returnType(SET_OF_TYPES)
-                .addContentLine("return CONTRACTS;"));
-    }
-
-    private void dependenciesMethod(ClassModel.Builder classModel, List<ParamDefinition> params, SuperType superType) {
         // List<Dependency> dependencies()
-        boolean hasSuperType = superType.hasSupertype();
-        if (hasSuperType || !params.isEmpty()) {
+        boolean hasSuperType = service.superType().present();
+        if (hasSuperType || !service.dependencies().isEmpty()) {
             classModel.addMethod(method -> method.addAnnotation(Annotations.OVERRIDE)
                     .returnType(LIST_OF_DEPENDENCIES)
                     .name("dependencies")
@@ -744,40 +493,131 @@ class GenerateServiceDescriptor {
         }
     }
 
-    private void instantiateMethod(ClassModel.Builder classModel,
-                                   TypeName serviceType,
-                                   List<ParamDefinition> params,
-                                   boolean isAbstractClass) {
-        if (isAbstractClass) {
+    private void serviceTypeMethod(ClassModel.Builder classModel, CoreService service) {
+        classModel.addField(field -> field
+                .isStatic(true)
+                .isFinal(true)
+                .accessModifier(AccessModifier.PRIVATE)
+                .type(TypeNames.TYPE_NAME)
+                .name("SERVICE_TYPE")
+                .addContentCreate(service.serviceType().genericTypeName()));
+
+        // TypeName serviceType()
+        classModel.addMethod(method -> method.addAnnotation(Annotations.OVERRIDE)
+                .returnType(TypeNames.TYPE_NAME)
+                .name("serviceType")
+                .addContentLine("return SERVICE_TYPE;"));
+    }
+
+    private void descriptorTypeMethod(ClassModel.Builder classModel, CoreService service) {
+        classModel.addField(field -> field
+                .isStatic(true)
+                .isFinal(true)
+                .accessModifier(AccessModifier.PRIVATE)
+                .type(TypeNames.TYPE_NAME)
+                .name("DESCRIPTOR_TYPE")
+                .addContentCreate(service.descriptorType().genericTypeName()));
+
+        // TypeName descriptorType()
+        classModel.addMethod(method -> method.addAnnotation(Annotations.OVERRIDE)
+                .returnType(TypeNames.TYPE_NAME)
+                .name("descriptorType")
+                .addContentLine("return DESCRIPTOR_TYPE;"));
+    }
+
+    private void contractsMethod(ClassModel.Builder classModel, CoreService service) {
+        var contracts = service.contracts();
+        var factoryContracts = service.factoryContracts();
+        var superType = service.superType();
+
+        if (!contracts.isEmpty() || superType.present()) {
+            // we must declare the contracts method
+            classModel.addField(contractsField -> contractsField
+                    .isStatic(true)
+                    .isFinal(true)
+                    .name("CONTRACTS")
+                    .type(SET_OF_RESOLVED_TYPES)
+                    .addContent(Set.class)
+                    .addContent(".of(")
+                    .update(it -> {
+                        Iterator<ResolvedType> iterator = contracts.iterator();
+                        while (iterator.hasNext()) {
+                            it.addContentCreate(iterator.next());
+                            if (iterator.hasNext()) {
+                                it.addContent(", ");
+                            }
+                        }
+                    })
+                    .addContent(")"));
+
+            // Set<Class<?>> contracts()
+            classModel.addMethod(method -> method
+                    .addAnnotation(Annotations.OVERRIDE)
+                    .name("contracts")
+                    .returnType(SET_OF_RESOLVED_TYPES)
+                    .addContentLine("return CONTRACTS;"));
+        }
+
+        if (!factoryContracts.isEmpty() || superType.present()) {
+            // we must declare the contracts method
+            classModel.addField(contractsField -> contractsField
+                    .isStatic(true)
+                    .isFinal(true)
+                    .name("FACTORY_CONTRACTS")
+                    .type(SET_OF_RESOLVED_TYPES)
+                    .addContent(Set.class)
+                    .addContent(".of(")
+                    .update(it -> {
+                        Iterator<ResolvedType> iterator = factoryContracts.iterator();
+                        while (iterator.hasNext()) {
+                            it.addContentCreate(iterator.next());
+                            if (iterator.hasNext()) {
+                                it.addContent(", ");
+                            }
+                        }
+                    })
+                    .addContent(")"));
+
+            // Set<Class<?>> factoryContracts()
+            classModel.addMethod(method -> method
+                    .addAnnotation(Annotations.OVERRIDE)
+                    .name("factoryContracts")
+                    .returnType(SET_OF_RESOLVED_TYPES)
+                    .addContentLine("return FACTORY_CONTRACTS;"));
+        }
+    }
+
+    private void instantiateMethod(ClassModel.Builder classModel, CoreService service) {
+        if (service.isAbstract()) {
             return;
         }
 
         // T instantiate(DependencyContext ctx__helidonRegistry)
         classModel.addMethod(method -> method.addAnnotation(Annotations.OVERRIDE)
-                .returnType(serviceType)
+                .returnType(service.serviceType())
                 .name("instantiate")
                 .addParameter(ctxParam -> ctxParam.type(ServiceCodegenTypes.SERVICE_DEPENDENCY_CONTEXT)
                         .name("ctx__helidonRegistry"))
-                .update(it -> createInstantiateBody(serviceType, it, params)));
+                .update(it -> createInstantiateBody(service.serviceType(), it, service.dependencies())));
     }
 
-    private void postConstructMethod(TypeInfo typeInfo, ClassModel.Builder classModel, TypeName serviceType) {
+    private void postConstructMethod(ClassModel.Builder classModel, CoreService service) {
         // postConstruct()
         lifecycleMethod(typeInfo, ServiceCodegenTypes.SERVICE_ANNOTATION_POST_CONSTRUCT).ifPresent(method -> {
             classModel.addMethod(postConstruct -> postConstruct.name("postConstruct")
                     .addAnnotation(Annotations.OVERRIDE)
-                    .addParameter(instance -> instance.type(serviceType)
+                    .addParameter(instance -> instance.type(service.serviceType())
                             .name("instance"))
                     .addContentLine("instance." + method.elementName() + "();"));
         });
     }
 
-    private void preDestroyMethod(TypeInfo typeInfo, ClassModel.Builder classModel, TypeName serviceType) {
+    private void preDestroyMethod(ClassModel.Builder classModel, CoreService service) {
         // preDestroy
         lifecycleMethod(typeInfo, ServiceCodegenTypes.SERVICE_ANNOTATION_PRE_DESTROY).ifPresent(method -> {
             classModel.addMethod(preDestroy -> preDestroy.name("preDestroy")
                     .addAnnotation(Annotations.OVERRIDE)
-                    .addParameter(instance -> instance.type(serviceType)
+                    .addParameter(instance -> instance.type(service.serviceType())
                             .name("instance"))
                     .addContentLine("instance." + method.elementName() + "();"));
         });
@@ -798,31 +638,31 @@ class GenerateServiceDescriptor {
         TypedElementInfo method = list.getFirst();
         if (method.accessModifier() == AccessModifier.PRIVATE) {
             throw new CodegenException("Method annotated with " + annotationType.fqName()
-                                                    + ", is private, which is not supported: " + typeInfo.typeName().fqName()
-                                                    + "#" + method.elementName(),
-                                       method.originatingElement().orElseGet(method::elementName));
+                                               + ", is private, which is not supported: " + typeInfo.typeName().fqName()
+                                               + "#" + method.elementName(),
+                                       method.originatingElementValue());
         }
         if (!method.parameterArguments().isEmpty()) {
             throw new CodegenException("Method annotated with " + annotationType.fqName()
-                                                    + ", has parameters, which is not supported: " + typeInfo.typeName().fqName()
-                                                    + "#" + method.elementName(),
-                                       method.originatingElement().orElseGet(method::elementName));
+                                               + ", has parameters, which is not supported: " + typeInfo.typeName().fqName()
+                                               + "#" + method.elementName(),
+                                       method.originatingElementValue());
         }
         if (!method.typeName().equals(TypeNames.PRIMITIVE_VOID)) {
             throw new CodegenException("Method annotated with " + annotationType.fqName()
-                                                    + ", is not void, which is not supported: " + typeInfo.typeName().fqName()
-                                                    + "#" + method.elementName(),
-                                       method.originatingElement().orElseGet(method::elementName));
+                                               + ", is not void, which is not supported: " + typeInfo.typeName().fqName()
+                                               + "#" + method.elementName(),
+                                       method.originatingElementValue());
         }
         return Optional.of(method);
     }
 
     private void createInstantiateBody(TypeName serviceType,
                                        Method.Builder method,
-                                       List<ParamDefinition> params) {
-        List<ParamDefinition> constructorParams = declareCtrParamsAndGetThem(method, params);
-        String paramsDeclaration = constructorParams.stream()
-                .map(ParamDefinition::ipParamName)
+                                       List<CoreDependency> params) {
+        declareConstructorParams(method, params);
+        String paramsDeclaration = params.stream()
+                .map(CoreDependency::name)
                 .collect(Collectors.joining(", "));
 
         // return new MyImpl(parameter, parameter2)
@@ -833,8 +673,8 @@ class GenerateServiceDescriptor {
                 .addContentLine(");");
     }
 
-    private void isAbstractMethod(ClassModel.Builder classModel, SuperType superType, boolean isAbstractClass) {
-        if (!isAbstractClass && !superType.hasSupertype()) {
+    private void isAbstractMethod(ClassModel.Builder classModel, CoreService service) {
+        if (!service.isAbstract() && service.superType().empty()) {
             return;
         }
         // only override for abstract types (and subtypes, where we do not want to check if super is abstract), default is false
@@ -842,11 +682,11 @@ class GenerateServiceDescriptor {
                 .name("isAbstract")
                 .returnType(TypeNames.PRIMITIVE_BOOLEAN)
                 .addAnnotation(Annotations.OVERRIDE)
-                .addContentLine("return " + isAbstractClass + ";"));
+                .addContentLine("return " + service.isAbstract() + ";"));
     }
 
-    private void weightMethod(TypeInfo typeInfo, ClassModel.Builder classModel, SuperType superType) {
-        boolean hasSuperType = superType.hasSupertype();
+    private void weightMethod(ClassModel.Builder classModel, CoreService service) {
+        boolean hasSuperType = service.superType().present();
         // double weight()
         Optional<Double> weight = weight(typeInfo);
 
@@ -869,17 +709,9 @@ class GenerateServiceDescriptor {
                 .flatMap(Annotation::doubleValue);
     }
 
-    private RegistryCodegenContext.Assignment translateParameter(TypeName typeName, String constantName) {
-        return ctx.assignment(typeName, "ctx__helidonRegistry.dependency(" + constantName + ")");
-    }
-
     private TypeName descriptorInstanceType(TypeName serviceType, TypeName descriptorType) {
         return TypeName.builder(descriptorType)
                 .addTypeArgument(serviceType)
                 .build();
-    }
-
-    private record GenericTypeDeclaration(String constantName,
-                                          TypeName typeName) {
     }
 }

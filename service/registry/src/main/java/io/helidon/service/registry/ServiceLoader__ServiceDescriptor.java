@@ -21,15 +21,17 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 
 /**
  * Service descriptor to enable dependency on services loaded via {@link java.util.ServiceLoader}.
  */
 @SuppressWarnings("checkstyle:TypeName") // matches pattern of generated descriptors
-public abstract class ServiceLoader__ServiceDescriptor implements GeneratedService.Descriptor<Object> {
+public abstract class ServiceLoader__ServiceDescriptor implements ServiceDescriptor<Object> {
     private static final TypeName DESCRIPTOR_TYPE = TypeName.create(ServiceLoader__ServiceDescriptor.class);
 
     // we must use instance comparison, so we must make sure we give the same instance for the same combination
@@ -47,9 +49,9 @@ public abstract class ServiceLoader__ServiceDescriptor implements GeneratedServi
      * @param weight            weight of the provider
      * @return new descriptor
      */
-    public static GeneratedService.Descriptor<Object> create(TypeName providerInterface,
-                                                             ServiceLoader.Provider<Object> provider,
-                                                             double weight) {
+    public static ServiceDescriptor<Object> create(TypeName providerInterface,
+                                                   ServiceLoader.Provider<Object> provider,
+                                                   double weight) {
         LOCK.lock();
         try {
             TypeName providerImpl = TypeName.create(provider.type());
@@ -66,14 +68,39 @@ public abstract class ServiceLoader__ServiceDescriptor implements GeneratedServi
         }
     }
 
+    /**
+     * Create a new instance for a specific provider interface and implementation.
+     * This method is used from generated code.
+     *
+     * @param providerInterface provider interface type
+     * @param implType          implementation class
+     * @param instanceSupplier  supplier of a new instance (so we do not use reflection)
+     * @param weight            weight of the provider implementation
+     * @param <T>               type of the implementation
+     * @return a new service descriptor
+     */
+    public static <T> ServiceDescriptor<Object> create(TypeName providerInterface,
+                                                       Class<T> implType,
+                                                       Supplier<T> instanceSupplier,
+                                                       double weight) {
+        return ServiceLoader__ServiceDescriptor.create(providerInterface, new ProviderImpl(implType, instanceSupplier), weight);
+    }
+
     @Override
     public TypeName descriptorType() {
         return DESCRIPTOR_TYPE;
     }
 
+    /**
+     * Type name of the provider interface this service implementation implements.
+     *
+     * @return provider interface type
+     */
+    public abstract TypeName providerInterface();
+
     private static class ServiceProviderDescriptor extends ServiceLoader__ServiceDescriptor {
         private final TypeName providerInterface;
-        private final Set<TypeName> contracts;
+        private final Set<ResolvedType> contracts;
         private final TypeName providerImpl;
         private final double weight;
         private final LazyValue<Object> instance;
@@ -83,7 +110,7 @@ public abstract class ServiceLoader__ServiceDescriptor implements GeneratedServi
                                           ServiceLoader.Provider<Object> provider,
                                           double weight) {
             this.providerInterface = providerInterface;
-            this.contracts = Set.of(providerInterface);
+            this.contracts = Set.of(ResolvedType.create(providerInterface));
             this.providerImpl = providerImpl;
             this.weight = weight;
             this.instance = LazyValue.create(provider);
@@ -102,7 +129,7 @@ public abstract class ServiceLoader__ServiceDescriptor implements GeneratedServi
         }
 
         @Override
-        public Set<TypeName> contracts() {
+        public Set<ResolvedType> contracts() {
             return contracts;
         }
 
@@ -116,8 +143,32 @@ public abstract class ServiceLoader__ServiceDescriptor implements GeneratedServi
             return weight;
         }
 
+        @Override
+        public TypeName providerInterface() {
+            return providerInterface;
+        }
     }
 
     private record ProviderKey(TypeName providerInterface, TypeName providerImpl) {
+    }
+
+    private static class ProviderImpl implements ServiceLoader.Provider<Object> {
+        private final Class<?> implType;
+        private final Supplier<?> instanceSupplier;
+
+        private ProviderImpl(Class<?> implType, Supplier<?> instanceSupplier) {
+            this.implType = implType;
+            this.instanceSupplier = instanceSupplier;
+        }
+
+        @Override
+        public Class<?> type() {
+            return implType;
+        }
+
+        @Override
+        public Object get() {
+            return instanceSupplier.get();
+        }
     }
 }

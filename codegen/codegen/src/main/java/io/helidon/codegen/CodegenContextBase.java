@@ -16,8 +16,10 @@
 
 package io.helidon.codegen;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
 
@@ -29,12 +31,17 @@ import io.helidon.codegen.spi.ElementMapperProvider;
 import io.helidon.codegen.spi.TypeMapper;
 import io.helidon.codegen.spi.TypeMapperProvider;
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.types.ElementSignature;
+import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypedElementInfo;
 
 /**
  * Base of codegen context implementation taking care of the common parts of the API.
  */
 public abstract class CodegenContextBase implements CodegenContext {
+    // class -> method name -> element signature
+    private final Map<TypeName, Map<String, ElementSignatures>> uniqueNames = new HashMap<>();
     private final List<ElementMapper> elementMappers;
     private final List<TypeMapper> typeMappers;
     private final List<AnnotationMapper> annotationMappers;
@@ -149,6 +156,13 @@ public abstract class CodegenContextBase implements CodegenContext {
         return options;
     }
 
+    @Override
+    public String uniqueName(TypeInfo type, TypedElementInfo element) {
+        return uniqueNames.computeIfAbsent(type.typeName(), it -> new HashMap<>())
+                .computeIfAbsent(element.elementName(), ElementSignatures::new)
+                .uniqueName(element.signature());
+    }
+
     private static void addSupported(CodegenProvider provider,
                                      Set<Option<?>> supportedOptions,
                                      Set<String> supportedPackages,
@@ -159,5 +173,24 @@ public abstract class CodegenContextBase implements CodegenContext {
                 .stream()
                 .map(it -> it.endsWith(".*") ? it : it + ".*")
                 .forEach(supportedPackages::add);
+    }
+
+    private static class ElementSignatures {
+        private final Map<ElementSignature, String> names = new HashMap<>();
+        private final String name;
+
+        private ElementSignatures(String name) {
+            this.name = name;
+        }
+
+        public String uniqueName(ElementSignature signature) {
+            int size = names.size();
+            if (names.containsKey(signature)) {
+                return names.get(signature);
+            }
+            String nextName = size == 0 ? name : name + "_" + size;
+            names.put(signature, nextName);
+            return nextName;
+        }
     }
 }
