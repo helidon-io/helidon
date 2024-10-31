@@ -81,7 +81,7 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
             }
             if (defaultContent == null) {
                 defaultContent = "";
-                LOGGER.log(Level.WARNING, "Static OpenAPI file not found, checked: {0}", DEFAULT_FILE_PATHS);
+                LOGGER.log(Level.DEBUG, "Static OpenAPI file not found, checked: {0}", DEFAULT_FILE_PATHS);
             }
         }
         content = defaultContent;
