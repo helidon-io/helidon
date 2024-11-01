@@ -68,7 +68,7 @@
         <version.lib.hibernate-validator>7.0.5.Final</version.lib.hibernate-validator>
         <version.lib.hikaricp>5.0.1</version.lib.hikaricp>
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
-        <version.lib.jackson>2.15.2</version.lib.jackson>
+        <version.lib.jackson>2.18.1</version.lib.jackson>
         <version.lib.jakarta.activation-api>2.1.3</version.lib.jakarta.activation-api>
         <version.lib.jakarta.annotation-api>2.1.1</version.lib.jakarta.annotation-api>
         <version.lib.jakarta.cdi-api>4.0.1</version.lib.jakarta.cdi-api>
