@@ -7,7 +7,7 @@ We welcome your contributions! There are multiple ways to contribute.
 
 Join us at [#helidon-users](http://slack.helidon.io) and participate in discussions.
 
-## Issues
+## Opening Issues
 
 If you hit a bug or have an enhancement request then file a [GitHub issue](https://github.com/oracle/helidon/issues).
 When filing a bug remember that the better written the bug is, the more likely it is
@@ -19,20 +19,22 @@ to be fixed. Please include:
 4. Version of Docker or Kubernetes or other software if it's relevant to your issue
 5. Steps to reproduce
 
-## Code
+## Contributing Code
 
 We welcome code contributions, but we need the contributor to sign the
 [Oracle Contributor Agreement (OCA)](https://oca.opensource.oracle.com)
 first.
 
-The process:
+## Pull Request Process
 
 0. Sign the [OCA](https://oca.opensource.oracle.com)
-1. Fork the repo
-2. Fix an issue or create an issue and fix it
-3. Create a Pull Request that fixes the issue. Follow [DEV-GUIDELINES](DEV-GUIDELINES.md) for a list of rules and best practices followed by project Helidon.
-4. Watch your PR for pipeline results. If there are failures then fix them.
-5. We will review your PR and merge as appropriate.
+1. Ensure there is an issue created to track and discuss the fix or enhancement you intend to submit.
+2. Fork this repository.
+3. Create a branch in your fork to implement the changes. We recommend using the issue number as part of your branch name, e.g. 1234-fixes. Follow [DEV-GUIDELINES](DEV-GUIDELINES.md) for a list of rules and best practices followed by project Helidon.
+4. Ensure that any documentation is updated with the changes that are required by your change.
+5. Ensure that any samples are updated if the base image has been changed.
+6. Submit the pull request. Do not leave the pull request blank. Explain exactly what your changes are meant to do and provide simple steps on how to validate. your changes. Ensure that you reference the issue you created as well.
+7. We will assign the pull request to 2-3 people for review before it is merged
 
 ## Code of Conduct
 

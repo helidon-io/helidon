@@ -145,7 +145,7 @@ class AptContextImpl extends CodegenContextBase implements AptContext {
             try (InputStream in = resource.openInputStream()) {
                 return Optional.of(ModuleInfoSourceParser.parse(in));
             }
-        } catch (IOException ignored) {
+        } catch (Exception ignored) {
             // it is not in sources, let's see if it got generated
         }
         // generated

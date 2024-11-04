@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ public final class GlobalConfig {
             return EMPTY;
         }
         // there is a valid provider, let's use its default configuration
-        return providers.get(0)
+        return providers.getFirst()
                 .create();
     });
     private static final AtomicReference<Config> CONFIG = new AtomicReference<>();
@@ -99,5 +99,17 @@ public final class GlobalConfig {
             CONFIG.set(config.get());
         }
         return CONFIG.get();
+    }
+
+    static Config create() {
+        List<ConfigProvider> providers = HelidonServiceLoader.create(ServiceLoader.load(ConfigProvider.class))
+                .asList();
+        // no implementations available, use empty configuration
+        if (providers.isEmpty()) {
+            return EMPTY;
+        }
+        // there is a valid provider, let's use its default configuration
+        return providers.getFirst()
+                .create();
     }
 }

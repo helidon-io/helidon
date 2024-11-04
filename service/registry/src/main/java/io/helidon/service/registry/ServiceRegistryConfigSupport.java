@@ -16,11 +16,7 @@
 
 package io.helidon.service.registry;
 
-import java.util.Objects;
-import java.util.Set;
-
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.Weighted;
 import io.helidon.common.types.TypeName;
 
 class ServiceRegistryConfigSupport {
@@ -32,8 +28,13 @@ class ServiceRegistryConfigSupport {
         }
 
         /**
-         * Put an instance of a contract outside of service described services.
-         * This will create a "virtual" service descriptor that will not be valid for metadata operations.
+         * Put an instance of a contract. In case there is a descriptor that matches the contract
+         * (i.e. the service type is the provided contract), the instance will be assigned that descriptor.
+         * The instance would be outside of service described services otherwise, creating a
+         * "virtual" service descriptor that will not be valid for metadata operations.
+         * <p>
+         * If there is no descriptor for the contract, you will not be able to use our Maven plugin to code generate bindings and
+         * main classes.
          *
          * @param builder  ignored
          * @param contract contract to add a specific instance for
@@ -47,8 +48,13 @@ class ServiceRegistryConfigSupport {
         }
 
         /**
-         * Put an instance of a contract outside of service described services.
-         * This will create a "virtual" service descriptor that will not be valid for metadata operations.
+         * Put an instance of a contract. In case there is a descriptor that matches the contract
+         * (i.e. the service type is the provided contract), the instance will be assigned that descriptor.
+         * The instance would be outside of service described services otherwise, creating a
+         * "virtual" service descriptor that will not be valid for metadata operations.
+         * <p>
+         * If there is no descriptor for the contract, you will not be able to use our Maven plugin to code generate bindings and
+         * main classes.
          *
          * @param builder  ignored
          * @param contract contract to add a specific instance for
@@ -59,57 +65,6 @@ class ServiceRegistryConfigSupport {
                                         Class<?> contract,
                                         Object instance) {
             putContractInstance(builder, TypeName.create(contract), instance);
-        }
-    }
-
-    private static class VirtualDescriptor implements GeneratedService.Descriptor<Object> {
-        private static final TypeName TYPE = TypeName.create(VirtualDescriptor.class);
-        private final Set<TypeName> contracts;
-        private final TypeName serviceType;
-        private final TypeName descriptorType;
-
-        private VirtualDescriptor(TypeName contract) {
-            this.contracts = Set.of(contract);
-            this.serviceType = contract;
-            this.descriptorType = TypeName.builder(TYPE)
-                    .className(TYPE.className() + "_" + contract.className() + "__VirtualDescriptor")
-                    .build();
-        }
-
-        @Override
-        public TypeName serviceType() {
-            return serviceType;
-        }
-
-        @Override
-        public TypeName descriptorType() {
-            return descriptorType;
-        }
-
-        @Override
-        public Set<TypeName> contracts() {
-            return contracts;
-        }
-
-        @Override
-        public double weight() {
-            return Weighted.DEFAULT_WEIGHT + 1000;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(serviceType);
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (!(o instanceof VirtualDescriptor that)) {
-                return false;
-            }
-            return Objects.equals(serviceType, that.serviceType);
         }
     }
 }

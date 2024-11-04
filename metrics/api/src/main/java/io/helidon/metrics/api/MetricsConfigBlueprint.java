@@ -220,6 +220,18 @@ interface MetricsConfigBlueprint {
     GcTimeType gcTimeType();
 
     /**
+     * Output format for built-in meter names.
+     * <p>
+     *     {@link BuiltInMeterNameFormat#SNAKE} selects "snake_case" which does not conform to the MicroProfile
+     *     Metrics specification.
+     *
+     * @return the output format for built-in meter names
+     */
+    @Option.Configured
+    @Option.Default(BuiltInMeterNameFormat.DEFAULT)
+    BuiltInMeterNameFormat builtInMeterNameFormat();
+
+    /**
      * Reports whether the specified scope is enabled, according to any scope configuration that
      * is part of this metrics configuration.
      *

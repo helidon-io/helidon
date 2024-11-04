@@ -21,7 +21,7 @@ import io.helidon.common.features.api.Preview;
 /**
  * Core service registry, supporting {@link io.helidon.service.registry.Service.Provider}.
  */
-@Feature(value = "registry",
+@Feature(value = "Registry",
          description = "Service Registry",
          in = HelidonFlavor.SE,
          path = "Registry"

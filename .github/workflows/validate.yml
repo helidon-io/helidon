@@ -338,7 +338,7 @@ jobs:
     strategy:
       matrix:
         os: [ ubuntu-20.04, macos-14 ]
-        module: [ mp-1, mp-2, mp-3, se-1 ]
+        module: [ mp-1, mp-2, mp-3, se-1, inject ]
         include:
           - { os: ubuntu-20.04, platform: linux }
           - { os: macos-14, platform: macos }

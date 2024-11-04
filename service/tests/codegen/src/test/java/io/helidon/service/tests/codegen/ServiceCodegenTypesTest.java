@@ -23,12 +23,16 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import io.helidon.builder.api.Prototype;
+import io.helidon.common.Generated;
 import io.helidon.common.types.TypeName;
 import io.helidon.service.codegen.ServiceCodegenTypes;
 import io.helidon.service.registry.Dependency;
 import io.helidon.service.registry.DependencyContext;
 import io.helidon.service.registry.GeneratedService;
 import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceDescriptor;
+import io.helidon.service.registry.ServiceInfo;
 
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.collection.IsEmptyCollection;
@@ -40,6 +44,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class ServiceCodegenTypesTest {
+    @SuppressWarnings("removal")
     @Test
     void testTypes() {
         // it is really important to test ALL constants on the class, so let's use reflection
@@ -67,11 +72,16 @@ class ServiceCodegenTypesTest {
         checkField(toCheck, checked, fields, "SERVICE_ANNOTATION_CONTRACT", Service.Contract.class);
         checkField(toCheck, checked, fields, "SERVICE_ANNOTATION_EXTERNAL_CONTRACTS", Service.ExternalContracts.class);
         checkField(toCheck, checked, fields, "SERVICE_ANNOTATION_DESCRIPTOR", Service.Descriptor.class);
-        checkField(toCheck, checked, fields, "SERVICE_DESCRIPTOR", GeneratedService.Descriptor.class);
         checkField(toCheck, checked, fields, "SERVICE_DEPENDENCY", Dependency.class);
         checkField(toCheck, checked, fields, "SERVICE_DEPENDENCY_CONTEXT", DependencyContext.class);
+        checkField(toCheck, checked, fields, "SERVICE_DESCRIPTOR", ServiceDescriptor.class);
 
-        assertThat(toCheck, IsEmptyCollection.empty());
+        checkField(toCheck, checked, fields, "BUILDER_BLUEPRINT", Prototype.Blueprint.class);
+        checkField(toCheck, checked, fields, "GENERATED_ANNOTATION", Generated.class);
+
+        assertThat("If the collection is not empty, please add appropriate checkField line to this test",
+                   toCheck,
+                   IsEmptyCollection.empty());
     }
 
     private void checkField(Set<String> namesToCheck,

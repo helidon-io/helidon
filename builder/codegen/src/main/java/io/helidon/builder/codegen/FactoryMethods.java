@@ -84,17 +84,17 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
     private static Optional<FactoryMethod> builder(CodegenContext ctx,
                                                    TypeHandler typeHandler,
                                                    Set<TypeName> builderCandidates) {
-        if (typeHandler.actualType().equals(OBJECT)) {
+        if (typeHandler.actualType().equals(OBJECT)
+                || typeHandler.actualType().primitive()
+                || typeHandler.actualType().generic()) {
             return Optional.empty();
         }
+
         builderCandidates.add(typeHandler.actualType());
         FactoryMethod found = null;
         FactoryMethod secondary = null;
         for (TypeName builderCandidate : builderCandidates) {
-            if (typeHandler.actualType().primitive()) {
-                // primitive methods do not have builders
-                continue;
-            }
+
             TypeInfo typeInfo = ctx.typeInfo(builderCandidate.genericTypeName()).orElse(null);
             if (typeInfo == null) {
                 if (secondary == null) {

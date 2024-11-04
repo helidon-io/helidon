@@ -61,22 +61,6 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
    <vulnerabilityName>CVE-2021-26291</vulnerabilityName>
 </suppress>
 
-<!--
-    This CVE is being disputed by the Jackson project and the community seems in agreement that this
-    CVE should be rejected. We are suppressing this for now to reduce noise in our scan and will
-    continue to monitor progress.
-    https://nvd.nist.gov/vuln/detail/CVE-2023-35116
-    https://github.com/FasterXML/jackson-databind/issues/3972
-
--->
-<suppress>
-   <notes><![CDATA[
-   file name: jackson-databind-2.15.2.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson\-databind@.*$</packageUrl>
-   <cve>CVE-2023-35116</cve>
-</suppress>
-
 <!-- False Positive. This does not apply to server Java deployment and certainly not to our use of graalvm SDK.
     This vulnerability applies to Java deployments, typically in clients running sandboxed
     Java Web Start applications or sandboxed Java applets, that load and run untrusted code
@@ -99,6 +83,13 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/org\.graalvm\.compiler/compiler@.*$</packageUrl>
    <vulnerabilityName>CVE-2024-21138</vulnerabilityName>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: compiler-23.1.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\.compiler/compiler@.*$</packageUrl>
+   <vulnerabilityName>CVE-2024-21235</vulnerabilityName>
 </suppress>
 
 <!--

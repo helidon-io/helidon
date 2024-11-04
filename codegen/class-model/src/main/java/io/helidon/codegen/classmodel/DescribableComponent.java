@@ -36,9 +36,24 @@ abstract class DescribableComponent extends ModelComponent {
         return type;
     }
 
-    List<String> description() {
+    /**
+     * Description (javadoc) of this component.
+     *
+     * @return description lines
+     */
+    public List<String> description() {
         return description;
     }
+
+    /**
+     * Type name of this component.
+     *
+     * @return type name
+     */
+    public TypeName typeName() {
+        return type().typeName();
+    }
+
 
     @Override
     void addImports(ImportOrganizer.Builder imports) {
