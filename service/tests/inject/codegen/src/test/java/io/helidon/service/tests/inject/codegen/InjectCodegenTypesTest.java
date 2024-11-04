@@ -24,10 +24,16 @@ import java.util.Map;
 import java.util.Set;
 
 import io.helidon.common.types.TypeName;
+import io.helidon.service.inject.Binding;
+import io.helidon.service.inject.InjectConfig;
+import io.helidon.service.inject.InjectRegistryManager;
+import io.helidon.service.inject.InjectionMain;
+import io.helidon.service.inject.InjectionPlanBinder;
 import io.helidon.service.inject.api.Event;
 import io.helidon.service.inject.api.EventManager;
 import io.helidon.service.inject.api.FactoryType;
 import io.helidon.service.inject.api.GeneratedInjectService;
+import io.helidon.service.inject.api.InjectRegistry;
 import io.helidon.service.inject.api.InjectServiceDescriptor;
 import io.helidon.service.inject.api.Injection;
 import io.helidon.service.inject.api.Interception;
@@ -85,6 +91,7 @@ class InjectCodegenTypesTest {
         checkField(toCheck, checked, fields, "INJECTION_SCOPE_HANDLER", Injection.ScopeHandler.class);
         checkField(toCheck, checked, fields, "INJECTION_SERVICES_FACTORY", Injection.ServicesFactory.class);
         checkField(toCheck, checked, fields, "INJECTION_QUALIFIED_FACTORY", Injection.QualifiedFactory.class);
+        checkField(toCheck, checked, fields, "INJECTION_MAIN", Injection.Main.class);
 
         // api.Interception.*
         checkField(toCheck, checked, fields, "INTERCEPTION_INTERCEPTED", Interception.Intercepted.class);
@@ -97,6 +104,13 @@ class InjectCodegenTypesTest {
         checkField(toCheck, checked, fields, "INJECT_INJECTION_POINT", Ip.class);
         checkField(toCheck, checked, fields, "INJECT_SERVICE_INSTANCE", ServiceInstance.class);
         checkField(toCheck, checked, fields, "INJECT_SERVICE_DESCRIPTOR", InjectServiceDescriptor.class);
+        checkField(toCheck, checked, fields, "INJECT_CONFIG", InjectConfig.class);
+        checkField(toCheck, checked, fields, "INJECT_CONFIG_BUILDER", InjectConfig.Builder.class);
+        checkField(toCheck, checked, fields, "INJECT_MAIN", InjectionMain.class);
+        checkField(toCheck, checked, fields, "INJECT_BINDING", Binding.class);
+        checkField(toCheck, checked, fields, "INJECT_REGISTRY", InjectRegistry.class);
+        checkField(toCheck, checked, fields, "INJECT_REGISTRY_MANAGER", InjectRegistryManager.class);
+        checkField(toCheck, checked, fields, "INJECT_PLAN_BINDER", InjectionPlanBinder.class);
 
         // api.* interception types
         checkField(toCheck, checked, fields, "INTERCEPT_EXCEPTION", InterceptionException.class);
@@ -131,6 +145,9 @@ class InjectCodegenTypesTest {
                    GeneratedInjectService.IpFactoryInterceptionWrapper.class);
         checkField(toCheck, checked, fields, "INTERCEPT_G_WRAPPER_QUALIFIED_FACTORY",
                    GeneratedInjectService.QualifiedFactoryInterceptionWrapper.class);
+
+        checkField(toCheck, checked, fields, "STRING_ARRAY", String[].class);
+        checkField(toCheck, checked, fields, "DOUBLE_ARRAY", double[].class);
 
         assertThat("If the collection is not empty, please add appropriate checkField line to this test",
                    toCheck,

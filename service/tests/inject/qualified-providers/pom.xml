@@ -127,6 +127,22 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>io.helidon.service.inject</groupId>
+                <artifactId>helidon-service-inject-maven-plugin</artifactId>
+                <version>${helidon.version}</version>
+                <executions>
+                    <execution>
+                        <id>create-application</id>
+                        <goals>
+                            <goal>create-application</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <failOnWarning>true</failOnWarning>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>
