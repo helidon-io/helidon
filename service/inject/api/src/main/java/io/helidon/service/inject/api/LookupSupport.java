@@ -111,6 +111,18 @@ final class LookupSupport {
         }
 
         /**
+         * The managed services advertised types (i.e., typically its interfaces).
+         *
+         * @param builder  builder instance
+         * @param contract contract the service implements
+         * @see Lookup#contracts()
+         */
+        @Prototype.BuilderMethod
+        static void addContract(Lookup.BuilderBase<?, ?> builder, TypeName contract) {
+            builder.addContract(ResolvedType.create(contract));
+        }
+
+        /**
          * The managed service implementation type.
          *
          * @param builder  builder instance

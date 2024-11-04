@@ -85,4 +85,15 @@ interface InjectConfigBlueprint extends ServiceRegistryConfig {
     @Option.Configured
     @Option.DefaultBoolean(true)
     boolean useBinding();
+
+    /**
+     * Maximal run level to handle when starting from the generated main class
+     * ({@link InjectionMain}). This setting is ignored when starting registry using
+     * other means, as run levels are not handled by default.
+     *
+     * @return maximal run level to lookup during application startup when using generated main class
+     */
+    @Option.Configured
+    @Option.DefaultDouble(Double.MAX_VALUE)
+    double maxRunLevel();
 }

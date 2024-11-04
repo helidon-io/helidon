@@ -47,7 +47,7 @@ import io.helidon.common.types.TypedElementInfo;
 /**
  * Generates a service descriptor.
  */
-class GenerateServiceDescriptor {
+public class GenerateServiceDescriptor {
     static final TypeName SET_OF_RESOLVED_TYPES = TypeName.builder(TypeNames.SET)
             .addTypeArgument(TypeNames.RESOLVED_TYPE_NAME)
             .build();
@@ -89,11 +89,11 @@ class GenerateServiceDescriptor {
      * @param service      service to create a descriptor for
      * @return class model builder of the service descriptor
      */
-    static ClassModel.Builder generate(TypeName generator,
-                                       RegistryCodegenContext ctx,
-                                       RegistryRoundContext roundContext,
-                                       Collection<TypeInfo> allServices,
-                                       TypeInfo service) {
+    public static ClassModel.Builder generate(TypeName generator,
+                                              RegistryCodegenContext ctx,
+                                              RegistryRoundContext roundContext,
+                                              Collection<TypeInfo> allServices,
+                                              TypeInfo service) {
         return new GenerateServiceDescriptor(generator,
                                              ctx,
                                              roundContext,
