@@ -335,7 +335,8 @@ class JaxRsService implements HttpService {
             if (contentLength > 0) {
                 res.header(HeaderValues.create(HeaderNames.CONTENT_LENGTH, String.valueOf(contentLength)));
             }
-            this.outputStream = res.outputStream();
+            // in case there is an exception during close operation, we would lose the information and wait indefinitely
+            this.outputStream = new ReleaseLatchStream(cdl, res.outputStream());
             return outputStream;
         }
 
@@ -364,6 +365,10 @@ class JaxRsService implements HttpService {
             } catch (IOException e) {
                 cdl.countDown();
                 throw new UncheckedIOException(e);
+            } catch (Throwable e) {
+                // always release on commit, regardless of what happened
+                cdl.countDown();
+                throw e;
             }
         }
 
@@ -382,11 +387,50 @@ class JaxRsService implements HttpService {
             return true;        // enable buffering in Jersey
         }
 
-        public void await() {
+        void await() {
             try {
                 cdl.await();
             } catch (InterruptedException e) {
                 throw new RuntimeException("Failed to wait for Jersey to write response");
+            }
+        }
+    }
+
+    private static class ReleaseLatchStream extends OutputStream {
+        private final CountDownLatch cdl;
+        private final OutputStream delegate;
+
+        private ReleaseLatchStream(CountDownLatch cdl, OutputStream delegate) {
+            this.cdl = cdl;
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void write(int b) throws IOException {
+            delegate.write(b);
+        }
+
+        @Override
+        public void write(byte[] b) throws IOException {
+            delegate.write(b);
+        }
+
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException {
+            delegate.write(b, off, len);
+        }
+
+        @Override
+        public void flush() throws IOException {
+            delegate.flush();
+        }
+
+        @Override
+        public void close() throws IOException {
+            try {
+                delegate.close();
+            } finally {
+                cdl.countDown();
             }
         }
     }

@@ -19,6 +19,7 @@ package io.helidon.webserver.http1;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
@@ -843,7 +844,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             closingDelegate.closing();     // inform of imminent call to close for last flush
             try {
                 delegate.close();
-            } catch (IOException e) {
+            } catch (IOException | UncheckedIOException e) {
                 throw new ServerConnectionException("Failed to close server output stream", e);
             }
         }
@@ -856,7 +857,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             try {
                 flush();
                 closingDelegate.commit();
-            } catch (IOException e) {
+            } catch (IOException | UncheckedIOException e) {
                 throw new ServerConnectionException("Failed to flush server output stream", e);
             }
         }
