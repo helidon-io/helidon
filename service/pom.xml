@@ -25,6 +25,7 @@
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
         <version>4.2.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <groupId>io.helidon.service</groupId>

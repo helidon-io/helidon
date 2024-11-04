@@ -13,6 +13,7 @@ Helidon Inject includes:
 - [Aspect Oriented Programming (interceptors)](#interceptors)
 - [Events](events)
 - [Programmatic Lookup](#programmatic-lookup)
+- [Startup](#startup)
 - [Other](#other)
 - [Glossary](#glossary)
 
@@ -360,6 +361,29 @@ Lookup parameter options:
 - `Class<?>` - the contract we are looking for
 - `TypeName` - the same, but using Helidon abstraction of type names (may have type arguments)
 - `Lookup` - a full search criteria for a registry lookup
+
+# Startup
+
+The following options are available to start a service registry (and the application):
+
+1. Use API to create an `io.helidon.service.inject.InjectRegistryManager`
+2. Use the Helidon startup class `io.helidon.Main`, which will use the injection main class through service loader
+3. Use a generated main class, by default named `ApplicationMain` in the main package of the application (supports customization)
+
+## Generated Main Class
+
+To generate a main class, the Helidon Service Inject Maven plugin must be configured.
+This is expected to be configured only for an application (i.e. not for library modules) - this is the reason we do not generate it automatically.
+
+The generated main class will contain full, reflection less configuration of the service registry. It registers all services directly through API, and disables service discovery from classpath.
+
+The Main class can also be customized; to do this:
+1. Create a custom class (let's call it `CustomMain` as an example)
+2. The class must extends the injection main class (`public abstract class CustomMain extends InjectionMain`)
+3. The class must be annotated with `@Injection.Main`, so it is discovered by annotation processor
+4. Implement any desired methods; the generated class will only implement `serviceDescriptors(InjectConfig.Builder configBuilder)` (always), and `discoverServices()` (if created from the Maven plugin)
+
+For details on how to configure your build, see [Maven Plugin](../maven-plugin/README.md).
 
 # Other
 

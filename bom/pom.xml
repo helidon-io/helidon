@@ -1506,6 +1506,11 @@
                 <artifactId>helidon-service-inject</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.service.inject</groupId>
+                <artifactId>helidon-service-inject-maven-plugin</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
             <!-- Metadata -->
             <dependency>

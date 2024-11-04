@@ -1141,6 +1141,10 @@
             <artifactId>helidon-service-inject</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.service.inject</groupId>
+            <artifactId>helidon-service-inject-maven-plugin</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.metadata</groupId>
             <artifactId>helidon-metadata-hson</artifactId>
         </dependency>
