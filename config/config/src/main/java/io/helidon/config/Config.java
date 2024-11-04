@@ -1020,8 +1020,8 @@ public interface Config extends io.helidon.common.config.Config {
          * @return unescaped name
          */
         static String unescapeName(String escapedName) {
-            return escapedName.replaceAll("~1", ".")
-                    .replaceAll("~0", "~");
+            return escapedName.replace("~1", ".")
+                    .replace("~0", "~");
         }
     }
 
