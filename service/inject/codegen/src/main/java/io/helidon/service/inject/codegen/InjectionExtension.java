@@ -34,6 +34,7 @@ import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenOptions;
 import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.ElementInfoPredicates;
+import io.helidon.codegen.ModuleInfo;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.codegen.classmodel.Field;
@@ -70,6 +71,7 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.GENERATED_ANNOTATIO
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_PROVIDER;
 import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECTION_DESCRIBE;
 import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECTION_INJECT;
+import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECTION_MAIN;
 import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECTION_NAMED;
 import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECTION_PER_INSTANCE;
 import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECTION_PER_LOOKUP;
@@ -79,6 +81,7 @@ import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECT_FACTOR
 import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECT_G_IP_SUPPORT;
 import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECT_G_QUALIFIED_FACTORY_DESCRIPTOR;
 import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECT_G_SCOPE_HANDLER_DESCRIPTOR;
+import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECT_MAIN;
 import static io.helidon.service.inject.codegen.InjectCodegenTypes.INJECT_SERVICE_INSTANCE;
 import static io.helidon.service.inject.codegen.InjectCodegenTypes.INTERCEPTION_DELEGATE;
 import static io.helidon.service.inject.codegen.InjectCodegenTypes.INTERCEPTION_EXTERNAL_DELEGATE;
@@ -117,6 +120,9 @@ class InjectionExtension implements RegistryCodegenExtension {
     private final Set<TypeName> scopeMetaAnnotations;
     private final List<InjectCodegenObserver> observers;
 
+    private volatile boolean mainClassGenerated;
+    private volatile String packageName;
+
     InjectionExtension(RegistryCodegenContext codegenContext) {
         this.ctx = codegenContext;
 
@@ -131,6 +137,9 @@ class InjectionExtension implements RegistryCodegenExtension {
                 .stream()
                 .map(it -> it.create(codegenContext))
                 .toList();
+        this.packageName = CodegenOptions.CODEGEN_PACKAGE.findValue(options)
+                .orElse(null);
+        this.mainClassGenerated = !options.enabled(InjectOptions.APPLICATION_MAIN_GENERATE);
     }
 
     static void annotationsField(ClassModel.Builder classModel, TypeInfo service) {
@@ -180,7 +189,29 @@ class InjectionExtension implements RegistryCodegenExtension {
 
     @Override
     public void process(RegistryRoundContext roundContext) {
+        if (this.packageName == null) {
+            // first try from module
+            this.packageName = ctx.module()
+                    .flatMap(ModuleInfo::firstUnqualifiedExport)
+                    .orElse(null);
+            // then use the first from source code
+            if (packageName == null) {
+                packageName = roundContext.types()
+                        .stream()
+                        .map(TypeInfo::typeName)
+                        .map(TypeName::packageName)
+                        .findFirst()
+                        .orElse(null);
+            }
+        }
+
+        Collection<TypeInfo> mainClasses = roundContext.annotatedTypes(INJECTION_MAIN);
+        if (!mainClasses.isEmpty()) {
+            generateMain(roundContext, mainClasses);
+        }
+
         List<TypeInfo> descriptorsRequired = new ArrayList<>(roundContext.types());
+        mainClasses.forEach(descriptorsRequired::remove);
 
         for (TypeInfo typeInfo : descriptorsRequired) {
             if (typeInfo.hasAnnotation(INTERCEPTION_EXTERNAL_DELEGATE)) {
@@ -194,6 +225,13 @@ class InjectionExtension implements RegistryCodegenExtension {
         }
 
         notifyObservers(roundContext, descriptorsRequired);
+    }
+
+    @Override
+    public void processingOver() {
+        if (!mainClassGenerated) {
+            generateMain();
+        }
     }
 
     private static void addAnnotationValue(ContentBuilder<?> contentBuilder, Object objectValue) {
@@ -387,6 +425,71 @@ class InjectionExtension implements RegistryCodegenExtension {
                                    serviceContracts,
                                    Set.of(),
                                    serviceDescriptor.typeInfo().originatingElementValue());
+    }
+
+    private void generateMain() {
+        if (packageName == null) {
+            throw new CodegenException("Cannot determine package name for the generated main class. "
+                                               + "Please use option " + CodegenOptions.CODEGEN_PACKAGE.name()
+                                               + " to specify it");
+        }
+        // generate main class if it doe not exist
+        String className = InjectOptions.APPLICATION_MAIN_CLASS_NAME.value(ctx.options());
+        TypeName generatedType = TypeName.builder()
+                .packageName(packageName)
+                .className(className)
+                .build();
+
+        ClassModel.Builder applicationMain = ApplicationMainGenerator.generate(GENERATOR,
+                                                                               Set.of(),
+                                                                               INJECT_MAIN,
+                                                                               generatedType,
+                                                                               false,
+                                                                               false,
+                                                                               (a, b, c) -> {
+                                                                             },
+                                                                               (a, b, c) -> {
+                                                                             });
+        ctx.filer()
+                .writeSourceFile(applicationMain.build(), GENERATOR);
+    }
+
+    private void generateMain(RegistryRoundContext roundCtx, Collection<TypeInfo> customMainClasses) {
+        TypeInfo customMain = customMainClasses.iterator().next();
+
+        if (customMainClasses.size() != 1) {
+            String names = customMainClasses.stream()
+                    .map(TypeInfo::typeName)
+                    .map(TypeName::fqName)
+                    .collect(Collectors.joining(", "));
+            throw new CodegenException("There can only be one class annotated with " + INJECTION_MAIN.fqName() + ", "
+                                               + "but discovered more than one: " + names,
+                                       customMain.originatingElementValue());
+        }
+
+        // we always generate the main class, even when there is no Maven plugin
+        mainClassGenerated = true;
+        String className = InjectOptions.APPLICATION_MAIN_CLASS_NAME.value(ctx.options());
+        TypeName generatedType = TypeName.builder()
+                .packageName(customMain.typeName().packageName())
+                .className(className)
+                .build();
+        ApplicationMainGenerator.validate(customMain);
+        var declaredSignatures = ApplicationMainGenerator.declaredSignatures(customMain);
+
+        ClassModel.Builder applicationMain = ApplicationMainGenerator.generate(GENERATOR,
+                                                                               declaredSignatures,
+                                                                               customMain.typeName(),
+                                                                               generatedType,
+                                                                               true,
+                                                                               false,
+                                                                               (a, b, c) -> {
+                                                                             },
+                                                                               (a, b, c) -> {
+                                                                             });
+        roundCtx.addGeneratedType(generatedType,
+                                  applicationMain,
+                                  GENERATOR);
     }
 
     // we are generating source code, that requires multiple lines

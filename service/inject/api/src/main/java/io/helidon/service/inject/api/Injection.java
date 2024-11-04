@@ -312,6 +312,26 @@ public final class Injection {
     }
 
     /**
+     * Marks a custom main class (should be declared as {@code abstract}).
+     * This is a required annotation to make sure the generated main class extends the user's main class.
+     * Note that the custom main class MUST extend the {@code io.helidon.service.inject.InjectionMain} to customize
+     * startup sequence.
+     * The name {@code ApplicationMain} is reserved by service registry, and cannot be used for your custom main class;
+     * the generated name can be modified through {@code Maven} plugin configuration and annotation processor configuration.
+     * <p>
+     * The generated main class adds registration of all available services to injection config,
+     * and disables service discovery to prevent any and all reflection done by service registry itself.
+     * <p>
+     * To have correct startup of your application, use the {@code ApplicationMain} as your application entry point
+     * (such as a {@code mainClass} configured in {@code pom.xml} when using Maven and Helidon application parents).
+     */
+    @Documented
+    @Retention(RetentionPolicy.CLASS)
+    @Target(ElementType.TYPE)
+    public @interface Main {
+    }
+
+    /**
      * Provides an ability to create more than one service instance from a single service definition.
      * This is useful when the cardinality can only be determined at runtime.
      *

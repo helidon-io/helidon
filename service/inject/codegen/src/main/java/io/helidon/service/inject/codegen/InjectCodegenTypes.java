@@ -17,6 +17,7 @@
 package io.helidon.service.inject.codegen;
 
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
 
 /**
  * Types for code generation from Helidon Service Inject API and Helidon Service Inject.
@@ -63,6 +64,10 @@ public class InjectCodegenTypes {
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.RunLevel}.
      */
     public static final TypeName INJECTION_RUN_LEVEL = TypeName.create("io.helidon.service.inject.api.Injection.RunLevel");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.Injection.Main}.
+     */
+    public static final TypeName INJECTION_MAIN = TypeName.create("io.helidon.service.inject.api.Injection.Main");
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.InjectionPointFactory}.
      */
@@ -120,6 +125,42 @@ public class InjectCodegenTypes {
      */
     public static final TypeName INJECT_SERVICE_DESCRIPTOR =
             TypeName.create("io.helidon.service.inject.api.InjectServiceDescriptor");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.InjectConfig.Builder}.
+     */
+    public static final TypeName INJECT_CONFIG_BUILDER =
+            TypeName.create("io.helidon.service.inject.InjectConfig.Builder");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.InjectConfig}.
+     */
+    public static final TypeName INJECT_CONFIG =
+            TypeName.create("io.helidon.service.inject.InjectConfig");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.InjectRegistry}.
+     */
+    public static final TypeName INJECT_REGISTRY =
+            TypeName.create("io.helidon.service.inject.api.InjectRegistry");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.InjectRegistryManager}.
+     */
+    public static final TypeName INJECT_REGISTRY_MANAGER =
+            TypeName.create("io.helidon.service.inject.InjectRegistryManager");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.InjectionMain}.
+     */
+    public static final TypeName INJECT_MAIN =
+            TypeName.create("io.helidon.service.inject.InjectionMain");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.Binding}.
+     */
+    public static final TypeName INJECT_BINDING =
+            TypeName.create("io.helidon.service.inject.Binding");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.InjectionPlanBinder}.
+     */
+    public static final TypeName INJECT_PLAN_BINDER =
+            TypeName.create("io.helidon.service.inject.InjectionPlanBinder");
+
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.inject.api.InvocationException}.
      */
@@ -209,6 +250,22 @@ public class InjectCodegenTypes {
      */
     public static final TypeName INJECT_G_EVENT_OBSERVER_REGISTRATION =
             TypeName.create("io.helidon.service.inject.api.GeneratedInjectService.EventObserverRegistration");
+
+    /**
+     * {@link io.helidon.common.types.TypeName} for String array.
+     */
+    public static final TypeName STRING_ARRAY = TypeName.builder()
+            .from(TypeNames.STRING)
+            .array(true)
+            .build();
+    /**
+     * {@link io.helidon.common.types.TypeName} for primitive double array.
+     */
+    public static final TypeName DOUBLE_ARRAY = TypeName.builder()
+            .from(TypeNames.PRIMITIVE_DOUBLE)
+            .array(true)
+            .build();
+
 
     private InjectCodegenTypes() {
     }

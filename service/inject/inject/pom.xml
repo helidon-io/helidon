@@ -40,6 +40,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.helidon</groupId>
+            <artifactId>helidon</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common</artifactId>
         </dependency>
@@ -54,6 +58,10 @@
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-types</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.logging</groupId>
+            <artifactId>helidon-logging-common</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.builder</groupId>
