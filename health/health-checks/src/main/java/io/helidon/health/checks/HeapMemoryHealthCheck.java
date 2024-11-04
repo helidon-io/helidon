@@ -19,13 +19,13 @@ package io.helidon.health.checks;
 import java.util.Formatter;
 import java.util.Locale;
 
-import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
+import io.helidon.config.mp.MpConfig;
 import io.helidon.health.common.BuiltInHealthCheck;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.inject.spi.CDI;
 import jakarta.inject.Inject;
+import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.Liveness;
@@ -85,8 +85,9 @@ public class HeapMemoryHealthCheck implements HealthCheck {
     // this will be ignored if not within CDI
     @Inject
     HeapMemoryHealthCheck(
+            Config config,
             Runtime runtime) {
-        this(runtime, DeprecatedConfig.get(config(),
+        this(runtime, DeprecatedConfig.get(MpConfig.toHelidonConfig(config),
                                            HealthChecks.CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX,
                                            HealthChecks.DEPRECATED_CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX)
                 .get(CONFIG_KEY_HEAP_PREFIX)
@@ -98,10 +99,6 @@ public class HeapMemoryHealthCheck implements HealthCheck {
     HeapMemoryHealthCheck(Runtime runtime, double thresholdPercent) {
         this.rt = runtime;
         this.thresholdPercent = thresholdPercent;
-    }
-
-    private static Config config() {
-        return CDI.current().select(Config.class).get();
     }
 
     private HeapMemoryHealthCheck(Builder builder) {
@@ -199,7 +196,7 @@ public class HeapMemoryHealthCheck implements HealthCheck {
          * @param config {@code Config} node for heap memory
          * @return updated builder instance
          */
-        public Builder config(Config config) {
+        public Builder config(io.helidon.config.Config config) {
             config.get(CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX)
                     .asDouble()
                     .ifPresent(this::thresholdPercent);

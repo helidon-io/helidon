@@ -26,11 +26,11 @@ import java.util.Locale;
 
 import io.helidon.config.Config;
 import io.helidon.config.DeprecatedConfig;
+import io.helidon.config.mp.MpConfig;
 import io.helidon.health.HealthCheckException;
 import io.helidon.health.common.BuiltInHealthCheck;
 
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.inject.spi.CDI;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
@@ -132,22 +132,10 @@ public class DiskSpaceHealthCheck implements HealthCheck {
     }
 
     @Inject
-    DiskSpaceHealthCheck() {
-        Config diskSpaceConfig = DeprecatedConfig.get(config(),
-                                                         HealthChecks.CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX,
-                                                         HealthChecks.DEPRECATED_CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX)
-                .get(CONFIG_KEY_DISKSPACE_PREFIX);
-        Path path = diskSpaceConfig.get(CONFIG_KEY_PATH_SUFFIX)
-                .as(Path.class)
-                .orElse(Paths.get("."));
-        thresholdPercent = diskSpaceConfig.get(CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX)
-                .asDouble()
-                .orElse(99.999d);
-        try {
-            this.fileStore = Files.getFileStore(path);
-        } catch (IOException e) {
-            throw new HealthCheckException("Failed to obtain file store for path " + path, e);
-        }
+    DiskSpaceHealthCheck(org.eclipse.microprofile.config.Config mpConfig) {
+        this(builder().config(DeprecatedConfig.get(MpConfig.toHelidonConfig(mpConfig),
+                                                   HealthChecks.CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX,
+                                                   HealthChecks.DEPRECATED_CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX)));
     }
 
     private DiskSpaceHealthCheck(Builder builder) {
@@ -197,6 +185,31 @@ public class DiskSpaceHealthCheck implements HealthCheck {
     public static DiskSpaceHealthCheck create() {
         return builder().build();
     }
+
+//    private static FileStore path(Config config) {
+//        try {
+//            return Files.getFileStore(
+//                    Path.of(DeprecatedConfig.get(MpConfig.toHelidonConfig(config),
+//                                                 HealthChecks.CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX,
+//                                                 HealthChecks.DEPRECATED_CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX)
+//                                    .get(CONFIG_KEY_DISKSPACE_PREFIX)
+//                                    .get(CONFIG_KEY_PATH_SUFFIX)
+//                                    .asString()
+//                                    .orElse(DEFAULT_PATH)));
+//        } catch (IOException ex) {
+//            throw new RuntimeException(ex);
+//        }
+//    }
+//
+//    private static double thresholdPercent(Config config) {
+//        return DeprecatedConfig.get(MpConfig.toHelidonConfig(config),
+//                                    HealthChecks.CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX,
+//                                    HealthChecks.DEPRECATED_CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX)
+//                .get(CONFIG_KEY_DISKSPACE_PREFIX)
+//                .get(CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX)
+//                .asDouble()
+//                .orElse(DEFAULT_THRESHOLD);
+//    }
 
     @Override
     public HealthCheckResponse call() {
@@ -314,9 +327,5 @@ public class DiskSpaceHealthCheck implements HealthCheck {
 
             return this;
         }
-    }
-
-    private static Config config() {
-        return CDI.current().select(Config.class).get();
     }
 }
