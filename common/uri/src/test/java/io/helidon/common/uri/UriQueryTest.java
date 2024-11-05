@@ -104,4 +104,43 @@ class UriQueryTest {
         assertThat(query.getRaw("p4"), is("a%20b%20c"));
     }
 
+    @Test
+    void testValidation() {
+        assertThrows(NullPointerException.class, () -> UriQuery.create((String) null));
+        assertThrows(NullPointerException.class, () -> UriQuery.create((URI) null));
+        assertThrows(NullPointerException.class, () -> UriQuery.create(null, true));
+        assertThrows(NullPointerException.class, () -> UriValidator.validateQuery(null));
+
+        UriQuery.create("", true);
+        UriValidator.validateQuery("");
+        UriQuery.create("a=b&c=d&a=e", true);
+        // validate all rules
+        // must be an ASCII (lower than 255)
+        validateBad("a=@/?%6147č",
+                    "Query contains invalid character (non-ASCII). Index: 10, character: 0x10d");
+        // percent encoded:  must be full percent encoding
+        validateBad("a=@/?%6147%4",
+                    "Query contains invalid % encoding, not enough characters left. Index: 10");
+        // percent encoded: first char is invalid
+        validateBad("a=@/?%6147%X1",
+                    "Query contains invalid character in % encoding. Index: 11, character: 0x58");
+        validateBad("a=@/?%6147%č1",
+                    "Query contains invalid character in % encoding. Index: 11, character: 0x10d");
+        // percent encoded: second char is invalid
+        validateBad("a=@/?%6147%1X",
+                    "Query contains invalid character in % encoding. Index: 12, character: 0x58");
+        validateBad("a=@/?%6147%1č",
+                    "Query contains invalid character in % encoding. Index: 12, character: 0x10d");
+        // character not in allowed sets
+        validateBad("a=@/?%6147{",
+                    "Query contains invalid character. Index: 10, character: 0x7b");
+        validateBad("a=@/?%6147\t",
+                    "Query contains invalid character. Index: 10, character: 0x09");
+    }
+
+    private static void validateBad(String query, String expected) {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                                                          () -> UriQuery.create(query, true));
+        assertThat(exception.getMessage(), is(expected));
+    }
 }
