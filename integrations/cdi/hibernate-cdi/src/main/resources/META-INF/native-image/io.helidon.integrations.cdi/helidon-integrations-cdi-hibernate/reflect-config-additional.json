@@ -1,0 +1,427 @@
+[
+  {
+    "name": "io.helidon.integrations.cdi.hibernate.CDISEJtaPlatform",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allPublicMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.jboss.jandex.ClassInfo[]",
+    "unsafeAllocated": true
+  },
+  {
+    "name": "org.hibernate.boot.model.relational.ColumnOrderingStrategyLegacy",
+    "methods": [
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.engine.jdbc.connections.internal.DatasourceConnectionProviderImpl",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.hibernate.engine.spi.Managed",
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.hibernate.engine.spi.ManagedEntity",
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.hibernate.engine.spi.PersistentAttributeInterceptable",
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.hibernate.engine.spi.SelfDirtinessTracker",
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.hibernate.engine.transaction.jta.platform.internal.AbstractJtaPlatform",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true,
+    "methods": [
+      {
+        "name": "canRegisterSynchronization",
+        "parameterTypes": []
+      },
+      {
+        "name": "configure",
+        "parameterTypes": [
+          "java.util.Map"
+        ]
+      },
+      {
+        "name": "getCurrentStatus",
+        "parameterTypes": []
+      },
+      {
+        "name": "getTransactionIdentifier",
+        "parameterTypes": [
+          "jakarta.transaction.Transaction"
+        ]
+      },
+      {
+        "name": "getTransactionManager",
+        "parameterTypes": []
+      },
+      {
+        "name": "injectServices",
+        "parameterTypes": [
+          "org.hibernate.service.spi.ServiceRegistryImplementor"
+        ]
+      },
+      {
+        "name": "registerSynchronization",
+        "parameterTypes": [
+          "jakarta.transaction.Synchronization"
+        ]
+      },
+      {
+        "name": "retrieveTransactionManager",
+        "parameterTypes": []
+      },
+      {
+        "name": "retrieveUserTransaction",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.engine.transaction.jta.platform.internal.TransactionManagerAccess",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allPublicMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.hibernate.engine.transaction.jta.platform.spi.JtaPlatform",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allPublicMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.hibernate.event.service.internal.EventListenerRegistryImpl",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.hibernate.jpa.HibernatePersistenceProvider",
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.hibernate.resource.beans.container.internal.CdiBeanContainerImmediateAccessImpl",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "jakarta.enterprise.inject.spi.BeanManager"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.resource.beans.container.spi.ExtendedBeanManager"
+  },
+  {
+    "name": "org.hibernate.resource.transaction.backend.jta.internal.JtaTransactionCoordinatorBuilderImpl",
+    "allPublicMethods": true,
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.service.Service",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allPublicMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.hibernate.service.spi.Configurable",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allPublicMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.hibernate.service.spi.ServiceRegistryAwareService",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allPublicMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.hibernate.dialect.CockroachDialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
+        ]
+      },
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.DB2400Dialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
+        ]
+      },
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.DB2Dialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
+        ]
+      },
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.DB2iDialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
+        ]
+      },
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.DB2zDialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
+        ]
+      },
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.DerbyDialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
+        ]
+      },
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.HANAColumnStoreDialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
+        ]
+      },
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.HANARowStoreDialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
+        ]
+      },
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.HSQLDialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
+        ]
+      },
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.SpannerDialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
+        ]
+      },
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.SybaseASEDialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
+        ]
+      },
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.SybaseDialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
+        ]
+      },
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.TiDBDialect",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo"
+        ]
+      },
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.PostgresPlusDialect",
+    "methods": [
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.OracleArrayJdbcTypeConstructor",
+    "methods": [
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.dialect.OracleNestedTableJdbcTypeConstructor",
+    "methods": [
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "com.arjuna.ats.internal.arjuna.utils.SocketProcessId",
+    "methods": [
+      {
+        "name": "<init>"
+      }
+    ]
+  },
+  {
+    "name": "org.hibernate.event.spi.ClearEventListener"
+  },
+  {
+    "name": "org.hibernate.event.spi.PreDeleteEventListener"
+  },
+  {
+    "name": "org.hibernate.event.spi.PreUpdateEventListener"
+  },
+  {
+    "name": "org.hibernate.event.spi.PreInsertEventListener"
+  },
+  {
+    "name": "org.hibernate.event.spi.PreCollectionRecreateEventListener"
+  },
+  {
+    "name": "org.hibernate.event.spi.PreCollectionRemoveEventListener"
+  },
+  {
+    "name": "org.hibernate.event.spi.PreCollectionUpdateEventListener"
+  },
+  {
+    "name": "org.hibernate.event.spi.PostCollectionRecreateEventListener"
+  },
+  {
+    "name": "org.hibernate.event.spi.PostCollectionRemoveEventListener"
+  },
+  {
+    "name": "org.hibernate.event.spi.PostCollectionUpdateEventListener"
+  },
+  {
+    "name": "antlr.CommonToken"
+  },
+  {
+    "name": "org.hibernate.persister.entity.EntityPersister"
+  },
+  {
+    "name": "org.hibernate.resource.beans.container.spi.ExtendedBeanManager"
+  },
+  {
+    "name": "org.hibernate.resource.beans.container.internal.CdiBasedBeanContainer"
+  },
+  {
+    "name": "org.hibernate.id.IdentifierGenerator"
+  },
+  {
+    "name": "org.hibernate.persister.walking.spi.AttributeSource"
+  },
+  {
+    "name": "org.hibernate.persister.collection.CollectionPersister"
+  }
+]
