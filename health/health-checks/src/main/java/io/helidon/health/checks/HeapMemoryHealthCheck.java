@@ -19,13 +19,11 @@ package io.helidon.health.checks;
 import java.util.Formatter;
 import java.util.Locale;
 
-import io.helidon.config.DeprecatedConfig;
-import io.helidon.config.mp.MpConfig;
+import io.helidon.config.mp.DeprecatedMpConfig;
 import io.helidon.health.common.BuiltInHealthCheck;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.Liveness;
@@ -78,22 +76,18 @@ public class HeapMemoryHealthCheck implements HealthCheck {
             + "." + CONFIG_KEY_HEAP_PREFIX
             + "." + CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX;
 
-
     private final Runtime rt;
     private final double thresholdPercent;
 
     // this will be ignored if not within CDI
     @Inject
-    HeapMemoryHealthCheck(
-            Config config,
-            Runtime runtime) {
-        this(runtime, DeprecatedConfig.get(MpConfig.toHelidonConfig(config),
-                                           HealthChecks.CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX,
-                                           HealthChecks.DEPRECATED_CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX)
-                .get(CONFIG_KEY_HEAP_PREFIX)
-                .get(CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX)
-                .asDouble()
-                .orElse(98d));
+    HeapMemoryHealthCheck(Runtime runtime, org.eclipse.microprofile.config.Config mpConfig) {
+        // Cannot use
+        this(runtime, DeprecatedMpConfig.getConfigValue(mpConfig,
+                                           Double.class,
+                                           thresholdPercentKey(HealthChecks.CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX),
+                                           thresholdPercentKey(HealthChecks.DEPRECATED_CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX))
+                .orElse(DEFAULT_THRESHOLD));
     }
 
     HeapMemoryHealthCheck(Runtime runtime, double thresholdPercent) {
@@ -124,6 +118,12 @@ public class HeapMemoryHealthCheck implements HealthCheck {
      */
     public static HeapMemoryHealthCheck create() {
         return builder().build();
+    }
+
+    private static String thresholdPercentKey(String prefix) {
+        return prefix + "."
+                + CONFIG_KEY_HEAP_PREFIX + "."
+                + CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX;
     }
 
     @Override

@@ -23,10 +23,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Formatter;
 import java.util.Locale;
+import java.util.function.Consumer;
 
 import io.helidon.config.Config;
-import io.helidon.config.DeprecatedConfig;
-import io.helidon.config.mp.MpConfig;
+import io.helidon.config.mp.DeprecatedMpConfig;
 import io.helidon.health.HealthCheckException;
 import io.helidon.health.common.BuiltInHealthCheck;
 
@@ -83,8 +83,6 @@ public class DiskSpaceHealthCheck implements HealthCheck {
     static final String CONFIG_KEY_DISKSPACE_PREFIX = "diskSpace";
 
     static final String CONFIG_KEY_PATH_SUFFIX = "path";
-    static final String CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX = "thresholdPercent";
-
     /**
      * Full configuration key for path, when configured through MicroProfile config.
      *
@@ -94,7 +92,7 @@ public class DiskSpaceHealthCheck implements HealthCheck {
     public static final String CONFIG_KEY_PATH = HealthChecks.DEPRECATED_CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX
             + "." + CONFIG_KEY_DISKSPACE_PREFIX
             + "." + CONFIG_KEY_PATH_SUFFIX;
-
+    static final String CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX = "thresholdPercent";
     /**
      * Full configuration key for threshold percent, when configured through Microprofile config.
      *
@@ -133,9 +131,7 @@ public class DiskSpaceHealthCheck implements HealthCheck {
 
     @Inject
     DiskSpaceHealthCheck(org.eclipse.microprofile.config.Config mpConfig) {
-        this(builder().config(DeprecatedConfig.get(MpConfig.toHelidonConfig(mpConfig),
-                                                   HealthChecks.CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX,
-                                                   HealthChecks.DEPRECATED_CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX)));
+        this(builder().update(applyConfig(mpConfig)));
     }
 
     private DiskSpaceHealthCheck(Builder builder) {
@@ -186,30 +182,28 @@ public class DiskSpaceHealthCheck implements HealthCheck {
         return builder().build();
     }
 
-//    private static FileStore path(Config config) {
-//        try {
-//            return Files.getFileStore(
-//                    Path.of(DeprecatedConfig.get(MpConfig.toHelidonConfig(config),
-//                                                 HealthChecks.CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX,
-//                                                 HealthChecks.DEPRECATED_CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX)
-//                                    .get(CONFIG_KEY_DISKSPACE_PREFIX)
-//                                    .get(CONFIG_KEY_PATH_SUFFIX)
-//                                    .asString()
-//                                    .orElse(DEFAULT_PATH)));
-//        } catch (IOException ex) {
-//            throw new RuntimeException(ex);
-//        }
-//    }
-//
-//    private static double thresholdPercent(Config config) {
-//        return DeprecatedConfig.get(MpConfig.toHelidonConfig(config),
-//                                    HealthChecks.CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX,
-//                                    HealthChecks.DEPRECATED_CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX)
-//                .get(CONFIG_KEY_DISKSPACE_PREFIX)
-//                .get(CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX)
-//                .asDouble()
-//                .orElse(DEFAULT_THRESHOLD);
-//    }
+    private static Consumer<Builder> applyConfig(org.eclipse.microprofile.config.Config mpConfig) {
+        return builder -> {
+            DeprecatedMpConfig.getConfigValue(mpConfig,
+                                              Path.class,
+                                              configKey(HealthChecks.CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX,
+                                                        CONFIG_KEY_PATH_SUFFIX),
+                                              configKey(HealthChecks.DEPRECATED_CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX,
+                                                        CONFIG_KEY_PATH_SUFFIX))
+                    .ifPresent(builder::path);
+            DeprecatedMpConfig.getConfigValue(mpConfig,
+                                              Double.class,
+                                              configKey(HealthChecks.CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX,
+                                                        CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX),
+                                              configKey(HealthChecks.DEPRECATED_CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX,
+                                                        CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX))
+                    .ifPresent(builder::thresholdPercent);
+        };
+    }
+
+    private static String configKey(String prefix, String suffix) {
+        return prefix + "." + CONFIG_KEY_DISKSPACE_PREFIX + "." + suffix;
+    }
 
     @Override
     public HealthCheckResponse call() {
