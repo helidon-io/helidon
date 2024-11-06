@@ -374,6 +374,17 @@
     ]
   },
   {
+    "name": "org.hibernate.boot.beanvalidation.TypeSafeActivator",
+    "methods": [
+      {
+        "name": "validateSuppliedFactory",
+        "parameterTypes": [
+          "java.lang.Object"
+        ]
+      }
+    ]
+  },
+  {
     "name": "org.hibernate.event.spi.ClearEventListener"
   },
   {
