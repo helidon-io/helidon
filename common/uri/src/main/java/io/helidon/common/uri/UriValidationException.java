@@ -30,7 +30,13 @@ import static io.helidon.common.uri.UriValidator.print;
  * @see #invalidValue()
  */
 public class UriValidationException extends IllegalArgumentException {
+    /**
+     * Segment that failed validation.
+     */
     private final Segment segment;
+    /**
+     * The value (containing illegal characters) that failed validation.
+     */
     private final char[] invalidValue;
 
     /**
