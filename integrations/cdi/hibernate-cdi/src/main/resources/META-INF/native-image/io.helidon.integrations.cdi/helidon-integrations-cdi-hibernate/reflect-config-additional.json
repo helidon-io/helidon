@@ -434,5 +434,29 @@
   },
   {
     "name": "org.hibernate.persister.collection.CollectionPersister"
+  },
+  {
+    "name": "org.hibernate.dialect.PostgreSQLStructCastingJdbcType"
+  },
+  {
+    "name": "org.hibernate.dialect.PostgreSQLSqlAstTranslator"
+  },
+  {
+    "name": "org.hibernate.dialect.PostgreSQLJsonPGObjectJsonType"
+  },
+  {
+    "name": "org.hibernate.dialect.PostgreSQLEnumJdbcType"
+  },
+  {
+    "name": "org.hibernate.dialect.PostgreSQLDriverKind"
+  },
+  {
+    "name": "org.hibernate.dialect.PostgreSQLCastingJsonJdbcType"
+  },
+  {
+    "name": "org.hibernate.dialect.PostgreSQLCastingIntervalSecondJdbcType"
+  },
+  {
+    "name": "org.hibernate.dialect.PostgreSQLCastingInetJdbcType"
   }
 ]
