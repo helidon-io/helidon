@@ -77,7 +77,7 @@ interface Http1ConfigBlueprint extends ProtocolConfig {
      * Request host header validation.
      * When host header is invalid, we return {@link io.helidon.http.Status#BAD_REQUEST_400}.
      * <p>
-     * The validation is done according to RFC-3986 (see {@link io.helidon.http.HostValidator}). This is a requirement of
+     * The validation is done according to RFC-3986 (see {@link io.helidon.common.uri.UriValidator}). This is a requirement of
      * the HTTP specification.
      * <p>
      * This option allows you to disable the "full-blown" validation ("simple" validation is still in - the port must be
@@ -107,6 +107,17 @@ interface Http1ConfigBlueprint extends ProtocolConfig {
     @Option.Configured
     @Option.DefaultBoolean(false)
     boolean validateResponseHeaders();
+
+    /**
+     * If set to false, any query and fragment is accepted (even containing illegal characters).
+     * Validation of path is controlled by {@link #validatePath()}.
+     *
+     * @return whether to validate prologue query and fragment
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(true)
+    boolean validatePrologue();
+
 
     /**
      * If set to false, any path is accepted (even containing illegal characters).
