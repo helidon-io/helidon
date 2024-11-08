@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.tests.integration</groupId>
         <artifactId>helidon-tests-integration-project</artifactId>
-        <version>4.1.4-SNAPSHOT</version>
+        <version>4.1.4</version>
     </parent>
 
     <artifactId>helidon-tests-integration-tls-revocation-config</artifactId>
