@@ -73,6 +73,13 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <!-- To satisfy jackson-module-jaxb-annotations 2.18.1 module dependency on java.xml.bind  -->
+        <!-- Somehow this got messed up in Jackson 2.18 via PR https://github.com/FasterXML/jackson-modules-base/pull/235 -->
+        <!-- Which changed the jaxb dependency to javax.xml.bind which did not provide a module name -->
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+        </dependency>
         <dependency>
             <groupId>jakarta.inject</groupId>
             <artifactId>jakarta.inject-api</artifactId>

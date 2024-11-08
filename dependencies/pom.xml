@@ -72,7 +72,7 @@
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
         <version.lib.inject>1.0</version.lib.inject>
         <version.lib.interceptor-api>1.2.5</version.lib.interceptor-api>
-        <version.lib.jackson>2.15.2</version.lib.jackson>
+        <version.lib.jackson>2.18.1</version.lib.jackson>
         <version.lib.jaegertracing>1.8.1</version.lib.jaegertracing>
         <version.lib.jandex>2.3.1.Final</version.lib.jandex>
         <version.lib.jaxb-api>2.3.3</version.lib.jaxb-api>
@@ -126,7 +126,7 @@
         <version.lib.netty-io_uring>0.0.19.Final</version.lib.netty-io_uring>
         <version.lib.oci>3.46.1</version.lib.oci>
         <version.lib.oci-java-sdk-objectstorage>${version.lib.oci}</version.lib.oci-java-sdk-objectstorage>
-        <version.lib.ojdbc8>21.3.0.0</version.lib.ojdbc8>
+        <version.lib.ojdbc8>21.15.0.0</version.lib.ojdbc8>
         <version.lib.database.messaging>19.3.0.0</version.lib.database.messaging>
         <!-- Manage okio version for dependency convergence -->
         <version.lib.okio>3.6.0</version.lib.okio>
