@@ -80,7 +80,7 @@ class SecurityOidcSnippets {
                 .path("greet")
                 .request()
                 .header(HttpHeaders.AUTHORIZATION, "Basic " + encoding)
-                .get(GreetingMessage.class);
+                .get(Message.class);
 
         assertThat(jsonMessage.getMessage(), is("Hello World!"));
         // end::snippet_4[]
