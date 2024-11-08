@@ -103,5 +103,4 @@ class UriQueryTest {
         assertThat(query.get("p4"), is("a b c"));
         assertThat(query.getRaw("p4"), is("a%20b%20c"));
     }
-
 }

@@ -114,7 +114,7 @@ public class ValidateHostHeaderTest {
     void testBadHosts() {
         // just empty
         invokeExpectFailure("Host header must not be empty", "");
-        invokeExpectFailure("Invalid Host header: Host contains invalid character: int.the[.middle]",
+        invokeExpectFailure("Invalid Host header: Host contains invalid char: int.the[.middle], index: 7, char: '['",
                             "int.the[.middle]:8080");
     }
 
@@ -122,7 +122,8 @@ public class ValidateHostHeaderTest {
     void testBadLiteral6() {
         // IPv6
         // empty segment
-        invokeExpectFailure("Invalid Host header: Host IPv6 contains more than one skipped segment: [2001:db8::85a3::7334]",
+        invokeExpectFailure("Invalid Host header: "
+                                    + "Host IPv6 contains more than one skipped segment: [2001:db8::85a3::7334]",
                             "[2001:db8::85a3::7334]");
     }
 
@@ -130,7 +131,7 @@ public class ValidateHostHeaderTest {
     void testBadLiteralFuture() {
         // IPv future
         // version must be present
-        invokeExpectFailure("Invalid Host header: Version cannot be blank: [v.abc:def]",
+        invokeExpectFailure("Invalid Host header: Version cannot be blank. Value: [v.abc:def]",
                             "[v.abc:def]");
         // missing address
     }
