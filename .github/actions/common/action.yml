@@ -54,7 +54,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - if: ${{ inputs.free-space == 'true' }}
+    - if: ${{ inputs.free-space == 'true' && runner.os != 'Windows'}}
       # See https://github.com/actions/runner-images/issues/2840
       name: Free disk space
       shell: bash
