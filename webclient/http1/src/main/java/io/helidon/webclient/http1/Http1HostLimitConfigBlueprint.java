@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,29 +18,32 @@ package io.helidon.webclient.http1;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.webclient.api.HttpClientConfig;
+import io.helidon.common.concurrency.limits.Limit;
+import io.helidon.common.concurrency.limits.spi.LimitProvider;
 
 /**
- * HTTP/1.1. full webclient configuration.
+ * Configuration of the host connection limit.
  */
 @Prototype.Configured
 @Prototype.Blueprint
-interface Http1ClientConfigBlueprint extends HttpClientConfig, Prototype.Factory<Http1Client> {
-    /**
-     * HTTP/1.1 specific configuration.
-     *
-     * @return protocol specific configuration
-     */
-    @Option.Default("create()")
-    Http1ClientProtocolConfig protocolConfig();
+interface Http1HostLimitConfigBlueprint {
 
     /**
-     * Client connection cache configuration.
+     * Hostname this limit applies to..
+     * Example: {@code localhost}.
      *
-     * @return cache configuration
+     * @return configured authority
      */
-    @Option.Default("create()")
     @Option.Configured
-    Http1ConnectionCacheConfig connectionCacheConfig();
+    String host();
+
+    /**
+     * Limit of how many connections can be created for this host.
+     *
+     * @return configured host connection limit
+     */
+    @Option.Provider(value = LimitProvider.class, discoverServices = false)
+    @Option.Configured
+    Limit limit();
 
 }
