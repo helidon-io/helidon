@@ -18,6 +18,8 @@ package io.helidon.tests.integration.packaging.mp3;
 import io.helidon.tests.integration.harness.ProcessRunner.ExecMode;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 class Mp3JlinkTestIT extends Mp3PackagingTestIT {
 
@@ -27,11 +29,13 @@ class Mp3JlinkTestIT extends Mp3PackagingTestIT {
     }
 
     @Test
+    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "application is not a valid Win32 application")
     void testExitOnStarted() {
         doTestExitOnStarted();
     }
 
     @Test
+    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "application is not a valid Win32 application")
     void testGreetResource() {
         doTestGreetResource();
     }
