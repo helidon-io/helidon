@@ -119,7 +119,7 @@ public final class Se1Main {
         MockZipkinService zipkinService = new MockZipkinService(Set.of("helidon-webclient"));
         WebClientService webClientService = new WebClientService(config, zipkinService);
 
-        Path web = config.get("app.static.path")
+        Path web = config.get("app-static-path")
                 .as(Path.class)
                 .orElseThrow(() -> new IllegalStateException("app static path is not present"));
 

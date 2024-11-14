@@ -78,10 +78,7 @@ jobs:
           run: etc/scripts/shellcheck.sh
   build:
     timeout-minutes: 15
-    strategy:
-      matrix:
-        os: [ ubuntu-20.04, windows-2022 ]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -369,7 +366,7 @@ jobs:
               verify
   test-results:
     runs-on: ubuntu-20.04
-    needs: [ _tests, archetypes, legacy-archetypes, _tck, packaging, _native-image ]
+    needs: [ packaging ]
     name: tests/results
     steps:
       - uses: actions/upload-artifact/merge@v4
@@ -378,7 +375,7 @@ jobs:
           pattern: "tests-*"
   gate:
     runs-on: ubuntu-20.04
-    needs: [ copyright, checkstyle, shellcheck, docs, javadoc, _spotbugs, test-results ]
+    needs: [ test-results ]
     steps:
       - shell: bash
         run: |

@@ -467,7 +467,17 @@ public abstract class ProcessRunner {
         @Override
         protected List<String> command(List<String> opts, List<String> args) {
             Objects.requireNonNull(finalName, "finalName is null");
-            return new CommandBuilder("target/" + finalName + "-jri/bin/start" + (IS_WINDOWS ? ".ps1" : ""))
+            if (IS_WINDOWS) {
+                if (opts.contains("-Dexit.on.started=!")) {
+                    opts.add("--test");
+                }
+                return new CommandBuilder("powershell")
+                        .append("target/" + finalName + "-jri/bin/start.ps1")
+                        .append("--jvm", String.join(" ", opts))
+                        .append(args)
+                        .command();
+            }
+            return new CommandBuilder("target/" + finalName + "-jri/bin/start")
                     .append("--jvm", String.join(" ", opts))
                     .append(args)
                     .command();
