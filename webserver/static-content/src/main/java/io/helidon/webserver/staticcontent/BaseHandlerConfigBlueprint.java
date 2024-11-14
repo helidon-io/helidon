@@ -67,7 +67,7 @@ interface BaseHandlerConfigBlueprint {
      * @return welcome-file name, such as {@code index.html}
      */
     @Option.Configured
-    Optional<String> welcomeFile();
+    Optional<String> welcome();
 
     /**
      * A set of files that are cached in memory at startup. These files are never removed from the in-memory cache, though

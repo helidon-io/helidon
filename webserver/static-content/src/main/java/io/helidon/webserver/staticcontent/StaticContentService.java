@@ -338,7 +338,7 @@ public interface StaticContentService extends HttpService {
                             .contentTypes(specificContentTypes())
                             .update(it -> {
                                 if (welcomeFileName() != null) {
-                                    it.welcomeFile(welcomeFileName());
+                                    it.welcome(welcomeFileName());
                                 }
                             })
                             .cachedFiles(cacheInMemory())
@@ -405,7 +405,7 @@ public interface StaticContentService extends HttpService {
                             .contentTypes(specificContentTypes())
                             .update(it -> {
                                 if (welcomeFileName() != null) {
-                                    it.welcomeFile(welcomeFileName());
+                                    it.welcome(welcomeFileName());
                                 }
                             })
                             .cachedFiles(cacheInMemory())

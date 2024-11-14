@@ -20,6 +20,7 @@ import java.lang.System.Logger;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -46,6 +47,8 @@ public class StaticContentFeature implements Weighted, ServerFeature, RuntimeTyp
     private final TemporaryStorage temporaryStorage;
     private final Map<String, MediaType> contentTypeMapping;
     private final boolean enabled;
+    private final Set<String> sockets;
+    private final Optional<String> welcome;
 
     private StaticContentFeature(StaticContentConfig config) {
         this.config = config;
@@ -54,6 +57,8 @@ public class StaticContentFeature implements Weighted, ServerFeature, RuntimeTyp
             this.contentTypeMapping = config.contentTypes();
             this.memoryCache = config.memoryCache()
                         .orElseGet(MemoryCache::create);
+            this.sockets = config.sockets();
+            this.welcome = config.welcome();
 
             if (config.classpath().isEmpty()) {
                 this.temporaryStorage = null;
@@ -62,6 +67,8 @@ public class StaticContentFeature implements Weighted, ServerFeature, RuntimeTyp
                         .orElseGet(TemporaryStorage::create);
             }
         } else {
+            this.sockets = Set.of();
+            this.welcome = Optional.empty();
             this.memoryCache = null;
             this.temporaryStorage = null;
             this.contentTypeMapping = null;
@@ -152,8 +159,14 @@ public class StaticContentFeature implements Weighted, ServerFeature, RuntimeTyp
             return;
         }
 
-        Set<String> allServerSockets = new HashSet<>(featureContext.sockets());
-        allServerSockets.add(WebServer.DEFAULT_SOCKET_NAME);
+        Set<String> defaultSockets;
+        if (this.sockets.isEmpty()) {
+            defaultSockets = new HashSet<>(featureContext.sockets());
+        } else {
+            defaultSockets = new HashSet<>(this.sockets);
+        }
+
+        defaultSockets.add(WebServer.DEFAULT_SOCKET_NAME);
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
 
         for (ClasspathHandlerConfig handlerConfig : config.classpath()) {
@@ -161,8 +174,9 @@ public class StaticContentFeature implements Weighted, ServerFeature, RuntimeTyp
                 continue;
             }
 
+
             Set<String> handlerSockets = handlerConfig.sockets().isEmpty()
-                    ? allServerSockets
+                    ? defaultSockets
                     : handlerConfig.sockets();
             MemoryCache handlerCache = handlerConfig.memoryCache()
                     .orElse(this.memoryCache);
@@ -170,6 +184,7 @@ public class StaticContentFeature implements Weighted, ServerFeature, RuntimeTyp
                     .orElse(this.temporaryStorage);
             ClassLoader handlerClassLoader = handlerConfig.classLoader()
                     .orElse(contextClassLoader);
+            Optional<String> welcome = handlerConfig.welcome().or(() -> this.welcome);
             Map<String, MediaType> contentTypeMap = new HashMap<>(this.contentTypeMapping);
             contentTypeMap.putAll(handlerConfig.contentTypes());
 
@@ -184,6 +199,7 @@ public class StaticContentFeature implements Weighted, ServerFeature, RuntimeTyp
                         .from(handlerConfig)
                         .memoryCache(handlerCache)
                         .temporaryStorage(handlerTmpStorage)
+                        .update(it -> welcome.ifPresent(it::welcome))
                         .classLoader(handlerClassLoader)
                         .contentTypes(contentTypeMap)
                         .build();
@@ -199,7 +215,7 @@ public class StaticContentFeature implements Weighted, ServerFeature, RuntimeTyp
                 continue;
             }
             Set<String> handlerSockets = handlerConfig.sockets().isEmpty()
-                    ? allServerSockets
+                    ? defaultSockets
                     : handlerConfig.sockets();
             MemoryCache handlerCache = handlerConfig.memoryCache()
                     .orElse(this.memoryCache);

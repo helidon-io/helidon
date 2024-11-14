@@ -19,6 +19,7 @@ package io.helidon.webserver.staticcontent;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
@@ -100,6 +101,7 @@ interface StaticContentConfigBlueprint extends Prototype.Factory<StaticContentFe
      * @return classpath handlers
      */
     @Option.Configured
+    @Option.Singular
     List<ClasspathHandlerConfig> classpath();
 
     /**
@@ -108,6 +110,7 @@ interface StaticContentConfigBlueprint extends Prototype.Factory<StaticContentFe
      * @return path handlers
      */
     @Option.Configured
+    @Option.Singular
     List<FileSystemHandlerConfig> path();
 
     /**
@@ -126,4 +129,26 @@ interface StaticContentConfigBlueprint extends Prototype.Factory<StaticContentFe
     @Option.Configured
     @Option.Singular
     Map<String, MediaType> contentTypes();
+
+    /**
+     * Welcome-file name. Default for all handlers.
+     * By default, we do not serve default files.
+     *
+     * @return welcome-file name, such as {@code index.html}
+     */
+    @Option.Configured
+    Optional<String> welcome();
+
+    /**
+     * Sockets names (listeners) that will host static content handlers, defaults to all configured sockets.
+     * Default socket name is {@code @default}.
+     * <p>
+     * This configures defaults for all handlers.
+     *
+     * @return sockets to register this handler on
+     */
+    @Option.Configured
+    @Option.Singular
+    Set<String> sockets();
+
 }

@@ -62,7 +62,7 @@ abstract class StaticContentHandler implements StaticContentService {
     private final MemoryCache memoryCache;
 
     StaticContentHandler(BaseHandlerConfig config) {
-        this.welcomeFilename = config.welcomeFile().orElse(null);
+        this.welcomeFilename = config.welcome().orElse(null);
         this.resolvePathFunction = config.pathMapper();
         this.handlerCache = LruCache.<String, CachedHandler>builder()
                 .update(it -> config.recordCacheCapacity().ifPresent(it::capacity))
