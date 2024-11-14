@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.microprofile.telemetry;
 
 import java.util.List;
@@ -21,6 +20,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.microprofile.testing.junit5.AddBean;
 import io.helidon.microprofile.testing.junit5.AddConfig;
+import io.helidon.microprofile.testing.junit5.AddConfigBlock;
 import io.helidon.microprofile.testing.junit5.AddExtension;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
@@ -46,16 +46,16 @@ import static org.hamcrest.Matchers.is;
 @AddBean(InMemorySpanExporter.class)
 @AddBean(InMemorySpanExporterProvider.class)
 @AddExtension(TelemetryCdiExtension.class)
-@AddConfig(key = "otel.service.name", value = "helidon-mp-telemetry")
-@AddConfig(key = "otel.sdk.disabled", value = "false")
-@AddConfig(key = "telemetry.span.full.url", value = "true")
-@AddConfig(key = "otel.traces.exporter", value = "in-memory")
+@AddConfigBlock("""
+        otel.service.name=helidon-mp-telemetry
+        otel.sdk.disabled=false
+        otel.traces.exporter=in-memory
+        telemetry.span.full.url=true
+        """)
 public class TestFullUrlName {
-
 
     @Inject
     WebTarget webTarget;
-
 
     @Inject
     InMemorySpanExporter spanExporter;
@@ -70,7 +70,6 @@ public class TestFullUrlName {
 
     @Test
     void spanNaming() {
-
         assertThat(webTarget.path("named").request().get().getStatus(), is(Response.Status.OK.getStatusCode()));
 
         List<String> names = spanExporter.getFinishedSpanItems(2)

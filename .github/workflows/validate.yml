@@ -78,10 +78,7 @@ jobs:
           run: etc/scripts/shellcheck.sh
   build:
     timeout-minutes: 15
-    strategy:
-      matrix:
-        os: [ ubuntu-20.04, windows-2022 ]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -116,7 +113,7 @@ jobs:
       - uses: ./.github/actions/common
         with:
           build-cache: read-only
-          test-artifact-name: tests-${{ matrix.moduleSet }}
+          test-artifact-name: tests-${{ matrix.moduleSet }}-${{ matrix.platform }}
           run: |
             mvn ${MAVEN_ARGS} \
               -DreactorRule=tests \

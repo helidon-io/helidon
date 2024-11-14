@@ -18,8 +18,6 @@ package io.helidon.tests.integration.packaging.mp1;
 import io.helidon.tests.integration.harness.ProcessRunner.ExecMode;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 
 class Mp1JlinkTestIT extends Mp1PackagingTestIT {
 
@@ -29,7 +27,6 @@ class Mp1JlinkTestIT extends Mp1PackagingTestIT {
     }
 
     @Test
-    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "application is not a valid Win32 application")
     void testApp() {
         doTestApp();
     }

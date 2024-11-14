@@ -18,8 +18,6 @@ package io.helidon.tests.integration.packaging.inject;
 import io.helidon.tests.integration.harness.ProcessRunner.ExecMode;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 
 class InjectJlinkTestIT extends InjectPackagingTestIT {
 
@@ -29,13 +27,11 @@ class InjectJlinkTestIT extends InjectPackagingTestIT {
     }
 
     @Test
-    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "application is not a valid Win32 application")
     void testExitOnStarted() {
         doTestExitOnStarted();
     }
 
     @Test
-    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "application is not a valid Win32 application")
     void testWebClientService() {
         doTestWebClientService();
     }
