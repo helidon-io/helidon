@@ -60,10 +60,10 @@
         <version.lib.google-error-prone>2.3.3</version.lib.google-error-prone>
         <version.lib.google-protobuf>3.25.5</version.lib.google-protobuf>
         <version.lib.graalvm>21.3.0</version.lib.graalvm>
-	<version.lib.graphql-java>22.1</version.lib.graphql-java>
+        <version.lib.graphql-java>22.1</version.lib.graphql-java>
         <version.lib.graphql-java.extended.scalars>22.0</version.lib.graphql-java.extended.scalars>
         <version.lib.gson>2.9.0</version.lib.gson>
-        <version.lib.grpc>1.60.0</version.lib.grpc>
+        <version.lib.grpc>1.65.1</version.lib.grpc>
         <version.lib.guava>32.0.1-jre</version.lib.guava>
         <version.lib.h2>1.4.200</version.lib.h2>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
