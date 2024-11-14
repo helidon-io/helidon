@@ -16,9 +16,9 @@
 
 package io.helidon.grpc.core;
 
-import com.google.protobuf.MessageLite;
+import com.google.protobuf.Message;
 import io.grpc.MethodDescriptor;
-import io.grpc.protobuf.lite.ProtoLiteUtils;
+import io.grpc.protobuf.ProtoUtils;
 import jakarta.inject.Named;
 
 /**
@@ -68,7 +68,7 @@ public interface MarshallerSupplier {
 
         @Override
         public <T> MethodDescriptor.Marshaller<T> get(Class<T> clazz) {
-            if (MessageLite.class.isAssignableFrom(clazz)) {
+            if (Message.class.isAssignableFrom(clazz)) {
                 return proto.get(clazz);
             }
             String msg = String.format(
@@ -91,9 +91,9 @@ public interface MarshallerSupplier {
         public <T> MethodDescriptor.Marshaller<T> get(Class<T> clazz) {
             try {
                 java.lang.reflect.Method getDefaultInstance = clazz.getDeclaredMethod("getDefaultInstance");
-                MessageLite instance = (MessageLite) getDefaultInstance.invoke(clazz);
+                Message instance = (Message) getDefaultInstance.invoke(clazz);
 
-                return (MethodDescriptor.Marshaller<T>) ProtoLiteUtils.marshaller(instance);
+                return (MethodDescriptor.Marshaller<T>) ProtoUtils.marshaller(instance);
             } catch (Exception e) {
                 String msg = String.format(
                         "Attempting to use class %s, which is not a valid Protocol buffer message, with a default marshaller",

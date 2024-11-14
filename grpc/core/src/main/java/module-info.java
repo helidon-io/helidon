@@ -33,7 +33,6 @@ module io.helidon.grpc.core {
 
     requires io.grpc.netty;
     requires transitive io.grpc.protobuf;
-    requires io.grpc.protobuf.lite;
     requires transitive io.grpc.stub;
     requires transitive io.grpc;
     requires io.netty.handler;
