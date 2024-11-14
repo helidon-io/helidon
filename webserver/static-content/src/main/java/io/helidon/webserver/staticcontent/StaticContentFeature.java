@@ -162,11 +162,11 @@ public class StaticContentFeature implements Weighted, ServerFeature, RuntimeTyp
         Set<String> defaultSockets;
         if (this.sockets.isEmpty()) {
             defaultSockets = new HashSet<>(featureContext.sockets());
+            defaultSockets.add(WebServer.DEFAULT_SOCKET_NAME);
         } else {
             defaultSockets = new HashSet<>(this.sockets);
         }
 
-        defaultSockets.add(WebServer.DEFAULT_SOCKET_NAME);
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
 
         for (ClasspathHandlerConfig handlerConfig : config.classpath()) {

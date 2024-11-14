@@ -63,8 +63,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
 
         this.classLoader = config.classLoader().orElseGet(() -> Thread.currentThread().getContextClassLoader());
         this.cacheInMemory = new HashSet<>(config.cachedFiles());
-        String location = config.location();
-        this.root = location.endsWith("/") ? location.substring(0, location.length() - 1) : location;
+        this.root = cleanRoot(config.location());
         this.rootWithTrailingSlash = root + '/';
 
         this.tmpStorage = config.temporaryStorage().orElseGet(TemporaryStorage::create);
@@ -371,5 +370,20 @@ class ClassPathContentHandler extends FileBasedContentHandler {
 
     private Optional<Instant> lastModified(String path) throws IOException {
         return lastModified(Paths.get(path));
+    }
+
+    private static String cleanRoot(String location) {
+        String cleanRoot = location;
+        if (cleanRoot.startsWith("/")) {
+            cleanRoot = cleanRoot.substring(1);
+        }
+        while (cleanRoot.endsWith("/")) {
+            cleanRoot = cleanRoot.substring(0, cleanRoot.length() - 1);
+        }
+
+        if (cleanRoot.isEmpty()) {
+            throw new IllegalArgumentException("Cannot serve full classpath, please configure a classpath prefix");
+        }
+        return cleanRoot;
     }
 }

@@ -559,8 +559,8 @@ public class ServerCdiExtension implements Extension {
     }
 
     private void registerStaticContent() {
-        Config config = (Config) ConfigProvider.getConfig();
-        config = config.get("server.static");
+        Config rootConfig = (Config) ConfigProvider.getConfig();
+        Config config = rootConfig.get("server.static");
 
         if (config.exists()) {
             LOGGER.log(Level.WARNING, "Configuration of static content through \"server.static\" is now deprecated."
@@ -578,7 +578,7 @@ public class ServerCdiExtension implements Extension {
         config.get("path")
                 .ifExists(this::registerPathStaticContent);
 
-        Config featureConfig = config.get("server.features.static-content");
+        Config featureConfig = rootConfig.get("server.features.static-content");
         if (featureConfig.exists()) {
             var builder = StaticContentConfig.builder()
                             .config(featureConfig);
