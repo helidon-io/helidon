@@ -24,19 +24,14 @@ import java.net.JarURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.BiFunction;
+import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -46,6 +41,7 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.InternalServerException;
 import io.helidon.http.Method;
+import io.helidon.http.ServerResponseHeaders;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
@@ -59,49 +55,24 @@ class ClassPathContentHandler extends FileBasedContentHandler {
     private final ClassLoader classLoader;
     private final String root;
     private final String rootWithTrailingSlash;
-    private final BiFunction<String, String, Path> tmpFile;
     private final Set<String> cacheInMemory;
+    private final TemporaryStorage tmpStorage;
 
-    // URL's hash code and equal are not suitable for map or set
-    private final Map<String, ExtractedJarEntry> extracted = new HashMap<>();
-    private final ReentrantLock lock = new ReentrantLock();
+    ClassPathContentHandler(ClasspathHandlerConfig config) {
+        super(config);
 
-    ClassPathContentHandler(StaticContentService.ClassPathBuilder builder) {
-        super(builder);
-
-        this.classLoader = builder.classLoader();
-        this.cacheInMemory = new HashSet<>(builder.cacheInMemory());
-        this.root = builder.root();
+        this.classLoader = config.classLoader().orElseGet(() -> Thread.currentThread().getContextClassLoader());
+        this.cacheInMemory = new HashSet<>(config.cachedFiles());
+        String location = config.location();
+        this.root = location.endsWith("/") ? location.substring(0, location.length() - 1) : location;
         this.rootWithTrailingSlash = root + '/';
 
-        Path tmpDir = builder.tmpDir();
-        if (tmpDir == null) {
-            this.tmpFile = (prefix, suffix) -> {
-                try {
-                    return Files.createTempFile(prefix, suffix);
-                } catch (IOException e) {
-                    throw new InternalServerException("Failed to create temporary file", e, true);
-                }
-            };
-        } else {
-            this.tmpFile = (prefix, suffix) -> {
-                try {
-                    return Files.createTempFile(tmpDir, prefix, suffix);
-                } catch (IOException e) {
-                    throw new InternalServerException("Failed to create temporary file", e, true);
-                }
-            };
-        }
+        this.tmpStorage = config.temporaryStorage().orElseGet(TemporaryStorage::create);
     }
 
-    static String fileName(URL url) {
-        String path = url.getPath();
-        int index = path.lastIndexOf('/');
-        if (index > -1) {
-            return path.substring(index + 1);
-        }
-
-        return path;
+    @SuppressWarnings("removal") // will be replaced with HttpService once removed
+    static StaticContentService create(ClasspathHandlerConfig config) {
+        return new ClassPathContentHandler(config);
     }
 
     @Override
@@ -123,7 +94,6 @@ class ClassPathContentHandler extends FileBasedContentHandler {
         populatedInMemoryCache.set(false);
     }
 
-    @SuppressWarnings("checkstyle:RegexpSinglelineJava")
     @Override
     boolean doHandle(Method method, String requestedPath, ServerRequest request, ServerResponse response, boolean mapped)
             throws IOException, URISyntaxException {
@@ -214,6 +184,16 @@ class ClassPathContentHandler extends FileBasedContentHandler {
         return cachedHandler.handle(handlerCache(), method, request, response, requestedResource);
     }
 
+    private static String fileName(URL url) {
+        String path = url.getPath();
+        int index = path.lastIndexOf('/');
+        if (index > -1) {
+            return path.substring(index + 1);
+        }
+
+        return path;
+    }
+
     private String requestedResource(String rawPath, String requestedPath, boolean mapped) throws URISyntaxException {
         String resource = requestedPath.isEmpty() || "/".equals(requestedPath) ? root : (rootWithTrailingSlash + requestedPath);
 
@@ -232,82 +212,99 @@ class ClassPathContentHandler extends FileBasedContentHandler {
         return rawPath.endsWith("/") ? result + "/" : result;
     }
 
-    private Optional<CachedHandler> jarHandler(String requestedResource, URL url) {
-        ExtractedJarEntry extrEntry;
-        lock.lock();
-        try {
-            extrEntry = extracted.compute(requestedResource, (key, entry) -> existOrCreate(url, entry));
-        } finally {
-            lock.unlock();
-        }
+    private Optional<CachedHandler> jarHandler(String requestedResource, URL url) throws IOException {
+        JarURLConnection jarUrlConnection = (JarURLConnection) url.openConnection();
+        JarEntry jarEntry = jarUrlConnection.getJarEntry();
 
-        if (extrEntry.tempFile == null) {
-            // once again, not caching 404
+        if (jarEntry.isDirectory()) {
+            // we cannot cache this - as we consider this to be 404
             return Optional.empty();
         }
 
-        Instant lastModified = extrEntry.lastModified();
-        if (lastModified == null) {
-            return Optional.of(new CachedHandlerJar(extrEntry.tempFile,
-                                                    detectType(extrEntry.entryName),
-                                                    null,
-                                                    null));
-        } else {
-            // we can cache this, as this is a jar record
+        var contentLength = jarEntry.getSize();
+        var contentType = detectType(fileName(url));
+        Optional<Instant> lastModified;
+
+        try (JarFile jarFile = jarUrlConnection.getJarFile()) {
+            lastModified = lastModified(jarFile.getName());
+        }
+
+        var lastModifiedHandler = lastModifiedHandler(lastModified);
+
+        /*
+        We have all the information we need to process a jar file
+        Now we have two options:
+        1. The file will be cached in memory
+        2. The file will be handled through CachedHandlerJar (and possibly extracted to a temporary directory)
+         */
+        if (contentLength <= Integer.MAX_VALUE && canCacheInMemory((int) contentLength)) {
+            // we may be able to cache this entry
+            var cached = cacheInMemory(requestedResource,
+                                       (int) contentLength,
+                                       inMemorySupplier(url,
+                                                        lastModified.orElse(null),
+                                                        lastModifiedHandler,
+                                                        contentType,
+                                                        contentLength));
+            if (cached.isPresent()) {
+                // we have successfully cached the entry in memory
+                return Optional.of(cached.get());
+            }
+        }
+
+        // cannot cache in memory (too big file, cache full)
+        CachedHandlerJar jarHandler = CachedHandlerJar.create(tmpStorage,
+                                                              url,
+                                                              lastModified.orElse(null),
+                                                              contentType,
+                                                              contentLength);
+
+        return Optional.of(jarHandler);
+    }
+
+    private BiConsumer<ServerResponseHeaders, Instant> lastModifiedHandler(Optional<Instant> lastModified) {
+        if (lastModified.isPresent()) {
             Header lastModifiedHeader = HeaderValues.create(HeaderNames.LAST_MODIFIED,
                                                             true,
                                                             false,
-                                                            formatLastModified(lastModified));
-            return Optional.of(new CachedHandlerJar(extrEntry.tempFile,
-                                                    detectType(extrEntry.entryName),
-                                                    extrEntry.lastModified(),
-                                                    (headers, instant) -> headers.set(lastModifiedHeader)));
+                                                            formatLastModified(lastModified.get()));
+            return (headers, instant) -> headers.set(lastModifiedHeader);
+        } else {
+            return (headers, instant) -> {
+            };
         }
     }
 
-    private ExtractedJarEntry existOrCreate(URL url, ExtractedJarEntry entry) {
-        if (entry == null) {
-            return extractJarEntry(url);
-        }
-        if (entry.tempFile == null) {
-            return entry;
-        }
-        if (Files.notExists(entry.tempFile)) {
-            return extractJarEntry(url);
-        }
-        return entry;
+    private Supplier<CachedHandlerInMemory> inMemorySupplier(URL url,
+                                                             Instant lastModified,
+                                                             BiConsumer<ServerResponseHeaders, Instant> lastModifiedHandler,
+                                                             MediaType contentType,
+                                                             long contentLength) {
+
+        Header contentLengthHeader = HeaderValues.create(HeaderNames.CONTENT_LENGTH,
+                                                         contentLength);
+        return () -> {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            try (InputStream in = url.openStream()) {
+                in.transferTo(baos);
+            } catch (IOException e) {
+                throw new InternalServerException("Cannot load resource", e);
+            }
+            byte[] bytes = baos.toByteArray();
+            return new CachedHandlerInMemory(contentType,
+                                             lastModified,
+                                             lastModifiedHandler,
+                                             bytes,
+                                             bytes.length,
+                                             contentLengthHeader);
+        };
     }
 
     private Optional<CachedHandler> urlStreamHandler(URL url) {
         return Optional.of(new CachedHandlerUrlStream(detectType(fileName(url)), url));
     }
 
-    private ExtractedJarEntry extractJarEntry(URL url) {
-        try {
-            JarURLConnection jarUrlConnection = (JarURLConnection) url.openConnection();
-            JarFile jarFile = jarUrlConnection.getJarFile();
-            JarEntry jarEntry = jarUrlConnection.getJarEntry();
-            if (jarEntry.isDirectory()) {
-                return new ExtractedJarEntry(jarEntry.getName()); // a directory
-            }
-            Optional<Instant> lastModified = lastModified(jarFile.getName());
-
-            // Extract JAR entry to file
-            try (InputStream is = jarFile.getInputStream(jarEntry)) {
-                Path tempFile = tmpFile.apply("ws", ".je");
-                Files.copy(is, tempFile, StandardCopyOption.REPLACE_EXISTING);
-                return new ExtractedJarEntry(tempFile, lastModified.orElse(null), jarEntry.getName());
-            } finally {
-                if (!jarUrlConnection.getUseCaches()) {
-                    jarFile.close();
-                }
-            }
-        } catch (IOException ioe) {
-            throw new InternalServerException("Cannot load resource", ioe);
-        }
-    }
-
-    private void addToInMemoryCache(String resource) throws IOException, URISyntaxException {
+    private void addToInMemoryCache(String resource) throws IOException {
         /*
           we need to know:
           - content size
@@ -351,12 +348,19 @@ class ClassPathContentHandler extends FileBasedContentHandler {
         cacheInMemory(requestedResource, contentType, entityBytes, lastModified);
     }
 
-    private Optional<Instant> lastModified(URL url) throws URISyntaxException, IOException {
-        return switch (url.getProtocol()) {
-            case "file" -> lastModified(Paths.get(url.toURI()));
-            case "jar" -> lastModifiedFromJar(url);
-            default -> Optional.empty();
-        };
+    private Optional<Instant> lastModified(URL url) {
+        try {
+            return switch (url.getProtocol()) {
+                case "file" -> lastModified(Paths.get(url.toURI()));
+                case "jar" -> lastModifiedFromJar(url);
+                default -> Optional.empty();
+            };
+        } catch (IOException | URISyntaxException e) {
+            if (LOGGER.isLoggable(Level.TRACE)) {
+                LOGGER.log(Level.TRACE, "Failed to get last modification of a file for URL: " + url, e);
+            }
+            return Optional.empty();
+        }
     }
 
     private Optional<Instant> lastModifiedFromJar(URL url) throws IOException {
@@ -367,14 +371,5 @@ class ClassPathContentHandler extends FileBasedContentHandler {
 
     private Optional<Instant> lastModified(String path) throws IOException {
         return lastModified(Paths.get(path));
-    }
-
-    private record ExtractedJarEntry(Path tempFile, Instant lastModified, String entryName) {
-        /**
-         * Creates directory representation.
-         */
-        ExtractedJarEntry(String entryName) {
-            this(null, null, entryName);
-        }
     }
 }

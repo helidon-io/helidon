@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,6 +56,7 @@ import io.helidon.webserver.observe.ObserveFeature;
 import io.helidon.webserver.observe.ObserveFeatureConfig;
 import io.helidon.webserver.observe.spi.Observer;
 import io.helidon.webserver.spi.ServerFeature;
+import io.helidon.webserver.staticcontent.StaticContentFeature;
 import io.helidon.webserver.staticcontent.StaticContentService;
 
 import jakarta.annotation.Priority;
@@ -560,13 +561,29 @@ public class ServerCdiExtension implements Extension {
         Config config = (Config) ConfigProvider.getConfig();
         config = config.get("server.static");
 
+        if (config.exists()) {
+            LOGGER.log(Level.WARNING, "Configuration of static content through \"server.static\" is now deprecated."
+                    + " Please use \"server.features.static-content\", with sub-keys \"path\" and/or \"classpath\""
+                    + " containing a list of handlers. At least \"context\" and \"location\" should be provided for each handler."
+                    + " Location for classpath is the resource location with static content, for path it is the"
+                    + " location on file system with the root of static content. For advanced configuration such as"
+                    + " in-memory caching, temporary storage setup etc. kindly see our config reference for "
+                    + "\"StaticContentFeature\" in documentation.");
+        }
+
         config.get("classpath")
                 .ifExists(this::registerClasspathStaticContent);
 
         config.get("path")
                 .ifExists(this::registerPathStaticContent);
+
+        Config featureConfig = config.get("server.features.static-content");
+        if (featureConfig.exists()) {
+            addFeature(StaticContentFeature.create(featureConfig));
+        }
     }
 
+    @SuppressWarnings("removal")
     private void registerPathStaticContent(Config config) {
         Config context = config.get("context");
         StaticContentService.FileSystemBuilder pBuilder = StaticContentService.builder(config.get("location")
@@ -587,6 +604,7 @@ public class ServerCdiExtension implements Extension {
         STARTUP_LOGGER.log(Level.TRACE, "Static path");
     }
 
+    @SuppressWarnings("removal")
     private void registerClasspathStaticContent(Config config) {
         Config context = config.get("context");
 
