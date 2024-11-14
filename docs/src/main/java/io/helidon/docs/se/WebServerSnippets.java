@@ -34,6 +34,7 @@ import io.helidon.http.encoding.gzip.GzipEncoding;
 import io.helidon.http.media.jsonp.JsonpSupport;
 import io.helidon.webserver.ProxyProtocolData;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.accesslog.AccessLogFeature;
 import io.helidon.webserver.http.HttpRoute;
 import io.helidon.webserver.http.HttpRouting;
@@ -41,7 +42,7 @@ import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http1.Http1Route;
 import io.helidon.webserver.http2.Http2Route;
-import io.helidon.webserver.staticcontent.StaticContentService;
+import io.helidon.webserver.staticcontent.StaticContentFeature;
 
 // tag::snippet_14[]
 import jakarta.json.Json;
@@ -240,12 +241,15 @@ class WebServerSnippets {
         // end::snippet_21[]
     }
 
-    void snippet_22(HttpRouting.Builder routing) {
+    void snippet_22(WebServerConfig.Builder builder) {
         // tag::snippet_22[]
-        routing.register("/pictures", StaticContentService.create(Paths.get("/some/WEB/pics"))) // <1>
-                .register("/", StaticContentService.builder("/static-content") // <2>
-                        .welcomeFileName("index.html") // <3>
-                        .build());
+        builder.addFeature(StaticContentFeature.builder() // <1>
+                                   .addPath(p -> p.location(Paths.get("/some/WEB/pics")) // <2>
+                                           .context("/pictures")) // <3>
+                                   .addClasspath(cl -> cl.location("/static-content") // <4>
+                                           .welcome("index.html") // <5>
+                                           .context("/")) // <6>
+                                   .build());
         // end::snippet_22[]
     }
 

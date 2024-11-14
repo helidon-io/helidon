@@ -626,12 +626,12 @@ To enable HTTP/2 support add the following dependency to your project's `pom.xml
 
 == Static Content Support
 
-+Use the `io.helidon.webserver.staticcontent.StaticContentService` class to serve files and classpath resources.
-`StaticContentService` can be created for any readable directory or classpath
-context root and registered on a path in `HttpRouting`.
+Static content is served through a `StaticContentFeature`. As with other server features, it can be configured through config,
+or registered with server config builder.
 
-You can combine dynamic handlers with `StaticContentService` objects: if no file matches the request path, then the request is forwarded to
-the next handler.
+Static content supports serving of files from classpath, or from any readable directory on file system.
+Each content handler has a location specified (required), and can provide a context that will be registered with the WebServer
+(defaults to `/`).
 
 === Maven Coordinates
 
@@ -650,19 +650,39 @@ To enable Static Content Support add the following dependency to your project's 
 To register static content based on a file system (`/pictures`), and classpath (`/`):
 
 [source,java]
+.server feature using `WebServerConfig.Builder`
 ----
 include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_22, indent=0]
 ----
-<1> Create a new `StaticContentService` object to serve data from the file system,
-and associate it with the `"/pictures"` context path.
-<2> Create a `StaticContentService` object to serve resources from the contextual
-`ClassLoader`. The specific classloader can be also
-defined. A builder lets you provide more configuration values.
-<3> `index.html` is the file that is returned if a directory is requested.
+<1> Create a new `StaticContentFeature` to register with the web server (will be served on all sockets by default)
+<2> Add path location served from `/some/WEB/pics` absolute path
+<3> Associate the path location with server context `/pictures`
+<4> Add classpath location to serve resources from the contextual
+`ClassLoader` from location `/static-content`
+<5> `index.html` is the file that is returned if a directory is requested
+<6> serve the classpath content on root context `/`
 
-A `StaticContentService` object can be created using `create(...)` factory methods or a
-`builder`. The `builder` lets you provide more configuration values, including _welcome file-name_
-and mappings of filename extensions to media types.
+Static content can also be registered using configuration of server feature.
+
+If you use `Config` with your webserver setup, you can register the same static content using configuration:
+
+[source,yaml]
+.application.yaml
+----
+server:
+  features:
+    static-content:
+      path:
+        - context: "/pictures"
+          location: "/some/WEB/pics"
+      classpath:
+        - context: "/"
+          welcome: "index.html"
+          location: "/static-content"
+----
+
+See xref:{rootdir}/config/io_helidon_webserver_staticcontent_StaticContentFeature.adoc[Static Content Feature Configuration Reference] for details of configuration options.
+
 
 == Media types support
 WebServer and WebClient share the HTTP media support of Helidon, and any supported media type can be used in both.
