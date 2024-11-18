@@ -366,14 +366,6 @@
     ]
   },
   {
-    "name": "com.arjuna.ats.internal.arjuna.utils.SocketProcessId",
-    "methods": [
-      {
-        "name": "<init>"
-      }
-    ]
-  },
-  {
     "name": "org.hibernate.boot.beanvalidation.TypeSafeActivator",
     "methods": [
       {
