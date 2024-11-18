@@ -120,8 +120,14 @@ class GrpcRouteHandler<ReqT, ResT> extends GrpcRoute {
                                                                   String methodName,
                                                                   ServerCallHandler<ReqT, ResT> callHandler) {
         Descriptors.ServiceDescriptor svc = proto.findServiceByName(serviceName);
+        if (svc == null) {
+            throw new IllegalArgumentException("Unable to find gRPC service '" + serviceName + "'");
+        }
         Descriptors.MethodDescriptor mtd = svc.findMethodByName(methodName);
-
+        if (mtd == null) {
+            throw new IllegalArgumentException("Unable to find gRPC method '" + methodName
+                    + "' in service '" + serviceName + "'");
+        }
         String path = svc.getFullName() + "/" + methodName;
 
         /*
