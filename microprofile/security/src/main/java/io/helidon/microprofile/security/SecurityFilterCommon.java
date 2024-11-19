@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
@@ -152,7 +154,7 @@ abstract class SecurityFilterCommon {
 
         SecurityEnvironment env = envBuilder.build();
         Map<String, Config> configMap = new HashMap<>();
-        findMethodConfig(UriPath.create(requestUri.getPath()))
+        findMethodConfig(UriPath.create(requestUri.getPath()), request.getMethod())
                 .asNode()
                 .ifPresent(conf -> conf.asNodeList().get().forEach(node -> configMap.put(node.name(), node)));
 
@@ -183,9 +185,10 @@ abstract class SecurityFilterCommon {
         }
     }
 
-    Config findMethodConfig(UriPath path) {
+    Config findMethodConfig(UriPath path, String method) {
         return PATH_CONFIGS.get()
                 .stream()
+                .filter(pathConfig -> pathConfig.method.isEmpty() || pathConfig.method.contains(method.toUpperCase()))
                 .filter(pathConfig -> pathConfig.pathMatcher.prefixMatch(path).accepted())
                 .findFirst()
                 .map(PathConfig::config)
@@ -487,12 +490,15 @@ abstract class SecurityFilterCommon {
         return security.configFor(child);
     }
 
-    private record PathConfig(PathMatcher pathMatcher, Config config) {
+    private record PathConfig(PathMatcher pathMatcher, Set<String> method, Config config) {
 
         static PathConfig create(Config config) {
             String path = config.get("path").asString().orElseThrow();
+            Set<String> method = config.get("method").asList(String.class)
+                    .map(list -> list.stream().map(String::toUpperCase).collect(Collectors.toSet()))
+                    .orElse(Set.of());
             PathMatcher matcher = PathMatchers.create(path);
-            return new PathConfig(matcher, config.get("config"));
+            return new PathConfig(matcher, method, config.get("config"));
         }
 
     }

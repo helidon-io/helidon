@@ -274,7 +274,8 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
                 .map(definitionMethod -> {
                     context.methodSecurity(getMethodSecurity(invokedResource,
                                                              definitionMethod,
-                                                             (ExtendedUriInfo) requestContext.getUriInfo()));
+                                                             (ExtendedUriInfo) requestContext.getUriInfo(),
+                                                             requestContext));
                     context.resourceName(definitionMethod.getDeclaringClass().getSimpleName());
 
                     return configureContext(context, requestContext, requestContext.getUriInfo());
@@ -347,7 +348,8 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
 
     private SecurityDefinition getMethodSecurity(InvokedResource invokedResource,
                                                  Method definitionMethod,
-                                                 ExtendedUriInfo uriInfo) {
+                                                 ExtendedUriInfo uriInfo,
+                                                 ContainerRequestContext requestContext) {
         // Check cache
 
         // Jersey model 'definition method' is the method that contains JAX-RS/Jersey annotations. JAX-RS does not support
@@ -414,7 +416,10 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
             for (Method method : methodsToProcess) {
                 Class<?> clazz = method.getDeclaringClass();
                 current = securityForClass(clazz, current);
-                SecurityDefinition methodDef = processMethod(current.copyMe(), uriInfo.getPath(), method);
+                SecurityDefinition methodDef = processMethod(current.copyMe(),
+                                                             uriInfo.getPath(),
+                                                             requestContext.getMethod(),
+                                                             method);
 
                 SecurityLevel currentSecurityLevel = methodDef.securityLevels().get(methodDef.securityLevels().size() - 1);
 
@@ -453,7 +458,10 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         }
 
         SecurityDefinition resClassSecurity = obtainClassSecurityDefinition(appRealClass, appClassSecurity, definitionClass);
-        SecurityDefinition methodDef = processMethod(resClassSecurity, uriInfo.getRequestUri().getPath(), definitionMethod);
+        SecurityDefinition methodDef = processMethod(resClassSecurity,
+                                                     uriInfo.getRequestUri().getPath(),
+                                                     requestContext.getMethod(),
+                                                     definitionMethod);
 
         int index = methodDef.securityLevels().size() - 1;
         SecurityLevel currentSecurityLevel = methodDef.securityLevels().get(index);
@@ -518,9 +526,9 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
         return this.analyzers;
     }
 
-    private SecurityDefinition processMethod(SecurityDefinition current, String path, Method method) {
+    private SecurityDefinition processMethod(SecurityDefinition current, String path, String httpMethod, Method method) {
         SecurityDefinition methodDef = current.copyMe();
-        findMethodConfig(UriPath.create(path))
+        findMethodConfig(UriPath.create(path), httpMethod)
                 .asNode()
                 .ifPresentOrElse(methodDef::fromConfig,
                                  () -> {

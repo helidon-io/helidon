@@ -20,15 +20,19 @@ server:
       endpoints:
         - path: "/policy/override"
           config:
-            abac.policy-validator.statement: "${env.time.year >= 2017}"
+            abac.policy-validator.statement: "\\${env.time.year >= 2017}"
         - path: "/policy/asterisk*"
           config:
-            abac.policy-validator.statement: "${env.time.year >= 2017}"
+            abac.policy-validator.statement: "\\${env.time.year >= 2017}"
         - path: "/explicit/configuration"
           config:
             authorize: true
             authorization-explicit: true
-            abac.policy-validator.statement: "${env.time.year >= 2017}"
+            abac.policy-validator.statement: "\\${env.time.year >= 2017}"
+        - path: "/method"
+          method: "GET"
+          config:
+            abac.policy-validator.statement: "\\${env.time.year >= 2017}"
 
 security:
   providers:
