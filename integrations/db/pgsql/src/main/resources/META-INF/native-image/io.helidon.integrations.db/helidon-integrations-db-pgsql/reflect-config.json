@@ -1,0 +1,98 @@
+[
+  {
+    "condition": {
+      "typeReachable": "org.postgresql.jdbc.PgConnection"
+    },
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ],
+    "name": "org.postgresql.util.PGInterval"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.postgresql.jdbc.PgConnection"
+    },
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ],
+    "name": "org.postgresql.geometric.PGbox"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.postgresql.jdbc.PgConnection"
+    },
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ],
+    "name": "org.postgresql.geometric.PGcircle"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.postgresql.jdbc.PgConnection"
+    },
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ],
+    "name": "org.postgresql.geometric.PGline"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.postgresql.jdbc.PgConnection"
+    },
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ],
+    "name": "org.postgresql.geometric.PGlseg"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.postgresql.jdbc.PgConnection"
+    },
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ],
+    "name": "org.postgresql.geometric.PGpath"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.postgresql.jdbc.PgConnection"
+    },
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ],
+    "name": "org.postgresql.geometric.PGpoint"
+  },
+  {
+    "condition": {
+      "typeReachable": "org.postgresql.jdbc.PgConnection"
+    },
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ],
+    "name": "org.postgresql.geometric.PGpolygon"
+  }
+]
