@@ -113,7 +113,7 @@ jobs:
       - uses: ./.github/actions/common
         with:
           build-cache: read-only
-          test-artifact-name: tests-${{ matrix.moduleSet }}
+          test-artifact-name: tests-${{ matrix.moduleSet }}-${{ matrix.platform }}
           run: |
             mvn ${MAVEN_ARGS} \
               -DreactorRule=tests \
@@ -366,7 +366,7 @@ jobs:
               verify
   test-results:
     runs-on: ubuntu-20.04
-    needs: [ packaging ]
+    needs: [ _tests, archetypes, legacy-archetypes, _tck, packaging, _native-image ]
     name: tests/results
     steps:
       - uses: actions/upload-artifact/merge@v4
@@ -375,7 +375,7 @@ jobs:
           pattern: "tests-*"
   gate:
     runs-on: ubuntu-20.04
-    needs: [ test-results ]
+    needs: [ copyright, checkstyle, shellcheck, docs, javadoc, _spotbugs, test-results ]
     steps:
       - shell: bash
         run: |

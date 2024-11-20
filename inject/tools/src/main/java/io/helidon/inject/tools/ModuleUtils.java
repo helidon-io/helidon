@@ -68,8 +68,8 @@ public class ModuleUtils {
     public static final String APPLICATION_PACKAGE_FILE_NAME = "app-package-name.txt";
     static final System.Logger LOGGER = System.getLogger(ModuleUtils.class.getName());
     static final String SERVICE_PROVIDER_MODULE_INFO_HBS = "module-info.hbs";
-    static final String SRC_MAIN_JAVA_DIR = File.separator + "src" + File.separator + "main" + File.separator + "java";
-    static final String SRC_TEST_JAVA_DIR = File.separator + "src" + File.separator + "test" + File.separator + "java";
+    static final String SRC_MAIN_JAVA_DIR = "/src/main/java";
+    static final String SRC_TEST_JAVA_DIR = "/src/test/java";
     static final ModuleInfoItem MODULE_COMPONENT_MODULE_INFO = ModuleInfoItem.builder()
             .provides(true)
             .target(ModuleComponent.class.getName())
@@ -354,6 +354,7 @@ public class ModuleUtils {
      * @return the base path
      */
     public static Path toBasePath(String sourcePath) {
+        sourcePath = sourcePath.replace(File.separator, "/");
         int pos = sourcePath.lastIndexOf(SRC_MAIN_JAVA_DIR);
         if (pos < 0) {
             pos = sourcePath.lastIndexOf(SRC_TEST_JAVA_DIR);
