@@ -138,12 +138,12 @@ final class ActivatorsPerLookup {
     /**
      * {@code MyService implements QualifiedProvider}.
      */
-    static class QualifiedProviderActivator<T> extends SingleServiceActivator<T> {
+    static class QualifiedFactoryActivator<T> extends SingleServiceActivator<T> {
         private final TypeName supportedQualifier;
         private final Set<ResolvedType> supportedContracts;
         private final boolean anyMatch;
 
-        QualifiedProviderActivator(ServiceProvider<T> provider, GeneratedInjectService.QualifiedFactoryDescriptor qpd) {
+        QualifiedFactoryActivator(ServiceProvider<T> provider, GeneratedInjectService.QualifiedFactoryDescriptor qpd) {
             super(provider);
             this.supportedQualifier = qpd.qualifierType();
             this.supportedContracts = provider.descriptor().contracts()
@@ -193,8 +193,8 @@ final class ActivatorsPerLookup {
     /**
      * {@code MyService implements InjectionPointProvider}.
      */
-    static class IpProviderActivator<T> extends SingleServiceActivator<T> {
-        IpProviderActivator(ServiceProvider<T> provider) {
+    static class IpFactoryActivator<T> extends SingleServiceActivator<T> {
+        IpFactoryActivator(ServiceProvider<T> provider) {
             super(provider);
         }
 
@@ -224,8 +224,8 @@ final class ActivatorsPerLookup {
     /**
      * {@code MyService implements ServicesProvider}.
      */
-    static class ServicesProviderActivator<T> extends SingleServiceActivator<T> {
-        ServicesProviderActivator(ServiceProvider<T> provider) {
+    static class ServicesFactoryActivator<T> extends SingleServiceActivator<T> {
+        ServicesFactoryActivator(ServiceProvider<T> provider) {
             super(provider);
         }
 

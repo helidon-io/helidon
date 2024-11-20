@@ -100,11 +100,11 @@ final class Activators {
                     yield () -> new ActivatorsPerLookup.SingleServiceActivator<>(provider);
                 }
                 case SUPPLIER -> () -> new ActivatorsPerLookup.SupplierActivator<>(provider);
-                case SERVICES -> () -> new ActivatorsPerLookup.ServicesProviderActivator<>(provider);
-                case INJECTION_POINT -> () -> new ActivatorsPerLookup.IpProviderActivator<>(provider);
+                case SERVICES -> () -> new ActivatorsPerLookup.ServicesFactoryActivator<>(provider);
+                case INJECTION_POINT -> () -> new ActivatorsPerLookup.IpFactoryActivator<>(provider);
                 case QUALIFIED -> () ->
-                        new ActivatorsPerLookup.QualifiedProviderActivator<>(provider,
-                                                                             (QualifiedFactoryDescriptor) descriptor);
+                        new ActivatorsPerLookup.QualifiedFactoryActivator<>(provider,
+                                                                            (QualifiedFactoryDescriptor) descriptor);
             };
         } else {
             return switch (descriptor.factoryType()) {
