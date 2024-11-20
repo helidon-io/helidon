@@ -49,6 +49,10 @@
                     <artifactId>ucp</artifactId>
                 </exclusion>
                 <exclusion>
+                    <groupId>com.oracle.database.jdbc</groupId>
+                    <artifactId>ucp11</artifactId>
+                </exclusion>
+                <exclusion>
                     <!-- Contains JAXP impl, so we exclude it to not interfere -->
                     <groupId>com.oracle.database.xml</groupId>
                     <artifactId>xmlparserv2</artifactId>
