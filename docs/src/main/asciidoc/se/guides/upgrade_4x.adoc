@@ -172,6 +172,11 @@ For example:
     <groupId>io.helidon.http.media</groupId>
     <artifactId>helidon-http-media-jsonp</artifactId>
 </dependency>
+
+<dependency>
+    <groupId>io.helidon.http.media</groupId>
+    <artifactId>helidon-http-media-jsonb</artifactId>
+</dependency>
 ----
 
 In Helidon 4 media support is discovered by default, so you simply need to add the dependency.
