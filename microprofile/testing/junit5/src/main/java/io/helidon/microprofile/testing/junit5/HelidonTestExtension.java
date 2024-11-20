@@ -30,15 +30,12 @@ import io.helidon.common.LazyValue;
 import io.helidon.microprofile.testing.junit5.HelidonTestInfo.MethodInfo;
 
 import jakarta.annotation.Priority;
-import jakarta.decorator.Decorator;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.context.Destroyed;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.event.Observes;
-import jakarta.enterprise.inject.Alternative;
 import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
-import jakarta.enterprise.inject.spi.AfterTypeDiscovery;
 import jakarta.enterprise.inject.spi.Annotated;
 import jakarta.enterprise.inject.spi.AnnotatedConstructor;
 import jakarta.enterprise.inject.spi.AnnotatedField;
@@ -53,7 +50,6 @@ import jakarta.enterprise.inject.spi.WithAnnotations;
 import jakarta.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
 import jakarta.enterprise.util.AnnotationLiteral;
 import jakarta.inject.Singleton;
-import jakarta.interceptor.Interceptor;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
@@ -78,14 +74,7 @@ final class HelidonTestExtension implements Extension {
             RequestScoped.class, RequestScoped.Literal.INSTANCE,
             Dependent.class, Dependent.Literal.INSTANCE);
 
-    private static final Set<Class<? extends Annotation>> AFTER_TYPE_ANNOTATIONS = Set.of(
-            Alternative.class,
-            Interceptor.class,
-            Decorator.class);
-
     private static final Set<Class<? extends Annotation>> TYPE_ANNOTATIONS = Set.of(
-            AddBean.class,
-            AddBeans.class,
             AddConfig.class,
             AddConfigs.class,
             AddConfigBlock.class,
@@ -98,8 +87,6 @@ final class HelidonTestExtension implements Extension {
             Socket.class);
 
     private static final Set<Class<? extends Annotation>> METHOD_ANNOTATIONS = Set.of(
-            AddBean.class,
-            AddBeans.class,
             AddConfig.class,
             AddConfigs.class,
             AddConfigBlock.class,
@@ -110,7 +97,6 @@ final class HelidonTestExtension implements Extension {
     private final HelidonTestInfo testInfo;
     private final HelidonTestConfig testConfig;
     private final HelidonTestScope testScope;
-    private final Set<AddBean> addBeans = new HashSet<>();
     private final Set<Socket> sockets = new HashSet<>();
     private final List<Method> afterStop = new ArrayList<>();
 
@@ -144,8 +130,6 @@ final class HelidonTestExtension implements Extension {
                     case AddConfigs e -> testConfig.synthetic().update(e.value());
                     case AddConfigBlock e -> testConfig.synthetic().update(e);
                     case AddConfigBlocks e -> testConfig.synthetic().update(e.value());
-                    case AddBeans e -> addBeans.addAll(List.of(e.value()));
-                    case AddBean e -> addBeans.add(e);
                     default -> {
                         // no-op
                     }
@@ -192,8 +176,6 @@ final class HelidonTestExtension implements Extension {
                                 case AddConfigs e -> testConfig.synthetic().update(e.value());
                                 case AddConfigBlock e -> testConfig.synthetic().update(e);
                                 case AddConfigBlocks e -> testConfig.synthetic().update(e.value());
-                                case AddBeans e -> addBeans.addAll(List.of(e.value()));
-                                case AddBean e -> addBeans.add(e);
                                 default -> throw new IllegalStateException(String.format(
                                         "@%s requires method %s to be static",
                                         method, a.annotationType().getSimpleName()));
@@ -205,34 +187,18 @@ final class HelidonTestExtension implements Extension {
         }
     }
 
-    private void beforeBeanDiscovery(@Observes BeforeBeanDiscovery event) {
+    private void beforeBeanDiscovery(@Observes BeforeBeanDiscovery event, BeanManager bm) {
         // remove bootstrap config
         testConfig.resolve();
 
         // add the test class
         event.addAnnotatedType(testInfo.classInfo().element(), "HelidonTest")
                 .add(HelidonTestScoped.Literal.INSTANCE);
-    }
 
-    private void afterTypeDiscovery(@Observes AfterTypeDiscovery event, BeanManager bm) {
-        for (AddBean addBean : addBeans) {
+        for (AddBean addBean : testInfo.addBeans()) {
             Class<?> beanClass = addBean.value();
             Class<? extends Annotation> scopeClass = addBean.scope();
             AnnotatedTypeConfigurator<?> configurator = event.addAnnotatedType(beanClass, beanClass.getName());
-            AnnotatedType<?> annotated = configurator.getAnnotated();
-
-            // AfterTypeDiscovery workaround
-            // Manually add alternatives, interceptors, decorators
-            processAnnotated(annotated, AFTER_TYPE_ANNOTATIONS, a -> {
-                switch (a) {
-                    case Alternative ignore -> event.getAlternatives().add(beanClass);
-                    case Interceptor ignore -> event.getInterceptors().add(beanClass);
-                    case Decorator ignore -> event.getDecorators().add(beanClass);
-                    default -> {
-                        // no-op
-                    }
-                }
-            });
 
             // process scope
             if (!scopeClass.equals(Annotation.class)) {
@@ -251,6 +217,7 @@ final class HelidonTestExtension implements Extension {
                 configurator.add(scope);
             } else {
                 // no scope configured
+                AnnotatedType<?> annotated = configurator.getAnnotated();
                 if (annotated.getAnnotations().stream()
                         .noneMatch(a -> bm.isScope(a.annotationType()))) {
 
