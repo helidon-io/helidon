@@ -9,6 +9,19 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 
 For Helidon 3.x releases please see [Helidon 3.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-3.x/CHANGELOG.md)
 
+## [2.6.10]
+
+This is a bugfix release of Helidon. It is recommended for all users of Helidon 2. Helidon 2 requires a minimum Java 11.
+
+- Dependencies: Upgrade cron-utils to 9.2.1 [9439](https://github.com/helidon-io/helidon/pull/9439)
+- Dependencies: Upgrade grpc-java to 1.65.1 [9497](https://github.com/helidon-io/helidon/pull/9497)
+- Dependencies: Upgrade Jackson to 2.18.1 [9482](https://github.com/helidon-io/helidon/pull/9482)
+- Dependencies: Upgrade Jersey to 2.45 [9507](https://github.com/helidon-io/helidon/pull/9507)
+- Dependencies: Upgrade Netty to 4.1.115[9497](https://github.com/helidon-io/helidon/pull/9497)
+- Dependencies: Upgrade ojdbc to 21.15.0.0 [9482](https://github.com/helidon-io/helidon/pull/9482)
+
+### CHANGES
+
 ## [2.6.9]
 
 This is a bugfix release of Helidon. It is recommended for all users of Helidon 2. Helidon 2 requires a minimum Java 11.
@@ -2269,6 +2282,7 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
+[2.6.10]: https://github.com/oracle/helidon/compare/2.6.9...2.6.10
 [2.6.9]: https://github.com/oracle/helidon/compare/2.6.8...2.6.9
 [2.6.8]: https://github.com/oracle/helidon/compare/2.6.7...2.6.8
 [2.6.7]: https://github.com/oracle/helidon/compare/2.6.6...2.6.7
