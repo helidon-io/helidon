@@ -38,6 +38,10 @@ final class ParameterizedTypes {
         T color();
     }
 
+    interface Type<T> {
+        T type();
+    }
+
     @Injection.Singleton
     static class Blue implements Color {
         @Override
@@ -56,20 +60,32 @@ final class ParameterizedTypes {
 
     @Injection.Singleton
     @Weight(Weighted.DEFAULT_WEIGHT + 10)
-    record BlueCircle(Blue color) implements Circle<Blue> {
+    record BlueCircle(Blue color) implements Circle<Blue>, Type<String> {
+        @Override
+        public String type() {
+            return "blue";
+        }
     }
 
     @Injection.Singleton
-    record GreenCircle(Green color) implements Circle<Green> {
+    record GreenCircle(Green color) implements Circle<Green>, Type<Integer> {
+        @Override
+        public Integer type() {
+            return 42;
+        }
     }
 
     @Injection.Singleton
     static class ColorReceiver {
         private final List<Circle<Color>> circles;
+        private final List<Circle<?>> allCircles;
+        private final List<Type<?>> types;
 
         @Injection.Inject
-        ColorReceiver(List<Circle<Color>> circles) {
+        ColorReceiver(List<Circle<Color>> circles, List<Circle<?>> allCircles, List<Type<?>> types) {
             this.circles = circles;
+            this.allCircles = allCircles;
+            this.types = types;
         }
 
         String getString() {
@@ -77,6 +93,14 @@ final class ParameterizedTypes {
                     .map(Circle::color)
                     .map(Color::name)
                     .collect(Collectors.joining("-"));
+        }
+
+        boolean allCirclesValid() {
+            return this.circles.equals(this.allCircles);
+        }
+        
+        List<Type<?>> types() {
+            return types;
         }
     }
 

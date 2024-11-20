@@ -16,31 +16,34 @@
 
 package io.helidon.service.tests.inject;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import io.helidon.service.inject.InjectConfig;
 import io.helidon.service.inject.InjectRegistryManager;
 import io.helidon.service.inject.api.InjectRegistry;
+import io.helidon.service.inject.api.Lookup;
+import io.helidon.service.inject.api.Qualifier;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 
-public class ParameterizedTypesTest {
+public class ServicesFactoryProvidedInstancesTest {
     private static InjectRegistryManager registryManager;
     private static InjectRegistry registry;
 
     @BeforeAll
     public static void initRegistry() {
         var injectConfig = InjectConfig.builder()
-                .addServiceDescriptor(ParameterizedTypes_Blue__ServiceDescriptor.INSTANCE)
-                .addServiceDescriptor(ParameterizedTypes_Green__ServiceDescriptor.INSTANCE)
-                .addServiceDescriptor(ParameterizedTypes_BlueCircle__ServiceDescriptor.INSTANCE)
-                .addServiceDescriptor(ParameterizedTypes_GreenCircle__ServiceDescriptor.INSTANCE)
-                .addServiceDescriptor(ParameterizedTypes_ColorReceiver__ServiceDescriptor.INSTANCE)
-                .addServiceDescriptor(ParameterizedTypes_ColorsReceiver__ServiceDescriptor.INSTANCE)
+                .addServiceDescriptor(ServicesFactoryTypes_TargetTypeProvider__ServiceDescriptor.INSTANCE)
+                .addServiceDescriptor(ServicesFactoryTypes_ConfigFactory__ServiceDescriptor.INSTANCE)
+                .putServiceInstance(ServicesFactoryTypes_ConfigFactory__ServiceDescriptor.INSTANCE,
+                                    new ServicesFactoryTypes.ConfigFactory(List.of(new ServicesFactoryTypes.NamedConfigImpl("custom"))))
                 .discoverServices(false)
                 .discoverServicesFromServiceLoader(false)
                 .build();
@@ -56,18 +59,19 @@ public class ParameterizedTypesTest {
     }
 
     @Test
-    void testColorReceiver() {
-        var receiver = registry.get(ParameterizedTypes.ColorReceiver.class);
+    void testServicesFactory() {
+        List<ServicesFactoryTypes.TargetType> targetTypes =
+                registry.all(Lookup.builder()
+                                     .addQualifier(Qualifier.WILDCARD_NAMED)
+                                     .addContract(ServicesFactoryTypes.TargetType.class)
+                                     .build());
 
-        assertThat(receiver.getString(), is("blue-green"));
-        assertThat("Circle<Color> and Circle<?> should receive same values", receiver.allCirclesValid(), is(true));
-        assertThat(receiver.types(), hasSize(2));
-    }
+        assertThat(targetTypes, hasSize(1));
+        var names = targetTypes.stream()
+                .map(ServicesFactoryTypes.TargetType::config)
+                .map(ServicesFactoryTypes.NamedConfig::name)
+                .collect(Collectors.toUnmodifiableSet());
 
-    @Test
-    void testColorsReceiver() {
-        var receiver = registry.get(ParameterizedTypes.ColorsReceiver.class);
-
-        assertThat(receiver.getString(), is("green-blue"));
+        assertThat(names, hasItems("custom"));
     }
 }

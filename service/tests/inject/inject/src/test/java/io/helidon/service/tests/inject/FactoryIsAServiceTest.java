@@ -19,6 +19,7 @@ package io.helidon.service.tests.inject;
 import io.helidon.service.inject.InjectConfig;
 import io.helidon.service.inject.InjectRegistryManager;
 import io.helidon.service.inject.api.InjectRegistry;
+import io.helidon.service.tests.inject.FactoryIsAServiceTypes.InjectionReceiver;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -26,21 +27,16 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 
-public class ParameterizedTypesTest {
+public class FactoryIsAServiceTest {
     private static InjectRegistryManager registryManager;
     private static InjectRegistry registry;
 
     @BeforeAll
     public static void initRegistry() {
         var injectConfig = InjectConfig.builder()
-                .addServiceDescriptor(ParameterizedTypes_Blue__ServiceDescriptor.INSTANCE)
-                .addServiceDescriptor(ParameterizedTypes_Green__ServiceDescriptor.INSTANCE)
-                .addServiceDescriptor(ParameterizedTypes_BlueCircle__ServiceDescriptor.INSTANCE)
-                .addServiceDescriptor(ParameterizedTypes_GreenCircle__ServiceDescriptor.INSTANCE)
-                .addServiceDescriptor(ParameterizedTypes_ColorReceiver__ServiceDescriptor.INSTANCE)
-                .addServiceDescriptor(ParameterizedTypes_ColorsReceiver__ServiceDescriptor.INSTANCE)
+                .addServiceDescriptor(FactoryIsAServiceTypes_MyFactory__ServiceDescriptor.INSTANCE)
+                .addServiceDescriptor(FactoryIsAServiceTypes_InjectionReceiver__ServiceDescriptor.INSTANCE)
                 .discoverServices(false)
                 .discoverServicesFromServiceLoader(false)
                 .build();
@@ -56,18 +52,10 @@ public class ParameterizedTypesTest {
     }
 
     @Test
-    void testColorReceiver() {
-        var receiver = registry.get(ParameterizedTypes.ColorReceiver.class);
+    void testServicesFactory() {
+        InjectionReceiver receiver = registry.get(InjectionReceiver.class);
 
-        assertThat(receiver.getString(), is("blue-green"));
-        assertThat("Circle<Color> and Circle<?> should receive same values", receiver.allCirclesValid(), is(true));
-        assertThat(receiver.types(), hasSize(2));
-    }
-
-    @Test
-    void testColorsReceiver() {
-        var receiver = registry.get(ParameterizedTypes.ColorsReceiver.class);
-
-        assertThat(receiver.getString(), is("green-blue"));
+        assertThat(receiver.factoryContract().name(), is("Factory"));
+        assertThat(receiver.targetType().name(), is("Created"));
     }
 }
