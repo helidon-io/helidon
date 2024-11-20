@@ -181,12 +181,17 @@ class InjectServiceRegistryImpl implements InjectRegistry, Scopes {
             if (instance != null) {
                 Activator<Object> activator = Activators.create(provider, instance);
                 servicesByDescriptor.put(descriptor,
-                                         new ServiceManager<>(scopeSupplier(injectDescriptor), provider, () -> activator));
-            } else {
-                servicesByDescriptor.put(descriptor,
                                          new ServiceManager<>(scopeSupplier(injectDescriptor),
                                                               provider,
-                                                              Activators.create(this, provider)));
+                                                              true,
+                                                              () -> activator));
+            } else {
+                // we must always prefer explicit instances - so if specified, we will never override it
+                servicesByDescriptor.putIfAbsent(descriptor,
+                                                 new ServiceManager<>(scopeSupplier(injectDescriptor),
+                                                                      provider,
+                                                                      false,
+                                                                      Activators.create(this, provider)));
             }
         });
 

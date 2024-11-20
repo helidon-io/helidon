@@ -36,14 +36,17 @@ Manager of a single service. There is one instance per service provider (and per
  */
 class ServiceManager<T> {
     private final ServiceProvider<T> provider;
+    private final boolean explicitInstance;
     private final Supplier<Activator<T>> activatorSupplier;
     private final Supplier<Scope> scopeSupplier;
 
     ServiceManager(Supplier<Scope> scopeSupplier,
                    ServiceProvider<T> provider,
+                   boolean explicitInstance,
                    Supplier<Activator<T>> activatorSupplier) {
         this.scopeSupplier = scopeSupplier;
         this.provider = provider;
+        this.explicitInstance = explicitInstance;
         this.activatorSupplier = activatorSupplier;
     }
 
@@ -53,6 +56,10 @@ class ServiceManager<T> {
     }
 
     void ensureInjectionPlan() {
+        if (explicitInstance) {
+            // we do not need injection plan, if service was provided as an instance
+            return;
+        }
         provider.injectionPlan();
     }
 

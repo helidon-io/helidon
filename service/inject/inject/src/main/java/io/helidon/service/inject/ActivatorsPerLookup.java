@@ -49,7 +49,7 @@ import io.helidon.service.registry.DependencyContext;
 import io.helidon.service.registry.ServiceInfo;
 import io.helidon.service.registry.ServiceRegistryException;
 
-import static io.helidon.service.inject.Activators.QualifiedProviderActivator.OBJECT_GENERIC_TYPE;
+import static io.helidon.service.inject.Activators.QualifiedFactoryActivator.OBJECT_GENERIC_TYPE;
 import static java.util.function.Predicate.not;
 
 /*

@@ -73,11 +73,18 @@ final class Activators {
 
     @SuppressWarnings("unchecked")
     static <T> Activator<T> create(ServiceProvider<T> provider, T instance) {
-        if (instance instanceof Supplier<?> supplier) {
-            return new FixedSupplierActivator<>(provider, (Supplier<T>) supplier);
-        } else {
-            return new Activators.FixedActivator<>(provider, instance);
-        }
+        return switch (provider.descriptor().factoryType()) {
+            case NONE, SERVICE, SUPPLIER -> {
+                if (instance instanceof Supplier<?> supplier) {
+                    yield new FixedSupplierActivator<>(provider, (Supplier<T>) supplier);
+                } else {
+                    yield new Activators.FixedActivator<>(provider, instance);
+                }
+            }
+            case SERVICES -> new Activators.FixedServicesFactoryActivator<>(provider, (Injection.ServicesFactory<T>) instance);
+            case INJECTION_POINT -> new Activators.FixedIpFactoryActivator<>(provider, (InjectionPointFactory<T>) instance);
+            case QUALIFIED -> new Activators.FixedQualifiedFactoryActivator<>(provider, (QualifiedFactory<T, ?>) instance);
+        };
     }
 
     static <T> Supplier<Activator<T>> create(InjectServiceRegistryImpl registry, ServiceProvider<T> provider) {
@@ -109,11 +116,11 @@ final class Activators {
                     yield () -> new Activators.SingleServiceActivator<>(provider);
                 }
                 case SUPPLIER -> () -> new Activators.SupplierActivator<>(provider);
-                case SERVICES -> () -> new Activators.ServicesProviderActivator<>(provider);
-                case INJECTION_POINT -> () -> new Activators.IpProviderActivator<>(provider);
+                case SERVICES -> () -> new ServicesFactoryActivator<>(provider);
+                case INJECTION_POINT -> () -> new IpFactoryActivator<>(provider);
                 case QUALIFIED -> () ->
-                        new Activators.QualifiedProviderActivator<>(provider,
-                                                                    (QualifiedFactoryDescriptor) descriptor);
+                        new QualifiedFactoryActivator<>(provider,
+                                                        (QualifiedFactoryDescriptor) descriptor);
             };
         }
     }
@@ -405,6 +412,31 @@ final class Activators {
 
     }
 
+    static class FixedIpFactoryActivator<T> extends IpFactoryActivator<T> {
+
+        public FixedIpFactoryActivator(ServiceProvider<T> provider,
+                                       InjectionPointFactory<T> instance) {
+            super(provider);
+            serviceInstance = InstanceHolder.create(instance);
+        }
+    }
+
+    static class FixedServicesFactoryActivator<T> extends ServicesFactoryActivator<T> {
+        FixedServicesFactoryActivator(ServiceProvider<T> provider,
+                                      Injection.ServicesFactory<T> factory) {
+            super(provider);
+            serviceInstance = InstanceHolder.create(factory);
+        }
+    }
+
+    static class FixedQualifiedFactoryActivator<T> extends QualifiedFactoryActivator<T> {
+        FixedQualifiedFactoryActivator(ServiceProvider<T> provider,
+                                       Injection.QualifiedFactory<T, ?> factory) {
+            super(provider, (QualifiedFactoryDescriptor) provider.descriptor());
+            serviceInstance = InstanceHolder.create(factory);
+        }
+    }
+
     /**
      * {@code MyService implements Contract}.
      * Created for a service within each scope.
@@ -432,7 +464,10 @@ final class Activators {
             }
             try {
                 lock.lock();
-                this.serviceInstance = InstanceHolder.create(provider, provider.injectionPlan());
+                if (serviceInstance == null) {
+                    // it may have been set explicitly when creating registry
+                    this.serviceInstance = InstanceHolder.create(provider, provider.injectionPlan());
+                }
                 this.serviceInstance.construct();
             } finally {
                 lock.unlock();
@@ -506,14 +541,14 @@ final class Activators {
     /**
      * {@code MyService implements QualifiedProvider}.
      */
-    static class QualifiedProviderActivator<T> extends SingleServiceActivator<T> {
+    static class QualifiedFactoryActivator<T> extends SingleServiceActivator<T> {
         static final GenericType<?> OBJECT_GENERIC_TYPE = GenericType.create(Object.class);
 
         private final TypeName supportedQualifier;
         private final Set<ResolvedType> supportedContracts;
         private final boolean anyMatch;
 
-        QualifiedProviderActivator(ServiceProvider<T> provider, QualifiedFactoryDescriptor qpd) {
+        QualifiedFactoryActivator(ServiceProvider<T> provider, QualifiedFactoryDescriptor qpd) {
             super(provider);
             this.supportedQualifier = qpd.qualifierType();
             this.supportedContracts = provider.descriptor()
@@ -569,8 +604,8 @@ final class Activators {
     /**
      * {@code MyService implements InjectionPointProvider}.
      */
-    static class IpProviderActivator<T> extends SingleServiceActivator<T> {
-        IpProviderActivator(ServiceProvider<T> provider) {
+    static class IpFactoryActivator<T> extends SingleServiceActivator<T> {
+        IpFactoryActivator(ServiceProvider<T> provider) {
             super(provider);
         }
 
@@ -605,8 +640,8 @@ final class Activators {
     /**
      * {@code MyService implements ServicesProvider}.
      */
-    static class ServicesProviderActivator<T> extends SingleServiceActivator<T> {
-        ServicesProviderActivator(ServiceProvider<T> provider) {
+    static class ServicesFactoryActivator<T> extends SingleServiceActivator<T> {
+        ServicesFactoryActivator(ServiceProvider<T> provider) {
             super(provider);
         }
 
@@ -815,14 +850,57 @@ final class Activators {
         }
     }
 
-    static class InstanceHolder<T> {
+    interface InstanceHolder<T> {
+        static <T> InstanceHolder<T> create(ServiceProvider<T> serviceProvider, Map<Dependency, IpPlan<?>> injectionPlan) {
+            // the same instance is returned for the lifetime of the service provider
+            return new InstanceHolderImpl<>(InjectionContext.create(injectionPlan),
+                                            serviceProvider.interceptionMetadata(),
+                                            serviceProvider.descriptor());
+        }
+
+        // we use the instance holder to hold either the actual instance,
+        // or the factory; this is a place for improvement
+        @SuppressWarnings("unchecked")
+        static <T> InstanceHolder<T> create(Object instance) {
+            return new FixedInstanceHolder<>((T) instance);
+        }
+
+        T get();
+
+        default void construct() {
+        }
+
+        default void inject() {
+        }
+
+        default void postConstruct() {
+        }
+
+        default void preDestroy() {
+        }
+    }
+
+    private static class FixedInstanceHolder<T> implements InstanceHolder<T> {
+        private final T instance;
+
+        private FixedInstanceHolder(T instance) {
+            this.instance = instance;
+        }
+
+        @Override
+        public T get() {
+            return instance;
+        }
+    }
+
+    private static class InstanceHolderImpl<T> implements InstanceHolder<T> {
         private final DependencyContext ctx;
         private final InterceptionMetadata interceptionMetadata;
         private final InjectServiceDescriptor<T> source;
 
         private volatile T instance;
 
-        private InstanceHolder(DependencyContext ctx,
+        private InstanceHolderImpl(DependencyContext ctx,
                                InterceptionMetadata interceptionMetadata,
                                InjectServiceDescriptor<T> source) {
             this.ctx = ctx;
@@ -830,33 +908,33 @@ final class Activators {
             this.source = source;
         }
 
-        static <T> InstanceHolder<T> create(ServiceProvider<T> serviceProvider, Map<Dependency, IpPlan<?>> injectionPlan) {
-            // the same instance is returned for the lifetime of the service provider
-            return new InstanceHolder<>(InjectionContext.create(injectionPlan),
-                                        serviceProvider.interceptionMetadata(),
-                                        serviceProvider.descriptor());
-        }
 
-        T get() {
+
+        @Override
+        public T get() {
             return instance;
         }
 
         @SuppressWarnings("unchecked")
-        void construct() {
+        @Override
+        public void construct() {
             instance = (T) source.instantiate(ctx, interceptionMetadata);
         }
 
-        void inject() {
+        @Override
+        public void inject() {
             // using linked set, so we can see in debugging what was injected first
             Set<String> injected = new LinkedHashSet<>();
             source.inject(ctx, interceptionMetadata, injected, instance);
         }
 
-        void postConstruct() {
+        @Override
+        public void postConstruct() {
             source.postConstruct(instance);
         }
 
-        void preDestroy() {
+        @Override
+        public void preDestroy() {
             source.preDestroy(instance);
         }
     }
