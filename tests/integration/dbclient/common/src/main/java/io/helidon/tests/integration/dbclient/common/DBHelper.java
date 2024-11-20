@@ -55,7 +55,7 @@ public class DBHelper {
         try {
             DbExecute exec = db.execute();
             Types.ALL.forEach(t -> exec.namedInsert("insert-type", t.id(), t.name()));
-            Pokemons.ALL.forEach(p -> exec.namedInsert("insert-pokemon", p.id(), p.name()));
+            Pokemons.ALL.forEach(p -> exec.namedInsert("insert-pokemon", p.id(), p.name(), p.healthy()));
             Pokemons.ALL.forEach(p -> p.types().forEach(t -> exec.namedInsert("insert-poketype", p.id(), t.id())));
         } catch (DbClientException ex) {
             ex.printStackTrace(System.err);

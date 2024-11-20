@@ -301,9 +301,11 @@ public final class TransactionTestImpl extends AbstractTestImpl implements Trans
         Pokemon pokemon = new Pokemon(85, "Sentret", Types.NORMAL);
         String stmt = statements.get("insert-pokemon-named-arg");
         DbTransaction tx = db.transaction();
-        long result = tx
-                .createNamedInsert("insert-bulbasaur", stmt)
-                .addParam("id", pokemon.id()).addParam("name", pokemon.name()).execute();
+        long result = tx.createNamedInsert("insert-bulbasaur", stmt)
+                .addParam("id", pokemon.id())
+                .addParam("name", pokemon.name())
+                .addParam("healthy", pokemon.healthy())
+                .execute();
         tx.commit();
         verifyInsertPokemon(result, pokemon);
     }
@@ -312,9 +314,11 @@ public final class TransactionTestImpl extends AbstractTestImpl implements Trans
     public void testCreateNamedInsertStrNamedArgs() {
         Pokemon pokemon = new Pokemon(86, "Furret", Types.NORMAL);
         DbTransaction tx = db.transaction();
-        long result = tx
-                .createNamedInsert("insert-pokemon-named-arg")
-                .addParam("id", pokemon.id()).addParam("name", pokemon.name()).execute();
+        long result = tx.createNamedInsert("insert-pokemon-named-arg")
+                .addParam("id", pokemon.id())
+                .addParam("name", pokemon.name())
+                .addParam("healthy", pokemon.healthy())
+                .execute();
         tx.commit();
         verifyInsertPokemon(result, pokemon);
     }
@@ -323,9 +327,11 @@ public final class TransactionTestImpl extends AbstractTestImpl implements Trans
     public void testCreateNamedInsertStrOrderArgs() {
         Pokemon pokemon = new Pokemon(87, "Chinchou", Types.WATER, Types.ELECTRIC);
         DbTransaction tx = db.transaction();
-        long result = tx
-                .createNamedInsert("insert-pokemon-order-arg")
-                .addParam(pokemon.id()).addParam(pokemon.name()).execute();
+        long result = tx.createNamedInsert("insert-pokemon-order-arg")
+                .addParam(pokemon.id())
+                .addParam(pokemon.name())
+                .addParam(pokemon.healthy())
+                .execute();
         tx.commit();
         verifyInsertPokemon(result, pokemon);
     }
@@ -335,9 +341,11 @@ public final class TransactionTestImpl extends AbstractTestImpl implements Trans
         Pokemon pokemon = new Pokemon(88, "Lanturn", Types.WATER, Types.ELECTRIC);
         String stmt = statements.get("insert-pokemon-named-arg");
         DbTransaction tx = db.transaction();
-        long result = tx
-                .createInsert(stmt)
-                .addParam("id", pokemon.id()).addParam("name", pokemon.name()).execute();
+        long result = tx.createInsert(stmt)
+                .addParam("id", pokemon.id())
+                .addParam("name", pokemon.name())
+                .addParam("healthy", pokemon.healthy())
+                .execute();
         tx.commit();
         verifyInsertPokemon(result, pokemon);
     }
@@ -347,9 +355,11 @@ public final class TransactionTestImpl extends AbstractTestImpl implements Trans
         Pokemon pokemon = new Pokemon(89, "Swinub", Types.GROUND, Types.ICE);
         String stmt = statements.get("insert-pokemon-order-arg");
         DbTransaction tx = db.transaction();
-        long result = tx
-                .createInsert(stmt)
-                .addParam(pokemon.id()).addParam(pokemon.name()).execute();
+        long result = tx.createInsert(stmt)
+                .addParam(pokemon.id())
+                .addParam(pokemon.name())
+                .addParam(pokemon.healthy())
+                .execute();
         tx.commit();
         verifyInsertPokemon(result, pokemon);
     }
@@ -358,8 +368,10 @@ public final class TransactionTestImpl extends AbstractTestImpl implements Trans
     public void testNamedInsertOrderArgs() {
         Pokemon pokemon = new Pokemon(90, "Piloswine", Types.GROUND, Types.ICE);
         DbTransaction tx = db.transaction();
-        long result = tx
-                .namedInsert("insert-pokemon-order-arg", pokemon.id(), pokemon.name());
+        long result = tx.namedInsert("insert-pokemon-order-arg",
+                                     pokemon.id(),
+                                     pokemon.name(),
+                                     pokemon.healthy());
         tx.commit();
         verifyInsertPokemon(result, pokemon);
     }
@@ -369,8 +381,10 @@ public final class TransactionTestImpl extends AbstractTestImpl implements Trans
         Pokemon pokemon = new Pokemon(91, "Mamoswine", Types.GROUND, Types.ICE);
         String stmt = statements.get("insert-pokemon-order-arg");
         DbTransaction tx = db.transaction();
-        long result = tx
-                .insert(stmt, pokemon.id(), pokemon.name());
+        long result = tx.insert(stmt,
+                                pokemon.id(),
+                                pokemon.name(),
+                                pokemon.healthy());
         tx.commit();
         verifyInsertPokemon(result, pokemon);
     }

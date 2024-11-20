@@ -359,7 +359,7 @@ public final class StatementTestImpl extends AbstractTestImpl implements Stateme
         Pokemon updated = new Pokemon(orig.id(), "UpdatedChatot", Types.WATER);
         long result = db.execute()
                 .createNamedDmlStatement("update-pokemon-order-arg")
-                .indexedParam(updated)
+                .indexedParam(updated, "name", "id")
                 .execute();
         verifyUpdatePokemon(result, updated);
     }

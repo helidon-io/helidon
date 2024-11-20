@@ -42,8 +42,8 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 
 /**
@@ -108,7 +108,7 @@ public final class ObservabilityTestImpl extends AbstractTestImpl implements Obs
 
         // Call insert-pokemon
         Pokemon pokemon = new Pokemon(401, "Lickitung", Types.NORMAL);
-        db.execute().namedInsert("insert-pokemon", pokemon.id(), pokemon.name());
+        db.execute().namedInsert("insert-pokemon", pokemon.id(), pokemon.name(), pokemon.healthy());
 
         // Read and process metrics response
         application = get("/observe/metrics/application")

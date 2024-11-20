@@ -24,16 +24,40 @@ import java.util.List;
  * @param name  name
  * @param types types
  */
-public record Pokemon(int id, String name, List<Type> types) {
+public record Pokemon(int id, String name, boolean healthy, List<Type> types) {
 
     /**
-     * Create a new instance.
+     * Create a new instance of pokemon.
+     *
+     * @param id    id
+     * @param name  name
+     * @param healthy whether pokemon is healthy
+     * @param types types
+     */
+    public Pokemon(int id, String name, boolean healthy, Type... types) {
+        this(id, name, healthy, List.of(types));
+    }
+
+    /**
+     * Create a new instance of healthy pokemon.
      *
      * @param id    id
      * @param name  name
      * @param types types
      */
     public Pokemon(int id, String name, Type... types) {
-        this(id, name, List.of(types));
+        this(id, name, true, types);
     }
+
+    /**
+     * Create a new instance of healthy pokemon.
+     *
+     * @param id    id
+     * @param name  name
+     * @param types types
+     */
+    public Pokemon(int id, String name, List<Type> types) {
+        this(id, name, true, types);
+    }
+
 }

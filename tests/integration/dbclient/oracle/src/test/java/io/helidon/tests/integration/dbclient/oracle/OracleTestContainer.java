@@ -28,7 +28,7 @@ import org.testcontainers.utility.DockerImageName;
  */
 abstract class OracleTestContainer {
 
-    private static final DockerImageName IMAGE = DockerImageName.parse("container-registry.oracle.com/database/express");
+    private static final DockerImageName IMAGE = DockerImageName.parse("container-registry.oracle.com/database/free");
 
     static final GenericContainer<?> CONTAINER = new GenericContainer<>(IMAGE)
             .withEnv("ORACLE_PWD", "oracle123")
@@ -41,7 +41,7 @@ abstract class OracleTestContainer {
     }
 
     private static String jdbcUrl() {
-        return "jdbc:oracle:thin:@localhost:%s/XE".formatted(CONTAINER.getMappedPort(1521));
+        return "jdbc:oracle:thin:@localhost:%s/FREE".formatted(CONTAINER.getMappedPort(1521));
     }
 
     private OracleTestContainer() {

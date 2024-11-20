@@ -65,7 +65,8 @@ db:
         "collection": "pokemons",
         "value": {
             "id": ?,
-            "name": ?
+            "name": ?,
+            "healthy": ?
         }
       }
     insert-poketype: |
@@ -85,7 +86,7 @@ db:
     select-pokemons: |
       {
         "collection": "pokemons",
-        "projection": { id: 1, name: 1, _id: 0 },
+        "projection": { id: 1, name: 1, healthy: 1, _id: 0 },
         "query": {}
       }
     select-poketypes: |
@@ -104,14 +105,14 @@ db:
       {
         "collection": "pokemons",
         "operation": "query",
-        "projection": { id: 1, name: 1, _id: 0 },
+        "projection": { id: 1, name: 1, healthy: 1, _id: 0 },
         "query": { name: $name }
       }
     select-pokemon-order-arg: |
       {
         "collection": "pokemons",
         "operation": "query",
-        "projection": { id: 1, name: 1, _id: 0 },
+        "projection": { id: 1, name: 1, healthy: 1, _id: 0 },
         "query": { name: ? }
       }
     insert-pokemon-named-arg: |
@@ -120,7 +121,8 @@ db:
         "operation": "insert",
         "value": {
             "id": $id,
-            "name": $name
+            "name": $name,
+            "healthy": $healthy
         }
       }
     insert-pokemon-order-arg: |
@@ -129,7 +131,8 @@ db:
         "operation": "insert",
         "value": {
             "id": ?,
-            "name": ?
+            "name": ?,
+            "healthy": ?
         }
       }
     insert-pokemon-order-arg-rev: |
@@ -138,14 +141,15 @@ db:
         "operation": "insert",
         "value": {
             "name": ?,
-            "id": ?
+            "id": ?,
+            "healthy": ?
         }
       }
     select-pokemon-by-id: |
       {
         "collection": "pokemons",
         "operation": "query",
-        "projection": { id: 1, name: 1, _id: 0 },
+        "projection": { id: 1, name: 1, healthy: 1, _id: 0 },
         "query": { id: ? }
       }
     update-pokemon-named-arg: |

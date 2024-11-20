@@ -69,19 +69,24 @@ public final class DbMapperProviderImpl implements DbMapperProvider {
 
         @Override
         public Pokemon read(DbRow row) {
-            return new Pokemon(row.column("id").get(Integer.class), row.column("name").get(String.class));
+            return new Pokemon(row.column("id").get(Integer.class),
+                               row.column("name").get(String.class),
+                               row.column("healthy").get(Boolean.class));
         }
 
         @Override
         public Map<String, ?> toNamedParameters(Pokemon pokemon) {
             return Map.of(
                     "id", pokemon.id(),
-                    "name", pokemon.name());
+                    "name", pokemon.name(),
+                    "healthy", pokemon.healthy());
         }
 
         @Override
         public List<?> toIndexedParameters(Pokemon pokemon) {
-            return List.of(pokemon.name(), pokemon.id());
+            return List.of(pokemon.name(),
+                           pokemon.id(),
+                           pokemon.healthy());
         }
     }
 }

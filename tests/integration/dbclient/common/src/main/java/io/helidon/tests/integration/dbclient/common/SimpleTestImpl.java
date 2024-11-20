@@ -110,7 +110,9 @@ public final class SimpleTestImpl extends AbstractTestImpl implements SimpleTest
         String stmt = statements.get("insert-pokemon-named-arg");
         long result = db.execute()
                 .createNamedDmlStatement("insert-torchic", stmt)
-                .addParam("id", pokemon.id()).addParam("name", pokemon.name())
+                .addParam("id", pokemon.id())
+                .addParam("name", pokemon.name())
+                .addParam("healthy", pokemon.healthy())
                 .execute();
         verifyInsertPokemon(result, pokemon);
     }
@@ -120,7 +122,9 @@ public final class SimpleTestImpl extends AbstractTestImpl implements SimpleTest
         Pokemon pokemon = new Pokemon(201, "Combusken", Types.FLYING, Types.FIRE);
         long result = db.execute()
                 .createNamedDmlStatement("insert-pokemon-named-arg")
-                .addParam("id", pokemon.id()).addParam("name", pokemon.name())
+                .addParam("id", pokemon.id())
+                .addParam("name", pokemon.name())
+                .addParam("healthy", pokemon.healthy())
                 .execute();
         verifyInsertPokemon(result, pokemon);
     }
@@ -130,7 +134,9 @@ public final class SimpleTestImpl extends AbstractTestImpl implements SimpleTest
         Pokemon pokemon = new Pokemon(202, "Treecko", Types.GRASS);
         long result = db.execute()
                 .createNamedDmlStatement("insert-pokemon-order-arg")
-                .addParam(pokemon.id()).addParam(pokemon.name())
+                .addParam(pokemon.id())
+                .addParam(pokemon.name())
+                .addParam(pokemon.healthy())
                 .execute();
         verifyInsertPokemon(result, pokemon);
     }
@@ -141,7 +147,9 @@ public final class SimpleTestImpl extends AbstractTestImpl implements SimpleTest
         String stmt = statements.get("insert-pokemon-named-arg");
         long result = db.execute()
                 .createDmlStatement(stmt)
-                .addParam("id", pokemon.id()).addParam("name", pokemon.name())
+                .addParam("id", pokemon.id())
+                .addParam("name", pokemon.name())
+                .addParam("healthy", pokemon.healthy())
                 .execute();
         verifyInsertPokemon(result, pokemon);
     }
@@ -152,7 +160,9 @@ public final class SimpleTestImpl extends AbstractTestImpl implements SimpleTest
         String stmt = statements.get("insert-pokemon-order-arg");
         long result = db.execute()
                 .createDmlStatement(stmt)
-                .addParam(pokemon.id()).addParam(pokemon.name())
+                .addParam(pokemon.id())
+                .addParam(pokemon.name())
+                .addParam(pokemon.healthy())
                 .execute();
         verifyInsertPokemon(result, pokemon);
     }
@@ -161,7 +171,10 @@ public final class SimpleTestImpl extends AbstractTestImpl implements SimpleTest
     public void testNamedDmlWithInsertOrderArgs() {
         Pokemon pokemon = new Pokemon(205, "Snover", Types.GRASS, Types.ICE);
         long result = db.execute()
-                .namedDml("insert-pokemon-order-arg", pokemon.id(), pokemon.name());
+                .namedDml("insert-pokemon-order-arg",
+                          pokemon.id(),
+                          pokemon.name(),
+                          pokemon.healthy());
         verifyInsertPokemon(result, pokemon);
     }
 
@@ -170,7 +183,10 @@ public final class SimpleTestImpl extends AbstractTestImpl implements SimpleTest
         Pokemon pokemon = new Pokemon(206, "Abomasnow", Types.GRASS, Types.ICE);
         String stmt = statements.get("insert-pokemon-order-arg");
         long result = db.execute()
-                .dml(stmt, pokemon.id(), pokemon.name());
+                .dml(stmt,
+                     pokemon.id(),
+                     pokemon.name(),
+                     pokemon.healthy());
         verifyInsertPokemon(result, pokemon);
     }
 
@@ -181,7 +197,8 @@ public final class SimpleTestImpl extends AbstractTestImpl implements SimpleTest
         String stmt = statements.get("update-pokemon-named-arg");
         long result = db.execute()
                 .createNamedDmlStatement("update-piplup", stmt)
-                .addParam("name", updated.name()).addParam("id", updated.id())
+                .addParam("name", updated.name())
+                .addParam("id", updated.id())
                 .execute();
         verifyUpdatePokemon(result, updated);
     }
@@ -402,7 +419,9 @@ public final class SimpleTestImpl extends AbstractTestImpl implements SimpleTest
         String stmt = statements.get("insert-pokemon-named-arg");
         long result = db.execute()
                 .createNamedInsert("insert-bulbasaur", stmt)
-                .addParam("id", pokemon.id()).addParam("name", pokemon.name())
+                .addParam("id", pokemon.id())
+                .addParam("name", pokemon.name())
+                .addParam("healthy", pokemon.healthy())
                 .execute();
         verifyInsertPokemon(result, pokemon);
     }
@@ -412,7 +431,9 @@ public final class SimpleTestImpl extends AbstractTestImpl implements SimpleTest
         Pokemon pokemon = new Pokemon(301, "Ivysaur", Types.POISON, Types.GRASS);
         long result = db.execute()
                 .createNamedInsert("insert-pokemon-named-arg")
-                .addParam("id", pokemon.id()).addParam("name", pokemon.name())
+                .addParam("id", pokemon.id())
+                .addParam("name", pokemon.name())
+                .addParam("healthy", pokemon.healthy())
                 .execute();
         verifyInsertPokemon(result, pokemon);
     }
@@ -422,7 +443,9 @@ public final class SimpleTestImpl extends AbstractTestImpl implements SimpleTest
         Pokemon pokemon = new Pokemon(302, "Venusaur", Types.POISON, Types.GRASS);
         long result = db.execute()
                 .createNamedInsert("insert-pokemon-order-arg")
-                .addParam(pokemon.id()).addParam(pokemon.name())
+                .addParam(pokemon.id())
+                .addParam(pokemon.name())
+                .addParam(pokemon.healthy())
                 .execute();
         verifyInsertPokemon(result, pokemon);
     }
@@ -433,7 +456,9 @@ public final class SimpleTestImpl extends AbstractTestImpl implements SimpleTest
         String stmt = statements.get("insert-pokemon-named-arg");
         long result = db.execute()
                 .createInsert(stmt)
-                .addParam("id", pokemon.id()).addParam("name", pokemon.name())
+                .addParam("id", pokemon.id())
+                .addParam("name", pokemon.name())
+                .addParam("healthy", pokemon.healthy())
                 .execute();
         verifyInsertPokemon(result, pokemon);
     }
@@ -444,7 +469,9 @@ public final class SimpleTestImpl extends AbstractTestImpl implements SimpleTest
         String stmt = statements.get("insert-pokemon-order-arg");
         long result = db.execute()
                 .createInsert(stmt)
-                .addParam(pokemon.id()).addParam(pokemon.name())
+                .addParam(pokemon.id())
+                .addParam(pokemon.name())
+                .addParam(pokemon.healthy())
                 .execute();
         verifyInsertPokemon(result, pokemon);
     }
@@ -452,7 +479,10 @@ public final class SimpleTestImpl extends AbstractTestImpl implements SimpleTest
     @Override
     public void testNamedInsertOrderArgs() {
         Pokemon pokemon = new Pokemon(305, "Rattata", Types.NORMAL);
-        long result = db.execute().namedInsert("insert-pokemon-order-arg", pokemon.id(), pokemon.name());
+        long result = db.execute().namedInsert("insert-pokemon-order-arg",
+                                               pokemon.id(),
+                                               pokemon.name(),
+                                               pokemon.healthy());
         verifyInsertPokemon(result, pokemon);
     }
 
@@ -460,7 +490,10 @@ public final class SimpleTestImpl extends AbstractTestImpl implements SimpleTest
     public void testInsertOrderArgs() {
         Pokemon pokemon = new Pokemon(306, "Raticate", Types.NORMAL);
         String stmt = statements.get("insert-pokemon-order-arg");
-        long result = db.execute().insert(stmt, pokemon.id(), pokemon.name());
+        long result = db.execute().insert(stmt,
+                                          pokemon.id(),
+                                          pokemon.name(),
+                                          pokemon.healthy());
         verifyInsertPokemon(result, pokemon);
     }
 
