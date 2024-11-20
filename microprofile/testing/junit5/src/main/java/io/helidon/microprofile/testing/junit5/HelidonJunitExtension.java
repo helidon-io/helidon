@@ -85,11 +85,8 @@ public class HelidonJunitExtension implements BeforeEachCallback,
                                               InvocationInterceptor,
                                               ParameterResolver {
 
-    // TODO unit test HelidonTestConfigDelegate (lazy config source)
     // TODO test @PostContruct @PreDestroy
     // TODO test parallel method execution
-    // TODO test PER_CLASS with test order (state in the test instance)
-    // TODO test PER_CLASS with constructor injection
     // TODO test PER_CLASS with implicit reset
 
     private static final Namespace NAMESPACE = Namespace.create(HelidonJunitExtension.class);
