@@ -20,6 +20,7 @@ import java.lang.reflect.Proxy;
 import io.helidon.config.Config;
 import io.helidon.config.mp.MpConfig;
 
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.is;
@@ -32,6 +33,10 @@ class HelidonTestConfigTest {
 
     @Test
     void testResolve() {
+        // install the "original" config
+        ConfigProviderResolver resolver = ConfigProviderResolver.instance();
+        resolver.registerConfig(resolver.getBuilder().build(), getClass().getClassLoader());
+
         HelidonTestConfig config = new HelidonTestConfig(new HelidonTestInfo.ClassInfo(getClass()));
         config.synthetic().update(addConfig("key1", "value1"));
         config.synthetic().update(addConfig("key2", "value2"));
@@ -64,7 +69,7 @@ class HelidonTestConfigTest {
     }
 
     @Test
-    void testLazyConfig() {
+    void testJustInTime() {
         HelidonTestConfig config = new HelidonTestConfig(new HelidonTestInfo.ClassInfo(getClass()));
         config.resolve();
 
