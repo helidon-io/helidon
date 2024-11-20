@@ -46,10 +46,6 @@
             <exclusions>
                 <exclusion>
                     <groupId>com.oracle.database.jdbc</groupId>
-                    <artifactId>ucp</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.oracle.database.jdbc</groupId>
                     <artifactId>ucp11</artifactId>
                 </exclusion>
                 <exclusion>
