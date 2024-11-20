@@ -30,6 +30,9 @@
     <name>Helidon Tests Integration Packaging MP2</name>
 
     <properties>
+        <angus.activation.native-image.trace>false</angus.activation.native-image.trace>
+        <helidon.native.reflection.trace>false</helidon.native.reflection.trace>
+        <helidon.native.reflection.trace-parsing>false</helidon.native.reflection.trace-parsing>
         <mainClass>io.helidon.tests.integration.packaging.mp2.Mp2Main</mainClass>
         <redirectTestOutputToFile>true</redirectTestOutputToFile>
     </properties>
@@ -145,6 +148,11 @@
                         <id>build-native-image</id>
                         <configuration>
                             <quickBuild>true</quickBuild>
+                            <systemProperties>
+                                <angus.activation.native-image.trace>${angus.activation.native-image.trace}</angus.activation.native-image.trace>
+                                <helidon.native.reflection.trace>${helidon.native.reflection.trace}</helidon.native.reflection.trace>
+                                <helidon.native.reflection.trace-parsing>${helidon.native.reflection.trace-parsing}</helidon.native.reflection.trace-parsing>
+                            </systemProperties>
                         </configuration>
                     </execution>
                 </executions>
