@@ -414,7 +414,7 @@ final class Activators {
 
     static class FixedIpFactoryActivator<T> extends IpFactoryActivator<T> {
 
-        public FixedIpFactoryActivator(ServiceProvider<T> provider,
+        FixedIpFactoryActivator(ServiceProvider<T> provider,
                                        InjectionPointFactory<T> instance) {
             super(provider);
             serviceInstance = InstanceHolder.create(instance);
