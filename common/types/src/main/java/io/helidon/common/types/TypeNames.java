@@ -87,6 +87,13 @@ public final class TypeNames {
      * Type name for {@link java.lang.annotation.Target}.
      */
     public static final TypeName TARGET = TypeName.create(Target.class);
+    /**
+     * Wildcard type name, represented in code by {@code ?}.
+     */
+    public static final TypeName WILDCARD = TypeName.builder()
+            .className("?")
+            .wildcard(true)
+            .build();
 
     /*
     Primitive types and their boxed counterparts
