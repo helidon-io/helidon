@@ -283,8 +283,17 @@ final class Activators {
             if (lookup.factoryTypes().contains(providerType)) {
                 return true;
             }
-            if (lookup.contracts().size() == 1 && lookup.contracts().contains(ResolvedType.create(descriptor().serviceType()))) {
-                return true;
+            if (lookup.contracts().size() == 1) {
+                ResolvedType requestedContract = lookup.contracts().iterator().next();
+                if (requestedContract.equals(ResolvedType.create(descriptor().serviceType()))) {
+                    // requested actual service
+                    return true;
+                }
+                if (descriptor().factoryContracts().contains(requestedContract)
+                        && !descriptor().contracts().contains(requestedContract)) {
+                    // requested a contract satisfied by the factory only
+                    return true;
+                }
             }
             if (lookup.serviceType().isPresent() && lookup.serviceType().get().equals(descriptor().serviceType())) {
                 return true;
