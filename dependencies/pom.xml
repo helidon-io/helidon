@@ -1410,6 +1410,13 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <!-- The ojdbc-bom as of this writing does not "cover" ojdbc17-production:pom. Add that here temporarily. -->
+            <dependency>
+                <groupId>com.oracle.database.jdbc</groupId>
+                <artifactId>ojdbc17-production</artifactId>
+                <version>${version.lib.ojdbc}</version>
+                <type>pom</type>
+            </dependency>
             <dependency>
                 <groupId>org.glassfish.jersey</groupId>
                 <artifactId>jersey-bom</artifactId>
