@@ -66,6 +66,7 @@
         <module>vault</module>
         <module>zipkin-mp-2.2</module>
         <module>tls-revocation-config</module>
+        <module>h2spec</module>
     </modules>
 
     <dependencyManagement>

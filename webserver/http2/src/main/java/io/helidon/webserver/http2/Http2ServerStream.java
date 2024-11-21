@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.socket.SocketWriterException;
@@ -89,13 +90,12 @@ class Http2ServerStream implements Runnable, Http2Stream {
     private final StreamFlowControl flowControl;
     private final Http2ConcurrentConnectionStreams streams;
     private final HttpRouting routing;
-
+    private final AtomicReference<WriteState> writeState = new AtomicReference<>(WriteState.INIT);
     private boolean wasLastDataFrame = false;
     private volatile Http2Headers headers;
     private volatile Http2Priority priority;
     // used from this instance and from connection
     private volatile Http2StreamState state = Http2StreamState.IDLE;
-    private WriteState writeState = WriteState.INIT;
     private Http2SubProtocolSelector.SubProtocolHandler subProtocolHandler;
     private long expectedLength = -1;
     private HttpPrologue prologue;
@@ -162,22 +162,25 @@ class Http2ServerStream implements Runnable, Http2Stream {
      * Check if headers can be received on this stream.
      * This method is called from connection thread.
      *
+     * @return true if headers are receivable as trailers
      * @throws Http2Exception in case headers cannot be received.
      */
-    public void checkHeadersReceivable() throws Http2Exception {
+    public boolean checkHeadersReceivable() throws Http2Exception {
         switch (state) {
         case IDLE:
-            // this is OK
-            break;
+            // headers
+            return false;
+        case OPEN:
+            // trailers
+            return true;
         case HALF_CLOSED_LOCAL:
         case HALF_CLOSED_REMOTE:
         case CLOSED:
             throw new Http2Exception(Http2ErrorCode.STREAM_CLOSED,
                                      "Stream " + streamId + " received headers when stream is " + state);
-        case OPEN:
-            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Received headers for open stream " + streamId);
         default:
-            throw new Http2Exception(Http2ErrorCode.INTERNAL, "Unknown stream state: " + streamId + ", state: " + state);
+            throw new Http2Exception(Http2ErrorCode.INTERNAL,
+                                     "Unknown stream state, streamId: " + streamId + ", state: " + state);
         }
     }
 
@@ -189,7 +192,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
                                              + streamId + " in IDLE state");
         }
         // TODO interrupt
-        boolean rapidReset = writeState == WriteState.INIT;
+        boolean rapidReset = writeState.get() == WriteState.INIT;
         this.state = Http2StreamState.CLOSED;
         return rapidReset;
     }
@@ -225,14 +228,14 @@ class Http2ServerStream implements Runnable, Http2Stream {
     @Override
     public void headers(Http2Headers headers, boolean endOfStream) {
         this.headers = headers;
-        this.state = endOfStream ? Http2StreamState.HALF_CLOSED_REMOTE : Http2StreamState.OPEN;
-        if (state == Http2StreamState.HALF_CLOSED_REMOTE) {
-            try {
-                // we need to notify that there is no data coming
-                inboundData.put(TERMINATING_FRAME);
-            } catch (InterruptedException e) {
-                throw new Http2Exception(Http2ErrorCode.INTERNAL, "Interrupted", e);
-            }
+        if (endOfStream) {
+            closeFromRemote();
+        } else {
+            this.state = Http2StreamState.OPEN;
+        }
+        Headers httpHeaders = headers.httpHeaders();
+        if (httpHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
+            this.expectedLength = httpHeaders.get(HeaderNames.CONTENT_LENGTH).get(long.class);
         }
     }
 
@@ -240,9 +243,20 @@ class Http2ServerStream implements Runnable, Http2Stream {
     public void data(Http2FrameHeader header, BufferData data, boolean endOfStream) {
         if (expectedLength != -1 && expectedLength < header.length()) {
             state = Http2StreamState.CLOSED;
+            writeState.updateAndGet(s -> s.checkAndMove(WriteState.END));
+            streams.remove(this.streamId);
             Http2RstStream rst = new Http2RstStream(Http2ErrorCode.PROTOCOL);
             writer.write(rst.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
-            return;
+
+            try {
+                // we need to notify that there is no data coming
+                inboundData.put(TERMINATING_FRAME);
+            } catch (InterruptedException e) {
+                throw new Http2Exception(Http2ErrorCode.INTERNAL, "Interrupted", e);
+            }
+
+            throw new Http2Exception(Http2ErrorCode.ENHANCE_YOUR_CALM,
+                                     "Request data length doesn't correspond to the content-length header.");
         }
         if (expectedLength != -1) {
             expectedLength -= header.length();
@@ -330,11 +344,28 @@ class Http2ServerStream implements Runnable, Http2Stream {
         }
     }
 
-    int writeHeaders(Http2Headers http2Headers, boolean endOfStream) {
-        writeState = writeState.checkAndMove(WriteState.HEADERS_SENT);
+    void closeFromRemote() {
+        this.state = Http2StreamState.HALF_CLOSED_REMOTE;
+        try {
+            // we need to notify that there is no data coming
+            inboundData.put(TERMINATING_FRAME);
+        } catch (InterruptedException e) {
+            throw new Http2Exception(Http2ErrorCode.INTERNAL, "Interrupted", e);
+        }
+    }
+
+    int writeHeaders(Http2Headers http2Headers, final boolean endOfStream) {
+        writeState.updateAndGet(s -> {
+            if (endOfStream) {
+                return s.checkAndMove(WriteState.HEADERS_SENT)
+                        .checkAndMove(WriteState.END);
+            }
+            return s.checkAndMove(WriteState.HEADERS_SENT);
+        });
+
         Http2Flag.HeaderFlags flags;
+
         if (endOfStream) {
-            writeState = writeState.checkAndMove(WriteState.END);
             streams.remove(this.streamId);
             flags = Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM);
         } else {
@@ -349,12 +380,9 @@ class Http2ServerStream implements Runnable, Http2Stream {
     }
 
     int writeHeadersWithData(Http2Headers http2Headers, int contentLength, BufferData bufferData, boolean endOfStream) {
-        writeState = writeState.checkAndMove(WriteState.HEADERS_SENT);
-        writeState = writeState.checkAndMove(WriteState.DATA_SENT);
-        if (endOfStream) {
-            writeState = writeState.checkAndMove(WriteState.END);
-            streams.remove(this.streamId);
-        }
+        writeState.updateAndGet(s -> s
+                .checkAndMove(WriteState.HEADERS_SENT)
+                .checkAndMove(WriteState.DATA_SENT));
 
         Http2FrameData frameData =
                 new Http2FrameData(Http2FrameHeader.create(contentLength,
@@ -369,13 +397,24 @@ class Http2ServerStream implements Runnable, Http2Stream {
                                        flowControl.outbound());
         } catch (UncheckedIOException e) {
             throw new ServerConnectionException("Failed to write headers", e);
+        } finally {
+            if (endOfStream) {
+                writeState.updateAndGet(s -> s.checkAndMove(WriteState.END));
+                streams.remove(this.streamId);
+            }
         }
     }
 
-    int writeData(BufferData bufferData, boolean endOfStream) {
-        writeState = writeState.checkAndMove(WriteState.DATA_SENT);
+    int writeData(BufferData bufferData, final boolean endOfStream) {
+        writeState.updateAndGet(s -> {
+            if (endOfStream) {
+                return s.checkAndMove(WriteState.DATA_SENT)
+                        .checkAndMove(WriteState.END);
+            }
+            return s.checkAndMove(WriteState.DATA_SENT);
+        });
+
         if (endOfStream) {
-            writeState = writeState.checkAndMove(WriteState.END);
             streams.remove(this.streamId);
         }
 
@@ -395,30 +434,33 @@ class Http2ServerStream implements Runnable, Http2Stream {
     }
 
     int writeTrailers(Http2Headers http2trailers) {
-        writeState = writeState.checkAndMove(WriteState.TRAILERS_SENT);
+        writeState.updateAndGet(s -> s.checkAndMove(WriteState.TRAILERS_SENT));
         streams.remove(this.streamId);
 
         try {
-        return writer.writeHeaders(http2trailers,
-                                          streamId,
-                                          Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
-                                          flowControl.outbound());
+            return writer.writeHeaders(http2trailers,
+                                       streamId,
+                                       Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
+                                       flowControl.outbound());
         } catch (UncheckedIOException e) {
             throw new ServerConnectionException("Failed to write trailers", e);
         }
     }
 
     void write100Continue() {
-        if (writeState == WriteState.EXPECTED_100) {
-            writeState = writeState.checkAndMove(WriteState.CONTINUE_100_SENT);
-
+        if (WriteState.EXPECTED_100 == writeState.updateAndGet(s -> {
+            if (WriteState.EXPECTED_100 == s) {
+                return s.checkAndMove(WriteState.CONTINUE_100_SENT);
+            }
+            return s;
+        })) {
             Header status = HeaderValues.createCached(Http2Headers.STATUS_NAME, 100);
             Http2Headers http2Headers = Http2Headers.create(WritableHeaders.create().add(status));
             try {
                 writer.writeHeaders(http2Headers,
-                                streamId,
-                                Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
-                                flowControl.outbound());
+                                    streamId,
+                                    Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                    flowControl.outbound());
             } catch (UncheckedIOException e) {
                 throw new ServerConnectionException("Failed to write 100-Continue", e);
             }
@@ -454,17 +496,17 @@ class Http2ServerStream implements Runnable, Http2Stream {
 
         if (frame.header().flags(Http2FrameTypes.DATA).endOfStream()) {
             wasLastDataFrame = true;
+            if (state == Http2StreamState.CLOSED) {
+                throw RequestException.builder().message("Stream is closed.").build();
+            }
         }
         return frame.data();
     }
 
     private void handle() {
         Headers httpHeaders = headers.httpHeaders();
-        if (httpHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
-            this.expectedLength = httpHeaders.get(HeaderNames.CONTENT_LENGTH).get(long.class);
-        }
         if (headers.httpHeaders().contains(HeaderValues.EXPECT_100)) {
-            writeState = writeState.checkAndMove(WriteState.EXPECTED_100);
+            writeState.updateAndGet(s -> s.checkAndMove(WriteState.EXPECTED_100));
         }
 
         subProtocolHandler = null;
@@ -554,20 +596,18 @@ class Http2ServerStream implements Runnable, Http2Stream {
         }
     }
 
-    private record DataFrame(Http2FrameHeader header, BufferData data) { }
-
     private enum WriteState {
         END,
         TRAILERS_SENT(END),
         DATA_SENT(TRAILERS_SENT, END),
         HEADERS_SENT(DATA_SENT, TRAILERS_SENT, END),
-        CONTINUE_100_SENT(HEADERS_SENT),
-        EXPECTED_100(CONTINUE_100_SENT, HEADERS_SENT),
-        INIT(EXPECTED_100, HEADERS_SENT);
+        CONTINUE_100_SENT(HEADERS_SENT, END),
+        EXPECTED_100(CONTINUE_100_SENT, HEADERS_SENT, END),
+        INIT(EXPECTED_100, HEADERS_SENT, END);
 
         private final Set<WriteState> allowedTransitions;
 
-        WriteState(WriteState... allowedTransitions){
+        WriteState(WriteState... allowedTransitions) {
             this.allowedTransitions = Set.of(allowedTransitions);
         }
 
@@ -575,7 +615,15 @@ class Http2ServerStream implements Runnable, Http2Stream {
             if (this == newState || allowedTransitions.contains(newState)) {
                 return newState;
             }
-            throw new IllegalStateException("Transition from " + this + " to " + newState + " is not allowed!");
+
+            IllegalStateException badTransitionException =
+                    new IllegalStateException("Transition from " + this + " to " + newState + " is not allowed!");
+            if (this == END) {
+                throw new IllegalStateException("Stream is already closed.", badTransitionException);
+            }
+            throw badTransitionException;
         }
     }
+
+    private record DataFrame(Http2FrameHeader header, BufferData data) { }
 }

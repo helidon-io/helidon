@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ import io.helidon.common.socket.SocketContext;
 public class Http2ConnectionWriter implements Http2StreamWriter {
     private final DataWriter writer;
 
-    // todo replace with prioritized lock (stream priority + connection writes have highest prio)
     private final Lock streamLock = new ReentrantLock(true);
     private final SocketContext ctx;
     private final Http2FrameListener listener;
@@ -143,24 +142,14 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
                             Http2Flag.HeaderFlags flags,
                             Http2FrameData dataFrame,
                             FlowControl.Outbound flowControl) {
-        // this is executing in the thread of the stream
-        // we must enforce parallelism of exactly 1, to make sure the dynamic table is updated
-        // and then immediately written
+        // Executed on stream thread
+        int bytesWritten = 0;
+        bytesWritten += writeHeaders(headers, streamId, flags, flowControl);
+        writeData(dataFrame, flowControl);
+        bytesWritten += Http2FrameHeader.LENGTH;
+        bytesWritten += dataFrame.header().length();
 
-        lock();
-        try {
-            int bytesWritten = 0;
-
-            bytesWritten += writeHeaders(headers, streamId, flags, flowControl);
-
-            writeData(dataFrame, flowControl);
-            bytesWritten += Http2FrameHeader.LENGTH;
-            bytesWritten += dataFrame.header().length();
-
-            return bytesWritten;
-        } finally {
-            streamLock.unlock();
-        }
+        return bytesWritten;
     }
 
     /**
@@ -227,32 +216,10 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
             } else if (splitFrames.length == 2) {
                 // write send-able part and block until window update with the rest
                 lockedWrite(splitFrames[0]);
-                flowControl.decrementWindowSize(currFrame.header().length());
+                flowControl.decrementWindowSize(splitFrames[0].header().length());
                 flowControl.blockTillUpdate();
                 currFrame = splitFrames[1];
             }
         }
     }
-
-    // TODO use for fastpath
-    //    private void noLockWrite(Http2FrameData... frames) {
-    //        List<BufferData> toWrite = new LinkedList<>();
-    //
-    //        for (Http2FrameData frame : frames) {
-    //            BufferData headerData = frame.header().write();
-    //
-    //            listener.frameHeader(ctx, frame.header());
-    //            listener.frameHeader(ctx, headerData);
-    //
-    //            toWrite.add(headerData);
-    //
-    //            BufferData data = frame.data();
-    //
-    //            if (data.available() != 0) {
-    //                toWrite.add(data);
-    //            }
-    //        }
-    //
-    //        writer.write(toWrite.toArray(new BufferData[0]));
-    //    }
 }
