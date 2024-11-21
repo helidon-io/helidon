@@ -32,10 +32,12 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -205,10 +207,13 @@ public class ConfigDocs {
 
         // map of annotated types to documentation
         Map<String, CmType> configuredTypes = new HashMap<>();
+        Set<String> allTypes = new HashSet<>();
 
         for (CmModule module : allModules) {
             for (CmType type : module.getTypes()) {
                 configuredTypes.put(type.getAnnotatedType(), type);
+                allTypes.add(type.getAnnotatedType());
+                allTypes.add(type.getType());
             }
         }
 
@@ -225,7 +230,7 @@ public class ConfigDocs {
 
         List<String> generatedFiles = new LinkedList<>();
         for (CmModule module : allModules) {
-            moduleDocs(configuredTypes, typeTemplate, path, module, generatedFiles);
+            moduleDocs(allTypes, configuredTypes, typeTemplate, path, module, generatedFiles);
         }
 
         // sort alphabetically by page title
@@ -320,14 +325,15 @@ public class ConfigDocs {
         return title;
     }
 
-    private static void moduleDocs(Map<String, CmType> configuredTypes,
+    private static void moduleDocs(Set<String> allTypes,
+                                   Map<String, CmType> configuredTypes,
                                    Template template,
                                    Path modulePath,
                                    CmModule module,
                                    List<String> generatedFiles) {
         Function<String, Boolean> exists = type -> {
             // 1: check if part of this processing
-            if (configuredTypes.containsKey(type)) {
+            if (allTypes.contains(type)) {
                 return true;
             }
             // 2: check if exists in target directory
