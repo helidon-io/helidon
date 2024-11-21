@@ -116,6 +116,25 @@ TLS in the gRPC MP client section is configured in the same way as in other Heli
 components such as the webserver. For more information see
 xref:{rootdir}/se/webserver.adoc#_configuring_tls[Configuring TLS].
 
+Given that TLS is enabled by default in gRPC, it must be explicitly turned off by
+setting the `enabled` flag to `false` when connecting to an unsecure endpoint.
+For example, to turn off TLS for the `string-channel` above use:
+
+[source,yaml]
+----
+grpc:
+  client:
+    channels:
+      - name: "string-channel"
+        port: 8080
+        tls:
+          enabled: "false"
+----
+
+NOTE: It is not sufficient to omit the TLS section in the configuration above. The
+TLS section must be present and explicitly disabled. It is generally discouraged
+to expose unsecure gRPC endpoints.
+
 == Usage
 
 === Defining a Client Interface
