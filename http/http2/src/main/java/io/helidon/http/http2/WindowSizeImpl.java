@@ -164,10 +164,12 @@ abstract class WindowSizeImpl implements WindowSize {
         @Override
         public void blockTillUpdate() {
             var startTime = System.currentTimeMillis();
+            int backoff = 50;
             while (getRemainingWindowSize() < 1) {
                 try {
                     updatedSemaphore.drainPermits();
-                    var ignored = updatedSemaphore.tryAcquire(timeoutMillis / 4, TimeUnit.MILLISECONDS);
+                    var ignored = updatedSemaphore.tryAcquire(Math.min(backoff, 5000), TimeUnit.MILLISECONDS);
+                    backoff *= 2;
                 } catch (InterruptedException e) {
                     debugLog("%s OFC STR %d: Window depleted, waiting for update interrupted.", e);
                     throw new Http2Exception(Http2ErrorCode.FLOW_CONTROL, "Flow control update wait interrupted.");
