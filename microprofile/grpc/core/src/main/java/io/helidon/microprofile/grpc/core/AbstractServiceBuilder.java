@@ -224,7 +224,7 @@ public abstract class AbstractServiceBuilder {
             Object value = m.invoke(annotation);
             return value instanceof String s ? s : null;
         } catch (NoSuchMethodException e) {
-            LOGGER.log(Level.WARNING, () -> String.format("Annotation %s has no name() method", annotation));
+            // falls through
         } catch (IllegalAccessException | InvocationTargetException e) {
             LOGGER.log(Level.WARNING, () -> String.format("Error calling name() method on annotation %s", annotation), e);
         }
