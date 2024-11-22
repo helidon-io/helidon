@@ -17,6 +17,7 @@ This is a bugfix release of Helidon. It is recommended for all users of Helidon 
 - Dependencies: Upgrade grpc-java to 1.65.1 [9497](https://github.com/helidon-io/helidon/pull/9497)
 - Dependencies: Upgrade Jackson to 2.18.1 [9482](https://github.com/helidon-io/helidon/pull/9482)
 - Dependencies: Upgrade Jersey to 2.45 [9507](https://github.com/helidon-io/helidon/pull/9507)
+- Dependencies: Upgrade kafka-clients to 3.8.1  [9525](https://github.com/helidon-io/helidon/pull/9525)
 - Dependencies: Upgrade Netty to 4.1.115[9497](https://github.com/helidon-io/helidon/pull/9497)
 - Dependencies: Upgrade ojdbc to 21.15.0.0 [9482](https://github.com/helidon-io/helidon/pull/9482)
 
