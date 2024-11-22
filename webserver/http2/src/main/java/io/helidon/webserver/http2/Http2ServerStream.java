@@ -448,7 +448,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
     }
 
     void write100Continue() {
-        if (WriteState.EXPECTED_100 == writeState.updateAndGet(s -> {
+        if (WriteState.EXPECTED_100 == writeState.getAndUpdate(s -> {
             if (WriteState.EXPECTED_100 == s) {
                 return s.checkAndMove(WriteState.CONTINUE_100_SENT);
             }
