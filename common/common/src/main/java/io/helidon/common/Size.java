@@ -254,8 +254,7 @@ public interface Size {
          * Exbi-bytes (represented as either {@code EB} or {@code EiB}), where we use binary approach, i.e.
          * 1 EB or EiB is 1024^6 bytes (1024 to the power 6), or 1024 PiB.
          */
-        EIB(1024, 6, "EB", "EiB"),
-        ;
+        EIB(1024, 6, "EB", "EiB");
 
         private static final Map<String, Unit> UNIT_MAP;
 
