@@ -121,6 +121,8 @@ abstract class WindowSizeImpl implements WindowSize {
      */
     static final class Outbound extends WindowSizeImpl implements WindowSize.Outbound {
 
+        private static final int BACKOFF_MIN = 50;
+        private static final int BACKOFF_MAX = 5000;
         private final Semaphore updatedSemaphore = new Semaphore(1);
         private final ConnectionFlowControl.Type type;
         private final int streamId;
@@ -164,12 +166,13 @@ abstract class WindowSizeImpl implements WindowSize {
         @Override
         public void blockTillUpdate() {
             var startTime = System.currentTimeMillis();
-            int backoff = 50;
+            int backoff = BACKOFF_MIN;
             while (getRemainingWindowSize() < 1) {
                 try {
                     updatedSemaphore.drainPermits();
-                    var ignored = updatedSemaphore.tryAcquire(Math.min(backoff, 5000), TimeUnit.MILLISECONDS);
-                    backoff *= 2;
+                    var ignored = updatedSemaphore.tryAcquire(backoff, TimeUnit.MILLISECONDS);
+                    // linear deterministic backoff
+                    backoff = Math.min(backoff * 2, BACKOFF_MAX);
                 } catch (InterruptedException e) {
                     debugLog("%s OFC STR %d: Window depleted, waiting for update interrupted.", e);
                     throw new Http2Exception(Http2ErrorCode.FLOW_CONTROL, "Flow control update wait interrupted.");
