@@ -46,7 +46,7 @@ public class MemoryCache implements RuntimeType.Api<MemoryCacheConfig> {
     private MemoryCache(MemoryCacheConfig config) {
         this.config = config;
         if (config.enabled()) {
-            long configuredMax = config.maxBytes();
+            long configuredMax = config.capacity().toBytes();
             this.maxSize = configuredMax == 0 ? Long.MAX_VALUE : configuredMax;
         } else {
             this.maxSize = 0;

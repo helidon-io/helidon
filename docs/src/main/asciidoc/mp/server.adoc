@@ -351,7 +351,7 @@ server.features.static-content.classpath.0.welcome=resource.html
 # server.features.static-content.classpath.0.context=/static-cp
 ----
 
-It is usually easier to configure list based options using `application.yaml` instead, such as:
+It is usually easier to configure list-based options using `application.yaml` instead, such as:
 [source,yaml]
 .application.yaml - Static content
 ----

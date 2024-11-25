@@ -18,10 +18,11 @@ package io.helidon.webserver.staticcontent;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Size;
 
 /**
  * Configuration of memory cache for static content.
- * The memory cache will cache the first {@link #maxBytes() bytes} that fit into the configured memory size for the
+ * The memory cache will cache the first {@link #capacity() bytes} that fit into the configured memory size for the
  * duration of the service uptime.
  */
 @Prototype.Blueprint
@@ -37,13 +38,16 @@ interface MemoryCacheConfigBlueprint extends Prototype.Factory<MemoryCache> {
     boolean enabled();
 
     /**
-     * Maximal capacity of the cached bytes of file content.
+     * Capacity of the cached bytes of file content.
      * If set to {@code 0}, the cache is unlimited. To disable caching, set {@link #enabled()} to {@code false},
      * or do not configure a memory cache at all.
+     * <p>
+     * The capacity must be less than {@link java.lang.Long#MAX_VALUE} bytes, though you must be careful still,
+     * as it must fit into the heap size.
      *
-     * @return maximal number of bytes in cache
+     * @return capacity of the cache in bytes, defaults to 50 million bytes (50 mB)
      */
-    @Option.DefaultLong(50_000_000)
+    @Option.Default("50 mB")
     @Option.Configured
-    long maxBytes();
+    Size capacity();
 }

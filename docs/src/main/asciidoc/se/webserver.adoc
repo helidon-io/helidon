@@ -629,8 +629,8 @@ To enable HTTP/2 support add the following dependency to your project's `pom.xml
 Static content is served through a `StaticContentFeature`. As with other server features, it can be configured through config,
 or registered with server config builder.
 
-Static content supports serving of files from classpath, or from any readable directory on file system.
-Each content handler has a location specified (required), and can provide a context that will be registered with the WebServer
+Static content supports serving of files from classpath, or from any readable directory on the file system.
+Each content handler must include a location, and can provide a context that will be registered with the WebServer
 (defaults to `/`).
 
 === Maven Coordinates
@@ -662,7 +662,7 @@ include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_22, indent=0]
 <5> `index.html` is the file that is returned if a directory is requested
 <6> serve the classpath content on root context `/`
 
-Static content can also be registered using configuration of server feature.
+Static content can also be registered using the configuration of server feature.
 
 If you use `Config` with your webserver setup, you can register the same static content using configuration:
 
