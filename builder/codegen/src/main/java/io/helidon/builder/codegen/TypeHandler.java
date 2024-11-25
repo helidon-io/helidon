@@ -32,6 +32,7 @@ import io.helidon.codegen.classmodel.Field;
 import io.helidon.codegen.classmodel.InnerClass;
 import io.helidon.codegen.classmodel.Javadoc;
 import io.helidon.codegen.classmodel.Method;
+import io.helidon.common.Size;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -178,8 +179,14 @@ class TypeHandler {
                     .addContent(defaultValue)
                     .addContent("\"");
         }
+        if (TypeNames.SIZE.equals(typeName)) {
+            CodegenValidator.validateSize(enclosingType, annotatedMethod, OPTION_DEFAULT, "value", defaultValue);
+            return content -> content.addContent(Size.class)
+                    .addContent(".parse(\"")
+                    .addContent(defaultValue)
+                    .addContent("\")");
+        }
         if (TypeNames.DURATION.equals(typeName)) {
-
             CodegenValidator.validateDuration(enclosingType, annotatedMethod, OPTION_DEFAULT, "value", defaultValue);
             return content -> content.addContent(Duration.class)
                     .addContent(".parse(\"")

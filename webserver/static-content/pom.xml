@@ -61,6 +61,11 @@
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.logging</groupId>
+            <artifactId>helidon-logging-jul</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -75,8 +80,50 @@
                             <artifactId>helidon-common-features-processor</artifactId>
                             <version>${helidon.version}</version>
                         </path>
+                        <path>
+                            <groupId>io.helidon.codegen</groupId>
+                            <artifactId>helidon-codegen-apt</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.config.metadata</groupId>
+                            <artifactId>helidon-config-metadata-codegen</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.builder</groupId>
+                            <artifactId>helidon-builder-codegen</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.codegen</groupId>
+                            <artifactId>helidon-codegen-helidon-copyright</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
                     </annotationProcessorPaths>
                 </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-apt</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.config.metadata</groupId>
+                        <artifactId>helidon-config-metadata-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.builder</groupId>
+                        <artifactId>helidon-builder-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-helidon-copyright</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>
