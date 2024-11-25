@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,10 +44,10 @@ import io.helidon.webserver.http.ServerResponse;
 abstract class FileBasedContentHandler extends StaticContentHandler {
     private final Map<String, MediaType> customMediaTypes;
 
-    FileBasedContentHandler(StaticContentService.FileBasedBuilder<?> builder) {
-        super(builder);
+    FileBasedContentHandler(BaseHandlerConfig config) {
+        super(config);
 
-        this.customMediaTypes = builder.specificContentTypes();
+        this.customMediaTypes = config.contentTypes();
     }
 
     static String fileName(Path path) {
@@ -82,7 +82,7 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
                                                                    contentLength);
             if (ranges.size() == 1) {
                 // single response
-                ByteRangeRequest range = ranges.get(0);
+                ByteRangeRequest range = ranges.getFirst();
                 range.setContentRange(response);
 
                 // only send a part of the file

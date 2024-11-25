@@ -333,24 +333,41 @@ io.helidon.examples.AdminService:
 .META-INF/microprofile-config.properties - File system static content
 ----
 # Location of content on file system
-server.static.path.location=/var/www/html
-# default is index.html
-server.static.path.welcome=resource.html
-# static content path - default is "/"
-# server.static.path.context=/static-file
+server.features.static-content.path.0.location=/var/www/html
+# default is index.html (only in Helidon MicroProfile)
+server.features.static-content.path.0.welcome=resource.html
+# static content context on webserver - default is "/"
+# server.features.static-content.path.0.context=/static-file
 ----
 
 [source,properties]
 .META-INF/microprofile-config.properties - Classpath static content
 ----
 # src/main/resources/WEB in your source tree
-server.static.classpath.location=/WEB
+server.features.static-content.classpath.0.location=/WEB
 # default is index.html
-server.static.classpath.welcome=resource.html
+server.features.static-content.classpath.0.welcome=resource.html
 # static content path - default is "/"
-# server.static.classpath.context=/static-cp
+# server.features.static-content.classpath.0.context=/static-cp
 ----
 
+It is usually easier to configure list-based options using `application.yaml` instead, such as:
+[source,yaml]
+.application.yaml - Static content
+----
+server:
+  features:
+    static-content:
+      welcome: "welcome.html"
+      classpath:
+        - context: "/static"
+          location: "/WEB"
+      path:
+        - context: "/static-file"
+          location: "./static-content"
+----
+
+See xref:{rootdir}/config/io_helidon_webserver_staticcontent_StaticContentFeature.adoc[Static Content Feature Configuration Reference] for details. The only difference is that we set welcome file to `index.html` by default.
 
 === Example configuration of routing
 
