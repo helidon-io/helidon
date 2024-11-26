@@ -182,8 +182,8 @@ class TestScanning {
         // relative automatically-named timer on parentGet method on superinterface = subtype.method-name
         TimerInfo getTimerFromSuperTypeInfo = TimerInfo.create(metricRegistry, ServiceClient.class.getCanonicalName()
                 + ".get");
-        //        assertThat("Relative automatically-named timer on method in superinterface", getTimerFromSuperTypeInfo.timer,
-        //        notNullValue());
+                assertThat("Relative automatically-named timer on method in superinterface", getTimerFromSuperTypeInfo.timer,
+                notNullValue());
 
         timers.add(getTimerFromSuperTypeInfo);
 

@@ -198,7 +198,7 @@ Add a dependency on the Helidon Rest Client implementation and create the follow
 [source,java]
 .client interface
 ----
-include::{sourcedir}/mp/restclient//RestclientSnippets.java[tag=snippet_6, indent=0]
+include::{sourcedir}/mp/restclient/RestclientSnippets.java[tag=snippet_6, indent=0]
 ----
 [[example-after-client-interface]]
 Then create a runnable method as described in <<creating-a-new-client, Creating new client>>, but with baseUri
