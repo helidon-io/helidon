@@ -89,12 +89,12 @@ interface Http2ClientProtocolConfigBlueprint extends ProtocolConfig {
     int initialWindowSize();
 
     /**
-     * Timeout for blocking between windows size check iterations.
+     * Timeout for blocking while waiting for window update when window is depleted.
      *
      * @return timeout
      */
     @Option.Configured
-    @Option.Default("PT0.1S")
+    @Option.Default("PT15S")
     Duration flowControlBlockTimeout();
 
     /**
