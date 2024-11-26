@@ -21,7 +21,7 @@
 :feature-name: MicroProfile Rest Client
 :microprofile-bundle: true
 :keywords: helidon, rest, client, microprofile, micro-profile
-:rootdir: {docdir}/..
+:rootdir: {docdir}/../..
 
 include::{rootdir}/includes/mp.adoc[]
 
@@ -43,8 +43,11 @@ Helidon will automatically create a _proxy_ class for the interface and map loca
 
 For more information, see link:{microprofile-rest-client-spec-url}[Rest Client For MicroProfile Specification].
 
+You can also use metrics annotations on your Rest Client methods as described in xref:restclientmetrics.adoc[this related page.]
+
 include::{rootdir}/includes/dependencies.adoc[]
 
+// tag::helidon-restclient-dep[]
 [source,xml]
 ----
 <dependency>
@@ -52,7 +55,7 @@ include::{rootdir}/includes/dependencies.adoc[]
     <artifactId>helidon-microprofile-rest-client</artifactId>
 </dependency>
 ----
-
+// end::helidon-restclient-dep[]
 == API
 [cols="1,2"]
 |===
@@ -86,7 +89,7 @@ the provided configuration.
 [source,java]
 .Example
 ----
-include::{sourcedir}/mp/RestclientSnippets.java[tag=snippet_1, indent=0]
+include::{sourcedir}/mp/restclient/RestclientSnippets.java[tag=snippet_1, indent=0]
 ----
 
 The `RestClientBuilder` interface extends the `Configurable` interface from Jakarta REST (JAX-RS),
@@ -95,7 +98,7 @@ enabling direct registration of _providers_ such as filters, param converters, e
 [source,java]
 .Example
 ----
-include::{sourcedir}/mp/RestclientSnippets.java[tag=snippet_2, indent=0]
+include::{sourcedir}/mp/restclient/RestclientSnippets.java[tag=snippet_2, indent=0]
 ----
 
 === Creating a New Client Using CDI
@@ -107,7 +110,7 @@ to access the service.
 [source,java]
 .Example
 ----
-include::{sourcedir}/mp/RestclientSnippets.java[tag=snippet_3, indent=0]
+include::{sourcedir}/mp/restclient/RestclientSnippets.java[tag=snippet_3, indent=0]
 ----
 
 Any Jakarta REST (JAX-RS) providers for a client can be registered using the (repeatable)
@@ -116,7 +119,7 @@ Any Jakarta REST (JAX-RS) providers for a client can be registered using the (re
 [source,java]
 .Example
 ----
-include::{sourcedir}/mp/RestclientSnippets.java[tag=snippet_4, indent=0]
+include::{sourcedir}/mp/restclient/RestclientSnippets.java[tag=snippet_4, indent=0]
 ----
 Once a client interface is annotated, it can be injected into any CDI bean.
 
@@ -126,7 +129,7 @@ All properties in annotation `RegisterRestClient` can be overridden via configur
 [source,java]
 .Example
 ----
-include::{sourcedir}/mp/RestclientSnippets.java[tag=snippet_5, indent=0]
+include::{sourcedir}/mp/restclient/RestclientSnippets.java[tag=snippet_5, indent=0]
 ----
 
 == Configuration
@@ -189,14 +192,15 @@ Configuration options affecting CDI and programmatically created clients:
 |===
 
 == Examples
-To be able to run and test this example, use the  xref:guides/quickstart.adoc[Helidon MP examples/quickstarts].
+To be able to run and test this example, use the  xref:../guides/quickstart.adoc[Helidon MP examples/quickstarts].
 Add a dependency on the Helidon Rest Client implementation and create the following client interface:
 
 [source,java]
 .client interface
 ----
-include::{sourcedir}/mp/RestclientSnippets.java[tag=snippet_6, indent=0]
+include::{sourcedir}/mp/restclient//RestclientSnippets.java[tag=snippet_6, indent=0]
 ----
+[[example-after-client-interface]]
 Then create a runnable method as described in <<creating-a-new-client, Creating new client>>, but with baseUri
 `http://localhost:8080/greet` and the above interface.
 

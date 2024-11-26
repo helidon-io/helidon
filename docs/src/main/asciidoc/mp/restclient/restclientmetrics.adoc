@@ -1,0 +1,187 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c)2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Rest Client Metrics
+:description: Helidon MP Rest Client Metrics
+:feature-name: MicroProfile Rest Client Metrics
+:microprofile-bundle: true
+:keywords: helidon, rest, client, microprofile, micro-profile, metrics
+:rootdir: {docdir}/../..
+
+include::{rootdir}/includes/mp.adoc[]
+
+== Contents
+
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
+- <<API, API>>
+- <<Configuration, Configuration>>
+- <<Reference, Reference>>
+
+== Overview
+Helidon supports MicroProfile REST Client metrics by registering metrics automatically when developers add MicroProfile Metrics annotations to REST client interfaces and methods.
+
+MicroProfile neither mandates nor specifies how metrics and the REST client work together. Support in Helidon for metrics on REST clients uses the MicroProfile Metrics spec for inspiration where appropriate.
+
+For more information about support for REST clients in Helidon see xref:restclient.adoc[REST Client].
+
+include::{rootdir}/includes/dependencies.adoc[]
+
+// tag::helidon-restclientmetrics-dep[]
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.microprofile.rest-client-metrics</groupId>
+    <artifactId>helidon-microprofile-rest-client-metrics</artifactId>
+</dependency>
+----
+// end::helidon-restclientmetrics-dep[]
+
+== Usage
+Add the MicroProfile Metrics `@Counted` and `@Timed` annotations to REST client interfaces and interface methods to trigger counting or timing, respectively, of REST client method invocations.
+
+Helidon determines metric names according to the link:https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/microprofile-metrics-spec-5.1.1.html#annotated-naming-convention[MicroProfile Metrics naming convention]  and supports the following metrics naming features:
+
+* absolute and relative names
+* explicit and inferred names
+* type-level annotations
+
+When you place annotations at the type level of a REST client interface Helidon registers _different_ metrics for each of the REST methods on the interface. This is the same behavior as in normal MicroProfile Metrics when you add metrics annotations at the type level.
+
+When you use the annotations at the type level on a superinterface Helidon acts as if those annotations appear at the type-level of any REST client subinterface which extends the superinterface. In keeping with the naming conventions enforced by the MicroProfile Metrics TCK, relative metric names use the _subinterface_ name not the declaring interface name.
+
+(Note that the
+MicroProfile Metrics specification states that the _declaring_ class name is used, while as written the MicroProfile Metrics TCK requires that implementations use the _subclass_ name. For consistency the Helidon REST client metrics implementation follows the enforced metrics TCK behavior.)
+
+=== Understanding How and When Helidon Registers REST Client Metrics
+
+Helidon registers the metrics associated with a REST client interface when that interface becomes known to Helidon as a REST client.
+
+The link:https://download.eclipse.org/microprofile/microprofile-rest-client-3.0/microprofile-rest-client-spec-3.0.html#_microprofile_rest_client[MicroProfile REST Client spec] describes how your application can inject a REST client interface or prepare it programmatically. Either action makes the REST client known to Helidon, at which time Helidon registers the metrics associated with that interface's methods. As a result, depending on how your application works, REST client metrics might be registered well after your code initially starts up.
+
+=== Using REST Client Metrics in Standalone Clients vs. in Servers
+Helidon registers and updates REST client metrics whether the REST client is standalone or is embedded in a Helidon server.
+
+Helidon _does not_ provide a `/metrics` endpoint for standalone clients, nor does it provide any built-in way to transmit metrics data from a client to a backend system. If needed, you can write your client code to access the application `MetricRegistry` and retrieve the REST client metrics Helidon has registered.
+
+In contrast, when REST clients run inside Helidon servers the REST client metrics for REST clients known to Helidon appear in the `/metrics` output.
+
+== API
+Use the following annotations from  `org.eclipse.microprofile.metrics.annotation`  listed in the following table to trigger REST client metrics.
+[cols="1,2"]
+|===
+| Annotation | Description
+| `@Counted` | Counts the invocations of a REST client method.
+| `@Timed` | Times the invocations of a REST client method.
+|===
+Type-level annotations trigger registration of separate metrics for each REST client method in the REST client interface.
+
+== Configuration
+Optional configuration options:
+[cols="3,3,2,5"]
+
+|===
+|key |type |default value |description
+
+|`enabled` | string | `true` | Whether to use REST client metrics.
+|===
+The `enabled` configuration setting allows developers to build REST client metrics into an application while permitting end users to disable the feature at their discretion.
+
+== Examples
+This example is similar to the xref:restclient.adoc#_examples[Helidon REST Client doc example] which starts with the xref:../guides/quickstart.adoc[Helidon MP QuickStart example].
+
+This sample app adds a new resource which mimics the functionality of the `GreetResource` but delegates each incoming request to its counterpart on the `GreetResource` using a REST client interface for that `GreetResource`. In short, the example application delegates to itself. Of course no production application would operate this way, but this contrived situation helps illustrate how to use REST client metrics simply with a single runnable project.
+
+To create this REST client metrics example follow these steps.
+
+1. Starting with the Helidon MP QuickStart example, add dependencies for both the Helidon REST client component and the Helidon REST client metrics component, as shown below.
++
+include::restclient.adoc[tag=helidon-restclient-dep]
++
+include::restclientmetrics.adoc[tag=helidon-restclientmetrics-dep]
+2. Add the following REST client interface which includes MicroProfile Metrics annotations to count and time various REST client method invocations.
++
+[source,java]
+----
+include::{sourcedir}/mp/restclient/RestclientMetricsSnippets.java[tag=snippet_1, indent=0]
+----
+<1> Times all outbound method invocations using separate timers for each method.
+<2> Counts the number of times a request is sent to get the default greeting message.
+3. Add a new resource class, similar to the `GreetService` resource class, but which delegates all incoming requests using the REST client.
++
+[source,java]
+----
+include::{sourcedir}/mp/restclient/RestclientMetricsSnippets.java[tag=snippet_2, indent=0]
+----
+<1> Holds the prepared REST client for use by the delegating methods.
+<2> Prepares the REST client. The example shows only one of many ways of doing this step.
+<3> Each delegating method invokes the corresponding REST client method and returns the result from it.
++
+By default, resource classes such as `DelegatingResource` are instantiated for each incoming request, but generally a Helidon server making outbound requests reuses the client data structures and connections. To create and reuse only a single REST client instance this example resource uses the Helidon `LazyValue` utility class so even as the system creates multiple instances of `DelegatingResource` they all reuse the same REST client.
+4. Build and run the application.
++
+[source,bash]
+----
+mvn clean package
+java -jar target/helidon-quickstart-mp.jar
+----
+5. Access the delegating endpoints.
++
+[source,bash]
+----
+curl http://localhost:8080/delegate
+curl http://localhost:8080/delegate
+curl http://localhost:8080/delegate/Joe
+----
+6. Retrieve the application metrics for the `getDefaultMessage` operation.
++
+[source,bash]
+----
+curl 'http://localhost:8080/metrics?scope=application' | grep getDefault
+----
+7. Look for two types of metrics:
+   a. Counter:
++
+[source,list]
+----
+# TYPE io_helidon_examples_quickstart_mp_GreetRestClient_getDefaultMessage_total counter
+io_helidon_examples_quickstart_mp_GreetRestClient_getDefaultMessage_total{mp_scope="application",} 2.0
+----
++
+This is the counter resulting from the `@Counted` annotation on the `getDefaultMessage` method of the REST client interface. The name is relative to the annotated method's class and is automatically set to the method name because neither `name` nor `absolute` were specified with the annotation.
+b. Timer:
++
+[source,list]
+----
+# TYPE timedGreet_getDefaultMessage_seconds summary
+timedGreet_getDefaultMessage_seconds{mp_scope="application",quantile="0.5",} 0.003407872
+timedGreet_getDefaultMessage_seconds{mp_scope="application",quantile="0.75",} 0.092143616
+timedGreet_getDefaultMessage_seconds_count{mp_scope="application",} 2.0
+----
++
+This excerpt shows the output for only one timer, but the full output includes timers for each method.
++
+The `@Timed` annotation at the type level triggers the registration of timers for each REST method in the REST client interface. The `name` setting overrides the default of the type name, and the `absolute` setting means the selected name _is not_ relative to the fully-qualified class name.
+
+== Reference
+
+* xref:restclient.adoc[Helidon REST Client documentation]
+* link:{microprofile-rest-client-spec-url}[MicroProfile RestClient specification]
+* link:{microprofile-metrics-spec-url}[MicroProfile Metrics specification]
+
