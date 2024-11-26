@@ -379,7 +379,7 @@ The generated main class will contain full, reflection less configuration of the
 
 The Main class can also be customized; to do this:
 1. Create a custom class (let's call it `CustomMain` as an example)
-2. The class must extends the injection main class (`public abstract class CustomMain extends InjectionMain`)
+2. The class must extend the injection main class (`public abstract class CustomMain extends InjectionMain`)
 3. The class must be annotated with `@Injection.Main`, so it is discovered by annotation processor
 4. Implement any desired methods; the generated class will only implement `serviceDescriptors(InjectConfig.Builder configBuilder)` (always), and `discoverServices()` (if created from the Maven plugin)
 

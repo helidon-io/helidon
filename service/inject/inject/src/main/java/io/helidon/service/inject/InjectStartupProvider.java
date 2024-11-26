@@ -60,6 +60,7 @@ public class InjectStartupProvider extends InjectionMain implements HelidonStart
 
     @Override
     protected void serviceDescriptors(InjectConfig.Builder configBuilder) {
+        // service descriptors are discovered when startup provider is used - see below discoverServices() method
     }
 
     @Override

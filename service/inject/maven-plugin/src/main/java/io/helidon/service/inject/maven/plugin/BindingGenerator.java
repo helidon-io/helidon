@@ -291,9 +291,14 @@ class BindingGenerator {
         Lookup dependencyTo = Lookup.create(dependency);
         Set<Qualifier> qualifiers = dependencyTo.qualifiers();
         if (self.contracts().containsAll(dependencyTo.contracts()) && self.qualifiers().equals(qualifiers)) {
-            // criteria must have a single contract for each injection point
-            // if this service implements the contracts actually required, we must look for services with lower weight
-            // but only if we also have the same qualifiers
+            /*
+            lookup must have a single contract for each injection point
+            if this service implements the contracts actually required, we must look for services with lower weight
+            but only if we also have the same qualifiers;
+            this is to ensure that if an injection point in a service injects a contract the service implements itself,
+            we do not end up in an infinite loop, but look for a service with a lower weight to satisfy that injection point
+            this allows us to "chain" a single contract through multiple services
+             */
             dependencyTo = Lookup.builder(dependencyTo)
                     .weight(self.weight())
                     .build();
