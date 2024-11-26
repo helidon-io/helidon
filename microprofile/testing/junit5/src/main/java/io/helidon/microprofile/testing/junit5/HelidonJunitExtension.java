@@ -97,8 +97,8 @@ public class HelidonJunitExtension implements BeforeEachCallback,
     @Override
     public Object createTestInstance(TestInstanceFactoryContext fc, ExtensionContext context) {
         // Use a proxy to start the container after the test instance creation
-        // The container is started lazily when invoking a test method
-        // or when resolving test method parameters
+        // The container is started lazily when invoking a method
+        // or when resolving parameters
         return ProxyHelper.proxyDelegate(context.getRequiredTestClass(), (testClass, testMethod) -> {
             // class context store specific to the intercepted method
             return container(context, testMethod).resolveInstance(testClass);
