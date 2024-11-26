@@ -67,6 +67,7 @@
         <module>zipkin-mp-2.2</module>
         <module>tls-revocation-config</module>
         <module>mp-telemetry</module>
+        <module>h2spec</module>
     </modules>
 
     <dependencyManagement>

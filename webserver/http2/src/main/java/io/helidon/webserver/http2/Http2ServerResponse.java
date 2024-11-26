@@ -30,7 +30,9 @@ import io.helidon.http.HeaderValues;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.ServerResponseTrailers;
 import io.helidon.http.Status;
+import io.helidon.http.http2.Http2Exception;
 import io.helidon.http.http2.Http2Headers;
+import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.http.ServerResponseBase;
@@ -137,6 +139,8 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             }
 
             afterSend();
+        } catch (Http2Exception e) {
+            throw new CloseConnectionException("Failed writing entity", e);
         } catch (UncheckedIOException e) {
             throw new ServerConnectionException("Failed writing entity", e);
         }
