@@ -46,5 +46,6 @@
         <module>stacking</module>
         <module>toolbox</module>
         <module>events</module>
+        <module>maven-plugin</module>
     </modules>
 </project>

@@ -104,6 +104,8 @@
         <version.lib.maven.plugin.annotations>3.9.0</version.lib.maven.plugin.annotations>
         <version.lib.maven.plugin.api>3.9.3</version.lib.maven.plugin.api>
         <version.lib.maven.plugin.project>2.2.1</version.lib.maven.plugin.project>
+        <version.lib.apiguardian.api>1.1.2</version.lib.apiguardian.api>
+        <version.lib.groovy>2.4.16</version.lib.groovy>
         <!--
         !Version statement! - end
         -->
@@ -125,6 +127,7 @@
         <version.plugin.helidon-build-tools>4.0.14</version.plugin.helidon-build-tools>
         <version.plugin.hibernate-enhance>${version.lib.hibernate}</version.plugin.hibernate-enhance>
         <version.plugin.install>3.1.2</version.plugin.install>
+        <version.plugin.invoker>3.2.2</version.plugin.invoker>
         <version.plugin.jacoco>0.8.5</version.plugin.jacoco>
         <version.plugin.jandex>3.1.2</version.plugin.jandex>
         <version.plugin.jar>3.3.0</version.plugin.jar>
@@ -859,6 +862,39 @@
                     <artifactId>maven-antrun-plugin</artifactId>
                     <version>${version.plugin.ant}</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-invoker-plugin</artifactId>
+                    <version>${version.plugin.invoker}</version>
+                    <configuration>
+                        <addTestClassPath>true</addTestClassPath>
+                        <settingsFile>src/it/settings.xml</settingsFile>
+                        <mergeUserSettings>true</mergeUserSettings>
+                        <localRepositoryPath>${project.build.directory}/it-repo</localRepositoryPath>
+                        <!--suppress MavenModelInspection -->
+                        <ignoreFailures>${maven.test.failure.ignore}</ignoreFailures>
+                        <showErrors>true</showErrors>
+                        <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
+                        <skipInvocation>${skipTests}</skipInvocation>
+                        <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
+                        <skipInstallation>${skipTests}</skipInstallation>
+                        <pomIncludes>
+                            <pomInclude>projects/*/pom.xml</pomInclude>
+                        </pomIncludes>
+                        <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+                        <goals>
+                            <goal>clean</goal>
+                            <goal>install</goal>
+                        </goals>
+                    </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.codehaus.groovy</groupId>
+                            <artifactId>groovy</artifactId>
+                            <version>${version.lib.groovy}</version>
+                        </dependency>
+                    </dependencies>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
@@ -1359,6 +1395,12 @@
                 <artifactId>maven-project</artifactId>
                 <version>${version.lib.maven.plugin.project}</version>
                 <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <!-- dependency convergence -->
+                <groupId>org.apiguardian</groupId>
+                <artifactId>apiguardian-api</artifactId>
+                <version>${version.lib.apiguardian.api}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
