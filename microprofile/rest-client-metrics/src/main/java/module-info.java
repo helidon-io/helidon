@@ -44,6 +44,10 @@ module io.helidon.microprofile.restclient.metrics {
 
     requires static io.helidon.common.features.api;
 
+    exports io.helidon.microprofile.restclientmetrics;
+
+    opens io.helidon.microprofile.restclientmetrics to weld.core.impl;
+    
     provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.microprofile.restclientmetrics.RestClientMetricsCdiExtension;
 
