@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -123,10 +123,10 @@ public class YamlConfigParser implements ConfigParser {
         if (map != null) {
             map.forEach((k, v) -> {
                 String strKey = k.toString();
-                if (v instanceof List) {
-                    builder.addList(strKey, fromList((List) v));
-                } else if (v instanceof Map) {
-                    builder.addObject(strKey, fromMap((Map) v));
+                if (v instanceof List listValue) {
+                    builder.addList(strKey, fromList(listValue));
+                } else if (v instanceof Map mapValue) {
+                    builder.addObject(strKey, fromMap(mapValue));
                 } else {
                     String strValue = v == null ? "" : v.toString();
                     builder.addValue(strKey, strValue);
@@ -139,10 +139,10 @@ public class YamlConfigParser implements ConfigParser {
     private static ListNode fromList(List<?> list) {
         ListNode.Builder builder = ListNode.builder();
         list.forEach(value -> {
-            if (value instanceof List) {
-                builder.addList(fromList((List) value));
-            } else if (value instanceof Map) {
-                builder.addObject(fromMap((Map) value));
+            if (value instanceof List listValue) {
+                builder.addList(fromList(listValue));
+            } else if (value instanceof Map mapValue) {
+                builder.addObject(fromMap(mapValue));
             } else {
                 String strValue = value == null ? "" : value.toString();
                 builder.addValue(strValue);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -315,10 +315,10 @@ public class YamlMpConfigSource implements ConfigSource {
     private static void processNext(Map<String, String> resultMap,
                                     String prefix,
                                     Object value) {
-        if (value instanceof List) {
-            process(resultMap, prefix, (List) value);
-        } else if (value instanceof Map) {
-            process(resultMap, prefix, (Map) value);
+        if (value instanceof List listValue) {
+            process(resultMap, prefix, listValue);
+        } else if (value instanceof Map mapValue) {
+            process(resultMap, prefix, mapValue);
         } else {
             String stringValue = (null == value) ? "" : value.toString();
             resultMap.put(prefix, stringValue);
