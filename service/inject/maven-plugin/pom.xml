@@ -32,13 +32,6 @@
     <packaging>maven-plugin</packaging>
 
     <properties>
-        <version.plexus.classworlds>2.7.0</version.plexus.classworlds>
-        <version.plexus.utils>3.3.0</version.plexus.utils>
-        <version.plugin.api>3.9.3</version.plugin.api>
-        <version.plugin.annotations>3.9.0</version.plugin.annotations>
-        <version.plugin.plugin>3.9.0</version.plugin.plugin>
-        <version.plugin.project>2.2.1</version.plugin.project>
-
         <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
     </properties>
 
@@ -62,13 +55,11 @@
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-artifact</artifactId>
-            <version>${version.plugin.api}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-model</artifactId>
-            <version>${version.plugin.api}</version>
             <scope>provided</scope>
         </dependency>
 
@@ -102,11 +93,6 @@
             <artifactId>helidon-service-metadata</artifactId>
         </dependency>
         <dependency>
-            <!--
-            we cannot use helidon-service-inject as the SPI is required on classpath of application,
-            and this introduces conflicts; API is small and does not introduce SPI
-            that is used from within it, so we can share it
-            -->
             <groupId>io.helidon.service.inject</groupId>
             <artifactId>helidon-service-inject-api</artifactId>
         </dependency>
@@ -129,66 +115,21 @@
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-plugin-api</artifactId>
-            <version>${version.plugin.api}</version>
             <scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.codehaus.plexus</groupId>
-                    <artifactId>plexus-classworlds</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.codehaus.plexus</groupId>
-                    <artifactId>plexus-utils</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.maven.plugin-tools</groupId>
             <artifactId>maven-plugin-annotations</artifactId>
-            <version>${version.plugin.annotations}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-project</artifactId>
-            <version>${version.plugin.project}</version>
             <scope>provided</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.maven</groupId>
-                    <artifactId>maven-model</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.codehaus.plexus</groupId>
-                    <artifactId>plexus-utils</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.maven</groupId>
-                    <artifactId>maven-artifact</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
     </dependencies>
 
     <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-plugin-plugin</artifactId>
-                    <version>${version.plugin.plugin}</version>
-                    <configuration>
-                        <mojoDependencies>
-                            <!-- we need this since 19ea is not really supported -->
-                            <!--                            <mojoDependency></mojoDependency>-->
-                        </mojoDependencies>
-                        <requiredMavenVersion>[3.6.1,)</requiredMavenVersion>
-                        <requiredJavaVersion>[${version.java}.0,)</requiredJavaVersion>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </pluginManagement>
-
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

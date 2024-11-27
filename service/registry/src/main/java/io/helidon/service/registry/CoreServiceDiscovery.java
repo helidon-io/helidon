@@ -100,9 +100,16 @@ class CoreServiceDiscovery implements ServiceDiscovery {
 
             return (Class) cl.loadClass(className.fqName());
         } catch (ClassNotFoundException e) {
-            throw new ServiceRegistryException("Resolution of type \"" + className.fqName()
-                                                       + "\" to class failed.",
-                                               e);
+            try {
+                // fall back to classloader of our class
+                return (Class) CoreServiceDiscovery.class.getClassLoader().loadClass(className.fqName());
+            } catch (ClassNotFoundException ex) {
+                var toThrow = new ServiceRegistryException("Resolution of type \"" + className.fqName()
+                                                           + "\" to class failed.",
+                                                   ex);
+                toThrow.addSuppressed(e);
+                throw toThrow;
+            }
         }
     }
 

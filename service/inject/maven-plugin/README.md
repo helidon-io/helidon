@@ -47,8 +47,8 @@ Configuration example in `pom.xml`:
 ```xml
 
 <plugin>
-    <groupId>io.helidon.service</groupId>
-    <artifactId>helidon-service-maven-plugin</artifactId>
+    <groupId>io.helidon.service.inject</groupId>
+    <artifactId>helidon-service-inject-maven-plugin</artifactId>
     <executions>
         <execution>
             <id>create-application</id>
@@ -57,11 +57,5 @@ Configuration example in `pom.xml`:
             </goals>
         </execution>
     </executions>
-    <configuration>
-        <packageName>com.example.mypackage</packageName>
-        <bindingClassName>MyInjection__Binding</bindingClassName>
-        <mainClassName>MyApplicationMain</mainClassName>
-        <validate>false</validate>
-    </configuration>
 </plugin>
 ```

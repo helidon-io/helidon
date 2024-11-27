@@ -161,6 +161,8 @@ abstract class CreateApplicationAbstractMojo extends CodegenAbstractMojo {
                                packageName);
 
             if (createMain()) {
+                // we need to re-create the classloader, as we have created new classes for binding
+                loader = createClassLoader(classpath, prev);
                 createMain(loader,
                            mavenLogger,
                            scanContext,

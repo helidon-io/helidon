@@ -18,6 +18,7 @@ package io.helidon.service.inject.maven.plugin;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -69,25 +70,13 @@ class MavenFiler implements CodegenFiler {
 
     @Override
     public Path writeSourceFile(ClassModel classModel, Object... originatingElements) {
-        TypeName typeName = classModel.typeName();
-        String pathToSourceFile = typeName.packageName().replace('.', '/');
-        String fileName = typeName.className() + ".java";
-        Path path = generatedSourceDir.resolve(pathToSourceFile)
-                .resolve(fileName);
-        Path parentDir = path.getParent();
-        if (parentDir != null) {
-            mkdirs(parentDir);
-        }
-
-        try (Writer writer = Files.newBufferedWriter(path,
-                                                     StandardCharsets.UTF_8,
-                                                     StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE)) {
-            classModel.write(writer, "    ");
-            generatedSources = true;
+        try {
+            StringWriter sw = new StringWriter();
+            classModel.write(sw);
+            return writeSourceFile(classModel.typeName(), sw.toString(), originatingElements);
         } catch (IOException e) {
-            throw new CodegenException("Failed to write new source file: " + path.toAbsolutePath(), e, typeName);
+            throw new CodegenException("Failed to write new source file: " + classModel.typeName(), e, classModel.typeName());
         }
-        return path;
     }
 
     @Override

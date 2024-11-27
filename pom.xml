@@ -99,6 +99,11 @@
         <version.lib.wiremock>2.26.3</version.lib.wiremock>
         <version.lib.commons-lang3>3.10</version.lib.commons-lang3>
         <version.lib.classgraph>4.8.165</version.lib.classgraph>
+        <version.lib.plexus.classworlds>2.7.0</version.lib.plexus.classworlds>
+        <version.lib.plexus.utils>3.3.0</version.lib.plexus.utils>
+        <version.lib.maven.plugin.annotations>3.9.0</version.lib.maven.plugin.annotations>
+        <version.lib.maven.plugin.api>3.9.3</version.lib.maven.plugin.api>
+        <version.lib.maven.plugin.project>2.2.1</version.lib.maven.plugin.project>
         <!--
         !Version statement! - end
         -->
@@ -127,6 +132,7 @@
         <version.plugin.jaxb>2.5.0</version.plugin.jaxb>
         <version.plugin.license>1.16</version.plugin.license>
         <version.plugin.os>1.5.0.Final</version.plugin.os>
+        <version.plugin.plugin>3.9.0</version.plugin.plugin>
         <version.plugin.project-info-reports>3.0.0</version.plugin.project-info-reports>
         <version.plugin.protobuf>0.6.1</version.plugin.protobuf>
         <version.plugin.resources>3.3.1</version.plugin.resources>
@@ -944,6 +950,15 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-plugin-plugin</artifactId>
+                <version>${version.plugin.plugin}</version>
+                <configuration>
+                    <requiredMavenVersion>[3.6.1,)</requiredMavenVersion>
+                    <requiredJavaVersion>[${version.java}.0,)</requiredJavaVersion>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
@@ -1313,6 +1328,37 @@
                 <groupId>jakarta.inject</groupId>
                 <artifactId>jakarta.inject-tck</artifactId>
                 <version>${version.lib.jakarta.inject}</version>
+            </dependency>
+            <!-- Maven plugin -->
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-artifact</artifactId>
+                <version>${version.lib.maven.plugin.api}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-model</artifactId>
+                <version>${version.lib.maven.plugin.api}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-plugin-api</artifactId>
+                <version>${version.lib.maven.plugin.api}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven.plugin-tools</groupId>
+                <artifactId>maven-plugin-annotations</artifactId>
+                <version>${version.lib.maven.plugin.annotations}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-project</artifactId>
+                <version>${version.lib.maven.plugin.project}</version>
+                <scope>provided</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
