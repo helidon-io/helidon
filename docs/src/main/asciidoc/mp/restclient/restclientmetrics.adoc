@@ -82,6 +82,13 @@ Helidon _does not_ provide a `/metrics` endpoint for standalone clients, nor doe
 
 In contrast, when REST clients run inside Helidon servers the REST client metrics for REST clients known to Helidon appear in the `/metrics` output.
 
+=== Turning on Logging
+Set `io.helidon.microprofile.restclientmetrics.level=DEBUG` in your logging settings to see some of the inner workings of the REST client metrics implementation.
+
+During start-up the logging reports analysis of candidate REST client interfaces and the creation of metric registration entries, including the metric annotation and where Helidon found each.
+
+When a REST client is made known to Helidon the logging reports the actual registration of the metrics derived from that REST client interface.
+
 == API
 Use the following annotations from  `org.eclipse.microprofile.metrics.annotation`  listed in the following table to trigger REST client metrics.
 [cols="1,2"]

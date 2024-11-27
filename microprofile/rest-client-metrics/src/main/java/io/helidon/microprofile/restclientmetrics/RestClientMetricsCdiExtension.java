@@ -19,12 +19,14 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -160,7 +162,7 @@ public class RestClientMetricsCdiExtension implements Extension {
                                                     "Examining type " + annotatedTypeInClosure.getJavaClass()
                                                             .getCanonicalName());
 
-                                          annotatedTypeInClosure.getMethods().stream()
+                                         annotatedTypeInClosure.getMethods().stream()
                                                  .filter(RestClientMetricsCdiExtension::hasRestAnnotation)
                                                  .forEach(annotatedMethod -> {
                                                      // Record registrations needed for this method based on
@@ -225,9 +227,10 @@ public class RestClientMetricsCdiExtension implements Extension {
                 Metric metric = registration.registrationOp.apply(metricRegistry);
                 if (LOGGER.isLoggable(DEBUG)) {
                     metricsRegisteredForRestClient.add(metric);
-                    LOGGER.log(DEBUG, String.format("For REST client method %s#%s registered metric %s",
+                    LOGGER.log(DEBUG, String.format("For REST client method %s#%s registering metric using %s",
                                                     restClient.getCanonicalName(),
                                                     method.getName(),
+                                                    registration,
                                                     metric));
                 }
                 metricsUpdateWorkByMethod.computeIfAbsent(method, k -> new ArrayList<>())
@@ -257,6 +260,14 @@ public class RestClientMetricsCdiExtension implements Extension {
     // For testing.
     Map<Method, List<MetricsUpdateWork>> metricsUpdateWorkByMethod() {
         return metricsUpdateWorkByMethod;
+    }
+
+    private static Tag[] tags(Annotation metricAnnotation) {
+        return switch (metricAnnotation) {
+            case Counted counted -> tags(counted.tags());
+            case Timed timed -> tags(timed.tags());
+            default -> null;
+        };
     }
 
     /**
@@ -342,11 +353,11 @@ public class RestClientMetricsCdiExtension implements Extension {
             return switch (metric) {
                 case Timer timer -> MetricsUpdateWork.create(cctx -> cctx.setProperty(SAVED_START_TIME_PROPERTY_NAME,
                                                                                       System.nanoTime()),
-                                                      cctx -> {
-                                                          long startTime =
-                                                                  (Long) cctx.getProperty(SAVED_START_TIME_PROPERTY_NAME);
-                                                          timer.update(Duration.ofNanos(System.nanoTime() - startTime));
-                                                      });
+                                                             cctx -> {
+                                                                 long startTime =
+                                                                         (Long) cctx.getProperty(SAVED_START_TIME_PROPERTY_NAME);
+                                                                 timer.update(Duration.ofNanos(System.nanoTime() - startTime));
+                                                             });
                 case Counter counter -> MetricsUpdateWork.create(cctx -> counter.inc());
                 default -> null;
             };
@@ -381,6 +392,8 @@ public class RestClientMetricsCdiExtension implements Extension {
      * @param registrationOp   function to register the new metric in a metric registry
      */
     private record Registration(String metricName,
+                                Tag[] tags,
+                                Metadata metadata,
                                 Annotation metricAnnotation,
                                 Function<MetricRegistry, ? extends Metric> registrationOp) {
 
@@ -400,13 +413,29 @@ public class RestClientMetricsCdiExtension implements Extension {
                                              + method.getJavaMember().getName())
                     .build();
 
+            Tag[] tagsFromAnnotation = RestClientMetricsCdiExtension.tags(metricAnnotation);
             return switch (metricAnnotation) {
-                case Timed timed ->
-                        new Registration(metadata.getName(), metricAnnotation, mr -> mr.timer(metadata, tags(timed.tags())));
-                case Counted counted ->
-                        new Registration(metadata.getName(), metricAnnotation, mr -> mr.counter(metadata, tags(counted.tags())));
+                case Timed timed -> new Registration(metadata.getName(),
+                                                      tagsFromAnnotation,
+                                                      metadata,
+                                                      timed,
+                                                      mr -> mr.timer(metadata, tagsFromAnnotation));
+                case Counted counted -> new Registration(metadata.getName(),
+                                                        tagsFromAnnotation,
+                                                        metadata,
+                                                        counted,
+                                                        mr -> mr.counter(metadata, tagsFromAnnotation));
                 default -> null;
             };
+        }
+
+        @Override
+        public String toString() {
+            return new StringJoiner(", ", Registration.class.getSimpleName() + "[", "]")
+                    .add("metadata=" + metadata)
+                    .add("tags=" + Arrays.toString(tags))
+                    .add("metricAnnotation=" + metricAnnotation)
+                    .toString();
         }
     }
 }
