@@ -1066,6 +1066,14 @@ class InjectionExtension implements RegistryCodegenExtension {
                 .filter(ElementInfoPredicates::isPrivate)
                 .findFirst();
         if (firstFound.isPresent()) {
+            if (typeInfo.kind() == ElementKind.RECORD) {
+                throw new CodegenException("Discovered " + InjectCodegenTypes.INJECTION_INJECT.fqName()
+                                                   + " annotation on record field(s). This is not supported. "
+                                                   + "If this is the only constructor, you can remove the Inject annotation; "
+                                                   + "if you need to inject the default constructor, kindly create an explicit"
+                                                   + " default constructor and annotate it with Inject.",
+                                           firstFound.get().originatingElementValue());
+            }
             throw new CodegenException("Discovered " + InjectCodegenTypes.INJECTION_INJECT.fqName()
                                                + " annotation on private field(s). We cannot support private field injection.",
                                        firstFound.get().originatingElementValue());
