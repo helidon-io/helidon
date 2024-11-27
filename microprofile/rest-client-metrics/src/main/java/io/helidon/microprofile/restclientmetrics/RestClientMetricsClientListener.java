@@ -19,10 +19,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.config.GlobalConfig;
 
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.ws.rs.Priorities;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.eclipse.microprofile.rest.client.spi.RestClientListener;
 
@@ -52,9 +52,15 @@ public class RestClientMetricsClientListener implements RestClientListener {
         private final RestClientMetricsFilter restClientMetricsFilter;
 
         private final LazyValue<RestClientMetricsConfig> restClientMetricsConfig =
-                LazyValue.create(() -> RestClientMetricsConfig.create(
-                        GlobalConfig.config()
-                                .get(RestClientMetricsFilter.REST_CLIENT_METRICS_CONFIG_KEY)));
+                LazyValue.create(() -> {
+                    boolean enabled = ConfigProvider.getConfig()
+                            .getOptionalValue(RestClientMetricsFilter.REST_CLIENT_METRICS_CONFIG_KEY
+                                                      + ".enabled", Boolean.class)
+                            .orElse(true);
+                    return RestClientMetricsConfig.builder()
+                            .enabled(enabled)
+                            .build();
+                });
 
         private final LazyValue<RestClientMetricsCdiExtension> ext =
                 LazyValue.create(() -> CDI.current().getBeanManager().getExtension(RestClientMetricsCdiExtension.class));
