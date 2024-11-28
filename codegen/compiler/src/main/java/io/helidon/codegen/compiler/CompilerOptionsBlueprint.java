@@ -18,6 +18,7 @@ package io.helidon.codegen.compiler;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
@@ -76,6 +77,14 @@ interface CompilerOptionsBlueprint {
      */
     @Option.Default("21")
     String target();
+
+    /**
+     * The compiler release.
+     * If not specified, {@link #source()} and {@link #target()} would be used.
+     *
+     * @return release for compilation
+     */
+    Optional<String> release();
 
     /**
      * Target directory to generate class files to.

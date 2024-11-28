@@ -105,7 +105,6 @@ abstract class CodegenAbstractMojo extends AbstractMojo {
     @Override
     public final void execute() throws MojoExecutionException, MojoFailureException {
         try {
-            getLog().info("Started " + getClass().getSimpleName());
             innerExecute();
         } catch (MojoFailureException | MojoExecutionException e) {
             if (failOnError) {

@@ -34,6 +34,7 @@ module io.helidon.service.inject.maven.plugin {
     requires maven.plugin.annotations;
     requires maven.plugin.api;
     requires maven.project;
+    requires java.xml;
     requires io.github.classgraph;
     requires io.helidon.service.metadata;
 

@@ -74,14 +74,7 @@ abstract class CreateApplicationAbstractMojo extends CodegenAbstractMojo {
      */
     @Parameter(property = "maven.compiler.source",
                defaultValue = "21")
-    private String source;
-    /**
-     * The -target argument for the Java compiler.
-     * Note: using the same as maven-compiler for convenience and least astonishment.
-     */
-    @Parameter(property = "maven.compiler.target",
-               defaultValue = "21")
-    private String target;
+    private String release;
     /**
      * Whether to validate the application when creating its bindings.
      */
@@ -147,8 +140,7 @@ abstract class CreateApplicationAbstractMojo extends CodegenAbstractMojo {
                     .classpath(List.copyOf(classpath))
                     .modulepath(List.copyOf(modulepath))
                     .sourcepath(sourceRootPaths())
-                    .source(getSource())
-                    .target(getTarget())
+                    .release(javaRelease())
                     .commandLineArguments(getCompilerArgs())
                     .outputDirectory(outputDirectory())
                     .build();
@@ -219,6 +211,8 @@ abstract class CreateApplicationAbstractMojo extends CodegenAbstractMojo {
                 .className(mainClassName)
                 .build();
 
+        getLog().info("Generating application main class: " + generatedType.fqName());
+
         MainClassCreator creator = new MainClassCreator(scanContext, failOnError());
         creator.create(scanContext, compilerOptions, services, generatedType);
     }
@@ -253,10 +247,13 @@ abstract class CreateApplicationAbstractMojo extends CodegenAbstractMojo {
         if (generateBinding) {
             // get the binding generator only after services are initialized (we need to ignore any existing apps)
             BindingGenerator creator = new BindingGenerator(scanContext, failOnError());
+            TypeName bindingTypeName = TypeName.create(packageName + "." + className);
+
+            getLog().info("Generating application binding: " + bindingTypeName.fqName());
 
             creator.createBinding(services,
                                   allServices,
-                                  TypeName.create(packageName + "." + className),
+                                  bindingTypeName,
                                   moduleName,
                                   compilerOptions);
         }
@@ -381,12 +378,8 @@ abstract class CreateApplicationAbstractMojo extends CodegenAbstractMojo {
         return new URLClassLoader(urls.toArray(new URL[0]), parent);
     }
 
-    String getSource() {
-        return source;
-    }
-
-    String getTarget() {
-        return target;
+    String javaRelease() {
+        return release;
     }
 
     LinkedHashSet<Path> getSourceClasspathElements() {

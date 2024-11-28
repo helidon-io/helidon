@@ -53,7 +53,7 @@ class ApplicationValidator {
             Level level = switch (error.getSeverity()) {
                 case FATAL -> Level.ERROR;
                 case WARN -> Level.WARNING;
-                case HINT -> Level.INFO;
+                case HINT -> Level.TRACE;
             };
             logger.log(level, error.getSeverity() + " " + error.getSource() + ": " + error.getMessage());
         }
