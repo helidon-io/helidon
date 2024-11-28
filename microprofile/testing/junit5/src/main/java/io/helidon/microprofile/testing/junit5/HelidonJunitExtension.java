@@ -85,14 +85,15 @@ public class HelidonJunitExtension implements BeforeEachCallback,
                                               InvocationInterceptor,
                                               ParameterResolver {
 
-    // TODO test @PostContruct @PreDestroy
-    // TODO test parallel method execution
-    // TODO test PER_CLASS with implicit reset
-
     private static final Namespace NAMESPACE = Namespace.create(HelidonJunitExtension.class);
 
     private final Map<Class<?>, ClassInfo> classInfos = new ConcurrentHashMap<>();
     private final Map<Method, MethodInfo> methodInfos = new ConcurrentHashMap<>();
+
+    // TODO test [alternative, interceptor, xxx] with observer method (replicate test for OCIMetricsBean)
+    // TODO replicate metrics test that failed
+    // TODO replicate messaging that failed
+    // TODO replicate jan visser interceptor test failed
 
     @Override
     public Object createTestInstance(TestInstanceFactoryContext fc, ExtensionContext context) {
@@ -145,15 +146,14 @@ public class HelidonJunitExtension implements BeforeEachCallback,
         if (container == null || container.closed()) {
             Store methodStore = context.getStore(NAMESPACE);
             Lifecycle lifecycle = context.getTestInstanceLifecycle().orElse(PER_METHOD);
-            HelidonTestScope scope = switch (lifecycle) {
-                case PER_CLASS -> new HelidonTestScope.PerContainer();
-                case PER_METHOD -> {
-                    scope = new HelidonTestScope.PerThread();
-                    // put the scope in the method context store to auto-close
-                    methodStore.put("scope", (CloseableResource) scope::close);
-                    yield scope;
-                }
-            };
+            HelidonTestScope scope;
+            if (lifecycle == Lifecycle.PER_CLASS) {
+                scope = new HelidonTestScope.PerContainer();
+            } else {
+                scope = new HelidonTestScope.PerThread();
+                // put the scope in the method context store to auto-close
+                methodStore.put("scope", (CloseableResource) scope::close);
+            }
             if (methodInfo.requiresReset()) {
                 // put in the method store to auto-close
                 container = new CloseableContainer(methodInfo, scope);
@@ -161,8 +161,8 @@ public class HelidonJunitExtension implements BeforeEachCallback,
             } else {
                 // put the "class container" in the class context store
                 // to re-use between methods
-                container = new CloseableContainer(classInfo, scope);
-                classStore.put("container", container);
+                container = classStore.getOrComputeIfAbsent("container",
+                        k -> new CloseableContainer(classInfo, scope), CloseableContainer.class);
             }
         }
         // proxy handler uses class context
@@ -175,7 +175,7 @@ public class HelidonJunitExtension implements BeforeEachCallback,
             throws ParameterResolutionException {
 
         HelidonTestContainer container = container(context, context.getRequiredTestMethod());
-        return container.initializedFailed() || container.isSupported(pc.getParameter().getType());
+        return !container.initFailed() && container.isSupported(pc.getParameter().getType());
     }
 
     @Override
@@ -183,7 +183,7 @@ public class HelidonJunitExtension implements BeforeEachCallback,
             throws ParameterResolutionException {
 
         HelidonTestContainer container = container(context, context.getRequiredTestMethod());
-        return container.initializedFailed() ? null : container.resolveInstance(pc.getParameter().getType());
+        return container.initFailed() ? null : container.resolveInstance(pc.getParameter().getType());
     }
 
     private void intercept(Invocation<Void> invocation,
@@ -191,7 +191,7 @@ public class HelidonJunitExtension implements BeforeEachCallback,
                            ExtensionContext context) throws Throwable {
 
         HelidonTestContainer container = container(context, context.getRequiredTestMethod());
-        if (container.initializedFailed()) {
+        if (container.initFailed()) {
             invocation.skip();
         } else {
             // proxy handler uses class context

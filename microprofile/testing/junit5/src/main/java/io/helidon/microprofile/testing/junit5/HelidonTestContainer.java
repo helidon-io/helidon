@@ -72,7 +72,7 @@ class HelidonTestContainer {
      *
      * @return {@code true} if failed, {@code false} otherwise
      */
-    boolean initializedFailed() {
+    boolean initFailed() {
         return error != null;
     }
 
