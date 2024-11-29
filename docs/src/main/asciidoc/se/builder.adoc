@@ -1,0 +1,439 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2024 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Helidon Builder
+
+:description: Helidon SE Builder
+:keywords: helidon, java, se, configuration, builders
+:feature-name: Builder
+:rootdir: {docdir}/..
+
+include::{rootdir}/includes/se.adoc[]
+:ws-cors-javadoc: {webserver-cors-javadoc-base-url}/io/helidon/webserver/cors
+:cors-javadoc: {cors-javadoc-base-url}/io/helidon/builder
+:ws-cors-artifact: io.helidon.webserver:helidon-webserver-cors
+
+== Contents
+
+* <<Overview, Overview>>
+* <<Maven Coordinates, Maven Coordinates>>
+* <<Use Cases, Use Cases>>
+    - <<Generate a class with a builder, Generate a class with a builder>>
+    - <<Add support for reading data from configuration, Add support for reading data from configuration>>
+    - <<Creating a runtime type, Creating a runtime type>>
+* <<API, API>>
+
+== Overview
+
+Helidon Builder is an API designed for generating immutable objects using the builder pattern, with optional integration with Helidon Config for initialization at runtime.
+
+=== Terminology
+
+* *Blueprint*: A package-private interface that serves as the source for code generation.
+* *Prototype*: The generated code extending the blueprint. It is part of the public API and includes the fluent builder implementation and static factory methods.
+* *Runtime Type*: An optional, user-defined type created using the prototype. It is useful for constructing custom objects beyond the generated prototype.
+
+=== High Level Example
+
+Here's a simple example of a blueprint:
+
+[source,java]
+----
+@Prototype.Blueprint
+interface ServiceConfigBlueprint {
+    String name();
+    int pageSize();
+}
+----
+
+The generated prototype can be used as follows:
+
+[source,java]
+----
+ServiceConfig serviceConfig = ServiceConfig.builder()
+    .name("My Service")
+    .pageSize(10)
+    .build();
+----
+
+=== Features
+
+- Reflection-free implementation; no bytecode manipulation.
+- Support for inheritance in prototypes and blueprints (within the same module).
+- Automatic Javadoc generation.
+- Seamless integration with Helidon Config for property initialization, default values, and advanced customization.
+- Optional generation of factory, prototype, and builder methods.
+- Supports `List`, `Set`, and `Map` collections.
+- Explicit default value support for common types (`String`, `int`, `long`, `boolean`, etc.).
+- Enumeration support.
+
+=== Limitations
+
+- Prototypes are generated in the same package as their blueprints.
+- Blueprints must be package-private interfaces.
+- Classes are not supported as blueprints.
+- `null` values are not allowed; use `Optional` instead.
+- Collection types are fixed to `ArrayList`, `LinkedHashSet`, and `LinkedHashMap`.
+
+include::{rootdir}/includes/dependencies.adoc[]
+
+[source,xml,subs="attributes+"]
+----
+<dependency>
+    <groupId>io.helidon.builder</groupId>
+    <artifactId>helidon-builder-api</artifactId>
+</dependency>
+----
+
+You also need to add the annotation processor configuration:
+[source,xml,subs="attributes+"]
+----
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+                <annotationProcessorPaths>
+                    <path>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-apt</artifactId>
+                        <version>${helidon.version}</version>
+                    </path>
+                    <path>
+                        <groupId>io.helidon.builder</groupId>
+                        <artifactId>helidon-builder-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </path>
+                </annotationProcessorPaths>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+----
+
+== Use Cases
+
+=== Generate a class with a builder
+
+This use case demonstrates generating an immutable class with a builder from a blueprint interface. The blueprint serves as the input for code generation, and the resulting prototype provides a fluent API for constructing instances.
+
+=== Specification
+
+1. Blueprint Requirements:
++
+- Must be a package-private interface.
+- Its name must end with `Blueprint`. The prototype's name will be the blueprint's name without this suffix.
+- Fields are defined as getter methods.
+
+2. Generated Output:
++
+- Prototype is a part of your module public API.
+- The prototype class is placed in the same package as the blueprint.
+- Generated files can be found in the `./target/generated-sources/annotations` directory.
+
+=== Example
+
+This example demonstrates generating a prototype from the blueprint below.
+
+[source,java]
+----
+@Prototype.Blueprint                   // <1>
+interface ServiceConfigBlueprint {     // <2>
+    String name();                     // <3>
+    int pageSize();
+}
+----
+<1> Marks the interface as a blueprint for code generation.
+<2> Must be package-private and named with a `Blueprint` suffix. The prototype's name will be `ServiceConfig`.
+<3> Getter method for field `name`.
+
+After building the project, a prototype `ServiceConfig` will be generated.
+
+Example of the generated prototype:
+
+[source,java]
+----
+@Generated(value = "io.helidon.builder.codegen.BuilderCodegen",
+           trigger = "com.example.ServiceConfigBlueprint")                           // <1>
+public interface ServiceConfig extends ServiceConfigBlueprint, Prototype.Api {       // <2>
+    static ServiceConfig.Builder builder() { /* ... */ }                             // <3>
+
+    static ServiceConfig.Builder builder(ServiceConfig instance) { /* ... */ }       // <4>
+
+    static ServiceConfig create() { /* ... */ }                                      // <5>
+
+    class Builder extends ServiceConfig.BuilderBase<ServiceConfig.Builder, ServiceConfig>
+        implements io.helidon.common.Builder<ServiceConfig.Builder, ServiceConfig> { // <6>
+        // ...
+    }
+
+    // ...
+}
+----
+<1> Marker annotation specifying that this interface was generated.
+<2> Generated interface extending the given blueprint. The interface name is a blueprint name with "Blueprint" suffix removed.
+<3> Static method returning a generated builder.
+<4> Static method returning a generated builder initialized with the field value from given instance.
+<5> Factory method creating an instance with default values.
+<6> Generated builder.
+
+The generated `ServiceConfig` can be used as follows:
+
+[source,java]
+----
+ServiceConfig serviceConfig = ServiceConfig.builder()
+    .name("My Service")
+    .pageSize(10)
+    .build();
+----
+
+This ensures type safety, immutability, and a fluent API for constructing objects.
+
+=== Add support for reading data from configuration
+
+This scenario extends the basic builder functionality by enabling the generated prototype to initialize its fields using values from Helidon Config.
+
+=== Specification
+
+1. The blueprint must be annotated with `@Prototype.Configured` to enable configuration-based initialization.
+2. Each field initialized from the configuration must be annotated with `@Option.Configured`.
+3. Default values can be set using `@Option.Default`. If a configuration value is missing, the default is used.
+4. `null` values are not supported; use `Optional` for optional fields.
+5. Lists and Maps are supported and initialized from configuration.
+6. You can customize and validate fields using the @Option API. Advanced programmatic customization is possible by implementing a custom `BuilderDecorator` via `@Prototype.Blueprint(decorator = MyDecorator.class)`.
+
+=== Example
+
+The following example demonstrates how to configure a `ServiceConfig` object using Helidon Config.
+
+Blueprint Definition:
+
+[source,java]
+----
+@Prototype.Blueprint
+@Prototype.Configured("service")      // <1>
+interface ServiceConfigBlueprint {
+    @Option.Configured                // <2>
+    String name();
+
+    @Option.Configured
+    @Option.Default(50)               // <3>
+    int pageSize();
+}
+----
+<1> Specifies that this blueprint can be configured with the root key `service` in the configuration.
+<2> Marks the field `name` as configurable. By default, the configuration key is derived from the method name in dash-separated format.
+<3> Sets a default value for `pageSize` if it is not defined in the configuration.
+
+The generated prototype includes a `create` method that accepts a `Config` instance:
+
+[source,java]
+----
+static ServiceConfig create(Config config);
+----
+
+Usage:
+
+[source,java]
+----
+Config config = Config.create();
+ServiceConfig serviceConfig = ServiceConfig.create(config);
+----
+
+Example configuration in `application.properties` file:
+
+[source,properties]
+----
+service.name=My Service
+service.page-size=10
+----
+
+Helidon Builder supports a range of customization options:
+
+* *Field Validation:* Add constraints or validations using annotations like `@Option.AllowedValues` or `@Option.Required`.
+* *Field Transformation:* Use a custom `BuilderDecorator` to modify field values during the build process.
+
+For additional customization details, see the <<API, API>> section.
+
+=== Creating a runtime type
+
+This scenario extends the basic functionality of Helidon Builder to create a user-defined runtime type based on a prototype. This approach is particularly useful when the generated prototype needs to be transformed into a domain-specific runtime type.
+
+=== Specification
+
+To enable runtime object creation, follow these guidelines:
+
+1. *Prototype Factory:* +
+The blueprint must extend `Prototype.Factory<RuntimeType>`, where `RuntimeType` is the desired runtime type.
+2. *Runtime Type Annotation:* +
+The runtime type must be annotated with `@RuntimeType.PrototypedBy(PrototypeBlueprint.class)` to establish a connection with the blueprint.
+3. *Runtime Type Interface:* +
+The runtime type must implement `RuntimeType.Api<Prototype>` to indicate the prototype it is based on.
+4. *Required Methods in Runtime Type:* +
+The runtime type must include the following methods, implemented by the user:
+- `public static Prototype.Builder builder()` +
+Provides a builder for the runtime type.
+- `public static RuntimeType create(Prototype)` +
+Creates a runtime type from a prototype instance.
+- `public static RuntimeType create(Consumer<Prototype.Builder>)` +
+Creates a runtime type from a consumer to configure the prototype builder.
+5. *Prototype Integration:* +
+The blueprint must include the `@Prototype.Blueprint` annotation and extend `Prototype.Factory<RuntimeType>`.
+
+=== Example
+
+The following example demonstrates creating a `Service` runtime type from a `ServiceConfigBlueprint`.
+
+Runtime type implementation:
+
+[source,java]
+----
+@RuntimeType.PrototypedBy(ServiceConfigBlueprint.class)                      // <1>
+public class Service implements RuntimeType.Api<ServiceConfig> {             // <2>
+    public static ServiceConfig.Builder builder() {                          // <3>
+        return ServiceConfig.builder();
+    }
+
+    public static Service create(ServiceConfig serviceConfig) {              // <4>
+        return serviceConfig.build();
+    }
+
+    public static Service create(Consumer<ServiceConfig.Builder> consumer) { // <5>
+        return create(ServiceConfig.builder()
+                              .update(consumer)
+                              .buildPrototype());
+    }
+}
+----
+<1> Maps the runtime type Service to the blueprint ServiceConfigBlueprint.
+<2> Implements the RuntimeType.Api<ServiceConfig> interface.
+<3> Provides a builder for the runtime type.
+<4> Creates a runtime object from a prototype.
+<5> Creates a runtime object from a consumer-configured prototype builder.
+
+Blueprint definition:
+
+[source,java]
+----
+@Prototype.Blueprint
+@Prototype.Configured("service")
+interface ServiceConfigBlueprint extends Prototype.Factory<Service> { // <1>
+    @Option.Configured
+    String name();
+
+    @Option.Configured
+    @Option.Default(50)
+    int pageSize();
+}
+----
+<1> Extending `Prototype.Factory<Service>` enables creating `Service` runtime objects.
+
+Usage:
+
+* Using a fluent builder:
++
+[source,java]
+----
+Service service = Service.builder().build();
+----
+*  Using intermediate prototype object:
++
+[source,java]
+----
+ServiceConfig serviceConfig = ServiceConfig.builder().buildPrototype();
+Service service = serviceConfig.build();
+----
+* Using a consumer to configure the builder:
++
+[source,java]
+----
+Service service = Service.create(builder -> builder.name("My Service")
+                                                   .pageSize(10));
+----
+
+== API
+
+=== Prototype
+
+Annotations:
+
+[cols="2,1,5"]
+|===
+| Annotation                  | Required | Description
+| `Prototype.Blueprint`       | Yes      | Annotation on the blueprint interface is required to trigger annotation processing
+| `Prototype.Implement`       | No       | Add additional implemented types to the generated prototype
+| `Prototype.Annotated`       | No       | Allows adding an annotation (or annotations) to the generated class or methods
+| `Prototype.FactoryMethod`   | No       | Use in generated code to mark static factory methods, also can be used on blueprint factory methods to be used during code generation, and on custom methods to mark static methods to be added to prototype
+| `Prototype.Singular`        | No       | Used for lists, sets, and maps to add methods `add*`/`put*` in addition to the full collection setters
+| `Prototype.SameGeneric`     | No       | Use for maps, where we want a setter method to use the same generic type for key and for value (such as `Class<T> key, T valuel`)
+| `Prototype.Redundant`       | No       | A redundant option will not be part of generated `toString`, `hashCode`, and `equals` methods (allows finer grained control)
+| `Prototype.Confidential`    | No       | A confidential option will not have value visible when `toString` is called, only if it is `null` or it has a value (`****`)
+| `Prototype.CustomMethods`   | No       | reference a class that will contain declarations (all static) of custom methods to be added to the generated code, can add prototype, builder, and factory methods
+| `Prototype.BuilderMethod`   | No       | Annotation to be placed on factory methods that are to be added to builder, first parameter is the `BuilderBase<?, ?>` of the prototype
+| `Prototype.PrototypeMethod` | No       | Annotation to be placed on factory methods that are to be added to prototype, first parameter is the prototype instance
+| `RuntimeType.PrototypedBy`  | Yes      | Annotation on runtime type that is created from a `Prototype`, to map it to the prototype it can be created from, used to trigger annotation processor for validation
+
+|===
+
+Interfaces:
+
+[cols="2,1,5"]
+|===
+| Annotation                    | Required | Description
+| `RuntimeType.Api`             | No       | Runtime type must implement this interface to mark which prototype is used to create it
+| `Prototype.Factory`           | No       | If blueprint implements factory, it means the prototype is used to create a single runtime type and will have methods `build` and `get` both on builder an on prototype interface that create a new instance of the runtime object
+| `Prototype.BuilderDecorator`  | No       | Custom decorator to modify builder before validation is done in method `build`
+| `Prototype.Api`               | Yes      | All prototypes implement this interface
+| `Prototype.Builder`           | Yes      | All prototype builders implement this interface, defines method `buildPrototype`
+| `Prototype.ConfiguredBuilder` | Yes      | all prototype builders that support configuration implement this interface, defines method `config(Config)`
+
+|===
+
+=== Option
+
+[cols="1,5"]
+|===
+| Annotation              | Description
+| `@Option.Singular`      | For collection based options. Adds setter for a single value (for `List<String> algorithms()`, there would be the following setters: `algorithms(List<String>)`, `addAlgorithms(List<String>)`, `addAlgorithm(String)`)
+| `@Option.Configured`    | For options that are configured from config (must be explicitly marked, default is not-configured), also ignored unless `@Prototype.Configured` is specified on the blueprint interface
+| `@Option.Required`      | We can recognize required options through signature in most cases (any option that does not return an `Optional` and does not have a default value); this option is useful for primitive types, where we need an explicit value set, rather than using the primitive's default value
+| `@Option.Provider`      | Satisfied by a provider implementation, see javadoc for details
+| `@Option.AllowedValues` | Allowed values for the property, not required for `enum`, where we create this automatically, though we can configure description of each value (works automatically for `enum` defined in the same module); the description is used for generated documentation
+| `@Option.SameGeneric`   | Advanced configuration of a Map, where the map accepts two typed values, and we must use the same generic on setters (such as `Map<Class<Object>, Object>` - `<T> Builder put(Class<T>, T)`)
+| `@Option.Redundant`     | Marks an option that is not used by equals and hashCode methods
+| `@Option.Confidential`  | Marks an option that will not be visible in `toString()`
+| `@Option.Deprecated`    | Marks a deprecated option that has a replacement option in this builder, use Java's deprecation for other cases, they will be honored in the generated code
+| `@Option.Type`          | Explicitly defined type of a property (may include generics), in case the type is code generated in the current module, and we cannot obtain the correct information from the annotation processing environment
+| `@Option.Decorator`     | Support for field decoration (to do side-effects on setter call)
+|===
+
+To configure default value(s) of an option, one of the following annotations can be used (mutually exclusive!).
+Most defaults support an array, to provide default values for collections.
+
+[cols="1,5"]
+|===
+| Annotation               | Description
+| `@Option.Default`        | Default value(s) that are `String` or we support coercion to the correct type (`enum`, `Duration`)
+| `@Option.DefaultInt`     | Default value(s) that are `int`
+| `@Option.DefaultLong`    | Default value(s) that are `long`
+| `@Option.DefaultDouble`  | Default value(s) that are `double`
+| `@Option.DefaultBoolean` | Default value(s) that are `boolean`
+| `@Option.DefaultMethod`  | Static method to invoke to obtain a default value
+| `@Option.DefaultCode`    | Source code to add to the generated assignment, single line only supported
+|===
