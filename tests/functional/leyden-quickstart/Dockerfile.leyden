@@ -1,0 +1,50 @@
+#
+# Copyright (c) 2024 Oracle and/or its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+FROM container-registry.oracle.com/os/oraclelinux:9-slim as olinux-leyden
+
+WORKDIR /usr/share
+
+ARG CHECKPOINT_DIR
+
+ENV JDK_NAME=openjdk-24-leyden+2-8_linux-x64
+ENV JAVA_HOME=/usr/share/$JDK_NAME
+ENV CR_DIR=${CONT_IMG_VER:-/leyden-checkpoint/cr}
+
+# Install wrk
+RUN microdnf -h
+RUN microdnf -y update && microdnf -y install perl wget tar gzip curl git openssl-devel
+RUN git clone https://github.com/wg/wrk.git && cd wrk && make && cp wrk /usr/local/bin/
+
+# Install Leyden
+RUN wget -O leyden-jdk.tar.gz "https://download.java.net/java/early_access/leyden/2/${JDK_NAME}_bin.tar.gz"
+RUN tar -xvf ./leyden-jdk.tar.gz -C /usr/share && mv /usr/share/jdk-24 $JAVA_HOME
+RUN ln -s $JAVA_HOME/bin/jcmd /bin/ && ln -s $JAVA_HOME/bin/jps /bin/ && ln -s $JAVA_HOME/bin/java /bin/
+
+FROM olinux-leyden
+WORKDIR /helidon
+
+ADD target/leyden-quickstart.jar .
+ADD target/libs ./libs
+ADD runtimeLeyden.sh .
+ADD warmUp.sh .
+ADD measure.sh .
+RUN chmod +x ./*.sh
+
+RUN ./runtimeLeyden.sh
+
+CMD ["sh","/helidon/runtimeLeyden.sh"]
+
+EXPOSE 7001
