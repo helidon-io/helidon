@@ -34,9 +34,10 @@ class TestDistributionCustomizationsNoInit {
 
     @Test
     void checkDistributionCustomizations() {
-        // Without the change, the following triggers an NPE because this test does not use @HelidonTest
-        // and therefore the normal metrics CDI extension initialization code --which sets up the distribution
-        // customizations -- does not run.
+        // Without the change in the main source, the following triggers an NPE because this test does not use @HelidonTest
+        // and therefore the normal metrics CDI extension initialization code--which sets up the distribution
+        // customizations--does not run. That means the configurable distribution customizations are never set, leading
+        // to the NPE.
         Timer timer = metricRegistry.timer("testTimer");
         assertThat("Timer", timer, notNullValue());
     }
