@@ -22,7 +22,7 @@
     <parent>
         <artifactId>helidon-dbclient-project</artifactId>
         <groupId>io.helidon.dbclient</groupId>
-        <version>3.2.11-SNAPSHOT</version>
+        <version>3.2.12-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-dbclient-jdbc</artifactId>

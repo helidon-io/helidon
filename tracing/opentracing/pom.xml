@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.tracing</groupId>
         <artifactId>helidon-tracing-project</artifactId>
-        <version>3.2.11-SNAPSHOT</version>
+        <version>3.2.12-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-tracing-opentracing</artifactId>
