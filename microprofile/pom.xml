@@ -59,6 +59,7 @@
         <module>service-common</module>
         <module>telemetry</module>
         <module>testing</module>
+        <module>rest-client-metrics</module>
     </modules>
 
     <profiles>

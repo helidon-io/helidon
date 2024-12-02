@@ -738,6 +738,11 @@
                 <artifactId>helidon-microprofile-rest-client</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.rest-client-metrics</groupId>
+                <artifactId>helidon-microprofile-rest-client-metrics</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
             <!-- Reactive Streams Operators -->
             <dependency>
