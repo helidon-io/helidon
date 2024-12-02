@@ -24,6 +24,7 @@ This is a bugfix release of Helidon and is recommended for all users of Helidon 
 - Dependencies: Update the version of the SmallRye OpenAPI UI library [9395](https://github.com/helidon-io/helidon/pull/9395)
 - Dependencies: Uptake build-tools 3.0.10 [9376](https://github.com/helidon-io/helidon/pull/9376)
 - Dependencies: Upgrade jackson to 2.18.1 [9481](https://github.com/helidon-io/helidon/pull/9481)
+- Dependencies: Upgrade kafka-clients to 3.8.1 [9526](https://github.com/helidon-io/helidon/pull/9526)
 - Docs: Replace deprecated VM memory flags in docs for building container images (#9480) [9483](https://github.com/helidon-io/helidon/pull/9483)
 - Examples: Update starter UI for Helidon MP Metrics [9403](https://github.com/helidon-io/helidon/pull/9403)
 

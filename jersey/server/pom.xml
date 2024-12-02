@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.jersey</groupId>
         <artifactId>helidon-jersey-project</artifactId>
-        <version>3.2.11-SNAPSHOT</version>
+        <version>3.2.12-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-jersey-server</artifactId>
