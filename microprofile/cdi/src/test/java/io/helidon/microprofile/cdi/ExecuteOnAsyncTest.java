@@ -41,8 +41,10 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.microprofile.cdi.ExecuteOn.ThreadType;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class ExecuteOnAsyncTest {
 
@@ -109,6 +111,11 @@ class ExecuteOnAsyncTest {
             return CompletableFuture.completedFuture(Thread.currentThread());
         }
 
+        @ExecuteOn(ThreadType.VIRTUAL)
+        CompletableFuture<Thread> alwaysFails() {
+            return CompletableFuture.failedFuture(new UnsupportedOperationException("Not supported"));
+        }
+
         @Produces
         @Named("my-executor")
         ExecutorService myExecutor() {
@@ -173,6 +180,18 @@ class ExecuteOnAsyncTest {
                      () -> completableFuture.get(SHORT_TIMEOUT, TimeUnit.MILLISECONDS));
         completableFuture.cancel(true);
         assertThrows(CancellationException.class,
-                     () -> completableFuture.get(SHORT_TIMEOUT, TimeUnit.MILLISECONDS));
+                     () -> completableFuture.get(LONG_TIMEOUT, TimeUnit.MILLISECONDS));
+    }
+
+    @Test
+    void testAlwaysFails() {
+        CompletableFuture<Thread> completableFuture = bean.alwaysFails();
+        try {
+            completableFuture.get(LONG_TIMEOUT, TimeUnit.MILLISECONDS);
+        } catch (ExecutionException e) {
+            assertThat(e.getCause(), is(instanceOf(UnsupportedOperationException.class)));
+        } catch (Exception e) {
+            fail();
+        }
     }
 }
