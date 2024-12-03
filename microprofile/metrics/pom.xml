@@ -130,6 +130,7 @@
                                 <exclude>**/TestDisabledMetrics.java</exclude>
                                 <exclude>**/TestSelectivelyDisabledMetrics.java</exclude>
                                 <exclude>**/TestConfigProcessing.java</exclude>
+                                <exclude>**/TestDistributionCustomizationsNoInit.java</exclude>
                             </excludes>
                             <systemPropertyVariables>
                                 <junit.jupiter.extensions.autodetection.enabled>true</junit.jupiter.extensions.autodetection.enabled>
@@ -194,6 +195,18 @@
                             <systemPropertyVariables>
                                 <junit.jupiter.extensions.autodetection.enabled>true</junit.jupiter.extensions.autodetection.enabled>
                             </systemPropertyVariables>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <!-- Run separately so the normal MP container start-up does not happen. -->
+                        <id>test-dist-cust-with-no-init</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/TestDistributionCustomizationsNoInit.java</include>
+                            </includes>
                         </configuration>
                     </execution>
                 </executions>
