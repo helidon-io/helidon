@@ -165,7 +165,7 @@ A new user is just created, but it needs a password to be able to log in. To ini
 . If the `Temporary` field is set to `ON`, the user has to  update password on next login. Click `ON`
 to make it `OFF` and prevent it.
 . Press `Save`.
-. A pop-up window is popping off. Click on `Set Password` to confirm the new password.
+. A pop-up window is popping off. Click on `Save Password` to confirm the new password.
 
 To verify that the new user is created correctly:
 
@@ -262,7 +262,6 @@ security:
         client-secret: "changeit" # <2>
         identity-uri: "http://localhost:8080/realms/myRealm" # <3>
         frontend-uri: "http://localhost:7987" # <4>
-        cookie-use: "false"
 ----
 <1> `client-id` must be the same as the one configure in keycloak.
 <2> The client secret generate by Keycloak during `Create a client` section.
@@ -475,7 +474,7 @@ a refresh token.
 ==== Resource Owner Password Credentials Grant (Direct Access Grants)
 
 The Direct Access Grants flow is used by REST clients that want to request tokens on behalf of a user.
-To use Postman to make this request on behalf of `myuser`, select the GET method and enter this URL:
+To use Postman to make this request on behalf of `myUser`, select the GET method and enter this URL:
 `http://localhost:7987/greet/`. Under `Authorization` tab, select authorization type `OAuth 2.0`. Under it, complete the
 sentence  `Add authorization data to` with `Request Headers`, and complete the required fields.
 
@@ -488,7 +487,7 @@ sentence  `Add authorization data to` with `Request Headers`, and complete the r
     {"key":"Access Token URL","value":"http://localhost:8080/realms/myRealm/protocol/openid-connect/token"},
     {"key":"Client ID","value":"myClientID"},
     {"key":"Client Secret","value":"client secret"},
-    {"key":"Username","value":"myuser"},
+    {"key":"Username","value":"myUser"},
     {"key":"Password","value":"password"},
     {"key":"Scope","value":"openid"},
     {"key":"Client Authentication","value":"Send as Basic Auth Header"}
