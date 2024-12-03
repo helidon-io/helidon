@@ -90,11 +90,6 @@ public class HelidonJunitExtension implements BeforeEachCallback,
     private final Map<Class<?>, ClassInfo> classInfos = new ConcurrentHashMap<>();
     private final Map<Method, MethodInfo> methodInfos = new ConcurrentHashMap<>();
 
-    // TODO test [alternative, interceptor, xxx] with observer method (replicate test for OCIMetricsBean)
-    // TODO replicate metrics test that failed
-    // TODO replicate messaging that failed
-    // TODO replicate jan visser interceptor test failed
-
     @Override
     public Object createTestInstance(TestInstanceFactoryContext fc, ExtensionContext context) {
         // Use a proxy to start the container after the test instance creation
