@@ -21,6 +21,7 @@ import java.util.ServiceLoader;
 import java.util.Set;
 
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.LazyValue;
 import io.helidon.microprofile.telemetry.spi.HelidonTelemetryClientFilterHelper;
 import io.helidon.tracing.HeaderConsumer;
 import io.helidon.tracing.HeaderProvider;
@@ -58,6 +59,9 @@ class HelidonTelemetryClientFilter implements ClientRequestFilter, ClientRespons
     private static final Set<Response.Status.Family> ERROR_STATUS_FAMILIES = Set.of(
             Response.Status.Family.CLIENT_ERROR,
             Response.Status.Family.SERVER_ERROR);
+
+    private static final LazyValue<List<HelidonTelemetryClientFilterHelper>> HELPERS = LazyValue.create(
+            HelidonTelemetryClientFilter::helpers);
 
     private static final String HELPER_START_SPAN_PROPERTY = HelidonTelemetryClientFilterHelper.class.getName() + ".startSpan";
 
