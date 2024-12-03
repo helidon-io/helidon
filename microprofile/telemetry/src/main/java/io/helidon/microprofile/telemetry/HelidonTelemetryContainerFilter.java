@@ -19,10 +19,14 @@ import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.LazyValue;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.mp.MpConfig;
+import io.helidon.microprofile.telemetry.spi.HelidonTelemetryContainerFilterHelper;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
@@ -62,6 +66,11 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
     private static final String HTTP_ROUTE = "http.route";
 
     private static final String SPAN_NAME_FULL_URL = "telemetry.span.full.url";
+
+    private static final String HELPER_START_SPAN_PROPERTY = HelidonTelemetryContainerFilterHelper.class + ".startSpan";
+
+    private static final LazyValue<List<HelidonTelemetryContainerFilterHelper>> HELPERS = LazyValue.create(
+            HelidonTelemetryContainerFilter::helpers);
 
     @Deprecated(forRemoval = true, since = "4.1")
     static final String SPAN_NAME_INCLUDES_METHOD = "telemetry.span.name-includes-method";
@@ -115,6 +124,16 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
             return;
         }
 
+        boolean startSpan = HELPERS.get().stream().allMatch(h -> h.shouldStartSpan(requestContext));
+        requestContext.setProperty(HELPER_START_SPAN_PROPERTY, startSpan);
+        if (!startSpan) {
+            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                LOGGER.log(System.Logger.Level.TRACE,
+                           "Container filter helper(s) voted to not start a span for " + requestContext);
+            }
+            return;
+        }
+
         if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
             LOGGER.log(System.Logger.Level.TRACE, "Starting Span in a Container Request");
         }
@@ -151,6 +170,11 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
             return;
         }
 
+        Boolean startSpanObj = (Boolean) request.getProperty(HELPER_START_SPAN_PROPERTY);
+        if (startSpanObj != null && !startSpanObj) {
+            return;
+        }
+
         if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
             LOGGER.log(System.Logger.Level.TRACE, "Closing Span in a Container Request");
         }
@@ -177,6 +201,10 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
             request.removeProperty(SPAN);
             request.removeProperty(SPAN_SCOPE);
         }
+    }
+
+    private static List<HelidonTelemetryContainerFilterHelper> helpers() {
+        return HelidonServiceLoader.create(ServiceLoader.load(HelidonTelemetryContainerFilterHelper.class)).asList();
     }
 
     private String spanName(ContainerRequestContext requestContext, String route) {

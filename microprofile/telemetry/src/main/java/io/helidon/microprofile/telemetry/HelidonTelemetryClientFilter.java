@@ -17,8 +17,12 @@ package io.helidon.microprofile.telemetry;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.Set;
 
+import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.LazyValue;
+import io.helidon.microprofile.telemetry.spi.HelidonTelemetryClientFilterHelper;
 import io.helidon.tracing.HeaderConsumer;
 import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.Scope;
@@ -55,6 +59,11 @@ class HelidonTelemetryClientFilter implements ClientRequestFilter, ClientRespons
             Response.Status.Family.CLIENT_ERROR,
             Response.Status.Family.SERVER_ERROR);
 
+    private static final LazyValue<List<HelidonTelemetryClientFilterHelper>> HELPERS = LazyValue.create(
+            HelidonTelemetryClientFilter::helpers);
+
+    private static final String HELPER_START_SPAN_PROPERTY = HelidonTelemetryClientFilterHelper.class.getName() + ".startSpan";
+
     private final io.helidon.tracing.Tracer helidonTracer;
 
     @Inject
@@ -65,6 +74,16 @@ class HelidonTelemetryClientFilter implements ClientRequestFilter, ClientRespons
 
     @Override
     public void filter(ClientRequestContext clientRequestContext) {
+
+        boolean startSpan = HELPERS.get().stream().allMatch(h -> h.shouldStartSpan(clientRequestContext));
+        clientRequestContext.setProperty(HELPER_START_SPAN_PROPERTY, startSpan);
+        if (!startSpan) {
+            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                LOGGER.log(System.Logger.Level.TRACE,
+                           "Client filter helper(s) voted to not start a span for " + clientRequestContext.getUri());
+            }
+            return;
+        }
 
         if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
             LOGGER.log(System.Logger.Level.TRACE, "Starting Span in a Client Request");
@@ -103,6 +122,11 @@ class HelidonTelemetryClientFilter implements ClientRequestFilter, ClientRespons
     @Override
     public void filter(ClientRequestContext clientRequestContext, ClientResponseContext clientResponseContext) {
 
+        Boolean startSpanObj = (Boolean) clientRequestContext.getProperty(HELPER_START_SPAN_PROPERTY);
+        if (startSpanObj != null && !startSpanObj) {
+            return;
+        }
+
         if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
             LOGGER.log(System.Logger.Level.TRACE, "Closing Span in a Client Response");
         }
@@ -126,6 +150,10 @@ class HelidonTelemetryClientFilter implements ClientRequestFilter, ClientRespons
 
         clientRequestContext.removeProperty(SPAN);
         clientRequestContext.removeProperty(SPAN_SCOPE);
+    }
+
+    private static List<HelidonTelemetryClientFilterHelper> helpers() {
+        return HelidonServiceLoader.create(ServiceLoader.load(HelidonTelemetryClientFilterHelper.class)).asList();
     }
 
     private static class RequestContextHeaderInjector implements HeaderConsumer {
