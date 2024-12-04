@@ -560,6 +560,10 @@
             <artifactId>helidon-microprofile-rest-client</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.microprofile.rest-client-metrics</groupId>
+            <artifactId>helidon-microprofile-rest-client-metrics</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.microprofile.reactive-streams</groupId>
             <artifactId>helidon-microprofile-reactive-streams</artifactId>
         </dependency>
