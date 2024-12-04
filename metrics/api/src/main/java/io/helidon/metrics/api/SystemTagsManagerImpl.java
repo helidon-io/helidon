@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,23 +17,17 @@ package io.helidon.metrics.api;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.StreamSupport;
 
-import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.LazyValue;
 import io.helidon.metrics.spi.MetricsProgrammaticConfig;
 
 /**
@@ -48,11 +42,6 @@ import io.helidon.metrics.spi.MetricsProgrammaticConfig;
  * </p>
  */
 class SystemTagsManagerImpl implements SystemTagsManager {
-
-    private static final LazyValue<Collection<MetricsProgrammaticConfig>> METRICS_CONFIG_OVERRIDES =
-            LazyValue.create(() ->
-                                     HelidonServiceLoader.create(ServiceLoader.load(MetricsProgrammaticConfig.class))
-                                             .asList());
 
     private static SystemTagsManagerImpl instance = new SystemTagsManagerImpl();
 
@@ -122,22 +111,6 @@ class SystemTagsManagerImpl implements SystemTagsManager {
 
     static SystemTagsManagerImpl createWithoutSaving(MetricsConfig metricsConfig) {
         return new SystemTagsManagerImpl(metricsConfig);
-    }
-
-    /**
-     * Returns an {@link java.lang.Iterable} of the implied type representing the provided scope <em>if</em> scope tagging
-     * is active: the scope tag name is non-null and non-blank.
-     *
-     * @param scopeTagName scope tag name
-     * @param scope        scope value
-     * @param factory      factory method to accept the scope tag and the scope and return an instance of the implied type
-     * @param <T>          type to which the scope tag and scope are converted
-     * @return iterable of the scope if the scope tag name is non-null and non-blank; an empty iterable otherwise
-     */
-    static <T> Iterable<T> scopeIterable(String scopeTagName, String scope, BiFunction<String, String, T> factory) {
-        return scopeTagName != null && !scopeTagName.isBlank() && scope != null
-                ? List.of(factory.apply(scopeTagName, scope))
-                : List.of();
     }
 
     @Override
@@ -250,61 +223,6 @@ class SystemTagsManagerImpl implements SystemTagsManager {
                 .findAny()
                 .map(Tag::value)
                 : Optional.empty();
-    }
-
-    static class MultiIterable<T> implements Iterable<T> {
-
-        private final Iterable<T>[] iterables;
-
-        private MultiIterable(Iterable<T>... iterables) {
-            if (iterables.length == 0) {
-                throw new IllegalArgumentException("Must provide at least one Iterable");
-            }
-            this.iterables = iterables;
-        }
-
-        @Override
-        public Iterator<T> iterator() {
-            return new Iterator<T>() {
-
-                private int nextIndex = 0;
-                private Iterator<T> current = nextIterator();
-
-                @Override
-                public boolean hasNext() {
-                    if (current.hasNext()) {
-                        return true;
-                    }
-
-                    current = nextIterator();
-                    return current.hasNext();
-                }
-
-                @Override
-                public T next() {
-                    return current.next();
-                }
-
-                private Iterator<T> nextIterator() {
-                    while (nextIndex < iterables.length) {
-                        Iterator<T> candidateNextIterator = iterables[nextIndex].iterator();
-                        if (candidateNextIterator.hasNext()) {
-                            nextIndex++;
-                            return candidateNextIterator;
-                        }
-                        nextIndex++;
-                    }
-                    return Collections.emptyIterator();
-                }
-            };
-        }
-
-        @Override
-        public void forEach(Consumer<? super T> action) {
-            for (Iterable<T> it : iterables) {
-                it.forEach(action);
-            }
-        }
     }
 
 }
