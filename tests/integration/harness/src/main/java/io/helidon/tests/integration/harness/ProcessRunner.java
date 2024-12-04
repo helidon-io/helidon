@@ -31,6 +31,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
@@ -468,12 +469,12 @@ public abstract class ProcessRunner {
         protected List<String> command(List<String> opts, List<String> args) {
             Objects.requireNonNull(finalName, "finalName is null");
             if (IS_WINDOWS) {
-                if (opts.contains("-Dexit.on.started=!")) {
-                    opts.add("--test");
-                }
                 return new CommandBuilder("powershell")
+                        .append("-File")
                         .append("target/" + finalName + "-jri/bin/start.ps1")
-                        .append("--jvm", String.join(" ", opts))
+                        .append("--jvm", opts.stream()
+                                .map(option -> String.format("'\\\"%s\\\"'", option))
+                                .collect(Collectors.joining(" ")))
                         .append(args)
                         .command();
             }

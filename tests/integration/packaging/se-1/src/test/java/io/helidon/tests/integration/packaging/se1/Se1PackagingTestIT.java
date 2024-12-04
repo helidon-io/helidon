@@ -58,7 +58,7 @@ abstract class Se1PackagingTestIT {
         return ProcessRunner.of(execMode())
                 .finalName("helidon-tests-integration-packaging-se-1")
                 .properties(properties)
-                .properties(Map.of("app-static-path", Path.of("web").toAbsolutePath()))
+                .properties(Map.of("app.static.path", Path.of("web").toAbsolutePath()))
                 .port(0)
                 .start();
     }
