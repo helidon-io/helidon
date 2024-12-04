@@ -20,6 +20,7 @@ import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -27,6 +28,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.StringJoiner;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -39,7 +41,6 @@ import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
 import jakarta.enterprise.inject.spi.AnnotatedMethod;
 import jakarta.enterprise.inject.spi.AnnotatedType;
-import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
 import jakarta.enterprise.inject.spi.Extension;
 import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
 import jakarta.enterprise.inject.spi.WithAnnotations;
@@ -84,16 +85,16 @@ public class RestClientMetricsCdiExtension implements Extension {
 
     private final Map<Class<?>, Map<Method, Set<Registration>>> registrations = new HashMap<>();
 
+    // Some code might create REST clients before CDI announces that app-scoped beans are initialized.
+    // We record those "early" REST clients and set up metrics for them only when we are ready.
+    private final Collection<Class<?>> deferredRestClients = new ConcurrentLinkedQueue<>();
+
     private MetricRegistry metricRegistry;
 
     /**
      * For service loading.
      */
     public RestClientMetricsCdiExtension() {
-    }
-
-    void checkForMpMetrics(@Observes BeforeBeanDiscovery bbd) {
-
     }
 
     void recordRestClientTypes(@Observes @WithAnnotations({OPTIONS.class,
@@ -218,20 +219,25 @@ public class RestClientMetricsCdiExtension implements Extension {
     void ready(@Observes @Initialized(ApplicationScoped.class) Object event,
                MetricRegistry metricRegistry) {
         this.metricRegistry = metricRegistry;
+        deferredRestClients.forEach(this::registerMetricsForRestClient);
+        deferredRestClients.clear();
     }
 
     void registerMetricsForRestClient(Class<?> restClient) {
+        if (metricRegistry == null) {
+            deferredRestClients.add(restClient);
+            return;
+        }
         registrations.get(restClient).forEach((method, regs) -> {
             List<Metric> metricsRegisteredForRestClient = LOGGER.isLoggable(DEBUG) ? new ArrayList<>() : null;
             regs.forEach(registration -> {
                 Metric metric = registration.registrationOp.apply(metricRegistry);
-                if (LOGGER.isLoggable(DEBUG)) {
+                if (metricsRegisteredForRestClient != null) {
                     metricsRegisteredForRestClient.add(metric);
                     LOGGER.log(DEBUG, String.format("For REST client method %s#%s registering metric using %s",
                                                     restClient.getCanonicalName(),
                                                     method.getName(),
-                                                    registration,
-                                                    metric));
+                                                    registration));
                 }
                 metricsUpdateWorkByMethod.computeIfAbsent(method, k -> new ArrayList<>())
                         .add(MetricsUpdateWork.create(metric));
