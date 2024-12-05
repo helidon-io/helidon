@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
+import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.config.Config;
 
 import static java.lang.System.Logger.Level.ERROR;
@@ -54,9 +54,11 @@ public final class FaultTolerance {
     private static final AtomicReference<Config> CONFIG = new AtomicReference<>(Config.empty());
 
     static {
-        EXECUTOR.set(LazyValue.create(() -> Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
-                                                          .name("helidon-ft-", 0)
-                                                          .factory())));
+        EXECUTOR.set(LazyValue.create(() -> ThreadPoolSupplier.builder()
+                .threadNamePrefix("helidon-ft-")
+                .virtualThreads(true)
+                .build()
+                .get()));
     }
 
     private FaultTolerance() {
