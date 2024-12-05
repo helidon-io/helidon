@@ -35,13 +35,13 @@ import java.lang.annotation.Target;
  * </pre>
  *
  * @see AddConfig
- * @see AddConfigs
- * @see AddConfigSource
  * @see Configuration
+ * @deprecated Use {@link io.helidon.microprofile.testing.AddConfigs} instead
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Inherited
+@Deprecated(since = "4.2.0")
 public @interface AddConfigs {
     /**
      * Get the contained annotations.

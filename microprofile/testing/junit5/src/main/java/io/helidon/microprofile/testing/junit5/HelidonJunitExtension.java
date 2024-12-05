@@ -55,21 +55,21 @@ import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_METHOD;
  * The container can be customized with the following annotations:
  * <ul>
  *     <li>{@link HelidonTest#resetPerTest()} force a new CDI container per test</li>
- *     <li>{@link DisableDiscovery} disables CDI discovery</li>
- *     <li>{@link AddBean} add CDI beans</li>
- *     <li>{@link AddExtension} add CDI extension</li>
- *     <li>{@link AddJaxRs} add JAX-RS (Jersey)</li>
+ *     <li>{@link io.helidon.microprofile.testing.DisableDiscovery} disables CDI discovery</li>
+ *     <li>{@link io.helidon.microprofile.testing.AddBean} add CDI beans</li>
+ *     <li>{@link io.helidon.microprofile.testing.AddExtension} add CDI extension</li>
+ *     <li>{@link io.helidon.microprofile.testing.AddJaxRs} add JAX-RS (Jersey)</li>
  * </ul>
  * <p>
  * The configuration can be customized with the following annotations:
  * <ul>
- *     <li>{@link Configuration} global setting for MicroProfile configuration</li>
- *     <li>{@link AddConfig} declarative key/value pair configuration</li>
- *     <li>{@link AddConfigBlock} declarative fragment configuration</li>
- *     <li>{@link AddConfigSource} programmatic configuration</li>
+ *     <li>{@link io.helidon.microprofile.testing.Configuration} global setting for MicroProfile configuration</li>
+ *     <li>{@link io.helidon.microprofile.testing.AddConfig} declarative key/value pair configuration</li>
+ *     <li>{@link io.helidon.microprofile.testing.AddConfigBlock} declarative fragment configuration</li>
+ *     <li>{@link io.helidon.microprofile.testing.AddConfigSource} programmatic configuration</li>
  * </ul>
  * <p>
- * See also {@link Socket}, a CDI qualifier to inject JAX-RS client or URI.
+ * See also {@link io.helidon.microprofile.testing.Socket}, a CDI qualifier to inject JAX-RS client or URI.
  * <p>
  * The container is created per test class by default, unless
  * {@link HelidonTest#resetPerTest()} is {@code true}, in
@@ -79,7 +79,7 @@ import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_METHOD;
  * {@link HelidonTest#resetPerTest()}. The container will be reset accordingly.
  * <p>
  * It is not recommended to provide a {@code beans.xml} along the test classes, as it would combine beans from all tests.
- * Instead, you should use {@link AddBean} to specify the beans per test or method.
+ * Instead, you should use {@link io.helidon.microprofile.testing.AddBean} to specify the beans per test or method.
  *
  * @see HelidonTest
  */

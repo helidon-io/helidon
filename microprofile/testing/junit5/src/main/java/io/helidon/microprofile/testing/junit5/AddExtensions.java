@@ -33,10 +33,12 @@ import java.lang.annotation.Target;
  * class MyTest {
  * }
  * </pre>
+ * @deprecated Use {@link io.helidon.microprofile.testing.AddExtensions} instead
  */
+@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
-@Inherited
+@Deprecated(since = "4.2.0")
 public @interface AddExtensions {
     /**
      * Get the contained annotations.

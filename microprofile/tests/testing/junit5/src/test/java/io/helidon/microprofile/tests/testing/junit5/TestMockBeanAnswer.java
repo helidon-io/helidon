@@ -19,7 +19,6 @@ package io.helidon.microprofile.tests.testing.junit5;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -31,7 +30,6 @@ import io.helidon.microprofile.testing.mocking.MockBean;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.Answers;
-import org.mockito.MockSettings;
 import org.mockito.Mockito;
 
 @HelidonTest

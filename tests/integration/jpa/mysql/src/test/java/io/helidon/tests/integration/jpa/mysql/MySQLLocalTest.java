@@ -16,7 +16,7 @@
 package io.helidon.tests.integration.jpa.mysql;
 
 import io.helidon.config.mp.MpConfigSources;
-import io.helidon.microprofile.testing.junit5.AddConfigSource;
+import io.helidon.microprofile.testing.AddConfigSource;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.testcontainers.containers.MySQLContainer;

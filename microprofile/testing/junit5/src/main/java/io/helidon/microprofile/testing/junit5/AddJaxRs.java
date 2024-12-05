@@ -32,7 +32,9 @@ import org.glassfish.jersey.weld.se.WeldRequestScope;
  * Add JAX-RS (Jersey) support.
  * <p>
  * If used on a method, the container will be reset regardless of the test lifecycle.
+ * @deprecated Use {@link io.helidon.microprofile.testing.AddJaxRs} instead
  */
+@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
 @AddExtension(ProcessAllAnnotatedTypes.class)
@@ -40,6 +42,6 @@ import org.glassfish.jersey.weld.se.WeldRequestScope;
 @AddExtension(JaxRsCdiExtension.class)
 @AddExtension(CdiComponentProvider.class)
 @AddBean(WeldRequestScope.class)
-@Inherited
+@Deprecated(since = "4.2.0")
 public @interface AddJaxRs {
 }

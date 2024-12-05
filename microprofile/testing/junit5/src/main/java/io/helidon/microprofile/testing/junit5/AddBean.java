@@ -37,11 +37,13 @@ import java.lang.annotation.Target;
  *     <li>If the bean does not define a scope, {@link jakarta.enterprise.context.ApplicationScoped ApplicationScoped}
  *     is used</li>
  * </ul>
+ * @deprecated Use {@link io.helidon.microprofile.testing.AddBean} instead
  */
+@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Repeatable(AddBeans.class)
-@Inherited
+@Deprecated(since = "4.2.0")
 public @interface AddBean {
     /**
      * The bean class.

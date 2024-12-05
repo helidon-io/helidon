@@ -18,7 +18,6 @@ package io.helidon.microprofile.testing.junit5;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
-import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -32,13 +31,13 @@ import java.lang.annotation.Target;
  *
  * @see AddConfig
  * @see AddConfigs
- * @see AddConfigSource
  * @see Configuration
+ * @deprecated Use {@link io.helidon.microprofile.testing.AddConfigBlock} instead
  */
+@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
-@Repeatable(AddConfigBlocks.class)
-@Inherited
+@Deprecated(since = "4.2.0")
 public @interface AddConfigBlock {
     /**
      * Specifies the configuration format.

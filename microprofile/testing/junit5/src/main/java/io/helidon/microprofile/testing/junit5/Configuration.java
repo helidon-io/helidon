@@ -30,11 +30,12 @@ import java.lang.annotation.Target;
  * @see AddConfig
  * @see AddConfigs
  * @see AddConfigBlock
- * @see AddConfigSource
+ * @deprecated Use {@link io.helidon.microprofile.testing.Configuration} instead
  */
+@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
-@Inherited
+@Deprecated(since = "4.2.0")
 public @interface Configuration {
     /**
      * If set to {@code false}, the synthetic test configuration is used.
@@ -46,7 +47,6 @@ public @interface Configuration {
      *     <li>{@link AddConfig}</li>
      *     <li>{@link AddConfigs}</li>
      *     <li>{@link AddConfigBlock}</li>
-     *     <li>{@link AddConfigSource}</li>
      * </ul>
      * <p>
      * If set to {@code true}, only the existing (or default) MicroProfile configuration is used

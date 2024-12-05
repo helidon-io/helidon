@@ -17,7 +17,6 @@ package io.helidon.microprofile.testing.junit5;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -30,6 +29,7 @@ import static io.helidon.microprofile.testing.junit5.ProxyHelper.mirror;
 /**
  * Base descriptor implementation that supports the deprecated annotations.
  */
+@SuppressWarnings("deprecation")
 class HelidonTestDescriptorImpl<T extends AnnotatedElement> extends HelidonTestDescriptorBase<T> {
 
     HelidonTestDescriptorImpl(T element) {
@@ -50,19 +50,15 @@ class HelidonTestDescriptorImpl<T extends AnnotatedElement> extends HelidonTestD
 
     @Override
     protected List<io.helidon.microprofile.testing.AddConfigBlock> lookupAddConfigBlocks() {
-        return lookup(io.helidon.microprofile.testing.AddConfigBlock.class, super.lookupAddConfigBlocks().stream(),
-                AddConfigBlock.class, AddConfigBlocks.class, AddConfigBlocks::value).toList();
+        return Stream.concat(super.lookupAddConfigBlocks().stream(), annotations(AddConfigBlock.class)
+                        .map(a -> mirror(io.helidon.microprofile.testing.AddConfigBlock.class, a)))
+                .toList();
     }
 
     @Override
     protected List<io.helidon.microprofile.testing.AddExtension> lookupAddExtensions() {
         return lookup(io.helidon.microprofile.testing.AddExtension.class, super.lookupAddExtensions().stream(),
                 AddExtension.class, AddExtensions.class, AddExtensions::value).toList();
-    }
-
-    @Override
-    protected List<Method> lookupAddConfigSources() {
-        return super.lookupAddConfigSources();
     }
 
     @Override

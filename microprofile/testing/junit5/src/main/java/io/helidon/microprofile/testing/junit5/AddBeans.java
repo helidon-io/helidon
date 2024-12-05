@@ -33,10 +33,12 @@ import java.lang.annotation.Target;
  * class MyTest {
  * }
  * </pre>
+ * @deprecated Use {@link io.helidon.microprofile.testing.AddBeans} instead
  */
+@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
-@Inherited
+@Deprecated(since = "4.2.0")
 public @interface AddBeans {
     /**
      * Get the contained annotations.

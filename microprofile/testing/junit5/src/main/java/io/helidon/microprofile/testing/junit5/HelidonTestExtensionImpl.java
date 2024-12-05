@@ -31,6 +31,7 @@ import static io.helidon.microprofile.testing.junit5.ProxyHelper.mirror;
 /**
  * An implementation of {@link HelidonTestExtension} that supports the deprecated annotations.
  */
+@SuppressWarnings("deprecation")
 final class HelidonTestExtensionImpl extends HelidonTestExtension {
 
     private static final Set<Class<? extends Annotation>> TYPE_ANNOTATION_TYPES = Set.of(
@@ -49,7 +50,6 @@ final class HelidonTestExtensionImpl extends HelidonTestExtension {
             AddConfig.class,
             AddConfigs.class,
             AddConfigBlock.class,
-            AddConfigSource.class,
             AfterStop.class,
             Configuration.class);
 
@@ -93,7 +93,6 @@ final class HelidonTestExtensionImpl extends HelidonTestExtension {
             case AddConfig e -> processAddConfig(e);
             case AddConfigs e -> processAddConfig(e.value());
             case AddConfigBlock e -> processAddConfigBlock(e);
-            case AddConfigBlocks e -> processAddConfigBlock(e.value());
             default -> super.processTypeAnnotation(annotation);
         }
     }
@@ -118,9 +117,7 @@ final class HelidonTestExtensionImpl extends HelidonTestExtension {
 
     @Override
     protected void processStaticMethodAnnotation(Annotation annotation, Method method) {
-        if (Objects.requireNonNull(annotation) instanceof AddConfigSource) {
-            processAddConfigSource(method);
-        } else if (annotation instanceof AfterStop) {
+        if (annotation instanceof AfterStop) {
             processAfterStop(method);
         } else {
             super.processStaticMethodAnnotation(annotation, method);
@@ -134,7 +131,6 @@ final class HelidonTestExtensionImpl extends HelidonTestExtension {
             case AddConfig e -> processAddConfig(e);
             case AddConfigs e -> processAddConfig(e.value());
             case AddConfigBlock e -> processAddConfigBlock(e);
-            case AddConfigBlocks e -> processAddConfigBlock(e.value());
             default -> super.processTestMethodAnnotation(annotation, method);
         }
     }
@@ -143,15 +139,13 @@ final class HelidonTestExtensionImpl extends HelidonTestExtension {
         processConfiguration(mirror(io.helidon.microprofile.testing.Configuration.class, annotation));
     }
 
+    private void processAddConfigBlock(AddConfigBlock annotation) {
+        processAddConfigBlock(mirror(io.helidon.microprofile.testing.AddConfigBlock.class, annotation));
+    }
+
     private void processAddConfig(AddConfig... annotations) {
         for (AddConfig annotation : annotations) {
             processAddConfig(mirror(io.helidon.microprofile.testing.AddConfig.class, annotation));
-        }
-    }
-
-    private void processAddConfigBlock(AddConfigBlock... annotations) {
-        for (AddConfigBlock annotation : annotations) {
-            processAddConfigBlock(mirror(io.helidon.microprofile.testing.AddConfigBlock.class, annotation));
         }
     }
 

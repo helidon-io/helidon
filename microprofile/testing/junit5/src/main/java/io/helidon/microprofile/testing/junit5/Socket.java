@@ -58,10 +58,12 @@ import jakarta.inject.Qualifier;
  *     private WebTarget target;
  * }
  * </pre>
+ * @deprecated Use {@link io.helidon.microprofile.testing.Socket} instead
  */
 @Qualifier
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD, ElementType.PARAMETER})
+@Deprecated(since = "4.2.0")
 public @interface Socket {
 
     /**

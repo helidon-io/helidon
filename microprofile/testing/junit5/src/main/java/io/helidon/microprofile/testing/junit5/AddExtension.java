@@ -30,11 +30,13 @@ import jakarta.enterprise.inject.spi.Extension;
  * This annotation can be repeated.
  * <p>
  * If used on a method, the container will be reset regardless of the test lifecycle.
+ * @deprecated Use {@link io.helidon.microprofile.testing.AddExtension} instead
  */
+@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Repeatable(AddExtensions.class)
-@Inherited
+@Deprecated(since = "4.2.0")
 public @interface AddExtension {
     /**
      * Class of the extension to add. The class must be public.

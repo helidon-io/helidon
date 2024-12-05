@@ -17,6 +17,7 @@
 package io.helidon.microprofile.testing.junit5;
 
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -30,8 +31,11 @@ import java.lang.annotation.Target;
  * static void afterStop() {
  *     // ...
  * }</pre>
+ * @deprecated Use {@link io.helidon.microprofile.testing.AfterStop} instead
  */
+@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
+@Deprecated(since = "4.2.0")
 public @interface AfterStop {
 }

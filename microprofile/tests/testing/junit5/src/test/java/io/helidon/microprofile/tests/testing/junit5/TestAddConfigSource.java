@@ -21,7 +21,7 @@ import java.util.Map;
 import jakarta.inject.Inject;
 
 import io.helidon.config.mp.MpConfigSources;
-import io.helidon.microprofile.testing.junit5.AddConfigSource;
+import io.helidon.microprofile.testing.AddConfigSource;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;

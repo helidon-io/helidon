@@ -31,13 +31,14 @@ import java.lang.annotation.Target;
  *
  * @see AddConfigs
  * @see AddConfigBlock
- * @see AddConfigSource
  * @see Configuration
+ * @deprecated Use {@link io.helidon.microprofile.testing.AddConfig} instead
  */
+@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Repeatable(AddConfigs.class)
-@Inherited
+@Deprecated(since = "4.2.0")
 public @interface AddConfig {
     /**
      * Configuration property key.

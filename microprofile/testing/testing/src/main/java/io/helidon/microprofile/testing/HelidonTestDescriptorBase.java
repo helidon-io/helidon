@@ -204,18 +204,6 @@ public abstract class HelidonTestDescriptorBase<T extends AnnotatedElement> impl
     }
 
     /**
-     * Lookup the {@link AddConfigSource} methods.
-     *
-     * @return methods
-     */
-    protected List<Method> lookupAddConfigSources() {
-        return filterAnnotated(annotated, AddConfigSource.class)
-                .map(Annotated::element)
-                .map(Method.class::cast)
-                .toList();
-    }
-
-    /**
      * Get annotations.
      *
      * @param aType    annotation type
@@ -240,5 +228,12 @@ public abstract class HelidonTestDescriptorBase<T extends AnnotatedElement> impl
      */
     protected <A extends Annotation> Stream<A> annotations(Class<A> aType) {
         return filterAnnotations(annotated, aType);
+    }
+
+    private List<Method> lookupAddConfigSources() {
+        return filterAnnotated(annotated, AddConfigSource.class)
+                .map(Annotated::element)
+                .map(Method.class::cast)
+                .toList();
     }
 }
