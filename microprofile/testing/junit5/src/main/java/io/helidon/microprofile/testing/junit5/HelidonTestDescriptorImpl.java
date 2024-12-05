@@ -66,29 +66,33 @@ class HelidonTestDescriptorImpl<T extends AnnotatedElement> extends HelidonTestD
     }
 
     @Override
-    protected Optional<io.helidon.microprofile.testing.AddJaxRs> lookupAddJaxRs() {
-        return lookup(io.helidon.microprofile.testing.AddJaxRs.class, super.lookupAddJaxRs().stream(),
-                AddJaxRs.class).findFirst();
-    }
-
-    @Override
     protected Optional<io.helidon.microprofile.testing.Configuration> lookupConfiguration() {
-        return lookup(io.helidon.microprofile.testing.Configuration.class, super.lookupConfiguration().stream(),
-                Configuration.class).findFirst();
+        return super.lookupConfiguration().or(() -> annotations(Configuration.class)
+                .map(a -> mirror(io.helidon.microprofile.testing.Configuration.class, a))
+                .findFirst());
     }
 
     @Override
-    protected Optional<io.helidon.microprofile.testing.DisableDiscovery> lookupDisableDiscovery() {
-        return lookup(io.helidon.microprofile.testing.DisableDiscovery.class, super.lookupDisableDiscovery().stream(),
-                DisableDiscovery.class).findFirst();
+    protected boolean lookupAddJaxRs() {
+        return super.lookupAddJaxRs() || annotations(AddJaxRs.class)
+                .findFirst()
+                .isPresent();
     }
 
-    private <R extends Annotation, D extends Annotation> Stream<R> lookup(Class<R> tType,
-                                                                          Stream<R> initial,
-                                                                          Class<D> aType) {
+    @Override
+    protected boolean lookupDisableDiscovery() {
+        return super.lookupDisableDiscovery() || annotations(DisableDiscovery.class)
+                .findFirst()
+                .map(DisableDiscovery::value)
+                .orElse(false);
+    }
 
-        return Stream.concat(initial, annotations(aType)
-                .map(a -> mirror(tType, a)));
+    @Override
+    protected boolean lookupresetPerTest() {
+        return annotations(HelidonTest.class)
+                .findFirst()
+                .map(HelidonTest::resetPerTest)
+                .orElse(false);
     }
 
     private <R extends Annotation, A extends Annotation, C extends Annotation> Stream<R> lookup(Class<R> tType,

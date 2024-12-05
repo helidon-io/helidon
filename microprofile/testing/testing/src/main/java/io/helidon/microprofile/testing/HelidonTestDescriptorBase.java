@@ -24,6 +24,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import io.helidon.common.LazyValue;
+import io.helidon.microprofile.testing.ReflectionHelper.Annotated;
 
 import static io.helidon.microprofile.testing.ReflectionHelper.annotated;
 import static io.helidon.microprofile.testing.ReflectionHelper.filterAnnotated;
@@ -37,12 +38,12 @@ import static io.helidon.microprofile.testing.ReflectionHelper.filterAnnotations
 public abstract class HelidonTestDescriptorBase<T extends AnnotatedElement> implements HelidonTestDescriptor<T> {
 
     private final T element;
-    private final List<ReflectionHelper.Annotated<?>> annotated;
+    private final List<Annotated<?>> annotated;
     private final LazyValue<Boolean> resetPerTest = LazyValue.create(this::lookupresetPerTest);
     private final LazyValue<List<AddExtension>> addExtensions = LazyValue.create(this::lookupAddExtensions);
     private final LazyValue<List<AddBean>> addBeans = LazyValue.create(this::lookupAddBeans);
-    private final LazyValue<Optional<AddJaxRs>> addJaxRs = LazyValue.create(this::lookupAddJaxRs);
-    private final LazyValue<Optional<DisableDiscovery>> disableDiscovery = LazyValue.create(this::lookupDisableDiscovery);
+    private final LazyValue<Boolean> addJaxRs = LazyValue.create(this::lookupAddJaxRs);
+    private final LazyValue<Boolean> disableDiscovery = LazyValue.create(this::lookupDisableDiscovery);
     private final LazyValue<List<AddConfig>> addConfigs = LazyValue.create(this::lookupAddConfigs);
     private final LazyValue<List<AddConfigBlock>> addConfigBlocks = LazyValue.create(this::lookupAddConfigBlocks);
     private final LazyValue<List<Method>> addConfigSources = LazyValue.create(this::lookupAddConfigSources);
@@ -87,12 +88,12 @@ public abstract class HelidonTestDescriptorBase<T extends AnnotatedElement> impl
     }
 
     @Override
-    public Optional<AddJaxRs> addJaxRs() {
+    public boolean addJaxRs() {
         return addJaxRs.get();
     }
 
     @Override
-    public Optional<DisableDiscovery> disableDiscovery() {
+    public boolean disableDiscovery() {
         return disableDiscovery.get();
     }
 
@@ -154,9 +155,10 @@ public abstract class HelidonTestDescriptorBase<T extends AnnotatedElement> impl
      *
      * @return annotation
      */
-    protected Optional<AddJaxRs> lookupAddJaxRs() {
+    protected boolean lookupAddJaxRs() {
         return annotations(AddJaxRs.class)
-                .findFirst();
+                .findFirst()
+                .isPresent();
     }
 
     /**
@@ -164,9 +166,11 @@ public abstract class HelidonTestDescriptorBase<T extends AnnotatedElement> impl
      *
      * @return annotation
      */
-    protected Optional<DisableDiscovery> lookupDisableDiscovery() {
+    protected boolean lookupDisableDiscovery() {
         return annotations(DisableDiscovery.class)
-                .findFirst();
+                .findFirst()
+                .map(DisableDiscovery::value)
+                .orElse(false);
     }
 
     /**
@@ -205,7 +209,8 @@ public abstract class HelidonTestDescriptorBase<T extends AnnotatedElement> impl
      * @return methods
      */
     protected List<Method> lookupAddConfigSources() {
-        return elements(AddConfigSource.class)
+        return filterAnnotated(annotated, AddConfigSource.class)
+                .map(Annotated::element)
                 .map(Method.class::cast)
                 .toList();
     }
@@ -235,15 +240,5 @@ public abstract class HelidonTestDescriptorBase<T extends AnnotatedElement> impl
      */
     protected <A extends Annotation> Stream<A> annotations(Class<A> aType) {
         return filterAnnotations(annotated, aType);
-    }
-
-    /**
-     * Get annotated elements.
-     *
-     * @param aType annotation type
-     * @return elements
-     */
-    protected Stream<AnnotatedElement> elements(Class<? extends Annotation> aType) {
-        return filterAnnotated(annotated, aType).map(ReflectionHelper.Annotated::element);
     }
 }

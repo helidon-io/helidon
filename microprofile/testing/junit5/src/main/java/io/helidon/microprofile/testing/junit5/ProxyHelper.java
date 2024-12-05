@@ -64,14 +64,14 @@ class ProxyHelper {
     }
 
     /**
-     * Create a proxy instance.
+     * Create a delegated proxy instance.
      *
      * @param type     type
      * @param resolver function to resolve the delegate
      * @param <T>      type
      * @return proxy
      */
-    static <T> T proxy(Class<T> type, BiFunction<Class<T>, Method, T> resolver) {
+    static <T> T proxyDelegate(Class<T> type, BiFunction<Class<T>, Method, T> resolver) {
         try (DynamicType.Unloaded<T> unloaded = new ByteBuddy()
                 .subclass(type, ConstructorStrategy.Default.NO_CONSTRUCTORS)
                 .withHashCodeEquals()

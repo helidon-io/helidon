@@ -38,6 +38,29 @@ public interface HelidonTestDescriptor<T extends AnnotatedElement> {
     T element();
 
     /**
+     * Get the discovered value of {@code @HelidonTest(resetPerTest = true)}.
+     *
+     * @return {@code resetPerTest} value
+     */
+    default boolean resetPerTest() {
+        return false;
+    }
+
+    /**
+     * Get the discovered {@link AddJaxRs} annotation.
+     *
+     * @return {@code true} if the annotation is present
+     */
+    boolean addJaxRs();
+
+    /**
+     * Get the value of the discovered {@link DisableDiscovery} annotation.
+     *
+     * @return {@link DisableDiscovery#value()} or {@code false} if not found
+     */
+    boolean disableDiscovery();
+
+    /**
      * Get the discovered {@link AddExtension} annotations.
      *
      * @return annotations
@@ -50,20 +73,6 @@ public interface HelidonTestDescriptor<T extends AnnotatedElement> {
      * @return annotations
      */
     List<AddBean> addBeans();
-
-    /**
-     * Get the discovered {@link AddJaxRs} annotation.
-     *
-     * @return annotation
-     */
-    Optional<AddJaxRs> addJaxRs();
-
-    /**
-     * Get the discovered {@link DisableDiscovery} annotation.
-     *
-     * @return annotation
-     */
-    Optional<DisableDiscovery> disableDiscovery();
 
     /**
      * Get the discovered {@link Configuration} annotation.
@@ -87,6 +96,13 @@ public interface HelidonTestDescriptor<T extends AnnotatedElement> {
     List<AddConfigBlock> addConfigBlocks();
 
     /**
+     * Get the discovered {@link AddConfigSource} methods.
+     *
+     * @return annotations
+     */
+    List<Method> addConfigSources();
+
+    /**
      * Test if the given extension is configured.
      *
      * @param type extension type
@@ -98,23 +114,4 @@ public interface HelidonTestDescriptor<T extends AnnotatedElement> {
                 .anyMatch(Predicate.isEqual(type));
     }
 
-    /**
-     * Class descriptor.
-     */
-    interface ClassDescriptor extends HelidonTestDescriptor<Class<?>> {
-
-        /**
-         * Get the discovered value of {@code @HelidonTest(resetPerTest = true)}.
-         *
-         * @return {@code resetPerTest} value
-         */
-        boolean resetPerTest();
-
-        /**
-         * Get the discovered {@link AddConfigSource} methods.
-         *
-         * @return annotations
-         */
-        List<Method> addConfigSources();
-    }
 }

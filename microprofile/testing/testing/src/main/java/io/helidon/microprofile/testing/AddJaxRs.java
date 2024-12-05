@@ -34,7 +34,7 @@ import org.glassfish.jersey.weld.se.WeldRequestScope;
  * If used on a method, the container will be reset regardless of the test lifecycle.
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
+@Target({ElementType.TYPE, ElementType.METHOD})
 @AddExtension(ProcessAllAnnotatedTypes.class)
 @AddExtension(ServerCdiExtension.class)
 @AddExtension(JaxRsCdiExtension.class)

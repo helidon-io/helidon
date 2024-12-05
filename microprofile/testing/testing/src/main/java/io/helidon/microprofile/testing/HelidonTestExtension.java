@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -194,10 +195,12 @@ public abstract class HelidonTestExtension implements Extension {
      * @param method     method
      */
     protected void processStaticMethodAnnotation(Annotation annotation, Method method) {
-        switch (annotation) {
-            case AddConfigSource ignored -> processAddConfigSource(method);
-            case AfterStop ignored -> processAfterStop(method);
-            default -> throw new IllegalStateException(String.format(
+        if (Objects.requireNonNull(annotation) instanceof AddConfigSource) {
+            processAddConfigSource(method);
+        } else if (annotation instanceof AfterStop) {
+            processAfterStop(method);
+        } else {
+            throw new IllegalStateException(String.format(
                     "@%s requires method %s to be non static",
                     method, annotation.annotationType().getSimpleName()));
         }
@@ -378,7 +381,7 @@ public abstract class HelidonTestExtension implements Extension {
         event.addContext(testScope);
 
         Class<? extends Extension> serverClass = serverClass();
-        if (serverClass != null && (!testInfo.discoveryDisabled() || testInfo.containsExtension(serverClass))) {
+        if (serverClass != null && (!testInfo.disableDiscovery() || testInfo.containsExtension(serverClass))) {
 
             Extension server = bm.getExtension(serverClass);
             Client client = ClientBuilder.newClient();

@@ -146,7 +146,7 @@ public class HelidonTestContainer {
     private SeContainer start() {
         HelidonTestExtension testExtension = extensionFactory.apply(testInfo, testScope);
         SeContainerInitializer initializer = SeContainerInitializer.newInstance();
-        if (testInfo.discoveryDisabled()) {
+        if (testInfo.disableDiscovery()) {
             initializer.disableDiscovery();
         }
         for (AddExtension extension : testInfo.addExtensions()) {

@@ -66,8 +66,8 @@ class HelidonTestConfigSynthetic extends HelidonTestConfigDelegate {
         map.put("mp.config.profile", "test");
         testInfo.addConfigs().forEach(this::update);
         testInfo.addConfigBlocks().forEach(this::update);
+        testInfo.addConfigSources().forEach(this::update);
         testInfo.configuration().ifPresent(this::update);
-        testInfo.classInfo().addConfigSources().forEach(this::update);
     }
 
     @Override

@@ -13,24 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.testing.junit5;
+package io.helidon.microprofile.testing;
 
-import io.helidon.microprofile.testing.HelidonTestDescriptor.ClassDescriptor;
+import java.lang.reflect.AnnotatedElement;
 
 /**
- * Test class descriptor that supports the deprecated annotations.
+ * Default descriptor implementation.
  */
-final class HelidonTestClassDescriptorImpl extends HelidonTestDescriptorImpl<Class<?>> implements ClassDescriptor {
+final class HelidonTestDescriptorImpl<T extends AnnotatedElement> extends HelidonTestDescriptorBase<T> {
 
-    HelidonTestClassDescriptorImpl(Class<?> element) {
+    HelidonTestDescriptorImpl(T element) {
         super(element);
-    }
-
-    @Override
-    protected boolean lookupresetPerTest() {
-        return annotations(HelidonTest.class)
-                .findFirst()
-                .map(HelidonTest::resetPerTest)
-                .orElse(false);
     }
 }

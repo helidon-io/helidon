@@ -96,7 +96,7 @@ public class HelidonJunitExtension implements BeforeEachCallback,
         // Use a proxy to start the container after the test instance creation
         // The container is started lazily when invoking a method
         // or when resolving parameters
-        return ProxyHelper.proxy(context.getRequiredTestClass(), (testClass, testMethod) -> {
+        return ProxyHelper.proxyDelegate(context.getRequiredTestClass(), (testClass, testMethod) -> {
             // class context store specific to the intercepted method
             Store store = store(context, testMethod);
             return requiredContainer(store).resolveInstance(testClass);
@@ -125,7 +125,7 @@ public class HelidonJunitExtension implements BeforeEachCallback,
         Class<?> testClass = context.getRequiredTestClass();
 
         ClassInfo classInfo = classInfos.computeIfAbsent(testClass,
-                e -> HelidonTestInfo.classInfo(new HelidonTestClassDescriptorImpl(e)));
+                e -> HelidonTestInfo.classInfo(new HelidonTestDescriptorImpl<>(e)));
         MethodInfo methodInfo = methodInfos.computeIfAbsent(testMethod,
                 e -> HelidonTestInfo.methodInfo(new HelidonTestDescriptorImpl<>(e), classInfo));
 

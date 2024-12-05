@@ -37,7 +37,7 @@ public sealed interface HelidonTestInfo<T extends AnnotatedElement> extends Heli
      * @return ClassInfo
      */
     static ClassInfo classInfo(Class<?> element) {
-        return new ClassInfo(new DefaultClassDescriptor(element));
+        return new ClassInfo(new HelidonTestDescriptorImpl<>(element));
     }
 
     /**
@@ -46,8 +46,19 @@ public sealed interface HelidonTestInfo<T extends AnnotatedElement> extends Heli
      * @param descriptor class descriptor
      * @return ClassInfo
      */
-    static ClassInfo classInfo(ClassDescriptor descriptor) {
+    static ClassInfo classInfo(HelidonTestDescriptor<Class<?>> descriptor) {
         return new ClassInfo(descriptor);
+    }
+
+    /**
+     * Create a new method info.
+     *
+     * @param element   method
+     * @param classInfo class info
+     * @return MethodInfo
+     */
+    static MethodInfo methodInfo(Method element, ClassInfo classInfo) {
+        return new MethodInfo(new HelidonTestDescriptorImpl<>(element), classInfo);
     }
 
     /**
@@ -80,125 +91,27 @@ public sealed interface HelidonTestInfo<T extends AnnotatedElement> extends Heli
      *
      * @return test method
      */
-    Optional<Method> testMethod();
-
-    /**
-     * Get the test class info.
-     *
-     * @return ClassInfo
-     */
-    ClassInfo classInfo();
-
-    /**
-     * Indicate if the container should be reset.
-     * For a class this is resolved via {@code @HelidonTest(resetPerTest = true)}.
-     * For a method this is inferred if any of the following annotations is used:
-     * <ul>
-     *     <li>{@link AddExtension}</li>
-     *     <li>{@link AddBean}</li>
-     *     <li>{@link AddJaxRs}</li>
-     *     <li>{@link DisableDiscovery}</li>
-     * </ul>
-     *
-     * @return {@code true} if reset is required, {@code false} otherwise
-     */
-    boolean requiresReset();
-
-    /**
-     * Get the value of {@link DisableDiscovery}.
-     *
-     * @return {@link DisableDiscovery#value()}
-     */
-    default boolean discoveryDisabled() {
-        return disableDiscovery()
-                .map(DisableDiscovery::value)
-                .orElse(false);
+    default Optional<Method> testMethod() {
+        return Optional.empty();
     }
 
     /**
      * Class info.
      */
-    final class ClassInfo implements HelidonTestInfo<Class<?>>, ClassDescriptor {
+    final class ClassInfo extends HelidonTestDescriptorDelegate<Class<?>> implements HelidonTestInfo<Class<?>> {
 
-        private final ClassDescriptor descriptor;
-
-        private ClassInfo(ClassDescriptor descriptor) {
-            this.descriptor = descriptor;
+        private ClassInfo(HelidonTestDescriptor<Class<?>> descriptor) {
+            super(descriptor);
         }
 
         @Override
         public String id() {
-            return descriptor.element().getName();
-        }
-
-        @Override
-        public ClassInfo classInfo() {
-            return this;
+            return element().getName();
         }
 
         @Override
         public Class<?> testClass() {
-            return descriptor.element();
-        }
-
-        @Override
-        public Optional<Method> testMethod() {
-            return Optional.empty();
-        }
-
-        @Override
-        public Class<?> element() {
-            return descriptor.element();
-        }
-
-        @Override
-        public List<AddExtension> addExtensions() {
-            return descriptor.addExtensions();
-        }
-
-        @Override
-        public List<AddBean> addBeans() {
-            return descriptor.addBeans();
-        }
-
-        @Override
-        public Optional<AddJaxRs> addJaxRs() {
-            return descriptor.addJaxRs();
-        }
-
-        @Override
-        public Optional<DisableDiscovery> disableDiscovery() {
-            return descriptor.disableDiscovery();
-        }
-
-        @Override
-        public Optional<Configuration> configuration() {
-            return descriptor.configuration();
-        }
-
-        @Override
-        public List<AddConfig> addConfigs() {
-            return descriptor.addConfigs();
-        }
-
-        @Override
-        public List<AddConfigBlock> addConfigBlocks() {
-            return descriptor.addConfigBlocks();
-        }
-
-        @Override
-        public List<Method> addConfigSources() {
-            return descriptor.addConfigSources();
-        }
-
-        @Override
-        public boolean resetPerTest() {
-            return descriptor.resetPerTest();
-        }
-
-        @Override
-        public boolean requiresReset() {
-            return descriptor.resetPerTest();
+            return element();
         }
     }
 
@@ -217,12 +130,7 @@ public sealed interface HelidonTestInfo<T extends AnnotatedElement> extends Heli
 
         @Override
         public String id() {
-            return classInfo.element().getName() + "#" + descriptor.element().getName();
-        }
-
-        @Override
-        public ClassInfo classInfo() {
-            return classInfo;
+            return classInfo.id() + "#" + element().getName();
         }
 
         @Override
@@ -251,15 +159,13 @@ public sealed interface HelidonTestInfo<T extends AnnotatedElement> extends Heli
         }
 
         @Override
-        public Optional<AddJaxRs> addJaxRs() {
-            return classInfo.addJaxRs()
-                    .or(descriptor::addJaxRs);
+        public boolean addJaxRs() {
+            return classInfo.addJaxRs() || descriptor.addJaxRs();
         }
 
         @Override
-        public Optional<DisableDiscovery> disableDiscovery() {
-            return classInfo.disableDiscovery()
-                    .or(descriptor::disableDiscovery);
+        public boolean disableDiscovery() {
+            return classInfo.disableDiscovery() || descriptor.disableDiscovery();
         }
 
         @Override
@@ -278,25 +184,35 @@ public sealed interface HelidonTestInfo<T extends AnnotatedElement> extends Heli
         }
 
         @Override
+        public List<Method> addConfigSources() {
+            return classInfo.addConfigSources();
+        }
+
+        /**
+         * Indicate if the container should be reset.
+         * For a class this is resolved via {@code HelidonTest#resetPerTest()}.
+         * For a method this is inferred if any of the following annotations is used:
+         * <ul>
+         *     <li>{@link Configuration}</li>
+         *     <li>{@link AddExtension}</li>
+         *     <li>{@link AddBean}</li>
+         *     <li>{@link AddJaxRs}</li>
+         *     <li>{@link DisableDiscovery}</li>
+         * </ul>
+         *
+         * @return {@code true} if reset is required, {@code false} otherwise
+         */
         public boolean requiresReset() {
-            return descriptor.disableDiscovery().isPresent()
+            return classInfo.resetPerTest()
+                   || descriptor.configuration().isPresent()
+                   || descriptor.disableDiscovery()
+                   || descriptor.addJaxRs()
                    || !descriptor.addBeans().isEmpty()
                    || !descriptor.addExtensions().isEmpty();
         }
 
         private static <T> List<T> concat(List<T> l1, List<T> l2) {
             return Stream.concat(l1.stream(), l2.stream()).toList();
-        }
-    }
-
-    /**
-     * Default class descriptor.
-     */
-    final class DefaultClassDescriptor extends HelidonTestDescriptorBase<Class<?>>
-            implements ClassDescriptor {
-
-        private DefaultClassDescriptor(Class<?> element) {
-            super(element);
         }
     }
 }

@@ -118,10 +118,12 @@ final class HelidonTestExtensionImpl extends HelidonTestExtension {
 
     @Override
     protected void processStaticMethodAnnotation(Annotation annotation, Method method) {
-        switch (annotation) {
-            case AddConfigSource ignored -> processAddConfigSource(method);
-            case AfterStop ignored -> processAfterStop(method);
-            default -> super.processStaticMethodAnnotation(annotation, method);
+        if (Objects.requireNonNull(annotation) instanceof AddConfigSource) {
+            processAddConfigSource(method);
+        } else if (annotation instanceof AfterStop) {
+            processAfterStop(method);
+        } else {
+            super.processStaticMethodAnnotation(annotation, method);
         }
     }
 
