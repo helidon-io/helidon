@@ -27,7 +27,9 @@ import jakarta.enterprise.util.Nonbinding;
 import jakarta.interceptor.InterceptorBinding;
 
 /**
- * Annotates a CDI bean method that shall be executed on a new thread.
+ * Annotates a CDI bean method that shall be executed on a new thread. If the method returns
+ * {@link java.util.concurrent.CompletableFuture} or {@link java.util.concurrent.CompletionStage},
+ * it is assumed to be asynchronous.
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
@@ -65,7 +67,7 @@ public @interface ExecuteOn {
     ThreadType value() default ThreadType.PLATFORM;
 
     /**
-     * Waiting timeout.
+     * Waiting timeout, used when the method is synchronous.
      *
      * @return waiting timeout
      */
@@ -73,7 +75,7 @@ public @interface ExecuteOn {
     long timeout() default 10000L;
 
     /**
-     * Waiting time unit.
+     * Waiting time unit, used when the method is synchronous.
      *
      * @return waiting time unit
      */

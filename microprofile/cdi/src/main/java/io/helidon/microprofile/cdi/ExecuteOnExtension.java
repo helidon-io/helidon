@@ -18,8 +18,11 @@ package io.helidon.microprofile.cdi;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import io.helidon.common.LazyValue;
 
@@ -32,6 +35,7 @@ import jakarta.enterprise.inject.spi.AnnotatedType;
 import jakarta.enterprise.inject.spi.Bean;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
+import jakarta.enterprise.inject.spi.DeploymentException;
 import jakarta.enterprise.inject.spi.Extension;
 import jakarta.enterprise.inject.spi.ProcessManagedBean;
 import jakarta.enterprise.inject.spi.ProcessSyntheticBean;
@@ -41,7 +45,13 @@ import jakarta.enterprise.inject.spi.ProcessSyntheticBean;
  */
 public class ExecuteOnExtension implements Extension {
 
+    enum MethodType {
+        BLOCKING,
+        NON_BLOCKING
+    };
+
     private final LazyValue<Map<Method, AnnotatedMethod<?>>> methodMap = LazyValue.create(ConcurrentHashMap::new);
+    private final LazyValue<Map<Method, MethodType>> methodType = LazyValue.create(ConcurrentHashMap::new);
 
     void registerMethods(BeanManager bm, @Observes ProcessSyntheticBean<?> event) {
         registerMethods(bm.createAnnotatedType(event.getBean().getBeanClass()));
@@ -54,13 +64,28 @@ public class ExecuteOnExtension implements Extension {
     private void registerMethods(AnnotatedType<?> type) {
         for (AnnotatedMethod<?> annotatedMethod : type.getMethods()) {
             if (annotatedMethod.isAnnotationPresent(ExecuteOn.class)) {
-                methodMap.get().put(annotatedMethod.getJavaMember(), annotatedMethod);
+                Method method = annotatedMethod.getJavaMember();
+                methodMap.get().put(method, annotatedMethod);
+                methodType.get().put(method, findMethodType(method));
             }
         }
     }
 
     void validateAnnotations(BeanManager bm, @Observes @Initialized(ApplicationScoped.class) Object event) {
         methodMap.get().forEach((method, annotatedMethod) -> validateExecutor(bm, annotatedMethod));
+    }
+
+
+    private static MethodType findMethodType(Method method) {
+        Class<?> returnType = method.getReturnType();
+        if (CompletionStage.class.isAssignableFrom(returnType)
+                || CompletableFuture.class.isAssignableFrom(returnType)) {
+            return MethodType.NON_BLOCKING;
+        }
+        if (Future.class.equals(returnType)) {
+            throw new DeploymentException("Future is not supported as return type of ExecuteOn method");
+        }
+        return MethodType.BLOCKING;
     }
 
     private static void validateExecutor(BeanManager bm, AnnotatedMethod<?> method) {
@@ -85,6 +110,10 @@ public class ExecuteOnExtension implements Extension {
         throw new IllegalArgumentException("Unable to map method " + method);
     }
 
+    MethodType getMethodType(Method method) {
+        return methodType.get().get(method);
+    }
+
     void registerInterceptors(@Observes BeforeBeanDiscovery discovery, BeanManager bm) {
         discovery.addAnnotatedType(bm.createAnnotatedType(ExecuteOnInterceptor.class),
                 ExecuteOnInterceptor.class.getName());
@@ -92,5 +121,6 @@ public class ExecuteOnExtension implements Extension {
 
     void clearMethodMap() {
         methodMap.get().clear();
+        methodType.get().clear();
     }
 }
