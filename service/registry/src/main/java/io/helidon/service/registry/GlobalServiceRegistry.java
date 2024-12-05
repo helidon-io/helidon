@@ -21,8 +21,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
 
-import io.helidon.common.config.GlobalConfig;
-
 /**
  * A global singleton manager for a service registry.
  * <p>
@@ -62,12 +60,7 @@ public final class GlobalServiceRegistry {
         }
         try {
             RW_LOCK.writeLock().lock();
-            ServiceRegistryConfig config;
-            if (GlobalConfig.configured()) {
-                config = ServiceRegistryConfig.create(GlobalConfig.config().get("registry"));
-            } else {
-                config = ServiceRegistryConfig.create();
-            }
+            ServiceRegistryConfig config = ServiceRegistryConfig.create();
             ServiceRegistry newInstance = ServiceRegistryManager.create(config).registry();
             INSTANCE.set(newInstance);
             return newInstance;
@@ -115,4 +108,5 @@ public final class GlobalServiceRegistry {
         INSTANCE.set(newGlobalRegistry);
         return newGlobalRegistry;
     }
+
 }

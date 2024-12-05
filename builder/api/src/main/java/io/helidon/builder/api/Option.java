@@ -153,6 +153,21 @@ public final class Option {
     }
 
     /**
+     * Options annotated with this annotation will use service registry to discover instances to use.
+     * This annotation cannot be combined with {@link io.helidon.builder.api.Option.Configured} - if you want
+     * providers configured from configuration, kindly use {@link io.helidon.builder.api.Option.Provider}.
+     * <p>
+     * Options annotated with this annotation will load the instances as the default value (before method {@code builder()})
+     * returns, thus you have full control over the field, be it an Optional, single value, or a List.
+     * <p>
+     * To support usage of custom service registry, a {@code builder(ServiceRegistry)} method will be generated as well.
+     */
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.CLASS)
+    public @interface RegistryService {
+    }
+
+    /**
      * Allowed values for this option.
      * The allowed value is always configured as a string, and is compared to {@link java.lang.String#valueOf(Object)} of the
      * value.

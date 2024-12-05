@@ -18,17 +18,14 @@ package io.helidon.service.registry;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.config.Config;
 
 /**
  * Helidon service registry configuration.
  */
 @Prototype.Blueprint
-@Prototype.Configured("registry")
 @Prototype.CustomMethods(ServiceRegistryConfigSupport.CustomMethods.class)
 interface ServiceRegistryConfigBlueprint {
     /**
@@ -38,7 +35,6 @@ interface ServiceRegistryConfigBlueprint {
      *
      * @return whether to discover services from classpath, defaults to {@code true}
      */
-    @Option.Configured
     @Option.DefaultBoolean(true)
     boolean discoverServices();
 
@@ -49,9 +45,17 @@ interface ServiceRegistryConfigBlueprint {
      * @return whether to discover Java {@link java.util.ServiceLoader} services from classpath (a curated list only),
      *         defaults to {@code true}
      */
-    @Option.Configured
     @Option.DefaultBoolean(true)
     boolean discoverServicesFromServiceLoader();
+
+    /**
+     * Whether to allow binding via methods, such as {@link io.helidon.service.registry.Services#set(Class, Object[])}.
+     * When disabled, attempts at late binding will throw an exception.
+     *
+     * @return whether late binding is enabled, defaults to {@code true}
+     */
+    @Option.DefaultBoolean(true)
+    boolean allowLateBinding();
 
     /**
      * Manually registered service descriptors to add to the registry.
@@ -76,10 +80,50 @@ interface ServiceRegistryConfigBlueprint {
     Map<ServiceDescriptor<?>, Object> serviceInstances();
 
     /**
-     * Config instance used to configure this registry configuration.
-     * DO NOT USE for application configuration!
+     * Flag indicating whether service lookups
+     * (i.e., via {@link io.helidon.service.registry.ServiceRegistry#first(io.helidon.service.registry.Lookup)}) are cached.
      *
-     * @return config node used to configure this service registry config instance (if any)
+     * @return the flag indicating whether service lookups are cached, defaults to {@code false}
      */
-    Optional<Config> config();
+    boolean lookupCacheEnabled();
+
+    /**
+     * Size of the lookup cache when {@link #lookupCacheEnabled()} is set to {@code true}.
+     *
+     * @return cache size
+     */
+    @Option.DefaultInt(10000)
+    int lookupCacheSize();
+
+    /**
+     * Flag indicating whether runtime interception is enabled.
+     * If set to {@code false}, methods will be invoked without any interceptors, even if interceptors are available.
+     *
+     * @return whether to intercept calls at runtime, defaults to {@code true}
+     */
+    @Option.DefaultBoolean(true)
+    boolean interceptionEnabled();
+
+    /**
+     * In certain conditions Injection services should be initialized but not started (i.e., avoiding calls to
+     * {@code PostConstruct}
+     * etc.). This can be used in special cases where the normal Injection startup should limit lifecycle up to a given phase.
+     *
+     * @return the phase to stop at during lifecycle
+     */
+    @Option.Default("ACTIVE")
+    ActivationPhase limitActivationPhase();
+
+    /**
+     * Flag indicating whether compile-time generated {@link io.helidon.service.registry.Binding}'s
+     * should be used at initialization.
+     * Even if set to {@code true}, this is effective only if an {@link io.helidon.service.registry.Binding}
+     * was generated using Helidon Service Maven Plugin.
+     *
+     * @return the flag indicating whether the provider is permitted to use binding generated code from compile-time,
+     *         defaults to {@code true}
+     * @see io.helidon.service.registry.Binding
+     */
+    @Option.DefaultBoolean(true)
+    boolean useBinding();
 }

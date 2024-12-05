@@ -88,7 +88,7 @@ public final class ExistingInstanceDescriptor<T> implements ServiceDescriptor<T>
     }
 
     @Override
-    public Object instantiate(DependencyContext ctx) {
+    public Object instantiate(DependencyContext ctx, InterceptionMetadata metadata) {
         return instance;
     }
 
@@ -118,5 +118,10 @@ public final class ExistingInstanceDescriptor<T> implements ServiceDescriptor<T>
     @Override
     public int hashCode() {
         return Objects.hash(instance, contracts, weight);
+    }
+
+    @Override
+    public TypeName scope() {
+        return Service.Singleton.TYPE;
     }
 }

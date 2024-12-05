@@ -30,7 +30,7 @@ package io.helidon.inject.runtime;
 public class Versions {
 
     /**
-     * Version 1 - the initial release of Injection.
+     * Version 1 - the initial release of Service.
      */
     public static final String INJECT_VERSION_1 = "1";
 

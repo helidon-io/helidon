@@ -46,6 +46,7 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 
 import static io.helidon.builder.codegen.Types.RUNTIME_PROTOTYPE;
+import static io.helidon.builder.codegen.Types.SERVICE_REGISTRY;
 
 class BuilderCodegen implements CodegenExtension {
     private static final TypeName GENERATOR = TypeName.create(BuilderCodegen.class);
@@ -196,21 +197,106 @@ class BuilderCodegen implements CodegenExtension {
         });
     }
 
+    private static void addRegistryBuilderMethod(ClassModel.Builder classModel,
+                                                 TypeName builderTypeName,
+                                                 List<TypeArgument> typeArguments,
+                                                 String ifaceName, List<PrototypeProperty> properties) {
+        classModel.addMethod(builder -> {
+            builder.isStatic(true)
+                    .name("builder")
+                    .description("Create a new fluent API builder to customize configuration using the provided service "
+                                         + "registry.")
+                    .addParameter(registry -> registry
+                            .type(SERVICE_REGISTRY)
+                            .name("registry")
+                    )
+                    .returnType(builderTypeName, "a new builder");
+            typeArguments.forEach(builder::addGenericArgument);
+            builder.addContent(builderTypeName.genericTypeName());
+
+            if (!typeArguments.isEmpty()) {
+                builder.addContent("<");
+                builder.addContent(typeArguments.stream()
+                                           .map(TypeArgument::className)
+                                           .collect(Collectors.joining(", ")));
+                builder.addContent(">");
+            }
+
+            builder.addContent(" builder = new ")
+                    .addContent(ifaceName)
+                    .addContent(".Builder");
+
+            if (typeArguments.isEmpty()) {
+                builder.addContentLine("();");
+            } else {
+                builder.addContentLine("<>();");
+            }
+
+            // and configure the service registry, and load all @Option.RegistryService fields
+            if (properties.stream()
+                    .anyMatch(PrototypeProperty::registryService)) {
+                builder.addContentLine("");
+                builder.addContentLine("builder.serviceRegistry(registry);");
+                // now for each option that has registry, add initialization
+                for (PrototypeProperty property : properties) {
+                    if (property.registryService()) {
+                        // depends on type - Optional, List, Direct (supplier?)
+                        TypeHandler typeHandler = property.typeHandler();
+                        typeHandler.updateBuilderFromRegistry(builder, "builder", "registry");
+                    }
+                }
+                builder.addContentLine("");
+            }
+            builder.addContentLine("return builder;");
+        });
+    }
     private static void addBuilderMethod(ClassModel.Builder classModel,
                                          TypeName builderTypeName,
                                          List<TypeArgument> typeArguments,
-                                         String ifaceName) {
+                                         String ifaceName,
+                                         List<PrototypeProperty> properties) {
         classModel.addMethod(builder -> {
             builder.isStatic(true)
                     .name("builder")
                     .description("Create a new fluent API builder to customize configuration.")
                     .returnType(builderTypeName, "a new builder");
             typeArguments.forEach(builder::addGenericArgument);
-            if (typeArguments.isEmpty()) {
-                builder.addContentLine("return new " + ifaceName + ".Builder();");
-            } else {
-                builder.addContentLine("return new " + ifaceName + ".Builder<>();");
+            builder.addContent(builderTypeName.genericTypeName());
+
+            if (!typeArguments.isEmpty()) {
+                builder.addContent("<");
+                builder.addContent(typeArguments.stream()
+                                           .map(TypeArgument::className)
+                                           .collect(Collectors.joining(", ")));
+                builder.addContent(">");
             }
+
+            builder.addContent(" builder = new ")
+                    .addContent(ifaceName)
+                    .addContent(".Builder");
+
+            if (typeArguments.isEmpty()) {
+                builder.addContentLine("();");
+            } else {
+                builder.addContentLine("<>();");
+            }
+
+            // and configure the service registry, and load all @Option.RegistryService fields
+            if (properties.stream()
+                    .anyMatch(PrototypeProperty::registryService)) {
+                builder.addContentLine("");
+                // now for each option that has registry, add initialization
+                for (PrototypeProperty property : properties) {
+                    if (property.registryService()) {
+                        // depends on type - Optional, List, Direct (supplier?)
+                        TypeHandler typeHandler = property.typeHandler();
+                        typeHandler.updateBuilderFromServices(builder, "builder");
+                    }
+                }
+                builder.addContentLine("");
+            }
+
+            builder.addContentLine("return builder;");
         });
     }
 
@@ -398,10 +484,18 @@ class BuilderCodegen implements CodegenExtension {
                 .build();
 
         // static Builder builder()
-        addBuilderMethod(classModel, builderTypeName, typeArguments, ifaceName);
+        addBuilderMethod(classModel, builderTypeName, typeArguments, ifaceName, typeContext.propertyData().properties());
 
         // static Builder builder(T instance)
         addCopyBuilderMethod(classModel, builderTypeName, prototype, typeArguments, ifaceName, typeArgumentString);
+
+        if (typeContext.typeInfo().supportsServiceRegistry()) {
+            addRegistryBuilderMethod(classModel,
+                                     builderTypeName,
+                                     typeArguments,
+                                     ifaceName,
+                                     typeContext.propertyData().properties());
+        }
 
         // static T create(Config config)
         addCreateFromConfigMethod(blueprintDef,
@@ -438,7 +532,7 @@ class BuilderCodegen implements CodegenExtension {
                                       blueprint.typeName(),
                                       blueprint.originatingElementValue());
 
-        if (typeContext.typeInfo().supportsServiceRegistry() && typeContext.propertyData().hasProvider()) {
+        if (typeContext.typeInfo().supportsServiceRegistry()) {
             for (PrototypeProperty property : typeContext.propertyData().properties()) {
                 if (property.configuredOption().provider()) {
                     this.serviceLoaderContracts.add(property.configuredOption().providerType().genericTypeName().fqName());

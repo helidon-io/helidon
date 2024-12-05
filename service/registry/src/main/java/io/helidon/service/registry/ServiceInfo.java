@@ -17,6 +17,7 @@
 package io.helidon.service.registry;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.common.Weighted;
@@ -62,12 +63,11 @@ public interface ServiceInfo extends Weighted {
 
     /**
      * List of dependencies required by this service.
-     * Each dependency is a point of injection of a dependency into
-     * a constructor.
+     * These may be injection points as constructor parameters, fields, or setter methods.
      *
      * @return required dependencies
      */
-    default List<? extends Dependency> dependencies() {
+    default List<Dependency> dependencies() {
         return List.of();
     }
 
@@ -79,5 +79,40 @@ public interface ServiceInfo extends Weighted {
      */
     default boolean isAbstract() {
         return false;
+    }
+
+    /**
+     * Service qualifiers.
+     *
+     * @return qualifiers
+     */
+    default Set<Qualifier> qualifiers() {
+        return Set.of();
+    }
+
+    /**
+     * Run level of this service.
+     *
+     * @return run level
+     */
+    default Optional<Double> runLevel() {
+        return Optional.empty();
+    }
+
+    /**
+     * Scope of this service.
+     *
+     * @return scope of the service
+     */
+    TypeName scope();
+
+    /**
+     * What factory type is the described service.
+     * Inject services can be any of the types in the {@link FactoryType enum}.
+     *
+     * @return factory type
+     */
+    default FactoryType factoryType() {
+        return FactoryType.SERVICE;
     }
 }

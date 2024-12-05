@@ -134,7 +134,12 @@ public abstract class ServiceLoader__ServiceDescriptor implements ServiceDescrip
         }
 
         @Override
-        public Object instantiate(DependencyContext ctx) {
+        public TypeName scope() {
+            return Service.Singleton.TYPE;
+        }
+
+        @Override
+        public Object instantiate(DependencyContext ctx, InterceptionMetadata metadata) {
             return instance.get();
         }
 

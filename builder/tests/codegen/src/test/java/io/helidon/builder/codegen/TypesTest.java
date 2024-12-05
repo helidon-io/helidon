@@ -36,9 +36,10 @@ import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.Generated;
 import io.helidon.common.config.Config;
 import io.helidon.common.types.TypeName;
-import io.helidon.service.registry.GeneratedService;
+import io.helidon.service.builder.BuilderRegistrySupport;
 import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.ServiceRegistry;
+import io.helidon.service.registry.Services;
 
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.collection.IsEmptyCollection;
@@ -90,7 +91,6 @@ public class TypesTest {
         checkField(toCheck, checked, fields, "URI", URI.class);
         checkField(toCheck, checked, fields, "SERVICE_REGISTRY", ServiceRegistry.class);
         checkField(toCheck, checked, fields, "GLOBAL_SERVICE_REGISTRY", GlobalServiceRegistry.class);
-        checkField(toCheck, checked, fields, "GENERATED_SERVICE", GeneratedService.class);
         checkField(toCheck, checked, fields, "BUILDER_DESCRIPTION", Description.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_BLUEPRINT", Prototype.Blueprint.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_IMPLEMENT", Prototype.Implement.class);
@@ -132,6 +132,10 @@ public class TypesTest {
         checkField(toCheck, checked, fields, "OPTION_DEPRECATED", Option.Deprecated.class);
         checkField(toCheck, checked, fields, "OPTION_TYPE", Option.Type.class);
         checkField(toCheck, checked, fields, "OPTION_DECORATOR", Option.Decorator.class);
+        checkField(toCheck, checked, fields, "OPTION_REGISTRY_SERVICE", Option.RegistryService.class);
+
+        checkField(toCheck, checked, fields, "REGISTRY_SUPPORT", BuilderRegistrySupport.class);
+        checkField(toCheck, checked, fields, "SERVICES", Services.class);
 
         assertThat(toCheck, IsEmptyCollection.empty());
     }

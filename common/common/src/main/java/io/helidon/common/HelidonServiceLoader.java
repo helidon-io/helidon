@@ -101,6 +101,19 @@ public final class HelidonServiceLoader<T> implements Iterable<T> {
     }
 
     /**
+     * A shortcut method to create a service loader based on the provider interface directly.
+     *
+     * @param theProviderInterface provider interface
+     * @return service loader
+     * @param <T> type of the service
+     */
+    public static <T> HelidonServiceLoader<T> create(Class<T> theProviderInterface) {
+        HelidonServiceLoader.class.getModule()
+                .addUses(theProviderInterface);
+        return create(ServiceLoader.load(theProviderInterface));
+    }
+
+    /**
      * Create a weighted service loader from a Java Service loader.
      *
      * @param serviceLoader the Java service loader

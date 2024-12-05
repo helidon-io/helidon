@@ -28,6 +28,7 @@ import io.helidon.common.types.TypeName;
  * The service registry has knowledge about all the services within your application.
  */
 @Service.Contract
+@Service.Describe
 public interface ServiceRegistry {
     /**
      * Type name of this interface.
@@ -179,11 +180,12 @@ public interface ServiceRegistry {
      * from the service descriptor, or instances provided by {@link #allServices(Class)}.
      *
      * @param serviceInfo service info instance
+     * @param <T>         type of the expected instance, we just cast to it, so this may cause runtime issues if assigned to
+     *                    invalid
+     *                    type
      * @return value of the service described by the service info provided (always a single value), as there is support
-     *          for providers that are {@link java.util.function.Supplier} of an instance, and that may return
-     *          {@link java.util.Optional}, we may not get a value, hence we return {@link java.util.Optional} as well
-     * @param <T> type of the expected instance, we just cast to it, so this may cause runtime issues if assigned to invalid
-     *            type
+     *         for providers that are {@link java.util.function.Supplier} of an instance, and that may return
+     *         {@link java.util.Optional}, we may not get a value, hence we return {@link java.util.Optional} as well
      */
     <T> Optional<T> get(ServiceInfo serviceInfo);
 
@@ -206,4 +208,97 @@ public interface ServiceRegistry {
      * @return list of service metadata of services that satisfy the provided contract
      */
     List<ServiceInfo> allServices(TypeName contract);
+
+    /**
+     * Get the first service instance matching the lookup with the expectation that there is a match available.
+     *
+     * @param lookup lookup criteria to find matching services
+     * @param <T>    type of the service, if you use any other than {@link java.lang.Object}, make sure
+     *               you have configured appropriate contracts in the lookup, as we cannot infer this
+     * @return the best service instance matching the lookup, cast to the expected type; please use a {@code Object} as the type
+     *         if the result may contain an unknown instance
+     * @throws io.helidon.service.registry.ServiceRegistryException if there is no service that could satisfy the lookup, or the
+     *                                                              resolution to instance failed
+     */
+    <T> T get(Lookup lookup);
+
+    /**
+     * Get the first service instance matching the contract with the expectation that there may not be a match available.
+     *
+     * @param lookup lookup criteria to find matching services
+     * @param <T>    type of the service, if you use any other than {@link java.lang.Object}, make sure
+     *               you have configured appropriate contracts in the lookup, as we cannot infer this
+     * @return the best service instance matching the lookup, cast to the expected type; please use a {@code Object} as the type
+     *         if the result may contain an unknown instance
+     */
+    <T> Optional<T> first(Lookup lookup);
+
+    /**
+     * Get all service instances matching the lookup with the expectation that there may not be a match available.
+     *
+     * @param lookup lookup criteria to find matching services
+     * @param <T>    type of the service, if you use any other than {@link java.lang.Object}, make sure
+     *               you have configured appropriate contracts in the lookup, as we cannot infer this
+     * @return list of services matching the criteria, may be empty if none matched, or no instances were provided
+     */
+    <T> List<T> all(Lookup lookup);
+
+    /**
+     * Get the first service supplier matching the lookup with the expectation that there is a match available.
+     * The provided {@link java.util.function.Supplier#get()} may throw an
+     * {@link io.helidon.service.registry.ServiceRegistryException} in case the matching service cannot provide a value (either
+     * because
+     * of scope mismatch, or because there is no available instance, and we use a runtime resolution through
+     * {@link io.helidon.service.registry.Service.ServicesFactory},
+     * {@link io.helidon.service.registry.Service.InjectionPointFactory}, or similar).
+     *
+     * @param lookup lookup criteria to find matching services
+     * @param <T>    type of the service, if you use any other than {@link java.lang.Object}, make sure
+     *               you have configured appropriate contracts in the lookup, as we cannot infer this
+     * @return the best service supplier matching the lookup, cast to the expected type; please use a {@code Object} as the type
+     *         if the result may contain an unknown instance
+     * @throws io.helidon.service.registry.ServiceRegistryException if there is no service that could satisfy the lookup
+     */
+    <T> Supplier<T> supply(Lookup lookup);
+
+    /**
+     * Find the first service matching the lookup with the expectation that there may not be a match available.
+     *
+     * @param lookup lookup criteria to find matching services
+     * @param <T>    type of the service, if you use any other than {@link java.lang.Object}, make sure
+     *               you have configured appropriate contracts in the lookup, as we cannot infer this
+     * @return the best service matching the lookup, cast to the expected type; please use a {@code Object} as the type
+     *         if the result may contain an unknown instance
+     */
+    <T> Supplier<Optional<T>> supplyFirst(Lookup lookup);
+
+    /**
+     * Lookup a supplier of all services matching the lookup with the expectation that there may not be a match available.
+     *
+     * @param lookup lookup criteria to find matching services
+     * @param <T>    type of the service, if you use any other than {@link java.lang.Object}, make sure
+     *               you have configured appropriate contracts in the lookup, as we cannot infer this
+     * @return supplier of list of services ordered, may be empty if there is no match
+     */
+    <T> Supplier<List<T>> supplyAll(Lookup lookup);
+
+    /**
+     * A lookup method operating on the service descriptors, rather than service instances.
+     * This is useful for tools that need to analyze the structure of the registry,
+     * for testing etc.
+     * <p>
+     * The registry is optimized for look-ups based on service type and service contracts, all other
+     * lookups trigger a full registry scan.
+     *
+     * @param lookup lookup criteria to find matching services
+     * @return a list of service descriptors that match the lookup criteria
+     */
+    List<ServiceInfo> lookupServices(Lookup lookup);
+
+    /**
+     * Provides registry metrics information.
+     *
+     * @return registry metrics
+     */
+    RegistryMetrics metrics();
 }

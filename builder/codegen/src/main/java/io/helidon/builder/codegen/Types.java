@@ -36,7 +36,8 @@ final class Types {
     static final TypeName URI = TypeName.create(java.net.URI.class);
     static final TypeName SERVICE_REGISTRY = TypeName.create("io.helidon.service.registry.ServiceRegistry");
     static final TypeName GLOBAL_SERVICE_REGISTRY = TypeName.create("io.helidon.service.registry.GlobalServiceRegistry");
-    static final TypeName GENERATED_SERVICE = TypeName.create("io.helidon.service.registry.GeneratedService");
+    static final TypeName SERVICES = TypeName.create("io.helidon.service.registry.Services");
+    static final TypeName REGISTRY_SUPPORT = TypeName.create("io.helidon.service.builder.BuilderRegistrySupport");
 
     static final TypeName BUILDER_DESCRIPTION = TypeName.create("io.helidon.builder.api.Description");
 
@@ -72,6 +73,7 @@ final class Types {
     static final TypeName OPTION_PROVIDER = TypeName.create("io.helidon.builder.api.Option.Provider");
     static final TypeName OPTION_ALLOWED_VALUES = TypeName.create("io.helidon.builder.api.Option.AllowedValues");
     static final TypeName OPTION_ALLOWED_VALUE = TypeName.create("io.helidon.builder.api.Option.AllowedValue");
+    static final TypeName OPTION_REGISTRY_SERVICE = TypeName.create("io.helidon.builder.api.Option.RegistryService");
     static final TypeName OPTION_DEFAULT = TypeName.create("io.helidon.builder.api.Option.Default");
     static final TypeName OPTION_DEFAULT_INT = TypeName.create("io.helidon.builder.api.Option.DefaultInt");
     static final TypeName OPTION_DEFAULT_DOUBLE = TypeName.create("io.helidon.builder.api.Option.DefaultDouble");

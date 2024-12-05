@@ -16,18 +16,35 @@
 
 package io.helidon.service.codegen;
 
+import java.util.List;
+import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.helidon.codegen.Option;
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.types.TypeName;
+import io.helidon.service.codegen.spi.InjectCodegenObserverProvider;
 import io.helidon.service.codegen.spi.RegistryCodegenExtension;
 import io.helidon.service.codegen.spi.RegistryCodegenExtensionProvider;
+
+import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_DESCRIBE;
+import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_INJECT;
+import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_PER_INSTANCE;
+import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_PROVIDER;
+import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_SCOPE;
 
 /**
  * A {@link java.util.ServiceLoader} provider implementation that adds code generation for Helidon Service Registry.
  * This extension creates service descriptors.
  */
 public class ServiceExtensionProvider implements RegistryCodegenExtensionProvider {
+    private static final List<InjectCodegenObserverProvider> OBSERVER_PROVIDERS =
+            HelidonServiceLoader.create(ServiceLoader.load(InjectCodegenObserverProvider.class,
+                                                           ServiceExtensionProvider.class.getClassLoader()))
+                    .asList();
+
     /**
      * Required default constructor for {@link java.util.ServiceLoader}.
      *
@@ -35,21 +52,34 @@ public class ServiceExtensionProvider implements RegistryCodegenExtensionProvide
      */
     @Deprecated
     public ServiceExtensionProvider() {
-        super();
     }
 
     @Override
     public Set<Option<?>> supportedOptions() {
-        return Set.of(ServiceOptions.AUTO_ADD_NON_CONTRACT_INTERFACES);
+        return Stream.concat(Stream.of(ServiceOptions.AUTO_ADD_NON_CONTRACT_INTERFACES,
+                                       ServiceOptions.INTERCEPTION_STRATEGY,
+                                       ServiceOptions.SCOPE_META_ANNOTATIONS),
+                             OBSERVER_PROVIDERS.stream()
+                                     .map(InjectCodegenObserverProvider::supportedOptions)
+                                     .flatMap(Set::stream))
+                .collect(Collectors.toSet());
     }
 
     @Override
     public Set<TypeName> supportedAnnotations() {
-        return Set.of(ServiceCodegenTypes.SERVICE_ANNOTATION_PROVIDER);
+        return Set.of(SERVICE_ANNOTATION_PROVIDER,
+                      SERVICE_ANNOTATION_DESCRIBE,
+                      SERVICE_ANNOTATION_PER_INSTANCE,
+                      SERVICE_ANNOTATION_INJECT);
+    }
+
+    @Override
+    public Set<TypeName> supportedMetaAnnotations() {
+        return Set.of(SERVICE_ANNOTATION_SCOPE);
     }
 
     @Override
     public RegistryCodegenExtension create(RegistryCodegenContext codegenContext) {
-        return new ServiceExtension(codegenContext);
+        return new ServiceExtension(codegenContext, OBSERVER_PROVIDERS);
     }
 }

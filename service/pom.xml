@@ -45,7 +45,8 @@
         <module>metadata</module>
         <module>codegen</module>
         <module>registry</module>
-        <module>inject</module>
+        <module>maven-plugin</module>
+        <module>builder</module>
     </modules>
 
     <build>

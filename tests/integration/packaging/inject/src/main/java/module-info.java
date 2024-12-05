@@ -17,7 +17,7 @@
 module io.helidon.tests.integration.packaging.inject {
     requires io.helidon.webserver;
     requires io.helidon;
-    requires io.helidon.service.inject;
+    requires io.helidon.service.registry;
     requires io.helidon.logging.common;
 
     exports io.helidon.tests.integration.packaging.inject;

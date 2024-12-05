@@ -468,6 +468,8 @@ public final class Prototype {
      * <p>
      * When using this annotation, you cannot use {@code serviceRegistry} as a custom option in your blueprint, as it will
      * be added by the annotation processor, to allow customization of the registry instance.
+     * <p>
+     * This
      */
     @Target(ElementType.TYPE)
     @Retention(RetentionPolicy.CLASS)

@@ -35,7 +35,7 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.lessThan;
 
 /**
- * Ensure the weights comparator from common works the way we expect it to. Sanity test for Injection.
+ * Ensure the weights comparator from common works the way we expect it to. Sanity test for Service.
  */
 class PriorityAndServiceTypeComparatorTest {
 

@@ -29,9 +29,17 @@ module io.helidon.service.codegen {
     exports io.helidon.service.codegen.spi;
 
     uses io.helidon.service.codegen.spi.RegistryCodegenExtensionProvider;
+    uses io.helidon.service.codegen.spi.InjectCodegenObserverProvider;
+    uses io.helidon.service.codegen.spi.InjectAssignmentProvider;
 
     provides io.helidon.codegen.spi.CodegenExtensionProvider
             with io.helidon.service.codegen.ServiceRegistryCodegenProvider;
     provides io.helidon.service.codegen.spi.RegistryCodegenExtensionProvider
-            with io.helidon.service.codegen.ServiceExtensionProvider;
+            with io.helidon.service.codegen.ServiceExtensionProvider,
+                    io.helidon.service.codegen.EventObserverExtensionProvider;
+    provides io.helidon.codegen.spi.AnnotationMapperProvider
+            with io.helidon.service.codegen.MapNamedByTypeMapperProvider;
+    provides io.helidon.service.codegen.spi.InjectCodegenObserverProvider
+            with io.helidon.service.codegen.EventEmitterObserverProvider;
+
 }

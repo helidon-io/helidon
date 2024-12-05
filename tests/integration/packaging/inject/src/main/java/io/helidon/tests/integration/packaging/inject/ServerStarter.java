@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import io.helidon.common.config.Config;
-import io.helidon.service.inject.api.Injection;
 import io.helidon.service.registry.Service;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpFeature;
@@ -28,15 +27,15 @@ import io.helidon.webserver.http.HttpFeature;
 /**
  * This will eventually be part of Helidon WebServer
  */
-@Injection.Singleton
-@Injection.RunLevel(Injection.RunLevel.SERVER)
+@Service.Singleton
+@Service.RunLevel(Service.RunLevel.SERVER)
 class ServerStarter {
     private final Supplier<Config> config;
     private final Supplier<List<HttpFeature>> features;
 
     private volatile WebServer server;
 
-    @Injection.Inject
+    @Service.Inject
     ServerStarter(Supplier<Config> config, Supplier<List<HttpFeature>> features) {
         this.config = config;
         this.features = features;

@@ -16,6 +16,10 @@
 
 package io.helidon.service.registry;
 
+import java.util.Set;
+
+import io.helidon.common.types.TypeName;
+
 /**
  * A descriptor of a service. In addition to providing service metadata, this also allows instantiation
  * of the service instance, with dependent services as parameters.
@@ -30,9 +34,23 @@ public interface ServiceDescriptor<T> extends ServiceInfo {
      * @return a new instance, must be of the type T or a subclass
      */
     // we cannot return T, as it does not allow us to correctly handle inheritance
-    default Object instantiate(DependencyContext ctx) {
+    default Object instantiate(DependencyContext ctx, InterceptionMetadata interceptionMetadata) {
         throw new IllegalStateException("Cannot instantiate type " + serviceType().fqName() + ", as it is either abstract,"
                                                 + " or an interface.");
+    }
+
+    /**
+     * Inject fields and methods.
+     *
+     * @param ctx                  injection context
+     * @param interceptionMetadata interception metadata to support interception of field injection
+     * @param injected             mutable set of already injected methods from subtypes
+     * @param instance             instance to update
+     */
+    default void inject(DependencyContext ctx,
+                        InterceptionMetadata interceptionMetadata,
+                        Set<String> injected,
+                        T instance) {
     }
 
     /**
@@ -49,5 +67,14 @@ public interface ServiceDescriptor<T> extends ServiceInfo {
      * @param instance instance to use
      */
     default void preDestroy(T instance) {
+    }
+
+    /**
+     * Scope of this service.
+     *
+     * @return scope of the service
+     */
+    default TypeName scope() {
+        return Service.Singleton.TYPE;
     }
 }

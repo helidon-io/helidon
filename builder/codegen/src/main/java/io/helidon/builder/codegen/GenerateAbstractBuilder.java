@@ -222,7 +222,7 @@ final class GenerateAbstractBuilder {
 
         TypeName returnType = TypeName.createFromGenericDeclaration("BUILDER");
 
-        if (typeContext.propertyData().hasProvider() && typeContext.typeInfo().supportsServiceRegistry()) {
+        if (typeContext.typeInfo().supportsServiceRegistry()) {
             // generate setter for service registry
             serviceRegistrySetter(classBuilder);
         }
@@ -513,9 +513,7 @@ final class GenerateAbstractBuilder {
         if (isBuilder && (typeContext.configuredData().configured() || hasConfig(typeContext.propertyData().properties()))) {
             classBuilder.addField(builder -> builder.type(Types.COMMON_CONFIG).name("config"));
         }
-        if (isBuilder
-                && typeContext.typeInfo().supportsServiceRegistry()
-                && typeContext.propertyData().hasProvider()) {
+        if (isBuilder && typeContext.typeInfo().supportsServiceRegistry()) {
             classBuilder.addField(builder -> builder.type(Types.SERVICE_REGISTRY).name("serviceRegistry"));
         }
         for (PrototypeProperty child : typeContext.propertyData().properties()) {
@@ -689,7 +687,7 @@ final class GenerateAbstractBuilder {
                 preBuildBuilder.addContent("this.add")
                         .addContent(capitalize(property.name()))
                         .addContent("(")
-                        .addContent(Types.GENERATED_SERVICE)
+                        .addContent(Types.REGISTRY_SUPPORT)
                         .addContentLine(".discoverServices(config,")
                         .increaseContentPadding()
                         .increaseContentPadding()
@@ -711,7 +709,7 @@ final class GenerateAbstractBuilder {
                         .decreaseContentPadding();
             } else {
                 preBuildBuilder
-                        .addContent(Types.GENERATED_SERVICE)
+                        .addContent(Types.REGISTRY_SUPPORT)
                         .addContentLine(".discoverService(config,")
                         .increaseContentPadding()
                         .increaseContentPadding()

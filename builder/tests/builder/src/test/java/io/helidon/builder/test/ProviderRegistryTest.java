@@ -21,6 +21,7 @@ import java.util.List;
 import io.helidon.builder.test.testsubjects.SomeProvider;
 import io.helidon.builder.test.testsubjects.WithProviderRegistry;
 import io.helidon.common.Errors;
+import io.helidon.common.mapper.MapperManager;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
@@ -48,7 +49,10 @@ class ProviderRegistryTest {
         /*
         Only the property that does not discover services and does not return optional is defined in config
          */
-        WithProviderRegistry value = WithProviderRegistry.create(config.get("min-defined"));
+        WithProviderRegistry value = WithProviderRegistry.builder()
+                .config(config.get("min-defined"))
+                .mapperManagerExplicit(MapperManager.global())
+                .build();
 
         assertThat(value.oneDiscover().prop(), is("some-1"));
         assertThat(value.oneNotDiscover().prop(), is("config"));
@@ -73,7 +77,10 @@ class ProviderRegistryTest {
         /*
         Everything is customized
          */
-        WithProviderRegistry value = WithProviderRegistry.create(config.get("all-defined"));
+        WithProviderRegistry value = WithProviderRegistry.builder()
+                .config(config.get("all-defined"))
+                .mapperManagerExplicit(MapperManager.global())
+                .build();
 
         assertThat(value.oneDiscover().prop(), is("config"));
         assertThat(value.oneNotDiscover().prop(), is("config"));
@@ -98,7 +105,10 @@ class ProviderRegistryTest {
         Missing the one mandatory option in config
          */
         Errors.ErrorMessagesException fail = assertThrows(Errors.ErrorMessagesException.class,
-                                                          () -> WithProviderRegistry.create(config.get("fail")));
+                                                          () -> WithProviderRegistry.builder()
+                                                                  .config(config.get("fail"))
+                                                                  .mapperManagerExplicit(MapperManager.global())
+                                                                  .build());
 
         assertThat(fail.getMessages(), hasSize(1));
         assertThat(fail.getMessage(), containsString("\"one-not-discover\" must not be null"));
@@ -110,7 +120,10 @@ class ProviderRegistryTest {
         Single value list (when not using discovery). When discovery is used, all in service loader are discovered, even
         if not configured
          */
-        WithProviderRegistry value = WithProviderRegistry.create(config.get("single-list"));
+        WithProviderRegistry value = WithProviderRegistry.builder()
+                .config(config.get("single-list"))
+                .mapperManagerExplicit(MapperManager.global())
+                .build();
 
         assertThat(value.oneNotDiscover().prop(), is("config2"));
 
@@ -130,6 +143,7 @@ class ProviderRegistryTest {
         WithProviderRegistry value = WithProviderRegistry.builder()
                 .listDiscoverDiscoverServices(false)
                 .oneNotDiscover(someService) //This needs to be set, otherwise validation fails
+                .mapperManagerExplicit(MapperManager.global())
                 .build();
         assertThat(value.listDiscover(), is(List.of()));
 
@@ -144,6 +158,7 @@ class ProviderRegistryTest {
         SomeProvider.SomeService someService = new DummyService();
         WithProviderRegistry.Builder value = WithProviderRegistry.builder()
                 .listDiscoverDiscoverServices(false)
+                .mapperManagerExplicit(MapperManager.global())
                 .oneNotDiscover(someService);
 
         WithProviderRegistry copy = WithProviderRegistry.builder()

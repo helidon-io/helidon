@@ -17,7 +17,7 @@
 package io.helidon.inject.api;
 
 /**
- * A general exception indicating that something failed related to Injection.
+ * A general exception indicating that something failed related to Service.
  *
  * @see InjectionServiceProviderException
  * @see ServiceProviderInjectionException
