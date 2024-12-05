@@ -19,11 +19,8 @@ import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.ServiceLoader;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.LazyValue;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.mp.MpConfig;
 import io.helidon.microprofile.telemetry.spi.HelidonTelemetryContainerFilterHelper;
@@ -36,6 +33,7 @@ import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.baggage.BaggageEntryMetadata;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
+import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -69,9 +67,6 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
 
     private static final String HELPER_START_SPAN_PROPERTY = HelidonTelemetryContainerFilterHelper.class + ".startSpan";
 
-    private static final LazyValue<List<HelidonTelemetryContainerFilterHelper>> HELPERS = LazyValue.create(
-            HelidonTelemetryContainerFilter::helpers);
-
     @Deprecated(forRemoval = true, since = "4.1")
     static final String SPAN_NAME_INCLUDES_METHOD = "telemetry.span.name-includes-method";
 
@@ -90,12 +85,15 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
      */
     private final boolean restSpanNameIncludesMethod;
 
+    private final List<HelidonTelemetryContainerFilterHelper> helpers;
+
     @jakarta.ws.rs.core.Context
     private ResourceInfo resourceInfo;
 
     @Inject
     HelidonTelemetryContainerFilter(io.helidon.tracing.Tracer helidonTracer,
-                                    org.eclipse.microprofile.config.Config mpConfig) {
+                                    org.eclipse.microprofile.config.Config mpConfig,
+                                    Instance<HelidonTelemetryContainerFilterHelper> helpersInstance) {
         this.helidonTracer = helidonTracer;
         isAgentPresent = HelidonOpenTelemetry.AgentDetector.isAgentPresent(MpConfig.toHelidonConfig(mpConfig));
 
@@ -115,6 +113,8 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
                                SPAN_NAME_INCLUDES_METHOD));
         }
         // end of code to remove in 5.x.
+
+        helpers = helpersInstance.stream().toList();
     }
 
     @Override
@@ -124,7 +124,7 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
             return;
         }
 
-        boolean startSpan = HELPERS.get().stream().allMatch(h -> h.shouldStartSpan(requestContext));
+        boolean startSpan = helpers.stream().allMatch(h -> h.shouldStartSpan(requestContext));
         requestContext.setProperty(HELPER_START_SPAN_PROPERTY, startSpan);
         if (!startSpan) {
             if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
@@ -203,9 +203,9 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
         }
     }
 
-    private static List<HelidonTelemetryContainerFilterHelper> helpers() {
-        return HelidonServiceLoader.create(ServiceLoader.load(HelidonTelemetryContainerFilterHelper.class)).asList();
-    }
+//    private static List<HelidonTelemetryContainerFilterHelper> helpers() {
+//        return HelidonServiceLoader.create(ServiceLoader.load(HelidonTelemetryContainerFilterHelper.class)).asList();
+//    }
 
     private String spanName(ContainerRequestContext requestContext, String route) {
         // @Deprecated(forRemoval = true) In 5.x remove the option of excluding the HTTP method from the REST span name.

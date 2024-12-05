@@ -233,6 +233,7 @@ class TelemetrySnippets {
     class FilterHelperSnippets_11_to_12 {
 
         // tag::snippet_11[]
+        @ApplicationScoped
         public class CustomRestRequestFilterHelper implements HelidonTelemetryContainerFilterHelper {
 
             @Override
@@ -246,6 +247,7 @@ class TelemetrySnippets {
         // end::snippet_11[]
 
         // tag::snippet_12[]
+        @ApplicationScoped
         public class CustomRestClientRequestFilterHelper implements HelidonTelemetryClientFilterHelper {
 
             @Override

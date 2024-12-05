@@ -21,7 +21,6 @@ import java.util.ServiceLoader;
 import java.util.Set;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.LazyValue;
 import io.helidon.microprofile.telemetry.spi.HelidonTelemetryClientFilterHelper;
 import io.helidon.tracing.HeaderConsumer;
 import io.helidon.tracing.HeaderProvider;
@@ -30,6 +29,7 @@ import io.helidon.tracing.Span;
 
 import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.context.Context;
+import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.ClientRequestContext;
 import jakarta.ws.rs.client.ClientRequestFilter;
@@ -59,23 +59,23 @@ class HelidonTelemetryClientFilter implements ClientRequestFilter, ClientRespons
             Response.Status.Family.CLIENT_ERROR,
             Response.Status.Family.SERVER_ERROR);
 
-    private static final LazyValue<List<HelidonTelemetryClientFilterHelper>> HELPERS = LazyValue.create(
-            HelidonTelemetryClientFilter::helpers);
-
     private static final String HELPER_START_SPAN_PROPERTY = HelidonTelemetryClientFilterHelper.class.getName() + ".startSpan";
 
     private final io.helidon.tracing.Tracer helidonTracer;
 
-    @Inject
-    HelidonTelemetryClientFilter(io.helidon.tracing.Tracer helidonTracer) {
-        this.helidonTracer = helidonTracer;
-    }
+    private final List<HelidonTelemetryClientFilterHelper> helpers;
 
+    @Inject
+    HelidonTelemetryClientFilter(io.helidon.tracing.Tracer helidonTracer,
+                                 Instance<HelidonTelemetryClientFilterHelper> helpersInstance) {
+        this.helidonTracer = helidonTracer;
+        helpers = helpersInstance.stream().toList();
+    }
 
     @Override
     public void filter(ClientRequestContext clientRequestContext) {
 
-        boolean startSpan = HELPERS.get().stream().allMatch(h -> h.shouldStartSpan(clientRequestContext));
+        boolean startSpan = helpers.stream().allMatch(h -> h.shouldStartSpan(clientRequestContext));
         clientRequestContext.setProperty(HELPER_START_SPAN_PROPERTY, startSpan);
         if (!startSpan) {
             if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
@@ -117,7 +117,6 @@ class HelidonTelemetryClientFilter implements ClientRequestFilter, ClientRespons
                              HeaderProvider.empty(),
                              new RequestContextHeaderInjector(clientRequestContext.getHeaders()));
     }
-
 
     @Override
     public void filter(ClientRequestContext clientRequestContext, ClientResponseContext clientResponseContext) {

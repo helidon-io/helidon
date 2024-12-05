@@ -17,8 +17,10 @@ package io.helidon.tests.integration.telemetry.mp.filterselectivity;
 
 import io.helidon.microprofile.telemetry.spi.HelidonTelemetryContainerFilterHelper;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.container.ContainerRequestContext;
 
+@ApplicationScoped
 public class FilterSelectorSuppressPersonalizedGreetingSpan implements HelidonTelemetryContainerFilterHelper {
 
     @Override
