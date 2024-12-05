@@ -15,9 +15,12 @@
  */
 package io.helidon.microprofile.testing.junit5;
 
+import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.util.function.BiFunction;
 
 import net.bytebuddy.ByteBuddy;
@@ -40,6 +43,27 @@ class ProxyHelper {
     }
 
     /**
+     * Mirror an annotation.
+     *
+     * @param type       annotation type
+     * @param annotation annotation
+     * @param <T>        annotation type
+     * @return mirror
+     */
+    static <T extends Annotation> T mirror(Class<T> type, Annotation annotation) {
+        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        Object o = Proxy.newProxyInstance(cl, new Class[] {type}, (proxy, method, args) -> {
+            try {
+                Method sourceMethod = annotation.getClass().getMethod(method.getName());
+                return sourceMethod.invoke(annotation, args);
+            } catch (InvocationTargetException | IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        return type.cast(o);
+    }
+
+    /**
      * Create a proxy instance.
      *
      * @param type     type
@@ -47,7 +71,7 @@ class ProxyHelper {
      * @param <T>      type
      * @return proxy
      */
-    static <T> T proxyDelegate(Class<T> type, BiFunction<Class<T>, Method, T> resolver) {
+    static <T> T proxy(Class<T> type, BiFunction<Class<T>, Method, T> resolver) {
         try (DynamicType.Unloaded<T> unloaded = new ByteBuddy()
                 .subclass(type, ConstructorStrategy.Default.NO_CONSTRUCTORS)
                 .withHashCodeEquals()

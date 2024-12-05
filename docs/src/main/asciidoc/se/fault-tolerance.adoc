@@ -93,7 +93,7 @@ The sample code above will retry calls to the supplier `this::retryOnFailure`
 for up to 3 times with a 100-millisecond delay between them.
 
 NOTE: The return type of method `retryOnFailure` in the example above must
-be some `T` and the parameter to the retry handler's `invoke`
+be some `N` and the parameter to the retry handler's `invoke`
 method `Supplier<? extends T>`.
 
 If the call to the supplier provided completes exceptionally, it will be treated as
@@ -130,7 +130,7 @@ we may fall back to the last result obtained from that service at an
 earlier time.
 
 A `Fallback` instance is created by providing a function that takes a `Throwable`
-and produces some `T` to be used when the intended method failed to return a value:
+and produces some `N` to be used when the intended method failed to return a value:
 
 [source,java]
 ----
@@ -219,7 +219,7 @@ being at maximum capacity.
 === Asynchronous
 
 Asynchronous tasks can be created or forked by using an `Async` instance. A supplier of type
-`T` is provided as the argument when invoking this handler. For example:
+`N` is provided as the argument when invoking this handler. For example:
 
 [source,java]
 ----

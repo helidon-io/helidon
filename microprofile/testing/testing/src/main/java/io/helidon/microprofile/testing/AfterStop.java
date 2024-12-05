@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,24 @@
  * limitations under the License.
  */
 
+package io.helidon.microprofile.testing;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 /**
- * JUnit5 extension module to run CDI tests.
+ * Mark a static method to be executed after the container is stopped.
+ * <p>
+ * E.g.
+ * <pre>
+ * &#064;AfterStop
+ * static void afterStop() {
+ *     // ...
+ * }</pre>
  */
-@SuppressWarnings("JavaModuleNaming")
-module io.helidon.microprofile.testing.junit5 {
-
-    requires io.helidon.microprofile.testing;
-    requires org.junit.jupiter.api;
-    requires net.bytebuddy;
-    requires jdk.unsupported;
-
-    requires static jersey.cdi1x;
-    requires static jersey.weld2.se;
-    requires static io.helidon.microprofile.server;
-
-    exports io.helidon.microprofile.testing.junit5;
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface AfterStop {
 }

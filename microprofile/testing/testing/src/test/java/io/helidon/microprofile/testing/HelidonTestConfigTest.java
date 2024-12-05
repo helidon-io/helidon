@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.testing.junit5;
+package io.helidon.microprofile.testing;
 
 import java.lang.reflect.Proxy;
 
@@ -23,8 +23,8 @@ import io.helidon.config.mp.MpConfig;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 /**
  * Tests {@link HelidonTestConfig}.
@@ -37,7 +37,7 @@ class HelidonTestConfigTest {
         ConfigProviderResolver resolver = ConfigProviderResolver.instance();
         resolver.registerConfig(resolver.getBuilder().build(), getClass().getClassLoader());
 
-        HelidonTestConfig config = new HelidonTestConfig(new HelidonTestInfo.ClassInfo(getClass()));
+        HelidonTestConfig config = new HelidonTestConfig(HelidonTestInfo.classInfo(getClass()));
         config.synthetic().update(addConfig("key1", "value1"));
         config.synthetic().update(addConfig("key2", "value2"));
 
@@ -70,7 +70,7 @@ class HelidonTestConfigTest {
 
     @Test
     void testJustInTime() {
-        HelidonTestConfig config = new HelidonTestConfig(new HelidonTestInfo.ClassInfo(getClass()));
+        HelidonTestConfig config = new HelidonTestConfig(HelidonTestInfo.classInfo(getClass()));
         config.resolve();
 
         // se config

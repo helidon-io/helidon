@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.testing.junit5;
+package io.helidon.microprofile.testing;
 
 import java.util.Map;
 
@@ -42,12 +42,7 @@ class HelidonTestConfig extends HelidonTestConfigDelegate {
     private final Config originalConfig;
     private volatile Config delegate;
 
-    /**
-     * Create a new instance.
-     *
-     * @param testInfo test info
-     */
-    HelidonTestConfig(HelidonTestInfo testInfo) {
+    HelidonTestConfig(HelidonTestInfo<?> testInfo) {
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
         ConfigProviderResolver resolver = ConfigProviderResolver.instance();
 

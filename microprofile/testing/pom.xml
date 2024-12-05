@@ -32,6 +32,7 @@
     <name>Helidon Microprofile Testing Project</name>
 
     <modules>
+        <module>testing</module>
         <module>junit5</module>
         <module>testng</module>
         <module>mocking</module>

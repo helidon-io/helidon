@@ -30,7 +30,7 @@ include::{rootdir}/includes/guides/upgrade.adoc[]
 
 == Getters
 
-Some methods that act as getters of type `T` have been modified to return `Optional<T>`. You will
+Some methods that act as getters of type `N` have been modified to return `Optional<T>`. You will
 need to change your code to handle the `Optional` return type. For example `ServerRequest.spanContext()`
 in 1.x had a return type of `SpanContext`. In 2.x it has a return type of `Optional<SpanContext>`.
 So if you had code like:

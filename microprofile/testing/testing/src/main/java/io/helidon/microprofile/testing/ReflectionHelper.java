@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.testing.junit5;
+package io.helidon.microprofile.testing;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
@@ -115,7 +115,7 @@ class ReflectionHelper {
     }
 
     /**
-     * Annotated record.
+     * Annotated element.
      *
      * @param element     element
      * @param annotations annotations
@@ -163,17 +163,17 @@ class ReflectionHelper {
      * Filter annotations of a given type.
      *
      * @param annotated annotations
-     * @param cType     container type
      * @param aType     annotation type
+     * @param cType     container type
      * @param function  function to inflate from container
-     * @param <T>       container type
-     * @param <U>       annotation type
+     * @param <T>       annotation type
+     * @param <U>       container type
      * @return annotations
      */
-    static <T extends Annotation, U extends Annotation> List<Annotated<U>> filterAnnotated(List<Annotated<?>> annotated,
-                                                                                           Class<T> cType,
-                                                                                           Class<U> aType,
-                                                                                           Function<T, U[]> function) {
+    static <T extends Annotation, U extends Annotation> List<Annotated<T>> filterAnnotated(List<Annotated<?>> annotated,
+                                                                                           Class<T> aType,
+                                                                                           Class<U> cType,
+                                                                                           Function<U, T[]> function) {
 
         Predicate<Annotation> predicate = a -> a.annotationType().equals(cType) || a.annotationType().equals(aType);
         return annotated.stream()
@@ -212,21 +212,20 @@ class ReflectionHelper {
      * Filter annotations of a given type.
      *
      * @param annotated annotations
-     * @param cType     container type
      * @param aType     annotation type
+     * @param cType     container type
      * @param function  function to inflate from container
-     * @param <T>       container type
-     * @param <U>       annotation type
+     * @param <T>       annotation type
+     * @param <U>       container type
      * @return annotations
      */
-    static <T extends Annotation, U extends Annotation> List<U> filterAnnotations(List<Annotated<?>> annotated,
-                                                                                  Class<T> cType,
-                                                                                  Class<U> aType,
-                                                                                  Function<T, U[]> function) {
+    static <T extends Annotation, U extends Annotation> Stream<T> filterAnnotations(List<Annotated<?>> annotated,
+                                                                                    Class<T> aType,
+                                                                                    Class<U> cType,
+                                                                                    Function<U, T[]> function) {
 
-        return filterAnnotated(annotated, cType, aType, function).stream()
-                .flatMap(it -> it.annotations.stream())
-                .toList();
+        return filterAnnotated(annotated, aType, cType, function).stream()
+                .flatMap(it -> it.annotations.stream());
     }
 
     /**

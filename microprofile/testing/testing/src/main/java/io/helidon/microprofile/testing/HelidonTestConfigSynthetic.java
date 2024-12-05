@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.testing.junit5;
+package io.helidon.microprofile.testing;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -36,10 +36,8 @@ import org.eclipse.microprofile.config.spi.ConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
-import static io.helidon.microprofile.testing.junit5.ReflectionHelper.filterAnnotated;
-import static io.helidon.microprofile.testing.junit5.ReflectionHelper.filterAnnotations;
-import static io.helidon.microprofile.testing.junit5.ReflectionHelper.invoke;
-import static io.helidon.microprofile.testing.junit5.ReflectionHelper.requireStatic;
+import static io.helidon.microprofile.testing.ReflectionHelper.invoke;
+import static io.helidon.microprofile.testing.ReflectionHelper.requireStatic;
 
 /**
  * The synthetic test configuration that is expressed with annotations.
@@ -54,27 +52,22 @@ class HelidonTestConfigSynthetic extends HelidonTestConfigDelegate {
     private final Map<String, Set<String>> blocks = new HashMap<>();
     private final Set<Method> methods = new HashSet<>();
     private final Set<String> resources = new HashSet<>();
-    private final HelidonTestInfo testInfo;
+    private final HelidonTestInfo<?> testInfo;
     private final ReentrantLock lock = new ReentrantLock();
     private final Runnable onUpdate;
     private boolean useExisting;
     private Config config;
 
-    HelidonTestConfigSynthetic(HelidonTestInfo testInfo, Runnable onUpdate) {
+    HelidonTestConfigSynthetic(HelidonTestInfo<?> testInfo, Runnable onUpdate) {
         this.testInfo = testInfo;
         this.onUpdate = onUpdate;
         map.put(ConfigSource.CONFIG_ORDINAL, "1000");
         map.put("server.port", "0");
         map.put("mp.config.profile", "test");
-        List<ReflectionHelper.Annotated<?>> annotations = testInfo.annotations();
-        filterAnnotations(annotations, AddConfigs.class, AddConfig.class, AddConfigs::value)
-                .forEach(this::update);
-        filterAnnotations(annotations, AddConfigBlocks.class, AddConfigBlock.class, AddConfigBlocks::value)
-                .forEach(this::update);
-        filterAnnotated(annotations, AddConfigSource.class)
-                .forEach(a -> update((Method) a.element()));
-        filterAnnotations(annotations, Configuration.class).findFirst()
-                .ifPresent(this::update);
+        testInfo.addConfigs().forEach(this::update);
+        testInfo.addConfigBlocks().forEach(this::update);
+        testInfo.configuration().ifPresent(this::update);
+        testInfo.classInfo().addConfigSources().forEach(this::update);
     }
 
     @Override
@@ -156,15 +149,20 @@ class HelidonTestConfigSynthetic extends HelidonTestConfigDelegate {
     private Config buildConfig() {
         List<ConfigSource> configSources = new ArrayList<>();
         configSources.add(MpConfigSources.create(testInfo.id(), map));
-        blocks.forEach((type, values) -> values.forEach(value ->
-                configSources.add(MpConfigSources.create(type, new StringReader(value)))));
-        methods.forEach(m -> configSources.add(invoke(ConfigSource.class, requireStatic(m), null)));
+        blocks.forEach((type, values) -> {
+            for (String value : values) {
+                configSources.add(MpConfigSources.create(type, new StringReader(value)));
+            }
+        });
+        for (Method m : methods) {
+            configSources.add(invoke(ConfigSource.class, requireStatic(m), null));
+        }
         for (String source : resources) {
             String filename = source.trim();
-            resources(filename).forEach(url -> {
+            for (URL url : resources(filename)) {
                 String type = extension(filename);
                 configSources.add(MpConfigSources.create(type, url));
-            });
+            }
         }
         ConfigBuilder builder = ConfigProviderResolver.instance()
                 .getBuilder()

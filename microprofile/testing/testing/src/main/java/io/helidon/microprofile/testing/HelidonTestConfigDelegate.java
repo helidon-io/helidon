@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.testing.junit5;
+package io.helidon.microprofile.testing;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -39,8 +39,8 @@ import io.helidon.config.spi.LazyConfigSource;
 /**
  * Config delegate.
  * <p>
- * Also implements a {@link Config Helidon Config} delegate backed by a {@link LazyConfigSource}
- * to support "just in time" caching when using {@link Config Helidon Config}.
+ * Also implements a {@link io.helidon.config.Config Helidon Config} delegate backed by a {@link io.helidon.config.spi.LazyConfigSource}
+ * to support "just in time" caching when using {@link io.helidon.config.Config Helidon Config}.
  */
 abstract class HelidonTestConfigDelegate implements org.eclipse.microprofile.config.Config, Config {
 
@@ -120,7 +120,7 @@ abstract class HelidonTestConfigDelegate implements org.eclipse.microprofile.con
     }
 
     @Override
-    public io.helidon.config.Config detach() {
+    public Config detach() {
         return hdelegate.get().detach();
     }
 

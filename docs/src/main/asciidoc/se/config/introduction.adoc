@@ -248,7 +248,7 @@ You can retrieve a `ConfigValue<T>` using the following `as` methods in `Config`
 ConfigValue<T> can be used to obtain:
 
 * an `Optional<T>` value _from a single node_,
-* the `T` value _from a single node_ interpreted as a basic Java type (primitive or simple object) already known to the config system (such as a `boolean` or a `Double`), or
+* the `N` value _from a single node_ interpreted as a basic Java type (primitive or simple object) already known to the config system (such as a `boolean` or a `Double`), or
 * a complex Java type _from a subtree_ of the config tree.
 +
 The config system automatically knows how to return `List` and `Map` complex types, and you can provide _config mappers_ to convert a config subtree to whatever

@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.testing.junit5;
+package io.helidon.microprofile.testing;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +28,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
-import io.helidon.microprofile.testing.junit5.HelidonTestInfo.MethodInfo;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -54,19 +54,18 @@ import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
 
-import static io.helidon.microprofile.testing.junit5.ReflectionHelper.annotationHierarchy;
-import static io.helidon.microprofile.testing.junit5.ReflectionHelper.invoke;
-import static io.helidon.microprofile.testing.junit5.ReflectionHelper.isOverride;
-import static io.helidon.microprofile.testing.junit5.ReflectionHelper.requireStatic;
-import static io.helidon.microprofile.testing.junit5.ReflectionHelper.typeHierarchy;
+import static io.helidon.microprofile.testing.ReflectionHelper.annotationHierarchy;
+import static io.helidon.microprofile.testing.ReflectionHelper.invoke;
+import static io.helidon.microprofile.testing.ReflectionHelper.isOverride;
+import static io.helidon.microprofile.testing.ReflectionHelper.requireStatic;
+import static io.helidon.microprofile.testing.ReflectionHelper.typeHierarchy;
 import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 import static jakarta.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
 
 /**
  * Helidon test CDI extension.
  */
-@SuppressWarnings("CdiManagedBeanInconsistencyInspection")
-final class HelidonTestExtension implements Extension {
+public abstract class HelidonTestExtension implements Extension {
 
     private static final Map<Class<? extends Annotation>, Annotation> ANNOTATION_LITERALS = Map.of(
             ApplicationScoped.class, ApplicationScoped.Literal.INSTANCE,
@@ -74,19 +73,19 @@ final class HelidonTestExtension implements Extension {
             RequestScoped.class, RequestScoped.Literal.INSTANCE,
             Dependent.class, Dependent.Literal.INSTANCE);
 
-    private static final Set<Class<? extends Annotation>> TYPE_ANNOTATIONS = Set.of(
+    private static final Set<Class<? extends Annotation>> TYPE_ANNOTATION_TYPES = Set.of(
             AddConfig.class,
             AddConfigs.class,
             AddConfigBlock.class,
             Configuration.class);
 
-    private static final Set<Class<? extends Annotation>> CTOR_PARAM_ANNOTATIONS = Set.of(
+    private static final Set<Class<? extends Annotation>> PARAMETER_ANNOTATION_TYPES = Set.of(
             Socket.class);
 
-    private static final Set<Class<? extends Annotation>> FIELD_ANNOTATIONS = Set.of(
+    private static final Set<Class<? extends Annotation>> FIELD_ANNOTATION_TYPES = Set.of(
             Socket.class);
 
-    private static final Set<Class<? extends Annotation>> METHOD_ANNOTATIONS = Set.of(
+    private static final Set<Class<? extends Annotation>> METHOD_ANNOTATION_TYPES = Set.of(
             AddConfig.class,
             AddConfigs.class,
             AddConfigBlock.class,
@@ -94,16 +93,188 @@ final class HelidonTestExtension implements Extension {
             AfterStop.class,
             Configuration.class);
 
-    private final HelidonTestInfo testInfo;
+    private final HelidonTestInfo<?> testInfo;
     private final HelidonTestConfig testConfig;
     private final HelidonTestScope testScope;
-    private final Set<Socket> sockets = new HashSet<>();
+    private final Map<Annotation, String> sockets = new HashMap<>();
     private final List<Method> afterStop = new ArrayList<>();
 
-    HelidonTestExtension(HelidonTestInfo testInfo, HelidonTestConfig testConfig, HelidonTestScope testScope) {
+    /**
+     * Create a new instance.
+     *
+     * @param testInfo  test info
+     * @param testScope test scope
+     */
+    protected HelidonTestExtension(HelidonTestInfo<?> testInfo, HelidonTestScope testScope) {
         this.testInfo = testInfo;
-        this.testConfig = testConfig;
+        this.testConfig = new HelidonTestConfig(testInfo);
         this.testScope = testScope;
+    }
+
+    /**
+     * Get the annotation types usable on type.
+     *
+     * @return annotations
+     */
+    protected Set<Class<? extends Annotation>> typeAnnotationTypes() {
+        return TYPE_ANNOTATION_TYPES;
+    }
+
+    /**
+     * Get the annotation types usable on parameters.
+     *
+     * @return annotation types
+     */
+    protected Set<Class<? extends Annotation>> parameterAnnotationTypes() {
+        return PARAMETER_ANNOTATION_TYPES;
+    }
+
+    /**
+     * Get the annotation types usable on fields.
+     *
+     * @return annotation types
+     */
+    protected Set<Class<? extends Annotation>> fieldAnnotationTypes() {
+        return FIELD_ANNOTATION_TYPES;
+    }
+
+    /**
+     * Get the annotation types usable on methods.
+     *
+     * @return annotation types
+     */
+    protected Set<Class<? extends Annotation>> methodAnnotationTypes() {
+        return METHOD_ANNOTATION_TYPES;
+    }
+
+    /**
+     * Process a type annotation.
+     *
+     * @param annotation annotation
+     */
+    protected void processTypeAnnotation(Annotation annotation) {
+        switch (annotation) {
+            case Configuration e -> processConfiguration(e);
+            case AddConfig e -> processAddConfig(e);
+            case AddConfigs e -> processAddConfig(e.value());
+            case AddConfigBlock e -> processAddConfigBlock(e);
+            case AddConfigBlocks e -> processAddConfigBlock(e.value());
+            default -> {
+                // no-op
+            }
+        }
+    }
+
+    /**
+     * Process a parameter annotation.
+     *
+     * @param annotation annotation
+     */
+    protected void processParameterAnnotation(Annotation annotation) {
+        if (annotation instanceof Socket s) {
+            processSocket(s, s.value());
+        }
+    }
+
+    /**
+     * Process a field annotation.
+     *
+     * @param annotation annotation
+     */
+    protected void processFieldAnnotation(Annotation annotation) {
+        if (annotation instanceof Socket s) {
+            processSocket(s, s.value());
+        }
+    }
+
+    /**
+     * Process a static method annotation.
+     *
+     * @param annotation annotation
+     * @param method     method
+     */
+    protected void processStaticMethodAnnotation(Annotation annotation, Method method) {
+        switch (annotation) {
+            case AddConfigSource ignored -> processAddConfigSource(method);
+            case AfterStop ignored -> processAfterStop(method);
+            default -> throw new IllegalStateException(String.format(
+                    "@%s requires method %s to be non static",
+                    method, annotation.annotationType().getSimpleName()));
+        }
+    }
+
+    /**
+     * Process a test method annotation.
+     *
+     * @param annotation annotation
+     * @param method     method
+     */
+    protected void processTestMethodAnnotation(Annotation annotation, Method method) {
+        switch (annotation) {
+            case Configuration e -> processConfiguration(e);
+            case AddConfig e -> processAddConfig(e);
+            case AddConfigs e -> processAddConfig(e.value());
+            case AddConfigBlock e -> processAddConfigBlock(e);
+            case AddConfigBlocks e -> processAddConfigBlock(e.value());
+            default -> throw new IllegalStateException(String.format(
+                    "@%s requires method %s to be static",
+                    method, annotation.annotationType().getSimpleName()));
+        }
+    }
+
+    /**
+     * Process a {@link Configuration} annotation.
+     *
+     * @param annotation annotation
+     */
+    protected final void processConfiguration(Configuration annotation) {
+        testConfig.synthetic().update(annotation);
+    }
+
+    /**
+     * Process {@link AddConfig Configuration} annotations.
+     *
+     * @param annotations annotations
+     */
+    protected final void processAddConfig(AddConfig... annotations) {
+        testConfig.synthetic().update(annotations);
+    }
+
+    /**
+     * Process {@link AddConfig Configuration} annotations.
+     *
+     * @param annotations annotations
+     */
+    protected final void processAddConfigBlock(AddConfigBlock... annotations) {
+        testConfig.synthetic().update(annotations);
+    }
+
+    /**
+     * Process a {@link AddConfigSource} method.
+     *
+     * @param method method
+     */
+    protected final void processAddConfigSource(Method method) {
+        testConfig.synthetic().update(method);
+    }
+
+    /**
+     * Process a {@link AfterStop} method.
+     *
+     * @param method method
+     */
+    protected final void processAfterStop(Method method) {
+        afterStop.add(requireStatic(method));
+    }
+
+    /**
+     * Process a {@link Socket} annotation.
+     *
+     * @param annotation annotation
+     * @param value      value
+     */
+    protected final void processSocket(Annotation annotation, String value) {
+        sockets.put(annotation, value);
     }
 
     private void processTestClass(@Observes
@@ -119,67 +290,33 @@ final class HelidonTestExtension implements Extension {
             allTypes.add(bm.createAnnotatedType(type));
         }
 
-        Method testMethod = testInfo instanceof MethodInfo m ? m.element() : null;
+        Method testMethod = testInfo.testMethod().orElse(null);
         for (AnnotatedType<?> type : allTypes) {
 
             // type
-            processAnnotated(type, TYPE_ANNOTATIONS, a -> {
-                switch (a) {
-                    case Configuration e -> testConfig.synthetic().update(e);
-                    case AddConfig e -> testConfig.synthetic().update(e);
-                    case AddConfigs e -> testConfig.synthetic().update(e.value());
-                    case AddConfigBlock e -> testConfig.synthetic().update(e);
-                    case AddConfigBlocks e -> testConfig.synthetic().update(e.value());
-                    default -> {
-                        // no-op
-                    }
-                }
-            });
+            processAnnotated(type, typeAnnotationTypes(), this::processTypeAnnotation);
 
             // constructor parameters
             for (AnnotatedConstructor<?> constructor : type.getConstructors()) {
                 for (AnnotatedParameter<?> parameter : constructor.getParameters()) {
-                    processAnnotated(parameter, FIELD_ANNOTATIONS, a -> {
-                        if (a instanceof Socket s) {
-                            sockets.add(s);
-                        }
-                    });
+                    processAnnotated(parameter, fieldAnnotationTypes(), this::processParameterAnnotation);
                 }
             }
 
             // fields
             for (AnnotatedField<?> field : type.getFields()) {
-                processAnnotated(field, CTOR_PARAM_ANNOTATIONS, a -> {
-                    if (a instanceof Socket s) {
-                        sockets.add(s);
-                    }
-                });
+                processAnnotated(field, parameterAnnotationTypes(), this::processFieldAnnotation);
             }
 
             // methods
             for (AnnotatedMethod<?> method : type.getMethods()) {
-                processAnnotated(method, METHOD_ANNOTATIONS, a -> {
+                processAnnotated(method, methodAnnotationTypes(), a -> {
                     if (method.isStatic()) {
-                        switch (a) {
-                            case AddConfigSource ignored -> testConfig.synthetic().update(method.getJavaMember());
-                            case AfterStop ignored -> afterStop.add(requireStatic(method.getJavaMember()));
-                            default -> throw new IllegalStateException(String.format(
-                                    "@%s requires method %s to be non static",
-                                    method, a.annotationType().getSimpleName()));
-                        }
+                        processStaticMethodAnnotation(a, method.getJavaMember());
                     } else {
                         // test method or super test method
                         if (testMethod != null && isOverride(method.getJavaMember(), testMethod)) {
-                            switch (a) {
-                                case Configuration e -> testConfig.synthetic().update(e);
-                                case AddConfig e -> testConfig.synthetic().update(e);
-                                case AddConfigs e -> testConfig.synthetic().update(e.value());
-                                case AddConfigBlock e -> testConfig.synthetic().update(e);
-                                case AddConfigBlocks e -> testConfig.synthetic().update(e.value());
-                                default -> throw new IllegalStateException(String.format(
-                                        "@%s requires method %s to be static",
-                                        method, a.annotationType().getSimpleName()));
-                            }
+                            processTestMethodAnnotation(a, method.getJavaMember());
                         }
                     }
                 });
@@ -192,7 +329,7 @@ final class HelidonTestExtension implements Extension {
         testConfig.resolve();
 
         // add the test class
-        event.addAnnotatedType(testInfo.classInfo().element(), "HelidonTest")
+        event.addAnnotatedType(testInfo.testClass(), "HelidonTest")
                 .add(HelidonTestScoped.Literal.INSTANCE);
 
         for (AddBean addBean : testInfo.addBeans()) {
@@ -241,7 +378,7 @@ final class HelidonTestExtension implements Extension {
         event.addContext(testScope);
 
         Class<? extends Extension> serverClass = serverClass();
-        if (serverClass != null && (!testInfo.disableDiscovery() || testInfo.containsExtension(serverClass))) {
+        if (serverClass != null && (!testInfo.discoveryDisabled() || testInfo.containsExtension(serverClass))) {
 
             Extension server = bm.getExtension(serverClass);
             Client client = ClientBuilder.newClient();
@@ -253,14 +390,14 @@ final class HelidonTestExtension implements Extension {
                     .createWith(c -> client.target("http://localhost:" + port(server, "@default")));
 
             // named ports
-            for (Socket socket : sockets) {
+            sockets.forEach((annotation, value) -> {
 
-                Supplier<String> supplier = () -> "http://localhost:" + port(server, socket.value());
+                Supplier<String> supplier = () -> "http://localhost:" + port(server, value);
 
                 event.addBean()
                         .addTransitiveTypeClosure(WebTarget.class)
                         .scope(ApplicationScoped.class)
-                        .qualifiers(socket)
+                        .qualifiers(annotation)
                         .createWith(c -> client.target(supplier.get()));
 
                 // unproxiable types, use dependent backed by lazy values
@@ -269,16 +406,16 @@ final class HelidonTestExtension implements Extension {
                 event.addBean()
                         .addType(URI.class)
                         .scope(Dependent.class)
-                        .qualifiers(socket)
+                        .qualifiers(annotation)
                         .createWith(c -> uri.get());
 
                 LazyValue<String> rawUri = LazyValue.create(supplier);
                 event.addBean()
                         .addType(String.class)
                         .scope(Dependent.class)
-                        .qualifiers(socket)
+                        .qualifiers(annotation)
                         .createWith(c -> rawUri.get());
-            }
+            });
         }
     }
 

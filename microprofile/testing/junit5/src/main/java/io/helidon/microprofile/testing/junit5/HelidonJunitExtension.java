@@ -16,18 +16,18 @@
 
 package io.helidon.microprofile.testing.junit5;
 
-import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import io.helidon.microprofile.testing.junit5.HelidonTestInfo.ClassInfo;
-import io.helidon.microprofile.testing.junit5.HelidonTestInfo.MethodInfo;
+import io.helidon.microprofile.testing.HelidonTestInfo;
+import io.helidon.microprofile.testing.HelidonTestInfo.ClassInfo;
+import io.helidon.microprofile.testing.HelidonTestInfo.MethodInfo;
+import io.helidon.microprofile.testing.HelidonTestScope;
 
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
 import org.junit.jupiter.api.extension.ExtensionContext.Store;
 import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
 import org.junit.jupiter.api.extension.InvocationInterceptor;
@@ -39,6 +39,9 @@ import org.junit.jupiter.api.extension.TestInstanceFactory;
 import org.junit.jupiter.api.extension.TestInstanceFactoryContext;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 
+import static io.helidon.microprofile.testing.junit5.ContextHelper.classContext;
+import static io.helidon.microprofile.testing.junit5.ContextHelper.lookup;
+import static io.helidon.microprofile.testing.junit5.ContextHelper.store;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_METHOD;
 
 /**
@@ -85,8 +88,6 @@ public class HelidonJunitExtension implements BeforeEachCallback,
                                               InvocationInterceptor,
                                               ParameterResolver {
 
-    private static final Namespace NAMESPACE = Namespace.create(HelidonJunitExtension.class);
-
     private final Map<Class<?>, ClassInfo> classInfos = new ConcurrentHashMap<>();
     private final Map<Method, MethodInfo> methodInfos = new ConcurrentHashMap<>();
 
@@ -95,9 +96,10 @@ public class HelidonJunitExtension implements BeforeEachCallback,
         // Use a proxy to start the container after the test instance creation
         // The container is started lazily when invoking a method
         // or when resolving parameters
-        return ProxyHelper.proxyDelegate(context.getRequiredTestClass(), (testClass, testMethod) -> {
+        return ProxyHelper.proxy(context.getRequiredTestClass(), (testClass, testMethod) -> {
             // class context store specific to the intercepted method
-            return container(context, testMethod).resolveInstance(testClass);
+            Store store = store(context, testMethod);
+            return requiredContainer(store).resolveInstance(testClass);
         });
     }
 
@@ -122,12 +124,14 @@ public class HelidonJunitExtension implements BeforeEachCallback,
         Method testMethod = context.getRequiredTestMethod();
         Class<?> testClass = context.getRequiredTestClass();
 
-        ClassInfo classInfo = classInfos.computeIfAbsent(testClass, ClassInfo::new);
-        MethodInfo methodInfo = methodInfos.computeIfAbsent(testMethod, e -> new MethodInfo(e, classInfo));
+        ClassInfo classInfo = classInfos.computeIfAbsent(testClass,
+                e -> HelidonTestInfo.classInfo(new HelidonTestClassDescriptorImpl(e)));
+        MethodInfo methodInfo = methodInfos.computeIfAbsent(testMethod,
+                e -> HelidonTestInfo.methodInfo(new HelidonTestDescriptorImpl<>(e), classInfo));
 
         ExtensionContext classContext = classContext(context);
-        Store classStore = classContext.getStore(NAMESPACE);
-        HelidonTestContainer container = classStore.get("container", HelidonTestContainer.class);
+        Store classStore = store(classContext);
+        HelidonTestContainerImpl container = container(classStore);
 
         if (context.getExecutionMode() == ExecutionMode.SAME_THREAD
             && container != null && !container.closed()
@@ -139,25 +143,25 @@ public class HelidonJunitExtension implements BeforeEachCallback,
         }
 
         if (container == null || container.closed()) {
-            Store methodStore = context.getStore(NAMESPACE);
+            Store methodStore = store(context);
             Lifecycle lifecycle = context.getTestInstanceLifecycle().orElse(PER_METHOD);
             HelidonTestScope scope;
             if (lifecycle == Lifecycle.PER_CLASS) {
-                scope = new HelidonTestScope.PerContainer();
+                scope = HelidonTestScope.ofContainer();
             } else {
-                scope = new HelidonTestScope.PerThread();
+                scope = HelidonTestScope.ofThread();
                 // put the scope in the method context store to auto-close
                 methodStore.put("scope", (CloseableResource) scope::close);
             }
             if (methodInfo.requiresReset()) {
                 // put in the method store to auto-close
-                container = new CloseableContainer(methodInfo, scope);
+                container = new HelidonTestContainerImpl(methodInfo, scope);
                 methodStore.put("container", container);
             } else {
                 // put the "class container" in the class context store
                 // to re-use between methods
                 container = classStore.getOrComputeIfAbsent("container",
-                        k -> new CloseableContainer(classInfo, scope), CloseableContainer.class);
+                        k -> new HelidonTestContainerImpl(classInfo, scope), HelidonTestContainerImpl.class);
             }
         }
         // proxy handler uses class context
@@ -169,7 +173,8 @@ public class HelidonJunitExtension implements BeforeEachCallback,
     public boolean supportsParameter(ParameterContext pc, ExtensionContext context)
             throws ParameterResolutionException {
 
-        HelidonTestContainer container = container(context, context.getRequiredTestMethod());
+        Store store = store(context, context.getRequiredTestMethod());
+        HelidonTestContainerImpl container = requiredContainer(store);
         return !container.initFailed() && container.isSupported(pc.getParameter().getType());
     }
 
@@ -177,7 +182,8 @@ public class HelidonJunitExtension implements BeforeEachCallback,
     public Object resolveParameter(ParameterContext pc, ExtensionContext context)
             throws ParameterResolutionException {
 
-        HelidonTestContainer container = container(context, context.getRequiredTestMethod());
+        Store store = store(context, context.getRequiredTestMethod());
+        HelidonTestContainerImpl container = requiredContainer(store);
         return container.initFailed() ? null : container.resolveInstance(pc.getParameter().getType());
     }
 
@@ -185,47 +191,27 @@ public class HelidonJunitExtension implements BeforeEachCallback,
                            ReflectiveInvocationContext<Method> ic,
                            ExtensionContext context) throws Throwable {
 
-        HelidonTestContainer container = container(context, context.getRequiredTestMethod());
+        Store methodStore = store(context, context.getRequiredTestMethod());
+        HelidonTestContainerImpl container = requiredContainer(methodStore);
         if (container.initFailed()) {
             invocation.skip();
         } else {
             // proxy handler uses class context
             // hence we use a class context store specific to the test method
             ExtensionContext classContext = classContext(context);
-            store(classContext, ic.getExecutable()).put("container", container);
+            Store store = store(classContext, ic.getExecutable());
+            store.put("container", container);
             invocation.proceed();
         }
     }
 
-    private static Store store(ExtensionContext context, Executable executable) {
-        return context.getStore(NAMESPACE.append(executable.getName()));
+    private static HelidonTestContainerImpl container(Store store) {
+        return lookup(store, HelidonTestContainerImpl.class, "container")
+                .orElse(null);
     }
 
-    private static HelidonTestContainer container(ExtensionContext context, Method method) {
-        HelidonTestContainer container = store(context, method).get("container", HelidonTestContainer.class);
-        if (container == null) {
-            throw new IllegalStateException("Container not set");
-        }
-        return container;
-    }
-
-    private static ExtensionContext classContext(ExtensionContext context) {
-        while (!context.getElement().map(Class.class::isInstance).orElse(false)) {
-            context = context.getParent().orElseThrow();
-        }
-        return context;
-    }
-
-    private static final class CloseableContainer extends HelidonTestContainer
-            implements CloseableResource {
-
-        CloseableContainer(HelidonTestInfo testInfo, HelidonTestScope testContext) {
-            super(testInfo, testContext);
-        }
-
-        @Override
-        public void close() {
-            super.close();
-        }
+    private static HelidonTestContainerImpl requiredContainer(Store store) {
+        return lookup(store, HelidonTestContainerImpl.class, "container")
+                .orElseThrow(() -> new IllegalStateException("Container not set"));
     }
 }

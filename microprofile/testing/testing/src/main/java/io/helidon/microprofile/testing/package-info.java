@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,19 +15,6 @@
  */
 
 /**
- * JUnit5 extension module to run CDI tests.
+ * Helidon MicroProfile Testing Support.
  */
-@SuppressWarnings("JavaModuleNaming")
-module io.helidon.microprofile.testing.junit5 {
-
-    requires io.helidon.microprofile.testing;
-    requires org.junit.jupiter.api;
-    requires net.bytebuddy;
-    requires jdk.unsupported;
-
-    requires static jersey.cdi1x;
-    requires static jersey.weld2.se;
-    requires static io.helidon.microprofile.server;
-
-    exports io.helidon.microprofile.testing.junit5;
-}
+package io.helidon.microprofile.testing;

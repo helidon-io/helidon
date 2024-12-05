@@ -15,29 +15,22 @@
  */
 package io.helidon.microprofile.testing.junit5;
 
-import java.io.Serial;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-
-import jakarta.enterprise.context.NormalScope;
-import jakarta.enterprise.util.AnnotationLiteral;
+import io.helidon.microprofile.testing.HelidonTestDescriptor.ClassDescriptor;
 
 /**
- * CDI scope used for the test class.
+ * Test class descriptor that supports the deprecated annotations.
  */
-@NormalScope
-@Retention(RetentionPolicy.RUNTIME)
-@interface HelidonTestScoped {
+final class HelidonTestClassDescriptorImpl extends HelidonTestDescriptorImpl<Class<?>> implements ClassDescriptor {
 
-    /**
-     * Annotation literal.
-     */
-    @SuppressWarnings("ALL")
-    final class Literal extends AnnotationLiteral<HelidonTestScoped> implements HelidonTestScoped {
+    HelidonTestClassDescriptorImpl(Class<?> element) {
+        super(element);
+    }
 
-        static final Literal INSTANCE = new Literal();
-
-        @Serial
-        private static final long serialVersionUID = 1L;
+    @Override
+    protected boolean lookupresetPerTest() {
+        return annotations(HelidonTest.class)
+                .findFirst()
+                .map(HelidonTest::resetPerTest)
+                .orElse(false);
     }
 }

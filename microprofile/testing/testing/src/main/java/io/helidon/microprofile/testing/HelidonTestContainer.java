@@ -13,46 +13,59 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.testing.junit5;
+package io.helidon.microprofile.testing;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.BiFunction;
 
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.se.SeContainerInitializer;
 
-import static io.helidon.microprofile.testing.junit5.ReflectionHelper.requirePublic;
+import static io.helidon.microprofile.testing.ReflectionHelper.requirePublic;
 
 /**
  * CDI container facade.
  */
-class HelidonTestContainer {
+public class HelidonTestContainer {
 
     /**
      * Indicate that the container previously failed to initialize.
      */
-    static final class InitializationFailed extends RuntimeException {
+    public static final class InitializationFailed extends RuntimeException {
         private InitializationFailed(RuntimeException error) {
             super("Container initialization previously failed", error);
         }
     }
 
-    private final HelidonTestInfo testInfo;
-    private final AtomicBoolean closed = new AtomicBoolean(false);
+    private final HelidonTestInfo<?> testInfo;
     private final HelidonTestScope testScope;
+    private final BiFunction<HelidonTestInfo<?>, HelidonTestScope, HelidonTestExtension> extensionFactory;
+    private final AtomicBoolean closed = new AtomicBoolean(false);
     private final ReentrantLock lock = new ReentrantLock();
     private SeContainer container;
     private RuntimeException error;
 
-    HelidonTestContainer(HelidonTestInfo testInfo, HelidonTestScope testScope) {
+    /**
+     * Create a new instance.
+     *
+     * @param testInfo         test info
+     * @param testScope        test scope
+     * @param extensionFactory extension factory
+     */
+    protected HelidonTestContainer(HelidonTestInfo<?> testInfo,
+                                   HelidonTestScope testScope,
+                                   BiFunction<HelidonTestInfo<?>, HelidonTestScope, HelidonTestExtension> extensionFactory) {
+
         this.testInfo = testInfo;
         this.testScope = testScope;
+        this.extensionFactory = extensionFactory;
     }
 
     /**
      * Stop the container.
      */
-    void close() {
+    public void close() {
         if (container != null && closed.compareAndSet(false, true)) {
             container.close();
         }
@@ -63,7 +76,7 @@ class HelidonTestContainer {
      *
      * @return {@code true} if closed, {@code false} otherwise
      */
-    boolean closed() {
+    public boolean closed() {
         return closed.get();
     }
 
@@ -72,7 +85,7 @@ class HelidonTestContainer {
      *
      * @return {@code true} if failed, {@code false} otherwise
      */
-    boolean initFailed() {
+    public boolean initFailed() {
         return error != null;
     }
 
@@ -82,10 +95,11 @@ class HelidonTestContainer {
      * @param type type
      * @param <T>  type
      * @return resolved instance
-     * @throws InitializationFailed if the container previusly failed to start
+     * @throws InitializationFailed if the container previusly failed to
+     *                              start
      */
     @SuppressWarnings("resource")
-    <T> T resolveInstance(Class<T> type) throws InitializationFailed {
+    public <T> T resolveInstance(Class<T> type) throws InitializationFailed {
         if (type.isAssignableFrom(SeContainer.class)) {
             return type.cast(container());
         }
@@ -97,10 +111,11 @@ class HelidonTestContainer {
      *
      * @param type type
      * @return {@code true} if supported, {@code false} otherwise
-     * @throws InitializationFailed if the container previusly failed to start
+     * @throws InitializationFailed if the container previusly failed to
+     *                              start
      */
     @SuppressWarnings("resource")
-    boolean isSupported(Class<?> type) throws InitializationFailed {
+    public boolean isSupported(Class<?> type) throws InitializationFailed {
         if (type.isAssignableFrom(SeContainer.class)) {
             return true;
         }
@@ -129,15 +144,15 @@ class HelidonTestContainer {
 
     @SuppressWarnings("unchecked")
     private SeContainer start() {
-        HelidonTestConfig testConfig = new HelidonTestConfig(testInfo);
+        HelidonTestExtension testExtension = extensionFactory.apply(testInfo, testScope);
         SeContainerInitializer initializer = SeContainerInitializer.newInstance();
-        if (testInfo.disableDiscovery()) {
+        if (testInfo.discoveryDisabled()) {
             initializer.disableDiscovery();
         }
         for (AddExtension extension : testInfo.addExtensions()) {
             initializer.addExtensions(requirePublic(extension.value()));
         }
-        initializer.addExtensions(new HelidonTestExtension(testInfo, testConfig, testScope));
+        initializer.addExtensions(testExtension);
         return initializer.initialize();
     }
 }

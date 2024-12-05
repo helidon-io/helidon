@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.testing.junit5;
+package io.helidon.microprofile.testing;
 
 import java.lang.annotation.Annotation;
 import java.util.HashMap;
@@ -29,7 +29,26 @@ import jakarta.enterprise.inject.spi.Bean;
 /**
  * CDI context that supports {@link HelidonTestScoped}.
  */
-public abstract class HelidonTestScope implements Context {
+public abstract sealed class HelidonTestScope implements Context permits HelidonTestScope.PerThread,
+                                                                         HelidonTestScope.PerContainer {
+
+    /**
+     * Create a new per-thread scope.
+     *
+     * @return HelidonTestScope
+     */
+    public static HelidonTestScope ofThread() {
+        return new PerThread();
+    }
+
+    /**
+     * Create a new per-container scope.
+     *
+     * @return HelidonTestScope
+     */
+    public static HelidonTestScope ofContainer() {
+        return new PerContainer();
+    }
 
     @Override
     public Class<? extends Annotation> getScope() {
@@ -52,6 +71,13 @@ public abstract class HelidonTestScope implements Context {
     }
 
     /**
+     * Close the scope.
+     */
+    public void close() {
+        instances().destroy();
+    }
+
+    /**
      * Get the instances.
      *
      * @return instances
@@ -59,16 +85,9 @@ public abstract class HelidonTestScope implements Context {
     abstract Instances instances();
 
     /**
-     * Close the scope.
-     */
-    void close() {
-        instances().destroy();
-    }
-
-    /**
      * Instances per thread.
      */
-    static class PerThread extends HelidonTestScope {
+    static final class PerThread extends HelidonTestScope {
         private static final ThreadLocal<Instances> THREAD_LOCAL = ThreadLocal.withInitial(Instances::new);
 
         @Override
@@ -77,16 +96,16 @@ public abstract class HelidonTestScope implements Context {
         }
 
         @Override
-        void close() {
-            super.close();
+        public void close() {
             THREAD_LOCAL.remove();
+            super.close();
         }
     }
 
     /**
      * Instances per container.
      */
-    static class PerContainer extends HelidonTestScope {
+    static final class PerContainer extends HelidonTestScope {
         private final Instances instances = new Instances(new ConcurrentHashMap<>());
 
         @Override

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -24,19 +24,10 @@
         <artifactId>helidon-microprofile-testing-project</artifactId>
         <version>4.2.0-SNAPSHOT</version>
     </parent>
-
-    <artifactId>helidon-microprofile-testing-junit5</artifactId>
-    <name>Helidon Microprofile Testing JUnit5</name>
-
-    <description>
-        Integration with Junit5 to support tests with CDI injection
-    </description>
+    <artifactId>helidon-microprofile-testing</artifactId>
+    <name>Helidon Microprofile Testing</name>
 
     <dependencies>
-        <dependency>
-            <groupId>io.helidon.microprofile.testing</groupId>
-            <artifactId>helidon-microprofile-testing</artifactId>
-        </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.server</groupId>
             <artifactId>helidon-microprofile-server</artifactId>
@@ -53,11 +44,6 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.jersey</groupId>
             <artifactId>helidon-jersey-client</artifactId>
         </dependency>
@@ -66,8 +52,9 @@
             <artifactId>helidon-config-yaml-mp</artifactId>
         </dependency>
         <dependency>
-            <groupId>net.bytebuddy</groupId>
-            <artifactId>byte-buddy</artifactId>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
@@ -75,5 +62,4 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
 </project>
