@@ -331,6 +331,12 @@ backend:
                   - "webclient.adoc"
                   - "dbclient.adoc"
                   - "performance-tuning.adoc"
+              - type: "PAGE"
+                title: "Builder"
+                source: "builder.adoc"
+                glyph:
+                  type: "icon"
+                  value: "handyman"
               - type: "MENU"
                 title: "Config"
                 dir: "config"
