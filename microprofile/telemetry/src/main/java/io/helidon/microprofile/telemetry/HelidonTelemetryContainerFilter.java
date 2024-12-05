@@ -19,11 +19,8 @@ import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.ServiceLoader;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.LazyValue;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.mp.MpConfig;
 import io.helidon.microprofile.telemetry.spi.HelidonTelemetryContainerFilterHelper;
@@ -69,9 +66,6 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
     private static final String SPAN_NAME_FULL_URL = "telemetry.span.full.url";
 
     private static final String HELPER_START_SPAN_PROPERTY = HelidonTelemetryContainerFilterHelper.class + ".startSpan";
-
-    private static final LazyValue<List<HelidonTelemetryContainerFilterHelper>> HELPERS = LazyValue.create(
-            HelidonTelemetryContainerFilter::helpers);
 
     @Deprecated(forRemoval = true, since = "4.1")
     static final String SPAN_NAME_INCLUDES_METHOD = "telemetry.span.name-includes-method";
