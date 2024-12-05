@@ -49,7 +49,9 @@ yet this process is still underway and some legacy libraries may never be fully 
 
 Helidon MP supports a new `@ExecuteOn` annotation to give developers full control on how to run
 tasks. This annotation can be applied to any CDI bean method to control the type of thread in
-which invocations of that method shall execute on.
+which invocations of that method shall execute on. If such a method returns `CompletionStage`
+or `CompletableFuture`, it is assumed to be asynchronous and shall execute in a new thread
+but without blocking the caller's thread.
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -129,10 +131,20 @@ but that is not a requirement in CDI.
 include::{sourcedir}/mp/ExecuteOnSnippets.java[tag=snippet_2, indent=0]
 ----
 
-3. Finally, it is also possible to explicitly execute a method in a
-virtual thread, blocking the caller thread until the method execution is complete.
+3. It is also possible to explicitly execute a method in a
+virtual thread, blocking the caller's thread until the method execution is complete.
 +
 [source,java]
 ----
 include::{sourcedir}/mp/ExecuteOnSnippets.java[tag=snippet_3, indent=0]
 ----
+
+4. Finally, a method can be executed in another thread but without blocking
+the caller's thread. This behavior is triggered automatically when the bean method returns
+`CompletionStage` or `CompletableFuture`.
++
+[source,java]
+----
+include::{sourcedir}/mp/ExecuteOnSnippets.java[tag=snippet_4, indent=0]
+----
+
