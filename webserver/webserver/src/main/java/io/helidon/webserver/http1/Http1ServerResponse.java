@@ -191,16 +191,22 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
      */
     @Override
     public void send(byte[] bytes) {
+        send(bytes, 0, bytes.length);
+    }
+
+    @Override
+    public void send(byte[] bytes, int position, int length) {
         // if no entity status, we cannot send bytes here
-        if (isNoEntityStatus && bytes.length > 0) {
+        if (isNoEntityStatus && length > 0) {
             status(noEntityInternalError(status()));
             return;
         }
 
         // send bytes to writer
         if (outputStreamFilter == null && !headers.contains(HeaderNames.TRAILER)) {
-            byte[] entity = entityBytes(bytes);
-            BufferData bufferData = responseBuffer(entity);
+            byte[] entity = entityBytes(bytes, position, length);
+            BufferData bufferData = (bytes != entity) ? responseBuffer(entity)
+                    : responseBuffer(entity, position, length);         // no encoding, same length
             bytesWritten = bufferData.available();
             isSent = true;
             request.reset();
@@ -208,9 +214,9 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             afterSend();
         } else {
             // we should skip encoders if no data is written (e.g. for GZIP)
-            boolean skipEncoders = (bytes.length == 0);
+            boolean skipEncoders = (length == 0);
             try (OutputStream os = outputStream(skipEncoders)) {
-                os.write(bytes);
+                os.write(bytes, position, length);
             } catch (IOException e) {
                 throw new ServerConnectionException("Failed to write response", e);
             }
@@ -371,6 +377,10 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     }
 
     private BufferData responseBuffer(byte[] bytes) {
+        return responseBuffer(bytes, 0, bytes.length);
+    }
+
+    private BufferData responseBuffer(byte[] bytes, int position, int length) {
         if (isSent) {
             throw new IllegalStateException("Response already sent");
         }
@@ -379,7 +389,6 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                                                     + ", do not call send().");
         }
 
-        int contentLength = bytes.length;
         boolean forcedChunkedEncoding = false;
         headers.setIfAbsent(HeaderValues.CONNECTION_KEEP_ALIVE);
 
@@ -387,10 +396,8 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             headers.remove(HeaderNames.CONTENT_LENGTH);
             // chunked enforced (and even if empty entity, will be used)
             forcedChunkedEncoding = true;
-        } else {
-            if (!headers.contains(HeaderNames.CONTENT_LENGTH)) {
-                headers.contentLength(contentLength);
-            }
+        } else if (!headers.contains(HeaderNames.CONTENT_LENGTH)) {
+            headers.contentLength(length);
         }
 
         Status usedStatus = status();
@@ -398,20 +405,20 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         sendListener.headers(ctx, headers);
 
         // give some space for code and headers + entity
-        BufferData responseBuffer = BufferData.growing(256 + bytes.length);
+        BufferData responseBuffer = BufferData.growing(256 + length);
 
         nonEntityBytes(headers, usedStatus, responseBuffer, keepAlive, validateHeaders);
         if (forcedChunkedEncoding) {
-            byte[] hex = Integer.toHexString(contentLength).getBytes(StandardCharsets.US_ASCII);
+            byte[] hex = Integer.toHexString(length).getBytes(StandardCharsets.US_ASCII);
             responseBuffer.write(hex);
             responseBuffer.write('\r');
             responseBuffer.write('\n');
-            responseBuffer.write(bytes);
+            responseBuffer.write(bytes, position, length);
             responseBuffer.write('\r');
             responseBuffer.write('\n');
             responseBuffer.write(TERMINATING_CHUNK);
         } else {
-            responseBuffer.write(bytes);
+            responseBuffer.write(bytes, position, length);
         }
 
         sendListener.data(ctx, responseBuffer);
