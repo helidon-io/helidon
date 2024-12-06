@@ -54,7 +54,7 @@ import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
 @HelidonTest(resetPerTest = true)
 @AddBean(TestResource.class)
 class CommonLoginBase {

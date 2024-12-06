@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,8 @@
 package io.helidon.microprofile.telemetry;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
-import io.helidon.http.Status;
-import io.helidon.microprofile.telemetry.InMemorySpanExporter;
-import io.helidon.microprofile.telemetry.InMemorySpanExporterProvider;
 import io.helidon.microprofile.testing.junit5.AddBean;
 import io.helidon.microprofile.testing.junit5.AddConfig;
 import io.helidon.microprofile.testing.junit5.AddExtension;
@@ -29,16 +27,15 @@ import io.helidon.microprofile.testing.junit5.HelidonTest;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.client.WebTarget;
-import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 
 /**
@@ -76,9 +73,14 @@ public class TestFullUrlName {
 
         assertThat(webTarget.path("named").request().get().getStatus(), is(Response.Status.OK.getStatusCode()));
 
-        List<SpanData> spanItems = spanExporter.getFinishedSpanItems(2);
-        assertThat(spanItems.size(), is(2));
-        assertThat(spanItems.get(0).getName(), is("http://localhost:" + webTarget.getUri().getPort() + "/named"));
+        List<String> names = spanExporter.getFinishedSpanItems(2)
+                .stream()
+                .map(SpanData::getName)
+                .collect(Collectors.toList());
+
+        assertThat(names.size(), is(2));
+        assertThat(names, hasItem("http://localhost:" + webTarget.getUri().getPort() + "/named"));
+        assertThat(names, hasItem("HTTP GET"));
     }
 
 
