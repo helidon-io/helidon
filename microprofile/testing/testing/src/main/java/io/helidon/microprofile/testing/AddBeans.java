@@ -34,9 +34,9 @@ import java.lang.annotation.Target;
  * }
  * </pre>
  */
+@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
-@Inherited
 public @interface AddBeans {
     /**
      * Get the contained annotations.

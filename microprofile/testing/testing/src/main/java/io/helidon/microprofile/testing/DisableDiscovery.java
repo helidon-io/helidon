@@ -44,9 +44,9 @@ import java.lang.annotation.Target;
  *     <li>{@link io.helidon.microprofile.config.ConfigCdiExtension ConfigCdiExtension}</li>
  * </ul>
  */
+@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
-@Inherited
 public @interface DisableDiscovery {
     /**
      * By default, if you annotate a class or a method, discovery gets disabled.

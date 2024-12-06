@@ -34,10 +34,10 @@ import java.lang.annotation.Target;
  * @see io.helidon.microprofile.testing.AddConfigSource
  * @see io.helidon.microprofile.testing.Configuration
  */
+@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Repeatable(AddConfigs.class)
-@Inherited
 public @interface AddConfig {
     /**
      * Configuration property key.

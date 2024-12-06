@@ -24,6 +24,7 @@ import io.helidon.microprofile.testing.HelidonTestInfo;
 import io.helidon.microprofile.testing.HelidonTestInfo.ClassInfo;
 import io.helidon.microprofile.testing.HelidonTestInfo.MethodInfo;
 import io.helidon.microprofile.testing.HelidonTestScope;
+import io.helidon.microprofile.testing.ProxyHelper;
 
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.extension.BeforeEachCallback;

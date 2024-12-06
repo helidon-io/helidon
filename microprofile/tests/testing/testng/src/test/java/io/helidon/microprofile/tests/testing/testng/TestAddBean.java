@@ -36,6 +36,10 @@ public class TestAddBean {
     @Inject
     private MyBean myBean;
 
+    TestAddBean() {
+        System.out.println("!!!");
+    }
+
     @Test
     void testIt() {
         assertThat(myBean, notNullValue());

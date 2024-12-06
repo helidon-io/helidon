@@ -34,9 +34,13 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.helidon.microprofile.testing</groupId>
+            <artifactId>helidon-microprofile-testing</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.microprofile.server</groupId>
             <artifactId>helidon-microprofile-server</artifactId>
-            <optional>true</optional>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.cdi</groupId>
@@ -46,7 +50,7 @@
         <dependency>
             <groupId>org.glassfish.jersey.ext.cdi</groupId>
             <artifactId>jersey-weld2-se</artifactId>
-            <optional>true</optional>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.jersey</groupId>
@@ -62,5 +66,4 @@
             <scope>provided</scope>
         </dependency>
     </dependencies>
-
 </project>

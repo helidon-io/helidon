@@ -35,10 +35,10 @@ import java.lang.annotation.Target;
  * @see AddConfigSource
  * @see Configuration
  */
+@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Repeatable(AddConfigBlocks.class)
-@Inherited
 public @interface AddConfigBlock {
     /**
      * Specifies the configuration format.

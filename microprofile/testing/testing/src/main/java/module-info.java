@@ -31,6 +31,8 @@ module io.helidon.microprofile.testing {
     requires static jersey.cdi1x;
     requires static jersey.weld2.se;
     requires jersey.client;
+    requires net.bytebuddy;
+    requires jdk.unsupported;
 
     exports io.helidon.microprofile.testing;
 }

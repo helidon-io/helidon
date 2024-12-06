@@ -26,7 +26,7 @@ import io.helidon.microprofile.testing.HelidonTestExtension;
 import io.helidon.microprofile.testing.HelidonTestInfo;
 import io.helidon.microprofile.testing.HelidonTestScope;
 
-import static io.helidon.microprofile.testing.junit5.ProxyHelper.mirror;
+import static io.helidon.microprofile.testing.ProxyHelper.mirror;
 
 /**
  * An implementation of {@link HelidonTestExtension} that supports the deprecated annotations.

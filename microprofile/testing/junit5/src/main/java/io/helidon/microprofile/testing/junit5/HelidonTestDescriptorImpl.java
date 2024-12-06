@@ -24,7 +24,7 @@ import java.util.stream.Stream;
 
 import io.helidon.microprofile.testing.HelidonTestDescriptorBase;
 
-import static io.helidon.microprofile.testing.junit5.ProxyHelper.mirror;
+import static io.helidon.microprofile.testing.ProxyHelper.mirror;
 
 /**
  * Base descriptor implementation that supports the deprecated annotations.

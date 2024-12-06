@@ -39,8 +39,8 @@ import java.lang.annotation.Target;
  * @see AddConfigBlock
  * @see Configuration
  */
+@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD})
-@Inherited
 public @interface AddConfigSource {
 }

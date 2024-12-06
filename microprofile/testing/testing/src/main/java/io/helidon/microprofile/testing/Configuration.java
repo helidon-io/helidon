@@ -32,9 +32,9 @@ import java.lang.annotation.Target;
  * @see io.helidon.microprofile.testing.AddConfigBlock
  * @see io.helidon.microprofile.testing.AddConfigSource
  */
+@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
-@Inherited
 public @interface Configuration {
     /**
      * If set to {@code false}, the synthetic test configuration is used.

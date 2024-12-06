@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.testing.junit5;
+package io.helidon.microprofile.testing;
 
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandles;
@@ -36,7 +36,7 @@ import static net.bytebuddy.matcher.ElementMatchers.not;
 /**
  * Proxy helper.
  */
-class ProxyHelper {
+public class ProxyHelper {
 
     private ProxyHelper() {
         // cannot be instantiated
@@ -50,7 +50,7 @@ class ProxyHelper {
      * @param <T>        annotation type
      * @return mirror
      */
-    static <T extends Annotation> T mirror(Class<T> type, Annotation annotation) {
+    public static <T extends Annotation> T mirror(Class<T> type, Annotation annotation) {
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
         Object o = Proxy.newProxyInstance(cl, new Class[] {type}, (proxy, method, args) -> {
             try {
@@ -71,7 +71,7 @@ class ProxyHelper {
      * @param <T>      type
      * @return proxy
      */
-    static <T> T proxyDelegate(Class<T> type, BiFunction<Class<T>, Method, T> resolver) {
+    public static <T> T proxyDelegate(Class<T> type, BiFunction<Class<T>, Method, T> resolver) {
         try (DynamicType.Unloaded<T> unloaded = new ByteBuddy()
                 .subclass(type, ConstructorStrategy.Default.NO_CONSTRUCTORS)
                 .withHashCodeEquals()

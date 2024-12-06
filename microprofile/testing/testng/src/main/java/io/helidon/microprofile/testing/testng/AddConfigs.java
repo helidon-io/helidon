@@ -16,22 +16,37 @@
 package io.helidon.microprofile.testing.testng;
 
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
  * A repeatable container for {@link AddConfig}.
- * No need to use this annotation, just repeat {@link AddConfig} annotation
- * on test class.
+ * <p>
+ * This annotation is optional, you can instead repeat {@link AddConfig}.
+ * <p>
+ * E.g.
+ * <pre>
+ * &#64;AddConfig(key="foo", value="1")
+ * &#64;AddConfig(key="bar", value="2")
+ * class MyTest {
+ * }
+ * </pre>
+ *
+ * @see AddConfig
+ * @see Configuration
+ * @deprecated Use {@link io.helidon.microprofile.testing.AddConfigs} instead
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
+@Inherited
+@Deprecated(since = "4.2.0")
 public @interface AddConfigs {
     /**
-     * Configuration properties to be added.
+     * Get the contained annotations.
      *
-     * @return properties
+     * @return annotations
      */
     AddConfig[] value();
 }

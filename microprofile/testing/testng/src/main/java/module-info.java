@@ -14,28 +14,16 @@
  * limitations under the License.
  */
 
-import io.helidon.microprofile.testing.testng.HelidonTestNgListener;
-
 /**
  * TestNG extension module to run CDI tests.
  */
 module io.helidon.microprofile.testing.testng {
 
-    requires io.helidon.config.mp;
-    requires io.helidon.config.yaml.mp;
-    requires io.helidon.microprofile.cdi;
-    requires jakarta.cdi;
-    requires jakarta.inject;
-    requires jakarta.ws.rs;
-    requires microprofile.config.api;
     requires org.testng;
-
-    requires static io.helidon.microprofile.server;
-    requires static jersey.cdi1x;
-    requires static jersey.weld2.se;
+    requires transitive io.helidon.microprofile.testing;
 
     exports io.helidon.microprofile.testing.testng;
 
     provides org.testng.ITestNGListener with HelidonTestNgListener;
-
+    provides org.testng.ITestObjectFactory with HelidonTestNgObjectFactory;
 }

@@ -39,9 +39,9 @@ import java.lang.annotation.Target;
  * @see AddConfigSource
  * @see Configuration
  */
+@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
-@Inherited
 public @interface AddConfigs {
     /**
      * Get the contained annotations.

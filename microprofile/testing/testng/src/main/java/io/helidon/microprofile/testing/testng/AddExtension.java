@@ -16,6 +16,7 @@
 package io.helidon.microprofile.testing.testng;
 
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -24,15 +25,22 @@ import java.lang.annotation.Target;
 import jakarta.enterprise.inject.spi.Extension;
 
 /**
- * Add a CDI extension to the test container.
+ * Add a CDI extension to the container.
+ * <p>
  * This annotation can be repeated.
+ * <p>
+ * If used on a method, the container will be reset regardless of the test lifecycle.
+ * @deprecated Use {@link io.helidon.microprofile.testing.AddExtension} instead
  */
+@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Repeatable(AddExtensions.class)
+@Deprecated(since = "4.2.0")
 public @interface AddExtension {
     /**
      * Class of the extension to add. The class must be public.
+     *
      * @return extension class.
      */
     Class<? extends Extension> value();

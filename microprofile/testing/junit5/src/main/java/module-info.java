@@ -19,15 +19,7 @@
  */
 @SuppressWarnings("JavaModuleNaming")
 module io.helidon.microprofile.testing.junit5 {
-
-    requires io.helidon.microprofile.testing;
+    requires transitive io.helidon.microprofile.testing;
     requires org.junit.jupiter.api;
-    requires net.bytebuddy;
-    requires jdk.unsupported;
-
-    requires static jersey.cdi1x;
-    requires static jersey.weld2.se;
-    requires static io.helidon.microprofile.server;
-
     exports io.helidon.microprofile.testing.junit5;
 }

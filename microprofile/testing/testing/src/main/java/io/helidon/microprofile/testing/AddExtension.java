@@ -31,10 +31,10 @@ import jakarta.enterprise.inject.spi.Extension;
  * <p>
  * If used on a method, the container will be reset regardless of the test lifecycle.
  */
+@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Repeatable(AddExtensions.class)
-@Inherited
 public @interface AddExtension {
     /**
      * Class of the extension to add. The class must be public.

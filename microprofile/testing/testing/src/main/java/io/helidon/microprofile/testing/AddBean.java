@@ -38,10 +38,10 @@ import java.lang.annotation.Target;
  *     is used</li>
  * </ul>
  */
+@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Repeatable(AddBeans.class)
-@Inherited
 public @interface AddBean {
     /**
      * The bean class.
