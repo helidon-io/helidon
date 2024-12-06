@@ -37,6 +37,12 @@ public class TelemetryCdiExtension implements Extension {
     private static final System.Logger LOGGER = System.getLogger(TelemetryCdiExtension.class.getName());
 
     /**
+     * For service loading.
+     */
+    public TelemetryCdiExtension() {
+    }
+
+    /**
      * Add {@code HelidonWithSpan} annotation with interceptor.
      *
      * @param discovery BeforeBeanDiscovery
