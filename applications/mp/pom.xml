@@ -75,8 +75,7 @@
                     <version>${version.plugin.hibernate.enhance}</version>
                     <dependencies>
                         <dependency>
-                            <!-- Force upgrade byte-buddy for Java 21.     -->
-                            <!-- Remove after upgrading to Hibernate -->
+                            <!-- Force upgrade byte-buddy for latest Java  -->
                             <groupId>net.bytebuddy</groupId>
                             <artifactId>byte-buddy</artifactId>
                             <version>${version.lib.byte-buddy}</version>
