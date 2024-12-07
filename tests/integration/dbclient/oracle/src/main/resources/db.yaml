@@ -17,7 +17,7 @@
 db:
   source: jdbc
   connection:
-    url: jdbc:oracle:thin:@localhost:1521/XE
+    url: jdbc:oracle:thin:@localhost:1521/FREE
     username: system
     password: oracle123
     poolName: test
@@ -27,3 +27,9 @@ db:
     statement: "SELECT 1 FROM DUAL"
   statements:
     ping: "SELECT 1 FROM DUAL"
+    create-pokemons: |
+      CREATE TABLE Pokemons (
+        id INTEGER NOT NULL PRIMARY KEY,
+        name VARCHAR(64) NOT NULL,
+        healthy BOOLEAN NOT NULL
+      )

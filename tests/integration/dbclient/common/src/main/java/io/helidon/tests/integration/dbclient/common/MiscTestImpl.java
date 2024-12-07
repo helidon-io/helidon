@@ -95,7 +95,7 @@ public final class MiscTestImpl extends AbstractTestImpl implements MiscTest {
         Pokemon pokemon = new Pokemon(100, "UpdatedMasquerain", Types.FLYING, Types.ICE);
         long result = db.execute()
                 .createNamedUpdate("update-pokemon-order-arg")
-                .indexedParam(pokemon)
+                .indexedParam(pokemon, "name", "id")
                 .execute();
         verifyUpdatePokemon(result, pokemon);
     }
@@ -115,7 +115,7 @@ public final class MiscTestImpl extends AbstractTestImpl implements MiscTest {
         Pokemon pokemon = Pokemons.MAKUHITA;
         long result = db.execute()
                 .createNamedDelete("delete-pokemon-full-order-arg")
-                .indexedParam(pokemon)
+                .indexedParam(pokemon, "name", "id")
                 .execute();
 
         assertThat(result, equalTo(1L));
