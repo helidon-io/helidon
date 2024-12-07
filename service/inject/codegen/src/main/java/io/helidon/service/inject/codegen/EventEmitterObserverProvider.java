@@ -184,7 +184,7 @@ public class EventEmitterObserverProvider implements InjectCodegenObserverProvid
                     .addContentLine("}")
                     .addContent("var qualifierSet = new ")
                     .addContent(HashSet.class)
-                    .addContentLine("(QUALIFIERS);")
+                    .addContentLine("<>(QUALIFIERS);")
                     .addContent("qualifierSet.addAll(")
                     .addContent(Set.class)
                     .addContentLine(".of(qualifiers));")
