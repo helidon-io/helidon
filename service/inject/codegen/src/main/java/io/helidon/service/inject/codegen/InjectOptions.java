@@ -17,6 +17,7 @@
 package io.helidon.service.inject.codegen;
 
 import java.util.Set;
+import java.util.function.Function;
 
 import io.helidon.codegen.Option;
 import io.helidon.common.GenericType;
@@ -47,6 +48,33 @@ public final class InjectOptions {
                              Set.of(),
                              TypeName::create,
                              new GenericType<Set<TypeName>>() { });
+
+    /**
+     * Name of the generated Main class for Injection. Defaults to
+     * {@value ApplicationMainGenerator#CLASS_NAME}.
+     * The same property must be provided to the maven plugin, to correctly update the generated class.
+     * To configure package name, use {@link io.helidon.codegen.CodegenOptions#CODEGEN_PACKAGE} option.
+     */
+    public static final Option<String> APPLICATION_MAIN_CLASS_NAME =
+            Option.create("helidon.inject.application.main.class.name",
+                          "Name of the generated Main class for Helidon Injection.",
+                          ApplicationMainGenerator.CLASS_NAME,
+                          Function.identity(),
+                          GenericType.STRING);
+
+    /**
+     * Whether to generate main class for Helidon Injection.
+     * Defaults to false. In case a custom main class is present (annotated with Injection.Main), this option is ignored.
+     * <p>
+     * As main class only makes sense for the end application, this is set to {@code false} by default, so we do not generate
+     * main classes for library modules.
+     */
+    public static final Option<Boolean> APPLICATION_MAIN_GENERATE =
+            Option.create("helidon.inject.application.main.generate",
+                          "Whether to generate Main class for Helidon Injection.",
+                          false,
+                          Boolean::parseBoolean,
+                          GenericType.create(Boolean.class));
 
     private InjectOptions() {
     }

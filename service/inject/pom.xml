@@ -40,5 +40,6 @@
         <module>codegen</module>
         <module>api</module>
         <module>inject</module>
+        <module>maven-plugin</module>
     </modules>
 </project>

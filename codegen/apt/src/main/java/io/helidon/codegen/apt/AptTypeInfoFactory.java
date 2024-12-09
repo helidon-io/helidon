@@ -697,7 +697,8 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
         moduleName.set(null);
 
         ModuleElement module = ctx.aptEnv().getElementUtils().getModuleOf(type);
-        if (!module.isUnnamed()) {
+
+        if (module != null && !module.isUnnamed()) {
             String name = module.getQualifiedName().toString();
             if (hasValue(name)) {
                 moduleName.set(name);

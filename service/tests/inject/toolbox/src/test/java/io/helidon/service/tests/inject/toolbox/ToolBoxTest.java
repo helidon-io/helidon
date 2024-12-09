@@ -150,7 +150,6 @@ class ToolBoxTest {
      * This assumes the presence of module(s) + application(s) to handle all bindings, with effectively no lookups!
      */
     @Test
-    @Disabled("Disabled, as this required maven plugin, to be added in a later PR")
     void noServiceActivationRequiresLookupWhenApplicationIsPresent() {
         Counter counter = lookupCounter();
         long initialCount = counter.count();
