@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.docs.mp;
+package io.helidon.docs.mp.restclient;
 
 import java.io.IOException;
 import java.net.URI;

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.docs.mp;
+package io.helidon.docs.mp.restclient;
 
 import java.net.URI;
 
@@ -33,7 +33,7 @@ import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 
-import static io.helidon.docs.mp.RestclientMetricsSnippets.Snippet1.GreetRestClient;
+import static io.helidon.docs.mp.restclient.RestclientMetricsSnippets.Snippet1.GreetRestClient;
 
 @SuppressWarnings("ALL")
 class RestclientMetricsSnippets {
