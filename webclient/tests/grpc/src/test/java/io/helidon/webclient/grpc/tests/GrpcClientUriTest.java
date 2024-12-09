@@ -29,6 +29,8 @@ import io.helidon.webserver.WebServer;
 import io.helidon.webserver.testing.junit5.ServerTest;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -77,6 +79,7 @@ class GrpcClientUriTest extends GrpcBaseTest {
      * Should fail to connect to first URI but succeed with second after retrying.
      */
     @Test
+    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "Windows runner is too slow")
     void testSupplierWithRetries() {
         CountDownLatch latch = new CountDownLatch(2);
         ClientUri badUri = ClientUri.create(URI.create("https://foo:8000"));
