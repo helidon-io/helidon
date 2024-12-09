@@ -366,6 +366,7 @@ interface ListenerConfigBlueprint {
      *
      * @return proxy support status
      */
+    @Option.Configured
     @Option.Default("false")
     boolean enableProxyProtocol();
 
