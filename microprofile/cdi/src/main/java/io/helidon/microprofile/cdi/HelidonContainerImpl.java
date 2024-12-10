@@ -151,6 +151,7 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
         LOGGER.fine(() -> "Initializing CDI container " + id);
 
         addHelidonBeanDefiningAnnotations("jakarta.ws.rs.Path",
+                                          "jakarta.ws.rs.ApplicationPath",
                                           "jakarta.ws.rs.ext.Provider",
                                           "jakarta.websocket.server.ServerEndpoint",
                                           "org.eclipse.microprofile.graphql.GraphQLApi",
