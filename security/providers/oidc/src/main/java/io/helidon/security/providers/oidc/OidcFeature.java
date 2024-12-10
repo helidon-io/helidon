@@ -423,6 +423,11 @@ public final class OidcFeature implements HttpFeature {
                 .add("code", code)
                 .add("redirect_uri", redirectUri(req, tenantName));
 
+        if (oidcConfig.pkceEnabled()) {
+            String verifier = stateCookie.getString("pkceVerifier");
+            form.add("code_verifier", verifier);
+        }
+
         HttpClientRequest post = webClient.post()
                 .uri(tenant.tokenEndpointUri())
                 .header(HeaderValues.ACCEPT_JSON);

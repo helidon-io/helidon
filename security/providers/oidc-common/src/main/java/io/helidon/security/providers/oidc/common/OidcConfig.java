@@ -22,6 +22,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -375,6 +376,7 @@ public final class OidcConfig extends TenantConfigImpl {
     static final boolean DEFAULT_PARAM_USE = false;
     static final boolean DEFAULT_HEADER_USE = false;
     static final boolean DEFAULT_COOKIE_USE = true;
+    static final boolean DEFAULT_PKCE_ENABLED = false;
 
     private static final System.Logger LOGGER = System.getLogger(OidcConfig.class.getName());
 
@@ -409,6 +411,9 @@ public final class OidcConfig extends TenantConfigImpl {
     private final boolean tokenSignatureValidation;
     private final boolean idTokenSignatureValidation;
     private final boolean accessTokenIpCheck;
+    private final boolean pkceEnabled;
+    private final PkceChallengeMethod pkceChallengeMethod;
+    private final OutboundType outboundType;
 
     private OidcConfig(Builder builder) {
         super(builder);
@@ -442,9 +447,12 @@ public final class OidcConfig extends TenantConfigImpl {
         this.tokenSignatureValidation = builder.tokenSignatureValidation;
         this.idTokenSignatureValidation = builder.idTokenSignatureValidation;
         this.accessTokenIpCheck = builder.accessTokenIpCheck;
+        this.pkceEnabled = builder.pkceEnabled;
+        this.pkceChallengeMethod = builder.pkceChallengeMethod;
 
         this.webClientBuilderSupplier = builder.webClientBuilderSupplier;
         this.defaultTenant = LazyValue.create(() -> Tenant.create(this, this));
+        this.outboundType = builder.outboundType;
 
         LOGGER.log(Level.TRACE, () -> "Redirect URI with host: " + frontendUri + redirectUri);
     }
@@ -836,6 +844,19 @@ public final class OidcConfig extends TenantConfigImpl {
         return accessTokenIpCheck;
     }
 
+    public boolean pkceEnabled() {
+        return pkceEnabled;
+    }
+
+    public PkceChallengeMethod pkceChallengeMethod() {
+        return pkceChallengeMethod;
+    }
+
+
+    public OutboundType outboundType() {
+        return outboundType;
+    }
+
     Supplier<WebClientConfig.Builder> webClientBuilderSupplier() {
         return webClientBuilderSupplier;
     }
@@ -914,7 +935,11 @@ public final class OidcConfig extends TenantConfigImpl {
         /**
          * Request to validate a JWT against an introspection endpoint.
          */
-        INTROSPECT_JWT;
+        INTROSPECT_JWT,
+        /**
+         * Request to exchange client id and secret for an access token.
+         */
+        ID_AND_SECRET_TO_TOKEN;
     }
 
     /**
@@ -948,6 +973,9 @@ public final class OidcConfig extends TenantConfigImpl {
         private String tenantParamName = DEFAULT_TENANT_PARAM_NAME;
         private boolean useHeader = DEFAULT_HEADER_USE;
         private boolean useParam = DEFAULT_PARAM_USE;
+        private OutboundType outboundType = OutboundType.USER_JWT;
+        private boolean pkceEnabled = DEFAULT_PKCE_ENABLED;
+        private PkceChallengeMethod pkceChallengeMethod = PkceChallengeMethod.S256;
 
         private final OidcCookieHandler.Builder tenantCookieBuilder = OidcCookieHandler.builder()
                 .encryptionEnabled(true)
@@ -1128,6 +1156,10 @@ public final class OidcConfig extends TenantConfigImpl {
 
             config.get("tenants").asList(Config.class)
                     .ifPresent(confList -> confList.forEach(tenantConfig -> tenantFromConfig(config, tenantConfig)));
+
+            config.get("outbound-type").as(OutboundType.class).ifPresent(this::outboundType);
+            config.get("pkce-enabled").asBoolean().ifPresent(this::pkceEnabled);
+            config.get("pkce-challenge-method").as(PkceChallengeMethod.class).ifPresent(this::pkceChallengeMethod);
 
             webClientConfigBuilder.config(config.get("webclient"));
             return this;
@@ -1795,6 +1827,38 @@ public final class OidcConfig extends TenantConfigImpl {
         @ConfiguredOption("true")
         public Builder accessTokenIpCheck(boolean enabled) {
             accessTokenIpCheck = enabled;
+            return this;
+        }
+
+        @ConfiguredOption("USER_JWT")
+        private Builder outboundType(OutboundType outboundType) {
+            this.outboundType = Objects.requireNonNull(outboundType);
+            return this;
+        }
+
+        /**
+         * Whether this provider should support PKCE.
+         * Default value is {@code false}.
+         *
+         * @param enabled PKCE enabled
+         * @return updated builder instance
+         */
+        @ConfiguredOption("false")
+        public Builder pkceEnabled(boolean enabled) {
+            pkceEnabled = enabled;
+            return this;
+        }
+
+        /**
+         * PKCE challenge creation method.
+         * Default value is {@link PkceChallengeMethod#S256}.
+         *
+         * @param pkceChallengeMethod challenge creation method
+         * @return updated builder instance
+         */
+        @ConfiguredOption("S256")
+        public Builder pkceChallengeMethod(PkceChallengeMethod pkceChallengeMethod) {
+            this.pkceChallengeMethod = Objects.requireNonNull(pkceChallengeMethod);
             return this;
         }
 

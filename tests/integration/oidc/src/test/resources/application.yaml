@@ -42,3 +42,10 @@ security:
             client-id: "clientTwo"
             client-secret: "jjWNrK4EVQCuZYsxUfC4AZ7y6StS6Jmy"
             identity-uri: "http://localhost:8080/realms/test2/"
+        outbound:
+          - name: "include-token"
+            hosts: [ "localhost" ]
+            paths: [ "/test/redirected" ]
+          - name: "do-not-include-token"
+            hosts: [ "*" ]
+            propagate: false
