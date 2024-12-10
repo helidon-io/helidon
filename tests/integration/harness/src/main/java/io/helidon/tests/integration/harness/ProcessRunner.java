@@ -473,7 +473,7 @@ public abstract class ProcessRunner {
                         .append("-File")
                         .append("target/" + finalName + "-jri/bin/start.ps1")
                         .append("--jvm", opts.stream()
-                                .map(option -> String.format("'\\\"%s\\\"'", option))
+                                .map(option -> String.format("'\"\"\"%s\"\"\"'", option))
                                 .collect(Collectors.joining(" ")))
                         .append(args)
                         .command();
