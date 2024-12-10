@@ -354,6 +354,7 @@ public class ModuleUtils {
      * @return the base path
      */
     public static Path toBasePath(String sourcePath) {
+        sourcePath = sourcePath.replace(File.separator, "/");
         int pos = sourcePath.lastIndexOf(SRC_MAIN_JAVA_DIR);
         if (pos < 0) {
             pos = sourcePath.lastIndexOf(SRC_TEST_JAVA_DIR);

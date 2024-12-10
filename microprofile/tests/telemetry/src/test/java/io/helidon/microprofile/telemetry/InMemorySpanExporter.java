@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ public class InMemorySpanExporter implements SpanExporter {
      */
     public List<SpanData> getFinishedSpanItems(int spanCount) {
         assertSpanCount(spanCount);
-        return finishedSpanItems.stream().sorted(comparingLong(SpanData::getStartEpochNanos).reversed())
+        return finishedSpanItems.stream().sorted(comparingLong(SpanData::getEndEpochNanos))
                 .collect(Collectors.toList());
     }
 
