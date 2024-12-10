@@ -413,7 +413,7 @@ public final class OidcConfig extends TenantConfigImpl {
     private final boolean accessTokenIpCheck;
     private final boolean pkceEnabled;
     private final PkceChallengeMethod pkceChallengeMethod;
-    private final OutboundType outboundType;
+    private final OidcOutboundType outboundType;
 
     private OidcConfig(Builder builder) {
         super(builder);
@@ -844,16 +844,30 @@ public final class OidcConfig extends TenantConfigImpl {
         return accessTokenIpCheck;
     }
 
+    /**
+     * Whether PKCE is enabled.
+     *
+     * @return enabled PKCE
+     */
     public boolean pkceEnabled() {
         return pkceEnabled;
     }
 
+    /**
+     * Selected PKCE challenge generation method.
+     *
+     * @return PKCE challenge generation method
+     */
     public PkceChallengeMethod pkceChallengeMethod() {
         return pkceChallengeMethod;
     }
 
-
-    public OutboundType outboundType() {
+    /**
+     * Selected type of the OIDC outbound.
+     *
+     * @return OIDC outbound type
+     */
+    public OidcOutboundType outboundType() {
         return outboundType;
     }
 
@@ -973,7 +987,7 @@ public final class OidcConfig extends TenantConfigImpl {
         private String tenantParamName = DEFAULT_TENANT_PARAM_NAME;
         private boolean useHeader = DEFAULT_HEADER_USE;
         private boolean useParam = DEFAULT_PARAM_USE;
-        private OutboundType outboundType = OutboundType.USER_JWT;
+        private OidcOutboundType outboundType = OidcOutboundType.USER_JWT;
         private boolean pkceEnabled = DEFAULT_PKCE_ENABLED;
         private PkceChallengeMethod pkceChallengeMethod = PkceChallengeMethod.S256;
 
@@ -1157,7 +1171,7 @@ public final class OidcConfig extends TenantConfigImpl {
             config.get("tenants").asList(Config.class)
                     .ifPresent(confList -> confList.forEach(tenantConfig -> tenantFromConfig(config, tenantConfig)));
 
-            config.get("outbound-type").as(OutboundType.class).ifPresent(this::outboundType);
+            config.get("outbound-type").as(OidcOutboundType.class).ifPresent(this::outboundType);
             config.get("pkce-enabled").asBoolean().ifPresent(this::pkceEnabled);
             config.get("pkce-challenge-method").as(PkceChallengeMethod.class).ifPresent(this::pkceChallengeMethod);
 
@@ -1830,9 +1844,16 @@ public final class OidcConfig extends TenantConfigImpl {
             return this;
         }
 
+        /**
+         * Type of the OIDC outbound.
+         * Default value is {@link OidcOutboundType#USER_JWT}.
+         *
+         * @param oidcOutboundType outbound type
+         * @return updated builder instance
+         */
         @ConfiguredOption("USER_JWT")
-        private Builder outboundType(OutboundType outboundType) {
-            this.outboundType = Objects.requireNonNull(outboundType);
+        private Builder outboundType(OidcOutboundType oidcOutboundType) {
+            this.outboundType = Objects.requireNonNull(oidcOutboundType);
             return this;
         }
 
