@@ -41,8 +41,8 @@
         <version.lib.annotation-api>1.3.5</version.lib.annotation-api>
         <version.lib.brave-opentracing>1.0.0</version.lib.brave-opentracing>
         <version.lib.reactivestreams>1.0.4</version.lib.reactivestreams>
-        <!-- Force upgrade byte-buddy for Java 23. Remove after upgrading hibernate -->
-        <version.lib.byte-buddy>1.14.18</version.lib.byte-buddy>
+        <!-- Force upgrade byte-buddy latest Java -->
+        <version.lib.byte-buddy>1.15.10</version.lib.byte-buddy>
         <version.lib.commons-logging>1.2</version.lib.commons-logging>
         <version.lib.cron-utils>9.2.1</version.lib.cron-utils>
         <version.lib.dropwizard.metrics>4.1.2</version.lib.dropwizard.metrics>
