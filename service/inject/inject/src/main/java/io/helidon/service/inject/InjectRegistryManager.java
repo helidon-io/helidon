@@ -301,6 +301,10 @@ public class InjectRegistryManager implements ServiceRegistryManager {
                 .orElse(descriptor);
     }
 
+    private static boolean contains(Set<ResolvedType> contracts, TypeName type) {
+        return contracts.stream().anyMatch(it -> it.type().equals(type));
+    }
+
     private Described toDescribed(Map<io.helidon.service.registry.ServiceInfo, Described> descriptorToDescribed,
                                   ServiceDescriptor<?> descriptor) {
         return descriptorToDescribed.computeIfAbsent(descriptor, it -> {
@@ -398,10 +402,19 @@ public class InjectRegistryManager implements ServiceRegistryManager {
                                                            + descriptor.descriptorType().fqName() + " does not.");
             }
         }
-    }
 
-    private static boolean contains(Set<ResolvedType> contracts, TypeName type) {
-        return contracts.stream().anyMatch(it -> it.type().equals(type));
+        // and bind factory types, as we can also lookup factories, but only types that are not provided by contracts
+        // as otherwise we would return a factory instance instead of constructed instance
+        // there are cases where the structure can "trick" us into thinking something is a factory contract, such as
+        // when an actual contract of the factory extends a Supplier that provides the same type as the factory itself
+        var factoryContracts = descriptor.factoryContracts();
+        for (ResolvedType factoryContract : factoryContracts) {
+            if (!contracts.contains(factoryContract)) {
+                servicesByContract.computeIfAbsent(factoryContract,
+                                                   it -> new TreeSet<>(SERVICE_INFO_COMPARATOR))
+                        .add(descriptor);
+            }
+        }
     }
 
     record TypedQualifiedProviderKey(TypeName qualifier, ResolvedType contract) {

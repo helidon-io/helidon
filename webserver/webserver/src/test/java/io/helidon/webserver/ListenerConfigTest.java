@@ -57,4 +57,24 @@ public class ListenerConfigTest {
         assertThat(listenerConfig.shutdownGracePeriod().toMillis(), is(2000L));
     }
 
+    @Test
+    void testEnableProxyProtocolConfig() {
+        Config config = Config.create();
+
+        // default is false in default socket
+        var webServerConfig = WebServer.builder().config(config.get("server")).buildPrototype();
+        assertThat(webServerConfig.enableProxyProtocol(), is(false));
+        ListenerConfig otherConfig = webServerConfig.sockets().get("other");
+        assertThat(otherConfig.enableProxyProtocol(), is(false));
+
+        // set to true in default socket
+        var webServerConfig2 = WebServer.builder().config(config.get("server2")).buildPrototype();
+        assertThat(webServerConfig2.enableProxyProtocol(), is(true));
+
+        // set to true in non-default socket
+        var webServerConfig3 = WebServer.builder().config(config.get("server3")).buildPrototype();
+        assertThat(webServerConfig3.enableProxyProtocol(), is(false));
+        ListenerConfig graceConfig = webServerConfig3.sockets().get("grace");
+        assertThat(graceConfig.enableProxyProtocol(), is(true));
+    }
 }

@@ -2270,17 +2270,31 @@ class InjectionExtension implements RegistryCodegenExtension {
 
     private void scopeMethod(ClassModel.Builder classModel, DescribedService service) {
         // TypeName scope()
-        classModel.addField(scopesField -> scopesField
-                .isStatic(true)
-                .isFinal(true)
-                .name("SCOPE")
-                .type(TypeNames.TYPE_NAME)
-                .addContentCreate(service.scope()));
+        TypeName scope = service.scope();
 
-        classModel.addMethod(scopeMethod -> scopeMethod.name("scope")
-                .addAnnotation(Annotations.OVERRIDE)
-                .returnType(TypeNames.TYPE_NAME)
-                .addContentLine("return SCOPE;"));
+        if (scope.packageName().equals(INJECTION_SINGLETON.packageName())
+                && scope.enclosingNames().size() == 1 && scope.enclosingNames().getFirst().equals("Injection")) {
+            // only method
+            classModel.addMethod(scopeMethod -> scopeMethod.name("scope")
+                    .addAnnotation(Annotations.OVERRIDE)
+                    .returnType(TypeNames.TYPE_NAME)
+                    .addContent("return ")
+                    .addContent(scope)
+                    .addContentLine(".TYPE;"));
+        } else {
+            // field and method
+            classModel.addField(scopesField -> scopesField
+                    .isStatic(true)
+                    .isFinal(true)
+                    .name("SCOPE")
+                    .type(TypeNames.TYPE_NAME)
+                    .addContentCreate(scope));
+
+            classModel.addMethod(scopeMethod -> scopeMethod.name("scope")
+                    .addAnnotation(Annotations.OVERRIDE)
+                    .returnType(TypeNames.TYPE_NAME)
+                    .addContentLine("return SCOPE;"));
+        }
     }
 
     private void weightMethod(ClassModel.Builder classModel, DescribedService service) {

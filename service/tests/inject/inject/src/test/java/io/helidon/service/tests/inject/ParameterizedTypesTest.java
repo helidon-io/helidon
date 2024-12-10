@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 
 public class ParameterizedTypesTest {
     private static InjectRegistryManager registryManager;
@@ -59,6 +60,8 @@ public class ParameterizedTypesTest {
         var receiver = registry.get(ParameterizedTypes.ColorReceiver.class);
 
         assertThat(receiver.getString(), is("blue-green"));
+        assertThat("Circle<Color> and Circle<?> should receive same values", receiver.allCirclesValid(), is(true));
+        assertThat(receiver.types(), hasSize(2));
     }
 
     @Test

@@ -169,7 +169,8 @@ interface LookupBlueprint {
         boolean matches = matches(serviceInfo.serviceType(), this.serviceType());
         if (matches && this.serviceType().isEmpty()) {
             matches = serviceInfo.contracts().containsAll(this.contracts())
-                    || this.contracts().contains(ResolvedType.create(serviceInfo.serviceType()));
+                    || this.contracts().contains(ResolvedType.create(serviceInfo.serviceType()))
+                    || serviceInfo.factoryContracts().containsAll(this.contracts());
         }
         return matches
                 && matchesProviderTypes(factoryTypes(), serviceInfo.factoryType())

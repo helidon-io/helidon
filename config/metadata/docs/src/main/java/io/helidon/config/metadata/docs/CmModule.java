@@ -66,4 +66,9 @@ public class CmModule {
     public void setTypes(List<CmType> types) {
         this.types = types;
     }
+
+    @Override
+    public String toString() {
+        return module;
+    }
 }

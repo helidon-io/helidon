@@ -201,17 +201,30 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
      * if entity is empty.
      *
      * @param configuredEntity plain bytes
-     * @return encoded bytes
+     * @return encoded bytes or same entity array if encoding is disabled
      */
     protected byte[] entityBytes(byte[] configuredEntity) {
+        return entityBytes(configuredEntity, 0, configuredEntity.length);
+    }
+
+    /**
+     * Entity bytes encoded using content encoding. Does not attempt encoding
+     * if entity is empty.
+     *
+     * @param configuredEntity plain bytes
+     * @param position starting position
+     * @param length number of bytes
+     * @return encoded bytes or same entity array if encoding is disabled
+     */
+    protected byte[] entityBytes(byte[] configuredEntity, int position, int length) {
         byte[] entity = configuredEntity;
-        if (contentEncodingContext.contentEncodingEnabled() && entity.length > 0) {
+        if (contentEncodingContext.contentEncodingEnabled() && length > 0) {
             ContentEncoder encoder = contentEncodingContext.encoder(requestHeaders);
             // we want to preserve optimization here, let's create a new byte array
-            ByteArrayOutputStream baos = new ByteArrayOutputStream(entity.length);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream(length);
             OutputStream os = encoder.apply(baos);
             try {
-                os.write(entity);
+                os.write(entity, position, length);
                 os.close();
             } catch (IOException e) {
                 throw new ServerConnectionException("Failed to write response", e);

@@ -36,12 +36,12 @@ import static org.hamcrest.Matchers.is;
 class SecurityOidcSnippets {
 
     // stub
-    static GreetingMessage createResponse(String str) {
+    static Message createResponse(String str) {
         return null;
     }
 
     // stub
-    record GreetingMessage() {
+    record Message() {
         String getMessage() {
             return "";
         }
@@ -51,7 +51,7 @@ class SecurityOidcSnippets {
     @Authenticated
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public GreetingMessage getDefaultMessage() {
+    public Message getDefaultMessage() {
         return createResponse("World");
     }
     // end::snippet_1[]
@@ -76,11 +76,11 @@ class SecurityOidcSnippets {
     void snippet_6(WebTarget target) {
         // tag::snippet_4[]
         String encoding = Base64.getEncoder().encodeToString("jack:changeit".getBytes());
-        GreetingMessage jsonMessage = target
+        Message jsonMessage = target
                 .path("greet")
                 .request()
                 .header(HttpHeaders.AUTHORIZATION, "Basic " + encoding)
-                .get(GreetingMessage.class);
+                .get(Message.class);
 
         assertThat(jsonMessage.getMessage(), is("Hello World!"));
         // end::snippet_4[]

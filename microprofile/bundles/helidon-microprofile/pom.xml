@@ -71,6 +71,10 @@
             <artifactId>helidon-microprofile-rest-client</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.microprofile.rest-client-metrics</groupId>
+            <artifactId>helidon-microprofile-rest-client-metrics</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.glassfish.jersey.media</groupId>
             <artifactId>jersey-media-json-binding</artifactId>
             <scope>runtime</scope>

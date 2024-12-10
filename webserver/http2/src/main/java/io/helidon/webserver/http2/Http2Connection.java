@@ -617,7 +617,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         int streamId = frameHeader.streamId();
         StreamContext streamContext = stream(streamId);
 
-        streamContext.stream().checkHeadersReceivable();
+        boolean trailers = streamContext.stream().checkHeadersReceivable();
 
         // first frame, expecting continuation
         if (frameHeader.type() == Http2FrameType.HEADERS && !frameHeader.flags(Http2FrameTypes.HEADERS).endOfHeaders()) {
@@ -672,6 +672,18 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         }
 
         receiveFrameListener.headers(ctx, streamId, headers);
+
+
+        if (trailers) {
+            if (!endOfStream) {
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Received trailers without endOfStream flag " + streamId);
+            }
+            stream.closeFromRemote();
+            state = State.READ_FRAME;
+            // Client's trailers are ignored, we don't provide any API to consume them yet
+            return;
+        }
+
         headers.validateRequest();
         String path = headers.path();
         Method method = headers.method();

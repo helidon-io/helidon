@@ -34,6 +34,9 @@
     </description>
 
     <properties>
+        <angus.activation.native-image.trace>false</angus.activation.native-image.trace>
+        <helidon.native.reflection.trace>false</helidon.native.reflection.trace>
+        <helidon.native.reflection.trace-parsing>false</helidon.native.reflection.trace-parsing>
         <mainClass>io.helidon.tests.integration.packaging.mp3.Mp3Main</mainClass>
         <redirectTestOutputToFile>true</redirectTestOutputToFile>
     </properties>
@@ -83,6 +86,11 @@
                 <artifactId>native-maven-plugin</artifactId>
                 <configuration>
                     <quickBuild>true</quickBuild>
+                    <systemProperties>
+                        <angus.activation.native-image.trace>${angus.activation.native-image.trace}</angus.activation.native-image.trace>
+                        <helidon.native.reflection.trace>${helidon.native.reflection.trace}</helidon.native.reflection.trace>
+                        <helidon.native.reflection.trace-parsing>${helidon.native.reflection.trace-parsing}</helidon.native.reflection.trace-parsing>
+                    </systemProperties>
                 </configuration>
             </plugin>
             <plugin>

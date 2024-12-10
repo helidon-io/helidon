@@ -230,11 +230,25 @@ cd helidon-quickstart-se
 Update the pom.xml file and add the following Helidon dependency to the `<dependencies>` section.
 
 [source,xml]
-.Add the following dependency to `pom.xml`:
+.Add the following dependencies to `pom.xml`:
 ----
+<dependency>
+    <groupId>io.helidon.webserver</groupId>
+    <artifactId>helidon-webserver-security</artifactId>
+</dependency>
 <dependency>
     <groupId>io.helidon.security.providers</groupId>
     <artifactId>helidon-security-providers-oidc</artifactId>
+</dependency>
+----
+
+[source,xml]
+.Remove the `test` scope from `helidon-webclient` dependency
+----
+<dependency>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient</artifactId>
+    <scope>test</scope> <!-- remove this line -->
 </dependency>
 ----
 

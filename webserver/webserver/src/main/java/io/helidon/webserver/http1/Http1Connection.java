@@ -37,13 +37,13 @@ import io.helidon.common.concurrency.limits.LimitAlgorithm;
 import io.helidon.common.mapper.MapperException;
 import io.helidon.common.task.InterruptableTask;
 import io.helidon.common.tls.TlsUtils;
+import io.helidon.common.uri.UriValidator;
 import io.helidon.http.BadRequestException;
 import io.helidon.http.DateTime;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.DirectHandler.EventType;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
-import io.helidon.http.HostValidator;
 import io.helidon.http.HtmlEncoder;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.InternalServerException;
@@ -159,6 +159,10 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                 recvListener.prologue(ctx, prologue);
                 currentEntitySize = 0;
                 currentEntitySizeRead = 0;
+
+                if (http1Config.validatePrologue()) {
+                    validatePrologue(prologue);
+                }
 
                 WritableHeaders<?> headers = http1headers.readHeaders(prologue);
                 if (http1Config.validateRequestHeaders()) {
@@ -318,6 +322,26 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         }
     }
 
+    private void validatePrologue(HttpPrologue prologue) {
+        try {
+            // scheme is not validated, as it is fixed and validated by the prologue reader
+            UriValidator.validateQuery(prologue.query().rawValue());
+            if (prologue.fragment().hasValue()) {
+                UriValidator.validateFragment(prologue.fragment().rawValue());
+            }
+        } catch (IllegalArgumentException e) {
+            throw RequestException.builder()
+                    .type(EventType.BAD_REQUEST)
+                    .status(Status.BAD_REQUEST_400)
+                    .request(DirectTransportRequest.create(prologue, ServerRequestHeaders.create()))
+                    .setKeepAlive(false)
+                    .message(e.getMessage())
+                    .safeMessage(true)
+                    .cause(e)
+                    .build();
+        }
+    }
+
     private static void simpleHostHeaderValidation(HttpPrologue prologue, WritableHeaders<?> headers) {
         if (headers.contains(HeaderNames.HOST)) {
             String host = headers.get(HeaderNames.HOST).get();
@@ -384,17 +408,17 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         int endLiteral = host.lastIndexOf(']');
         if (startLiteral == 0 && endLiteral == host.length() - 1) {
             // this is most likely an IPv6 address without a port
-            HostValidator.validateIpLiteral(host);
+            UriValidator.validateIpLiteral(host);
             return;
         }
         if (startLiteral == 0 && endLiteral == -1) {
-            HostValidator.validateIpLiteral(host);
+            UriValidator.validateIpLiteral(host);
             return;
         }
         int colon = host.lastIndexOf(':');
         if (colon == -1) {
             // only host
-            HostValidator.validateNonIpLiteral(host);
+            UriValidator.validateNonIpLiteral(host);
             return;
         }
 
@@ -414,11 +438,11 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         // can be
         // IP-literal [..::]
         if (startLiteral == 0 && endLiteral == hostString.length() - 1) {
-            HostValidator.validateIpLiteral(hostString);
+            UriValidator.validateIpLiteral(hostString);
             return;
         }
 
-        HostValidator.validateNonIpLiteral(hostString);
+        UriValidator.validateNonIpLiteral(hostString);
     }
 
     private BufferData readEntityFromPipeline(HttpPrologue prologue, WritableHeaders<?> headers) {

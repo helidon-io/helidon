@@ -210,14 +210,21 @@ public class ServiceContracts {
 
         if (!resolvedType.type().typeArguments().isEmpty()) {
             // we also need to add a contract for the type it implements
-            // i.e. if this is Circle<Green>, we may want to add Circle<Color> as well
+            // i.e. if this is Circle<Green>, we may want to add Circle<Color> as well, and Circle<?>
             typeInfoFactory.apply(withGenerics.genericTypeName())
                     .ifPresent(declaration -> {
                         TypeName tn = declaration.typeName();
                         for (int i = 0; i < withGenerics.typeArguments().size(); i++) {
                             TypeName declared = tn.typeArguments().get(i);
                             if (declared.generic()) {
-                                // this is not ideal (this could be T extends Circle)
+                                // Circle<?>
+                                contractSet.add(ResolvedType.create(
+                                        TypeName.builder()
+                                                .from(withGenerics)
+                                                .typeArguments(List.of(TypeNames.WILDCARD))
+                                                .build()));
+
+                                // Circle<Color>
                                 var asString = declared.toString();
                                 int index = asString.indexOf(" extends ");
                                 if (index != -1) {
