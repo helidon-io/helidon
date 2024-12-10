@@ -2,7 +2,7 @@ package io.helidon.service.registry;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-class RegistryMetricsImpl implements RegistryMetrics {
+final class RegistryMetricsImpl implements RegistryMetrics {
     private final AtomicInteger lookupCount = new AtomicInteger();
     private final AtomicInteger fullScanCount = new AtomicInteger();
     private final AtomicInteger cacheAccessCount = new AtomicInteger();

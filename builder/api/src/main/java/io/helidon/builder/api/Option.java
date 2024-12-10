@@ -31,7 +31,7 @@ public final class Option {
     }
 
     /**
-     * Mark a prototype option as one that can be read from {@link io.helidon.common.config.Config}.
+     * Mark a prototype option as one that can be read from {@code io.helidon.common.config.Config}.
      */
     @Target(ElementType.METHOD)
     @Inherited
@@ -157,6 +157,15 @@ public final class Option {
      * This annotation cannot be combined with {@link io.helidon.builder.api.Option.Configured} - if you want
      * providers configured from configuration, kindly use {@link io.helidon.builder.api.Option.Provider}.
      * <p>
+     * Behavior depends on the return type of the annotated method:
+     * <ul>
+     *     <li>A single instance - if the instance is configured on the builder by hand, registry is not used</li>
+     *     <li>An {@link java.util.Optional} instance - ditto</li>
+     *     <li>A {@link java.util.List} of instances - instances configured on the builder are combined with instances
+     *      discovered in the registry; there is a generated method that allows for disabling registry use for each
+     *      service</li>
+     * </ul>
+     *
      * Options annotated with this annotation will load the instances as the default value (before method {@code builder()})
      * returns, thus you have full control over the field, be it an Optional, single value, or a List.
      * <p>

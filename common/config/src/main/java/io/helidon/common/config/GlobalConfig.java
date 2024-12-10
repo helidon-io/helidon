@@ -25,6 +25,7 @@ import java.util.function.Supplier;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.config.spi.ConfigProvider;
+import io.helidon.service.registry.Services;
 
 /**
  * Global configuration can be set by a user before any Helidon code is invoked, to override default discovery
@@ -89,14 +90,23 @@ public final class GlobalConfig {
      * @param config configuration to use
      * @param overwrite whether to overwrite an existing configured value
      * @return current global config
+     * @deprecated use {@link io.helidon.service.registry.Services#get(Class)} instead
      */
+    @Deprecated(forRemoval = true, since = "4.2.0")
     public static Config config(Supplier<Config> config, boolean overwrite) {
         Objects.requireNonNull(config);
 
         if (overwrite || !configured()) {
             // there is a certain risk we may do this twice, if two components try to set global config in parallel.
             // as the result was already unclear (as order matters), we do not need to be 100% thread safe here
-            CONFIG.set(config.get());
+            Config config1 = config.get();
+            CONFIG.set(config1);
+
+            try {
+                Services.set(Config.class, config1);
+            } catch (Exception e) {
+                // todo log in warning, as this will not work in the future
+            }
         }
         return CONFIG.get();
     }

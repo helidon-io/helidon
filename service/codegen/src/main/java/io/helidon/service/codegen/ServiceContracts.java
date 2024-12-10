@@ -16,6 +16,7 @@
 
 package io.helidon.service.codegen;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -214,15 +215,16 @@ public class ServiceContracts {
             typeInfoFactory.apply(withGenerics.genericTypeName())
                     .ifPresent(declaration -> {
                         TypeName tn = declaration.typeName();
+
+                        List<TypeName> wildcards = new ArrayList<>();
+                        List<TypeName> extendses = new ArrayList<>();
+                        boolean extendsValid = false;
+
                         for (int i = 0; i < withGenerics.typeArguments().size(); i++) {
                             TypeName declared = tn.typeArguments().get(i);
                             if (declared.generic()) {
                                 // Circle<?>
-                                contractSet.add(ResolvedType.create(
-                                        TypeName.builder()
-                                                .from(withGenerics)
-                                                .typeArguments(List.of(TypeNames.WILDCARD))
-                                                .build()));
+                                wildcards.add(TypeNames.WILDCARD);
 
                                 // Circle<Color>
                                 var asString = declared.toString();
@@ -230,15 +232,24 @@ public class ServiceContracts {
                                 if (index != -1) {
                                     TypeName extendedType = TypeName.create(asString.substring(index + 9));
                                     if (isEligible(extendedType)) {
-                                        contractSet.add(ResolvedType.create(
-                                                TypeName.builder()
-                                                        .from(withGenerics)
-                                                        .typeArguments(List.of(extendedType))
-                                                        .build()));
+                                        extendses.add(extendedType);
+                                        extendsValid = true;
                                     }
                                 }
-                            } else {
-                                contractSet.add(ResolvedType.create(declared));
+                            }
+                        }
+                        if (!wildcards.isEmpty()) {
+                            contractSet.add(ResolvedType.create(
+                                    TypeName.builder()
+                                            .from(withGenerics)
+                                            .typeArguments(wildcards)
+                                            .build()));
+                            if (extendsValid) {
+                                contractSet.add(ResolvedType.create(
+                                        TypeName.builder()
+                                                .from(withGenerics)
+                                                .typeArguments(extendses)
+                                                .build()));
                             }
                         }
                     });

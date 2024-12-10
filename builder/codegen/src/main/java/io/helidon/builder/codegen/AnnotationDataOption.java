@@ -45,6 +45,7 @@ import static io.helidon.builder.codegen.Types.OPTION_DEFAULT_LONG;
 import static io.helidon.builder.codegen.Types.OPTION_DEFAULT_METHOD;
 import static io.helidon.builder.codegen.Types.OPTION_PROVIDER;
 import static io.helidon.builder.codegen.Types.OPTION_REDUNDANT;
+import static io.helidon.builder.codegen.Types.OPTION_REGISTRY_SERVICE;
 import static io.helidon.builder.codegen.Types.OPTION_REQUIRED;
 import static io.helidon.builder.codegen.Types.OPTION_SAME_GENERIC;
 import static io.helidon.builder.codegen.Types.OPTION_SINGULAR;
@@ -60,6 +61,7 @@ record AnnotationDataOption(Javadoc javadoc,
                             AccessModifier accessModifier,
                             boolean required,
                             boolean validateNotNull,
+                            boolean registryService,
                             boolean provider,
                             TypeName providerType,
                             boolean providerDiscoverServices,
@@ -101,6 +103,7 @@ record AnnotationDataOption(Javadoc javadoc,
                     .orElse(false);
         }
         accessModifier = accessModifier(element);
+        boolean registryService = element.hasAnnotation(OPTION_REGISTRY_SERVICE);
         if (element.hasAnnotation(OPTION_PROVIDER)) {
             Annotation annotation = element.annotation(OPTION_PROVIDER);
             providerBased = true;
@@ -171,6 +174,7 @@ record AnnotationDataOption(Javadoc javadoc,
                                         accessModifier,
                                         required,
                                         validateNotNull,
+                                        registryService,
                                         providerBased,
                                         providerType,
                                         discoverServices,

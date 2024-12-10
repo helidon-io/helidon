@@ -78,14 +78,6 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.service</groupId>
-            <artifactId>helidon-service-registry</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.service</groupId>
-            <artifactId>helidon-service-codegen</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.service</groupId>
             <artifactId>helidon-service-codegen</artifactId>
         </dependency>
         <dependency>

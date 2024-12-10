@@ -34,11 +34,11 @@ import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.service.registry.Service;
 
-@Service.Provider
-@Service.ExternalContracts(Config.class)
+@Service.Singleton
 class ConfigProvider implements Config {
     private final Config config;
 
+    @Service.Inject
     ConfigProvider(Supplier<MetaConfig> metaConfig,
                    Supplier<List<ConfigSource>> configSources,
                    Supplier<List<ConfigParser>> configParsers,

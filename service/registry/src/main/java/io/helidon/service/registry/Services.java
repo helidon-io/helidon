@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.common.types.TypeName;
+
 /**
  * Static access to the service registry.
  * <p>
@@ -113,6 +115,22 @@ public final class Services {
     }
 
     /**
+     * Get the first instance of the contract, expecting the contract is available.
+     *
+     * @param contract contract to find
+     * @param <T>      type of the contract
+     * @return an instance of the contract, never {@code null}
+     * @throws io.helidon.service.registry.ServiceRegistryException in case the contract is not available in the registry
+     * @throws java.lang.NullPointerException                       if either of the parameters is null
+     * @see #first(Class)
+     */
+    public static <T> T get(TypeName contract) {
+        Objects.requireNonNull(contract);
+        return GlobalServiceRegistry.registry().get(contract);
+    }
+
+
+    /**
      * Get all instances of the contract.
      *
      * @param contract contract to find
@@ -126,6 +144,19 @@ public final class Services {
     }
 
     /**
+     * Get all instances of the contract.
+     *
+     * @param contract contract to find
+     * @param <T>      type of the contract
+     * @return all instances in the registry, may be empty
+     * @throws java.lang.NullPointerException if either of the parameters is null
+     */
+    public static <T> List<T> all(TypeName contract) {
+        Objects.requireNonNull(contract);
+        return GlobalServiceRegistry.registry().all(contract);
+    }
+
+    /**
      * Get first instance of the contract from the registry, all an empty optional if none exist.
      *
      * @param contract contract to find
@@ -134,6 +165,19 @@ public final class Services {
      * @throws java.lang.NullPointerException if either of the parameters is null
      */
     public static <T> Optional<T> first(Class<T> contract) {
+        Objects.requireNonNull(contract);
+        return GlobalServiceRegistry.registry().first(contract);
+    }
+
+    /**
+     * Get first instance of the contract from the registry, all an empty optional if none exist.
+     *
+     * @param contract contract to find
+     * @param <T>      type of the contract
+     * @return first instance, or an empty optional
+     * @throws java.lang.NullPointerException if either of the parameters is null
+     */
+    public static <T> Optional<T> first(TypeName contract) {
         Objects.requireNonNull(contract);
         return GlobalServiceRegistry.registry().first(contract);
     }

@@ -54,6 +54,24 @@ public final class TypeArgument extends Type implements TypeName {
     }
 
     /**
+     * Creates a new instance from a generic type name.
+     *
+     * @param typeName type name to use
+     * @return a new type argument
+     */
+    public static TypeArgument create(TypeName typeName) {
+        var builder = TypeArgument.builder()
+                .token(typeName.className());
+
+        typeName.upperBounds()
+                .forEach(it -> builder.bound(it).lowerBound(false));
+        typeName.lowerBounds()
+                .forEach(it -> builder.bound(it).lowerBound(true));
+
+        return builder.build();
+    }
+
+    /**
      * Return new {@link Builder} instance.
      *
      * @return new builder instance

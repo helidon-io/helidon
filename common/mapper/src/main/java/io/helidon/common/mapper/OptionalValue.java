@@ -42,7 +42,7 @@ public interface OptionalValue<T> extends Value<T> {
      * @param qualifiers    qualifiers of the mapper
      * @return an empty value
      */
-    static <T> OptionalValue<T> create(MapperManager mapperManager, String name, Class<T> type, String... qualifiers) {
+    static <T> OptionalValue<T> create(Mappers mapperManager, String name, Class<T> type, String... qualifiers) {
         Objects.requireNonNull(name, "Name of the Value must not be null");
         return create(mapperManager, name, GenericType.create(type), qualifiers);
     }
@@ -58,7 +58,7 @@ public interface OptionalValue<T> extends Value<T> {
      * @param <T>           type of the value
      * @return an empty value
      */
-    static <T> OptionalValue<T> create(MapperManager mapperManager, String name, GenericType<T> type, String... qualifiers) {
+    static <T> OptionalValue<T> create(Mappers mapperManager, String name, GenericType<T> type, String... qualifiers) {
         Objects.requireNonNull(name, "Name of the Value must not be null");
         return new ValueEmpty<>(mapperManager, type, name, qualifiers);
     }
@@ -73,7 +73,7 @@ public interface OptionalValue<T> extends Value<T> {
      * @param <T>           type of the value
      * @return a value backed by data
      */
-    static <T> OptionalValue<T> create(MapperManager mapperManager, String name, T value, String... qualifiers) {
+    static <T> OptionalValue<T> create(Mappers mapperManager, String name, T value, String... qualifiers) {
         Objects.requireNonNull(name, "Name of the Value must not be null");
         Objects.requireNonNull(value, "Value content for Value " + name + " must not be null, use empty(String) instead");
         return new ValueBacked<>(mapperManager, name, value, qualifiers);
@@ -90,7 +90,7 @@ public interface OptionalValue<T> extends Value<T> {
      * @param <T>           type of the value
      * @return a value backed by data
      */
-    static <T> OptionalValue<T> create(MapperManager mapperManager,
+    static <T> OptionalValue<T> create(Mappers mapperManager,
                                        String name,
                                        T value,
                                        GenericType<T> type,

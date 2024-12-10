@@ -20,7 +20,7 @@ import io.helidon.common.mapper.spi.MapperProvider;
 /**
  * Maps String to Integer and String to Long using class.
  */
-public class ServiceLoaderMapper1 implements MapperProvider {
+public class ServiceLoaderMapper implements MapperProvider {
     @Override
     public ProviderResponse mapper(Class<?> sourceClass, Class<?> targetClass, String qualifier) {
         if ((sourceClass.equals(String.class)) && (targetClass.equals(Integer.class))) {

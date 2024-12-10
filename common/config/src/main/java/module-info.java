@@ -21,6 +21,7 @@ module io.helidon.common.config {
 
     requires transitive io.helidon.common;
     requires transitive io.helidon.common.mapper;
+    requires io.helidon.service.registry;
 
     exports io.helidon.common.config;
     exports io.helidon.common.config.spi;

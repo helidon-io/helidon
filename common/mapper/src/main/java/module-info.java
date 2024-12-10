@@ -19,6 +19,11 @@
  */
 module io.helidon.common.mapper {
     requires transitive io.helidon.common;
+    requires transitive io.helidon.builder.api;
+
+    requires io.helidon.common.types;
+
+    requires io.helidon.service.registry;
 
     exports io.helidon.common.mapper;
     exports io.helidon.common.mapper.spi;

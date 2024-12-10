@@ -188,4 +188,13 @@ interface TypedElementInfoBlueprint extends Annotated {
      */
     @Option.Access("")
     ElementSignature signature();
+
+    /**
+     * Type parameters of this element. Such as when a method is declared as {@code <T> T generate(Class<T> type)},
+     * this would return the generic type {@code T} with no upper or lower bounds.
+     *
+     * @return list of type parameters of this element
+     */
+    @Option.Singular
+    List<TypeName> typeParameters();
 }

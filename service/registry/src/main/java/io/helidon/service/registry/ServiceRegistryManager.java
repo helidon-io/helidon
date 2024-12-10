@@ -104,6 +104,7 @@ public final class ServiceRegistryManager {
      *
      * @return service registry ready to be used
      */
+    @SuppressWarnings("checkstyle:methodLength") // already condensed; further extraction would decrease readability
     public ServiceRegistry registry() {
         Lock readLock = lifecycleLock.readLock();
         try {

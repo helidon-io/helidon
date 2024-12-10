@@ -24,12 +24,12 @@ import java.util.function.Function;
 import io.helidon.common.GenericType;
 
 class ValueEmpty<T> implements OptionalValue<T> {
-    private final MapperManager mapperManager;
+    private final Mappers mapperManager;
     private final GenericType<T> type;
     private final String name;
     private final String[] qualifiers;
 
-    ValueEmpty(MapperManager mapperManager, GenericType<T> type, String name, String[] qualifiers) {
+    ValueEmpty(Mappers mapperManager, GenericType<T> type, String name, String[] qualifiers) {
         this.mapperManager = mapperManager;
         this.type = type;
         this.name = name;

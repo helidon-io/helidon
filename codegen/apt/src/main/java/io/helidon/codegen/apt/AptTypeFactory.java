@@ -243,6 +243,11 @@ public final class AptTypeFactory {
             return createTypeName(processed, ee.getReturnType());
         }
 
+        if (type.getKind() == ElementKind.TYPE_PARAMETER) {
+            TypeMirror mirror = type.asType();
+            return createTypeName(processed, mirror);
+        }
+
         List<String> classNames = new ArrayList<>();
         String simpleName = type.getSimpleName().toString();
 

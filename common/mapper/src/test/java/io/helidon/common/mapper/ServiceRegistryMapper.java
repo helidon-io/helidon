@@ -16,12 +16,17 @@
 package io.helidon.common.mapper;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.common.mapper.spi.MapperProvider;
+import io.helidon.service.registry.Service;
 
 /**
  * Maps String to Integer, and String to Short using type.
  */
-public class ServiceLoaderMapper2 implements MapperProvider {
+@Weight(Weighted.DEFAULT_WEIGHT + 1)
+@Service.Singleton
+class ServiceRegistryMapper implements MapperProvider {
     static final GenericType<String> STRING_TYPE = GenericType.create(String.class);
     static final GenericType<Integer> INTEGER_TYPE = GenericType.create(Integer.class);
     static final GenericType<Short> SHORT_TYPE = GenericType.create(Short.class);

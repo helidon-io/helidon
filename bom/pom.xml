@@ -1496,11 +1496,6 @@
                 <artifactId>helidon-service-maven-plugin</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
-            <dependency>
-                <groupId>io.helidon.service</groupId>
-                <artifactId>helidon-service-builder</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
 
             <!-- Metadata -->
             <dependency>

@@ -21,7 +21,7 @@ import java.util.List;
 import io.helidon.builder.test.testsubjects.SomeProvider;
 import io.helidon.builder.test.testsubjects.WithProviderRegistry;
 import io.helidon.common.Errors;
-import io.helidon.common.mapper.MapperManager;
+import io.helidon.common.mapper.Mappers;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
@@ -51,7 +51,7 @@ class ProviderRegistryTest {
          */
         WithProviderRegistry value = WithProviderRegistry.builder()
                 .config(config.get("min-defined"))
-                .mapperManagerExplicit(MapperManager.global())
+                .mappersExplicit(Mappers.create())
                 .build();
 
         assertThat(value.oneDiscover().prop(), is("some-1"));
@@ -79,7 +79,7 @@ class ProviderRegistryTest {
          */
         WithProviderRegistry value = WithProviderRegistry.builder()
                 .config(config.get("all-defined"))
-                .mapperManagerExplicit(MapperManager.global())
+                .mappersExplicit(Mappers.create())
                 .build();
 
         assertThat(value.oneDiscover().prop(), is("config"));
@@ -107,7 +107,7 @@ class ProviderRegistryTest {
         Errors.ErrorMessagesException fail = assertThrows(Errors.ErrorMessagesException.class,
                                                           () -> WithProviderRegistry.builder()
                                                                   .config(config.get("fail"))
-                                                                  .mapperManagerExplicit(MapperManager.global())
+                                                                  .mappersExplicit(Mappers.create())
                                                                   .build());
 
         assertThat(fail.getMessages(), hasSize(1));
@@ -122,7 +122,7 @@ class ProviderRegistryTest {
          */
         WithProviderRegistry value = WithProviderRegistry.builder()
                 .config(config.get("single-list"))
-                .mapperManagerExplicit(MapperManager.global())
+                .mappersExplicit(Mappers.create())
                 .build();
 
         assertThat(value.oneNotDiscover().prop(), is("config2"));
@@ -143,7 +143,7 @@ class ProviderRegistryTest {
         WithProviderRegistry value = WithProviderRegistry.builder()
                 .listDiscoverDiscoverServices(false)
                 .oneNotDiscover(someService) //This needs to be set, otherwise validation fails
-                .mapperManagerExplicit(MapperManager.global())
+                .mappersExplicit(Mappers.create())
                 .build();
         assertThat(value.listDiscover(), is(List.of()));
 
@@ -158,12 +158,13 @@ class ProviderRegistryTest {
         SomeProvider.SomeService someService = new DummyService();
         WithProviderRegistry.Builder value = WithProviderRegistry.builder()
                 .listDiscoverDiscoverServices(false)
-                .mapperManagerExplicit(MapperManager.global())
+                .mappersExplicit(Mappers.create())
                 .oneNotDiscover(someService);
 
         WithProviderRegistry copy = WithProviderRegistry.builder()
                 .from(value)
                 .build();
+
         assertThat(copy.listDiscover(), is(List.of()));
     }
 

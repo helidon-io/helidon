@@ -88,7 +88,8 @@ interface ServiceRegistryConfigBlueprint {
     boolean lookupCacheEnabled();
 
     /**
-     * Size of the lookup cache when {@link #lookupCacheEnabled()} is set to {@code true}.
+     * Size of the lookup cache when {@link io.helidon.service.registry.ServiceRegistryConfig#lookupCacheEnabled()}
+     * is set to {@code true}.
      *
      * @return cache size
      */

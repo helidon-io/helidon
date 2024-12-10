@@ -39,6 +39,7 @@ import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.MergingStrategy;
 import io.helidon.config.spi.OverrideSource;
 import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceRegistry;
 
 /**
  * <h2>Configuration</h2>
@@ -383,6 +384,12 @@ public interface Config extends io.helidon.common.config.Config {
         return new BuilderImpl();
     }
 
+    static Builder builder(ServiceRegistry serviceRegistry) {
+        return new BuilderImpl()
+                .serviceRegistry(serviceRegistry);
+
+    }
+
     /**
      * Creates a new {@link Config} loaded from the specified {@link ConfigSource}s.
      * No other sources will be included.
@@ -406,7 +413,10 @@ public interface Config extends io.helidon.common.config.Config {
      * global config registered in not an instance of this type.
      *
      * @return global config instance, creates one if not yet registered
+     * @deprecated either use {@link io.helidon.service.registry.Services#get(Class)} instead for static access,
+     *  inject an instance into your service when creating a service, or use your service registry instance
      */
+    @Deprecated(forRemoval = true, since = "4.2.0")
     static Config global() {
         if (GlobalConfig.configured()) {
             io.helidon.common.config.Config global = GlobalConfig.config();
@@ -425,7 +435,10 @@ public interface Config extends io.helidon.common.config.Config {
      * This method registers also {@link io.helidon.common.config.GlobalConfig} instance.
      *
      * @param config to configure as global
+     * @deprecated use {@link io.helidon.service.registry.Services#set(Class, Object[])} to register a static instance for the
+     *      global service registry; when using a custom service registry instance, set is on the registry configuration builder
      */
+    @Deprecated(forRemoval = true, since = "4.2.0")
     static void global(Config config) {
         GlobalConfig.config(() -> config, true);
         BuilderImpl.GlobalConfigHolder.set(config);
@@ -1788,5 +1801,13 @@ public interface Config extends io.helidon.common.config.Config {
          * @return updated builder from meta configuration
          */
         Builder config(Config metaConfig);
+
+        /**
+         * Configure an explicit service registry to use to discover services (config sources, parsers etc.).
+         *
+         * @param serviceRegistry registry to use
+         * @return updated builder instance
+         */
+        Builder serviceRegistry(ServiceRegistry serviceRegistry);
     }
 }

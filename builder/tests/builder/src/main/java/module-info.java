@@ -25,7 +25,6 @@ module io.helidon.builder.test.builder {
     requires io.helidon.common.config;
     requires io.helidon.builder.api;
     requires io.helidon.service.registry;
-    requires io.helidon.service.builder;
 
     exports io.helidon.builder.test.testsubjects;
 

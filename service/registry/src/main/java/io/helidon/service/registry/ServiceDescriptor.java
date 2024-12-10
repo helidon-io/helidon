@@ -30,7 +30,8 @@ public interface ServiceDescriptor<T> extends ServiceInfo {
     /**
      * Create a new service instance.
      *
-     * @param ctx dependency context with all dependencies of this service
+     * @param ctx                  dependency context with all dependencies of this service
+     * @param interceptionMetadata metadata handler for interception
      * @return a new instance, must be of the type T or a subclass
      */
     // we cannot return T, as it does not allow us to correctly handle inheritance

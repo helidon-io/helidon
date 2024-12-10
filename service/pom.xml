@@ -46,7 +46,6 @@
         <module>codegen</module>
         <module>registry</module>
         <module>maven-plugin</module>
-        <module>builder</module>
     </modules>
 
     <build>

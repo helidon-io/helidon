@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2024 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.service.codegen;
 
 import java.util.ArrayList;
@@ -73,6 +89,9 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.SET_OF_RESOLVED_TYP
 import static io.helidon.service.codegen.ServiceCodegenTypes.SET_OF_STRINGS;
 import static java.util.function.Predicate.not;
 
+/**
+ * Code generator of service descriptor for Helidon Services.
+ */
 public class ServiceDescriptorCodegen {
     private static final TypeName GENERATOR = TypeName.create(ServiceExtension.class);
     private static final TypeName DESCRIPTOR_TYPE = TypeName.builder(ServiceCodegenTypes.SERVICE_DESCRIPTOR)
@@ -124,6 +143,7 @@ public class ServiceDescriptorCodegen {
      * @param services  all types that are going to be described
      * @param typeInfo  type info of the service type
      */
+    @SuppressWarnings("checkstyle:MethodLength") // this already extracting the necessary steps
     public void service(TypeName generator, RegistryRoundContext roundCtx, Collection<TypeInfo> services, TypeInfo typeInfo) {
         packageName(roundCtx);
 
@@ -2094,33 +2114,6 @@ public class ServiceDescriptorCodegen {
                     .name(constantName)
                     .addContentCreate(typedElementInfo));
         }
-        /*
-        TypedElements.gatherElements(typeInfo)
-                .stream()
-                .filter(element -> ElementInfoPredicates.isMethod(element.element()))
-                .filter(element -> !ElementInfoPredicates.isPrivate(element.element()))
-                .forEach(element -> {
-                    var method = element.element();
-                    String uniqueName = ctx.uniqueName(typeInfo, method);
-                    String constantName = "METHOD_" + toConstantName(uniqueName);
-
-                    // add inherited annotations from interfaces
-                    List<Annotation> elementAnnotations = new ArrayList<>(method.annotations());
-                    addInterfaceAnnotations(elementAnnotations, element.abstractMethods());
-                    TypedElementInfo typedElementInfo = TypedElementInfo.builder()
-                            .from(method)
-                            .annotations(elementAnnotations)
-                            .build();
-                    classModel.addField(constant -> constant
-                            .description("Element info for method: {@code " + method.signature() + "}.")
-                            .accessModifier(AccessModifier.PUBLIC)
-                            .isStatic(true)
-                            .isFinal(true)
-                            .type(TypeNames.TYPED_ELEMENT_INFO)
-                            .name(constantName)
-                            .addContentCreate(typedElementInfo));
-                });
-         */
     }
 
     private void generateInterceptedType(RegistryRoundContext roundContext,

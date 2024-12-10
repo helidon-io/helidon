@@ -1133,10 +1133,6 @@
             <artifactId>helidon-service-maven-plugin</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.service</groupId>
-            <artifactId>helidon-service-builder</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.metadata</groupId>
             <artifactId>helidon-metadata-hson</artifactId>
         </dependency>

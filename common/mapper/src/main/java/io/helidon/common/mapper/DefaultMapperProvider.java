@@ -19,8 +19,12 @@ package io.helidon.common.mapper;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import io.helidon.common.Weight;
 import io.helidon.common.mapper.spi.MapperProvider;
+import io.helidon.service.registry.Service;
 
+@Service.Singleton
+@Weight(0.1)
 class DefaultMapperProvider implements MapperProvider {
     private static final Map<CacheKey, ProviderResponse> CACHE = new ConcurrentHashMap<>();
 
@@ -38,7 +42,6 @@ class DefaultMapperProvider implements MapperProvider {
     }
 
     private static ProviderResponse fromString(Class<?> target) {
-        // todo add all supported types
         if (target.equals(int.class) || target.equals(Integer.class)) {
             return new ProviderResponse(Support.COMPATIBLE, o -> Integer.parseInt((String) o));
         }
@@ -49,7 +52,6 @@ class DefaultMapperProvider implements MapperProvider {
     }
 
     private static ProviderResponse toString(Class<?> source) {
-        // todo add all supported types (explicitly)
         return new ProviderResponse(Support.COMPATIBLE, String::valueOf);
     }
 

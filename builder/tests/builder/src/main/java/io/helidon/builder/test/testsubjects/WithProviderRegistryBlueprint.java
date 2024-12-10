@@ -22,7 +22,7 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.mapper.MapperManager;
+import io.helidon.common.mapper.Mappers;
 
 @Prototype.Blueprint
 @Prototype.Configured
@@ -72,14 +72,14 @@ interface WithProviderRegistryBlueprint {
     List<ProviderNoImpls.SomeService> listNoImplNotDiscover();
 
     @Option.RegistryService
-    Optional<MapperManager> mapperManager();
+    Optional<Mappers> mappers();
 
     @Option.RegistryService
-    MapperManager mapperManagerExplicit();
+    Mappers mappersExplicit();
 
     @Option.RegistryService
-    List<MapperManager> mapperManagers();
+    List<Mappers> mappersList();
 
     @Option.RegistryService
-    Set<MapperManager> mapperManagerSet();
+    Set<Mappers> mappersSet();
 }

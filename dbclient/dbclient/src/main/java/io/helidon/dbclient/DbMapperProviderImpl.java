@@ -102,6 +102,9 @@ public class DbMapperProviderImpl implements MapperProvider  {
         return Collections.unmodifiableMap(mappers);
     }
 
+    public DbMapperProviderImpl() {
+    }
+
     @Override
     public ProviderResponse mapper(Class<?> sourceClass, Class<?> targetClass, String qualifier) {
         Map<Class<?>, Mapper<?, ?>> targetMap = MAPPERS.get(sourceClass);

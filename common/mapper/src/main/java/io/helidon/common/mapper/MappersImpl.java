@@ -16,6 +16,7 @@
 
 package io.helidon.common.mapper;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -24,17 +25,40 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.Weights;
 import io.helidon.common.mapper.spi.MapperProvider;
+import io.helidon.service.registry.Service;
 
 /**
- * Implementation of {@link io.helidon.common.mapper.MapperManager}.
+ * Implementation of {@link io.helidon.common.mapper.Mappers}.
  */
-final class MapperManagerImpl implements MapperManager {
-    private final List<MapperProvider> providers;
+@SuppressWarnings("removal")
+@Service.Singleton
+final class MappersImpl implements MapperManager, Mappers {
     private final Map<ClassCacheKey, Mapper<?, ?>> classCache = new ConcurrentHashMap<>();
     private final Map<GenericCacheKey, Mapper<?, ?>> typeCache = new ConcurrentHashMap<>();
 
-    MapperManagerImpl(Builder builder) {
+    private final List<MapperProvider> providers;
+    private final MappersConfig prototype;
+
+    @Service.Inject
+    MappersImpl() {
+        this(MappersConfig.create());
+    }
+
+    MappersImpl(MappersConfig prototype) {
+        this.prototype = prototype;
+        List<MapperProvider> providers = new ArrayList<>(prototype.mapperProviders());
+        Weights.sort(providers);
+        this.providers = providers;
+    }
+
+    @SuppressWarnings("removal")
+    MappersImpl(MapperManager.Builder builder) {
+        this.prototype = MappersConfig.builder()
+                .useBuiltInMappers(false)
+                .mapperProviders(builder.mapperProviders())
+                .buildPrototype();
         this.providers = builder.mapperProviders();
     }
 
@@ -74,6 +98,11 @@ final class MapperManagerImpl implements MapperManager {
             return Optional.empty();
         }
         return Optional.of(mapper);
+    }
+
+    @Override
+    public MappersConfig prototype() {
+        return prototype;
     }
 
     int classCacheSize() {
