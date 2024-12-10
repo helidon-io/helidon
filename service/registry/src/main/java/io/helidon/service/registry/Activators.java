@@ -799,7 +799,7 @@ final class Activators {
             // I need the list of descriptors from the injection plan
             for (Map.Entry<Dependency, IpPlan<?>> entry : ipSupplierMap.entrySet()) {
                 Dependency dependency = entry.getKey();
-                if (createFor.equals(dependency.contract())
+                if (createFor.equals(ResolvedType.create(dependency.contract()))
                         && dependency.qualifiers().size() == 1
                         && dependency.qualifiers().contains(Qualifier.WILDCARD_NAMED)) {
                     return List.of(entry.getValue().descriptors());

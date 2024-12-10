@@ -30,7 +30,6 @@ import java.util.stream.Stream;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.config.ConfigException;
-import io.helidon.common.config.GlobalConfig;
 import io.helidon.config.spi.ConfigFilter;
 import io.helidon.config.spi.ConfigMapper;
 import io.helidon.config.spi.ConfigMapperProvider;
@@ -384,12 +383,6 @@ public interface Config extends io.helidon.common.config.Config {
         return new BuilderImpl();
     }
 
-    static Builder builder(ServiceRegistry serviceRegistry) {
-        return new BuilderImpl()
-                .serviceRegistry(serviceRegistry);
-
-    }
-
     /**
      * Creates a new {@link Config} loaded from the specified {@link ConfigSource}s.
      * No other sources will be included.
@@ -416,17 +409,18 @@ public interface Config extends io.helidon.common.config.Config {
      * @deprecated either use {@link io.helidon.service.registry.Services#get(Class)} instead for static access,
      *  inject an instance into your service when creating a service, or use your service registry instance
      */
+    @SuppressWarnings("removal")
     @Deprecated(forRemoval = true, since = "4.2.0")
     static Config global() {
-        if (GlobalConfig.configured()) {
-            io.helidon.common.config.Config global = GlobalConfig.config();
+        if (io.helidon.common.config.GlobalConfig.configured()) {
+            io.helidon.common.config.Config global = io.helidon.common.config.GlobalConfig.config();
             if (global instanceof Config cfg) {
                 return cfg;
             }
             return BuilderImpl.GlobalConfigHolder.get();
         }
         Config config = Config.create();
-        GlobalConfig.config(() -> config, true);
+        io.helidon.common.config.GlobalConfig.config(() -> config, true);
         return config;
     }
 
@@ -438,9 +432,10 @@ public interface Config extends io.helidon.common.config.Config {
      * @deprecated use {@link io.helidon.service.registry.Services#set(Class, Object[])} to register a static instance for the
      *      global service registry; when using a custom service registry instance, set is on the registry configuration builder
      */
+    @SuppressWarnings("removal")
     @Deprecated(forRemoval = true, since = "4.2.0")
     static void global(Config config) {
-        GlobalConfig.config(() -> config, true);
+        io.helidon.common.config.GlobalConfig.config(() -> config, true);
         BuilderImpl.GlobalConfigHolder.set(config);
     }
 

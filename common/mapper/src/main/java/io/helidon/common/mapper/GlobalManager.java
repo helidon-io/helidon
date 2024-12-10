@@ -16,25 +16,42 @@
 
 package io.helidon.common.mapper;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.helidon.common.LazyValue;
+import io.helidon.service.registry.Services;
 
+// this class should be removed when deprecation is resolved
+@SuppressWarnings("removal")
 final class GlobalManager {
-    private static final LazyValue<MapperManager> DEFAULT_MAPPER = LazyValue.create(() -> MapperManager.builder()
-            .useBuiltIn(true)
-            .build());
+    private static final System.Logger LOGGER = System.getLogger(GlobalManager.class.getName());
+    private static final AtomicBoolean LOGGED_REGISTERED = new AtomicBoolean(false);
+
     private static final AtomicReference<MapperManager> MANAGER = new AtomicReference<>();
 
     private GlobalManager() {
     }
 
-    public static void mapperManager(MapperManager manager) {
+    static void mapperManager(MapperManager manager) {
         MANAGER.set(manager);
+
+        try {
+            Services.set(Mappers.class, manager);
+        } catch (Exception e) {
+            if (LOGGED_REGISTERED.compareAndSet(false, true)) {
+                // only log this once
+                LOGGER.log(System.Logger.Level.WARNING,
+                           "Attempting to set a Mappers (MapperManager) instance when it either was already "
+                                   + "set once, or it was already used by a component."
+                                   + " This will not work in future versions of"
+                                   + " Helidon",
+                           e);
+            }
+        }
     }
 
     static MapperManager mapperManager() {
         MapperManager mapperManager = MANAGER.get();
-        return mapperManager == null ? DEFAULT_MAPPER.get() : mapperManager;
+        return mapperManager == null ? Services.get(MapperManager.class) : mapperManager;
     }
 }

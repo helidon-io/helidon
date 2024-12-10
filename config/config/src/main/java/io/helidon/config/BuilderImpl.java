@@ -100,7 +100,6 @@ class BuilderImpl implements Config.Builder {
     private boolean systemPropertiesSourceEnabled;
     private boolean environmentVariablesSourceEnabled;
     private boolean envVarAliasGeneratorEnabled;
-    private ServiceRegistry serviceRegistry;
 
     BuilderImpl() {
         overrideSource = OverrideSources.empty();
@@ -357,7 +356,7 @@ class BuilderImpl implements Config.Builder {
 
     @Override
     public Config.Builder serviceRegistry(ServiceRegistry serviceRegistry) {
-        this.serviceRegistry = serviceRegistry;
+        // not yet implemented
         return this;
     }
 

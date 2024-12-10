@@ -20,6 +20,7 @@ final class MappersConfigSupport {
         /**
          * Add a mapper to the list of mapper.
          *
+         * @param builder    ignored
          * @param mapper     the mapper to map source instances to target instances
          * @param sourceType class of the source instance
          * @param targetType class of the target instance
@@ -39,6 +40,7 @@ final class MappersConfigSupport {
         /**
          * Add a mapper to the list of mapper.
          *
+         * @param builder    ignored
          * @param mapper     the mapper to map source instances to target instances
          * @param sourceType generic type of the source instance
          * @param targetType generic type of the target instance
@@ -59,6 +61,7 @@ final class MappersConfigSupport {
         /**
          * Add a mapper to the list of mapper with a custom priority.
          *
+         * @param builder    ignored
          * @param mapper     the mapper to map source instances to target instances
          * @param sourceType class of the source instance
          * @param targetType class of the target instance
@@ -84,6 +87,7 @@ final class MappersConfigSupport {
         /**
          * Add a mapper to the list of mapper with custom priority.
          *
+         * @param builder    ignored
          * @param mapper     the mapper to map source instances to target instances
          * @param sourceType generic type of the source instance
          * @param targetType generic type of the target instance

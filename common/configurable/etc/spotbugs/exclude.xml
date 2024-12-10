@@ -42,4 +42,9 @@
         <Method name="&lt;init&gt;"/>
         <Bug pattern = "VA_FORMAT_STRING_USES_NEWLINE"/>
     </Match>
+    <Match>
+        <!-- deprecated, need the common to decouple from config -->
+        <Class name="io.helidon.common.configurable.LruCache" />
+        <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE" />
+    </Match>
 </FindBugsFilter>

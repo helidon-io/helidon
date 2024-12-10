@@ -102,6 +102,9 @@ public class DbMapperProviderImpl implements MapperProvider  {
         return Collections.unmodifiableMap(mappers);
     }
 
+    /**
+     * Public constructor required by {@link java.util.ServiceLoader}.
+     */
     public DbMapperProviderImpl() {
     }
 

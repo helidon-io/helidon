@@ -202,6 +202,10 @@ final class GenerateAbstractBuilder {
                 }
             }
 
+            for (TypeName typeParameter : customMethod.generatedMethod().method().typeParameters()) {
+                method.addGenericArgument(TypeArgument.create(typeParameter));
+            }
+
             if (!generated.javadoc().isEmpty()) {
                 Javadoc javadoc = Javadoc.builder()
                         .from(Javadoc.parse(generated.javadoc()))
@@ -209,9 +213,7 @@ final class GenerateAbstractBuilder {
                         .build();
                 method.javadoc(javadoc);
             }
-            for (TypeName typeParameter : customMethod.generatedMethod().method().typeParameters()) {
-                method.addGenericArgument(TypeArgument.create(typeParameter));
-            }
+
             builder.addMethod(method);
         }
     }
@@ -322,8 +324,8 @@ final class GenerateAbstractBuilder {
         }
          */
         Javadoc javadoc = Javadoc.builder()
-                .addLine("Provide an explicit registry instance to use. ")
-                .addLine("<p/>")
+                .addLine("Provide an explicit registry instance to use.")
+                .addLine("<p>")
                 .addLine("If not configured, the {@link "
                                  + Types.GLOBAL_SERVICE_REGISTRY.fqName()
                                  + "} would be used to discover services.")
