@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.lessThan;
 
 /**
- * Ensure the weights comparator from common works the way we expect it to. Sanity test for Injection.
+ * Ensure the weights comparator from common works the way we expect it to. Sanity test for Service.
  */
 class PriorityAndServiceTypeComparatorTest {
 

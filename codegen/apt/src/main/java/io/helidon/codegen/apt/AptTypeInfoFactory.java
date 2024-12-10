@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.AnnotationValue;
@@ -183,6 +184,7 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
                 .map(Modifier::toString)
                 .collect(Collectors.toSet());
         Set<TypeName> thrownChecked = Set.of();
+        List<TypeName> typeParameters = new ArrayList<>();
 
         if (v instanceof ExecutableElement ee) {
             typeMirror = Objects.requireNonNull(ee.getReturnType());
@@ -209,6 +211,17 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
                     .filter(it -> isCheckedException(ctx, it))
                     .flatMap(it -> AptTypeFactory.createTypeName(it).stream())
                     .collect(Collectors.toSet());
+
+            var elementTypeParameters = ee.getTypeParameters();
+            if (!elementTypeParameters.isEmpty()) {
+                // we need to keep the formal order and number of type parameters; if we cannot create it, just use error
+                elementTypeParameters.stream()
+                        .map(AptTypeFactory::createTypeName)
+                        .flatMap(it -> it.isPresent()
+                                ? it.stream()
+                                : Stream.of(TypeName.createFromGenericDeclaration("error")))
+                        .forEach(typeParameters::add);
+            }
         } else if (v instanceof VariableElement ve) {
             typeMirror = Objects.requireNonNull(ve.asType());
         }
@@ -254,6 +267,7 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
                 .accessModifier(accessModifier(modifierNames))
                 .throwsChecked(thrownChecked)
                 .parameterArguments(params)
+                .typeParameters(typeParameters)
                 .originatingElement(v);
 
         // To be failure-tolerant, as the ECJ may not provide an enclosing element for a VariableElement.
@@ -697,7 +711,8 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
         moduleName.set(null);
 
         ModuleElement module = ctx.aptEnv().getElementUtils().getModuleOf(type);
-        if (!module.isUnnamed()) {
+
+        if (module != null && !module.isUnnamed()) {
             String name = module.getQualifiedName().toString();
             if (hasValue(name)) {
                 moduleName.set(name);

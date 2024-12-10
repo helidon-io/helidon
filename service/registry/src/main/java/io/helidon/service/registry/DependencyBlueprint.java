@@ -16,9 +16,15 @@
 
 package io.helidon.service.registry;
 
+import java.util.Optional;
+import java.util.Set;
+
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.GenericType;
+import io.helidon.common.types.AccessModifier;
+import io.helidon.common.types.Annotation;
+import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -86,4 +92,52 @@ interface DependencyBlueprint {
      */
     @Option.Redundant(stringValue = false)
     TypeName typeName();
+
+    /**
+     * Kind of element we inject into (constructor, field, method).
+     *
+     * @return element kind (for parameters, the containing element)
+     */
+    @Option.Default("CONSTRUCTOR")
+    ElementKind elementKind();
+
+    /**
+     * The qualifier type annotations on this element.
+     *
+     * @return the qualifier type annotations on this element
+     */
+    @Option.Singular
+    @Option.Redundant(stringValue = false)
+    // kind + service type + name is a unique identification already
+    Set<Qualifier> qualifiers();
+
+    /**
+     * The access modifier on the injection point/receiver.
+     * Defaults to {@link io.helidon.common.types.AccessModifier#PACKAGE_PRIVATE}.
+     *
+     * @return the access
+     */
+    @Option.Default("PACKAGE_PRIVATE")
+    @Option.Redundant
+    // kind + service type + name is a unique identification already
+    AccessModifier access();
+
+    /**
+     * The annotations on this element.
+     *
+     * @return the annotations on this element
+     */
+    @Option.Singular
+    @Option.Redundant
+    // kind + service type + name is a unique identification already
+    Set<Annotation> annotations();
+
+    /**
+     * Top level method that declares this method.
+     * This is to provide information about overridden methods, as we should only inject such methods once.
+     *
+     * @return unique identification of a declaring method
+     */
+    @Option.Redundant(stringValue = false)
+    Optional<String> method();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -98,6 +98,19 @@ public final class HelidonServiceLoader<T> implements Iterable<T> {
      */
     public static <T> Builder<T> builder(ServiceLoader<T> serviceLoader) {
         return new Builder<>(serviceLoader);
+    }
+
+    /**
+     * A shortcut method to create a service loader based on the provider interface directly.
+     *
+     * @param theProviderInterface provider interface
+     * @return service loader
+     * @param <T> type of the service
+     */
+    public static <T> HelidonServiceLoader<T> create(Class<T> theProviderInterface) {
+        HelidonServiceLoader.class.getModule()
+                .addUses(theProviderInterface);
+        return create(ServiceLoader.load(theProviderInterface));
     }
 
     /**

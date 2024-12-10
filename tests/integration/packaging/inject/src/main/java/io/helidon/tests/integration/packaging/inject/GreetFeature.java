@@ -16,8 +16,7 @@
 
 package io.helidon.tests.integration.packaging.inject;
 
-import io.helidon.service.inject.api.Configuration;
-import io.helidon.service.inject.api.Injection;
+import io.helidon.common.config.Config;
 import io.helidon.service.registry.Service;
 import io.helidon.webserver.http.HttpFeature;
 import io.helidon.webserver.http.HttpRouting;
@@ -28,7 +27,7 @@ import io.helidon.webserver.http.ServerResponse;
 /**
  * A simple service to greet you.
  */
-@Injection.Singleton
+@Service.Singleton
 @Service.ExternalContracts(HttpFeature.class)
 class GreetFeature implements HttpFeature {
 
@@ -37,8 +36,8 @@ class GreetFeature implements HttpFeature {
      */
     private final String greeting;
 
-    GreetFeature(@Configuration.Value("app.greeting:Ciao") String greetingValue) {
-        this.greeting = greetingValue;
+    GreetFeature(Config config) {
+        this.greeting = config.get("app.greeting").asString().orElse("Ciao");
     }
 
     @Override

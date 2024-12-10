@@ -31,13 +31,22 @@ public class VirtualDescriptor implements ServiceDescriptor<Object> {
     private final Set<ResolvedType> contracts;
     private final TypeName serviceType;
     private final TypeName descriptorType;
+    private final double weight;
+    private final Object instance;
 
     VirtualDescriptor(TypeName contract) {
+        // explicit instances configured through config have a very high weight, to be used first
+        this(contract, Weighted.DEFAULT_WEIGHT + 1000, TYPE);
+    }
+
+    VirtualDescriptor(TypeName contract, double weight, Object instance) {
         this.contracts = Set.of(ResolvedType.create(contract));
         this.serviceType = contract;
         this.descriptorType = TypeName.builder(TYPE)
                 .className(TYPE.className() + "_" + contract.className() + "__VirtualDescriptor")
                 .build();
+        this.weight = weight;
+        this.instance = instance;
     }
 
     @Override
@@ -57,7 +66,7 @@ public class VirtualDescriptor implements ServiceDescriptor<Object> {
 
     @Override
     public double weight() {
-        return Weighted.DEFAULT_WEIGHT + 1000;
+        return weight;
     }
 
     @Override
@@ -73,6 +82,18 @@ public class VirtualDescriptor implements ServiceDescriptor<Object> {
         if (!(o instanceof VirtualDescriptor that)) {
             return false;
         }
-        return Objects.equals(serviceType, that.serviceType);
+        // if this represents the same instance, it is equal, otherwise not
+        return Objects.equals(serviceType, that.serviceType)
+                && (instance == that.instance);
+    }
+
+    @Override
+    public TypeName scope() {
+        return Service.Singleton.TYPE;
+    }
+
+    @Override
+    public String toString() {
+        return "VirtualDescriptor for contract " + serviceType + " (" + weight + ")";
     }
 }

@@ -1133,16 +1133,8 @@
             <artifactId>helidon-service-codegen</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.service.inject</groupId>
-            <artifactId>helidon-service-inject-codegen</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.service.inject</groupId>
-            <artifactId>helidon-service-inject-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.service.inject</groupId>
-            <artifactId>helidon-service-inject</artifactId>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-maven-plugin</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.metadata</groupId>
