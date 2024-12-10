@@ -204,6 +204,40 @@ include::{sourcedir}/mp/TelemetrySnippets.java[tag=snippet_6, indent=0]
 
 include::{rootdir}/includes/tracing/common-callbacks.adoc[tags=defs;detailed,leveloffset=+1]
 
+=== Controlling Automatic Span Creation
+By default, Helidon MP Telemetry creates a new child span for each incoming REST request and for each outgoing REST client request. You can selectively control if Helidon creates these automatic spans on a request-by-request basis by adding a very small amount of code to your project.
+
+==== Controlling Automatic Spans for Incoming REST Requests
+To selectively suppress child span creation for incoming REST requests implement the link:{telemetry-javadoc-base-url}/io/helidon/microprofile/telemetry/spi/HelidonTelemetryContainerFilterHelper.html[HelidonTelemetryContainerFilterHelper interface].
+
+When Helidon receives an incoming REST request it invokes the `shouldStartSpan` method on each such implementation, passing the link:{jakarta-jaxrs-javadoc-url}/jakarta.ws.rs/jakarta/ws/rs/container/containerrequestcontext[Jakarta REST container request context] for the request. If at least one implementation returns `false` then Helidon suppresses the automatic child span. If all implementations return `true` then Helidon creates the automatic child span.
+
+The following example shows how to allow automatic spans in the Helidon greet example app for requests for the default greeting but not for the personalized greeting or the `PUT` request to change the greeting message (because the update path ends with `greeting` not `greet`).
+
+Your implementation of `HelidonTelemetryContainerFilterHelper` must have a CDI bean-defining annotation. The example shows `@ApplicationScoped`.
+
+.Example container helper for the Helidon MP Greeting app
+[source,java]
+----
+include::{sourcedir}/mp/TelemetrySnippets.java[tag=snippet_11, indent=0]
+----
+
+
+==== Controlling Automatic Spans for Outgoing REST Client Requests
+To selectively suppress child span creation for outgoing REST client requests implement the link:{telemetry-javadoc-base-url}/io/helidon/microprofile/telemetry/spi/HelidonTelemetryClientFilterHelper.html[HelidonTelemetryClientFilterHelper interface].
+
+When your application sends an outgoing REST client request Helidon invokes the `shouldStartSpan` method on each such implementation, passing the link:{jakarta-jaxrs-javadoc-url}/jakarta.ws.rs/jakarta/ws/rs/client/clientrequestcontext[Jakarta REST client request context] for the request. If at least one implementation returns `false` then Helidon suppresses the automatic child span. If all implementations return `true` then Helidon creates the automatic child span.
+
+The following example shows how to allow automatic spans in an app that invokes the Helidon greet example app. The example permits automatic child spans for outgoing requests for the default greeting but not for the personalized greeting or the `PUT` request to change the greeting message (because the update path ends with `greeting` not `greet`).
+
+Your implementation of `HelidonTelemetryClientFilterHelper` must have a CDI bean-defining annotation. The example shows `@ApplicationScoped`.
+
+.Example Client Helper for the Helidon MP Greeting App
+[source,java]
+----
+include::{sourcedir}/mp/TelemetrySnippets.java[tag=snippet_12, indent=0]
+----
+
 == Configuration
 
 IMPORTANT: MicroProfile Telemetry is not activated by default. To activate this feature, you need to specify the configuration `otel.sdk.disabled=false` in one of the MicroProfile Config or other config sources.
