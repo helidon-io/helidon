@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.microprofile.grpc</groupId>
         <artifactId>helidon-microprofile-grpc-project</artifactId>
-        <version>4.1.5-SNAPSHOT</version>
+        <version>4.1.5</version>
     </parent>
 
     <artifactId>helidon-microprofile-grpc-tracing</artifactId>

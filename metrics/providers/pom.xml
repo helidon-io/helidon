@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.metrics</groupId>
         <artifactId>helidon-metrics-project</artifactId>
-        <version>4.1.5-SNAPSHOT</version>
+        <version>4.1.5</version>
     </parent>
     <packaging>pom</packaging>
     <groupId>io.helidon.metrics.providers</groupId>

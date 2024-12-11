@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.integrations.oci</groupId>
         <artifactId>helidon-integrations-oci-project</artifactId>
-        <version>4.1.5-SNAPSHOT</version>
+        <version>4.1.5</version>
     </parent>
     <packaging>pom</packaging>
 
