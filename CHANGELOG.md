@@ -25,6 +25,7 @@ A minimum of Java 21 is required to use Helidon 4.
 - MP: Adds support for async on @ExecuteOn methods [9566](https://github.com/helidon-io/helidon/pull/9566)
 - Metrics: Initialize distribution customizations even before config is applied [9564](https://github.com/helidon-io/helidon/pull/9564)
 - Tracing: Add telemetry filter helper feature so developer code can influence automatic span creation [9581](https://github.com/helidon-io/helidon/pull/9581)
+- Tracing: Fix incorrect throw of exception in global tracer assignment [9588](https://github.com/helidon-io/helidon/pull/9588)
 - Tracing: Fully initialize OpenTelemetry items during start-up  [9553](https://github.com/helidon-io/helidon/pull/9553)
 - WebServer: Adds support for send(byte[],int,int) to server responses [9575](https://github.com/helidon-io/helidon/pull/9575)
 - WebServer: Enables support to turn on/off proxy protocol in config [9579](https://github.com/helidon-io/helidon/pull/9579)
