@@ -105,10 +105,10 @@ class AimdLimitImpl {
                 token.success();
                 return response;
             } catch (IgnoreTaskException e) {
-                token.dropped();
+                token.ignore();
                 return e.handle();
             } catch (Throwable e) {
-                token.ignore();
+                token.dropped();
                 throw e;
             }
         } else {
