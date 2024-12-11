@@ -11,6 +11,31 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [4.1.5]
+
+This release contains important bugfixes and is recommended for all users of Helidon 4.
+
+A minimum of Java 21 is required to use Helidon 4.
+
+### CHANGES
+
+- FT: Creates FT executor using our ThreadPoolSupplier to ensure context propagation [9567](https://github.com/helidon-io/helidon/pull/9567)
+- gRPC: Removes repeated warning when method name cannot be determined from annotation [9562](https://github.com/helidon-io/helidon/pull/9562)
+- gRPC: compatiblity fixes [9559](https://github.com/helidon-io/helidon/pull/9559)
+- MP: Adds support for async on @ExecuteOn methods [9566](https://github.com/helidon-io/helidon/pull/9566)
+- Metrics: Initialize distribution customizations even before config is applied [9564](https://github.com/helidon-io/helidon/pull/9564)
+- Tracing: Add telemetry filter helper feature so developer code can influence automatic span creation [9581](https://github.com/helidon-io/helidon/pull/9581)
+- Tracing: Fully initialize OpenTelemetry items during start-up  [9553](https://github.com/helidon-io/helidon/pull/9553)
+- WebServer: Adds support for send(byte[],int,int) to server responses [9575](https://github.com/helidon-io/helidon/pull/9575)
+- WebServer: Enables support to turn on/off proxy protocol in config [9579](https://github.com/helidon-io/helidon/pull/9579)
+- Dependencies: Upgrade ASM and Byte Buddy for Java 24 support (#9571) [9573](https://github.com/helidon-io/helidon/pull/9573)
+- Dependencies: Upgrade kafka-clients to 3.8.1 [9563](https://github.com/helidon-io/helidon/pull/9563)
+- Dependencies: Upgrades ojdbc to the latest version of 23 as of this writing [9574](https://github.com/helidon-io/helidon/pull/9574)
+- Dependencies: upgrade Netty to 4.1.115 [9557](https://github.com/helidon-io/helidon/pull/9557)
+- Docs: Fix to correctly create references for config documentation provider implementations [9561](https://github.com/helidon-io/helidon/pull/9561)
+- Docs: New paragraph describing how to explicitly turn off TLS on an MP gRPC client [9560](https://github.com/helidon-io/helidon/pull/9560)
+- Docs: mp telemetry doc typo [9584](https://github.com/helidon-io/helidon/pull/9584)
+
 ## [4.1.4]
 
 This release contains important bugfixes and is recommended for all users of Helidon 4.
@@ -1503,6 +1528,7 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/oracle/helidon/pull/4737)
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
+[4.1.5]: https://github.com/oracle/helidon/compare/4.1.4...4.1.5
 [4.1.4]: https://github.com/oracle/helidon/compare/4.1.3...4.1.4
 [4.1.3]: https://github.com/oracle/helidon/compare/4.1.2...4.1.3
 [4.1.2]: https://github.com/oracle/helidon/compare/4.1.1...4.1.2
