@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.integrations</groupId>
         <artifactId>helidon-integrations-project</artifactId>
-        <version>4.1.4-SNAPSHOT</version>
+        <version>4.1.5-SNAPSHOT</version>
     </parent>
 
     <groupId>io.helidon.integrations.vault</groupId>

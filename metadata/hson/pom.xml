@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.metadata</groupId>
         <artifactId>helidon-metadata-project</artifactId>
-        <version>4.1.4-SNAPSHOT</version>
+        <version>4.1.5-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-metadata-hson</artifactId>
