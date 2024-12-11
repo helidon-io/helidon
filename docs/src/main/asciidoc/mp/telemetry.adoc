@@ -319,7 +319,7 @@ Add these lines to `META-INF/microprofile-config.properties`:
 ----
 otel.sdk.disabled=false     <1>
 otel.traces.exporter=jaeger <2>
-otel.exporter.name=greeting-service <3>
+otel.service.name=greeting-service <3>
 ----
 <1> Enable MicroProfile Telemetry.
 <2> Set exporter to Jaeger.
