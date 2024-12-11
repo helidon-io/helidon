@@ -16,11 +16,9 @@
 
 package io.helidon.common.concurrency.limits;
 
-import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
@@ -51,23 +49,23 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
     static final String TYPE = "fixed";
 
     private final FixedLimitConfig config;
-    private final LimiterHandler handler;
+    private final LimitHandlers.LimiterHandler handler;
     private final int initialPermits;
 
     private FixedLimit(FixedLimitConfig config) {
         this.config = config;
         if (config.permits() == 0 && config.semaphore().isEmpty()) {
-            this.handler = new NoOpSemaphoreHandler();
+            this.handler = new LimitHandlers.NoOpSemaphoreHandler();
             this.initialPermits = 0;
         } else {
             Semaphore semaphore = config.semaphore().orElseGet(() -> new Semaphore(config.permits(), config.fair()));
             this.initialPermits = semaphore.availablePermits();
             if (config.queueLength() == 0) {
-                this.handler = new RealSemaphoreHandler(semaphore);
+                this.handler = new LimitHandlers.RealSemaphoreHandler(semaphore);
             } else {
-                this.handler = new QueuedSemaphoreHandler(semaphore,
-                                                          config.queueLength(),
-                                                          config.queueTimeout());
+                this.handler = new LimitHandlers.QueuedSemaphoreHandler(semaphore,
+                                                                        config.queueLength(),
+                                                                        config.queueTimeout());
             }
         }
     }
@@ -184,166 +182,5 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
                     .build();
         }
         return config.build();
-    }
-
-    @SuppressWarnings("removal")
-    private interface LimiterHandler extends SemaphoreLimit, LimitAlgorithm {
-    }
-
-    private static class NoOpSemaphoreHandler implements LimiterHandler {
-        private static final Token TOKEN = new Token() {
-            @Override
-            public void dropped() {
-            }
-
-            @Override
-            public void ignore() {
-            }
-
-            @Override
-            public void success() {
-            }
-        };
-
-        @Override
-        public <T> T invoke(Callable<T> callable) throws Exception {
-            try {
-                return callable.call();
-            } catch (IgnoreTaskException e) {
-                return e.handle();
-            }
-        }
-
-        @Override
-        public void invoke(Runnable runnable) {
-            runnable.run();
-        }
-
-        @Override
-        public Optional<Token> tryAcquire(boolean wait) {
-            return Optional.of(TOKEN);
-        }
-
-        @SuppressWarnings("removal")
-        @Override
-        public Semaphore semaphore() {
-            return NoopSemaphore.INSTANCE;
-        }
-    }
-
-    @SuppressWarnings("removal")
-    private static class RealSemaphoreHandler implements LimiterHandler {
-        private final Semaphore semaphore;
-
-        private RealSemaphoreHandler(Semaphore semaphore) {
-            this.semaphore = semaphore;
-        }
-
-        @Override
-        public <T> T invoke(Callable<T> callable) throws Exception {
-            if (semaphore.tryAcquire()) {
-                try {
-                    return callable.call();
-                } catch (IgnoreTaskException e) {
-                    return e.handle();
-                } finally {
-                    semaphore.release();
-                }
-            } else {
-                throw new LimitException("No more permits available for the semaphore");
-            }
-        }
-
-        @Override
-        public void invoke(Runnable runnable) throws Exception {
-            if (semaphore.tryAcquire()) {
-                try {
-                    runnable.run();
-                } catch (IgnoreTaskException e) {
-                    e.handle();
-                } finally {
-                    semaphore.release();
-                }
-            } else {
-                throw new LimitException("No more permits available for the semaphore");
-            }
-        }
-
-        @Override
-        public Optional<Token> tryAcquire(boolean wait) {
-            if (!semaphore.tryAcquire()) {
-                return Optional.empty();
-            }
-            return Optional.of(new SemaphoreToken(semaphore));
-        }
-
-        @Override
-        public Semaphore semaphore() {
-            return semaphore;
-        }
-    }
-
-    private static class QueuedSemaphoreHandler implements LimiterHandler {
-        private final Semaphore semaphore;
-        private final int queueLength;
-        private final long timeoutMillis;
-
-        private QueuedSemaphoreHandler(Semaphore semaphore, int queueLength, Duration queueTimeout) {
-            this.semaphore = semaphore;
-            this.queueLength = queueLength;
-            this.timeoutMillis = queueTimeout.toMillis();
-        }
-
-        @Override
-        public Optional<Token> tryAcquire(boolean wait) {
-            if (semaphore.getQueueLength() >= this.queueLength) {
-                // this is an estimate - we do not promise to be precise here
-                return Optional.empty();
-            }
-
-            try {
-                if (wait) {
-                    if (!semaphore.tryAcquire(timeoutMillis, TimeUnit.MILLISECONDS)) {
-                        return Optional.empty();
-                    }
-                } else {
-                    if (!semaphore.tryAcquire()) {
-                        return Optional.empty();
-                    }
-                }
-
-            } catch (InterruptedException e) {
-                return Optional.empty();
-            }
-            return Optional.of(new SemaphoreToken(semaphore));
-        }
-
-        @Override
-        public Semaphore semaphore() {
-            return semaphore;
-        }
-    }
-
-    private static class SemaphoreToken implements Token {
-        private final Semaphore semaphore;
-
-        private SemaphoreToken(Semaphore semaphore) {
-            this.semaphore = semaphore;
-        }
-
-        @Override
-        public void dropped() {
-            semaphore.release();
-        }
-
-        @Override
-        public void ignore() {
-            semaphore.release();
-        }
-
-        @Override
-        public void success() {
-            semaphore.release();
-        }
     }
 }

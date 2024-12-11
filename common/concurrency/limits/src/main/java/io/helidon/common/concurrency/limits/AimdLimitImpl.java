@@ -36,6 +36,7 @@ class AimdLimitImpl {
     private final Supplier<Long> clock;
     private final AtomicInteger concurrentRequests;
     private final AdjustableSemaphore semaphore;
+    private final LimitHandlers.LimiterHandler handler;
 
     private final AtomicInteger limit;
     private final Lock limitLock = new ReentrantLock();
@@ -49,9 +50,18 @@ class AimdLimitImpl {
         this.clock = config.clock().orElseGet(() -> System::nanoTime);
 
         this.concurrentRequests = new AtomicInteger();
-        this.semaphore = new AdjustableSemaphore(initialLimit);
-
         this.limit = new AtomicInteger(initialLimit);
+
+        this.semaphore = new AdjustableSemaphore(initialLimit, config.fair());
+        if (config.queueLength() == 0) {
+            this.handler = new LimitHandlers.RealSemaphoreHandler(semaphore,
+                                                                  () -> new AimdToken(clock, concurrentRequests));
+        } else {
+            this.handler = new LimitHandlers.QueuedSemaphoreHandler(semaphore,
+                                                                    config.queueLength(),
+                                                                    config.queueTimeout(),
+                                                                    () -> new AimdToken(clock, concurrentRequests));
+        }
 
         if (!(backoffRatio < 1.0 && backoffRatio >= 0.5)) {
             throw new ConfigException("Backoff ratio must be within [0.5, 1.0)");
@@ -76,11 +86,7 @@ class AimdLimitImpl {
     }
 
     Optional<Limit.Token> tryAcquire() {
-        if (!semaphore.tryAcquire()) {
-            return Optional.empty();
-        }
-
-        return Optional.of(new AimdToken(clock, concurrentRequests));
+        return handler.tryAcquire();
     }
 
     void invoke(Runnable runnable) throws Exception {
@@ -91,22 +97,19 @@ class AimdLimitImpl {
     }
 
     <T> T invoke(Callable<T> callable) throws Exception {
-        long startTime = clock.get();
-        int currentRequests = concurrentRequests.incrementAndGet();
-
-        if (semaphore.tryAcquire()) {
+        Optional<LimitAlgorithm.Token> optionalToken = handler.tryAcquire();
+        if (optionalToken.isPresent()) {
+            LimitAlgorithm.Token token = optionalToken.get();
             try {
                 T response = callable.call();
-                updateWithSample(startTime, clock.get(), currentRequests, true);
+                token.success();
                 return response;
             } catch (IgnoreTaskException e) {
+                token.dropped();
                 return e.handle();
             } catch (Throwable e) {
-                updateWithSample(startTime, clock.get(), currentRequests, false);
+                token.ignore();
                 throw e;
-            } finally {
-                concurrentRequests.decrementAndGet();
-                semaphore.release();
             }
         } else {
             throw new LimitException("No more permits available for the semaphore");
@@ -155,8 +158,8 @@ class AimdLimitImpl {
         @Serial
         private static final long serialVersionUID = 114L;
 
-        private AdjustableSemaphore(int permits) {
-            super(permits);
+        private AdjustableSemaphore(int permits, boolean fair) {
+            super(permits, fair);
         }
 
         @Override
