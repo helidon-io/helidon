@@ -21,16 +21,21 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.List;
 import java.util.function.BiFunction;
 
 import net.bytebuddy.ByteBuddy;
+import net.bytebuddy.description.method.MethodDescription;
 import net.bytebuddy.dynamic.DynamicType;
 import net.bytebuddy.dynamic.loading.ClassLoadingStrategy;
 import net.bytebuddy.dynamic.scaffold.subclass.ConstructorStrategy;
 import net.bytebuddy.implementation.InvocationHandlerAdapter;
+import net.bytebuddy.matcher.ElementMatcher;
 
+import static net.bytebuddy.matcher.ElementMatchers.isAnnotatedWith;
 import static net.bytebuddy.matcher.ElementMatchers.isEquals;
 import static net.bytebuddy.matcher.ElementMatchers.isHashCode;
+import static net.bytebuddy.matcher.ElementMatchers.isToString;
 import static net.bytebuddy.matcher.ElementMatchers.not;
 
 /**
@@ -72,10 +77,33 @@ public class ProxyHelper {
      * @return proxy
      */
     public static <T> T proxyDelegate(Class<T> type, BiFunction<Class<T>, Method, T> resolver) {
+        return proxyDelegate(type, List.of(), resolver);
+    }
+
+    /**
+     * Create a delegated proxy instance.
+     *
+     * @param type     type
+     * @param excludes method annotation types to skip interception
+     * @param resolver function to resolve the delegate
+     * @param <T>      type
+     * @return proxy
+     */
+    public static <T> T proxyDelegate(Class<T> type,
+                                      List<Class<? extends Annotation>> excludes,
+                                      BiFunction<Class<T>, Method, T> resolver) {
+
+        ElementMatcher.Junction<MethodDescription> matcher = not(isEquals())
+                .and(not(isHashCode()))
+                .and(not(isToString()));
+        for (Class<? extends Annotation> exclude : excludes) {
+            matcher = matcher.and(not(isAnnotatedWith(exclude)));
+        }
+
         try (DynamicType.Unloaded<T> unloaded = new ByteBuddy()
                 .subclass(type, ConstructorStrategy.Default.NO_CONSTRUCTORS)
                 .withHashCodeEquals()
-                .method(not(isEquals()).and(not(isHashCode())))
+                .method(matcher)
                 .intercept(InvocationHandlerAdapter.of((proxy, method, args) -> {
                     T instance = resolver.apply(type, method);
                     if (instance != null) {

@@ -18,12 +18,15 @@
  * TestNG extension module to run CDI tests.
  */
 module io.helidon.microprofile.testing.testng {
+    uses org.testng.xml.ISuiteParser;
 
     requires org.testng;
     requires transitive io.helidon.microprofile.testing;
+    requires static io.helidon.microprofile.server;
+    requires static jersey.cdi1x;
+    requires static jersey.weld2.se;
 
     exports io.helidon.microprofile.testing.testng;
 
-    provides org.testng.ITestNGListener with HelidonTestNgListener;
-    provides org.testng.ITestObjectFactory with HelidonTestNgObjectFactory;
+    provides org.testng.ITestNGListener with io.helidon.microprofile.testing.testng.HelidonTestNgListener;
 }

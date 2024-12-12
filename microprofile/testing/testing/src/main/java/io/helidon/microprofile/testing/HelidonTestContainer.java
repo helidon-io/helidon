@@ -53,9 +53,9 @@ public class HelidonTestContainer {
      * @param testScope        test scope
      * @param extensionFactory extension factory
      */
-    protected HelidonTestContainer(HelidonTestInfo<?> testInfo,
-                                   HelidonTestScope testScope,
-                                   BiFunction<HelidonTestInfo<?>, HelidonTestScope, HelidonTestExtension> extensionFactory) {
+    public HelidonTestContainer(HelidonTestInfo<?> testInfo,
+                                HelidonTestScope testScope,
+                                BiFunction<HelidonTestInfo<?>, HelidonTestScope, HelidonTestExtension> extensionFactory) {
 
         this.testInfo = testInfo;
         this.testScope = testScope;

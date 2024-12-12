@@ -15,9 +15,16 @@
  */
 package io.helidon.microprofile.testing.testng;
 
+import java.lang.reflect.Constructor;
+import java.util.List;
+
+import io.helidon.microprofile.testing.HelidonTestContainer;
 import io.helidon.microprofile.testing.ProxyHelper;
 
 import org.testng.ITestObjectFactory;
+import org.testng.annotations.BeforeTest;
+
+import static io.helidon.microprofile.testing.testng.HelidonTestNgListener.CONTAINER;
 
 /**
  * TestNG Object factory.
@@ -27,12 +34,19 @@ public class HelidonTestNgObjectFactory implements ITestObjectFactory {
     @Override
     public <T> T newInstance(Class<T> cls, Object... parameters) {
         // Use a proxy to start the container after the test instance creation
-        // The container is started lazily when invoking a method
-        // or when resolving parameters
-        return ProxyHelper.proxyDelegate(cls, (testClass, testMethod) -> {
-            // class context store specific to the intercepted method
-            return HelidonTestContainerHolder.getOrThrow().resolveInstance(testClass);
+        // Make @BeforeTest a no-op when used on instance
+        return ProxyHelper.proxyDelegate(cls, List.of(BeforeTest.class), (type, method) -> {
+            HelidonTestContainer container = CONTAINER.get();
+            if (container == null) {
+                throw new IllegalStateException("Container not set");
+            }
+            return container.resolveInstance(type);
         });
+    }
+
+    @Override
+    public <T> T newInstance(Constructor<T> constructor, Object... parameters) {
+        return newInstance(constructor.getDeclaringClass(), parameters);
     }
 
     @Override

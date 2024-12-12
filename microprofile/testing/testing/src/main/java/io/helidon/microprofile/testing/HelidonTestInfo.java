@@ -15,10 +15,18 @@
  */
 package io.helidon.microprofile.testing;
 
+import java.lang.ref.SoftReference;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -37,7 +45,23 @@ public sealed interface HelidonTestInfo<T extends AnnotatedElement> extends Heli
      * @return ClassInfo
      */
     static ClassInfo classInfo(Class<?> element) {
-        return new ClassInfo(new HelidonTestDescriptorImpl<>(element));
+        return classInfo(element, HelidonTestDescriptorImpl::new);
+    }
+
+    /**
+     * Create a new class info.
+     *
+     * @param element  class
+     * @param function descriptor factory
+     * @return ClassInfo
+     */
+    static ClassInfo classInfo(Class<?> element, Function<Class<?>, HelidonTestDescriptor<Class<?>>> function) {
+        return ClassInfo.CACHE.compute(element.getName(), (e, r) -> {
+            if (r == null || r.get() == null) {
+                return new SoftReference<>(new ClassInfo(function.apply(element)));
+            }
+            return r;
+        }).get();
     }
 
     /**
@@ -47,7 +71,12 @@ public sealed interface HelidonTestInfo<T extends AnnotatedElement> extends Heli
      * @return ClassInfo
      */
     static ClassInfo classInfo(HelidonTestDescriptor<Class<?>> descriptor) {
-        return new ClassInfo(descriptor);
+        return ClassInfo.CACHE.compute(descriptor.element().getName(), (e, r) -> {
+            if (r == null || r.get() == null) {
+                return new SoftReference<>(new ClassInfo(descriptor));
+            }
+            return r;
+        }).get();
     }
 
     /**
@@ -58,7 +87,24 @@ public sealed interface HelidonTestInfo<T extends AnnotatedElement> extends Heli
      * @return MethodInfo
      */
     static MethodInfo methodInfo(Method element, ClassInfo classInfo) {
-        return new MethodInfo(new HelidonTestDescriptorImpl<>(element), classInfo);
+        return methodInfo(element, classInfo, HelidonTestDescriptorImpl::new);
+    }
+
+    /**
+     * Create a new method info.
+     *
+     * @param element   method
+     * @param classInfo class info
+     * @param function  descriptor factory
+     * @return MethodInfo
+     */
+    static MethodInfo methodInfo(Method element, ClassInfo classInfo, Function<Method, HelidonTestDescriptor<Method>> function) {
+        return MethodInfo.CACHE.compute(MethodInfo.cacheKey(element, classInfo), (e, r) -> {
+            if (r == null || r.get() == null) {
+                return new SoftReference<>(new MethodInfo(function.apply(element), classInfo));
+            }
+            return r;
+        }).get();
     }
 
     /**
@@ -69,7 +115,12 @@ public sealed interface HelidonTestInfo<T extends AnnotatedElement> extends Heli
      * @return MethodInfo
      */
     static MethodInfo methodInfo(HelidonTestDescriptor<Method> descriptor, ClassInfo classInfo) {
-        return new MethodInfo(descriptor, classInfo);
+        return MethodInfo.CACHE.compute(MethodInfo.cacheKey(descriptor.element(), classInfo), (e, r) -> {
+            if (r == null || r.get() == null) {
+                return new SoftReference<>(new MethodInfo(descriptor, classInfo));
+            }
+            return r;
+        }).get();
     }
 
     /**
@@ -96,9 +147,17 @@ public sealed interface HelidonTestInfo<T extends AnnotatedElement> extends Heli
     }
 
     /**
+     * Get the class info.
+     *
+     * @return ClassInfo
+     */
+    ClassInfo classInfo();
+
+    /**
      * Class info.
      */
     final class ClassInfo extends HelidonTestDescriptorDelegate<Class<?>> implements HelidonTestInfo<Class<?>> {
+        private static final Map<String, SoftReference<ClassInfo>> CACHE = new ConcurrentHashMap<>();
 
         private ClassInfo(HelidonTestDescriptor<Class<?>> descriptor) {
             super(descriptor);
@@ -113,12 +172,41 @@ public sealed interface HelidonTestInfo<T extends AnnotatedElement> extends Heli
         public Class<?> testClass() {
             return element();
         }
+
+        @Override
+        public ClassInfo classInfo() {
+            return this;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof ClassInfo that)) {
+                return false;
+            }
+            return Objects.equals(element().getName(), that.element().getName());
+        }
+
+        @Override
+        public int hashCode() {
+            return element().getName().hashCode();
+        }
+
+        @Override
+        public String toString() {
+            return "ClassInfo{"
+                   + "class=" + element().getName()
+                   + "}";
+        }
     }
 
     /**
      * Method info.
      */
     final class MethodInfo implements HelidonTestInfo<Method> {
+        private static final Map<String, SoftReference<MethodInfo>> CACHE = new ConcurrentHashMap<>();
 
         private final HelidonTestDescriptor<Method> descriptor;
         private final ClassInfo classInfo;
@@ -126,6 +214,14 @@ public sealed interface HelidonTestInfo<T extends AnnotatedElement> extends Heli
         private MethodInfo(HelidonTestDescriptor<Method> descriptor, ClassInfo classInfo) {
             this.descriptor = descriptor;
             this.classInfo = classInfo;
+        }
+
+        private static String cacheKey(Method method, ClassInfo classInfo) {
+            return classInfo.element().getName() + "#"
+                   + method.getName()
+                   + Arrays.stream(method.getParameterTypes())
+                           .map(Type::getTypeName)
+                           .collect(Collectors.joining(",", "(", ")"));
         }
 
         @Override
@@ -141,6 +237,11 @@ public sealed interface HelidonTestInfo<T extends AnnotatedElement> extends Heli
         @Override
         public Optional<Method> testMethod() {
             return Optional.of(descriptor.element());
+        }
+
+        @Override
+        public ClassInfo classInfo() {
+            return classInfo;
         }
 
         @Override
@@ -209,6 +310,30 @@ public sealed interface HelidonTestInfo<T extends AnnotatedElement> extends Heli
                    || descriptor.addJaxRs()
                    || !descriptor.addBeans().isEmpty()
                    || !descriptor.addExtensions().isEmpty();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof MethodInfo that)) {
+                return false;
+            }
+            return Objects.equals(element().getName(), that.element().getName());
+        }
+
+        @Override
+        public int hashCode() {
+            return element().hashCode();
+        }
+
+        @Override
+        public String toString() {
+            return "MethodInfo{" +
+                   "method=" + element().getName() +
+                   ", class=" + classInfo.element().getName() +
+                   '}';
         }
 
         private static <T> List<T> concat(List<T> l1, List<T> l2) {
