@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.inject.configdriven</groupId>
         <artifactId>helidon-inject-configdriven-project</artifactId>
-        <version>4.1.4-SNAPSHOT</version>
+        <version>4.1.6-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.inject.configdriven.tests</groupId>
     <artifactId>helidon-inject-configdriven-tests-project</artifactId>

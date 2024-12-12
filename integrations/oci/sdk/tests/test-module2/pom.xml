@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.integrations.oci.sdk.tests</groupId>
         <artifactId>helidon-integrations-oci-sdk-tests-project</artifactId>
-        <version>4.1.4-SNAPSHOT</version>
+        <version>4.1.6-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 

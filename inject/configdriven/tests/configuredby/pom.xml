@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.inject.configdriven.tests</groupId>
         <artifactId>helidon-inject-configdriven-tests-project</artifactId>
-        <version>4.1.4-SNAPSHOT</version>
+        <version>4.1.6-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-inject-configdriven-tests-configuredby</artifactId>
     <name>Helidon Injection ConfigDriven Tests CfgedBy Svc</name>

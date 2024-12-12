@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.microprofile.weld</groupId>
         <artifactId>helidon-microprofile-weld-project</artifactId>
-        <version>4.1.4-SNAPSHOT</version>
+        <version>4.1.6-SNAPSHOT</version>
     </parent>
     <artifactId>weld-se-core</artifactId>
     <name>Helidon Weld SE Core</name>
