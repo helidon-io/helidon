@@ -125,7 +125,12 @@ public class HelidonTestNgListener implements ITestListener,
                 // and also to configure HelidonTestNgModuleFactory
                 // I.e. we add @Guice(moduleFactory = HelidonTestNgModuleFactory.class)
                 for (XmlClass xmlClass : test.getClasses()) {
+
+
+                    // If annotated with @HelidonTest or @Listeners ?
+
                     Class<?> testClass = xmlClass.getSupportClass();
+                    xmlClass.setName(testClass.getName()); // TODO verify
                     Class<?> instumentedClass = ProxyHelper.proxyClass(testClass,
                             PROXY_ANNOTATIONS, PROXY_METHOD_EXCLUDES, this::resolveInstance);
                     instrumentedClasses.put(instumentedClass, testClass);
