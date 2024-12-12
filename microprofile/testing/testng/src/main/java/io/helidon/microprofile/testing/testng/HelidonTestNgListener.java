@@ -16,6 +16,9 @@
 
 package io.helidon.microprofile.testing.testng;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,6 +28,7 @@ import io.helidon.microprofile.testing.HelidonTestInfo;
 import io.helidon.microprofile.testing.HelidonTestInfo.ClassInfo;
 import io.helidon.microprofile.testing.HelidonTestInfo.MethodInfo;
 import io.helidon.microprofile.testing.HelidonTestScope;
+import io.helidon.microprofile.testing.ProxyHelper;
 
 import org.testng.IAlterSuiteListener;
 import org.testng.IClassListener;
@@ -35,6 +39,9 @@ import org.testng.ITestClass;
 import org.testng.ITestListener;
 import org.testng.ITestNGMethod;
 import org.testng.ITestResult;
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Guice;
+import org.testng.xml.XmlClass;
 import org.testng.xml.XmlSuite;
 import org.testng.xml.XmlTest;
 
@@ -91,6 +98,18 @@ public class HelidonTestNgListener implements ITestListener,
      */
     static final ThreadLocal<HelidonTestContainer> CONTAINER = new ThreadLocal<>();
 
+    private static final List<Annotation> PROXY_ANNOTATIONS = List.of(
+            ProxyHelper.newAnnotation(Guice.class, attr -> {
+                if (attr.equals("moduleFactory")) {
+                    return HelidonTestNgModuleFactory.class;
+                }
+                return null;
+            }));
+
+    private static final List<Class<? extends Annotation>> PROXY_METHOD_EXCLUDES = List.of(
+            BeforeTest.class);
+
+    private final Map<Class<?>, Class<?>> instrumentedClasses = new HashMap<>();
     private final Map<HelidonTestInfo<?>, HelidonTestContainer> containers = new ConcurrentHashMap<>();
 
     // TODO early hook to self-disable if no helidon used
@@ -98,12 +117,20 @@ public class HelidonTestNgListener implements ITestListener,
     @Override
     public void alter(List<XmlSuite> suites) {
         for (XmlSuite suite : suites) {
-            // configure our object factory
-            suite.setObjectFactoryClass(HelidonTestNgObjectFactory.class);
-
-            // support ParallelMode with annotation
             for (XmlTest test : suite.getTests()) {
+                // TODO support ParallelMode with annotation
                 test.setParallel(XmlSuite.ParallelMode.METHODS);
+
+                // The test class is instrumented as a proxy to support lazy container initialization
+                // and also to configure HelidonTestNgModuleFactory
+                // I.e. we add @Guice(moduleFactory = HelidonTestNgModuleFactory.class)
+                for (XmlClass xmlClass : test.getClasses()) {
+                    Class<?> testClass = xmlClass.getSupportClass();
+                    Class<?> instumentedClass = ProxyHelper.proxyClass(testClass,
+                            PROXY_ANNOTATIONS, PROXY_METHOD_EXCLUDES, this::resolveInstance);
+                    instrumentedClasses.put(instumentedClass, testClass);
+                    xmlClass.setClass(instumentedClass);
+                }
             }
         }
     }
@@ -139,6 +166,14 @@ public class HelidonTestNgListener implements ITestListener,
         if (container != null) {
             container.close();
         }
+    }
+
+    private <T> T resolveInstance(Class<T> type, Method method) {
+        HelidonTestContainer container = CONTAINER.get();
+        if (container == null) {
+            throw new IllegalStateException("Container not set");
+        }
+        return container.resolveInstance(type);
     }
 
     private void initContainer(ITestResult tr, ITestNGMethod tm) {
@@ -182,8 +217,10 @@ public class HelidonTestNgListener implements ITestListener,
         }
     }
 
-    private static HelidonTestInfo<?> testInfo(ITestResult tr, ITestNGMethod tm) {
-        ClassInfo classInfo = classInfo(tr.getTestClass().getRealClass(), HelidonTestDescriptorImpl::new);
+    private HelidonTestInfo<?> testInfo(ITestResult tr, ITestNGMethod tm) {
+        Class<?> instrumentedClass = tr.getTestClass().getRealClass();
+        Class<?> testClass = instrumentedClasses.getOrDefault(instrumentedClass, instrumentedClass);
+        ClassInfo classInfo = classInfo(testClass, HelidonTestDescriptorImpl::new);
         if (tm != null) {
             return methodInfo(tm.getConstructorOrMethod().getMethod(), classInfo, HelidonTestDescriptorImpl::new);
         }

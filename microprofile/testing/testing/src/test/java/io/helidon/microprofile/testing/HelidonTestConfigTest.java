@@ -15,8 +15,6 @@
  */
 package io.helidon.microprofile.testing;
 
-import java.lang.reflect.Proxy;
-
 import io.helidon.config.Config;
 import io.helidon.config.mp.MpConfig;
 
@@ -87,22 +85,18 @@ class HelidonTestConfigTest {
     }
 
     private static AddConfig addConfig(String key, String value) {
-        ClassLoader cl = HelidonTestConfigTest.class.getClassLoader();
-        return (AddConfig) Proxy.newProxyInstance(cl, new Class[] {AddConfig.class},
-                (proxy, method, args) -> switch (method.getName()) {
-                    case "key" -> key;
-                    case "value" -> value;
-                    default -> method.getDefaultValue();
-                });
+        return ProxyHelper.newAnnotation(AddConfig.class, attr -> switch (attr) {
+            case "key" -> key;
+            case "value" -> value;
+            default -> null;
+        });
     }
 
     private static Configuration configuration(boolean useExisting, String... configSources) {
-        ClassLoader cl = HelidonTestConfigTest.class.getClassLoader();
-        return (Configuration) Proxy.newProxyInstance(cl, new Class[] {Configuration.class},
-                (proxy, method, args) -> switch (method.getName()) {
-                    case "useExisting" -> useExisting;
-                    case "configSources" -> configSources;
-                    default -> method.getDefaultValue();
-                });
+        return ProxyHelper.newAnnotation(Configuration.class, attr -> switch (attr) {
+            case "useExisting" -> useExisting;
+            case "configSources" -> configSources;
+            default -> null;
+        });
     }
 }

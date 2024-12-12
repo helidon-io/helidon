@@ -26,7 +26,7 @@ import io.helidon.microprofile.testing.HelidonTestExtension;
 import io.helidon.microprofile.testing.HelidonTestInfo;
 import io.helidon.microprofile.testing.HelidonTestScope;
 
-import static io.helidon.microprofile.testing.ProxyHelper.mirror;
+import static io.helidon.microprofile.testing.ProxyHelper.mirrorAnnotation;
 
 /**
  * An implementation of {@link HelidonTestExtension} that supports the deprecated annotations.
@@ -136,16 +136,16 @@ final class HelidonTestExtensionImpl extends HelidonTestExtension {
     }
 
     private void processConfiguration(Configuration annotation) {
-        processConfiguration(mirror(io.helidon.microprofile.testing.Configuration.class, annotation));
+        processConfiguration(mirrorAnnotation(io.helidon.microprofile.testing.Configuration.class, annotation));
     }
 
     private void processAddConfigBlock(AddConfigBlock annotation) {
-        processAddConfigBlock(mirror(io.helidon.microprofile.testing.AddConfigBlock.class, annotation));
+        processAddConfigBlock(mirrorAnnotation(io.helidon.microprofile.testing.AddConfigBlock.class, annotation));
     }
 
     private void processAddConfig(AddConfig... annotations) {
         for (AddConfig annotation : annotations) {
-            processAddConfig(mirror(io.helidon.microprofile.testing.AddConfig.class, annotation));
+            processAddConfig(mirrorAnnotation(io.helidon.microprofile.testing.AddConfig.class, annotation));
         }
     }
 

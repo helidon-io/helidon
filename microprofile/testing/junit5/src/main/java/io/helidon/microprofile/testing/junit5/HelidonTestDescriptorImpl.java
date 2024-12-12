@@ -24,7 +24,7 @@ import java.util.stream.Stream;
 
 import io.helidon.microprofile.testing.HelidonTestDescriptorBase;
 
-import static io.helidon.microprofile.testing.ProxyHelper.mirror;
+import static io.helidon.microprofile.testing.ProxyHelper.mirrorAnnotation;
 
 /**
  * Base descriptor implementation that supports the deprecated annotations.
@@ -51,7 +51,7 @@ class HelidonTestDescriptorImpl<T extends AnnotatedElement> extends HelidonTestD
     @Override
     protected List<io.helidon.microprofile.testing.AddConfigBlock> lookupAddConfigBlocks() {
         return Stream.concat(super.lookupAddConfigBlocks().stream(), annotations(AddConfigBlock.class)
-                        .map(a -> mirror(io.helidon.microprofile.testing.AddConfigBlock.class, a)))
+                        .map(a -> mirrorAnnotation(io.helidon.microprofile.testing.AddConfigBlock.class, a)))
                 .toList();
     }
 
@@ -64,7 +64,7 @@ class HelidonTestDescriptorImpl<T extends AnnotatedElement> extends HelidonTestD
     @Override
     protected Optional<io.helidon.microprofile.testing.Configuration> lookupConfiguration() {
         return super.lookupConfiguration().or(() -> annotations(Configuration.class)
-                .map(a -> mirror(io.helidon.microprofile.testing.Configuration.class, a))
+                .map(a -> mirrorAnnotation(io.helidon.microprofile.testing.Configuration.class, a))
                 .findFirst());
     }
 
@@ -98,6 +98,6 @@ class HelidonTestDescriptorImpl<T extends AnnotatedElement> extends HelidonTestD
                                                                                                 Function<C, A[]> function) {
 
         return Stream.concat(initial, annotations(aType, cType, function)
-                .map(a -> mirror(tType, a)));
+                .map(a -> mirrorAnnotation(tType, a)));
     }
 }

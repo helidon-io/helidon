@@ -23,6 +23,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.List;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import net.bytebuddy.ByteBuddy;
 import net.bytebuddy.description.method.MethodDescription;
@@ -50,21 +51,43 @@ public class ProxyHelper {
     /**
      * Mirror an annotation.
      *
-     * @param type       annotation type
-     * @param annotation annotation
-     * @param <T>        annotation type
+     * @param type       target type
+     * @param annotation source annotation
+     * @param <T>        target type
      * @return mirror
      */
-    public static <T extends Annotation> T mirror(Class<T> type, Annotation annotation) {
+    public static <T extends Annotation> T mirrorAnnotation(Class<T> type, Annotation annotation) {
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
         Object o = Proxy.newProxyInstance(cl, new Class[] {type}, (proxy, method, args) -> {
+            Method sourceMethod = annotation.getClass().getMethod(method.getName());
             try {
-                Method sourceMethod = annotation.getClass().getMethod(method.getName());
-                return sourceMethod.invoke(annotation, args);
+                return sourceMethod.invoke(annotation);
             } catch (InvocationTargetException | IllegalAccessException e) {
                 throw new RuntimeException(e);
             }
         });
+        return type.cast(o);
+    }
+
+    /**
+     * Instantiate an annotation.
+     *
+     * @param type     annotation type
+     * @param function attributes function
+     * @param <T>      annotation type
+     * @return annotation
+     */
+    public static <T extends Annotation> T newAnnotation(Class<T> type, Function<String, Object> function) {
+        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        Object o = Proxy.newProxyInstance(cl, new Class[] {type},
+                (proxy, method, args) -> {
+                    String methodName = method.getName();
+                    if ("annotationType".equals(methodName)) {
+                        return type;
+                    }
+                    Object value = function.apply(methodName);
+                    return value != null ? value : method.getDefaultValue();
+                });
         return type.cast(o);
     }
 
@@ -83,25 +106,63 @@ public class ProxyHelper {
     /**
      * Create a delegated proxy instance.
      *
-     * @param type     type
-     * @param excludes method annotation types to skip interception
-     * @param resolver function to resolve the delegate
-     * @param <T>      type
+     * @param type           type
+     * @param methodExcludes method annotation types to skip interception
+     * @param resolver       function to resolve the delegate
+     * @param <T>            type
      * @return proxy
      */
     public static <T> T proxyDelegate(Class<T> type,
-                                      List<Class<? extends Annotation>> excludes,
+                                      List<Class<? extends Annotation>> methodExcludes,
                                       BiFunction<Class<T>, Method, T> resolver) {
+
+        Class<? extends T> loaded = proxyClass(type, List.of(), methodExcludes, resolver);
+        return allocateInstance(loaded);
+    }
+
+    /**
+     * Instantiate a class without running constructors.
+     *
+     * @param type type
+     * @param <T>  type
+     * @return instance
+     */
+    public static <T> T allocateInstance(Class<T> type) {
+        try {
+            // instantiate without running constructors
+            return type.cast(unsafe().allocateInstance(type));
+        } catch (InstantiationException
+                 | IllegalAccessException
+                 | NoSuchFieldException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Create a delegated proxy class.
+     *
+     * @param type           type
+     * @param annotations    annotations to add to the proxy class
+     * @param methodExcludes method annotation types to skip interception
+     * @param resolver       function to resolve the delegate
+     * @param <T>            type
+     * @return proxy class
+     */
+    public static <T> Class<? extends T> proxyClass(Class<T> type,
+                                                    List<Annotation> annotations,
+                                                    List<Class<? extends Annotation>> methodExcludes,
+                                                    BiFunction<Class<T>, Method, T> resolver) {
 
         ElementMatcher.Junction<MethodDescription> matcher = not(isEquals())
                 .and(not(isHashCode()))
                 .and(not(isToString()));
-        for (Class<? extends Annotation> exclude : excludes) {
+        for (Class<? extends Annotation> exclude : methodExcludes) {
             matcher = matcher.and(not(isAnnotatedWith(exclude)));
         }
 
         try (DynamicType.Unloaded<T> unloaded = new ByteBuddy()
-                .subclass(type, ConstructorStrategy.Default.NO_CONSTRUCTORS)
+                .subclass(type, ConstructorStrategy.Default.IMITATE_SUPER_CLASS.withInheritedAnnotations())
+                .annotateType(annotations.toArray(Annotation[]::new))
                 .withHashCodeEquals()
                 .method(matcher)
                 .intercept(InvocationHandlerAdapter.of((proxy, method, args) -> {
@@ -114,13 +175,9 @@ public class ProxyHelper {
                 }))
                 .make()) {
             MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(type, MethodHandles.lookup());
-            Class<? extends T> loaded = unloaded.load(type.getClassLoader(), ClassLoadingStrategy.UsingLookup.of(lookup))
+            return unloaded.load(type.getClassLoader(), ClassLoadingStrategy.UsingLookup.of(lookup))
                     .getLoaded();
-            // instantiate without running constructors
-            return loaded.cast(unsafe().allocateInstance(loaded));
-        } catch (InstantiationException
-                 | IllegalAccessException
-                 | NoSuchFieldException e) {
+        } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         }
     }

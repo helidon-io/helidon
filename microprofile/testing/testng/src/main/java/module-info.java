@@ -25,6 +25,7 @@ module io.helidon.microprofile.testing.testng {
     requires static io.helidon.microprofile.server;
     requires static jersey.cdi1x;
     requires static jersey.weld2.se;
+    requires com.google.guice;
 
     exports io.helidon.microprofile.testing.testng;
 
