@@ -28,6 +28,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URL;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -38,6 +39,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.helidon.common.testing.virtualthreads.PinningRecorder;
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
@@ -111,7 +113,7 @@ class HelidonJunitExtension implements BeforeAllCallback,
     private ConfigProviderResolver configProviderResolver;
     private Config config;
     private SeContainer container;
-
+    private PinningRecorder pinningRecorder;
 
     @SuppressWarnings("unchecked")
     @Override
@@ -135,7 +137,12 @@ class HelidonJunitExtension implements BeforeAllCallback,
         HelidonTest testAnnot = testClass.getAnnotation(HelidonTest.class);
         if (testAnnot != null) {
             resetPerTest = testAnnot.resetPerTest();
+            if (testAnnot.pinningDetection()) {
+                pinningRecorder = PinningRecorder.create();
+                pinningRecorder.record(Duration.ofMillis(testAnnot.pinningThreshold()));
+            }
         }
+
 
         DisableDiscovery discovery = getAnnotation(testClass, DisableDiscovery.class, metaAnnotations);
         if (discovery != null) {
@@ -174,7 +181,7 @@ class HelidonJunitExtension implements BeforeAllCallback,
         for (Annotation testAnnotation : testAnnotations) {
             List<Annotation> annotations = List.of(testAnnotation.annotationType().getAnnotations());
             List<Class<?>> annotationsClass = annotations.stream()
-                    .map(a -> a.annotationType()).collect(Collectors.toList());
+                    .map(Annotation::annotationType).collect(Collectors.toList());
             if (!Collections.disjoint(HELIDON_TEST_ANNOTATIONS, annotationsClass)) {
                 // Contains at least one of HELIDON_TEST_ANNOTATIONS
                 return annotations;
@@ -268,6 +275,7 @@ class HelidonJunitExtension implements BeforeAllCallback,
             releaseConfig();
             stopContainer();
         }
+//        pinningRecorder.checkAndThrow();
     }
 
     private void validatePerClass() {
@@ -427,6 +435,10 @@ class HelidonJunitExtension implements BeforeAllCallback,
         stopContainer();
         releaseConfig();
         callAfterStop();
+        if (pinningRecorder != null) {
+            pinningRecorder.close();
+            pinningRecorder = null;
+        }
     }
 
     @Override

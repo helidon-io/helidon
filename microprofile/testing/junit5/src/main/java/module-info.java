@@ -24,7 +24,6 @@ module io.helidon.microprofile.testing.junit5 {
     requires io.helidon.microprofile.cdi;
     requires jakarta.inject;
     requires org.junit.jupiter.api;
-    requires jdk.jfr;
 
     requires transitive jakarta.cdi;
     requires transitive jakarta.ws.rs;
@@ -32,6 +31,7 @@ module io.helidon.microprofile.testing.junit5 {
     requires static io.helidon.microprofile.server;
     requires static jersey.cdi1x;
     requires static jersey.weld2.se;
+    requires io.helidon.common.testing.vitualthreads;
 
     exports io.helidon.microprofile.testing.junit5;
 
