@@ -20,12 +20,20 @@ import java.io.Serial;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 import io.helidon.common.config.ConfigException;
+import io.helidon.metrics.api.Gauge;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.metrics.api.Timer;
+
+import static io.helidon.metrics.api.Meter.Scope.VENDOR;
 
 class AimdLimitImpl {
     private final double backoffRatio;
@@ -40,6 +48,8 @@ class AimdLimitImpl {
 
     private final AtomicInteger limit;
     private final Lock limitLock = new ReentrantLock();
+
+    private Timer rttTimer;
 
     AimdLimitImpl(AimdLimitConfig config) {
         int initialLimit = config.initialLimit();
@@ -119,6 +129,10 @@ class AimdLimitImpl {
     void updateWithSample(long startTime, long endTime, int currentRequests, boolean success) {
         long rtt = endTime - startTime;
 
+        if (rttTimer != null) {
+            rttTimer.record(rtt, TimeUnit.NANOSECONDS);
+        }
+
         int currentLimit = limit.get();
         if (rtt > timeoutInNanos || !success) {
             currentLimit = (int) (currentLimit * backoffRatio);
@@ -151,6 +165,38 @@ class AimdLimitImpl {
             }
         } finally {
             limitLock.unlock();
+        }
+    }
+
+    /**
+     * Initialize metrics for this limit.
+     *
+     * @param socketName name of socket for which this limit was created
+     * @param config this limit's config
+     */
+    void initMetrics(String socketName, AimdLimitConfig config) {
+        if (config.enableMetrics()) {
+            MetricsFactory metricsFactory = MetricsFactory.getInstance();
+            MeterRegistry meterRegistry = Metrics.globalRegistry();
+            String namePrefix = (socketName.startsWith("@") ? socketName.substring(1) : socketName)
+                    + "_" + config.name();
+
+            Gauge.Builder<Integer> limitBuilder = metricsFactory.gaugeBuilder(
+                    namePrefix + "_limit", limit::get).scope(VENDOR);
+            meterRegistry.getOrCreate(limitBuilder);
+
+            Gauge.Builder<Integer> concurrentRequestsBuilder = metricsFactory.gaugeBuilder(
+                    namePrefix + "_concurrent_requests", concurrentRequests::get).scope(VENDOR);
+            meterRegistry.getOrCreate(concurrentRequestsBuilder);
+
+            Gauge.Builder<Integer> queueLengthBuilder = metricsFactory.gaugeBuilder(
+                    namePrefix + "_queue_length", semaphore::getQueueLength).scope(VENDOR);
+            meterRegistry.getOrCreate(queueLengthBuilder);
+
+            Timer.Builder timerBuilder = metricsFactory.timerBuilder(namePrefix + "_rtt")
+                    .scope(VENDOR)
+                    .baseUnit(Timer.BaseUnits.MILLISECONDS);
+            rttTimer = meterRegistry.getOrCreate(timerBuilder);
         }
     }
 

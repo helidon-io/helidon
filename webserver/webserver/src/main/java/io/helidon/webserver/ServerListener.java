@@ -130,6 +130,7 @@ class ServerListener implements ListenerContext {
                     .permits(listenerConfig.maxConcurrentRequests())
                     .build();
         }
+        this.requestLimit.init(socketName);
 
         this.connectionProviders = ConnectionProviders.create(selectors);
         this.socketName = socketName;

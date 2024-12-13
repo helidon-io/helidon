@@ -30,4 +30,13 @@ public interface Limit extends LimitAlgorithm, NamedService {
      * @return a copy of this limit
      */
     Limit copy();
+
+    /**
+     * Initialization method for this limit. This method can be used for any
+     * task, including metrics initialization.
+     *
+     * @param socketName socket name for this limit such as {@code "@default"}
+     */
+    default void init(String socketName) {
+    }
 }

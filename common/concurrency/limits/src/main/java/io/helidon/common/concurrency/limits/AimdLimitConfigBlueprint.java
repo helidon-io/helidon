@@ -129,4 +129,13 @@ interface AimdLimitConfigBlueprint extends Prototype.Factory<AimdLimit> {
     @Option.Configured
     @Option.DefaultBoolean(false)
     boolean fair();
+
+    /**
+     * Whether to collect metrics for the AIMD implementation.
+     *
+     * @return metrics flag
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(false)
+    boolean enableMetrics();
 }
