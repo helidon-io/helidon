@@ -32,6 +32,7 @@ include::{rootdir}/includes/se.adoc[]
 - <<Maven Coordinates, Maven Coordinates>>
 - <<Usage, Usage>>
 - <<Examples, Examples>>
+- <<Virtual Threads, Virtual Threads>>
 - <<Additional Information, Additional Information>>
 - <<Reference, Reference>>
 
@@ -206,6 +207,33 @@ If only routing tests are required, this is a "lighter" way of testing because t
 It is required to annotate the test class with the `@RoutingTest` annotation to trigger the server to do the configuration. Thus, it will inject the DirectClient client, which can then be used in unit tests.
 
 Routing is configured the same way as in full server testing using the `@SetUpRoute` annotation.
+
+== Virtual Threads
+Helidon tests are able to detect Virtual Threads pinning. A situation when carrier thread is blocked
+in a way, that virtual thread scheduler can't use it for scheduling of other virtual threads.
+This can happen for example when blocking native code is invoked, or prior to the JDK 24 when
+blocking IO operation happens in a synchronized block.
+Pinning can in some cases negatively affect application performance.
+
+[source,java]
+.Enable pinning detection
+----
+include::{sourcedir}/se/TestingSnippets.java[tag=snippet_6, indent=0]
+----
+
+Pinning is considered as harmful when it takes longer than 20 milliseconds,
+that is also the default when detecting it within Helidon tests.
+
+Pinning threshold can be changed with:
+
+[source,java]
+.Configure pinning threshold
+----
+include::{sourcedir}/se/TestingSnippets.java[tag=snippet_7, indent=0]
+----
+<1> Change pinning threshold from default(20) to 50 milliseconds.
+
+When pinning is detected, test fails with stacktrace pointing to the line of code causing it.
 
 == Additional Information
 

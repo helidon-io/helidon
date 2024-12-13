@@ -24,7 +24,7 @@
 module io.helidon.webserver.testing.junit5 {
 
     requires io.helidon.logging.common;
-    requires jdk.jfr;
+    requires io.helidon.common.testing.vitualthreads;
 
     requires transitive hamcrest.all;
     requires transitive io.helidon.common.testing.http.junit5;

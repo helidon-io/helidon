@@ -91,4 +91,16 @@ class TestingNgSnippets {
     }
     // end::snippet_2[]
 
+    // tag::snippet_3[]
+    @HelidonTest(pinningDetection = true)
+    // end::snippet_3[]
+    class TestDetectionExample1 {
+    }
+
+    // tag::snippet_4[]
+    @HelidonTest(pinningDetection = true, pinningThreshold = 50)// <1>
+    // end::snippet_4[]
+    class TestDetectionExample2 {
+    }
+
 }

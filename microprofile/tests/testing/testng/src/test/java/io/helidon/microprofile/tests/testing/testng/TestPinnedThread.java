@@ -16,25 +16,61 @@
 
 package io.helidon.microprofile.tests.testing.testng;
 
-import io.helidon.microprofile.testing.testng.PinnedThreadValidation;
+import java.util.Arrays;
 
-import org.testng.annotations.Ignore;
+import io.helidon.common.testing.virtualthreads.PinningAssertionError;
+import io.helidon.microprofile.tests.testing.testng.programmatic.PinningExtraThreadTest;
+
+import org.hamcrest.BaseMatcher;
+import org.hamcrest.Description;
+import org.testng.Assert;
+import org.testng.TestListenerAdapter;
+import org.testng.TestNG;
 import org.testng.annotations.Test;
 
-@PinnedThreadValidation
-class TestPinnedThread {
+import static org.hamcrest.CoreMatchers.startsWith;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.IsCollectionContaining.hasItem;
+
+public class TestPinnedThread {
+
+    private static final String EXPECTED_PINNING_METHOD_NAME = "lambda$testPinningExtraThread$0";
 
     @Test
-    @Ignore("Enable to verify pinned threads fails")
-    void test() throws InterruptedException {
-        Thread.ofVirtual().start(() -> {
-            synchronized (this) {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    Thread.interrupted();
-                }
-            }
-        }).join();
+    void testListener() {
+        TestNG testng = new TestNG();
+        testng.setTestClasses(new Class[] {PinningExtraThreadTest.class});
+        TestListenerAdapter tla = new TestListenerAdapter();
+        testng.addListener(tla);
+        PinningAssertionError pinningAssertionError = Assert.expectThrows(PinningAssertionError.class, testng::run);
+        assertThat(pinningAssertionError.getMessage(), startsWith("Pinned virtual threads were detected:"));
+        assertThat("Method with pinning is missing from stack strace.", Arrays.asList(pinningAssertionError.getStackTrace()),
+                   hasItem(new StackTraceElementMatcher(EXPECTED_PINNING_METHOD_NAME)));
+    }
+
+    private static class StackTraceElementMatcher extends BaseMatcher<StackTraceElement> {
+
+        private final String methodName;
+
+        StackTraceElementMatcher(String methodName) {
+            this.methodName = methodName;
+        }
+
+        @Override
+        public boolean matches(Object o) {
+            return methodName.equals(((StackTraceElement) o).getMethodName());
+        }
+
+        @Override
+        public void describeMismatch(Object o, Description description) {
+            description.appendText("method ").appendValue(methodName)
+                    .appendText(" does not match stack trace element ")
+                    .appendValue(o);
+        }
+
+        @Override
+        public void describeTo(Description description) {
+
+        }
     }
 }

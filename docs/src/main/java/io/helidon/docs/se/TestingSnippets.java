@@ -16,6 +16,7 @@
 package io.helidon.docs.se;
 
 import io.helidon.http.Status;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webclient.websocket.WsClient;
@@ -156,4 +157,16 @@ class TestingSnippets {
         }
     }
     // end::snippet_5[]
+
+    // tag::snippet_6[]
+    @ServerTest(pinningDetection = true)
+    // end::snippet_6[]
+    class TestDetectionExample1 {
+    }
+
+    // tag::snippet_7[]
+    @ServerTest(pinningDetection = true, pinningThreshold = 50)// <1>
+    // end::snippet_7[]
+    class TestDetectionExample2 {
+    }
 }

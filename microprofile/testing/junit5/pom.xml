@@ -39,6 +39,10 @@
             <optional>true</optional>
         </dependency>
         <dependency>
+            <groupId>io.helidon.common.testing</groupId>
+            <artifactId>helidon-common-testing-virtual-threads</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.microprofile.cdi</groupId>
             <artifactId>helidon-microprofile-cdi</artifactId>
             <scope>provided</scope>

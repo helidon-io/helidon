@@ -13,22 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.testing.junit5;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Inherited;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
- * An annotation making this test class to fail at the end if a pinned virtual thread was detected.
+ * Virtual Thread testing features for Helidon test extensions.
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-@ExtendWith(HelidonPinnedThreadValidationJunitExtension.class)
-@Inherited
-public @interface PinnedThreadValidation {
+module io.helidon.common.testing.vitualthreads {
+    requires jdk.jfr;
+    exports io.helidon.common.testing.virtualthreads to
+            io.helidon.microprofile.testing.junit5,
+            io.helidon.microprofile.testing.testng,
+            io.helidon.webserver.testing.junit5;
 }
