@@ -31,16 +31,20 @@ import io.helidon.microprofile.testing.HelidonTestScope;
 import io.helidon.microprofile.testing.ProxyHelper;
 
 import org.testng.IAlterSuiteListener;
+import org.testng.IClass;
 import org.testng.IClassListener;
 import org.testng.IConfigurationListener;
 import org.testng.IInvokedMethod;
 import org.testng.IInvokedMethodListener;
+import org.testng.ISuite;
+import org.testng.ISuiteListener;
 import org.testng.ITestClass;
 import org.testng.ITestListener;
 import org.testng.ITestNGMethod;
 import org.testng.ITestResult;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Guice;
+import org.testng.internal.ITestClassConfigInfo;
 import org.testng.xml.XmlClass;
 import org.testng.xml.XmlSuite;
 import org.testng.xml.XmlTest;
@@ -91,6 +95,7 @@ public class HelidonTestNgListener implements ITestListener,
                                               IClassListener,
                                               IInvokedMethodListener,
                                               IConfigurationListener,
+                                              ISuiteListener,
                                               IAlterSuiteListener {
 
     /**
@@ -99,7 +104,7 @@ public class HelidonTestNgListener implements ITestListener,
     static final ThreadLocal<HelidonTestContainer> CONTAINER = new ThreadLocal<>();
 
     private static final List<Annotation> PROXY_ANNOTATIONS = List.of(
-            ProxyHelper.newAnnotation(Guice.class, attr -> {
+            ProxyHelper.annotation(Guice.class, attr -> {
                 if (attr.equals("moduleFactory")) {
                     return HelidonTestNgModuleFactory.class;
                 }
@@ -109,7 +114,7 @@ public class HelidonTestNgListener implements ITestListener,
     private static final List<Class<? extends Annotation>> PROXY_METHOD_EXCLUDES = List.of(
             BeforeTest.class);
 
-    private final Map<Class<?>, Class<?>> instrumentedClasses = new HashMap<>();
+    private final Map<Class<?>, Class<?>> realClasses = new HashMap<>();
     private final Map<HelidonTestInfo<?>, HelidonTestContainer> containers = new ConcurrentHashMap<>();
 
     // TODO early hook to self-disable if no helidon used
@@ -122,21 +127,33 @@ public class HelidonTestNgListener implements ITestListener,
                 test.setParallel(XmlSuite.ParallelMode.METHODS);
 
                 // The test class is instrumented as a proxy to support lazy container initialization
-                // and also to configure HelidonTestNgModuleFactory
-                // I.e. we add @Guice(moduleFactory = HelidonTestNgModuleFactory.class)
+                // and also to add @Guice(moduleFactory = HelidonTestNgModuleFactory.class)
                 for (XmlClass xmlClass : test.getClasses()) {
 
-
-                    // If annotated with @HelidonTest or @Listeners ?
+                    // TODO skip if not annotated with @HelidonTest or @Listeners ?
 
                     Class<?> testClass = xmlClass.getSupportClass();
-                    xmlClass.setName(testClass.getName()); // TODO verify
                     Class<?> instumentedClass = ProxyHelper.proxyClass(testClass,
                             PROXY_ANNOTATIONS, PROXY_METHOD_EXCLUDES, this::resolveInstance);
-                    instrumentedClasses.put(instumentedClass, testClass);
+                    realClasses.put(instumentedClass, testClass);
                     xmlClass.setClass(instumentedClass);
                 }
             }
+        }
+    }
+
+    @Override
+    public void onStart(ISuite suite) {
+        for (ITestNGMethod tm : suite.getAllMethods()) {
+            ITestClass tc = tm.getTestClass();
+            Class<?> testClass = realClass(tc);
+            tm.setTestClass((ITestClass) ProxyHelper.proxy(List.of(ITestClass.class, ITestClassConfigInfo.class),
+                    (proxy, method, args) -> {
+                        if ("getRealClass".equals(method.getName()) && method.getParameterCount() == 0) {
+                            return testClass;
+                        }
+                        return method.invoke(tc, args);
+                    }));
         }
     }
 
@@ -161,13 +178,14 @@ public class HelidonTestNgListener implements ITestListener,
     }
 
     @Override
-    public void afterInvocation(IInvokedMethod method, ITestResult testResult) {
+    public void afterInvocation(IInvokedMethod method, ITestResult tr) {
         CONTAINER.remove();
     }
 
     @Override
     public void onAfterClass(ITestClass tc) {
-        HelidonTestContainer container = containers.remove(classInfo(tc.getRealClass(), HelidonTestDescriptorImpl::new));
+        ClassInfo classInfo = classInfo(realClass(tc), HelidonTestDescriptorImpl::new);
+        HelidonTestContainer container = containers.remove(classInfo);
         if (container != null) {
             container.close();
         }
@@ -223,13 +241,17 @@ public class HelidonTestNgListener implements ITestListener,
     }
 
     private HelidonTestInfo<?> testInfo(ITestResult tr, ITestNGMethod tm) {
-        Class<?> instrumentedClass = tr.getTestClass().getRealClass();
-        Class<?> testClass = instrumentedClasses.getOrDefault(instrumentedClass, instrumentedClass);
+        Class<?> testClass = realClass(tr.getTestClass());
         ClassInfo classInfo = classInfo(testClass, HelidonTestDescriptorImpl::new);
         if (tm != null) {
             return methodInfo(tm.getConstructorOrMethod().getMethod(), classInfo, HelidonTestDescriptorImpl::new);
         }
         return classInfo;
+    }
+
+    private Class<?> realClass(IClass tc) {
+        Class<?> instrumentedClass = tc.getRealClass();
+        return realClasses.getOrDefault(instrumentedClass, instrumentedClass);
     }
 
     private static boolean isSequential(ITestResult tr) {

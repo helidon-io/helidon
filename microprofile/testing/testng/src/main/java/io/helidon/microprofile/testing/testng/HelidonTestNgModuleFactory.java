@@ -23,7 +23,7 @@ import org.testng.IModuleFactory;
 import org.testng.ITestContext;
 
 /**
- * A Guice module factory implementation that instantiates instrumented classes.
+ * A Guice module factory that instantiates instrumented classes.
  */
 public class HelidonTestNgModuleFactory implements IModuleFactory {
     @Override
@@ -33,14 +33,16 @@ public class HelidonTestNgModuleFactory implements IModuleFactory {
 
     private static class ModuleImpl<T> extends AbstractModule {
         private final Class<T> testClass;
+        private final T testInstance;
 
         ModuleImpl(Class<T> testClass) {
             this.testClass = testClass;
+            this.testInstance = ProxyHelper.allocateInstance(testClass);
         }
 
         @Override
         protected void configure() {
-            bind(testClass).toProvider(() -> ProxyHelper.allocateInstance(testClass));
+            bind(testClass).toProvider(() -> testInstance);
         }
     }
 }

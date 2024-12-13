@@ -18,6 +18,7 @@ package io.helidon.microprofile.testing;
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -36,7 +37,6 @@ import net.bytebuddy.matcher.ElementMatcher;
 import static net.bytebuddy.matcher.ElementMatchers.isAnnotatedWith;
 import static net.bytebuddy.matcher.ElementMatchers.isEquals;
 import static net.bytebuddy.matcher.ElementMatchers.isHashCode;
-import static net.bytebuddy.matcher.ElementMatchers.isToString;
 import static net.bytebuddy.matcher.ElementMatchers.not;
 
 /**
@@ -77,18 +77,28 @@ public class ProxyHelper {
      * @param <T>      annotation type
      * @return annotation
      */
-    public static <T extends Annotation> T newAnnotation(Class<T> type, Function<String, Object> function) {
-        ClassLoader cl = Thread.currentThread().getContextClassLoader();
-        Object o = Proxy.newProxyInstance(cl, new Class[] {type},
-                (proxy, method, args) -> {
-                    String methodName = method.getName();
-                    if ("annotationType".equals(methodName)) {
-                        return type;
-                    }
-                    Object value = function.apply(methodName);
-                    return value != null ? value : method.getDefaultValue();
-                });
+    public static <T extends Annotation> T annotation(Class<T> type, Function<String, Object> function) {
+        Object o = proxy(List.of(type), (proxy, method, args) -> {
+            String methodName = method.getName();
+            if ("annotationType".equals(methodName)) {
+                return type;
+            }
+            Object value = function.apply(methodName);
+            return value != null ? value : method.getDefaultValue();
+        });
         return type.cast(o);
+    }
+
+    /**
+     * Create a proxy instance.
+     *
+     * @param interfaces interfaces
+     * @param handler    invocation handler
+     * @return proxy
+     */
+    public static Object proxy(List<Class<?>> interfaces, InvocationHandler handler) {
+        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        return Proxy.newProxyInstance(cl, interfaces.toArray(Class[]::new), handler);
     }
 
     /**
@@ -153,9 +163,7 @@ public class ProxyHelper {
                                                     List<Class<? extends Annotation>> methodExcludes,
                                                     BiFunction<Class<T>, Method, T> resolver) {
 
-        ElementMatcher.Junction<MethodDescription> matcher = not(isEquals())
-                .and(not(isHashCode()))
-                .and(not(isToString()));
+        ElementMatcher.Junction<MethodDescription> matcher = not(isEquals()).and(not(isHashCode()));
         for (Class<? extends Annotation> exclude : methodExcludes) {
             matcher = matcher.and(not(isAnnotatedWith(exclude)));
         }
@@ -166,6 +174,9 @@ public class ProxyHelper {
                 .withHashCodeEquals()
                 .method(matcher)
                 .intercept(InvocationHandlerAdapter.of((proxy, method, args) -> {
+                    if ("toString".equals(method.getName()) && method.getParameterCount() == 0) {
+                        return type.getName();
+                    }
                     T instance = resolver.apply(type, method);
                     if (instance != null) {
                         method.setAccessible(true);
