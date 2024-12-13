@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+
+import static io.helidon.common.testing.virtualthreads.PinningRecorder.DEFAULT_THRESHOLD;
 
 /**
  * An annotation making this test class a CDI bean with support for injection.
@@ -48,4 +50,18 @@ public @interface HelidonTest {
      * @return whether to reset container per test method
      */
     boolean resetPerTest() default false;
+
+    /**
+     * Time threshold for carrier thread blocking to be considered as pinning.
+     *
+     * @return threshold in milliseconds, {@code 20} is default
+     */
+    long pinningThreshold() default DEFAULT_THRESHOLD;
+
+    /**
+     * Whether to turn on pinning detection during {@code @HelidonTest}.
+     *
+     * @return true for turning detection on, {@code false} is default
+     */
+    boolean pinningDetection() default false;
 }

@@ -26,6 +26,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URL;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -36,6 +37,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.helidon.common.testing.virtualthreads.PinningRecorder;
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
@@ -59,8 +61,6 @@ import jakarta.enterprise.util.AnnotationLiteral;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import jakarta.ws.rs.client.ClientBuilder;
-import jdk.jfr.consumer.RecordedEvent;
-import jdk.jfr.consumer.RecordingStream;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.spi.ConfigBuilder;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
@@ -90,29 +90,31 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
     private List<AddExtension> classLevelExtensions = new ArrayList<>();
     private List<AddBean> classLevelBeans = new ArrayList<>();
     private ConfigMeta classLevelConfigMeta = new ConfigMeta();
-    private RecordingStream recordingStream;
     private boolean classLevelDisableDiscovery = false;
+    private boolean helidonTest;
     private boolean resetPerTest;
-    private boolean pinnedThreadValidation;
 
     private Class<?> testClass;
     private Object testInstance;
     private ConfigProviderResolver configProviderResolver;
     private Config config;
     private SeContainer container;
-    private PinningException pinningException;
+    private PinningRecorder pinningRecorder;
 
     @Override
     public void onBeforeClass(ITestClass iTestClass) {
         testClass = iTestClass.getRealClass();
+        HelidonTest testAnnot = testClass.getAnnotation(HelidonTest.class);
+        if (testAnnot == null) {
+            return;
+        }
+        helidonTest = true;
+        resetPerTest = testAnnot.resetPerTest();
 
         List<Annotation> metaAnnotations = extractMetaAnnotations(testClass);
 
         AddConfig[] configs = getAnnotations(testClass, AddConfig.class, metaAnnotations);
-        pinnedThreadValidation = testClass.getAnnotation(PinnedThreadValidation.class) != null;
-        startRecordingStream();
 
-        AddConfig[] configs = getAnnotations(testClass, AddConfig.class);
         classLevelConfigMeta.addConfig(configs);
         classLevelConfigMeta.configuration(getAnnotation(testClass, Configuration.class, metaAnnotations));
         classLevelConfigMeta.addConfigBlock(getAnnotation(testClass, AddConfigBlock.class, metaAnnotations));
@@ -124,9 +126,9 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
         AddBean[] beans = getAnnotations(testClass, AddBean.class, metaAnnotations);
         classLevelBeans.addAll(Arrays.asList(beans));
 
-        HelidonTest testAnnot = testClass.getAnnotation(HelidonTest.class);
-        if (testAnnot != null) {
-            resetPerTest = testAnnot.resetPerTest();
+        if (testAnnot.pinningDetection()) {
+            pinningRecorder = PinningRecorder.create();
+            pinningRecorder.record(Duration.ofMillis(testAnnot.pinningThreshold()));
         }
 
         DisableDiscovery discovery = getAnnotation(testClass, DisableDiscovery.class, metaAnnotations);
@@ -165,15 +167,25 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
 
     @Override
     public void onAfterClass(ITestClass testClass) {
+        if (!helidonTest) {
+            return;
+        }
+
         if (!resetPerTest) {
             releaseConfig();
             stopContainer();
         }
-        closeRecordingStream();
+        if (pinningRecorder != null) {
+            pinningRecorder.close();
+            pinningRecorder = null;
+        }
     }
 
     @Override
     public void onTestStart(ITestResult result) {
+        if (!helidonTest) {
+            return;
+        }
 
         if (resetPerTest) {
             Method method = result.getMethod().getConstructorOrMethod().getMethod();
@@ -206,6 +218,10 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
 
     @Override
     public void onTestFailure(ITestResult iTestResult) {
+        if (!helidonTest) {
+            return;
+        }
+
         if (resetPerTest) {
             releaseConfig();
             stopContainer();
@@ -214,6 +230,10 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
 
     @Override
     public void onTestSuccess(ITestResult iTestResult) {
+        if (!helidonTest) {
+            return;
+        }
+
         if (resetPerTest) {
             releaseConfig();
             stopContainer();
@@ -336,7 +356,7 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
         for (Annotation testAnnotation : testAnnotations) {
             List<Annotation> annotations = List.of(testAnnotation.annotationType().getAnnotations());
             List<Class<?>> annotationsClass = annotations.stream()
-                    .map(a -> a.annotationType()).collect(Collectors.toList());
+                    .map(Annotation::annotationType).collect(Collectors.toList());
             if (!Collections.disjoint(TEST_ANNOTATIONS, annotationsClass)) {
                 // Contains at least one of HELIDON_TEST_ANNOTATIONS
                 return annotations;
@@ -365,30 +385,6 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
             }
         }
         return annotation;
-    }
-
-    private void startRecordingStream() {
-        if (pinnedThreadValidation) {
-            pinningException = null;
-            recordingStream = new RecordingStream();
-            recordingStream.enable("jdk.VirtualThreadPinned").withStackTrace();
-            recordingStream.onEvent("jdk.VirtualThreadPinned", this::record);
-            recordingStream.startAsync();
-        }
-    }
-
-    private void closeRecordingStream() {
-        if (pinnedThreadValidation) {
-            try {
-                // Flush ending events
-                recordingStream.stop();
-                if (pinningException != null) {
-                    throw pinningException;
-                }
-            } finally {
-                recordingStream.close();
-            }
-        }
     }
 
     @SuppressWarnings("unchecked")
@@ -462,15 +458,6 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
             }
         }
         return false;
-    }
-
-    void record(RecordedEvent event) {
-        PinningException e = new PinningException(event);
-        if (pinningException == null) {
-            pinningException = e;
-        } else {
-            pinningException.addSuppressed(e);
-        }
     }
 
     @SuppressWarnings("CdiManagedBeanInconsistencyInspection")
@@ -686,29 +673,6 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
     @SuppressWarnings("ClassExplicitlyAnnotation")
     private static final class SingletonLiteral extends AnnotationLiteral<Singleton> implements Singleton {
         static final SingletonLiteral INSTANCE = new SingletonLiteral();
-    }
-
-    private static class PinningException extends AssertionError {
-        private final RecordedEvent recordedEvent;
-
-        PinningException(RecordedEvent recordedEvent) {
-            this.recordedEvent = recordedEvent;
-            if (recordedEvent.getStackTrace() != null) {
-                StackTraceElement[] stackTraceElements = recordedEvent.getStackTrace().getFrames().stream()
-                        .map(f -> new StackTraceElement(f.getMethod().getType().getName(),
-                                                        f.getMethod().getName(),
-                                                        f.getMethod().getType().getName() + ".java",
-                                                        f.getLineNumber()))
-                        .toArray(StackTraceElement[]::new);
-                super.setStackTrace(stackTraceElements);
-            }
-        }
-
-        @Override
-        public String getMessage() {
-            return "Pinned virtual threads were detected:\n"
-                    + recordedEvent.toString();
-        }
     }
 
 }
