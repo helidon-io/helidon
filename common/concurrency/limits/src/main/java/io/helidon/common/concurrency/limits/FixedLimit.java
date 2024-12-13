@@ -23,6 +23,12 @@ import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.config.Config;
+import io.helidon.metrics.api.Gauge;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.MetricsFactory;
+
+import static io.helidon.metrics.api.Meter.Scope.VENDOR;
 
 /**
  * Semaphore based limit, that supports queuing for a permit, and timeout on the queue.
@@ -51,14 +57,16 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
     private final FixedLimitConfig config;
     private final LimitHandlers.LimiterHandler handler;
     private final int initialPermits;
+    private final Semaphore semaphore;
 
     private FixedLimit(FixedLimitConfig config) {
         this.config = config;
         if (config.permits() == 0 && config.semaphore().isEmpty()) {
             this.handler = new LimitHandlers.NoOpSemaphoreHandler();
             this.initialPermits = 0;
+            semaphore = null;
         } else {
-            Semaphore semaphore = config.semaphore().orElseGet(() -> new Semaphore(config.permits(), config.fair()));
+            semaphore = config.semaphore().orElseGet(() -> new Semaphore(config.permits(), config.fair()));
             this.initialPermits = semaphore.availablePermits();
             if (config.queueLength() == 0) {
                 this.handler = new LimitHandlers.RealSemaphoreHandler(semaphore);
@@ -182,5 +190,26 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
                     .build();
         }
         return config.build();
+    }
+
+    /**
+     * Initialize metrics for this limit.
+     *
+     * @param socketName name of socket for which this limit was created
+     */
+    @Override
+    public void init(String socketName) {
+        if (config.enableMetrics()) {
+            MetricsFactory metricsFactory = MetricsFactory.getInstance();
+            MeterRegistry meterRegistry = Metrics.globalRegistry();
+            String namePrefix = (socketName.startsWith("@") ? socketName.substring(1) : socketName)
+                    + "_" + config.name();
+
+            if (semaphore != null) {
+                Gauge.Builder<Integer> queueLengthBuilder = metricsFactory.gaugeBuilder(
+                        namePrefix + "_queue_length", semaphore::getQueueLength).scope(VENDOR);
+                meterRegistry.getOrCreate(queueLengthBuilder);
+            }
+        }
     }
 }

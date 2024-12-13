@@ -96,4 +96,12 @@ interface FixedLimitConfigBlueprint extends Prototype.Factory<FixedLimit> {
      */
     Optional<Semaphore> semaphore();
 
+    /**
+     * Whether to collect metrics for the AIMD implementation.
+     *
+     * @return metrics flag
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(false)
+    boolean enableMetrics();
 }

@@ -146,4 +146,9 @@ public class AimdLimit implements Limit, SemaphoreLimit, RuntimeType.Api<AimdLim
     public Limit copy() {
         return config.build();
     }
+
+    @Override
+    public void init(String socketName) {
+        aimdLimitImpl.initMetrics(socketName, config);
+    }
 }
