@@ -43,13 +43,15 @@ class AimdLimitImpl {
 
     private final Supplier<Long> clock;
     private final AtomicInteger concurrentRequests;
+    private final AtomicInteger rejectedRequests;
     private final AdjustableSemaphore semaphore;
     private final LimitHandlers.LimiterHandler handler;
-
     private final AtomicInteger limit;
     private final Lock limitLock = new ReentrantLock();
+    private final int queueLength;
 
     private Timer rttTimer;
+    private Timer queueWaitTimer;
 
     AimdLimitImpl(AimdLimitConfig config) {
         int initialLimit = config.initialLimit();
@@ -60,18 +62,15 @@ class AimdLimitImpl {
         this.clock = config.clock().orElseGet(() -> System::nanoTime);
 
         this.concurrentRequests = new AtomicInteger();
+        this.rejectedRequests = new AtomicInteger();
         this.limit = new AtomicInteger(initialLimit);
 
+        this.queueLength = config.queueLength();
         this.semaphore = new AdjustableSemaphore(initialLimit, config.fair());
-        if (config.queueLength() == 0) {
-            this.handler = new LimitHandlers.RealSemaphoreHandler(semaphore,
-                                                                  () -> new AimdToken(clock, concurrentRequests));
-        } else {
-            this.handler = new LimitHandlers.QueuedSemaphoreHandler(semaphore,
-                                                                    config.queueLength(),
-                                                                    config.queueTimeout(),
-                                                                    () -> new AimdToken(clock, concurrentRequests));
-        }
+        this.handler = new LimitHandlers.QueuedSemaphoreHandler(semaphore,
+                                                                queueLength,
+                                                                config.queueTimeout(),
+                                                                () -> new AimdToken(clock, concurrentRequests));
 
         if (!(backoffRatio < 1.0 && backoffRatio >= 0.5)) {
             throw new ConfigException("Backoff ratio must be within [0.5, 1.0)");
@@ -95,8 +94,23 @@ class AimdLimitImpl {
         return limit.get();
     }
 
-    Optional<Limit.Token> tryAcquire() {
-        return handler.tryAcquire();
+    Optional<LimitAlgorithm.Token> tryAcquire(boolean wait) {
+        Optional<LimitAlgorithm.Token> token = handler.tryAcquire(false);
+        if (token.isPresent()) {
+            return token;
+        }
+        if (wait && queueLength > 0) {
+            long startWait = clock.get();
+            token = handler.tryAcquire(true);
+            if (token.isPresent()) {
+                if (queueWaitTimer != null) {
+                    queueWaitTimer.record(clock.get() - startWait, TimeUnit.NANOSECONDS);
+                }
+                return token;
+            }
+        }
+        rejectedRequests.getAndIncrement();
+        return token;
     }
 
     void invoke(Runnable runnable) throws Exception {
@@ -107,7 +121,7 @@ class AimdLimitImpl {
     }
 
     <T> T invoke(Callable<T> callable) throws Exception {
-        Optional<LimitAlgorithm.Token> optionalToken = handler.tryAcquire();
+        Optional<LimitAlgorithm.Token> optionalToken = tryAcquire(true);
         if (optionalToken.isPresent()) {
             LimitAlgorithm.Token token = optionalToken.get();
             try {
@@ -189,14 +203,23 @@ class AimdLimitImpl {
                     namePrefix + "_concurrent_requests", concurrentRequests::get).scope(VENDOR);
             meterRegistry.getOrCreate(concurrentRequestsBuilder);
 
+            Gauge.Builder<Integer> rejectedRequestsBuilder = metricsFactory.gaugeBuilder(
+                    namePrefix + "_rejected_requests", rejectedRequests::get).scope(VENDOR);
+            meterRegistry.getOrCreate(rejectedRequestsBuilder);
+
             Gauge.Builder<Integer> queueLengthBuilder = metricsFactory.gaugeBuilder(
                     namePrefix + "_queue_length", semaphore::getQueueLength).scope(VENDOR);
             meterRegistry.getOrCreate(queueLengthBuilder);
 
-            Timer.Builder timerBuilder = metricsFactory.timerBuilder(namePrefix + "_rtt")
+            Timer.Builder rttTimerBuilder = metricsFactory.timerBuilder(namePrefix + "_rtt")
                     .scope(VENDOR)
                     .baseUnit(Timer.BaseUnits.MILLISECONDS);
-            rttTimer = meterRegistry.getOrCreate(timerBuilder);
+            rttTimer = meterRegistry.getOrCreate(rttTimerBuilder);
+
+            Timer.Builder waitTimerBuilder = metricsFactory.timerBuilder(namePrefix + "_queue_wait_time")
+                    .scope(VENDOR)
+                    .baseUnit(Timer.BaseUnits.MILLISECONDS);
+            queueWaitTimer = meterRegistry.getOrCreate(waitTimerBuilder);
         }
     }
 

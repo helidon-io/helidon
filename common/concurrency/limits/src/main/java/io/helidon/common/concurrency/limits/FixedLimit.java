@@ -19,7 +19,10 @@ package io.helidon.common.concurrency.limits;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.config.Config;
@@ -27,6 +30,7 @@ import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.metrics.api.Timer;
 
 import static io.helidon.metrics.api.Meter.Scope.VENDOR;
 
@@ -39,6 +43,7 @@ import static io.helidon.metrics.api.Meter.Scope.VENDOR;
 @SuppressWarnings("removal")
 @RuntimeType.PrototypedBy(FixedLimitConfig.class)
 public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedLimitConfig> {
+
     /**
      * Default limit, meaning unlimited execution.
      */
@@ -58,23 +63,32 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
     private final LimitHandlers.LimiterHandler handler;
     private final int initialPermits;
     private final Semaphore semaphore;
+    private final Supplier<Long> clock;
+    private final AtomicInteger concurrentRequests;
+    private final AtomicInteger rejectedRequests;
+    private final int queueLength;
+
+    private Timer rttTimer;
+    private Timer queueWaitTimer;
 
     private FixedLimit(FixedLimitConfig config) {
         this.config = config;
+        this.concurrentRequests = new AtomicInteger();
+        this.rejectedRequests = new AtomicInteger();
+        this.clock = config.clock().orElseGet(() -> System::nanoTime);
+
         if (config.permits() == 0 && config.semaphore().isEmpty()) {
-            this.handler = new LimitHandlers.NoOpSemaphoreHandler();
+            this.semaphore = null;
             this.initialPermits = 0;
-            semaphore = null;
+            this.queueLength = 0;
+            this.handler = new LimitHandlers.NoOpSemaphoreHandler();
         } else {
-            semaphore = config.semaphore().orElseGet(() -> new Semaphore(config.permits(), config.fair()));
+            this.semaphore = config.semaphore().orElseGet(() -> new Semaphore(config.permits(), config.fair()));
             this.initialPermits = semaphore.availablePermits();
-            if (config.queueLength() == 0) {
-                this.handler = new LimitHandlers.RealSemaphoreHandler(semaphore);
-            } else {
-                this.handler = new LimitHandlers.QueuedSemaphoreHandler(semaphore,
-                                                                        config.queueLength(),
-                                                                        config.queueTimeout());
-            }
+            this.queueLength = Math.max(0, config.queueLength());
+            this.handler = new LimitHandlers.QueuedSemaphoreHandler(semaphore,
+                                                                    queueLength,
+                                                                    config.queueTimeout());
         }
     }
 
@@ -144,18 +158,59 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
     }
 
     @Override
+    public Optional<Token> tryAcquire(boolean wait) {
+        Optional<LimitAlgorithm.Token> token = handler.tryAcquire(false);
+        if (token.isPresent()) {
+            return token;
+        }
+        if (wait && queueLength > 0) {
+            long startWait = clock.get();
+            token = handler.tryAcquire(true);
+            if (token.isPresent()) {
+                if (queueWaitTimer != null) {
+                    queueWaitTimer.record(clock.get() - startWait, TimeUnit.NANOSECONDS);
+                }
+                return token;
+            }
+        }
+        rejectedRequests.getAndIncrement();
+        return token;
+    }
+
+    @Override
     public <T> T invoke(Callable<T> callable) throws Exception {
-        return handler.invoke(callable);
+        Optional<LimitAlgorithm.Token> optionalToken = tryAcquire(true);
+        if (optionalToken.isPresent()) {
+            LimitAlgorithm.Token token = optionalToken.get();
+            try {
+                concurrentRequests.getAndIncrement();
+                long startTime = clock.get();
+                T response = callable.call();
+                if (rttTimer != null) {
+                    rttTimer.record(clock.get() - startTime, TimeUnit.NANOSECONDS);
+                }
+                token.success();
+                return response;
+            } catch (IgnoreTaskException e) {
+                token.ignore();
+                return e.handle();
+            } catch (Throwable e) {
+                token.dropped();
+                throw e;
+            } finally {
+                concurrentRequests.getAndDecrement();
+            }
+        } else {
+            throw new LimitException("No more permits available for the semaphore");
+        }
     }
 
     @Override
     public void invoke(Runnable runnable) throws Exception {
-        handler.invoke(runnable);
-    }
-
-    @Override
-    public Optional<Token> tryAcquire(boolean wait) {
-        return handler.tryAcquire(wait);
+        invoke(() -> {
+            runnable.run();
+            return null;
+        });
     }
 
     @SuppressWarnings("removal")
@@ -209,6 +264,24 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
                 Gauge.Builder<Integer> queueLengthBuilder = metricsFactory.gaugeBuilder(
                         namePrefix + "_queue_length", semaphore::getQueueLength).scope(VENDOR);
                 meterRegistry.getOrCreate(queueLengthBuilder);
+
+                Gauge.Builder<Integer> concurrentRequestsBuilder = metricsFactory.gaugeBuilder(
+                        namePrefix + "_concurrent_requests", concurrentRequests::get).scope(VENDOR);
+                meterRegistry.getOrCreate(concurrentRequestsBuilder);
+
+                Gauge.Builder<Integer> rejectedRequestsBuilder = metricsFactory.gaugeBuilder(
+                        namePrefix + "_rejected_requests", rejectedRequests::get).scope(VENDOR);
+                meterRegistry.getOrCreate(rejectedRequestsBuilder);
+
+                Timer.Builder rttTimerBuilder = metricsFactory.timerBuilder(namePrefix + "_rtt")
+                        .scope(VENDOR)
+                        .baseUnit(Timer.BaseUnits.MILLISECONDS);
+                rttTimer = meterRegistry.getOrCreate(rttTimerBuilder);
+
+                Timer.Builder waitTimerBuilder = metricsFactory.timerBuilder(namePrefix + "_queue_wait_time")
+                        .scope(VENDOR)
+                        .baseUnit(Timer.BaseUnits.MILLISECONDS);
+                queueWaitTimer = meterRegistry.getOrCreate(waitTimerBuilder);
             }
         }
     }

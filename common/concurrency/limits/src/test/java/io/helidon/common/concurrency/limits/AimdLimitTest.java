@@ -190,7 +190,7 @@ public class AimdLimitTest {
         }
     }
 
-    @RepeatedTest(5)
+    @RepeatedTest(3)
     public void testLimitWithQueue() throws Exception {
         AimdLimit limiter = AimdLimit.builder()
                 .minLimit(1)

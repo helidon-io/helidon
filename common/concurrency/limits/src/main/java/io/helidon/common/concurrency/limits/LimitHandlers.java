@@ -72,65 +72,6 @@ class LimitHandlers {
         }
     }
 
-    @SuppressWarnings("removal")
-    static class RealSemaphoreHandler implements LimiterHandler {
-        private final Semaphore semaphore;
-        private final Supplier<Token> tokenSupplier;
-
-        RealSemaphoreHandler(Semaphore semaphore) {
-            this.semaphore = semaphore;
-            this.tokenSupplier = () -> new SemaphoreToken(semaphore);
-        }
-
-        RealSemaphoreHandler(Semaphore semaphore, Supplier<Token> tokenSupplier) {
-            this.semaphore = semaphore;
-            this.tokenSupplier = tokenSupplier;
-        }
-
-        @Override
-        public <T> T invoke(Callable<T> callable) throws Exception {
-            if (semaphore.tryAcquire()) {
-                try {
-                    return callable.call();
-                } catch (IgnoreTaskException e) {
-                    return e.handle();
-                } finally {
-                    semaphore.release();
-                }
-            } else {
-                throw new LimitException("No more permits available for the semaphore");
-            }
-        }
-
-        @Override
-        public void invoke(Runnable runnable) throws Exception {
-            if (semaphore.tryAcquire()) {
-                try {
-                    runnable.run();
-                } catch (IgnoreTaskException e) {
-                    e.handle();
-                } finally {
-                    semaphore.release();
-                }
-            } else {
-                throw new LimitException("No more permits available for the semaphore");
-            }
-        }
-
-        @Override
-        public Optional<Token> tryAcquire(boolean wait) {
-            if (!semaphore.tryAcquire()) {
-                return Optional.empty();
-            }
-            return Optional.of(tokenSupplier.get());
-        }
-
-        @Override
-        public Semaphore semaphore() {
-            return semaphore;
-        }
-    }
-
     static class QueuedSemaphoreHandler implements LimiterHandler {
         private final Semaphore semaphore;
         private final int queueLength;
@@ -153,7 +94,7 @@ class LimitHandlers {
 
         @Override
         public Optional<Token> tryAcquire(boolean wait) {
-            if (semaphore.getQueueLength() >= this.queueLength) {
+            if (queueLength > 0 && semaphore.getQueueLength() >= queueLength) {
                 // this is an estimate - we do not promise to be precise here
                 return Optional.empty();
             }
@@ -163,12 +104,9 @@ class LimitHandlers {
                     if (!semaphore.tryAcquire(timeoutMillis, TimeUnit.MILLISECONDS)) {
                         return Optional.empty();
                     }
-                } else {
-                    if (!semaphore.tryAcquire()) {
-                        return Optional.empty();
-                    }
+                } else if (!semaphore.tryAcquire()) {
+                    return Optional.empty();
                 }
-
             } catch (InterruptedException e) {
                 return Optional.empty();
             }

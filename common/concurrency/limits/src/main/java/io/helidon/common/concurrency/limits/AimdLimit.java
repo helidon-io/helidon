@@ -118,7 +118,7 @@ public class AimdLimit implements Limit, SemaphoreLimit, RuntimeType.Api<AimdLim
 
     @Override
     public Optional<Token> tryAcquire(boolean wait) {
-        return aimdLimitImpl.tryAcquire();
+        return aimdLimitImpl.tryAcquire(wait);
     }
 
     @SuppressWarnings("removal")
