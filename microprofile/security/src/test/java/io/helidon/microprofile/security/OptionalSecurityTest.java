@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,7 +100,7 @@ class OptionalSecurityTest {
          */
         securityFilter.processAuthentication(filterContext, clientBuilder, methodSecurity, tracing.atnTracing());
 
-        assertThat(filterContext.isShouldFinish(), is(false));
+        assertThat(filterContext.shouldFinish(), is(false));
         assertThat(securityContext.user(), is(Optional.empty()));
     }
 
@@ -108,7 +108,7 @@ class OptionalSecurityTest {
     void testNotOptional() {
         SecurityContext securityContext = security.createContext("context_id");
         SecurityFilterContext filterContext = new SecurityFilterContext();
-        filterContext.setJerseyRequest(mock(ContainerRequest.class));
+        filterContext.jerseyRequest(mock(ContainerRequest.class));
         SecurityDefinition methodSecurity = mock(SecurityDefinition.class);
         when(methodSecurity.authenticationOptional()).thenReturn(false);
 
@@ -123,7 +123,7 @@ class OptionalSecurityTest {
          */
         securityFilter.processAuthentication(filterContext, clientBuilder, methodSecurity, tracing.atnTracing());
 
-        assertThat(filterContext.isShouldFinish(), is(true));
+        assertThat(filterContext.shouldFinish(), is(true));
         assertThat(securityContext.user(), is(Optional.empty()));
     }
 

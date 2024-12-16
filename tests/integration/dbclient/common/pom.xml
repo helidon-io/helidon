@@ -23,18 +23,12 @@
     <parent>
         <groupId>io.helidon.tests.integration.dbclient</groupId>
         <artifactId>helidon-tests-integration-dbclient-project</artifactId>
-        <version>4.1.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-tests-integration-dbclient-common</artifactId>
-    <name>Helidon Tests Integration Database Client Common</name>
+    <name>Helidon Tests Integration DbClient Common</name>
 
     <dependencies>
-        <dependency>
-            <groupId>io.helidon.tests.integration</groupId>
-            <artifactId>helidon-tests-integration-harness</artifactId>
-            <version>${project.version}</version>
-        </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config</artifactId>
@@ -60,16 +54,16 @@
             <artifactId>parsson</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-context</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver.observe</groupId>
@@ -80,9 +74,8 @@
             <artifactId>helidon-webserver-observe-health</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-core</artifactId>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient-http1</artifactId>
         </dependency>
     </dependencies>
-
 </project>

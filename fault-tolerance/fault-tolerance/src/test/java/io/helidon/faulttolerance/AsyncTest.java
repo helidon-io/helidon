@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,9 @@ package io.helidon.faulttolerance;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 
 import org.junit.jupiter.api.Test;
 
@@ -59,6 +62,24 @@ class AsyncTest {
 
         assertThat(threadName, startsWith("helidon-ft-"));
         assertThat(threadName, endsWith(": async"));
+    }
+
+    @Test
+    void testContextPropagation() throws Exception {
+        Context context = Context.create();
+        CompletableFuture<Context> cf = new CompletableFuture<>();
+        Contexts.runInContext(context, () -> {
+            try {
+                Async async = Async.create();
+                async.invoke(() -> {
+                    cf.complete(Contexts.context().orElse(null));
+                    return null;
+                });
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+        assertThat(cf.get(WAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS), is(context));
     }
 
     private Thread testAsync(Async async) {

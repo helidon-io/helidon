@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,9 @@ import io.helidon.http.Status;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 class Http1StatusParserTest {
 
@@ -30,14 +31,14 @@ class Http1StatusParserTest {
     public void http10() {
         String response = "HTTP/1.0 200 Connection established\r\n";
         Status status = Http1StatusParser.readStatus(new DataReader(() -> response.getBytes()), 256);
-        assertEquals(200, status.code());
+        assertThat(status.code(), is(200));
     }
 
     @Test
     public void http11() {
         String response = "HTTP/1.1 200 Connection established\r\n";
         Status status = Http1StatusParser.readStatus(new DataReader(() -> response.getBytes()), 256);
-        assertEquals(200, status.code());
+        assertThat(status.code(), is(200));
     }
 
     @Test

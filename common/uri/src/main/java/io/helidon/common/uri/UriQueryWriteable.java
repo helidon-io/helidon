@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,8 +85,11 @@ public interface UriQueryWriteable extends UriQuery {
     UriQueryWriteable remove(String name, Consumer<List<String>> removedConsumer);
 
     /**
-     * Update from a query string (with decoded values).
-     * @param queryString decoded query string to update this instance
+     * Update from a query string (with <b>encoded</b> values).
+     * <p>
+     * This documentation (and behavior) has been changed, as we cannot create a proper query from {@code decoded} values,
+     *  as these may contain characters used to split the query.
+     * @param queryString encoded query string to update this instance
      */
     void fromQueryString(String queryString);
 

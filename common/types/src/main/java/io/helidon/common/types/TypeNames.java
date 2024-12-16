@@ -16,8 +16,10 @@
 
 package io.helidon.common.types;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
@@ -28,6 +30,7 @@ import java.util.function.Supplier;
 
 import io.helidon.common.Generated;
 import io.helidon.common.GenericType;
+import io.helidon.common.Size;
 
 /**
  * Commonly used type names.
@@ -74,9 +77,24 @@ public final class TypeNames {
      */
     public static final TypeName RETENTION = TypeName.create(Retention.class);
     /**
+     * Type name for {@link java.lang.annotation.Documented}.
+     */
+    public static final TypeName DOCUMENTED = TypeName.create(Documented.class);
+    /**
      * Type name for {@link java.lang.annotation.Inherited}.
      */
     public static final TypeName INHERITED = TypeName.create(Inherited.class);
+    /**
+     * Type name for {@link java.lang.annotation.Target}.
+     */
+    public static final TypeName TARGET = TypeName.create(Target.class);
+    /**
+     * Wildcard type name, represented in code by {@code ?}.
+     */
+    public static final TypeName WILDCARD = TypeName.builder()
+            .className("?")
+            .wildcard(true)
+            .build();
 
     /*
     Primitive types and their boxed counterparts
@@ -162,6 +180,10 @@ public final class TypeNames {
      */
     public static final TypeName TYPE_NAME = TypeName.create(TypeName.class);
     /**
+     * Type name of the resolved type name.
+     */
+    public static final TypeName RESOLVED_TYPE_NAME = TypeName.create(ResolvedType.class);
+    /**
      * Type name of typed element info.
      */
     public static final TypeName TYPED_ELEMENT_INFO = TypeName.create(TypedElementInfo.class);
@@ -185,6 +207,10 @@ public final class TypeNames {
      * Helidon {@link io.helidon.common.GenericType}.
      */
     public static final TypeName GENERIC_TYPE = TypeName.create(GenericType.class);
+    /**
+     * Type name for {@link io.helidon.common.Size}.
+     */
+    public static final TypeName SIZE = TypeName.create(Size.class);
 
     private TypeNames() {
     }

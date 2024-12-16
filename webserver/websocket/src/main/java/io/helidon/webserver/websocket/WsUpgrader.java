@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -124,7 +124,7 @@ public class WsUpgrader implements Http1Upgrader {
     public ServerConnection upgrade(ConnectionContext ctx, HttpPrologue prologue, WritableHeaders<?> headers) {
         String wsKey;
         if (headers.contains(WS_KEY)) {
-            wsKey = headers.get(WS_KEY).value();
+            wsKey = headers.get(WS_KEY).get();
         } else {
             // this header is required
             return null;
@@ -132,7 +132,7 @@ public class WsUpgrader implements Http1Upgrader {
         // protocol version
         String version;
         if (headers.contains(WS_VERSION)) {
-            version = headers.get(WS_VERSION).value();
+            version = headers.get(WS_VERSION).get();
         } else {
             version = SUPPORTED_VERSION;
         }
@@ -156,7 +156,7 @@ public class WsUpgrader implements Http1Upgrader {
 
         if (!anyOrigin()) {
             if (headers.contains(HeaderNames.ORIGIN)) {
-                String origin = headers.get(HeaderNames.ORIGIN).value();
+                String origin = headers.get(HeaderNames.ORIGIN).get();
                 if (!origins().contains(origin)) {
                     throw RequestException.builder()
                             .message("Invalid Origin")

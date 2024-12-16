@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,6 +79,10 @@ abstract class MetricImpl<M extends Meter> extends AbstractMetric<M> implements 
      */
     protected static Iterable<io.helidon.metrics.api.Tag> allTags(String scope, Tag[] tags) {
         return toHelidonTags(SystemTagsManager.instance().withScopeTag(iterableEntries(tags), scope));
+    }
+
+    static String resolvedScope(Meter delegate) {
+        return SystemTagsManager.instance().effectiveScope(delegate.scope()).orElse(Meter.Scope.DEFAULT);
     }
 
     /**

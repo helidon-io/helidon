@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,12 +42,26 @@ public interface SinkProvider<T> {
     /**
      * Creates a sink using this provider.
      *
+     * @param context a context for a sync provider
+     * @param <X> type of sink
+     * @return newly created sink
+     */
+    default <X extends Sink<T>> X create(SinkProviderContext context) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    /**
+     * Creates a sink using this provider.
+     *
      * @param response the HTTP response
      * @param eventConsumer an event consumer
      * @param closeRunnable a runnable to call on close
      * @param <X> type of sink
      * @return newly created sink
+     * @deprecated replaced by {@link #create(SinkProviderContext)}
      */
-    <X extends Sink<T>> X create(ServerResponse response, BiConsumer<Object, MediaType> eventConsumer,
+    @Deprecated(since = "4.1.2", forRemoval = true)
+    <X extends Sink<T>> X create(ServerResponse response,
+                                 BiConsumer<Object, MediaType> eventConsumer,
                                  Runnable closeRunnable);
 }

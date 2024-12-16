@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,7 +78,7 @@ record CachedHandlerInMemory(MediaType mediaType,
                                                                    contentLength);
             if (ranges.size() == 1) {
                 // single response
-                ByteRangeRequest range = ranges.get(0);
+                ByteRangeRequest range = ranges.getFirst();
 
                 if (range.offset() > contentLength()) {
                     throw new HttpException("Invalid range offset", Status.REQUESTED_RANGE_NOT_SATISFIABLE_416, true);

@@ -43,6 +43,8 @@ public interface Annotated {
      * <p>
      * The returned list does not contain {@link #annotations()}. If a meta-annotation is present on multiple
      * annotations, it will be returned once for each such declaration.
+     * <p>
+     * This method does not return annotations on super types or interfaces!
      *
      * @return list of all meta annotations of this element
      */
@@ -85,11 +87,10 @@ public interface Annotated {
      * @see #findAnnotation(TypeName)
      */
     default Annotation annotation(TypeName annotationType) {
-        return findAnnotation(annotationType).orElseThrow(() -> new NoSuchElementException("Annotation " + annotationType + " "
-                                                                                                   + "is not present. Guard "
-                                                                                                   + "with hasAnnotation(), or "
-                                                                                                   + "use findAnnotation() "
-                                                                                                   + "instead"));
+        return findAnnotation(annotationType)
+                .orElseThrow(() -> new NoSuchElementException("Annotation " + annotationType + " is not present. "
+                                                                      + "Guard with hasAnnotation(), "
+                                                                      + "or use findAnnotation() instead"));
     }
 
     /**

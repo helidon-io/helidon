@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -125,11 +125,18 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
     abstract class BuilderBase<BUILDER extends TypeName.BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends TypeName>
             implements Prototype.Builder<BUILDER, PROTOTYPE> {
 
+        private final List<TypeName> lowerBounds = new ArrayList<>();
         private final List<TypeName> typeArguments = new ArrayList<>();
+        private final List<TypeName> upperBounds = new ArrayList<>();
         private final List<String> enclosingNames = new ArrayList<>();
         private final List<String> typeParameters = new ArrayList<>();
         private boolean array = false;
         private boolean generic = false;
+        private boolean isEnclosingNamesMutated;
+        private boolean isLowerBoundsMutated;
+        private boolean isTypeArgumentsMutated;
+        private boolean isTypeParametersMutated;
+        private boolean isUpperBoundsMutated;
         private boolean primitive = false;
         private boolean wildcard = false;
         private String className;
@@ -142,7 +149,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
-         * Update this builder from an existing prototype instance.
+         * Update this builder from an existing prototype instance. This method disables automatic service discovery.
          *
          * @param prototype existing prototype to update this builder from
          * @return updated builder instance
@@ -150,13 +157,30 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         public BUILDER from(TypeName prototype) {
             packageName(prototype.packageName());
             className(prototype.className());
+            if (!isEnclosingNamesMutated) {
+                enclosingNames.clear();
+            }
             addEnclosingNames(prototype.enclosingNames());
             primitive(prototype.primitive());
             array(prototype.array());
             generic(prototype.generic());
             wildcard(prototype.wildcard());
+            if (!isTypeArgumentsMutated) {
+                typeArguments.clear();
+            }
             addTypeArguments(prototype.typeArguments());
+            if (!isTypeParametersMutated) {
+                typeParameters.clear();
+            }
             addTypeParameters(prototype.typeParameters());
+            if (!isLowerBoundsMutated) {
+                lowerBounds.clear();
+            }
+            addLowerBounds(prototype.lowerBounds());
+            if (!isUpperBoundsMutated) {
+                upperBounds.clear();
+            }
+            addUpperBounds(prototype.upperBounds());
             return self();
         }
 
@@ -169,20 +193,58 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         public BUILDER from(TypeName.BuilderBase<?, ?> builder) {
             packageName(builder.packageName());
             builder.className().ifPresent(this::className);
-            addEnclosingNames(builder.enclosingNames());
+            if (isEnclosingNamesMutated) {
+                if (builder.isEnclosingNamesMutated) {
+                    addEnclosingNames(builder.enclosingNames);
+                }
+            } else {
+                enclosingNames.clear();
+                addEnclosingNames(builder.enclosingNames);
+            }
             primitive(builder.primitive());
             array(builder.array());
             generic(builder.generic());
             wildcard(builder.wildcard());
-            addTypeArguments(builder.typeArguments());
-            addTypeParameters(builder.typeParameters());
+            if (isTypeArgumentsMutated) {
+                if (builder.isTypeArgumentsMutated) {
+                    addTypeArguments(builder.typeArguments);
+                }
+            } else {
+                typeArguments.clear();
+                addTypeArguments(builder.typeArguments);
+            }
+            if (isTypeParametersMutated) {
+                if (builder.isTypeParametersMutated) {
+                    addTypeParameters(builder.typeParameters);
+                }
+            } else {
+                typeParameters.clear();
+                addTypeParameters(builder.typeParameters);
+            }
+            if (isLowerBoundsMutated) {
+                if (builder.isLowerBoundsMutated) {
+                    addLowerBounds(builder.lowerBounds);
+                }
+            } else {
+                lowerBounds.clear();
+                addLowerBounds(builder.lowerBounds);
+            }
+            if (isUpperBoundsMutated) {
+                if (builder.isUpperBoundsMutated) {
+                    addUpperBounds(builder.upperBounds);
+                }
+            } else {
+                upperBounds.clear();
+                addUpperBounds(builder.upperBounds);
+            }
             return self();
         }
 
         /**
          * Update builder from the provided type.
          *
-         * @param type type to get information (package name, class name, primitive, array)
+         * @param type type to get information (package name, class name, primitive, array), can only be a class or a
+         *             {@link io.helidon.common.GenericType}
          * @return updated builder instance
          */
         public BUILDER type(Type type) {
@@ -227,6 +289,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          */
         public BUILDER enclosingNames(List<? extends String> enclosingNames) {
             Objects.requireNonNull(enclosingNames);
+            isEnclosingNamesMutated = true;
             this.enclosingNames.clear();
             this.enclosingNames.addAll(enclosingNames);
             return self();
@@ -243,6 +306,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          */
         public BUILDER addEnclosingNames(List<? extends String> enclosingNames) {
             Objects.requireNonNull(enclosingNames);
+            isEnclosingNamesMutated = true;
             this.enclosingNames.addAll(enclosingNames);
             return self();
         }
@@ -259,6 +323,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         public BUILDER addEnclosingName(String enclosingName) {
             Objects.requireNonNull(enclosingName);
             this.enclosingNames.add(enclosingName);
+            isEnclosingNamesMutated = true;
             return self();
         }
 
@@ -319,6 +384,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          */
         public BUILDER typeArguments(List<? extends TypeName> typeArguments) {
             Objects.requireNonNull(typeArguments);
+            isTypeArgumentsMutated = true;
             this.typeArguments.clear();
             this.typeArguments.addAll(typeArguments);
             return self();
@@ -333,6 +399,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          */
         public BUILDER addTypeArguments(List<? extends TypeName> typeArguments) {
             Objects.requireNonNull(typeArguments);
+            isTypeArgumentsMutated = true;
             this.typeArguments.addAll(typeArguments);
             return self();
         }
@@ -348,6 +415,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         public BUILDER addTypeArgument(TypeName typeArgument) {
             Objects.requireNonNull(typeArgument);
             this.typeArguments.add(typeArgument);
+            isTypeArgumentsMutated = true;
             return self();
         }
 
@@ -378,6 +446,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          */
         public BUILDER typeParameters(List<? extends String> typeParameters) {
             Objects.requireNonNull(typeParameters);
+            isTypeParametersMutated = true;
             this.typeParameters.clear();
             this.typeParameters.addAll(typeParameters);
             return self();
@@ -394,6 +463,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          */
         public BUILDER addTypeParameters(List<? extends String> typeParameters) {
             Objects.requireNonNull(typeParameters);
+            isTypeParametersMutated = true;
             this.typeParameters.addAll(typeParameters);
             return self();
         }
@@ -405,11 +475,160 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          *
          * @param typeParameter type parameter names as declared on this type, or names that represent the {@link #typeArguments()}
          * @return updated builder instance
+         * @deprecated the {@link io.helidon.common.types.TypeName#typeArguments()} will contain all required information
          * @see #typeParameters()
          */
+        @Deprecated(since = "4.2.0", forRemoval = true)
         public BUILDER addTypeParameter(String typeParameter) {
             Objects.requireNonNull(typeParameter);
             this.typeParameters.add(typeParameter);
+            isTypeParametersMutated = true;
+            return self();
+        }
+
+        /**
+         * Generic types that provide keyword {@code extends} will have a lower bound defined.
+         * Each lower bound may be a real type, or another generic type.
+         * <p>
+         * This list may only have value if this is a generic type.
+         *
+         * @param lowerBounds list of lower bounds of this type
+         * @return updated builder instance
+         * @see #lowerBounds()
+         */
+        public BUILDER lowerBounds(List<? extends TypeName> lowerBounds) {
+            Objects.requireNonNull(lowerBounds);
+            isLowerBoundsMutated = true;
+            this.lowerBounds.clear();
+            this.lowerBounds.addAll(lowerBounds);
+            return self();
+        }
+
+        /**
+         * Generic types that provide keyword {@code extends} will have a lower bound defined.
+         * Each lower bound may be a real type, or another generic type.
+         * <p>
+         * This list may only have value if this is a generic type.
+         *
+         * @param lowerBounds list of lower bounds of this type
+         * @return updated builder instance
+         * @see #lowerBounds()
+         */
+        public BUILDER addLowerBounds(List<? extends TypeName> lowerBounds) {
+            Objects.requireNonNull(lowerBounds);
+            isLowerBoundsMutated = true;
+            this.lowerBounds.addAll(lowerBounds);
+            return self();
+        }
+
+        /**
+         * Generic types that provide keyword {@code extends} will have a lower bound defined.
+         * Each lower bound may be a real type, or another generic type.
+         * <p>
+         * This list may only have value if this is a generic type.
+         *
+         * @param lowerBound list of lower bounds of this type
+         * @return updated builder instance
+         * @see io.helidon.common.types.TypeName#generic()
+         * @see #lowerBounds()
+         */
+        public BUILDER addLowerBound(TypeName lowerBound) {
+            Objects.requireNonNull(lowerBound);
+            this.lowerBounds.add(lowerBound);
+            isLowerBoundsMutated = true;
+            return self();
+        }
+
+        /**
+         * Generic types that provide keyword {@code extends} will have a lower bound defined.
+         * Each lower bound may be a real type, or another generic type.
+         * <p>
+         * This list may only have value if this is a generic type.
+         *
+         * @param consumer list of lower bounds of this type
+         * @return updated builder instance
+         * @see io.helidon.common.types.TypeName#generic()
+         * @see #lowerBounds()
+         * @see #lowerBounds()
+         */
+        public BUILDER addLowerBound(Consumer<TypeName.Builder> consumer) {
+            Objects.requireNonNull(consumer);
+            var builder = TypeName.builder();
+            consumer.accept(builder);
+            this.lowerBounds.add(builder.build());
+            return self();
+        }
+
+        /**
+         * Generic types that provide keyword {@code super} will have an upper bound defined.
+         * Upper bound may be a real type, or another generic type.
+         * <p>
+         * This list may only have value if this is a generic type.
+         *
+         * @param upperBounds list of upper bounds of this type
+         * @return updated builder instance
+         * @see #upperBounds()
+         */
+        public BUILDER upperBounds(List<? extends TypeName> upperBounds) {
+            Objects.requireNonNull(upperBounds);
+            isUpperBoundsMutated = true;
+            this.upperBounds.clear();
+            this.upperBounds.addAll(upperBounds);
+            return self();
+        }
+
+        /**
+         * Generic types that provide keyword {@code super} will have an upper bound defined.
+         * Upper bound may be a real type, or another generic type.
+         * <p>
+         * This list may only have value if this is a generic type.
+         *
+         * @param upperBounds list of upper bounds of this type
+         * @return updated builder instance
+         * @see #upperBounds()
+         */
+        public BUILDER addUpperBounds(List<? extends TypeName> upperBounds) {
+            Objects.requireNonNull(upperBounds);
+            isUpperBoundsMutated = true;
+            this.upperBounds.addAll(upperBounds);
+            return self();
+        }
+
+        /**
+         * Generic types that provide keyword {@code super} will have an upper bound defined.
+         * Upper bound may be a real type, or another generic type.
+         * <p>
+         * This list may only have value if this is a generic type.
+         *
+         * @param upperBound list of upper bounds of this type
+         * @return updated builder instance
+         * @see io.helidon.common.types.TypeName#generic()
+         * @see #upperBounds()
+         */
+        public BUILDER addUpperBound(TypeName upperBound) {
+            Objects.requireNonNull(upperBound);
+            this.upperBounds.add(upperBound);
+            isUpperBoundsMutated = true;
+            return self();
+        }
+
+        /**
+         * Generic types that provide keyword {@code super} will have an upper bound defined.
+         * Upper bound may be a real type, or another generic type.
+         * <p>
+         * This list may only have value if this is a generic type.
+         *
+         * @param consumer list of upper bounds of this type
+         * @return updated builder instance
+         * @see io.helidon.common.types.TypeName#generic()
+         * @see #upperBounds()
+         * @see #upperBounds()
+         */
+        public BUILDER addUpperBound(Consumer<TypeName.Builder> consumer) {
+            Objects.requireNonNull(consumer);
+            var builder = TypeName.builder();
+            consumer.accept(builder);
+            this.upperBounds.add(builder.build());
             return self();
         }
 
@@ -495,15 +714,48 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          * if {@link #typeArguments()} exist, this list MUST exist and have the same size and order (it maps the name to the type).
          *
          * @return the type parameters
+         * @deprecated the {@link io.helidon.common.types.TypeName#typeArguments()} will contain all required information
          */
+        @Deprecated(since = "4.2.0", forRemoval = true)
         public List<String> typeParameters() {
             return typeParameters;
+        }
+
+        /**
+         * Generic types that provide keyword {@code extends} will have a lower bound defined.
+         * Each lower bound may be a real type, or another generic type.
+         * <p>
+         * This list may only have value if this is a generic type.
+         *
+         * @return the lower bounds
+         * @see io.helidon.common.types.TypeName#generic()
+         * @see #lowerBounds()
+         * @see #lowerBounds()
+         */
+        public List<TypeName> lowerBounds() {
+            return lowerBounds;
+        }
+
+        /**
+         * Generic types that provide keyword {@code super} will have an upper bound defined.
+         * Upper bound may be a real type, or another generic type.
+         * <p>
+         * This list may only have value if this is a generic type.
+         *
+         * @return the upper bounds
+         * @see io.helidon.common.types.TypeName#generic()
+         * @see #upperBounds()
+         * @see #upperBounds()
+         */
+        public List<TypeName> upperBounds() {
+            return upperBounds;
         }
 
         /**
          * Handles providers and decorators.
          */
         protected void preBuildPrototype() {
+            new TypeNameSupport.Decorator().decorate(this);
         }
 
         /**
@@ -526,7 +778,9 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             private final boolean generic;
             private final boolean primitive;
             private final boolean wildcard;
+            private final List<TypeName> lowerBounds;
             private final List<TypeName> typeArguments;
+            private final List<TypeName> upperBounds;
             private final List<String> enclosingNames;
             private final List<String> typeParameters;
             private final String className;
@@ -547,6 +801,8 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
                 this.wildcard = builder.wildcard();
                 this.typeArguments = List.copyOf(builder.typeArguments());
                 this.typeParameters = List.copyOf(builder.typeParameters());
+                this.lowerBounds = List.copyOf(builder.lowerBounds());
+                this.upperBounds = List.copyOf(builder.upperBounds());
             }
 
             @Override
@@ -627,6 +883,16 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             @Override
             public List<String> typeParameters() {
                 return typeParameters;
+            }
+
+            @Override
+            public List<TypeName> lowerBounds() {
+                return lowerBounds;
+            }
+
+            @Override
+            public List<TypeName> upperBounds() {
+                return upperBounds;
             }
 
             @Override

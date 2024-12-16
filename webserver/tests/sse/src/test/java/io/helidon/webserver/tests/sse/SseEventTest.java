@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,5 +89,21 @@ class SseEventTest extends SseBaseTest {
         HelloWorld json = event.data(HelloWorld.class, MediaTypes.APPLICATION_JSON);
         assertThat(json, is(notNullValue()));
         assertThat(json.getHello(), is("world"));
+    }
+
+    @Test
+    void testNoData() {
+        SseEvent event = SseEvent.builder().build();
+        assertThat(event, is(notNullValue()));
+        assertThat(event.data(), is(SseEvent.NO_DATA));
+    }
+
+    @Test
+    void testConvertNoData() {
+        SseEvent event = SseEvent.builder()
+                .mediaContext(mediaContext)
+                .build();
+        assertThrows(IllegalStateException.class, () -> event.data(Object.class));
+        assertThrows(IllegalStateException.class, () -> event.data(Object.class, MediaTypes.TEXT_PLAIN));
     }
 }

@@ -37,7 +37,7 @@ use a Helidon application POM as their parent. This parent POM provides the foll
    Helidon application.
 
 If you want to use your own parent POM, then take a look at the
-link:{helidon-github-tree-url}/examples/quickstarts/helidon-standalone-quickstart-{flavor-lc}[standalone quickstart example].
+link:{helidon-github-examples-url}/quickstarts/helidon-standalone-quickstart-{flavor-lc}[standalone quickstart example].
 This example has a standalone POM that you can pattern your own application POM after.
 
 For more details on Helidon application POMs see the

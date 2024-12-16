@@ -288,7 +288,7 @@ public final class JwtUtil {
             return ((Address) object).getJson();
         }
         if (object instanceof Collection) {
-            return JSON.createArrayBuilder((Collection) object).build();
+            return JSON.createArrayBuilder((Collection<?>) object).build();
         }
         return JSON_PROVIDER.createValue(String.valueOf(object));
     }
@@ -310,10 +310,10 @@ public final class JwtUtil {
     }
 
     static Optional<List<String>> toScopes(JsonObject json) {
-        if (json.get("scope") instanceof JsonArray) {
-            return getStrings(json, "scope");
+        if (json.get(Jwt.SCOPE) instanceof JsonArray) {
+            return getStrings(json, Jwt.SCOPE);
         } else {
-            return getString(json, "scope")
+            return getString(json, Jwt.SCOPE)
                     .map(it -> Arrays.asList(it.split(" ")));
         }
     }

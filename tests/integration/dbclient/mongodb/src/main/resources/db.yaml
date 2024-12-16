@@ -1,0 +1,202 @@
+#
+# Copyright (c) 2024 Oracle and/or its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+db:
+  create-schema: false
+  source: mongoDb
+  connection:
+    url: mongodb://localhost:27017/pokemon
+    username: test
+    password: mongo123
+  health-check:
+    type: query
+    statement: |
+      {
+        "operation": "command",
+        "query": { "ping": 1 }
+      }
+  statements:
+    ping: |
+      {
+        "operation": "command",
+        "query": { ping: 1 }
+      }
+    delete-types: |
+      {
+        "collection": "types",
+        "operation": "delete",
+        "query": { }
+      }
+    delete-pokemons: |
+      {
+        "collection": "pokemons",
+        "operation": "delete",
+        "query": { }
+      }
+    delete-poketypes: |
+      {
+        "collection": "pokemon_types",
+        "operation": "delete",
+        "query": { }
+      }
+    insert-type: |
+      {
+        "collection": "types",
+        "value": {
+            "id": ?,
+            "type": ?
+        }
+      }
+    insert-pokemon: |
+      {
+        "collection": "pokemons",
+        "value": {
+            "id": ?,
+            "name": ?
+        }
+      }
+    insert-poketype: |
+      {
+        "collection": "pokemon_types",
+        "value": {
+            "id_pokemon": ?,
+            "id_type": ?
+        }
+      }
+    select-types: |
+      {
+        "collection": "types",
+        "projection": { id: 1, type: 1, _id: 0 },
+        "query": {}
+      }
+    select-pokemons: |
+      {
+        "collection": "pokemons",
+        "projection": { id: 1, name: 1, _id: 0 },
+        "query": {}
+      }
+    select-poketypes: |
+      {
+        "collection": "pokemon_types",
+        "projection": { id_pokemon: 1, id_type: 1, _id: 0 },
+        "query": { id_pokemon: ? }
+      }
+    select-poketypes-all: |
+      {
+        "collection": "pokemon_types",
+        "projection": { id_pokemon: 1, id_type: 1, _id: 0 },
+        "query": {}
+      }
+    select-pokemon-named-arg: |
+      {
+        "collection": "pokemons",
+        "operation": "query",
+        "projection": { id: 1, name: 1, _id: 0 },
+        "query": { name: $name }
+      }
+    select-pokemon-order-arg: |
+      {
+        "collection": "pokemons",
+        "operation": "query",
+        "projection": { id: 1, name: 1, _id: 0 },
+        "query": { name: ? }
+      }
+    insert-pokemon-named-arg: |
+      {
+        "collection": "pokemons",
+        "operation": "insert",
+        "value": {
+            "id": $id,
+            "name": $name
+        }
+      }
+    insert-pokemon-order-arg: |
+      {
+        "collection": "pokemons",
+        "operation": "insert",
+        "value": {
+            "id": ?,
+            "name": ?
+        }
+      }
+    insert-pokemon-order-arg-rev: |
+      {
+        "collection": "pokemons",
+        "operation": "insert",
+        "value": {
+            "name": ?,
+            "id": ?
+        }
+      }
+    select-pokemon-by-id: |
+      {
+        "collection": "pokemons",
+        "operation": "query",
+        "projection": { id: 1, name: 1, _id: 0 },
+        "query": { id: ? }
+      }
+    update-pokemon-named-arg: |
+      {
+        "collection": "pokemons",
+        "operation": "update",
+        "value":{ $set: { "name": $name } },
+        "query": { id: $id }
+      }
+    update-pokemon-order-arg: |
+      {
+        "collection": "pokemons",
+        "operation": "update",
+        "value":{ $set: { "name": ? } },
+        "query": { id: ? }
+      }
+    delete-pokemon-named-arg: |
+      {
+        "collection": "pokemons",
+        "operation": "delete",
+        "query": { id: $id }
+      }
+    delete-pokemon-order-arg: |
+      {
+        "collection": "pokemons",
+        "operation": "delete",
+        "query": { id: ? }
+      }
+    delete-pokemon-full-named-arg: |
+      {
+        "collection": "pokemons",
+        "operation": "delete",
+        "query": { $and: [ {name: $name }, { id: $id } ] }
+      }
+    delete-pokemon-full-order-arg: |
+      {
+        "collection": "pokemons",
+        "operation": "delete",
+        "query": { $and: [ {name: ? }, { id: ? } ] }
+      }
+    select-pokemons-idrng-named-arg: |
+      {
+        "collection": "pokemons",
+        "operation": "query",
+        "projection": { id: 1, name: 1, _id: 0 },
+        "query": { $and: [ { id: { $gt: $idmin } }, { id: { $lt: $idmax } } ] }
+      }
+    select-pokemons-idrng-order-arg: |
+      {
+        "collection": "pokemons",
+        "operation": "query",
+        "projection": { id: 1, name: 1, _id: 0 },
+        "query": { $and: [ { id: { $gt: ? } }, { id: { $lt: ? } } ] }
+      }

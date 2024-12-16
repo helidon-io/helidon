@@ -116,7 +116,7 @@ You might also need Docker and Kubernetes depending on how you plan to deploy yo
 .Prerequisite product versions for Helidon {helidon-version}
 [%autowidth]
 |====
-include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites-table-details]
+include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites-table-rows]
 |====
 // end::prereqs[]
 We also strongly suggest installing the xref:cli.adoc[Helidon CLI] (command line interface) which helps in generating and building Helidon projects.

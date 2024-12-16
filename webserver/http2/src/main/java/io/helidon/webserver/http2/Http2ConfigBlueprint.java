@@ -22,13 +22,14 @@ import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.http.RequestedUriDiscoveryContext;
 import io.helidon.webserver.spi.ProtocolConfig;
+import io.helidon.webserver.spi.ProtocolConfigProvider;
 
 /**
  * HTTP/2 server configuration.
  */
 @Prototype.Blueprint(decorator = Http2ConfigBlueprint.Http2ConfigDecorator.class)
-@Prototype.Configured
-@Prototype.Provides(ProtocolConfig.class)
+@Prototype.Configured(root = false, value = Http2ConnectionProvider.CONFIG_NAME)
+@Prototype.Provides(ProtocolConfigProvider.class)
 interface Http2ConfigBlueprint extends ProtocolConfig {
     /**
      * The size of the largest frame payload that the sender is willing to receive in bytes.
@@ -81,9 +82,8 @@ interface Http2ConfigBlueprint extends ProtocolConfig {
     /**
      * Outbound flow control blocking timeout configured as {@link java.time.Duration}
      * or text in ISO-8601 format.
-     * Blocking timeout defines an interval to wait for the outbound window size changes(incoming window updates)
-     * before the next blocking iteration.
-     * Default value is {@code PT0.1S}.
+     * Blocking timeout defines an interval to wait for the outbound window size changes(incoming window updates).
+     * Default value is {@code PT15S}.
      *
      * <table>
      *     <caption><b>ISO_8601 format examples:</b></caption>
@@ -96,7 +96,7 @@ interface Http2ConfigBlueprint extends ProtocolConfig {
      * @see <a href="https://en.wikipedia.org/wiki/ISO_8601#Durations">ISO_8601 Durations</a>
      */
     @Option.Configured
-    @Option.Default("PT0.1S")
+    @Option.Default("PT15S")
     Duration flowControlTimeout();
 
     /**

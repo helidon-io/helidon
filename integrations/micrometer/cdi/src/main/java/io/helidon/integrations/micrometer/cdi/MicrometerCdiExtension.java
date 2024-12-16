@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,10 @@ import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 
 /**
  * CDI extension for handling Micrometer artifacts.
+ *
+ * @deprecated To be removed in a future release. No replacement.
  */
+@Deprecated(forRemoval = true, since = "4.1")
 public class MicrometerCdiExtension extends HelidonRestCdiExtension {
 
     private static final System.Logger LOGGER = System.getLogger(MicrometerCdiExtension.class.getName());
@@ -126,6 +129,8 @@ public class MicrometerCdiExtension extends HelidonRestCdiExtension {
                                  annotation.annotationType(),
                                  MeterWorkItem.create(newMeter, isOnlyOnException));
         });
+
+        LOGGER.log(Level.WARNING, "Micrometer integration is deprecated and will be removed in a future major release.");
     }
     MeterRegistry meterRegistry() {
         if (feature == null) {

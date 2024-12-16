@@ -157,4 +157,4 @@ mp.messaging:
 
 Don't forget to check out the examples with pre-configured Kafka docker image, for easy testing:
 
-* {helidon-github-tree-url}/examples/messaging
+* {helidon-github-examples-url}/messaging

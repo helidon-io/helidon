@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ class OutputStreamTest {
         }
     }
 
-    private static class Service {
+    protected static class Service {
 
         public static void outputStream(ServerRequest req, ServerResponse res) throws IOException {
             InputStream in = new ByteArrayInputStream("Hello World".getBytes(StandardCharsets.UTF_8));

@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.integrations.db</groupId>
         <artifactId>helidon-integrations-db-project</artifactId>
-        <version>4.1.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>ojdbc</artifactId>
@@ -46,7 +46,7 @@
             <exclusions>
                 <exclusion>
                     <groupId>com.oracle.database.jdbc</groupId>
-                    <artifactId>ucp</artifactId>
+                    <artifactId>ucp11</artifactId>
                 </exclusion>
                 <exclusion>
                     <!-- Contains JAXP impl, so we exclude it to not interfere -->

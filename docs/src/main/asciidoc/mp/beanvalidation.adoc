@@ -387,7 +387,7 @@ include::{sourcedir}/mp/BeanvalidationSnippets.java[tag=snippet_3, indent=0]
 +
 NOTE: `beans.xml` is required to identify beans and for bean validation to work properly.
 
-Examples are available in link:{helidon-github-tree-url}/examples/microprofile/bean-validation[our official GitHub repository].
+Examples are available in link:{helidon-github-examples-url}/microprofile/bean-validation[our official GitHub repository].
 
 == Additional Information
 

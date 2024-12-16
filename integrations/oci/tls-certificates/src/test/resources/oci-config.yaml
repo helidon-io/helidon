@@ -15,4 +15,4 @@
 #
 
 helidon.oci:
-  allowed-atn-strategies: ["instance-principals", "config-file", "resource-principal", "config"]
+  allowed-authentication-strategies: ["instance-principals", "config-file", "resource-principal", "config"]

@@ -1,0 +1,58 @@
+[
+    {
+        "name": "java.lang.Boolean",
+        "methods": [
+            { "name": "<init>", "parameterTypes": [ "java.lang.String" ] },
+            { "name": "valueOf", "parameterTypes": [ "java.lang.String" ] }
+        ]
+    },
+    {
+        "name": "java.lang.Byte",
+        "methods": [
+            { "name": "<init>", "parameterTypes": [ "java.lang.String" ] },
+            { "name": "valueOf", "parameterTypes": [ "java.lang.String" ] }
+        ]
+    },
+    {
+        "name": "java.lang.Double",
+        "methods": [
+            { "name": "<init>", "parameterTypes": [ "java.lang.String" ] },
+            { "name": "valueOf", "parameterTypes": [ "java.lang.String" ] }
+        ]
+    },
+    {
+        "name": "java.lang.Float",
+        "methods": [
+            { "name": "<init>", "parameterTypes": [ "java.lang.String" ] },
+            { "name": "valueOf", "parameterTypes": [ "java.lang.String" ] }
+        ]
+    },
+    {
+        "name": "java.lang.Integer",
+        "methods": [
+            { "name": "<init>", "parameterTypes": [ "java.lang.String" ] },
+            { "name": "valueOf", "parameterTypes": [ "java.lang.String" ] }
+        ]
+    },
+    {
+        "name": "java.lang.Long",
+        "methods": [
+            { "name": "<init>", "parameterTypes": [ "java.lang.String" ] },
+            { "name": "valueOf", "parameterTypes": [ "java.lang.String" ] }
+        ]
+    },
+    {
+        "name": "java.lang.Short",
+        "methods": [
+            { "name": "<init>", "parameterTypes": [ "java.lang.String" ] },
+            { "name": "valueOf", "parameterTypes": [ "java.lang.String" ] }
+        ]
+    },
+    {
+        "name": "java.lang.String",
+        "methods": [
+            { "name": "<init>", "parameterTypes": [ "java.lang.String" ] },
+            { "name": "valueOf", "parameterTypes": [ "java.lang.Object" ] }
+        ]
+    }
+]

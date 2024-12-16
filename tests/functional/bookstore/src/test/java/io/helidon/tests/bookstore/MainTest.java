@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.lang.System.Logger.Level;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -87,11 +88,11 @@ class MainTest {
         }
 
         URL getHealthUrl() throws MalformedURLException {
-            return new URL("http://localhost:" + this.port + "/health");
+            return URI.create("http://localhost:" + this.port + "/health").toURL();
         }
 
         URL getBaseUrl() throws MalformedURLException {
-            return new URL("http://localhost:" + this.port);
+            return URI.create("http://localhost:" + this.port).toURL();
         }
 
         void waitForApplicationDown() throws Exception {
@@ -210,7 +211,7 @@ class MainTest {
             Thread.sleep(500);
         } while (System.currentTimeMillis() < maxTime);
 
-        String eol = System.getProperty("line.separator");
+        String eol = System.lineSeparator();
         Assertions.fail("quickstart " + edition + " did not exit as expected." + eol
                 + eol
                 + "stdOut: " + stdOut + eol

@@ -22,13 +22,14 @@ import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.http.RequestedUriDiscoveryContext;
 import io.helidon.webserver.spi.ProtocolConfig;
+import io.helidon.webserver.spi.ProtocolConfigProvider;
 
 /**
  * HTTP/1.1 server configuration.
  */
 @Prototype.Blueprint(decorator = Http1BuilderDecorator.class)
-@Prototype.Configured
-@Prototype.Provides(ProtocolConfig.class)
+@Prototype.Configured(root = false, value = Http1ConnectionProvider.CONFIG_NAME)
+@Prototype.Provides(ProtocolConfigProvider.class)
 interface Http1ConfigBlueprint extends ProtocolConfig {
     /**
      * Name of this configuration, in most cases the same as {@link #type()}.
@@ -44,7 +45,7 @@ interface Http1ConfigBlueprint extends ProtocolConfig {
      * @return maximal size in bytes
      */
     @Option.Configured
-    @Option.DefaultInt(2048)
+    @Option.DefaultInt(4096)
     int maxPrologueLength();
 
     /**
@@ -73,6 +74,25 @@ interface Http1ConfigBlueprint extends ProtocolConfig {
     boolean validateRequestHeaders();
 
     /**
+     * Request host header validation.
+     * When host header is invalid, we return {@link io.helidon.http.Status#BAD_REQUEST_400}.
+     * <p>
+     * The validation is done according to RFC-3986 (see {@link io.helidon.common.uri.UriValidator}). This is a requirement of
+     * the HTTP specification.
+     * <p>
+     * This option allows you to disable the "full-blown" validation ("simple" validation is still in - the port must be
+     * parseable to integer).
+     *
+     * @return whether to do a full validation of {@code Host} header according to the specification
+     * @deprecated this switch exists for temporary backward compatible behavior, and will be removed in a future Helidon
+     *              version
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(true)
+    @Deprecated(forRemoval = true, since = "4.1.3")
+    boolean validateRequestHostHeader();
+
+    /**
      * Whether to validate headers.
      * If set to false, any value is accepted, otherwise validates headers + known headers
      * are validated by format
@@ -87,6 +107,17 @@ interface Http1ConfigBlueprint extends ProtocolConfig {
     @Option.Configured
     @Option.DefaultBoolean(false)
     boolean validateResponseHeaders();
+
+    /**
+     * If set to false, any query and fragment is accepted (even containing illegal characters).
+     * Validation of path is controlled by {@link #validatePath()}.
+     *
+     * @return whether to validate prologue query and fragment
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(true)
+    boolean validatePrologue();
+
 
     /**
      * If set to false, any path is accepted (even containing illegal characters).

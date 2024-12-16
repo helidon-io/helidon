@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,11 +32,11 @@ class SingleFileContentHandler extends FileBasedContentHandler {
     private final boolean cacheInMemory;
     private final Path path;
 
-    SingleFileContentHandler(FileSystemBuilder builder) {
-        super(builder);
+    SingleFileContentHandler(FileSystemHandlerConfig config) {
+        super(config);
 
-        this.cacheInMemory = builder.cacheInMemory().contains(".") || builder.cacheInMemory().contains("/");
-        this.path = builder.root().toAbsolutePath().normalize();
+        this.cacheInMemory = config.cachedFiles().contains(".") || config.cachedFiles().contains("/");
+        this.path = config.location().toAbsolutePath().normalize();
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @HelidonTest
 class SecretTest {
@@ -43,6 +42,6 @@ class SecretTest {
                 .get();
         assertThat(r.getStatus(), is(Response.Status.OK.getStatusCode()));
         JsonObject o = r.readEntity(JsonObject.class);
-        assertEquals(o.get("secret1"), o.get("secret2"));
+        assertThat(o.get("secret1"), is(o.get("secret2")));
     }
 }

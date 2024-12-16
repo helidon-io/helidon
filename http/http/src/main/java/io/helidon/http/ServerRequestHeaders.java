@@ -78,7 +78,7 @@ public interface ServerRequestHeaders extends Headers {
     default Optional<ZonedDateTime> ifModifiedSince() {
         if (contains(HeaderNames.IF_MODIFIED_SINCE)) {
             return Optional.of(get(HeaderNames.IF_MODIFIED_SINCE))
-                    .map(Header::value)
+                    .map(Header::get)
                     .map(DateTime::parse);
         }
 
@@ -95,7 +95,7 @@ public interface ServerRequestHeaders extends Headers {
     default Optional<ZonedDateTime> ifUnmodifiedSince() {
         if (contains(HeaderNames.IF_UNMODIFIED_SINCE)) {
             return Optional.of(get(HeaderNames.IF_UNMODIFIED_SINCE))
-                    .map(Header::value)
+                    .map(Header::get)
                     .map(DateTime::parse);
         }
         return Optional.empty();
@@ -189,7 +189,7 @@ public interface ServerRequestHeaders extends Headers {
     default Optional<ZonedDateTime> acceptDatetime() {
         if (contains(HeaderNames.ACCEPT_DATETIME)) {
             return Optional.of(get(HeaderNames.ACCEPT_DATETIME))
-                    .map(Header::value)
+                    .map(Header::get)
                     .map(DateTime::parse);
         }
         return Optional.empty();
@@ -203,7 +203,7 @@ public interface ServerRequestHeaders extends Headers {
     default Optional<ZonedDateTime> date() {
         if (contains(HeaderNames.DATE)) {
             return Optional.of(get(HeaderNames.DATE))
-                    .map(Header::value)
+                    .map(Header::get)
                     .map(DateTime::parse);
         }
         return Optional.empty();
@@ -221,7 +221,7 @@ public interface ServerRequestHeaders extends Headers {
     default Optional<URI> referer() {
         if (contains(HeaderNames.REFERER)) {
             return Optional.of(get(HeaderNames.REFERER))
-                    .map(Header::value)
+                    .map(Header::get)
                     .map(URI::create);
         }
         return Optional.empty();

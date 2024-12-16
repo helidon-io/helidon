@@ -432,7 +432,7 @@ public final class Option {
      * This is useful for example when setting a compound option, where we need to set additional options on this builder.
      * <p>
      * Decorator on collection based options will be ignored.
-     * Decorator on optional values must accept an option (as it would be called both from the setter and unset methods).
+     * Decorator on optional values must accept an optional (as it would be called both from the setter and unset methods).
      */
     @Target(ElementType.METHOD)
     // note: class retention needed for cases when derived builders are inherited across modules

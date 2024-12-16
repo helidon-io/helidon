@@ -172,6 +172,11 @@ For example:
     <groupId>io.helidon.http.media</groupId>
     <artifactId>helidon-http-media-jsonp</artifactId>
 </dependency>
+
+<dependency>
+    <groupId>io.helidon.http.media</groupId>
+    <artifactId>helidon-http-media-jsonb</artifactId>
+</dependency>
 ----
 
 In Helidon 4 media support is discovered by default, so you simply need to add the dependency.
@@ -303,4 +308,4 @@ If you use this handler in your `logging.properties` you will need to update it 
 Please proceed to xref:../introduction.adoc[Helidon SE Introduction] to find more information and documentation about each module.
 
 Also, the
-link:{helidon-github-tree-url}/examples/[Helidon examples] are a good resource for seeing how things are done in Helidon 4.
+link:{helidon-github-examples-url}/[Helidon examples] are a good resource for seeing how things are done in Helidon 4.

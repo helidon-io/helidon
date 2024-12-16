@@ -104,8 +104,8 @@ class TestSpanAndBaggage {
         assertThat("Span context from inbound headers", spanContextOpt, OptionalMatcher.optionalPresent());
         Span span = tracer.spanBuilder("inbound").parent(spanContextOpt.get()).start();
         span.end();
-        assertThat("Inbound baggage bag1", span.baggage("bag1"), OptionalMatcher.optionalValue(is("val1")));
-        assertThat("Inbound baggage bag1", span.baggage("bag2"), OptionalMatcher.optionalValue(is("val2")));
+        assertThat("Inbound baggage bag1", span.baggage().get("bag1"), OptionalMatcher.optionalValue(is("val1")));
+        assertThat("Inbound baggage bag1", span.baggage().get("bag2"), OptionalMatcher.optionalValue(is("val2")));
     }
 
     @Test
@@ -161,7 +161,7 @@ class TestSpanAndBaggage {
     }
 
     private void checkBaggage(Tracer tracer, Span span, Supplier<SpanContext> spanContextSupplier) {
-        String value = span.baggage(BAGGAGE_KEY).orElseThrow();
+        String value = span.baggage().get(BAGGAGE_KEY).orElseThrow();
         assertThat("baggage value right after set", value, Matchers.is(Matchers.equalTo(BAGGAGE_VALUE)));
 
         // Inject the span (context) into the consumer

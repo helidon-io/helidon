@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Timer;
-import org.eclipse.microprofile.metrics.annotation.RegistryType;
+import org.eclipse.microprofile.metrics.annotation.RegistryScope;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -63,14 +63,12 @@ public class HelloWorldAsyncResponseTest {
     @Inject
     MetricRegistry registry;
 
-    // TODO change to RegistryScope once MP makes it a qualifier
     @Inject
-    @RegistryType(type = MetricRegistry.Type.BASE)
+    @RegistryScope(scope = MetricRegistry.BASE_SCOPE)
     private MetricRegistry syntheticTimerRegistry;
 
-    // TODO change to RegistryScope once MP makes it a qualifier
     @Inject
-    @RegistryType(type = MetricRegistry.Type.VENDOR)
+    @RegistryScope(scope = MetricRegistry.VENDOR_SCOPE)
     private MetricRegistry vendorRegistry;
 
     @Disabled

@@ -78,7 +78,13 @@ record PrototypeProperty(MethodSignature signature,
 
         boolean sameGeneric = element.hasAnnotation(Types.OPTION_SAME_GENERIC);
         // to help with defaults, setters, config mapping etc.
-        TypeHandler typeHandler = TypeHandler.create(name, getterName, setterName, returnType, sameGeneric);
+        TypeHandler typeHandler = TypeHandler.create(blueprint.typeName(),
+                                                     element,
+                                                     name,
+                                                     getterName,
+                                                     setterName,
+                                                     returnType,
+                                                     sameGeneric);
 
         // all information from @ConfiguredOption annotation
         AnnotationDataOption configuredOption = AnnotationDataOption.create(typeHandler, element);

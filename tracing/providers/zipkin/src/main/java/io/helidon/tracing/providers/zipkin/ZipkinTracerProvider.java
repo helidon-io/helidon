@@ -48,6 +48,12 @@ public class ZipkinTracerProvider implements OpenTracingProvider {
     private static final List<String> TRACING_CONTEXT_PROPAGATION_HEADERS =
             List.of(X_OT_SPAN_CONTEXT, X_B3_TRACE_ID, X_B3_SPAN_ID, X_B3_PARENT_SPAN_ID, X_B3_SAMPLED, X_B3_FLAGS);
 
+    /**
+     * Public constructor for service loading.
+     */
+    public ZipkinTracerProvider() {
+    }
+
     @Override
     public ZipkinTracerBuilder createBuilder() {
         return ZipkinTracerBuilder.create();

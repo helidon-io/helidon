@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -534,7 +534,7 @@ class SchemaGeneratorTest extends AbstractGraphQLTest {
 
     @Test
     public void testFormatting() {
-        assertFormat(FLOAT, "en-ZA", "¤ 000.00", 100.0d, "R 100,00");
+        assertFormat(FLOAT, "fr-FR", "¤ 000.00", 100.0d, "€ 100,00");
         assertFormat(FLOAT, "en-AU", "¤ 000.00", 100.0d, "$ 100.00");
         assertFormat(FLOAT, "en-AU", "000.00 'ml'", 125.12d, "125.12 ml");
         assertFormat(INT, "en-AU", "0 'years'", 52, "52 years");

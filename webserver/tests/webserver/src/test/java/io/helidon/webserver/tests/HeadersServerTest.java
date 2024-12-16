@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,6 +89,16 @@ class HeadersServerTest {
                          res.send(DATA);
                      }
         );
+        router.route(GET, "/stream-with-trailers-and-length",
+                     (req, res) -> {
+                         res.header(HeaderNames.TRAILER, TEST_TRAILER_HEADER.name());
+                         res.header(HeaderNames.CONTENT_LENGTH, String.valueOf(DATA.length()));     // must switch to chunked
+                         try (var os = res.outputStream()) {
+                             os.write(DATA.getBytes());
+                         }
+                         res.trailers().add(TEST_TRAILER_HEADER);
+                     }
+        );
     }
 
     @Test
@@ -147,6 +157,19 @@ class HeadersServerTest {
         assertThat(res.entity(), CoreMatchers.is(
                 "Trailers are supported only when request came with 'TE: trailers' header or "
                         + "response headers have trailer names definition 'Trailer: <trailer-name>'"));
+    }
+
+    @Test
+    void streamWithTrailersAndLength(WebClient client) throws IOException {
+        ClientResponseTyped<InputStream> res = client
+                .get("/stream-with-trailers-and-length")
+                .header(HeaderValues.TE_TRAILERS)
+                .request(InputStream.class);
+        assertThat(res.headers(), hasHeader(HeaderValues.TRANSFER_ENCODING_CHUNKED));       // trailers need chunked
+        try (var ins = res.entity()) {
+            assertThat(ins.readAllBytes(), is(DATA.getBytes()));
+        }
+        assertThat(res.trailers(), hasHeader(TEST_TRAILER_HEADER));
     }
 
     private void checkCachedConnection(ClientResponseHeaders h) {

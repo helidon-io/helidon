@@ -19,13 +19,18 @@ package io.helidon.builder.codegen;
 import java.util.Optional;
 
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.common.types.TypeNames.SET;
 
 class TypeHandlerSet extends TypeHandlerCollection {
 
-    TypeHandlerSet(String name, String getterName, String setterName, TypeName declaredType) {
-        super(name,
+    TypeHandlerSet(TypeName blueprintType,
+                   TypedElementInfo annotatedMethod,
+                   String name, String getterName, String setterName, TypeName declaredType) {
+        super(blueprintType,
+              annotatedMethod,
+              name,
               getterName,
               setterName,
               declaredType,

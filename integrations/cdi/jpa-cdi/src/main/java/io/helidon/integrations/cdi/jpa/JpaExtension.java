@@ -101,6 +101,7 @@ import jakarta.persistence.spi.PersistenceUnitInfo;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Unmarshaller;
+import org.eclipse.microprofile.config.ConfigProvider;
 
 import static jakarta.interceptor.Interceptor.Priority.LIBRARY_AFTER;
 import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
@@ -316,7 +317,10 @@ public class JpaExtension implements Extension {
         if (LOGGER.isLoggable(Level.FINER)) {
             LOGGER.entering(cn, mn);
         }
-        this.enabled = Boolean.parseBoolean(System.getProperty(this.getClass().getName() + ".enabled", "false"));
+        this.enabled =
+            Boolean.parseBoolean(ConfigProvider.getConfig()
+                                 .getOptionalValue(this.getClass().getName() + ".enabled", String.class)
+                                 .orElse("false"));
         if (LOGGER.isLoggable(Level.FINE) && !this.enabled) {
             LOGGER.logp(Level.FINE, cn, mn, "jpaExtensionDisabled", this.getClass().getName());
         }

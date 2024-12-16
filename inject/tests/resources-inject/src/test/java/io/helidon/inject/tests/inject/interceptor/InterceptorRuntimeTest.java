@@ -59,7 +59,6 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class InterceptorRuntimeTest {
@@ -91,9 +90,10 @@ class InterceptorRuntimeTest {
         assertThat(file.exists(), is(true));
         String java = Files.readString(file.toPath());
         String expected = loadStringFromResource("expected/ximpl-interceptor._java_");
-        assertEquals(
-                expected.replaceFirst("#DATE#", Integer.toString(Calendar.getInstance().get(Calendar.YEAR))),
-                java);
+        assertThat(
+            java,
+            is(expected.replaceFirst("#DATE#", Integer.toString(Calendar.getInstance().get(Calendar.YEAR))))
+        );
     }
 
     @Test
@@ -104,9 +104,10 @@ class InterceptorRuntimeTest {
         assertThat(file.exists(), is(true));
         String java = Files.readString(file.toPath());
         String expected = loadStringFromResource("expected/yimpl-interceptor._java_");
-        assertEquals(
-                expected.replaceFirst("#DATE#", Integer.toString(Calendar.getInstance().get(Calendar.YEAR))),
-                java);
+        assertThat(
+            java,
+            is(expected.replaceFirst("#DATE#", Integer.toString(Calendar.getInstance().get(Calendar.YEAR))))
+        );
     }
 
     @Test

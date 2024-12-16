@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ record JerseySecurityContext(io.helidon.security.SecurityContext securityContext
 
     @Override
     public boolean isUserInRole(String role) {
-        return securityContext.isUserInRole(role, methodSecurity.getAuthorizer());
+        return securityContext.isUserInRole(role, methodSecurity.authorizer());
     }
 
     @Override

@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.config</groupId>
         <artifactId>helidon-config-project</artifactId>
-        <version>4.1.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.config.tests</groupId>
     <artifactId>helidon-config-tests-project</artifactId>
@@ -59,10 +59,14 @@
         <module>test-mappers-1-common</module>
         <module>test-mappers-2-complex</module>
         <module>test-meta-source</module>
+        <module>test-meta-source-fail</module>
         <module>test-parsers-1-complex</module>
         <module>service-registry</module>
         <module>config-metadata-meta-api</module>
         <module>config-metadata-builder-api</module>
         <module>test-lazy-source</module>
+        <module>test-no-config-sources</module>
+        <module>test-default-config-source</module>
+        <module>test-mp-se-meta</module>
     </modules>
 </project>

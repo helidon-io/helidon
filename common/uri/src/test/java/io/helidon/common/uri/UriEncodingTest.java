@@ -30,4 +30,9 @@ class UriEncodingTest {
         assertThat(decodeUri("+hello+world+"), is(" hello world "));
         assertThat(decodeUri("[+]hello[+]world[+]"), is("[+]hello[+]world[+]"));
     }
+
+    @Test
+    void testIPv6Literal() {
+        assertThat(decodeUri("http://[fe80::1%lo0]:8080"), is("http://[fe80::1%lo0]:8080"));
+    }
 }

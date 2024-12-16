@@ -43,6 +43,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+
 @ServerTest
 class BadRequestTest {
     public static final String CUSTOM_REASON_PHRASE = "Custom-bad-request";
@@ -71,13 +72,10 @@ class BadRequestTest {
                                        .build());
     }
 
-    // no need to try with resources when reading as string
-    @SuppressWarnings("resource")
     @Test
     void testOk() {
         String response = client.method(Method.GET)
-                .request()
-                .as(String.class);
+                .requestEntity(String.class);
 
         assertThat(response, is("Hi"));
     }

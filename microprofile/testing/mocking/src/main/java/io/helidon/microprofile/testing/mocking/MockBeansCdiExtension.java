@@ -17,20 +17,23 @@ package io.helidon.microprofile.testing.mocking;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.literal.InjectLiteral;
 import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
+import jakarta.enterprise.inject.spi.AfterDeploymentValidation;
 import jakarta.enterprise.inject.spi.AnnotatedParameter;
 import jakarta.enterprise.inject.spi.Bean;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.Extension;
 import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
 import jakarta.enterprise.inject.spi.WithAnnotations;
+import jakarta.enterprise.inject.spi.configurator.AnnotatedConstructorConfigurator;
+import jakarta.enterprise.inject.spi.configurator.AnnotatedFieldConfigurator;
+import jakarta.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
 import org.mockito.MockSettings;
 import org.mockito.Mockito;
 
@@ -41,52 +44,51 @@ public class MockBeansCdiExtension implements Extension {
 
     private final Map<Class<?>, MockBean> mocks = new HashMap<>();
 
-    void processMockBean(@Observes @WithAnnotations(MockBean.class) ProcessAnnotatedType<?> obj) throws Exception {
-        var configurator = obj.configureAnnotatedType();
-        configurator.fields().forEach(field -> {
+    void processMockBean(@Observes @WithAnnotations(MockBean.class) ProcessAnnotatedType<?> obj) {
+        AnnotatedTypeConfigurator<?> configurator = obj.configureAnnotatedType();
+        for (AnnotatedFieldConfigurator<?> field : configurator.fields()) {
             MockBean mockBean = field.getAnnotated().getAnnotation(MockBean.class);
             if (mockBean != null) {
                 Field f = field.getAnnotated().getJavaMember();
-                // Adds @Inject to be more user friendly
+                // make @Inject optional
                 field.add(InjectLiteral.INSTANCE);
-                Class<?> fieldType = f.getType();
-                mocks.put(fieldType, mockBean);
+                mocks.put(f.getType(), mockBean);
             }
-        });
-        configurator.constructors().forEach(constructor -> {
-            processMockBeanParameters(constructor.getAnnotated().getParameters());
-        });
+        }
+        for (AnnotatedConstructorConfigurator<?> ctor : configurator.constructors()) {
+            for (AnnotatedParameter<?> parameter : ctor.getAnnotated().getParameters()) {
+                MockBean mockBean = parameter.getAnnotation(MockBean.class);
+                if (mockBean != null) {
+                    Class<?> parameterType = parameter.getJavaParameter().getType();
+                    mocks.put(parameterType, mockBean);
+                }
+            }
+        }
     }
 
-    private void processMockBeanParameters(List<? extends AnnotatedParameter<?>> parameters) {
-        parameters.stream().forEach(parameter -> {
-            MockBean mockBean = parameter.getAnnotation(MockBean.class);
-            if (mockBean != null) {
-                Class<?> parameterType = parameter.getJavaParameter().getType();
-                mocks.put(parameterType, mockBean);
-            }
-        });
-    }
-
-    void registerOtherBeans(@Observes AfterBeanDiscovery event, BeanManager beanManager) {
-        // Register all mocks
-        mocks.entrySet().forEach(entry -> {
-            event.addBean()
-                .addType(entry.getKey())
+    void registerOtherBeans(@Observes AfterBeanDiscovery event) {
+        // register mocks
+        mocks.forEach((key, value) -> event.addBean()
+                .addTransitiveTypeClosure(key)
                 .scope(ApplicationScoped.class)
                 .alternative(true)
-                .createWith(inst -> {
-                    Set<Bean<?>> beans = beanManager.getBeans(MockSettings.class);
-                    if (!beans.isEmpty()) {
-                        Bean<?> bean = beans.iterator().next();
-                        MockSettings mockSettings = (MockSettings) beanManager.getReference(bean, MockSettings.class,
-                                beanManager.createCreationalContext(null));
-                        return Mockito.mock(entry.getKey(), mockSettings);
-                    } else {
-                        return Mockito.mock(entry.getKey(), Mockito.withSettings().defaultAnswer(entry.getValue().answer()));
-                    }
+                .produceWith(i -> {
+                    Instance<MockSettings> msi = i.select(MockSettings.class);
+                    MockSettings settings = msi.isUnsatisfied()
+                            ? Mockito.withSettings().defaultAnswer(value.answer())
+                            : msi.get();
+                    return Mockito.mock(key, settings);
                 })
-                .priority(0);
-        });
+                .priority(0));
+    }
+
+    void initializeBeans(@Observes AfterDeploymentValidation event, BeanManager manager) {
+        for (Class<?> key : mocks.keySet()) {
+            for (Bean<?> bean : manager.getBeans(key)) {
+                // call toString() to force the beans to be initialized
+                // noinspection ResultOfMethodCallIgnored
+                manager.getReference(bean, key, manager.createCreationalContext(bean)).toString();
+            }
+        }
     }
 }

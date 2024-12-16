@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,6 +63,7 @@ public class MongoDbStatementDml extends MongoDbStatement<DbStatementDml> implem
                             "Statement operation not yet supported: %s",
                             type.name()));
                 };
+                future.complete(result);
                 LOGGER.log(System.Logger.Level.DEBUG, () -> String.format(
                         "%s DML %s execution succeeded",
                         type.name(),

@@ -174,8 +174,8 @@ class MetricsSnippets {
 
             private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) {
                 Timer.Sample timerSample = Timer.start(); // <3>
-                sendResponse(response, "Here are some cards ...");
                 response.whenSent(() -> timerSample.stop(cardTimer)); // <4>
+                sendResponse(response, "Here are some cards ...");
             }
 
             private void sendResponse(ServerResponse response, String msg) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.security.jwt.jwk;
 
 import java.security.InvalidKeyException;
+import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -118,7 +119,7 @@ public class JwkOctet extends Jwk {
         }
 
         byte[] ourSignature = sign(signedBytes);
-        return Arrays.equals(signature, ourSignature);
+        return MessageDigest.isEqual(signature, ourSignature);
     }
 
     @Override

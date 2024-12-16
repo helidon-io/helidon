@@ -240,7 +240,7 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
     /**
      * Enabled cipher suites for TLS communication.
      *
-     * @return cipher suits to enable, by default (or if list is empty), all available cipher suites
+     * @return cipher suites to enable, by default (or if list is empty), all available cipher suites
      *         are enabled
      */
     @Option.Configured("cipher-suite")

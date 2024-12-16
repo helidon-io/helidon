@@ -39,7 +39,6 @@ import jakarta.transaction.TransactionManager;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -58,40 +57,59 @@ import static org.junit.jupiter.api.Assertions.fail;
         "user=sa"
     }
 )
+// Note that this class tests JpaExtension behavior, not PersistenceExtension behavior. JpaExtension is deprecated and
+// this test suite exists for backwards-compatibility tests only.
 class TestAnnotationRewriting {
 
     @PersistenceUnit(unitName = "test-resource-local")
     private EntityManagerFactory emf;
-    
+
     @PersistenceContext(name = "bogus", unitName = "test")
     private EntityManager em;
 
     @PersistenceContext(unitName = "test", type = PersistenceContextType.EXTENDED)
     private EntityManager extendedEm;
-    
+
+    private String persistenceExtensionEnabledProperty;
+
+    private String jpaExtensionEnabledProperty;
+
     private SeContainer cdiContainer;
 
     TestAnnotationRewriting() {
         super();
     }
-    
+
     @BeforeEach
     void startCdiContainer() {
-        final SeContainerInitializer initializer = SeContainerInitializer.newInstance()
+        this.jpaExtensionEnabledProperty = System.setProperty(JpaExtension.class.getName() + ".enabled", "true");
+        this.persistenceExtensionEnabledProperty = System.setProperty(PersistenceExtension.class.getName() + ".enabled", "false");
+
+        SeContainerInitializer initializer = SeContainerInitializer.newInstance()
             .addBeanClasses(this.getClass());
         assertThat(initializer, notNullValue());
         this.cdiContainer = initializer.initialize();
     }
-  
+
     @AfterEach
     void shutDownCdiContainer() {
         if (this.cdiContainer != null) {
             this.cdiContainer.close();
         }
+        if (this.jpaExtensionEnabledProperty == null) {
+            System.clearProperty(JpaExtension.class.getName() + ".enabled");
+        } else {
+            System.setProperty(JpaExtension.class.getName() + ".enabled", this.jpaExtensionEnabledProperty);
+        }
+        if (this.persistenceExtensionEnabledProperty == null) {
+            System.clearProperty(PersistenceExtension.class.getName() + ".enabled");
+        } else {
+            System.setProperty(PersistenceExtension.class.getName() + ".enabled", this.persistenceExtensionEnabledProperty);
+        }
     }
 
-    private void onShutdown(@Observes @BeforeDestroyed(ApplicationScoped.class) final Object event,
-                            final TransactionManager tm) throws SystemException {
+    private void onShutdown(@Observes @BeforeDestroyed(ApplicationScoped.class) Object event,
+                            TransactionManager tm) throws SystemException {
         // If an assertion fails, or some other error happens in the
         // CDI container, there may be a current transaction that has
         // neither been committed nor rolled back.  Because the
@@ -106,10 +124,10 @@ class TestAnnotationRewriting {
             tm.rollback();
         }
     }
-  
+
     @PersistenceContext(unitName = "test")
-    private void observerMethod(@Observes final TestIsRunning event,
-                                final EntityManager emParameter) {
+    private void observerMethod(@Observes TestIsRunning event,
+                                EntityManager emParameter) {
         assertThat(event, notNullValue());
 
         assertThat(emParameter, notNullValue());
@@ -136,8 +154,8 @@ class TestAnnotationRewriting {
         try {
           em = this.emf.createEntityManager(SynchronizationType.UNSYNCHRONIZED, null);
           fail("Was able to pass a non-null SynchronizationType");
-        } catch (final IllegalStateException expected) {
-          
+        } catch (IllegalStateException expected) {
+
         } finally {
           if (em != null && !em.isOpen()) {
             em.close();
@@ -154,29 +172,28 @@ class TestAnnotationRewriting {
     }
 
     @Test
-    @Disabled // TODO See https://github.com/helidon-io/helidon/issues/8122
     void testNonTransactionalEntityManager() {
         this.cdiContainer.getBeanManager()
             .getEvent()
             .select(TestIsRunning.class)
             .fire(new TestIsRunning("testNonTransactionalEntityManager"));
-        final Set<Annotation> qualifiers = new HashSet<>();
+        Set<Annotation> qualifiers = new HashSet<>();
         qualifiers.add(ContainerManaged.Literal.INSTANCE);
-        qualifiers.add(JpaTransactionScoped.Literal.INSTANCE);
-        final EntityManager entityManager = this.cdiContainer.select(EntityManager.class, qualifiers.toArray(new Annotation[qualifiers.size()])).get();
+        qualifiers.add(JpaTransactionScoped.Literal.INSTANCE); // Note that this is from the old stuff and is deprecated.
+        EntityManager entityManager = this.cdiContainer.select(EntityManager.class, qualifiers.toArray(new Annotation[qualifiers.size()])).get();
         assertThat(entityManager, instanceOf(DelegatingEntityManager.class));
         assertThat(entityManager.isOpen(), is(true));
         assertThat(entityManager.isJoinedToTransaction(), is(false));
         try {
             entityManager.persist(new Object());
             fail("A TransactionRequiredException should have been thrown");
-        } catch (final TransactionRequiredException expected) {
+        } catch (TransactionRequiredException expected) {
 
         }
         try {
             entityManager.close();
             fail("Closed EntityManager; should not have been able to");
-        } catch (final IllegalStateException expected) {
+        } catch (IllegalStateException expected) {
 
         }
     }
@@ -187,12 +204,12 @@ class TestAnnotationRewriting {
             .getEvent()
             .select(TestIsRunning.class)
             .fire(new TestIsRunning("testTransactionalEntityManager"));
-        final Instance<TestAnnotationRewriting> instance = this.cdiContainer.select(TestAnnotationRewriting.class);
-        final TestAnnotationRewriting test = instance.get();
+        Instance<TestAnnotationRewriting> instance = this.cdiContainer.select(TestAnnotationRewriting.class);
+        TestAnnotationRewriting test = instance.get();
         assertThat(test, notNullValue());
         test.testEntityManagerIsJoinedToTransactionInTransactionalAnnotatedMethod();
     }
-    
+
     @Transactional
     void testEntityManagerIsJoinedToTransactionInTransactionalAnnotatedMethod() {
         assertThat(this.em, notNullValue());
@@ -200,22 +217,22 @@ class TestAnnotationRewriting {
         try {
             this.em.close();
             fail("Closed EntityManager; should not have been able to");
-        } catch (final IllegalStateException expected) {
+        } catch (IllegalStateException expected) {
 
         }
     }
 
-    private static final class TestIsRunning {
+    private static class TestIsRunning {
 
         private final String test;
 
-        private TestIsRunning(final String test) {
+        private TestIsRunning(String test) {
             super();
             this.test = test;
         }
 
         @Override
-        public final String toString() {
+        public String toString() {
             return this.test;
         }
     }

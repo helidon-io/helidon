@@ -43,19 +43,27 @@ public final class UriEncoding {
 
     /**
      * Decode a URI segment.
+     * <p>
+     * Percent characters {@code "%s"} found between brackets {@code "[]"} are not decoded to support IPv6 literal.
+     * E.g. {@code http://[fe80::1%lo0]:8080}.
+     * <p>
+     * See <a href="https://tools.ietf.org/html/rfc6874#section-2">RFC 6874, section 2.</a>
      *
      * @param uriSegment URI segment with percent encoding
      * @return decoded string
      */
     public static String decodeUri(String uriSegment) {
-        if (uriSegment.isEmpty()) {
-            return "";
-        }
-        if (uriSegment.indexOf('%') == -1 && uriSegment.indexOf('+') == -1) {
-            return uriSegment;
-        }
+        return decodeUri(uriSegment, true);
+    }
 
-        return decode(uriSegment);
+    /**
+     * Decode a URI query.
+     *
+     * @param uriQuery URI query with percent encoding
+     * @return decoded string
+     */
+    public static String decodeQuery(String uriQuery) {
+        return decodeUri(uriQuery, false);
     }
 
     /**
@@ -123,7 +131,18 @@ public final class UriEncoding {
         appender.append(HEX_DIGITS[b & 0x0F]);
     }
 
-    private static String decode(String string) {
+    private static String decodeUri(String uriSegment, boolean ignorePercentInBrackets) {
+        if (uriSegment.isEmpty()) {
+            return "";
+        }
+        if (uriSegment.indexOf('%') == -1 && uriSegment.indexOf('+') == -1) {
+            return uriSegment;
+        }
+        return decode(uriSegment, ignorePercentInBrackets);
+    }
+
+    // see java.net.URI.decode(String, boolean)
+    private static String decode(String string, boolean ignorePercentInBrackets) {
         int len = string.length();
 
         StringBuilder sb = new StringBuilder(len);
@@ -141,7 +160,7 @@ public final class UriEncoding {
             } else if (betweenBrackets && c == ']') {
                 betweenBrackets = false;
             }
-            if (c != '%' || betweenBrackets) {
+            if (c != '%' || (betweenBrackets && ignorePercentInBrackets)) {
                 sb.append(c == '+' && !betweenBrackets ? ' ' : c);      // handles '+' decoding
                 if (++i >= len) {
                     break;

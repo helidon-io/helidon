@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,16 +83,15 @@ class ConfigSourceRuntimeImpl implements ConfigSourceRuntime {
 
         // content source
         AtomicReference<Object> lastStamp = new AtomicReference<>();
-        if (configSource instanceof ParsableSource) {
+        if (configSource instanceof ParsableSource parsableSource) {
             // eager parsable config source
-            reloader = new ParsableConfigSourceReloader(configContext, (ParsableSource) source, lastStamp);
+            reloader = new ParsableConfigSourceReloader(configContext, parsableSource, lastStamp);
             singleNodeFunction = objectNodeToSingleNode();
-        } else if (configSource instanceof NodeConfigSource) {
+        } else if (configSource instanceof NodeConfigSource nodeConfigSource) {
             // eager node config source
-            reloader = new NodeConfigSourceReloader((NodeConfigSource) source, lastStamp);
+            reloader = new NodeConfigSourceReloader(nodeConfigSource, lastStamp);
             singleNodeFunction = objectNodeToSingleNode();
-        } else if (configSource instanceof LazyConfigSource) {
-            LazyConfigSource lazySource = (LazyConfigSource) source;
+        } else if (configSource instanceof LazyConfigSource lazySource) {
             // lazy config source
             reloader = Optional::empty;
             singleNodeFunction = lazySource::node;
@@ -143,8 +142,7 @@ class ConfigSourceRuntimeImpl implements ConfigSourceRuntime {
             }
         }
 
-        if (!changesSupported && (configSource instanceof EventConfigSource)) {
-            EventConfigSource event = (EventConfigSource) source;
+        if (!changesSupported && (configSource instanceof EventConfigSource event)) {
             changesSupported = true;
             changesRunnable = () -> event.onChange((key, config) -> listeners.forEach(it -> it.accept(key, config)));
         }
@@ -222,8 +220,8 @@ class ConfigSourceRuntimeImpl implements ConfigSourceRuntime {
         }
 
         // we may have media type mapping per node configured as well
-        if (configSource instanceof AbstractConfigSource) {
-            loadedData = loadedData.map(it -> ((AbstractConfigSource) configSource)
+        if (configSource instanceof AbstractConfigSource abstractConfigSource) {
+            loadedData = loadedData.map(it -> abstractConfigSource
                     .processNodeMapping(configContext::findParser, ConfigKeyImpl.of(), it));
         }
 

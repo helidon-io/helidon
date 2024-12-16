@@ -104,7 +104,6 @@ class TestDataSourceAcquisition {
     }
 
     private void configure(@Observes @Named("test") final PoolDataSource pds) throws SQLException {
-        assertThat(pds.getServiceName(), is("fred"));
         assertThat(pds.getDescription(), nullValue());
         assertThat(pds.getClass().isSynthetic(), is(false));
         pds.setDescription("A test datasource");

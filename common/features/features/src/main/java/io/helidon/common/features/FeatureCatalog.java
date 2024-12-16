@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,8 @@ final class FeatureCatalog {
                 }
                 String module = props.getProperty("m");
                 if (module == null) {
-                    LOGGER.log(Level.WARNING, "Got module descriptor with no module name. Available properties: " + props);
+                    LOGGER.log(Level.WARNING, "Got module descriptor with no module name. Available properties: " + props
+                            + " at " + url);
                     continue;
                 }
                 FeatureDescriptor.Builder builder = FeatureDescriptor.builder();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,20 @@ import io.helidon.http.PathMatchers;
 import io.helidon.webserver.Route;
 
 abstract class GrpcRoute implements Route {
-    abstract Grpc<?, ?> toGrpc(HttpPrologue grpcPrologue);
 
+    /**
+     * Finds a match for an HTTP prologue.
+     *
+     * @param prologue the prologue
+     * @return the match result
+     */
     abstract PathMatchers.MatchResult accepts(HttpPrologue prologue);
+
+    /**
+     * Obtains a handler from an HTTP prologue.
+     *
+     * @param grpcPrologue the prologue
+     * @return the handler
+     */
+    abstract GrpcRouteHandler<?, ?> handler(HttpPrologue grpcPrologue);
 }

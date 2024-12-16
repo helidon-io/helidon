@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@
 
 package io.helidon.webserver.testing.junit5.http2;
 
+import java.net.URI;
+import java.util.Set;
+
 import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.testing.junit5.Junit5Util;
@@ -30,16 +33,13 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
  * artifacts, such as {@link io.helidon.webclient.http2.Http2Client} in Helidon integration tests.
  */
 public class Http2ServerExtension implements ServerJunitExtension {
+
+    private static final Set<Class<?>> SUPPORTED = Set.of(Http2Client.class, Http2TestClient.class);
+
     /**
      * Required constructor for {@link java.util.ServiceLoader}.
      */
     public Http2ServerExtension() {
-    }
-
-    @Override
-    public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
-            throws ParameterResolutionException {
-        return Http2Client.class.equals(parameterContext.getParameter().getType());
     }
 
     @Override
@@ -49,11 +49,39 @@ public class Http2ServerExtension implements ServerJunitExtension {
                                    WebServer server) {
         String socketName = Junit5Util.socketName(parameterContext.getParameter());
 
+        URI uri = URI.create("http://localhost:" + server.port(socketName));
+
         if (Http2Client.class.equals(parameterType)) {
             return Http2Client.builder()
-                    .baseUri("http://localhost:" + server.port(socketName))
+                    .baseUri(uri)
                     .build();
         }
+
+        if (Http2TestClient.class.equals(parameterType)) {
+            Http2TestClient client = new Http2TestClient(uri);
+            extensionContext
+                    .getStore(ExtensionContext.Namespace.GLOBAL)
+                    .put(Http2TestClient.class.getName(), client);
+            return client;
+        }
+
         throw new ParameterResolutionException("HTTP/2 extension only supports Http2Client parameter type");
+    }
+
+    @Override
+    public void afterEach(ExtensionContext context) {
+        ServerJunitExtension.super.afterEach(context);
+        Http2TestClient client = (Http2TestClient) context
+                .getStore(ExtensionContext.Namespace.GLOBAL)
+                .remove(Http2TestClient.class.getName());
+        if (client != null) {
+            client.close();
+        }
+    }
+
+    @Override
+    public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
+            throws ParameterResolutionException {
+        return SUPPORTED.contains(parameterContext.getParameter().getType());
     }
 }

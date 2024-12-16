@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -143,21 +143,22 @@ class MtlsTest {
 
     @Test
     void testTlsReload() {
-        WebClient client = client();
-        ClientResponseTyped<String> response = client.method(Method.GET)
+        WebClient client1 = client();
+        ClientResponseTyped<String> response = client1.method(Method.GET)
                 .uri("/serverCert")
                 .request(String.class);
 
         assertThat(response.status(), is(Status.OK_200));
         assertThat(response.entity(), is("X.509:CN=Helidon-Test-Server|X.509:CN=Helidon-Test-CA"));
 
-        response = client.method(Method.GET)
+        response = client1.method(Method.GET)
                 .uri("/reload")
                 .request(String.class);
 
         assertThat(response.status(), is(Status.OK_200));
 
-        response = client.method(Method.GET)
+        WebClient client2  = client();      // for caching in HttpClientRequest
+        response = client2.method(Method.GET)
                 .uri("/serverCert")
                 .request(String.class);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,11 @@ import io.helidon.http.media.MediaContext;
  * An SSE event.
  */
 public class SseEvent {
+
+    /**
+     * Value returned by {@link #data()} when no data has been set.
+     */
+    public static final Object NO_DATA = new Object();
 
     private static final WritableHeaders<?> EMPTY_HEADERS = WritableHeaders.create();
 
@@ -91,7 +96,7 @@ public class SseEvent {
     /**
      * Get data for this event.
      *
-     * @return the data
+     * @return the data or {@link #NO_DATA}
      */
     public Object data() {
         return data;
@@ -218,7 +223,7 @@ public class SseEvent {
 
         private String id;
         private String name;
-        private Object data;
+        private Object data = NO_DATA;
         private String comment;
         private MediaType mediaType;
         private Duration reconnectMillis;
@@ -229,9 +234,6 @@ public class SseEvent {
 
         @Override
         public SseEvent build() {
-            if (data == null) {
-                throw new IllegalArgumentException("Event must include some data");
-            }
             return new SseEvent(this);
         }
 

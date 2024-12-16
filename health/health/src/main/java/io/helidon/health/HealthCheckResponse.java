@@ -60,7 +60,7 @@ public interface HealthCheckResponse {
          */
         DOWN,
         /**
-         * This health check failed with an exception that was not excpected.
+         * This health check failed with an exception that was not expected.
          */
         ERROR
     }
@@ -94,7 +94,7 @@ public interface HealthCheckResponse {
         /**
          * Status of health check, defaults to {@link HealthCheckResponse.Status#UP}.
          *
-         * @param status status as a boolean ({@code true} for {@link HealthCheckResponse.Status#UP})
+         * @param status status as a boolean ({@code true} for {@link HealthCheckResponse.Status#UP}), ({@code false} for {@link HealthCheckResponse.Status#DOWN})
          * @return updated builder
          */
         public Builder status(boolean status) {

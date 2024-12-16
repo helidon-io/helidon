@@ -1,7 +1,7 @@
 <!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
 <!--
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -19,7 +19,15 @@
 
 <suite name="microprofile-telemetry-tracing-TCK" verbose="2" configfailurepolicy="continue">
 
-    <test name="microprofile-telemetry-tracing TCK">
+    <test name="microprofile-telemetry-tracing TCK" verbose="10">
+        <groups>
+            <run>
+                <!--
+                    Helidon does not use Jakarta Concurrency, which the optional 1.1 TCK async tests use. Skip those tests.
+                -->
+                <exclude name="optional-jaxrs-tests"></exclude>
+            </run>
+        </groups>
         <packages>
             <package name="org.eclipse.microprofile.telemetry.tracing.tck.*"/>
         </packages>

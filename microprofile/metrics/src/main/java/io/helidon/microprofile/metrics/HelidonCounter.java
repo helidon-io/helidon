@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,6 +51,12 @@ class HelidonCounter extends MetricImpl<io.helidon.metrics.api.Counter> implemen
                                  io.helidon.metrics.api.Counter delegate) {
         return new HelidonCounter(scope,
                                   metadata,
+                                  delegate);
+    }
+
+    static HelidonCounter create(io.helidon.metrics.api.Counter delegate) {
+        return new HelidonCounter(resolvedScope(delegate),
+                                  Registry.metadata(delegate),
                                   delegate);
     }
 

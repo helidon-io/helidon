@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,11 @@ import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
 
-import io.helidon.common.configurable.LruCache;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.webserver.http.HttpService;
 
@@ -42,7 +42,13 @@ import io.helidon.webserver.http.HttpService;
  * }</pre>
  * <p>
  * Content is served ONLY on HTTP {@code GET} method.
+ *
+ * @deprecated static content has been refactored to use server feature, with a new service, using new configuration approach,
+ *         use {@link io.helidon.webserver.staticcontent.StaticContentFeature} instead, or if specific services are desired,
+ *         kindly use {@link io.helidon.webserver.staticcontent.StaticContentFeature#createService(ClasspathHandlerConfig)}
+ *         and/or {@link io.helidon.webserver.staticcontent.StaticContentFeature#createService(FileSystemHandlerConfig)}
  */
+@Deprecated(forRemoval = true, since = "4.1.5")
 public interface StaticContentService extends HttpService {
     /**
      * Creates new builder with defined static content root as a class-loader resource. Builder provides ability to define
@@ -53,7 +59,9 @@ public interface StaticContentService extends HttpService {
      * @param resourceRoot a root resource path.
      * @return a builder
      * @throws NullPointerException if {@code resourceRoot} attribute is {@code null}
+     * @deprecated use {@link ClasspathHandlerConfig#builder()} instead
      */
+    @Deprecated(forRemoval = true, since = "4.1.5")
     static ClassPathBuilder builder(String resourceRoot) {
         Objects.requireNonNull(resourceRoot, "Attribute resourceRoot is null!");
         return builder(resourceRoot, Thread.currentThread().getContextClassLoader());
@@ -67,7 +75,9 @@ public interface StaticContentService extends HttpService {
      * @param classLoader  a class-loader for the static content
      * @return a builder
      * @throws NullPointerException if {@code resourceRoot} attribute is {@code null}
+     * @deprecated use {@link ClasspathHandlerConfig#builder()} instead
      */
+    @Deprecated(forRemoval = true, since = "4.1.5")
     static ClassPathBuilder builder(String resourceRoot, ClassLoader classLoader) {
         Objects.requireNonNull(resourceRoot, "Attribute resourceRoot is null!");
         return new ClassPathBuilder()
@@ -82,7 +92,9 @@ public interface StaticContentService extends HttpService {
      * @param root a root path.
      * @return a builder
      * @throws NullPointerException if {@code root} attribute is {@code null}
+     * @deprecated use {@link io.helidon.webserver.staticcontent.FileSystemHandlerConfig#builder()} instead
      */
+    @Deprecated(forRemoval = true, since = "4.1.5")
     static FileSystemBuilder builder(Path root) {
         Objects.requireNonNull(root, "Attribute root is null!");
         return new FileSystemBuilder()
@@ -97,7 +109,10 @@ public interface StaticContentService extends HttpService {
      * @param resourceRoot a root resource path.
      * @return created instance
      * @throws NullPointerException if {@code resourceRoot} attribute is {@code null}
+     * @deprecated use {@link ClasspathHandlerConfig#builder()} and
+     *         {@link io.helidon.webserver.staticcontent.StaticContentFeature#createService(ClasspathHandlerConfig)} instead
      */
+    @Deprecated(forRemoval = true, since = "4.1.5")
     static StaticContentService create(String resourceRoot) {
         return create(resourceRoot, Thread.currentThread().getContextClassLoader());
     }
@@ -109,7 +124,10 @@ public interface StaticContentService extends HttpService {
      * @param classLoader  a class-loader for the static content
      * @return created instance
      * @throws NullPointerException if {@code resourceRoot} attribute is {@code null}
+     * @deprecated use {@link ClasspathHandlerConfig#builder()} and
+     *         {@link io.helidon.webserver.staticcontent.StaticContentFeature#createService(ClasspathHandlerConfig)} instead
      */
+    @Deprecated(forRemoval = true, since = "4.1.5")
     static StaticContentService create(String resourceRoot, ClassLoader classLoader) {
         return builder(resourceRoot, classLoader).build();
     }
@@ -120,7 +138,10 @@ public interface StaticContentService extends HttpService {
      * @param root a root path.
      * @return created instance
      * @throws NullPointerException if {@code root} attribute is {@code null}
+     * @deprecated use {@link io.helidon.webserver.staticcontent.FileSystemHandlerConfig#builder()} and
+     *         {@link io.helidon.webserver.staticcontent.StaticContentFeature#createService(FileSystemHandlerConfig)} instead
      */
+    @Deprecated(forRemoval = true, since = "4.1.5")
     static StaticContentService create(Path root) {
         return builder(root).build();
     }
@@ -129,13 +150,16 @@ public interface StaticContentService extends HttpService {
      * Fluent builder of the StaticContent detailed parameters.
      *
      * @param <B> type of a subclass of a concrete builder
+     * @deprecated replaced with {@link io.helidon.webserver.staticcontent.FileSystemHandlerConfig} and
+     *         {@link io.helidon.webserver.staticcontent.ClasspathHandlerConfig}
      */
+    @Deprecated(forRemoval = true, since = "4.1.5")
     abstract class Builder<B extends Builder<B>> implements io.helidon.common.Builder<B, StaticContentService> {
+        private final Set<String> cacheInMemory = new HashSet<>();
+
         private String welcomeFileName;
         private Function<String, String> resolvePathFunction = Function.identity();
-        private Set<String> cacheInMemory = new HashSet<>();
-        private LruCache<String, CachedHandler> handlerCache;
-
+        private Integer recordCacheCapacity;
 
         /**
          * Default constructor.
@@ -205,12 +229,9 @@ public interface StaticContentService extends HttpService {
          * @return updated builder
          */
         public B recordCacheCapacity(int capacity) {
-            this.handlerCache = LruCache.<String, CachedHandler>builder()
-                    .capacity(capacity)
-                    .build();
+            this.recordCacheCapacity = capacity;
             return identity();
         }
-
 
         /**
          * Build the actual instance.
@@ -231,9 +252,8 @@ public interface StaticContentService extends HttpService {
             return cacheInMemory;
         }
 
-
-        LruCache<String, CachedHandler> handlerCache() {
-            return handlerCache == null ? LruCache.create() : handlerCache;
+        Optional<Integer> handlerCacheCapacity() {
+            return Optional.ofNullable(recordCacheCapacity);
         }
     }
 
@@ -245,6 +265,7 @@ public interface StaticContentService extends HttpService {
     @SuppressWarnings("unchecked")
     abstract class FileBasedBuilder<T extends FileBasedBuilder<T>> extends Builder<FileBasedBuilder<T>> {
         private final Map<String, MediaType> specificContentTypes = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+
         /**
          * Default constructor.
          */
@@ -311,7 +332,25 @@ public interface StaticContentService extends HttpService {
 
         @Override
         protected StaticContentService doBuild() {
-            return new ClassPathContentHandler(this);
+            return ClassPathContentHandler.create(
+                    ClasspathHandlerConfig.builder()
+                            .location(clRoot)
+                            .contentTypes(specificContentTypes())
+                            .update(it -> {
+                                if (welcomeFileName() != null) {
+                                    it.welcome(welcomeFileName());
+                                }
+                            })
+                            .cachedFiles(cacheInMemory())
+                            .pathMapper(resolvePathFunction())
+                            .update(it -> handlerCacheCapacity().ifPresent(it::recordCacheCapacity))
+                            .update(it -> classLoader().ifPresent(it::classLoader))
+                            .update(it -> {
+                                if (tmpDir != null) {
+                                    it.temporaryStorage(tmp -> tmp.directory(tmpDir));
+                                }
+                            })
+                            .build());
         }
 
         ClassPathBuilder classLoader(ClassLoader cl) {
@@ -338,16 +377,8 @@ public interface StaticContentService extends HttpService {
             return this;
         }
 
-        String root() {
-            return clRoot;
-        }
-
-        ClassLoader classLoader() {
-            return classLoader;
-        }
-
-        Path tmpDir() {
-            return tmpDir;
+        Optional<ClassLoader> classLoader() {
+            return Optional.ofNullable(classLoader);
         }
     }
 
@@ -368,11 +399,19 @@ public interface StaticContentService extends HttpService {
             if (root == null) {
                 throw new NullPointerException("Root path must be defined");
             }
-            if (Files.isDirectory(root)) {
-                return new FileSystemContentHandler(this);
-            } else {
-                return new SingleFileContentHandler(this);
-            }
+            return FileSystemContentHandler.create(
+                    FileSystemHandlerConfig.builder()
+                            .location(root)
+                            .contentTypes(specificContentTypes())
+                            .update(it -> {
+                                if (welcomeFileName() != null) {
+                                    it.welcome(welcomeFileName());
+                                }
+                            })
+                            .cachedFiles(cacheInMemory())
+                            .pathMapper(resolvePathFunction())
+                            .update(it -> handlerCacheCapacity().ifPresent(it::recordCacheCapacity))
+                            .build());
         }
 
         FileSystemBuilder root(Path root) {

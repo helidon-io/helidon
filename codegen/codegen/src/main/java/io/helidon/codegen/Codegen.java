@@ -20,9 +20,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -35,7 +35,6 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypedElementInfo;
 
 /**
  * Central piece of code processing and generation.
@@ -60,52 +59,48 @@ public class Codegen {
         SUPPORTED_APT_OPTIONS = Set.copyOf(supportedOptions);
     }
 
-    private final Map<TypeName, List<CodegenExtension>> typeToExtensions = new HashMap<>();
-    private final Map<CodegenExtension, Predicate<TypeName>> extensionPredicates = new IdentityHashMap<>();
     private final CodegenContext ctx;
-    private final List<CodegenExtension> extensions;
+    private final List<ExtensionInfo> extensions;
     private final Set<TypeName> supportedAnnotations;
+    private final Set<TypeName> supportedMetaAnnotations;
     private final Set<String> supportedPackagePrefixes;
 
     private Codegen(CodegenContext ctx, TypeName generator) {
         this.ctx = ctx;
 
+        Set<TypeName> supportedAnnotations = new HashSet<>(ctx.mapperSupportedAnnotations());
+        Set<TypeName> supportedMetaAnnotations = new HashSet<>();
+        Set<String> supportedPackagePrefixes = new HashSet<>();
+
         this.extensions = EXTENSIONS.stream()
                 .map(it -> {
                     CodegenExtension extension = it.create(this.ctx, generator);
 
-                    for (TypeName typeName : it.supportedAnnotations()) {
-                        typeToExtensions.computeIfAbsent(typeName, key -> new ArrayList<>())
-                                .add(extension);
-                    }
-                    Collection<String> packages = it.supportedAnnotationPackages();
-                    if (!packages.isEmpty()) {
-                        extensionPredicates.put(extension, discoveryPredicate(packages));
-                    }
+                    Set<TypeName> extensionAnnotations = it.supportedAnnotations();
+                    Set<String> extensionPackages = it.supportedAnnotationPackages();
+                    Set<TypeName> extensionMetaAnnotations = it.supportedMetaAnnotations();
 
-                    return extension;
+                    supportedAnnotations.addAll(extensionAnnotations);
+                    supportedMetaAnnotations.addAll(extensionMetaAnnotations);
+                    supportedPackagePrefixes.addAll(extensionPackages);
+
+                    Predicate<TypeName> annotationPredicate = discoveryPredicate(extensionAnnotations,
+                                                                                 extensionPackages);
+
+                    return new ExtensionInfo(extension,
+                                             annotationPredicate,
+                                             extensionMetaAnnotations);
                 })
                 .toList();
 
-        // handle supported annotations and package prefixes
-        Set<String> packagePrefixes = new HashSet<>();
-        Set<TypeName> annotations = new HashSet<>(ctx.mapperSupportedAnnotations());
-
-        for (CodegenExtensionProvider extension : EXTENSIONS) {
-            annotations.addAll(extension.supportedAnnotations());
-
-            ctx.mapperSupportedAnnotationPackages()
-                    .stream()
-                    .map(Codegen::toPackagePrefix)
-                    .forEach(packagePrefixes::add);
-        }
         ctx.mapperSupportedAnnotationPackages()
                 .stream()
                 .map(Codegen::toPackagePrefix)
-                .forEach(packagePrefixes::add);
+                .forEach(supportedPackagePrefixes::add);
 
-        this.supportedAnnotations = Set.copyOf(annotations);
-        this.supportedPackagePrefixes = Set.copyOf(packagePrefixes);
+        this.supportedAnnotations = Set.copyOf(supportedAnnotations);
+        this.supportedPackagePrefixes = Set.copyOf(supportedPackagePrefixes);
+        this.supportedMetaAnnotations = Set.copyOf(supportedMetaAnnotations);
     }
 
     /**
@@ -146,12 +141,11 @@ public class Codegen {
         // type info list will contain all mapped annotations, so this is the state we can do annotation processing on
         List<TypeInfoAndAnnotations> annotatedTypes = annotatedTypes(allTypes);
 
-        for (CodegenExtension extension : extensions) {
+        for (var extension : extensions) {
             // and now for each extension, we discover types that contain annotations supported by that extension
-            // and create a new round context for each extension
-
-            RoundContextImpl roundCtx = createRoundContext(annotatedTypes, extension);
-            extension.process(roundCtx);
+            // and create a new round context
+            RoundContextImpl roundCtx = createRoundContext(annotatedTypes, extension, toWrite);
+            extension.extension().process(roundCtx);
             toWrite.addAll(roundCtx.newTypes());
         }
 
@@ -165,9 +159,9 @@ public class Codegen {
         List<ClassCode> toWrite = new ArrayList<>();
 
         // do processing over in each extension
-        for (CodegenExtension extension : extensions) {
-            RoundContextImpl roundCtx = createRoundContext(List.of(), extension);
-            extension.processingOver(roundCtx);
+        for (var extension : extensions) {
+            RoundContextImpl roundCtx = createRoundContext(List.of(), extension, toWrite);
+            extension.extension().processingOver(roundCtx);
             toWrite.addAll(roundCtx.newTypes());
         }
 
@@ -193,11 +187,25 @@ public class Codegen {
         return supportedPackagePrefixes;
     }
 
-    private static Predicate<TypeName> discoveryPredicate(Collection<String> packages) {
-        List<String> prefixes = packages.stream()
+    /**
+     * A set of annotation types that may annotate annotation types.
+     *
+     * @return set of meta annotations for annotations to be processed
+     */
+    public Set<TypeName> supportedMetaAnnotations() {
+        return supportedMetaAnnotations;
+    }
+
+    private static Predicate<TypeName> discoveryPredicate(Set<TypeName> extensionAnnotations,
+                                                          Collection<String> extensionPackages) {
+        List<String> prefixes = extensionPackages.stream()
                 .map(it -> it.endsWith(".*") ? it.substring(0, it.length() - 2) : it)
                 .toList();
+
         return typeName -> {
+            if (extensionAnnotations.contains(typeName)) {
+                return true;
+            }
             String packageName = typeName.packageName();
             for (String prefix : prefixes) {
                 if (packageName.startsWith(prefix)) {
@@ -222,7 +230,7 @@ public class Codegen {
         List<TypeInfoAndAnnotations> result = new ArrayList<>();
 
         for (TypeInfo typeInfo : allTypes) {
-            result.add(new TypeInfoAndAnnotations(typeInfo, annotations(typeInfo)));
+            result.add(new TypeInfoAndAnnotations(typeInfo, TypeHierarchy.nestedAnnotations(ctx, typeInfo)));
         }
         return result;
     }
@@ -238,74 +246,65 @@ public class Codegen {
         }
     }
 
-    private RoundContextImpl createRoundContext(List<TypeInfoAndAnnotations> annotatedTypes, CodegenExtension extension) {
-        Set<TypeName> extAnnots = new HashSet<>();
-        Map<TypeName, List<TypeInfo>> extAnnotToType = new HashMap<>();
-        Map<TypeName, TypeInfo> extTypes = new HashMap<>();
+    private RoundContextImpl createRoundContext(List<TypeInfoAndAnnotations> annotatedTypes,
+                                                ExtensionInfo extension,
+                                                List<ClassCode> newTypes) {
+        Set<TypeName> availableAnnotations = new HashSet<>();
+        Map<TypeName, List<TypeInfo>> annotationToTypes = new HashMap<>();
+        Map<TypeName, TypeInfo> processedTypes = new HashMap<>();
+        Map<TypeName, Set<TypeName>> metaAnnotationToAnnotations = new HashMap<>();
 
+        // now go through all available annotated types and make sure we only include the ones required by this extension
         for (TypeInfoAndAnnotations annotatedType : annotatedTypes) {
-            for (TypeName typeName : annotatedType.annotations()) {
-                boolean added = false;
-                List<CodegenExtension> validExts = this.typeToExtensions.get(typeName);
-                if (validExts != null) {
-                    for (CodegenExtension validExt : validExts) {
-                        if (validExt == extension) {
-                            extAnnots.add(typeName);
-                            extAnnotToType.computeIfAbsent(typeName, key -> new ArrayList<>())
-                                    .add(annotatedType.typeInfo());
-                            extTypes.put(annotatedType.typeInfo().typeName(), annotatedType.typeInfo);
-                            added = true;
-                        }
-                    }
-                }
-                if (!added) {
-                    Predicate<TypeName> predicate = this.extensionPredicates.get(extension);
-                    if (predicate != null && predicate.test(typeName)) {
-                        extAnnots.add(typeName);
-                        extAnnotToType.computeIfAbsent(typeName, key -> new ArrayList<>())
-                                .add(annotatedType.typeInfo());
-                        extTypes.put(annotatedType.typeInfo().typeName(), annotatedType.typeInfo);
-                    }
+            for (TypeName annotationType : annotatedType.annotations()) {
+                boolean metaAnnotated = metaAnnotations(extension, metaAnnotationToAnnotations, annotationType);
+                if (metaAnnotated || extension.supportedAnnotationsPredicate().test(annotationType)) {
+                    availableAnnotations.add(annotationType);
+                    processedTypes.put(annotatedType.typeInfo().typeName(), annotatedType.typeInfo());
+                    annotationToTypes.computeIfAbsent(annotationType, k -> new ArrayList<>())
+                            .add(annotatedType.typeInfo());
+                    // annotation is meta-annotated with a supported meta-annotation,
+                    // or we support the annotation type, or it is prefixed by the package prefix
                 }
             }
         }
 
         return new RoundContextImpl(
-                Set.copyOf(extAnnots),
-                Map.copyOf(extAnnotToType),
-                List.copyOf(extTypes.values()));
+                ctx,
+                newTypes,
+                Set.copyOf(availableAnnotations),
+                Map.copyOf(annotationToTypes),
+                Map.copyOf(metaAnnotationToAnnotations),
+                List.copyOf(processedTypes.values()));
     }
 
-    private Set<TypeName> annotations(TypeInfo theTypeInfo) {
-        Set<TypeName> result = new HashSet<>();
+    private boolean metaAnnotations(ExtensionInfo extension,
+                                    Map<TypeName, Set<TypeName>> metaAnnotationToAnnotations,
+                                    TypeName annotationType) {
+        Optional<TypeInfo> annotationInfo = ctx.typeInfo(annotationType);
+        if (annotationInfo.isEmpty()) {
+            return false;
+        }
+        TypeInfo annotationTypeInfo = annotationInfo.get();
 
-        // on type
-        theTypeInfo.annotations()
-                .stream()
-                .map(Annotation::typeName)
-                .forEach(result::add);
-
-        // on fields, methods etc.
-        theTypeInfo.elementInfo()
-                .stream()
-                .map(TypedElementInfo::annotations)
-                .flatMap(List::stream)
-                .map(Annotation::typeName)
-                .forEach(result::add);
-
-        // on parameters
-        theTypeInfo.elementInfo()
-                .stream()
-                .map(TypedElementInfo::parameterArguments)
-                .flatMap(List::stream)
-                .map(TypedElementInfo::annotations)
-                .flatMap(List::stream)
-                .map(Annotation::typeName)
-                .forEach(result::add);
-
-        return result;
+        boolean metaAnnotated = false;
+        for (TypeName metaAnnotation : extension.supportedMetaAnnotations()) {
+            for (Annotation anAnnotation : annotationTypeInfo.allAnnotations()) {
+                if (anAnnotation.typeName().equals(metaAnnotation)) {
+                    metaAnnotated = true;
+                    metaAnnotationToAnnotations.computeIfAbsent(metaAnnotation, k -> new HashSet<>())
+                            .add(annotationType);
+                }
+            }
+        }
+        return metaAnnotated;
     }
 
     private record TypeInfoAndAnnotations(TypeInfo typeInfo, Set<TypeName> annotations) {
+    }
+
+    private record ExtensionInfo(CodegenExtension extension,
+                                 Predicate<TypeName> supportedAnnotationsPredicate,
+                                 Set<TypeName> supportedMetaAnnotations) {
     }
 }

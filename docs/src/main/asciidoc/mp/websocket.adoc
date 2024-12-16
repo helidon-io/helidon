@@ -131,7 +131,7 @@ the root path for WebSocket endpoints will be  `"/web"` instead of the default `
 
 All endpoint methods in Helidon MP are executed in a separate thread pool, independently of Netty. Therefore, there is no need to create additional threads for blocking or long-running operations as these will not affect Netty's ability to process networking data.
 
-For more information see the link:{helidon-github-tree-url}/examples/webserver/websocket[example].
+For more information see the link:{helidon-github-examples-url}/webserver/websocket[example].
 
 === WebSocket Endpoints on Different Ports
 

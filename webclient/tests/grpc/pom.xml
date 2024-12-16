@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.webclient.tests</groupId>
         <artifactId>helidon-webclient-tests-project</artifactId>
-        <version>4.1.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-webclient-tests-grpc</artifactId>
@@ -102,6 +102,11 @@
         <dependency>
             <groupId>io.helidon.webserver.testing.junit5</groupId>
             <artifactId>helidon-webserver-testing-junit5-grpc</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.fault-tolerance</groupId>
+            <artifactId>helidon-fault-tolerance</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

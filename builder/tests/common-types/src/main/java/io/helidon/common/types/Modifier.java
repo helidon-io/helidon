@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,23 @@ public enum Modifier {
     /**
      * The {@code final} modifier.
      */
-    FINAL("final");
+    FINAL("final"),
+    /**
+     * The {@code transient} modifier.
+     */
+    TRANSIENT("transient"),
+    /**
+     * The {@code volatile} modifier.
+     */
+    VOLATILE("volatile"),
+    /**
+     * The {@code synchronized} modifier.
+     */
+    SYNCHRONIZED("synchronized"),
+    /**
+     * The {@code native} modifier.
+     */
+    NATIVE("native");
 
     private final String modifierName;
 

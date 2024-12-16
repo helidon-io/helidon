@@ -1020,8 +1020,8 @@ public interface Config extends io.helidon.common.config.Config {
          * @return unescaped name
          */
         static String unescapeName(String escapedName) {
-            return escapedName.replaceAll("~1", ".")
-                    .replaceAll("~0", "~");
+            return escapedName.replace("~1", ".")
+                    .replace("~0", "~");
         }
     }
 
@@ -1635,8 +1635,14 @@ public interface Config extends io.helidon.common.config.Config {
          * @see #config(Config)
          */
         default Builder metaConfig() {
-            MetaConfig.metaConfig()
-                    .ifPresent(this::config);
+            try {
+                MetaConfig.metaConfig()
+                        .ifPresent(this::config);
+            } catch (MetaConfigException e) {
+                System.getLogger(getClass().getName())
+                        .log(System.Logger.Level.WARNING, "Failed to load SE meta-configuration,"
+                                + " please make sure it has correct format.", e);
+            }
 
             return this;
         }

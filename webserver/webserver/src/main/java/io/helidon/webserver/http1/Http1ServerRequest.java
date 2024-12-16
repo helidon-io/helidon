@@ -182,7 +182,7 @@ abstract class Http1ServerRequest implements RoutingRequest {
 
     @Override
     public String authority() {
-        return headers.get(HeaderNames.HOST).value();
+        return headers.get(HeaderNames.HOST).get();
     }
 
     @Override

@@ -88,6 +88,9 @@ public class WebSocketClientTest {
 
             @Override
             public void onOpen(WsSession session) {
+                if (session.socketContext().remotePeer() == null) {
+                    throw new InternalError("Unable to access remote peer info");
+                }
                 for (String s : text) {
                     session.send(s, false);
                 }

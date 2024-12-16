@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import io.helidon.webserver.testing.junit5.SetUpRoute;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import static io.helidon.webserver.staticcontent.StaticContentFeature.createService;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -45,6 +46,7 @@ class StaticContentTest {
         this.testClient = testClient;
     }
 
+    @SuppressWarnings("removal")
     @SetUpRoute
     static void setupRouting(HttpRouting.Builder builder) throws Exception {
         Path nested = tempDir.resolve("nested");
@@ -57,10 +59,15 @@ class StaticContentTest {
         Files.writeString(favicon, "Wrong icon text");
         Files.writeString(nested.resolve("resource.txt"), "Nested content");
 
-        builder.register("/classpath", StaticContentService.builder("web"))
-                .register("/singleclasspath", StaticContentService.builder("web/resource.txt"))
-                .register("/path", StaticContentService.builder(tempDir))
-                .register("/singlepath", StaticContentService.builder(resource));
+        builder.register("/classpath", createService(ClasspathHandlerConfig.create("web")))
+                .register("/singleclasspath", createService(ClasspathHandlerConfig.create("web/resource.txt")))
+                .register("/path", createService(FileSystemHandlerConfig.create(tempDir)))
+                .register("/singlepath", createService(FileSystemHandlerConfig.create(resource)));
+
+        builder.register("/backward-comp/classpath", StaticContentService.builder("web"))
+                .register("/backward-comp/singleclasspath", StaticContentService.builder("web/resource.txt"))
+                .register("/backward-comp/path", StaticContentService.builder(tempDir))
+                .register("/backward-comp/singlepath", StaticContentService.builder(resource));
     }
 
     @Test
@@ -74,8 +81,29 @@ class StaticContentTest {
     }
 
     @Test
+    void testClasspathFaviconBackwardComp() {
+        try (Http1ClientResponse response = testClient.get("/backward-comp/classpath/favicon.ico")
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, "image/x-icon"));
+        }
+    }
+
+    @Test
     void testClasspathNested() {
         try (Http1ClientResponse response = testClient.get("/classpath/nested/resource.txt")
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, "text/plain"));
+            assertThat(response.as(String.class), is("Nested content"));
+        }
+    }
+
+    @Test
+    void testClasspathNestedBackwardComp() {
+        try (Http1ClientResponse response = testClient.get("/backward-comp/classpath/nested/resource.txt")
                 .request()) {
 
             assertThat(response.status(), is(Status.OK_200));
@@ -96,8 +124,29 @@ class StaticContentTest {
     }
 
     @Test
+    void testClasspathSingleFileBackwardComp() {
+        try (Http1ClientResponse response = testClient.get("/backward-comp/singleclasspath")
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, "text/plain"));
+            assertThat(response.as(String.class), is("Content"));
+        }
+    }
+
+    @Test
     void testFileSystemFavicon() {
         try (Http1ClientResponse response = testClient.get("/path/favicon.ico")
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, "image/x-icon"));
+        }
+    }
+
+    @Test
+    void testFileSystemFaviconBackwardComp() {
+        try (Http1ClientResponse response = testClient.get("/backward-comp/path/favicon.ico")
                 .request()) {
 
             assertThat(response.status(), is(Status.OK_200));
@@ -116,9 +165,32 @@ class StaticContentTest {
         }
     }
 
+
+    @Test
+    void testFileSystemNestedBackwardComp() {
+        try (Http1ClientResponse response = testClient.get("/backward-comp/path/nested/resource.txt")
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, "text/plain"));
+            assertThat(response.as(String.class), is("Nested content"));
+        }
+    }
+
     @Test
     void testFileSystemSingleFile() {
         try (Http1ClientResponse response = testClient.get("/singlepath")
+                .request()) {
+
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, "text/plain"));
+            assertThat(response.as(String.class), is("Content"));
+        }
+    }
+
+    @Test
+    void testFileSystemSingleFileBackwardComp() {
+        try (Http1ClientResponse response = testClient.get("/backward-comp/singlepath")
                 .request()) {
 
             assertThat(response.status(), is(Status.OK_200));

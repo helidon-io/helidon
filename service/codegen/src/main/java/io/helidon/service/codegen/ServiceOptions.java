@@ -16,19 +16,35 @@
 
 package io.helidon.service.codegen;
 
+import java.io.Serializable;
+import java.util.Set;
+
 import io.helidon.codegen.Option;
+import io.helidon.common.GenericType;
+import io.helidon.common.types.TypeName;
 
 /**
  * Supported options specific to Helidon Service Registry.
  */
-final class ServiceOptions {
+public final class ServiceOptions {
     /**
      * Treat all super types as a contract for a given service type being added.
      */
     public static final Option<Boolean> AUTO_ADD_NON_CONTRACT_INTERFACES =
             Option.create("helidon.registry.autoAddNonContractInterfaces",
-                          "Treat all super types as a contract for a given service type being added.",
-                          false);
+                          "Treat all super types and implemented types as a contract for a given service type "
+                                  + "being added. Defaults to true.",
+                          true);
+    /**
+     * A set of interface/class types that should not be considered contracts, even if implemented by a service.
+     */
+    public static final Option<Set<TypeName>> NON_CONTRACT_TYPES =
+            Option.createSet("helidon.registry.nonContractTypes",
+                             "Types that should not be considered contracts. "
+                                     + "By default we exclude Serializable.",
+                             Set.of(TypeName.create(Serializable.class)),
+                             TypeName::create,
+                             new GenericType<Set<TypeName>>() { });
 
     private ServiceOptions() {
     }

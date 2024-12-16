@@ -15,13 +15,8 @@
  */
 package io.helidon.integrations.oci.sdk.cdi;
 
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.nio.file.Path;
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 
-import com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider;
 import jakarta.ws.rs.ProcessingException;
 import org.apache.http.client.config.RequestConfig;
 import org.junit.jupiter.api.Test;
@@ -29,11 +24,9 @@ import org.junit.jupiter.api.Test;
 import static com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider.builder;
 import static com.oracle.bmc.http.client.jersey3.ApacheClientProperties.REQUEST_CONFIG;
 import static com.oracle.bmc.http.client.StandardClientProperties.CONNECT_TIMEOUT;
-import static java.nio.file.Files.createTempFile;
-import static java.nio.file.Files.deleteIfExists;
-import static java.nio.file.Files.newBufferedWriter;
-import static java.util.concurrent.Executors.newScheduledThreadPool;
+import static io.helidon.integrations.oci.sdk.cdi.Utils.imdsAvailable;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class TestInstancePrincipalsAuthenticationDetailsProvider {
@@ -47,6 +40,8 @@ class TestInstancePrincipalsAuthenticationDetailsProvider {
         // Don't run in the pipeline/Github Actions; there's no point. See comments below.
         String ci = System.getenv("CI");
         assumeTrue(ci == null || ci.isBlank());
+        // skip if imds is available
+        assumeFalse(imdsAvailable());
 
         assertThrows(ProcessingException.class, () -> builder()
                      // (There does not seem to be a way to avoid this taking multiple seconds, no matter what timeout
@@ -74,5 +69,4 @@ class TestInstancePrincipalsAuthenticationDetailsProvider {
                      .timeoutForEachRetry(1) // milliseconds; no visible effect
                      .build()); // takes multiple seconds
     }
-
 }

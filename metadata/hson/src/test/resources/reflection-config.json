@@ -1,0 +1,26 @@
+{
+    "annotated":[
+        "jakarta.persistence.Entity",
+        "jakarta.persistence.MappedSuperclass"
+    ],
+    "class-hierarchy": [
+        "javax.xml.stream.XMLEventFactory",
+        "javax.sql.DataSource",
+        "javax.sql.XADataSource",
+        "javax.sql.XAConnection",
+        "jakarta.transaction.xa.XAResource",
+        "java.sql.Connection",
+        "java.sql.Statement",
+        "java.sql.ResultSet",
+        "jakarta.transaction.TransactionManager",
+        "jakarta.transaction.Transaction",
+        "jakarta.persistence.EntityManager",
+        "jakarta.transaction.TransactionSynchronizationRegistry"
+    ],
+    "classes": [
+        "com.sun.xml.internal.stream.events.XMLEventFactoryImpl",
+        "java.net.URLClassLoader",
+        "java.sql.Statement[]"
+    ],
+    "exclude": []
+}

@@ -606,6 +606,15 @@ public class SocketHttpClient implements AutoCloseable {
     }
 
     /**
+     * Provides access to underlying socket reader.
+     *
+     * @return the reader
+     */
+    public BufferedReader socketReader() {
+        return socketReader;
+    }
+
+    /**
      * Override this to send a specific payload.
      *
      * @param pw      the print writer where to write the payload

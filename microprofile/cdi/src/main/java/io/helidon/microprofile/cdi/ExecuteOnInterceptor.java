@@ -16,7 +16,13 @@
 
 package io.helidon.microprofile.cdi;
 
+import java.lang.reflect.Method;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.configurable.ThreadPoolSupplier;
@@ -47,56 +53,111 @@ class ExecuteOnInterceptor {
 
     private static final LazyValue<ExecutorService> PLATFORM_EXECUTOR_SERVICE
             = LazyValue.create(() -> {
-                    Config mpConfig = ConfigProvider.getConfig();
-                    io.helidon.config.Config config = MpConfig.toHelidonConfig(mpConfig);
-                    return ThreadPoolSupplier.builder()
-                                             .threadNamePrefix(EXECUTE_ON)
-                                             .config(config.get(RUN_ON_PLATFORM_THREAD))
-                                             .virtualThreads(false)        // overrides to platform threads
-                                             .build()
-                                             .get();
-            });
+        Config mpConfig = ConfigProvider.getConfig();
+        io.helidon.config.Config config = MpConfig.toHelidonConfig(mpConfig);
+        return ThreadPoolSupplier.builder()
+                .threadNamePrefix(EXECUTE_ON)
+                .config(config.get(RUN_ON_PLATFORM_THREAD))
+                .virtualThreads(false)        // overrides to platform threads
+                .build()
+                .get();
+    });
 
     private static final LazyValue<ExecutorService> VIRTUAL_EXECUTOR_SERVICE
             = LazyValue.create(() -> {
-                Config mpConfig = ConfigProvider.getConfig();
-                io.helidon.config.Config config = MpConfig.toHelidonConfig(mpConfig);
-                String threadNamePrefix = config.get(RUN_ON_VIRTUAL_THREAD)
-                                                .get("thread-name-prefix")
-                                                .asString()
-                                                .asOptional()
-                                                .orElse(EXECUTE_ON);
-                return ThreadPoolSupplier.builder()
-                                         .threadNamePrefix(threadNamePrefix)
-                                         .virtualThreads(true)
-                                         .build()
-                                         .get();
-            });
+        Config mpConfig = ConfigProvider.getConfig();
+        io.helidon.config.Config config = MpConfig.toHelidonConfig(mpConfig);
+        String threadNamePrefix = config.get(RUN_ON_VIRTUAL_THREAD)
+                .get("thread-name-prefix")
+                .asString()
+                .asOptional()
+                .orElse(EXECUTE_ON);
+        return ThreadPoolSupplier.builder()
+                .threadNamePrefix(threadNamePrefix)
+                .virtualThreads(true)
+                .build()
+                .get();
+    });
 
     @Inject
     private ExecuteOnExtension extension;
 
     /**
-     * Intercepts a call to bean method annotated by {@code @OnNewThread}.
+     * Intercepts a call to bean method annotated by {@link io.helidon.microprofile.cdi.ExecuteOn}.
      *
      * @param context Invocation context.
      * @return Whatever the intercepted method returns.
      * @throws Throwable If a problem occurs.
      */
     @AroundInvoke
+    @SuppressWarnings("unchecked")
     public Object executeOn(InvocationContext context) throws Throwable {
-        ExecuteOn executeOn = extension.getAnnotation(context.getMethod());
-        return switch (executeOn.value()) {
-            case PLATFORM -> PLATFORM_EXECUTOR_SERVICE.get()
-                    .submit(context::proceed)
-                    .get(executeOn.timeout(), executeOn.unit());
-            case VIRTUAL -> VIRTUAL_EXECUTOR_SERVICE.get()
-                    .submit(context::proceed)
-                    .get(executeOn.timeout(), executeOn.unit());
-            case EXECUTOR -> findExecutor(executeOn.executorName())
-                    .submit(context::proceed)
-                    .get(executeOn.timeout(), executeOn.unit());
+        Method method = context.getMethod();
+        ExecuteOn executeOn = extension.getAnnotation(method);
+
+        // find executor service to use
+        ExecutorService executorService = switch (executeOn.value()) {
+            case PLATFORM -> PLATFORM_EXECUTOR_SERVICE.get();
+            case VIRTUAL -> VIRTUAL_EXECUTOR_SERVICE.get();
+            case EXECUTOR -> findExecutor(executeOn.executorName());
         };
+
+        switch (extension.getMethodType(method)) {
+        case BLOCKING:
+            // block until call completes
+            return executorService.submit(context::proceed).get(executeOn.timeout(), executeOn.unit());
+        case NON_BLOCKING:
+            // execute call asynchronously
+            CompletableFuture<?> supplyFuture = CompletableFuture.supplyAsync(
+                    () -> {
+                        try {
+                            return context.proceed();
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    }, executorService);
+
+            // return new, cancellable completable future
+            AtomicBoolean mayInterrupt = new AtomicBoolean(false);
+            CompletableFuture<Object> resultFuture = new CompletableFuture<>() {
+                @Override
+                public boolean cancel(boolean mayInterruptIfRunning) {
+                    mayInterrupt.set(mayInterruptIfRunning);
+                    return super.cancel(mayInterruptIfRunning);
+                }
+            };
+
+            // link completion of supplyFuture with resultFuture
+            supplyFuture.whenComplete((result, throwable) -> {
+                if (throwable == null) {
+                    // result must be CompletionStage or CompletableFuture
+                    CompletableFuture<Object> cfResult = !(result instanceof CompletableFuture<?>)
+                            ? ((CompletionStage<Object>) result).toCompletableFuture()
+                            : (CompletableFuture<Object>) result;
+                    cfResult.whenComplete((r, t) -> {
+                        if (t == null) {
+                            resultFuture.complete(r);
+                        } else {
+                            resultFuture.completeExceptionally(unwrapThrowable(t));
+                        }
+                    });
+                } else {
+                    resultFuture.completeExceptionally(unwrapThrowable(throwable));
+                }
+            });
+
+            // if resultFuture is cancelled, then cancel supplyFuture
+            resultFuture.exceptionally(t -> {
+                if (t instanceof CancellationException) {
+                    supplyFuture.cancel(mayInterrupt.get());
+                }
+                return null;
+            });
+
+            return resultFuture;
+        default:
+            throw new IllegalStateException("Unrecognized ExecuteOn method type");
+        }
     }
 
     /**
@@ -107,5 +168,15 @@ class ExecuteOnInterceptor {
      */
     private static ExecutorService findExecutor(String executorName) {
         return CDI.current().select(ExecutorService.class, NamedLiteral.of(executorName)).get();
+    }
+
+    /**
+     * Extract underlying throwable.
+     *
+     * @param t the throwable
+     * @return the wrapped throwable
+     */
+    private static Throwable unwrapThrowable(Throwable t) {
+        return t instanceof ExecutionException ? t.getCause() : t;
     }
 }

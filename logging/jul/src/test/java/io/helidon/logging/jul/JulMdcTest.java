@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,7 +82,7 @@ public class JulMdcTest {
     }
 
     @Test
-    public void testThreadPropagation() {
+    public void testThreadPropagationWithContext() {
         HelidonMdc.set(TEST_KEY, TEST_VALUE);
         Context context = Context.create();
         ExecutorService executor = Contexts.wrap(Executors.newFixedThreadPool(1));
@@ -95,6 +95,19 @@ public class JulMdcTest {
                 throw new ExecutorException("failed to execute", e);
             }
         });
+    }
+
+    @Test
+    public void testThreadPropagationWithoutContext() {
+        HelidonMdc.set(TEST_KEY, TEST_VALUE);
+        ExecutorService executor = Contexts.wrap(Executors.newFixedThreadPool(1));
+
+        try {
+            String value = executor.submit(new TestCallable()).get();
+            assertThat(value, is(TEST_VALUE));
+        } catch (Exception e) {
+            throw new ExecutorException("failed to execute", e);
+        }
     }
 
     private static final class TestCallable implements Callable<String> {

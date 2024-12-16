@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.common.types;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -60,10 +61,67 @@ final class TypedElementInfoSupport {
         BuilderDecorator() {
         }
 
-        @SuppressWarnings("removal")
         @Override
         public void decorate(TypedElementInfo.BuilderBase<?, ?> target) {
-/*
+            backwardCompatibility(target);
+            constructorName(target);
+            signature(target);
+        }
+
+        private void signature(TypedElementInfo.BuilderBase<?, ?> target) {
+            if (target.kind().isEmpty()) {
+                // this will fail when validating
+                target.signature(ElementSignatures.createNone());
+                return;
+            } else {
+                target.signature(signature(target, target.kind().get()));
+            }
+        }
+
+        private ElementSignature signature(TypedElementInfo.BuilderBase<?, ?> target, ElementKind elementKind) {
+            if (elementKind == ElementKind.CONSTRUCTOR) {
+                return ElementSignatures.createConstructor(toTypes(target.parameterArguments()));
+            }
+            // for everything else we need the type (it is required)
+            if (target.typeName().isEmpty() || target.elementName().isEmpty()) {
+                return ElementSignatures.createNone();
+            }
+
+            TypeName typeName = target.typeName().get();
+            String name = target.elementName().get();
+
+            if (elementKind == ElementKind.FIELD
+                    || elementKind == ElementKind.RECORD_COMPONENT
+                    || elementKind == ElementKind.ENUM_CONSTANT) {
+                return ElementSignatures.createField(typeName, name);
+            }
+            if (elementKind == ElementKind.METHOD) {
+                return ElementSignatures.createMethod(typeName, name, toTypes(target.parameterArguments()));
+            }
+            if (elementKind == ElementKind.PARAMETER) {
+                return ElementSignatures.createParameter(typeName, name);
+            }
+            return ElementSignatures.createNone();
+        }
+
+        private List<TypeName> toTypes(List<TypedElementInfo> typedElementInfos) {
+            return typedElementInfos.stream()
+                    .map(TypedElementInfo::typeName)
+                    .collect(Collectors.toUnmodifiableList());
+        }
+
+        private void constructorName(TypedElementInfo.BuilderBase<?, ?> target) {
+            Optional<ElementKind> elementKind = target.kind();
+            if (elementKind.isPresent()) {
+                if (elementKind.get() == ElementKind.CONSTRUCTOR) {
+                    target.elementName("<init>");
+                }
+            }
+        }
+
+        @SuppressWarnings("removal")
+        private void backwardCompatibility(TypedElementInfo.BuilderBase<?, ?> target) {
+            /*
             Backward compatibility for deprecated methods.
              */
             if (target.kind().isEmpty() && target.elementTypeKind().isPresent()) {
@@ -103,14 +161,6 @@ final class TypedElementInfoSupport {
                 target.addModifier(typeModifier.modifierName());
             }
             target.addModifier(target.accessModifier().get().modifierName());
-
-
-            Optional<ElementKind> elementKind = target.kind();
-            if (elementKind.isPresent()) {
-                if (elementKind.get() == ElementKind.CONSTRUCTOR) {
-                    target.elementName("<init>");
-                }
-            }
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -113,7 +113,7 @@ final class MetaProviders {
                 .filter(provider -> provider.supports(type))
                 .findFirst()
                 .map(provider -> provider.create(type, config))
-                .orElseThrow(() -> new IllegalArgumentException("Config source of type " + type + " is not supported."
+                .orElseThrow(() -> new MetaConfigException("Config source of type " + type + " is not supported."
                                                                         + " Supported types: " + SUPPORTED_CONFIG_SOURCES));
     }
 
@@ -122,7 +122,7 @@ final class MetaProviders {
                 .filter(provider -> provider.supports(type))
                 .findFirst()
                 .map(provider -> provider.createMulti(type, sourceProperties))
-                .orElseThrow(() -> new IllegalArgumentException("Config source of type " + type + " is not supported."
+                .orElseThrow(() -> new MetaConfigException("Config source of type " + type + " is not supported."
                                                                         + " Supported types: " + SUPPORTED_CONFIG_SOURCES));
     }
 
@@ -131,7 +131,7 @@ final class MetaProviders {
                 .filter(provider -> provider.supports(type))
                 .findFirst()
                 .map(provider -> provider.create(type, config))
-                .orElseThrow(() -> new IllegalArgumentException("Config source of type " + type + " is not supported."
+                .orElseThrow(() -> new MetaConfigException("Config source of type " + type + " is not supported."
                                                                         + " Supported types: " + SUPPORTED_OVERRIDE_SOURCES));
     }
 
@@ -140,7 +140,7 @@ final class MetaProviders {
                 .filter(provider -> provider.supports(type))
                 .findFirst()
                 .map(provider -> provider.create(type, config))
-                .orElseThrow(() -> new IllegalArgumentException("Polling strategy of type " + type + " is not supported."
+                .orElseThrow(() -> new MetaConfigException("Polling strategy of type " + type + " is not supported."
                                                                         + " Supported types: " + SUPPORTED_POLLING_STRATEGIES));
     }
 
@@ -149,7 +149,7 @@ final class MetaProviders {
                 .filter(provider -> provider.supports(type))
                 .findFirst()
                 .map(provider -> provider.create(type, config))
-                .orElseThrow(() -> new IllegalArgumentException("Retry policy of type " + type + " is not supported."
+                .orElseThrow(() -> new MetaConfigException("Retry policy of type " + type + " is not supported."
                                                                         + " Supported types: " + SUPPORTED_RETRY_POLICIES));
     }
 
@@ -158,7 +158,7 @@ final class MetaProviders {
                 .filter(provider -> provider.supports(type))
                 .findFirst()
                 .map(provider -> provider.create(type, config))
-                .orElseThrow(() -> new IllegalArgumentException("Change watcher of type " + type + " is not supported."
+                .orElseThrow(() -> new MetaConfigException("Change watcher of type " + type + " is not supported."
                                                                 + " Supported types: " + SUPPORTED_CHANGE_WATCHERS));
     }
 

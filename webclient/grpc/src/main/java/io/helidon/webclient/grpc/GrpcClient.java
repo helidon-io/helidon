@@ -114,4 +114,11 @@ public interface GrpcClient extends RuntimeType.Api<GrpcClientConfig> {
     default Channel channel(Collection<ClientInterceptor> interceptors) {
         return channel(interceptors.toArray(new ClientInterceptor[]{}));
     }
+
+    /**
+     * Configuration for this gRPC client.
+     *
+     * @return the configuration
+     */
+    GrpcClientConfig clientConfig();
 }

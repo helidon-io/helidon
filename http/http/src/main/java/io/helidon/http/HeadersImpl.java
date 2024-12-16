@@ -162,7 +162,9 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
         HeaderName name = header.headerName();
 
         Header usedHeader = header;
-        if (header instanceof HeaderWriteable) {
+        if (header instanceof HeaderValueLazy) {
+            // use it directly (lazy values are write once)
+        } else if (header instanceof HeaderWriteable) {
             // we must create a new instance, as we risk modifying state of the provided header
             usedHeader = new HeaderValueCopy(header);
         }

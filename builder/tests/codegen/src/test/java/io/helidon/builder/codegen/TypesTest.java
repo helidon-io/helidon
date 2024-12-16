@@ -18,6 +18,8 @@ package io.helidon.builder.codegen;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.net.URI;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -84,6 +86,8 @@ public class TypesTest {
         checkField(toCheck, checked, fields, "ARRAY_LIST", ArrayList.class);
         checkField(toCheck, checked, fields, "LINKED_HASH_SET", LinkedHashSet.class);
         checkField(toCheck, checked, fields, "CHAR_ARRAY", char[].class);
+        checkField(toCheck, checked, fields, "PATH", Path.class);
+        checkField(toCheck, checked, fields, "URI", URI.class);
         checkField(toCheck, checked, fields, "SERVICE_REGISTRY", ServiceRegistry.class);
         checkField(toCheck, checked, fields, "GLOBAL_SERVICE_REGISTRY", GlobalServiceRegistry.class);
         checkField(toCheck, checked, fields, "GENERATED_SERVICE", GeneratedService.class);
@@ -94,6 +98,7 @@ public class TypesTest {
         checkField(toCheck, checked, fields, "PROTOTYPE_ANNOTATED", Prototype.Annotated.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_FACTORY", Prototype.Factory.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_CONFIGURED", Prototype.Configured.class);
+        checkField(toCheck, checked, fields, "PROTOTYPE_PROVIDES", Prototype.Provides.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_BUILDER", Prototype.Builder.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_CONFIGURED_BUILDER", Prototype.ConfiguredBuilder.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_CUSTOM_METHODS", Prototype.CustomMethods.class);

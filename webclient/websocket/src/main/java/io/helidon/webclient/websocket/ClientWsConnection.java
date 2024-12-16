@@ -22,6 +22,7 @@ import java.util.Optional;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.socket.HelidonSocket;
+import io.helidon.common.socket.SocketContext;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.websocket.ClientWsFrame;
 import io.helidon.websocket.ServerWsFrame;
@@ -167,6 +168,11 @@ public class ClientWsConnection implements WsSession, Runnable {
     @Override
     public Optional<String> subProtocol() {
         return Optional.ofNullable(subProtocol);
+    }
+
+    @Override
+    public SocketContext socketContext() {
+        return helidonSocket;
     }
 
     private ClientWsConnection send(ClientWsFrame frame) {

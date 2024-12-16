@@ -279,13 +279,15 @@ class StaticContentHandlerTest {
         final boolean returnValue;
         Path path;
 
-        TestContentHandler(StaticContentService.FileSystemBuilder builder, boolean returnValue) {
-            super(builder);
+        TestContentHandler(FileSystemHandlerConfig config, boolean returnValue) {
+            super(config);
             this.returnValue = returnValue;
         }
 
         static TestContentHandler create(boolean returnValue) {
-            return new TestContentHandler(StaticContentService.builder(Paths.get(".")), returnValue);
+            return new TestContentHandler(FileSystemHandlerConfig.builder()
+                                                  .location(Paths.get("."))
+                                                  .build(), returnValue);
         }
 
         @Override
@@ -307,13 +309,15 @@ class StaticContentHandlerTest {
         final AtomicInteger counter = new AtomicInteger(0);
         final boolean returnValue;
 
-        TestClassPathContentHandler(StaticContentService.ClassPathBuilder builder, boolean returnValue) {
-            super(builder);
+        TestClassPathContentHandler(ClasspathHandlerConfig config, boolean returnValue) {
+            super(config);
             this.returnValue = returnValue;
         }
 
         static TestClassPathContentHandler create() {
-            return new TestClassPathContentHandler(StaticContentService.builder("/root"), true);
+            return new TestClassPathContentHandler(ClasspathHandlerConfig.builder()
+                                                           .location("/root")
+                                                           .build(), true);
         }
 
         @Override

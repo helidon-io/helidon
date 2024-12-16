@@ -44,6 +44,7 @@ public abstract class TypeInfoFactoryBase {
                                                                     TypeName.create(Target.class),
                                                                     TypeName.create(Retention.class),
                                                                     TypeName.create(Repeatable.class));
+    private static final Set<String> ACCESS_MODIFIERS = Set.of("PUBLIC", "PRIVATE", "PROTECTED");
 
     /**
      * There are no side effects of this constructor.
@@ -144,10 +145,15 @@ public abstract class TypeInfoFactoryBase {
         Set<io.helidon.common.types.Modifier> result = new HashSet<>();
 
         for (String stringModifier : stringModifiers) {
+            String upperCased = stringModifier.toUpperCase(Locale.ROOT);
+            if (ACCESS_MODIFIERS.contains(upperCased)) {
+                // ignore access modifiers, as they are handled elsewhere
+                continue;
+            }
             try {
-                result.add(io.helidon.common.types.Modifier.valueOf(stringModifier.toUpperCase(Locale.ROOT)));
+                result.add(io.helidon.common.types.Modifier.valueOf(upperCased));
             } catch (Exception ignored) {
-                // we do not care about modifiers we do not understand - either access modifier, or something new
+                // we do not care about modifiers we do not understand
                 ctx.logger().log(System.Logger.Level.TRACE,
                                  "Modifier " + stringModifier + " not understood by type info factory.");
             }

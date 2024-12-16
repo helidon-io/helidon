@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,11 +42,12 @@ final class HelidonHistogram extends MetricImpl<DistributionSummary> implements 
     static HelidonHistogram create(MeterRegistry meterRegistry, String scope, Metadata metadata, Tag... tags) {
         return create(scope,
                       metadata,
-                      meterRegistry.getOrCreate(DistributionSummary.builder(metadata.getName())
-                                                        .scope(scope)
-                                                        .description(metadata.getDescription())
-                                                        .baseUnit(sanitizeUnit(metadata.getUnit()))
-                                                        .tags(allTags(scope, tags))));
+                      meterRegistry.getOrCreate(DistributionCustomizations
+                                                        .apply(DistributionSummary.builder(metadata.getName())
+                                                                       .scope(scope)
+                                                                       .description(metadata.getDescription())
+                                                                       .baseUnit(sanitizeUnit(metadata.getUnit()))
+                                                                       .tags(allTags(scope, tags)))));
     }
 
     static HelidonHistogram create(String scope,
@@ -54,6 +55,12 @@ final class HelidonHistogram extends MetricImpl<DistributionSummary> implements 
                                    io.helidon.metrics.api.DistributionSummary delegate) {
         return new HelidonHistogram(scope,
                                     metadata,
+                                    delegate);
+    }
+
+    static HelidonHistogram create(io.helidon.metrics.api.DistributionSummary delegate) {
+        return new HelidonHistogram(resolvedScope(delegate),
+                                    Registry.metadata(delegate),
                                     delegate);
     }
 

@@ -60,9 +60,9 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
     private volatile Future<?> writeStreamFuture;
     private volatile Future<?> heartbeatFuture;
 
-    GrpcClientCall(GrpcClientImpl grpcClient, MethodDescriptor<ReqT, ResT> methodDescriptor, CallOptions callOptions) {
-        super(grpcClient, methodDescriptor, callOptions);
-        this.executor = grpcClient.webClient().executor();
+    GrpcClientCall(GrpcChannel grpcChannel, MethodDescriptor<ReqT, ResT> methodDescriptor, CallOptions callOptions) {
+        super(grpcChannel, methodDescriptor, callOptions);
+        this.executor = grpcClient().webClient().executor();
     }
 
     @Override

@@ -28,4 +28,16 @@ public interface WritableBaggage extends Baggage {
      * @return the baggage instance (for chained invocation)
      */
     WritableBaggage set(String key, String value);
+
+    /**
+     * Adds a new or overrides an existing setting for the specified key using the provided value and baggage metadata.
+     *
+     * @param key name of the entry to add or update
+     * @param value value to assign to the entry
+     * @param metadata metadata to assign to the entry
+     * @return the baggage instance (for chained invocation)
+     */
+    default WritableBaggage set(String key, String value, String metadata) {
+        return set(key, value);
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,17 +31,33 @@ import io.helidon.common.parameters.Parameters;
 public interface UriQuery extends Parameters {
     /**
      * Create a new HTTP query from the query string.
+     * This method does not validate the raw query against specification.
      *
      * @param query raw query string
      * @return HTTP query instance
+     * @see #create(String, boolean)
      */
     static UriQuery create(String query) {
+        return create(query, false);
+    }
+
+    /**
+     * Create a new HTTP query from the query string, validating if requested.
+     *
+     * @param query raw query string
+     * @param validate whether to validate that the query is according to the specification
+     * @return HTTP query instance
+     */
+    static UriQuery create(String query, boolean validate) {
         Objects.requireNonNull(query, "Raw query string cannot be null, use create(URI) or empty()");
 
         if (query.isEmpty()) {
             return empty();
         }
 
+        if (validate) {
+            return new UriQueryImpl(query).validate();
+        }
         return new UriQueryImpl(query);
     }
 

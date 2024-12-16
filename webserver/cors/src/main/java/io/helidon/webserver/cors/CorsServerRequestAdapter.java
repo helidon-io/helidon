@@ -17,11 +17,15 @@ package io.helidon.webserver.cors;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import io.helidon.common.uri.UriInfo;
 import io.helidon.cors.CorsRequestAdapter;
 import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.Headers;
 import io.helidon.http.ServerRequestHeaders;
+import io.helidon.http.WritableHeaders;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
@@ -29,6 +33,13 @@ import io.helidon.webserver.http.ServerResponse;
  * Implementation of {@link CorsRequestAdapter} that adapts {@link ServerRequest}.
  */
 class CorsServerRequestAdapter implements CorsRequestAdapter<ServerRequest> {
+
+    /**
+     * Header names useful for CORS diagnostic logging messages.
+     */
+    static final Set<HeaderName> HEADERS_FOR_CORS_DIAGNOSTICS = Set.of(HeaderNames.ORIGIN,
+                                                                       HeaderNames.HOST,
+                                                                       HeaderNames.ACCESS_CONTROL_REQUEST_METHOD);
 
     private final ServerRequest request;
     private final ServerResponse response;
@@ -85,6 +96,17 @@ class CorsServerRequestAdapter implements CorsRequestAdapter<ServerRequest> {
 
     @Override
     public String toString() {
-        return String.format("RequestAdapterSe{path=%s, method=%s, headers=%s}", path(), method(), request.headers());
+        return String.format("RequestAdapterSe{path=%s, method=%s, headers=%s}", path(), method(), headersDisplay());
+    }
+
+    private Headers headersDisplay() {
+        WritableHeaders<?> result = WritableHeaders.create();
+
+        HEADERS_FOR_CORS_DIAGNOSTICS.forEach(headerName -> {
+            if (headers.contains(headerName)) {
+                result.add(headers.get(headerName));
+            }
+        });
+        return result;
     }
 }

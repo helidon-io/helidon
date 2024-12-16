@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -109,6 +110,14 @@ public abstract class ReadableEntityBase implements ReadableEntity {
     @Override
     public final <T> T as(GenericType<T> type) {
         return entityAs(type);
+    }
+
+    @Override
+    public <T> Optional<T> asOptional(GenericType<T> type) {
+        if (hasEntity()) {
+            return Optional.of(entityAs(type));
+        }
+        return Optional.empty();
     }
 
     @Override
@@ -219,6 +228,13 @@ public abstract class ReadableEntityBase implements ReadableEntity {
         }
 
         @Override
+        public void close() throws IOException {
+            if (!finished) {
+                ensureBuffer(1);
+            }
+        }
+
+        @Override
         public int read(byte[] b, int off, int len) {
             if (finished) {
                 return -1;
@@ -258,6 +274,11 @@ public abstract class ReadableEntityBase implements ReadableEntity {
         @Override
         public <T> T as(GenericType<T> type) {
             throw new IllegalStateException("No entity");
+        }
+
+        @Override
+        public <T> Optional<T> asOptional(GenericType<T> type) {
+            return Optional.empty();
         }
 
         @Override

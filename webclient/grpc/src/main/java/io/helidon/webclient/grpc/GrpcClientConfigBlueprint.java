@@ -16,6 +16,8 @@
 
 package io.helidon.webclient.grpc;
 
+import java.util.Optional;
+
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.webclient.api.HttpClientConfig;
@@ -35,4 +37,13 @@ interface GrpcClientConfigBlueprint extends HttpClientConfig, Prototype.Factory<
     @Option.Default("create()")
     @Option.Configured
     GrpcClientProtocolConfig protocolConfig();
+
+    /**
+     * A {@link io.helidon.webclient.grpc.ClientUriSupplier} that can dynamically
+     * provide zero or more {@link io.helidon.webclient.api.ClientUri}s to connect.
+     *
+     * @return a supplier for zero or more client URIs
+     */
+    Optional<ClientUriSupplier> clientUriSupplier();
 }
+

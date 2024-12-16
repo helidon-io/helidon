@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import io.helidon.common.Errors;
@@ -54,6 +55,41 @@ import jakarta.json.JsonValue;
  */
 @SuppressWarnings("WeakerAccess") // getters should be public
 public class Jwt {
+
+    static final String CRITICAL = "crit";
+
+    static final String ISSUER = "iss";
+    static final String SUBJECT = "sub";
+    static final String AUDIENCE = "aud";
+    static final String EXPIRATION = "exp";
+    static final String NOT_BEFORE = "nbf";
+    static final String ISSUED_AT = "iat";
+    static final String USER_PRINCIPAL = "upn";
+    static final String USER_GROUPS = "groups";
+    static final String JWT_ID = "jti";
+    static final String EMAIL = "email";
+    static final String EMAIL_VERIFIED = "email_verified";
+    static final String FULL_NAME = "name";
+    static final String GIVEN_NAME = "given_name";
+    static final String MIDDLE_NAME = "middle_name";
+    static final String FAMILY_NAME = "family_name";
+    static final String LOCALE = "locale";
+    static final String NICKNAME = "nickname";
+    static final String PREFERRED_USERNAME = "preferred_username";
+    static final String PROFILE = "profile";
+    static final String PICTURE = "picture";
+    static final String WEBSITE = "website";
+    static final String GENDER = "gender";
+    static final String BIRTHDAY = "birthday";
+    static final String ZONE_INFO = "zoneinfo";
+    static final String PHONE_NUMBER = "phone_number";
+    static final String PHONE_NUMBER_VERIFIED = "phone_number_verified";
+    static final String UPDATED_AT = "updated_at";
+    static final String ADDRESS = "address";
+    static final String AT_HASH = "at_hash";
+    static final String C_HASH = "c_hash";
+    static final String NONCE = "nonce";
+    static final String SCOPE = "scope";
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
@@ -227,51 +263,51 @@ public class Jwt {
         this.payloadClaims = getClaims(payloadJson);
 
         // known payload
-        this.issuer = JwtUtil.getString(payloadJson, "iss");
-        this.expirationTime = JwtUtil.toInstant(payloadJson, "exp");
-        this.issueTime = JwtUtil.toInstant(payloadJson, "iat");
-        this.notBefore = JwtUtil.toInstant(payloadJson, "nbf");
-        this.subject = JwtUtil.getString(payloadJson, "sub");
-        JsonValue groups = payloadJson.get("groups");
+        this.issuer = JwtUtil.getString(payloadJson, ISSUER);
+        this.expirationTime = JwtUtil.toInstant(payloadJson, EXPIRATION);
+        this.issueTime = JwtUtil.toInstant(payloadJson, ISSUED_AT);
+        this.notBefore = JwtUtil.toInstant(payloadJson, NOT_BEFORE);
+        this.subject = JwtUtil.getString(payloadJson, SUBJECT);
+        JsonValue groups = payloadJson.get(USER_GROUPS);
         if (groups instanceof JsonArray) {
-            this.userGroups = JwtUtil.getStrings(payloadJson, "groups");
+            this.userGroups = JwtUtil.getStrings(payloadJson, USER_GROUPS);
         } else {
-            this.userGroups = JwtUtil.getString(payloadJson, "groups").map(List::of);
+            this.userGroups = JwtUtil.getString(payloadJson, USER_GROUPS).map(List::of);
         }
 
-        JsonValue aud = payloadJson.get("aud");
+        JsonValue aud = payloadJson.get(AUDIENCE);
         // support both a single string and an array
         if (aud instanceof JsonArray) {
-            this.audience = JwtUtil.getStrings(payloadJson, "aud");
+            this.audience = JwtUtil.getStrings(payloadJson, AUDIENCE);
         } else {
-            this.audience = JwtUtil.getString(payloadJson, "aud").map(List::of);
+            this.audience = JwtUtil.getString(payloadJson, AUDIENCE).map(List::of);
         }
 
-        this.jwtId = JwtUtil.getString(payloadJson, "jti");
-        this.email = JwtUtil.getString(payloadJson, "email");
-        this.emailVerified = JwtUtil.toBoolean(payloadJson, "email_verified");
-        this.fullName = JwtUtil.getString(payloadJson, "name");
-        this.givenName = JwtUtil.getString(payloadJson, "given_name");
-        this.middleName = JwtUtil.getString(payloadJson, "middle_name");
-        this.familyName = JwtUtil.getString(payloadJson, "family_name");
-        this.locale = JwtUtil.toLocale(payloadJson, "locale");
-        this.nickname = JwtUtil.getString(payloadJson, "nickname");
-        this.preferredUsername = JwtUtil.getString(payloadJson, "preferred_username");
-        this.profile = JwtUtil.toUri(payloadJson, "profile");
-        this.picture = JwtUtil.toUri(payloadJson, "picture");
-        this.website = JwtUtil.toUri(payloadJson, "website");
-        this.gender = JwtUtil.getString(payloadJson, "gender");
-        this.birthday = JwtUtil.toDate(payloadJson, "birthday");
-        this.timeZone = JwtUtil.toTimeZone(payloadJson, "zoneinfo");
-        this.phoneNumber = JwtUtil.getString(payloadJson, "phone_number");
-        this.phoneNumberVerified = JwtUtil.toBoolean(payloadJson, "phone_number_verified");
-        this.updatedAt = JwtUtil.toInstant(payloadJson, "updated_at");
-        this.address = JwtUtil.toAddress(payloadJson, "address");
-        this.atHash = JwtUtil.getByteArray(payloadJson, "at_hash", "at_hash value");
-        this.cHash = JwtUtil.getByteArray(payloadJson, "c_hash", "c_hash value");
-        this.nonce = JwtUtil.getString(payloadJson, "nonce");
+        this.jwtId = JwtUtil.getString(payloadJson, JWT_ID);
+        this.email = JwtUtil.getString(payloadJson, EMAIL);
+        this.emailVerified = JwtUtil.toBoolean(payloadJson, EMAIL_VERIFIED);
+        this.fullName = JwtUtil.getString(payloadJson, FULL_NAME);
+        this.givenName = JwtUtil.getString(payloadJson, GIVEN_NAME);
+        this.middleName = JwtUtil.getString(payloadJson, MIDDLE_NAME);
+        this.familyName = JwtUtil.getString(payloadJson, FAMILY_NAME);
+        this.locale = JwtUtil.toLocale(payloadJson, LOCALE);
+        this.nickname = JwtUtil.getString(payloadJson, NICKNAME);
+        this.preferredUsername = JwtUtil.getString(payloadJson, PREFERRED_USERNAME);
+        this.profile = JwtUtil.toUri(payloadJson, PROFILE);
+        this.picture = JwtUtil.toUri(payloadJson, PICTURE);
+        this.website = JwtUtil.toUri(payloadJson, WEBSITE);
+        this.gender = JwtUtil.getString(payloadJson, GENDER);
+        this.birthday = JwtUtil.toDate(payloadJson, BIRTHDAY);
+        this.timeZone = JwtUtil.toTimeZone(payloadJson, ZONE_INFO);
+        this.phoneNumber = JwtUtil.getString(payloadJson, PHONE_NUMBER);
+        this.phoneNumberVerified = JwtUtil.toBoolean(payloadJson, PHONE_NUMBER_VERIFIED);
+        this.updatedAt = JwtUtil.toInstant(payloadJson, UPDATED_AT);
+        this.address = JwtUtil.toAddress(payloadJson, ADDRESS);
+        this.atHash = JwtUtil.getByteArray(payloadJson, AT_HASH, "at_hash value");
+        this.cHash = JwtUtil.getByteArray(payloadJson, C_HASH, "c_hash value");
+        this.nonce = JwtUtil.getString(payloadJson, NONCE);
         this.scopes = JwtUtil.toScopes(payloadJson);
-        this.userPrincipal = JwtUtil.getString(payloadJson, "upn")
+        this.userPrincipal = JwtUtil.getString(payloadJson, USER_PRINCIPAL)
                 .or(() -> preferredUsername)
                 .or(() -> subject);
     }
@@ -289,29 +325,29 @@ public class Jwt {
         this.expirationTime = builder.expirationTime;
         this.issueTime = builder.issueTime;
         this.notBefore = builder.notBefore;
-        this.subject = builder.subject.or(() -> toOptionalString(builder.payloadClaims, "sub"));
+        this.subject = builder.subject.or(() -> toOptionalString(builder.payloadClaims, SUBJECT));
         this.audience = Optional.ofNullable(builder.audience);
         this.jwtId = builder.jwtId;
-        this.email = builder.email.or(() -> toOptionalString(builder.payloadClaims, "email"));
-        this.emailVerified = builder.emailVerified.or(() -> getClaim(builder.payloadClaims, "email_verified"));
-        this.fullName = builder.fullName.or(() -> toOptionalString(builder.payloadClaims, "name"));
-        this.givenName = builder.givenName.or(() -> toOptionalString(builder.payloadClaims, "given_name"));
-        this.middleName = builder.middleName.or(() -> toOptionalString(builder.payloadClaims, "middle_name"));
-        this.familyName = builder.familyName.or(() -> toOptionalString(builder.payloadClaims, "family_name"));
-        this.locale = builder.locale.or(() -> getClaim(builder.payloadClaims, "locale"));
-        this.nickname = builder.nickname.or(() -> toOptionalString(builder.payloadClaims, "nickname"));
+        this.email = builder.email.or(() -> toOptionalString(builder.payloadClaims, EMAIL));
+        this.emailVerified = builder.emailVerified.or(() -> getClaim(builder.payloadClaims, EMAIL_VERIFIED));
+        this.fullName = builder.fullName.or(() -> toOptionalString(builder.payloadClaims, FULL_NAME));
+        this.givenName = builder.givenName.or(() -> toOptionalString(builder.payloadClaims, GIVEN_NAME));
+        this.middleName = builder.middleName.or(() -> toOptionalString(builder.payloadClaims, MIDDLE_NAME));
+        this.familyName = builder.familyName.or(() -> toOptionalString(builder.payloadClaims, FAMILY_NAME));
+        this.locale = builder.locale.or(() -> getClaim(builder.payloadClaims, LOCALE));
+        this.nickname = builder.nickname.or(() -> toOptionalString(builder.payloadClaims, NICKNAME));
         this.preferredUsername = builder.preferredUsername
-                .or(() -> toOptionalString(builder.payloadClaims, "preferred_username"));
-        this.profile = builder.profile.or(() -> getClaim(builder.payloadClaims, "profile"));
-        this.picture = builder.picture.or(() -> getClaim(builder.payloadClaims, "picture"));
-        this.website = builder.website.or(() -> getClaim(builder.payloadClaims, "website"));
-        this.gender = builder.gender.or(() -> toOptionalString(builder.payloadClaims, "gender"));
-        this.birthday = builder.birthday.or(() -> getClaim(builder.payloadClaims, "birthday"));
-        this.timeZone = builder.timeZone.or(() -> getClaim(builder.payloadClaims, "zoneinfo"));
+                .or(() -> toOptionalString(builder.payloadClaims, PREFERRED_USERNAME));
+        this.profile = builder.profile.or(() -> getClaim(builder.payloadClaims, PROFILE));
+        this.picture = builder.picture.or(() -> getClaim(builder.payloadClaims, PICTURE));
+        this.website = builder.website.or(() -> getClaim(builder.payloadClaims, WEBSITE));
+        this.gender = builder.gender.or(() -> toOptionalString(builder.payloadClaims, GENDER));
+        this.birthday = builder.birthday.or(() -> getClaim(builder.payloadClaims, BIRTHDAY));
+        this.timeZone = builder.timeZone.or(() -> getClaim(builder.payloadClaims, ZONE_INFO));
         this.phoneNumber = builder.phoneNumber
-                .or(() -> toOptionalString(builder.payloadClaims, "phone_number"));
+                .or(() -> toOptionalString(builder.payloadClaims, PHONE_NUMBER));
         this.phoneNumberVerified = builder.phoneNumberVerified
-                .or(() -> getClaim(builder.payloadClaims, "phone_number_verified"));
+                .or(() -> getClaim(builder.payloadClaims, PHONE_NUMBER_VERIFIED));
 
         this.updatedAt = builder.updatedAt;
         this.address = builder.address;
@@ -321,7 +357,7 @@ public class Jwt {
         this.scopes = builder.scopes;
 
         this.userPrincipal = builder.userPrincipal
-                .or(() -> toOptionalString(builder.payloadClaims, "upn"))
+                .or(() -> toOptionalString(builder.payloadClaims, USER_PRINCIPAL))
                 .or(() -> preferredUsername)
                 .or(() -> subject);
 
@@ -350,7 +386,9 @@ public class Jwt {
      * By default the time skew allowed is 5 seconds and all fields are optional.
      *
      * @return list of validators
+     * @deprecated use {@link JwtValidator.Builder#addDefaultTimeValidators()} instead
      */
+    @Deprecated(since = "4.0.10", forRemoval = true)
     public static List<Validator<Jwt>> defaultTimeValidators() {
         List<Validator<Jwt>> validators = new LinkedList<>();
         validators.add(new ExpirationValidator(false));
@@ -369,7 +407,9 @@ public class Jwt {
      * @param mandatory      whether the field is mandatory. True for mandatory, false for optional (for all default time
      *                       validators)
      * @return list of validators
+     * @deprecated use {@link JwtValidator.Builder#addDefaultTimeValidators(Instant, Duration, boolean)} instead
      */
+    @Deprecated(since = "4.0.10", forRemoval = true)
     public static List<Validator<Jwt>> defaultTimeValidators(Instant now,
                                                              int timeSkewAmount,
                                                              ChronoUnit timeSkewUnit,
@@ -387,7 +427,9 @@ public class Jwt {
      * @param validators collection of validators
      * @param issuer     issuer expected to be in the token
      * @param mandatory  whether issuer field is mandatory in the token (true - mandatory, false - optional)
+     * @deprecated use {@link JwtValidator.Builder#addIssuerValidator(String, boolean)} instead
      */
+    @Deprecated(since = "4.0.10", forRemoval = true)
     public static void addIssuerValidator(Collection<Validator<Jwt>> validators, String issuer, boolean mandatory) {
         validators.add(FieldValidator.create(Jwt::issuer, "Issuer", issuer, mandatory));
     }
@@ -398,7 +440,9 @@ public class Jwt {
      * @param validators collection of validators
      * @param audience   audience expected to be in the token, never null
      * @param mandatory  whether the audience field is mandatory in the token
+     * @deprecated use {@link JwtValidator.Builder#addAudienceValidator(Consumer)} instead
      */
+    @Deprecated(since = "4.0.10", forRemoval = true)
     public static void addAudienceValidator(Collection<Validator<Jwt>> validators, String audience, boolean mandatory) {
         addAudienceValidator(validators, Set.of(audience), mandatory);
     }
@@ -409,7 +453,9 @@ public class Jwt {
      * @param validators collection of validators
      * @param audience   audience expected to be in the token
      * @param mandatory  whether the audience field is mandatory in the token
+     * @deprecated use {@link JwtValidator.Builder#addAudienceValidator(Consumer)} instead
      */
+    @Deprecated(since = "4.0.10", forRemoval = true)
     public static void addAudienceValidator(Collection<Validator<Jwt>> validators, Set<String> audience, boolean mandatory) {
         validators.add((jwt, collector) -> {
             Optional<List<String>> jwtAudiences = jwt.audience();
@@ -434,7 +480,9 @@ public class Jwt {
      * @param expectedMaxTokenAge max token age since issue time
      * @param clockSkew clock skew
      * @param iatRequired whether to fail if iat clam is present
+     * @deprecated use {@link JwtValidator.Builder#addMaxTokenAgeValidator(Consumer)} instead
      */
+    @Deprecated(since = "4.0.10", forRemoval = true)
     public static void addMaxTokenAgeValidator(Collection<Validator<Jwt>> validators,
                                                Duration expectedMaxTokenAge,
                                                Duration clockSkew,
@@ -498,12 +546,10 @@ public class Jwt {
     public Optional<JsonValue> payloadClaim(String claim) {
         JsonValue rawValue = payloadClaims.get(claim);
 
-        switch (claim) {
-        case "aud":
+        if (claim.equals(AUDIENCE)) {
             return Optional.ofNullable(ensureJsonArray(rawValue));
-        default:
-            return Optional.ofNullable(rawValue);
         }
+        return Optional.ofNullable(rawValue);
     }
 
     private JsonValue ensureJsonArray(JsonValue rawValue) {
@@ -868,49 +914,49 @@ public class Jwt {
         payloadClaims.forEach(objectBuilder::add);
 
         // known payload
-        this.issuer.ifPresent(it -> objectBuilder.add("iss", it));
-        this.expirationTime.ifPresent(it -> objectBuilder.add("exp", it.getEpochSecond()));
-        this.issueTime.ifPresent(it -> objectBuilder.add("iat", it.getEpochSecond()));
-        this.notBefore.ifPresent(it -> objectBuilder.add("nbf", it.getEpochSecond()));
-        this.subject.ifPresent(it -> objectBuilder.add("sub", it));
-        this.userPrincipal.ifPresent(it -> objectBuilder.add("upn", it));
+        this.issuer.ifPresent(it -> objectBuilder.add(ISSUER, it));
+        this.expirationTime.ifPresent(it -> objectBuilder.add(EXPIRATION, it.getEpochSecond()));
+        this.issueTime.ifPresent(it -> objectBuilder.add(ISSUED_AT, it.getEpochSecond()));
+        this.notBefore.ifPresent(it -> objectBuilder.add(NOT_BEFORE, it.getEpochSecond()));
+        this.subject.ifPresent(it -> objectBuilder.add(SUBJECT, it));
+        this.userPrincipal.ifPresent(it -> objectBuilder.add(USER_PRINCIPAL, it));
         this.userGroups.ifPresent(it -> {
             JsonArrayBuilder jab = JSON.createArrayBuilder();
             it.forEach(jab::add);
-            objectBuilder.add("groups", jab);
+            objectBuilder.add(USER_GROUPS, jab);
         });
         this.audience.ifPresent(it -> {
             JsonArrayBuilder jab = JSON.createArrayBuilder();
             it.forEach(jab::add);
-            objectBuilder.add("aud", jab);
+            objectBuilder.add(AUDIENCE, jab);
         });
-        this.jwtId.ifPresent(it -> objectBuilder.add("jti", it));
-        this.email.ifPresent(it -> objectBuilder.add("email", it));
-        this.emailVerified.ifPresent(it -> objectBuilder.add("email_verified", it));
-        this.fullName.ifPresent(it -> objectBuilder.add("name", it));
-        this.givenName.ifPresent(it -> objectBuilder.add("given_name", it));
-        this.middleName.ifPresent(it -> objectBuilder.add("middle_name", it));
-        this.familyName.ifPresent(it -> objectBuilder.add("family_name", it));
-        this.locale.ifPresent(it -> objectBuilder.add("locale", it.toLanguageTag()));
-        this.nickname.ifPresent(it -> objectBuilder.add("nickname", it));
-        this.preferredUsername.ifPresent(it -> objectBuilder.add("preferred_username", it));
-        this.profile.ifPresent(it -> objectBuilder.add("profile", it.toASCIIString()));
-        this.picture.ifPresent(it -> objectBuilder.add("picture", it.toASCIIString()));
-        this.website.ifPresent(it -> objectBuilder.add("website", it.toASCIIString()));
-        this.gender.ifPresent(it -> objectBuilder.add("gender", it));
-        this.birthday.ifPresent(it -> objectBuilder.add("birthday", JwtUtil.toDate(it)));
-        this.timeZone.ifPresent(it -> objectBuilder.add("zoneinfo", it.getId()));
-        this.phoneNumber.ifPresent(it -> objectBuilder.add("phone_number", it));
-        this.phoneNumberVerified.ifPresent(it -> objectBuilder.add("phone_number_verified", it));
-        this.updatedAt.ifPresent(it -> objectBuilder.add("updated_at", it.getEpochSecond()));
-        this.address.ifPresent(it -> objectBuilder.add("address", it.getJson()));
-        this.atHash.ifPresent(it -> objectBuilder.add("at_hash", JwtUtil.base64Url(it)));
-        this.cHash.ifPresent(it -> objectBuilder.add("c_hash", JwtUtil.base64Url(it)));
-        this.nonce.ifPresent(it -> objectBuilder.add("nonce", it));
+        this.jwtId.ifPresent(it -> objectBuilder.add(JWT_ID, it));
+        this.email.ifPresent(it -> objectBuilder.add(EMAIL, it));
+        this.emailVerified.ifPresent(it -> objectBuilder.add(EMAIL_VERIFIED, it));
+        this.fullName.ifPresent(it -> objectBuilder.add(FULL_NAME, it));
+        this.givenName.ifPresent(it -> objectBuilder.add(GIVEN_NAME, it));
+        this.middleName.ifPresent(it -> objectBuilder.add(MIDDLE_NAME, it));
+        this.familyName.ifPresent(it -> objectBuilder.add(FAMILY_NAME, it));
+        this.locale.ifPresent(it -> objectBuilder.add(LOCALE, it.toLanguageTag()));
+        this.nickname.ifPresent(it -> objectBuilder.add(NICKNAME, it));
+        this.preferredUsername.ifPresent(it -> objectBuilder.add(PREFERRED_USERNAME, it));
+        this.profile.ifPresent(it -> objectBuilder.add(PROFILE, it.toASCIIString()));
+        this.picture.ifPresent(it -> objectBuilder.add(PICTURE, it.toASCIIString()));
+        this.website.ifPresent(it -> objectBuilder.add(WEBSITE, it.toASCIIString()));
+        this.gender.ifPresent(it -> objectBuilder.add(GENDER, it));
+        this.birthday.ifPresent(it -> objectBuilder.add(BIRTHDAY, JwtUtil.toDate(it)));
+        this.timeZone.ifPresent(it -> objectBuilder.add(ZONE_INFO, it.getId()));
+        this.phoneNumber.ifPresent(it -> objectBuilder.add(PHONE_NUMBER, it));
+        this.phoneNumberVerified.ifPresent(it -> objectBuilder.add(PHONE_NUMBER_VERIFIED, it));
+        this.updatedAt.ifPresent(it -> objectBuilder.add(UPDATED_AT, it.getEpochSecond()));
+        this.address.ifPresent(it -> objectBuilder.add(ADDRESS, it.getJson()));
+        this.atHash.ifPresent(it -> objectBuilder.add(AT_HASH, JwtUtil.base64Url(it)));
+        this.cHash.ifPresent(it -> objectBuilder.add(C_HASH, JwtUtil.base64Url(it)));
+        this.nonce.ifPresent(it -> objectBuilder.add(NONCE, it));
 
         this.scopes.ifPresent(it -> {
             String scopesString = String.join(" ", it);
-            objectBuilder.add("scope", scopesString);
+            objectBuilder.add(SCOPE, scopesString);
         });
 
         return objectBuilder.build();
@@ -918,12 +964,16 @@ public class Jwt {
 
     /**
      * Validate this JWT against provided validators.
+     * <p>
+     * This method does not work properly upon validation of the {@code crit} JWT header.
      *
      * @param validators Validators to validate with. Obtain them through (e.g.) {@link #defaultTimeValidators()}
      *                   , {@link #addAudienceValidator(Collection, String, boolean)}
      *                   , {@link #addIssuerValidator(Collection, String, boolean)}
      * @return errors instance to check if valid and access error messages
+     * @deprecated use {@link JwtValidator#validate(Jwt)} instead
      */
+    @Deprecated(since = "4.0.10", forRemoval = true)
     public Errors validate(List<Validator<Jwt>> validators) {
         Errors.Collector collector = Errors.collector();
         validators.forEach(it -> it.validate(this, collector));
@@ -946,7 +996,9 @@ public class Jwt {
      * @param audience validates that this JWT was issued for this audience. Setting this to non-null value will make
      *                 audience claim mandatory
      * @return errors instance to check for validation result
+     * @deprecated use {@link JwtValidator#validate(Jwt)} instead
      */
+    @Deprecated(since = "4.0.10", forRemoval = true)
     public Errors validate(String issuer, String audience) {
         return validate(issuer, audience == null ? Set.of() : Set.of(audience));
     }
@@ -961,7 +1013,9 @@ public class Jwt {
      *                 audience claim mandatory
      * @param checkAudience whether audience claim validation should be executed
      * @return errors instance to check for validation result
+     * @deprecated use {@link JwtValidator#validate(Jwt)} instead
      */
+    @Deprecated(since = "4.0.10", forRemoval = true)
     public Errors validate(String issuer, String audience, boolean checkAudience) {
         return validate(issuer, audience == null ? Set.of() : Set.of(audience), checkAudience);
     }
@@ -983,7 +1037,9 @@ public class Jwt {
      *                 any non-null value in the Set will make audience claim mandatory
      * @param checkAudience whether audience claim validation should be executed
      * @return errors instance to check for validation result
+     * @deprecated use {@link JwtValidator#validate(Jwt)} instead
      */
+    @Deprecated(since = "4.0.10", forRemoval = true)
     public Errors validate(String issuer, Set<String> audience, boolean checkAudience) {
         List<Validator<Jwt>> validators = defaultTimeValidators();
         if (null != issuer) {
@@ -1012,7 +1068,9 @@ public class Jwt {
      * @param audience validates that this JWT was issued for this audience. Setting this to non-null value and with
      *                 any non-null value in the Set will make audience claim mandatory
      * @return errors instance to check for validation result
+     * @deprecated use {@link JwtValidator#validate(Jwt)} instead
      */
+    @Deprecated(since = "4.0.10", forRemoval = true)
     public Errors validate(String issuer, Set<String> audience) {
         return validate(issuer, audience, true);
     }
@@ -1021,11 +1079,14 @@ public class Jwt {
      * Adds a validator that makes sure the {@link Jwt#userPrincipal()} is present.
      *
      * @param validators validator collection to update
+     * @deprecated use {@link JwtValidator.Builder#addUserPrincipalValidator()} instead
      */
+    @Deprecated(since = "4.0.10", forRemoval = true)
     public static void addUserPrincipalValidator(Collection<Validator<Jwt>> validators) {
         validators.add(new UserPrincipalValidator());
     }
 
+    @Deprecated(since = "4.0.10", forRemoval = true)
     private abstract static class OptionalValidator {
         private final boolean mandatory;
 
@@ -1045,6 +1106,7 @@ public class Jwt {
         }
     }
 
+    @Deprecated(since = "4.0.10", forRemoval = true)
     private abstract static class InstantValidator extends OptionalValidator {
         private final Instant instant;
         private final long allowedTimeSkewAmount;
@@ -1086,7 +1148,10 @@ public class Jwt {
 
     /**
      * Validator of a string field obtained from a JWT.
+     *
+     * @deprecated use {@link JwtValidator.Builder#addFieldValidator(Consumer)} instead
      */
+    @Deprecated(since = "4.0.10", forRemoval = true)
     public static final class FieldValidator extends OptionalValidator implements Validator<Jwt> {
         private final Function<Jwt, Optional<String>> fieldAccessor;
         private final String expectedValue;
@@ -1220,7 +1285,10 @@ public class Jwt {
 
     /**
      * Validator of issue time claim.
+     *
+     * @deprecated use {@link JwtValidator.Builder#addIssueTimeValidator()} instead
      */
+    @Deprecated(since = "4.0.10", forRemoval = true)
     public static final class IssueTimeValidator extends InstantValidator implements Validator<Jwt> {
 
         private IssueTimeValidator() {
@@ -1272,7 +1340,10 @@ public class Jwt {
 
     /**
      * Validator of expiration claim.
+     *
+     * @deprecated use {@link JwtValidator.Builder#addExpirationValidator()} instead
      */
+    @Deprecated(since = "4.0.10", forRemoval = true)
     public static final class ExpirationValidator extends InstantValidator implements Validator<Jwt> {
         private ExpirationValidator(boolean mandatory) {
             super(mandatory);
@@ -1338,7 +1409,10 @@ public class Jwt {
 
     /**
      * Validator of not before claim.
+     *
+     * @deprecated use {@link JwtValidator.Builder#addNotBeforeValidator()} instead
      */
+    @Deprecated(since = "4.0.10", forRemoval = true)
     public static final class NotBeforeValidator extends InstantValidator implements Validator<Jwt> {
         private NotBeforeValidator() {
         }
@@ -1919,6 +1993,17 @@ public class Jwt {
         }
 
         /**
+         * Allows configuration of JWT headers directly over the {@link JwtHeaders.Builder}.
+         *
+         * @param consumer header builder consumer
+         * @return updated builder instance
+         */
+        public Builder headerBuilder(Consumer<JwtHeaders.Builder> consumer) {
+            consumer.accept(headerBuilder);
+            return this;
+        }
+
+        /**
          * Build and instance of the {@link Jwt}.
          *
          * @return a new token instance
@@ -1940,6 +2025,7 @@ public class Jwt {
         }
     }
 
+    @Deprecated(since = "4.0.10", forRemoval = true)
     private static final class UserPrincipalValidator extends OptionalValidator implements Validator<Jwt> {
 
         private UserPrincipalValidator() {

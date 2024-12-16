@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -38,6 +37,7 @@ import io.helidon.common.SerializationConfig;
 import io.helidon.common.Version;
 import io.helidon.common.Weights;
 import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.features.HelidonFeatures;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.common.tls.Tls;
@@ -71,7 +71,7 @@ class LoomServer implements WebServer {
                         .id("web-" + WEBSERVER_COUNTER.getAndIncrement())
                         .build());
         this.serverConfig = serverConfig;
-        this.executorService = Executors.newVirtualThreadPerTaskExecutor();
+        this.executorService = ExecutorsFactory.newLoomServerVirtualThreadPerTaskExecutor();
 
         Map<String, ListenerConfig> sockets = new HashMap<>(serverConfig.sockets());
         sockets.put(DEFAULT_SOCKET_NAME, serverConfig);
@@ -227,7 +227,15 @@ class LoomServer implements WebServer {
 
         if ("!".equals(System.getProperty(EXIT_ON_STARTED_KEY))) {
             LOGGER.log(System.Logger.Level.INFO, String.format("Exiting, -D%s set.", EXIT_ON_STARTED_KEY));
-            System.exit(0);
+            // we need to run the system exit on a different thread, to correctly finish whatever was happening on main
+            // all shutdown hooks run on that thread
+            var ctx = Contexts.context().orElseGet(Contexts::globalContext);
+            Thread.ofPlatform()
+                    .daemon(false)
+                    .name("Helidon system exit thread")
+                    .start(() -> {
+                        Contexts.runInContext(ctx, () -> System.exit(0));
+                    });
         }
     }
 

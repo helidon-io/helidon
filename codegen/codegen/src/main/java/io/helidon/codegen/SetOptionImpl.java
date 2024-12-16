@@ -87,6 +87,11 @@ final class SetOptionImpl<T> implements Option<Set<T>> {
         return Objects.hash(name);
     }
 
+    @Override
+    public String toString() {
+        return name + "(" + defaultValue + ")";
+    }
+
     private Set<T> toSet(String[] strings) {
         return Stream.of(strings)
                 .map(String::trim)

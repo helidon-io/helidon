@@ -301,7 +301,7 @@ include::{sourcedir}/se/ReactiveMessagingSnippets.java[tag=snippet_12, indent=0]
 
 Don't forget to check out the examples with pre-configured Kafka docker image, for easy testing:
 
-* {helidon-github-tree-url}/examples/messaging
+* {helidon-github-examples-url}/messaging
 
 ==== JMS Connector
 
@@ -382,7 +382,7 @@ include::{sourcedir}/se/ReactiveMessagingSnippets.java[tag=snippet_16, indent=0]
 
 Don't forget to check out the examples with pre-configured ActiveMQ docker image, for easy testing:
 
-* link:{helidon-github-tree-url}/examples/messaging[Helidon Messaging Examples]
+* link:{helidon-github-examples-url}/messaging[Helidon Messaging Examples]
 
 ==== AQ Connector
 
@@ -424,4 +424,4 @@ include::{sourcedir}/se/ReactiveMessagingSnippets.java[tag=snippet_17, indent=0]
 
 * link:{microprofile-reactive-messaging-spec-url}[MicroProfile Reactive Messaging Specification]
 * link:https://github.com/eclipse/microprofile-reactive-messaging[MicroProfile Reactive Messaging on GitHub]
-* link:{helidon-github-tree-url}/examples/messaging[Helidon Messaging Examples]
+* link:{helidon-github-examples-url}/messaging[Helidon Messaging Examples]

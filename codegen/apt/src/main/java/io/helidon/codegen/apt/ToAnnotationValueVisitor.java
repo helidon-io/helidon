@@ -28,6 +28,9 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 
+import io.helidon.common.types.EnumValue;
+import io.helidon.common.types.TypeNames;
+
 class ToAnnotationValueVisitor implements AnnotationValueVisitor<Object, Object> {
     private final Elements elements;
     private boolean mapVoidToNull;
@@ -126,18 +129,30 @@ class ToAnnotationValueVisitor implements AnnotationValueVisitor<Object, Object>
         return s;
     }
 
+    @SuppressWarnings("removal")
     @Override
     public Object visitType(TypeMirror t, Object o) {
-        String val = t.toString();
-        if (mapVoidToNull && ("void".equals(val) || Void.class.getName().equals(val))) {
-            val = null;
+        var maybeType = AptTypeFactory.createTypeName(t);
+        if (maybeType.isEmpty()) {
+            return null;
         }
-        return val;
+        var type = maybeType.get();
+        if (mapVoidToNull && (type.equals(TypeNames.BOXED_VOID) || type.equals(TypeNames.PRIMITIVE_VOID))) {
+            return null;
+        }
+        return type;
     }
 
+    @SuppressWarnings("removal")
     @Override
     public Object visitEnumConstant(VariableElement c, Object o) {
-        return String.valueOf(c.getSimpleName());
+        var maybeType = AptTypeFactory.createTypeName(c.getEnclosingElement());
+
+        if (maybeType.isEmpty()) {
+            // this will be one-way only
+            return String.valueOf(c.getSimpleName());
+        }
+        return EnumValue.create(maybeType.get(), String.valueOf(c.getSimpleName()));
     }
 
     @Override

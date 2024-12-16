@@ -1,6 +1,6 @@
 #!/bin/bash -e
 #
-# Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+# Copyright (c) 2019, 2024 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -32,13 +32,20 @@
 #
 
 # Path to this script
-# shellcheck disable=SC2015
-[ -h "${0}" ] && readonly SCRIPT_PATH="$(readlink "${0}")" || readonly SCRIPT_PATH="${0}"
+if [ -h "${0}" ] ; then
+    SCRIPT_PATH="$(readlink "${0}")"
+else
+    SCRIPT_PATH="${0}"
+fi
+readonly SCRIPT_PATH
 
 # Path to the root of the workspace
-readonly WS_DIR=$(cd "$(dirname -- "${SCRIPT_PATH}")" ; cd ../.. ; pwd -P)
+# shellcheck disable=SC2046
+WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
+readonly WS_DIR
 
-readonly tmpOutputDir=/tmp
+TMP_OUTPUT_DIR=/tmp
+readonly TMP_OUTPUT_DIR
 
 # The project pom file has a set of properties that look like this:
 #
@@ -54,7 +61,7 @@ linkPropNames=()
 execArgs=""
 i=0
 while read -r linkProp ; do
-    linkPropNames[${i}]=${linkProp}
+    linkPropNames[i]=${linkProp}
     execArgs+="\${javadoc.link.${linkProp}} "
     i=$((i+1))
 done < <(grep "<javadoc.link." "${WS_DIR}/pom.xml"  | cut -d '>' -f1 | cut -d '.' -f3)
@@ -79,14 +86,14 @@ for ((i=0;i<${#linkPropNames[@]};i++))
 
     # Go get package-list file! We save in a temp file so  we don't overwrite
     # anything in the workspace until we  know the request is good
-    code=$(curl -L -s --user-agent '' -o ${tmpOutputDir}/package-list -w "%{http_code}" "${value}/package-list")
+    code=$(curl -L -s --user-agent '' -o ${TMP_OUTPUT_DIR}/package-list -w "%{http_code}" "${value}/package-list")
 
     if [ "$code" -ne "200" ]; then
         # No package-list. Try element-list
-        rm -f ${tmpOutputDir}/package-list
-        code=$(curl -L -s --user-agent '' -o ${tmpOutputDir}/element-list -w "%{http_code}" "${value}/element-list")
+        rm -f ${TMP_OUTPUT_DIR}/package-list
+        code=$(curl -L -s --user-agent '' -o ${TMP_OUTPUT_DIR}/element-list -w "%{http_code}" "${value}/element-list")
         if [ "$code" -ne "200" ]; then
-            rm -f ${tmpOutputDir}/element-list
+            rm -f ${TMP_OUTPUT_DIR}/element-list
             echo "${code} ${name} ${value}"
             echo "WARNING! Could not download package-list nor element-list for" >&2
             echo "${value}" >&2
@@ -94,11 +101,11 @@ for ((i=0;i<${#linkPropNames[@]};i++))
             echo "${outputDir}/" >&2
         else
             echo "${code} ${name} ${value}/element-list"
-            mv ${tmpOutputDir}/element-list "${outputDir}/"
+            mv ${TMP_OUTPUT_DIR}/element-list "${outputDir}/"
         fi
     else
         echo "${code} ${name} ${value}/package-list"
-        mv ${tmpOutputDir}/package-list "${outputDir}/"
+        mv ${TMP_OUTPUT_DIR}/package-list "${outputDir}/"
     fi
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,8 +86,8 @@ class ConfigDiff {
     }
 
     private static Optional<String> value(Config node) {
-        if (node instanceof AbstractConfigImpl) {
-            return ((AbstractConfigImpl) node).value();
+        if (node instanceof AbstractConfigImpl abstractConfig) {
+            return abstractConfig.value();
         }
         return node.asString().asOptional();
     }

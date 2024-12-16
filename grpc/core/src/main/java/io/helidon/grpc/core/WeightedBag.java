@@ -105,6 +105,17 @@ public class WeightedBag<T> implements Iterable<T> {
     }
 
     /**
+     * Obtain a copy of this {@link WeightedBag}.
+     *
+     * @return a copy of this {@link WeightedBag}
+     */
+    public WeightedBag<T> copyMe() {
+        WeightedBag<T> copy = WeightedBag.create();
+        copy.merge(this);
+        return copy;
+    }
+
+    /**
      * Add elements to the bag.
      * <p>
      * If the element's class is annotated with the {@link io.helidon.common.Weight}

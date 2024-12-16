@@ -59,6 +59,7 @@ final class GenerateAbstractBuilder {
                          TypeName prototype,
                          TypeName runtimeType,
                          List<TypeArgument> typeArguments,
+                         List<TypeName> typeArgumentNames,
                          TypeContext typeContext) {
         Optional<TypeName> superType = typeContext.typeInfo()
                 .superPrototype();
@@ -73,7 +74,7 @@ final class GenerateAbstractBuilder {
                             .description("type of the builder extending this abstract builder")
                             .bound(TypeName.builder()
                                            .from(TypeName.create(prototype.fqName() + ".BuilderBase"))
-                                           .addTypeArguments(typeArguments)
+                                           .addTypeArguments(typeArgumentNames)
                                            .addTypeArgument(TypeName.createFromGenericDeclaration("BUILDER"))
                                            .addTypeArgument(TypeName.createFromGenericDeclaration("PROTOTYPE"))
                                            .build()))
@@ -107,7 +108,7 @@ final class GenerateAbstractBuilder {
 
             // method "from(prototype)"
             fromInstanceMethod(builder, typeContext, prototype);
-            fromBuilderMethod(builder, typeContext, typeArguments);
+            fromBuilderMethod(builder, typeContext, typeArgumentNames);
 
             // method preBuildPrototype() - handles providers, decorator
             preBuildPrototypeMethod(builder, typeContext);
@@ -126,7 +127,7 @@ final class GenerateAbstractBuilder {
                      true);
 
             // before the builder class is finished, we also generate a protected implementation
-            generatePrototypeImpl(builder, typeContext, typeArguments);
+            generatePrototypeImpl(builder, typeContext, typeArguments, typeArgumentNames);
         });
     }
 
@@ -431,7 +432,8 @@ final class GenerateAbstractBuilder {
 
     private static void fromBuilderMethod(InnerClass.Builder classBuilder,
                                           TypeContext typeContext,
-                                          List<TypeArgument> arguments) {
+                                          List<TypeName> arguments) {
+
         TypeName prototype = typeContext.typeInfo().prototype();
         TypeName parameterType = TypeName.builder()
                 .from(TypeName.create(prototype.fqName() + ".BuilderBase"))
@@ -823,7 +825,8 @@ final class GenerateAbstractBuilder {
 
     private static void generatePrototypeImpl(InnerClass.Builder classBuilder,
                                               TypeContext typeContext,
-                                              List<TypeArgument> typeArguments) {
+                                              List<TypeArgument> typeArguments,
+                                              List<TypeName> typeArgumentNames) {
         Optional<TypeName> superPrototype = typeContext.typeInfo()
                 .superPrototype();
         TypeName prototype = typeContext.typeInfo().prototype();
@@ -864,7 +867,7 @@ final class GenerateAbstractBuilder {
                         .addParameter(param -> param.name("builder")
                                 .type(TypeName.builder()
                                               .from(TypeName.create(ifaceName + ".BuilderBase"))
-                                              .addTypeArguments(typeArguments)
+                                              .addTypeArguments(typeArgumentNames)
                                               .addTypeArgument(TypeArgument.create("?"))
                                               .addTypeArgument(TypeArgument.create("?"))
                                               .build())

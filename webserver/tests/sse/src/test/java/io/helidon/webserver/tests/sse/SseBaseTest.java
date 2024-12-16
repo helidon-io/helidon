@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,33 @@
 package io.helidon.webserver.tests.sse;
 
 import io.helidon.http.sse.SseEvent;
-import io.helidon.webserver.sse.SseSink;
+import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.sse.SseSink;
+
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+
 class SseBaseTest {
+
+    private final WebServer webServer;
+
+    SseBaseTest() {
+        this.webServer = null;
+    }
+
+    SseBaseTest(WebServer webServer) {
+        this.webServer = webServer;
+    }
+
+    protected WebServer webServer() {
+        return webServer;
+    }
 
     static void sseString1(ServerRequest req, ServerResponse res) {
         try (SseSink sseSink = res.sink(SseSink.TYPE)) {
@@ -94,6 +114,16 @@ class SseBaseTest {
                     .data("hello")
                     .build();
             sseSink.emit(event);
+        }
+    }
+
+    protected void testSse(String path, String... events) throws Exception {
+        assert webServer != null;
+        try (SimpleSseClient sseClient = SimpleSseClient.create(webServer.port(), path)) {
+            for (String e : events) {
+                assertThat(sseClient.nextEvent(), is(e));
+            }
+            assertThat(sseClient.nextEvent(), is(nullValue()));
         }
     }
 }

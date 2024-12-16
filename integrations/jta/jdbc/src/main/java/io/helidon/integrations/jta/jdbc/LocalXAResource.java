@@ -18,9 +18,11 @@ package io.helidon.integrations.jta.jdbc;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
@@ -38,6 +40,7 @@ import io.helidon.integrations.jta.jdbc.ExceptionConverter.XARoutine;
 import static javax.transaction.xa.XAException.XAER_DUPID;
 import static javax.transaction.xa.XAException.XAER_INVAL;
 import static javax.transaction.xa.XAException.XAER_NOTA;
+import static javax.transaction.xa.XAException.XAER_OUTSIDE;
 import static javax.transaction.xa.XAException.XAER_PROTO;
 import static javax.transaction.xa.XAException.XAER_RMERR;
 import static javax.transaction.xa.XAException.XAER_RMFAIL;
@@ -51,6 +54,11 @@ import static javax.transaction.xa.XAException.XA_RBROLLBACK;
  * potentially lossy in the presence of two-phase commit operations.</p>
  *
  * <p>Instances of this class are safe for concurrent use by multiple threads.</p>
+ *
+ * @see XAResource
+ *
+ * @see <a href="https://pubs.opengroup.org/onlinepubs/009680699/toc.pdf">Distributed Transaction Processing:
+ * The XA Specification</a>
  */
 final class LocalXAResource implements XAResource {
 
@@ -64,8 +72,10 @@ final class LocalXAResource implements XAResource {
 
     private static final Xid[] EMPTY_XID_ARRAY = new Xid[0];
 
-    // package-protected for testing only.
-    static final ConcurrentMap<Xid, Association> ASSOCIATIONS = new ConcurrentHashMap<>();
+    // package-protected for testing only. Guarded by ASSOCIATIONS_LOCK below.
+    static final Map<Xid, Association> ASSOCIATIONS = new HashMap<>();
+
+    private static final Lock ASSOCIATIONS_LOCK = new ReentrantLock();
 
 
     /*
@@ -166,7 +176,20 @@ final class LocalXAResource implements XAResource {
             throw new UncheckedXAException((XAException) new XAException(XAER_RMERR)
                                            .initCause(new NullPointerException("connectionFunction.apply(" + x + ")")));
         }
-        a = new Association(Association.BranchState.ACTIVE, x, c);
+        if (!autoCommit(c)) {
+            // The Connection is doing work outside of a global transaction, i.e. someone else set its autoCommit status
+            // to false before this branch started, so there is work going on outside of the about-to-start branch, so
+            // if we were to call commit() on the connection we would have no idea what would be committed. The XA
+            // specification calls this "work outside of a global transaction", and says to report XAER_OUTSIDE here in
+            // such a case.
+            throw new UncheckedXAException((XAException) new XAException(XAER_OUTSIDE)
+                                           .initCause(new IllegalStateException("!c.getAutoCommit(): " + c)));
+        }
+        a = new Association(Association.BranchState.ACTIVE,
+                            x,
+                            false, // not suspended
+                            c,
+                            true); // already checked for a false autoCommit status
         if (LOGGER.isLoggable(Level.FINE)) {
             LOGGER.logp(Level.FINE, this.getClass().getName(), "start",
                         "Created new Association ({0}) for connection ({1}) in state ACTIVE", new Object[] {a, c});
@@ -362,10 +385,13 @@ final class LocalXAResource implements XAResource {
                                            Xid xid,
                                            BiFunction<? super Xid, ? super Association, ? extends Association> f)
         throws XAException {
+        ASSOCIATIONS_LOCK.lock();
         try {
             return ASSOCIATIONS.compute(xid, f);
         } catch (RuntimeException e) {
             throw this.convert(xaRoutine, e);
+        } finally {
+            ASSOCIATIONS_LOCK.unlock();
         }
     }
 
@@ -375,6 +401,7 @@ final class LocalXAResource implements XAResource {
                                            UnaryOperator<Association> f,
                                            boolean removeAssociationOnError)
         throws XAException {
+        ASSOCIATIONS_LOCK.lock();
         try {
             return ASSOCIATIONS.compute(xid, (x, a) -> remap(x, a, legalBranchStates, f));
         } catch (RuntimeException e) {
@@ -382,6 +409,8 @@ final class LocalXAResource implements XAResource {
                 ASSOCIATIONS.remove(xid);
             }
             throw this.convert(xaRoutine, e);
+        } finally {
+            ASSOCIATIONS_LOCK.unlock();
         }
     }
 
@@ -402,14 +431,17 @@ final class LocalXAResource implements XAResource {
                 returnValue = (XAException) new XAException(XAER_PROTO).initCause(e);
             } else if (e instanceof SQLException sqlException) {
                 returnValue = this.exceptionConverter.convert(xaRoutine, sqlException);
+                if (returnValue == null) {
+                    returnValue = (XAException) new XAException(XAER_RMERR).initCause(e);
+                }
             } else if (cause instanceof SQLException sqlException) {
                 returnValue = this.exceptionConverter.convert(xaRoutine, sqlException);
+                if (returnValue == null) {
+                    returnValue = (XAException) new XAException(XAER_RMERR).initCause(e);
+                }
             } else {
                 returnValue = (XAException) new XAException(XAER_RMERR).initCause(e);
             }
-        }
-        if (returnValue == null) {
-            returnValue = (XAException) new XAException(XAER_RMERR).initCause(e);
         }
         return returnValue;
     }
@@ -686,10 +718,19 @@ final class LocalXAResource implements XAResource {
         }
     }
 
+    private static boolean autoCommit(Connection c) {
+        try {
+            return c.getAutoCommit();
+        } catch (SQLException e) {
+            throw new UncheckedSQLException(e);
+        }
+    }
+
 
     /*
      * Inner and nested classes.
      */
+
 
     record Association(BranchState branchState,
                        Xid xid,
@@ -699,10 +740,29 @@ final class LocalXAResource implements XAResource {
 
         private static final Logger LOGGER = Logger.getLogger(Association.class.getName());
 
+        // https://pubs.opengroup.org/onlinepubs/009680699/toc.pdf
+
         // Branch Association States: (XA specification, table 6-2)
         // T0: Not Associated
         // T1: Associated
         // T2: Association Suspended
+
+        /*
+          digraph "Transaction States (Jakarta Transactions Specification)" {
+              t0 [label="Not Associated\n(t0)"];
+              t1 [label="Associated\n(t1)"];
+              t2 [label="Association\nSuspended\n(t2)"];
+
+              t0 -> t1 [label="start()"];
+              t0 -> t1 [label="start() [TMJOIN]"];
+
+              t1 -> t0 [label="end() [TMFAIL, TMSUCCESS"];
+              t1 -> t2 [label="end() [TMSUSPEND]"];
+
+              t2 -> t0 [label="end() [TMFAIL, TMSUCCESS]"]
+              t2 -> t1 [label="start() [TMRESUME]"];
+          }
+        */
 
         // Branch States: (XA specification, table 6-4)
         // S0: Non-existent Transaction
@@ -712,9 +772,49 @@ final class LocalXAResource implements XAResource {
         // S4: Rollback Only
         // S5: Heuristically Completed
 
-        Association(BranchState branchState, Xid xid, Connection connection) {
-            this(branchState, xid, false, connection, autoCommit(connection));
-        }
+        /*
+          digraph "Branch States (XA specification, table 6-4)" {
+              s0 [label="Non-existent\nTransaction\n(s0)"];
+              s1 [label="Active\n(s1)"];
+              s2 [label="Idle\n(s2)"];
+              s3 [label="Prepared\n(s3)"];
+              s4 [label="Rollback\nOnly\n(s4)"];
+              s5 [label="Heuristically\nCompleted\n(s5)"];
+
+              s0 -> s1 [label="start()"];
+              s0 -> s0 [label="recover()"];
+
+              s1 -> s1 [label="recover()"];
+              s1 -> s2 [label="end()"];
+              s1 -> s4 [label="end() [RB]"];
+
+              s2 -> s0 [label="prepare() [RB, RDONLY]"];
+              s2 -> s0 [label="commit() [RB, OK, ERR]"];
+              s2 -> s0 [label="rollback() [RB, OK, ERR]"];
+              s2 -> s1 [label="start()"];
+              s2 -> s2 [label="recover()"];
+              s2 -> s3 [label="prepare()"];
+              s2 -> s4 [label="start() [RB]"];
+              s2 -> s5 [label="commit() [HEUR]"]
+
+              s3 -> s0 [label="commit()"];
+              s3 -> s0 [label="rollback()"];
+              s3 -> s3 [label="commit() [RETRY]"];
+              s3 -> s3 [label="recover()"];
+              s3 -> s5 [label="commit() [HEUR]"]
+              s3 -> s5 [label="rollback() [HEUR]"];
+
+              s4 -> s0 [label="rollback() [RB, OK, ERR]"];
+              s4 -> s4 [label="recover()"];
+              s4 -> s5 [label="rollback() [HEUR]"];
+
+              s5 -> s0 [label="forget()"];
+              s5 -> s5 [label="commit() [HEUR]"];
+              s5 -> s5 [label="forget() [ERR]"];
+              s5 -> s5 [label="rollback() [HEUR]"];
+              s5 -> s5 [label="recover()"];
+          }
+         */
 
         Association {
             Objects.requireNonNull(xid, "xid");
@@ -988,14 +1088,6 @@ final class LocalXAResource implements XAResource {
                                    false,
                                    connection,
                                    this.priorAutoCommit());
-        }
-
-        private static boolean autoCommit(Connection c) {
-            try {
-                return c.getAutoCommit();
-            } catch (SQLException e) {
-                throw new UncheckedSQLException(e);
-            }
         }
 
         // Transaction Branch States (XA specification, table 6-4):

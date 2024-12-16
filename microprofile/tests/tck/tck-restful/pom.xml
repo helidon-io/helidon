@@ -24,12 +24,18 @@
     <parent>
         <groupId>io.helidon.microprofile.tests.tck</groupId>
         <artifactId>helidon-microprofile-tests-tck-project</artifactId>
-        <version>4.1.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
     <packaging>pom</packaging>
     <artifactId>tck-restful</artifactId>
     <name>Helidon Microprofile Tests TCK Restful</name>
+
+    <properties>
+        <tck.filename>jakarta-restful-ws-tck-${version.lib.microprofile-restful-tck}</tck.filename>
+        <tck.url>https://download.eclipse.org/ee4j/jakartaee-tck/jakartaee10/staged/eftl/${tck.filename}.zip</tck.url>
+        <tck.artifact>${tck.filename}</tck.artifact>
+        <stage.dir>${project.build.directory}/tck</stage.dir>
+    </properties>
 
     <modules>
         <module>tck-restful-test</module>
@@ -38,7 +44,9 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
+                <inherited>false</inherited>
                 <executions>
                     <execution>
                         <phase>validate</phase>
@@ -48,13 +56,31 @@
                         <configuration>
                             <target>
                                 <!-- If you use proxy you need to set it as a system properties -->
-                                <get skipexisting="true" src="https://download.eclipse.org/ee4j/jakartaee-tck/jakartaee10/staged/eftl/jakarta-restful-ws-tck-${version.lib.microprofile-restful-tck}.zip" dest="jakarta-restful-ws-tck-${version.lib.microprofile-restful-tck}.zip"/>
-                                <unzip src="jakarta-restful-ws-tck-${version.lib.microprofile-restful-tck}.zip" dest="./target"/>
-                                <chmod file="artifact-install.sh" perm="+x"/>
-                                <exec executable="sh">
-                                    <arg line="artifact-install.sh ${version.lib.microprofile-restful-tck}"/>
-                                </exec>
+                                <get skipexisting="true" src="${tck.url}" dest="${project.build.directory}/${tck.filename}.zip" />
+                                <unzip src="${project.build.directory}/${tck.filename}.zip" dest="${stage.dir}">
+                                    <patternset>
+                                        <include name="**/${tck.artifact}*"/>
+                                    </patternset>
+                                </unzip>
                             </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-install-plugin</artifactId>
+                <inherited>false</inherited>
+                <executions>
+                    <execution>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>install-file</goal>
+                        </goals>
+                        <configuration>
+                            <file>${stage.dir}/${tck.artifact}.jar</file>
+                            <pomFile>${stage.dir}/${tck.artifact}.pom</pomFile>
+                            <sources>${stage.dir}/${tck.artifact}-sources.jar</sources>
                         </configuration>
                     </execution>
                 </executions>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,19 @@
 package io.helidon.tracing.providers.opentelemetry;
 
 import java.util.Map;
+import java.util.stream.Stream;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 /**
  * Check Agent Detector working correctly.
@@ -55,5 +59,27 @@ class AgentDetectorTest {
         Config config = Config.create();
         boolean present = HelidonOpenTelemetry.AgentDetector.isAgentPresent(config);
         assertThat(present, is(true));
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    void checkUsePreexistingOTel(String testDescr, Config config, boolean expectedResult) {
+        assertThat(testDescr, HelidonOpenTelemetry.AgentDetector.useExistingGlobalOpenTelemetry(config), is(expectedResult));
+    }
+
+    static Stream<Arguments> checkUsePreexistingOTel() {
+        return Stream.of(arguments("OTel agent present true",
+                                   Config.just(ConfigSources.create(Map.of(HelidonOpenTelemetry.OTEL_AGENT_PRESENT_PROPERTY, "true"))),
+                                   true),
+                         arguments("OTel agent present not specified, use existing OTel true",
+                                   Config.just(ConfigSources.create(Map.of(HelidonOpenTelemetry.USE_EXISTING_OTEL, "true"))),
+                                   true),
+                         arguments("Neither config value set",
+                                   Config.empty(),
+                                   false),
+                         arguments("OTel agent present but NOT to use existing OTel instance",
+                                   Config.just(ConfigSources.create(Map.of(HelidonOpenTelemetry.OTEL_AGENT_PRESENT_PROPERTY, "true",
+                                                                           HelidonOpenTelemetry.USE_EXISTING_OTEL, "false"))),
+                                   true));
     }
 }

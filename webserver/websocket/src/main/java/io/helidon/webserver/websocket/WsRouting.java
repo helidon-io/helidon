@@ -52,7 +52,7 @@ public class WsRouting implements Routing {
     }
 
     /**
-     * Emtpy WebSocket routing.
+     * Empty WebSocket routing.
      *
      * @return empty routing
      */

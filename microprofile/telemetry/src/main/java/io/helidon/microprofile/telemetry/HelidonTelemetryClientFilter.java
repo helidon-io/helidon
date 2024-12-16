@@ -17,24 +17,33 @@ package io.helidon.microprofile.telemetry;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.ServiceLoader;
+import java.util.Set;
 
+import io.helidon.common.HelidonServiceLoader;
+import io.helidon.microprofile.telemetry.spi.HelidonTelemetryClientFilterHelper;
 import io.helidon.tracing.HeaderConsumer;
 import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 
+import io.opentelemetry.api.baggage.Baggage;
+import io.opentelemetry.context.Context;
+import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.ClientRequestContext;
 import jakarta.ws.rs.client.ClientRequestFilter;
 import jakarta.ws.rs.client.ClientResponseContext;
 import jakarta.ws.rs.client.ClientResponseFilter;
 import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 
 import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_METHOD;
 import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_SCHEME;
 import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.HTTP_STATUS_CODE;
-
+import static io.opentelemetry.semconv.trace.attributes.SemanticAttributes.NET_PEER_NAME;
+import static io.opentelemetry.semconv.trace.attributes.SemanticAttributes.NET_PEER_PORT;
 
 /**
  * Filter to process Client request and Client response. Starts a new {@link io.opentelemetry.api.trace.Span} on request and
@@ -46,17 +55,35 @@ class HelidonTelemetryClientFilter implements ClientRequestFilter, ClientRespons
     private static final String HTTP_URL = "http.url";
     private static final String SPAN_SCOPE = Scope.class.getName();
     private static final String SPAN = Span.class.getName();
+    private static final Set<Response.Status.Family> ERROR_STATUS_FAMILIES = Set.of(
+            Response.Status.Family.CLIENT_ERROR,
+            Response.Status.Family.SERVER_ERROR);
+
+    private static final String HELPER_START_SPAN_PROPERTY = HelidonTelemetryClientFilterHelper.class.getName() + ".startSpan";
 
     private final io.helidon.tracing.Tracer helidonTracer;
 
-    @Inject
-    HelidonTelemetryClientFilter(io.helidon.tracing.Tracer helidonTracer) {
-        this.helidonTracer = helidonTracer;
-    }
+    private final List<HelidonTelemetryClientFilterHelper> helpers;
 
+    @Inject
+    HelidonTelemetryClientFilter(io.helidon.tracing.Tracer helidonTracer,
+                                 Instance<HelidonTelemetryClientFilterHelper> helpersInstance) {
+        this.helidonTracer = helidonTracer;
+        helpers = helpersInstance.stream().toList();
+    }
 
     @Override
     public void filter(ClientRequestContext clientRequestContext) {
+
+        boolean startSpan = helpers.stream().allMatch(h -> h.shouldStartSpan(clientRequestContext));
+        clientRequestContext.setProperty(HELPER_START_SPAN_PROPERTY, startSpan);
+        if (!startSpan) {
+            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                LOGGER.log(System.Logger.Level.TRACE,
+                           "Client filter helper(s) voted to not start a span for " + clientRequestContext.getUri());
+            }
+            return;
+        }
 
         if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
             LOGGER.log(System.Logger.Level.TRACE, "Starting Span in a Client Request");
@@ -69,11 +96,18 @@ class HelidonTelemetryClientFilter implements ClientRequestFilter, ClientRespons
                 .tag(HTTP_METHOD, clientRequestContext.getMethod())
                 .tag(HTTP_SCHEME, clientRequestContext.getUri().getScheme())
                 .tag(HTTP_URL, clientRequestContext.getUri().toString())
+                .tag(NET_PEER_NAME.getKey(), clientRequestContext.getUri().getHost())
+                .tag(NET_PEER_PORT.getKey(), clientRequestContext.getUri().getPort())
                 .update(builder -> Span.current()
                         .map(Span::context)
                         .ifPresent(builder::parent))
                 .start();
 
+        Baggage.fromContext(Context.current())
+                .forEach((key, baggageEntry) ->
+                                 helidonSpan.baggage().set(key,
+                                                           baggageEntry.getValue(),
+                                                           baggageEntry.getMetadata().getValue()));
         Scope helidonScope = helidonSpan.activate();
 
         clientRequestContext.setProperty(SPAN_SCOPE, helidonScope);
@@ -84,9 +118,13 @@ class HelidonTelemetryClientFilter implements ClientRequestFilter, ClientRespons
                              new RequestContextHeaderInjector(clientRequestContext.getHeaders()));
     }
 
-
     @Override
     public void filter(ClientRequestContext clientRequestContext, ClientResponseContext clientResponseContext) {
+
+        Boolean startSpanObj = (Boolean) clientRequestContext.getProperty(HELPER_START_SPAN_PROPERTY);
+        if (startSpanObj != null && !startSpanObj) {
+            return;
+        }
 
         if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
             LOGGER.log(System.Logger.Level.TRACE, "Closing Span in a Client Response");
@@ -100,10 +138,21 @@ class HelidonTelemetryClientFilter implements ClientRequestFilter, ClientRespons
         scope.close();
 
         span.tag(HTTP_STATUS_CODE, clientResponseContext.getStatus());
+
+        // OpenTelemetry semantic conventions dictate what the span status should be.
+        // https://opentelemetry.io/docs/specs/semconv/http/http-spans/#status
+        if (ERROR_STATUS_FAMILIES.contains(clientResponseContext.getStatusInfo().getFamily())) {
+            span.status(Span.Status.ERROR);
+        }
+
         span.end();
 
         clientRequestContext.removeProperty(SPAN);
         clientRequestContext.removeProperty(SPAN_SCOPE);
+    }
+
+    private static List<HelidonTelemetryClientFilterHelper> helpers() {
+        return HelidonServiceLoader.create(ServiceLoader.load(HelidonTelemetryClientFilterHelper.class)).asList();
     }
 
     private static class RequestContextHeaderInjector implements HeaderConsumer {

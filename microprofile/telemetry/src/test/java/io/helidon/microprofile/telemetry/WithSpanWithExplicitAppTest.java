@@ -18,6 +18,7 @@ package io.helidon.microprofile.telemetry;
 import java.util.stream.Stream;
 
 import io.helidon.microprofile.testing.junit5.AddBean;
+import io.helidon.microprofile.testing.junit5.AddConfig;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;

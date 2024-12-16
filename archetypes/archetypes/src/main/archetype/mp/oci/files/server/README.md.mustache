@@ -203,16 +203,16 @@ and currently has the following parameters:
 7. `oci.logging.id` - Custom log id configured. Please see [Custom Logs Monitoring](#Custom-Logs-Monitoring) for more information.
 8. `oci.auth-strategy` - Allows OCI client authentication mechanism to be specified and can either be an individual
 value or a list of authentication types separated by comma. If specified as a list, it will cycle through each until a 
-successful authentication is reached. This is currently set to `config_file,instance_principals,resource_principal` 
-which means that `config_file` will be tried first, then falls back to `instance_principals` if it fails, and 
-eventually falls back to `resource_principals` if `instance_principals` fails. The following are the different types
+successful authentication is reached. This is currently set to `config-file,instance-principals,resource-principal`
+which means that `config-file` will be tried first, then falls back to `instance-principals` if it fails, and
+eventually falls back to `resource-principal` if `instance-principals` fails. The following are the different types
 of OCI client authentication:
-   * `config_file` - Uses user authentication set in ~/.oci/config
+   * `config-file` - Uses user authentication set in ~/.oci/config
    * `config` - Sets user authentication in the helidon config, i.e. microprofile-config.properties
-   * `instance_principals` - Uses the compute instance as the authentication and authorization principal. Please see 
+   * `instance-principals` - Uses the compute instance as the authentication and authorization principal. Please see
 [Calling Services from an Instance](https://docs.oracle.com/en-us/iaas/Content/Identity/Tasks/callingservicesfrominstances.htm)
 for more details.
-   * `resource_principal` - Very similar to instance principal auth but uses OCI resources and services as the 
+   * `resource-principal` - Very similar to instance principal auth but uses OCI resources and services as the
 authentication and authorization principal such as serverless functions. Please see 
 [About Using Resource Principal to Access Oracle Cloud Infrastructure Resources](https://docs.oracle.com/en/cloud/paas/autonomous-database/adbsa/resource-principal-about.html#GUID-7EED5198-2C92-41B6-99DD-29F4187CABF5) for more information.
 

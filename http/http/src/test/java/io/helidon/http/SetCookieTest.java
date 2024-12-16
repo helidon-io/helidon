@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,11 @@
  */
 package io.helidon.http;
 
+import java.time.Duration;
+
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -34,9 +37,21 @@ public class SetCookieTest {
                 + "Domain=domain.value; "
                 + "Path=/; "
                 + "Secure; "
-                + "HttpOnly";
+                + "HttpOnly; "
+                + "SameSite=Lax";
         SetCookie setCookie = SetCookie.parse(template);
-        assertThat(setCookie.toString(), is(template));
+
+        assertThat(setCookie.name(), is("some-cookie"));
+        assertThat(setCookie.value(), is("some-cookie-value"));
+        assertThat(setCookie.expires(), optionalValue(is(DateTime.parse("Thu, 22 Oct 2015 07:28:00 GMT"))));
+        assertThat(setCookie.maxAge(), optionalValue(is(Duration.ofSeconds(2592000))));
+        assertThat(setCookie.domain(), optionalValue(is("domain.value")));
+        assertThat(setCookie.path(), optionalValue(is("/")));
+        assertThat(setCookie.secure(), is(true));
+        assertThat(setCookie.httpOnly(), is(true));
+        assertThat(setCookie.sameSite(), optionalValue(is(SetCookie.SameSite.LAX)));
+
+        assertThat("Generate same cookie value", setCookie.toString(), is(template));
     }
 
     @Test

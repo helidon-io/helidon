@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,7 +66,7 @@ class SecurityFilterTest {
         ContainerRequest request = mock(ContainerRequest.class);
 
         SecurityFilterContext filterContext = new SecurityFilterContext();
-        filterContext.setJerseyRequest(request);
+        filterContext.jerseyRequest(request);
 
         SecurityDefinition methodSecurity = mock(SecurityDefinition.class);
 
@@ -74,7 +74,7 @@ class SecurityFilterTest {
         when(clientBuilder.submit()).thenReturn(AuthenticationResponse.failed("Unit-test"));
 
         sf.processAuthentication(filterContext, clientBuilder, methodSecurity, tracing.atnTracing());
-        assertThat(filterContext.isShouldFinish(), is(true));
+        assertThat(filterContext.shouldFinish(), is(true));
 
         verify(request).abortWith(argThat(response -> response.getStatus() == 401));
     }
@@ -94,7 +94,7 @@ class SecurityFilterTest {
         ContainerRequest request = mock(ContainerRequest.class);
 
         SecurityFilterContext filterContext = new SecurityFilterContext();
-        filterContext.setJerseyRequest(request);
+        filterContext.jerseyRequest(request);
 
         SecurityDefinition methodSecurity = mock(SecurityDefinition.class);
 
@@ -125,7 +125,7 @@ class SecurityFilterTest {
         ContainerRequest request = mock(ContainerRequest.class);
 
         SecurityFilterContext filterContext = new SecurityFilterContext();
-        filterContext.setJerseyRequest(request);
+        filterContext.jerseyRequest(request);
 
         SecurityClientBuilder<AuthorizationResponse> clientBuilder = mock(SecurityClientBuilder.class);
         when(clientBuilder.submit()).thenReturn(AuthorizationResponse.builder()
@@ -134,7 +134,7 @@ class SecurityFilterTest {
                                                              .build());
 
         sf.processAuthorization(filterContext, clientBuilder);
-        assertThat(filterContext.isShouldFinish(), is(true));
+        assertThat(filterContext.shouldFinish(), is(true));
 
         verify(request).abortWith(argThat(response -> response.getStatus() == 403));
     }
@@ -154,7 +154,7 @@ class SecurityFilterTest {
         ContainerRequest request = mock(ContainerRequest.class);
 
         SecurityFilterContext filterContext = new SecurityFilterContext();
-        filterContext.setJerseyRequest(request);
+        filterContext.jerseyRequest(request);
 
         SecurityClientBuilder<AuthorizationResponse> clientBuilder = mock(SecurityClientBuilder.class);
         when(clientBuilder.submit()).thenReturn(AuthorizationResponse.builder()

@@ -16,10 +16,13 @@
 
 package io.helidon.common.types;
 
+import java.util.ArrayDeque;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.Set;
 
 import io.helidon.builder.api.Option;
@@ -32,11 +35,33 @@ import io.helidon.builder.api.Prototype;
 interface TypeInfoBlueprint extends Annotated {
     /**
      * The type name.
+     * This type name represents the type usage of this type
+     * (obtained from {@link TypeInfo#superTypeInfo()} or {@link TypeInfo#interfaceTypeInfo()}).
+     * In case this is a type info created from {@link io.helidon.common.types.TypeName}, this will be the type name returned.
      *
      * @return the type name
      */
     @Option.Required
     TypeName typeName();
+
+    /**
+     * The raw type name. This is a unique identification of a type, containing ONLY:
+     * <ul>
+     *  <li>{@link TypeName#packageName()}</li>
+     *  <li>{@link io.helidon.common.types.TypeName#className()}</li>
+     *  <li>if relevant: {@link io.helidon.common.types.TypeName#enclosingNames()}</li>
+     * </ul>
+     *
+     * @return raw type of this type info
+     */
+    TypeName rawType();
+
+    /**
+     * The declared type name, including type parameters.
+     *
+     * @return type name with declared type parameters
+     */
+    TypeName declaredType();
 
     /**
      * Description, such as javadoc, if available.
@@ -227,6 +252,54 @@ interface TypeInfoBlueprint extends Annotated {
      */
     @Option.Redundant
     Optional<Object> originatingElement();
+
+    /**
+     * The element used to create this instance, or {@link io.helidon.common.types.TypeInfo#typeName()} if none provided.
+     * The type of the object depends on the environment we are in - it may be an {@code TypeElement} in annotation processing,
+     * or a {@code ClassInfo} when using classpath scanning.
+     *
+     * @return originating element, or the type of this type info
+     */
+    default Object originatingElementValue() {
+        return originatingElement().orElseGet(this::typeName);
+    }
+
+    /**
+     * Checks if the current type implements, or extends the provided type.
+     * This method analyzes the whole dependency tree of the current type.
+     *
+     * @param typeName type of interface to check
+     * @return the super type info, or interface type info matching the provided type, with appropriate generic declarations
+     */
+    default Optional<TypeInfo> findInHierarchy(TypeName typeName) {
+        if (typeName.equals(typeName())) {
+            return Optional.of((TypeInfo) this);
+        }
+        // scan super types
+        Optional<TypeInfo> superClass = superTypeInfo();
+        if (superClass.isPresent() && !superClass.get().typeName().equals(TypeNames.OBJECT)) {
+            var superType = superClass.get();
+            var foundInSuper = superType.findInHierarchy(typeName);
+            if (foundInSuper.isPresent()) {
+                return foundInSuper;
+            }
+        }
+        // nope, let's try interfaces
+        Queue<TypeInfo> interfaces = new ArrayDeque<>(interfaceTypeInfo());
+        Set<TypeName> processed = new HashSet<>();
+
+        while (!interfaces.isEmpty()) {
+            TypeInfo type = interfaces.remove();
+            // make sure we process each type only once
+            if (processed.add(type.typeName())) {
+                if (typeName.equals(type.typeName())) {
+                    return Optional.of(type);
+                }
+                interfaces.addAll(type.interfaceTypeInfo());
+            }
+        }
+        return Optional.empty();
+    }
 
     /**
      * Uses {@link io.helidon.common.types.TypeInfo#referencedModuleNames()} to determine if the module name is known for the

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.webserver.grpc;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.FlowControl;
 import io.helidon.http.http2.Http2Flag;
@@ -45,6 +46,7 @@ class GrpcProtocolHandlerNotFound implements Http2SubProtocolSelector.SubProtoco
     @Override
     public void init() {
         WritableHeaders<?> writable = WritableHeaders.create();
+        writable.set(Http2Headers.STATUS_NAME, Status.NOT_FOUND_404.code());
         writable.set(GrpcStatus.NOT_FOUND);
         Http2Headers http2Headers = Http2Headers.create(writable);
         streamWriter.writeHeaders(http2Headers,
@@ -70,5 +72,4 @@ class GrpcProtocolHandlerNotFound implements Http2SubProtocolSelector.SubProtoco
     @Override
     public void data(Http2FrameHeader header, BufferData data) {
     }
-
 }

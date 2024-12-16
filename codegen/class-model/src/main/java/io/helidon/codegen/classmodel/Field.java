@@ -33,12 +33,14 @@ public final class Field extends AnnotatedComponent {
     private final Content defaultValue;
     private final boolean isFinal;
     private final boolean isStatic;
+    private final boolean isVolatile;
 
     private Field(Builder builder) {
         super(builder);
         this.defaultValue = builder.defaultValueBuilder.build();
         this.isFinal = builder.isFinal;
         this.isStatic = builder.isStatic;
+        this.isVolatile = builder.isVolatile;
     }
 
     /**
@@ -72,6 +74,9 @@ public final class Field extends AnnotatedComponent {
             if (isFinal) {
                 writer.write("final ");
             }
+            if (isVolatile) {
+                writer.write("volatile ");
+            }
         }
         type().writeComponent(writer, declaredTokens, imports, classType);
         writer.write(" ");
@@ -90,10 +95,6 @@ public final class Field extends AnnotatedComponent {
         super.addImports(imports);
         type().addImports(imports);
         defaultValue.addImports(imports);
-    }
-
-    boolean isStatic() {
-        return isStatic;
     }
 
     @Override
@@ -125,8 +126,31 @@ public final class Field extends AnnotatedComponent {
         return accessModifier().modifierName() + " " + type().fqTypeName() + " " + name();
     }
 
-    boolean isFinal() {
+    /**
+     * Is this field final.
+     *
+     * @return whether this is a final field
+     */
+    public boolean isFinal() {
         return isFinal;
+    }
+
+    /**
+     * Is this field static.
+     *
+     * @return whether this is a static field
+     */
+    public boolean isStatic() {
+        return isStatic;
+    }
+
+    /**
+     * Is this field volatile.
+     *
+     * @return whether this is a volatile field
+     */
+    public boolean isVolatile() {
+        return isVolatile;
     }
 
     /**
@@ -136,6 +160,7 @@ public final class Field extends AnnotatedComponent {
 
         private final Content.Builder defaultValueBuilder = Content.builder();
         private boolean isFinal = false;
+        private boolean isVolatile = false;
         private boolean isStatic = false;
 
         private Builder() {
@@ -239,6 +264,17 @@ public final class Field extends AnnotatedComponent {
          */
         public Builder isFinal(boolean isFinal) {
             this.isFinal = isFinal;
+            return this;
+        }
+
+        /**
+         * Whether this field is {@code volatile}.
+         *
+         * @param isVolatile volatile field
+         * @return updated builder instance
+         */
+        public Builder isVolatile(boolean isVolatile) {
+            this.isVolatile = isVolatile;
             return this;
         }
 

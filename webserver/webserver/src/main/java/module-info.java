@@ -43,6 +43,7 @@ module io.helidon.webserver {
     requires transitive io.helidon.config;
     requires transitive io.helidon.http.encoding;
     requires transitive io.helidon.http.media;
+    requires transitive io.helidon.common.concurrency.limits;
 
     // provides multiple packages due to intentional cyclic dependency
     // we want to support HTTP/1.1 by default (we could fully separate it, but the API would be harder to use
@@ -60,7 +61,7 @@ module io.helidon.webserver {
     uses io.helidon.webserver.spi.ServerFeatureProvider;
     uses io.helidon.webserver.http.spi.SinkProvider;
     uses io.helidon.webserver.http1.spi.Http1UpgradeProvider;
-
+    uses io.helidon.common.concurrency.limits.spi.LimitProvider;
 
     provides io.helidon.webserver.spi.ProtocolConfigProvider
             with io.helidon.webserver.http1.Http1ProtocolConfigProvider;

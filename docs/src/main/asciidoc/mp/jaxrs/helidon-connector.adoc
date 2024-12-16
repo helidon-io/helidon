@@ -112,6 +112,11 @@ properties supported by the connector, their types, scopes and default values.
 |client, invocation
 |true
 
+|jersey.config.client.request.expect.100.continue.processing
+|`Boolean`
+|client
+|true
+
 |jersey.connector.helidon.config
 |`io.helidon.config.Config`
 |client

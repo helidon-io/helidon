@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.security.jwt;
 
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -795,7 +796,7 @@ public final class EncryptedJwt {
                 mac.update(encryptionParts.aad());
                 mac.update(encryptionParts.encryptedContent());
                 byte[] authKey = mac.doFinal();
-                return Arrays.equals(authKey, encryptionParts.authTag());
+                return MessageDigest.isEqual(authKey, encryptionParts.authTag());
             } catch (InvalidKeyException e) {
                 throw new JwtException("Exception occurred while HMAC signature.");
             }

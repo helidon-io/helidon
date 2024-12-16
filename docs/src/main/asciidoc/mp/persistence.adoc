@@ -327,7 +327,7 @@ the `test` data source's associated connection pool or vendor-specific
 
 [source,properties]
 ----
-javax.sql.DataSource.test.foo.bar=baz # <1> <2> <3>
+javax.sql.DataSource.test.foo.bar=baz# <1><2><3>
 ----
 <1> The *_objecttype_* portion of the configuration property name is
     `javax.sql.DataSource`.
@@ -434,8 +434,8 @@ a service name of `XE`, a `user` of `scott`, and a `password` of
 
 [source,properties]
 ----
-javax.sql.DataSource.main.connectionFactoryClassName = oracle.jdbc.pool.OracleDataSource # <1>
-javax.sql.DataSource.main.url = jdbc:oracle:thin://@localhost:1521/XE # <2>
+javax.sql.DataSource.main.connectionFactoryClassName = oracle.jdbc.pool.OracleDataSource# <1>
+javax.sql.DataSource.main.URL = jdbc:oracle:thin:@//localhost:1521/XE# <2>
 javax.sql.DataSource.main.user = scott
 javax.sql.DataSource.main.password = tiger
 ----
@@ -488,8 +488,8 @@ password:
 
 [source,properties]
 ----
-javax.sql.DataSource.test.dataSourceClassName = org.h2.jdbcx.JdbcDataSource # <1>
-javax.sql.DataSource.test.dataSource.url = jdbc:h2:mem:unit-testing;DB_CLOSE_DELAY=-1 # <2> <3>
+javax.sql.DataSource.test.dataSourceClassName = org.h2.jdbcx.JdbcDataSource# <1>
+javax.sql.DataSource.test.dataSource.url = jdbc:h2:mem:unit-testing;DB_CLOSE_DELAY=-1# <2><3>
 javax.sql.DataSource.test.dataSource.user = sa
 javax.sql.DataSource.test.dataSource.password =
 ----
@@ -1349,7 +1349,7 @@ relational database tables, and how to perform other related tasks.
 
 === Examples [[JPA-Examples]]
 
-* link:{helidon-github-tree-url}/examples/integrations/cdi/pokemons[JPA
+* link:{helidon-github-examples-url}/integrations/cdi/pokemons[JPA
   Pokemons Example]
 
 == References [[References]]

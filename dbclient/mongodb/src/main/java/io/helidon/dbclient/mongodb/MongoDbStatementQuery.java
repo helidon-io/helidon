@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io.helidon.dbclient.mongodb;
 
 import java.lang.System.Logger.Level;
 import java.util.Spliterator;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -28,6 +29,7 @@ import io.helidon.dbclient.DbStatementType;
 
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
 
@@ -62,8 +64,8 @@ public class MongoDbStatementQuery extends MongoDbStatement<DbStatementQuery> im
             try {
                 MongoStatement stmt = queryOrCommand(preparedStmt);
                 return switch (stmt.getOperation()) {
-                    case QUERY -> executeQuery(stmt);
-                    case COMMAND -> executeCommand(stmt);
+                    case QUERY -> executeQuery(stmt, future);
+                    case COMMAND -> executeCommand(stmt, future);
                     default -> throw new UnsupportedOperationException(String.format(
                             "Operation %s is not supported by query", stmt.getOperation().toString()));
                 };
@@ -87,14 +89,15 @@ public class MongoDbStatementQuery extends MongoDbStatement<DbStatementQuery> im
         }
     }
 
-    private Stream<DbRow> executeCommand(MongoStatement stmt) {
+    private Stream<DbRow> executeCommand(MongoStatement stmt, CompletableFuture<Long> future) {
         Document command = stmt.getQuery();
         LOGGER.log(Level.DEBUG, () -> String.format("Command: %s", command.toString()));
         Document doc = db().runCommand(command);
+        future.complete(1L);
         return Stream.of(new MongoDbRow(doc, context()));
     }
 
-    private Stream<DbRow> executeQuery(MongoStatement stmt) {
+    private Stream<DbRow> executeQuery(MongoStatement stmt, CompletableFuture<Long> future) {
         MongoCollection<Document> mc = db().getCollection(stmt.getCollection());
         Document query = stmt.getQuery();
         Document projection = stmt.getProjection();
@@ -109,7 +112,9 @@ public class MongoDbStatementQuery extends MongoDbStatement<DbStatementQuery> im
             finder = finder.projection(projection);
         }
 
-        Spliterator<Document> spliterator = spliteratorUnknownSize(finder.iterator(), Spliterator.ORDERED);
+        MongoCursor<Document> it = finder.iterator();
+        future.complete(it.hasNext() ? 1L : 0L);
+        Spliterator<Document> spliterator = spliteratorUnknownSize(it, Spliterator.ORDERED);
         Stream<Document> stream = StreamSupport.stream(spliterator, false);
         return stream.map(doc -> new MongoDbRow(doc, context()));
     }

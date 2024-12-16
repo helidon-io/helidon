@@ -11,6 +11,7 @@ Features
 | CORS                   | 850    |
 | Security               | 800    |
 | Routing (all handlers) | 100    |
+| Static Content         | 95     |
 | OpenAPI                | 90     |
 | Observe                | 80     |
 

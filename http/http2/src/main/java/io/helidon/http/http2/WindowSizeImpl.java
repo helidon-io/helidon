@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,9 @@
  */
 package io.helidon.http.http2;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
 import static java.lang.System.Logger.Level.DEBUG;
@@ -124,7 +121,9 @@ abstract class WindowSizeImpl implements WindowSize {
      */
     static final class Outbound extends WindowSizeImpl implements WindowSize.Outbound {
 
-        private final AtomicReference<CompletableFuture<Void>> updated = new AtomicReference<>(new CompletableFuture<>());
+        private static final int BACKOFF_MIN = 50;
+        private static final int BACKOFF_MAX = 5000;
+        private final Semaphore updatedSemaphore = new Semaphore(1);
         private final ConnectionFlowControl.Type type;
         private final int streamId;
         private final long timeoutMillis;
@@ -147,20 +146,51 @@ abstract class WindowSizeImpl implements WindowSize {
         }
 
         @Override
+        public void resetWindowSize(int size) {
+            super.resetWindowSize(size);
+            triggerUpdate();
+        }
+
+        @Override
+        public int decrementWindowSize(int decrement) {
+            int n = super.decrementWindowSize(decrement);
+            triggerUpdate();
+            return n;
+        }
+
+        @Override
         public void triggerUpdate() {
-            updated.getAndSet(new CompletableFuture<>()).complete(null);
+            updatedSemaphore.release();
         }
 
         @Override
         public void blockTillUpdate() {
+            var startTime = System.currentTimeMillis();
+            int backoff = BACKOFF_MIN;
             while (getRemainingWindowSize() < 1) {
                 try {
-                    updated.get().get(timeoutMillis, TimeUnit.MILLISECONDS);
-                } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                    if (LOGGER_OUTBOUND.isLoggable(DEBUG)) {
-                        LOGGER_OUTBOUND.log(DEBUG,
-                                            String.format("%s OFC STR %d: Window depleted, waiting for update.", type, streamId));
-                    }
+                    updatedSemaphore.drainPermits();
+                    var ignored = updatedSemaphore.tryAcquire(backoff, TimeUnit.MILLISECONDS);
+                    // linear deterministic backoff
+                    backoff = Math.min(backoff * 2, BACKOFF_MAX);
+                } catch (InterruptedException e) {
+                    debugLog("%s OFC STR %d: Window depleted, waiting for update interrupted.", e);
+                    throw new Http2Exception(Http2ErrorCode.FLOW_CONTROL, "Flow control update wait interrupted.");
+                }
+                if (System.currentTimeMillis() - startTime > timeoutMillis) {
+                    debugLog("%s OFC STR %d: Window depleted, waiting for update time-out.", null);
+                    throw new Http2Exception(Http2ErrorCode.FLOW_CONTROL, "Flow control update wait time-out.");
+                }
+                debugLog("%s OFC STR %d: Window depleted, waiting for update.", null);
+            }
+        }
+
+        private void debugLog(String message, Exception e) {
+            if (LOGGER_OUTBOUND.isLoggable(DEBUG)) {
+                if (e != null) {
+                    LOGGER_OUTBOUND.log(DEBUG, String.format(message, type, streamId), e);
+                } else {
+                    LOGGER_OUTBOUND.log(DEBUG, String.format(message, type, streamId));
                 }
             }
         }

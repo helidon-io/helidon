@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,29 +57,29 @@ class JsonpWriter<T extends JsonStructure> implements EntityWriter<T> {
                 Optional<String> charset = acceptedType.charset();
                 if (charset.isPresent()) {
                     Charset characterSet = Charset.forName(charset.get());
-                    write(type, object, new OutputStreamWriter(outputStream, characterSet));
+                    write(object, new OutputStreamWriter(outputStream, characterSet));
                 } else {
-                    write(type, object, outputStream);
+                    write(object, outputStream);
                 }
                 return;
             }
         }
 
-        write(type, object, outputStream);
+        write(object, outputStream);
     }
 
     @Override
     public void write(GenericType<T> type, T object, OutputStream outputStream, WritableHeaders<?> headers) {
         headers.setIfAbsent(HeaderValues.CONTENT_TYPE_JSON);
-        write(type, object, outputStream);
+        write(object, outputStream);
     }
 
-    private void write(GenericType<T> type, T object, Writer out) {
+    private void write(T object, Writer out) {
         JsonWriter writer = writerFactory.createWriter(out);
         writer.write(object);
     }
 
-    private void write(GenericType<T> type, T object, OutputStream out) {
+    private void write(T object, OutputStream out) {
         try (out) {
             writerFactory.createWriter(out).write(object);
         } catch (IOException e) {

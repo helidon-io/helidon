@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,8 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import io.helidon.common.Reflected;
+import io.helidon.config.Config;
+import io.helidon.config.mp.MpConfig;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.webserver.http.HttpService;
 
@@ -60,6 +62,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Application;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.lra.annotation.AfterLRA;
 import org.eclipse.microprofile.lra.annotation.Compensate;
 import org.eclipse.microprofile.lra.annotation.Complete;
@@ -84,6 +87,7 @@ import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 public class LraCdiExtension implements Extension {
 
     private static final System.Logger LOGGER = System.getLogger(LraCdiExtension.class.getName());
+    private static final String CONFIG_PREFIX = "helidon.lra.participant";
 
     private static final Set<Class<? extends Annotation>> EXPECTED_ANNOTATIONS = Set.of(
             AfterLRA.class,
@@ -98,6 +102,7 @@ public class LraCdiExtension implements Extension {
     private final Map<Class<?>, Bean<?>> lraCdiBeanReferences = new HashMap<>();
     private final Indexer indexer;
     private final ClassLoader classLoader;
+    private final Config config;
     private IndexView index;
 
 
@@ -105,6 +110,7 @@ public class LraCdiExtension implements Extension {
      * Initialize MicroProfile Long Running Actions CDI extension.
      */
     public LraCdiExtension() {
+        config = MpConfig.toHelidonConfig(ConfigProvider.getConfig()).get(CONFIG_PREFIX);
         indexer = new Indexer();
         classLoader = Thread.currentThread().getContextClassLoader();
         // Needs to be always indexed
@@ -117,17 +123,9 @@ public class LraCdiExtension implements Extension {
                 Application.class,
                 NonJaxRsResource.class).forEach(c -> runtimeIndex(DotName.createSimple(c.getName())));
 
-        List<URL> indexFiles;
-        try {
-            indexFiles = findIndexFiles("META-INF/jandex.idx");
-            if (!indexFiles.isEmpty()) {
-                index = CompositeIndex.create(indexer.complete(), existingIndexFileReader(indexFiles));
-            } else {
-                index = null;
-            }
-        } catch (IOException e) {
-            LOGGER.log(Level.WARNING, "Error when locating Jandex index, fall-back to runtime computed index.", e);
-            index = null;
+        Boolean useBuildTimeIndex = config.get("use-build-time-index").asBoolean().orElse(Boolean.TRUE);
+        if (useBuildTimeIndex) {
+            resolveBuildTimeIndex();
         }
     }
 
@@ -139,7 +137,7 @@ public class LraCdiExtension implements Extension {
                     LRA.class,
                     AfterLRA.class, Compensate.class, Complete.class, Forget.class, Status.class
             }) ProcessAnnotatedType<?> pat) {
-        // compile time bilt index
+        // compile time built index
         if (index != null) return;
         // create runtime index when pre-built index is not available
         runtimeIndex(DotName.createSimple(pat.getAnnotatedType().getJavaClass().getName()));
@@ -275,6 +273,21 @@ public class LraCdiExtension implements Extension {
             classInfo.interfaceNames().forEach(this::runtimeIndex);
         } catch (IOException e) {
             LOGGER.log(Level.ERROR, "Unable to index referenced class.", e);
+        }
+    }
+
+    private void resolveBuildTimeIndex() {
+        List<URL> indexFiles;
+        try {
+            indexFiles = findIndexFiles(config.get("index-resource").asString().orElse("META-INF/jandex.idx"));
+            if (!indexFiles.isEmpty()) {
+                index = CompositeIndex.create(indexer.complete(), existingIndexFileReader(indexFiles));
+            } else {
+                index = null;
+            }
+        } catch (IOException e) {
+            LOGGER.log(Level.WARNING, "Error when locating Jandex index, fall-back to runtime computed index.", e);
+            index = null;
         }
     }
 

@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.messaging</groupId>
         <artifactId>helidon-messaging-connectors-project</artifactId>
-        <version>4.1.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
 
     <groupId>io.helidon.messaging.aq</groupId>
@@ -64,10 +64,6 @@
         <dependency>
             <groupId>io.helidon.integrations.db</groupId>
             <artifactId>ojdbc</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.oracle.database.jdbc</groupId>
-            <artifactId>ucp</artifactId>
         </dependency>
         <dependency>
             <groupId>jakarta.transaction</groupId>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ public class DbClientContext implements DbContext {
     private final DbMapperManager dbMapperManager;
     private final MapperManager mapperManager;
     private final List<DbClientService> clientServices;
+    private final boolean missingMapParametersAsNull;
     private final DbStatements statements;
     private final String dbType;
 
@@ -42,8 +43,14 @@ public class DbClientContext implements DbContext {
         this.dbMapperManager = builder.dbMapperManager;
         this.mapperManager = builder.mapperManager;
         this.clientServices = builder.clientServices;
+        this.missingMapParametersAsNull = builder.missingMapParametersAsNull;
         this.statements = builder.statements;
         this.dbType = builder.dbType;
+    }
+
+    @Override
+    public boolean missingMapParametersAsNull() {
+        return missingMapParametersAsNull;
     }
 
     @Override
@@ -107,6 +114,7 @@ public class DbClientContext implements DbContext {
         private DbMapperManager dbMapperManager;
         private MapperManager mapperManager;
         private List<DbClientService> clientServices = List.of();
+        private boolean missingMapParametersAsNull;
         private DbStatements statements;
         private String dbType;
 
@@ -146,6 +154,20 @@ public class DbClientContext implements DbContext {
          */
         public B clientServices(List<DbClientService> clientServices) {
             this.clientServices = clientServices;
+            return identity();
+        }
+
+        /**
+         * Missing values in named parameters {@link java.util.Map} are considered as null values.
+         * When set to {@code true}, named parameters value missing in the {@code Map} is considered
+         * as {@code null}. When set to {@code false}, any parameter value missing in the {@code Map}
+         * will cause an exception.
+         * @param missingMapParametersAsNull whether missing values in named parameters {@code Map}
+         *                                   are considered as null values
+         * @return updated builder instance
+         */
+        public B missingMapParametersAsNull(boolean missingMapParametersAsNull) {
+            this.missingMapParametersAsNull = missingMapParametersAsNull;
             return identity();
         }
 

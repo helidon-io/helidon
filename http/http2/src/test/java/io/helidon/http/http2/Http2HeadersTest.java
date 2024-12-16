@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ class Http2HeadersTest {
         DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
         Headers requestHeaders = headers(hexEncoded, dynamicTable).httpHeaders();
 
-        assertThat(requestHeaders.get(HeaderNames.create("custom-key")).value(), is("custom-header"));
+        assertThat(requestHeaders.get(HeaderNames.create("custom-key")).get(), is("custom-header"));
     }
 
     BufferData data(String hexEncoded) {
@@ -76,7 +76,7 @@ class Http2HeadersTest {
         DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
         Headers requestHeaders = headers(hexEncoded, dynamicTable).httpHeaders();
 
-        assertThat(requestHeaders.get(HeaderNames.create("password")).value(), is("secret"));
+        assertThat(requestHeaders.get(HeaderNames.create("password")).get(), is("secret"));
         assertThat("Dynamic table should be empty", dynamicTable.currentTableSize(), is(0));
     }
 
@@ -124,7 +124,7 @@ class Http2HeadersTest {
         assertThat(http2Headers.scheme(), is("http"));
         assertThat(http2Headers.path(), is("/"));
         assertThat(http2Headers.authority(), is("www.example.com"));
-        assertThat(requestHeaders.get(HeaderNames.create("cache-control")).value(), is("no-cache"));
+        assertThat(requestHeaders.get(HeaderNames.create("cache-control")).get(), is("no-cache"));
 
         assertThat("Dynamic table should not be empty", dynamicTable.currentTableSize(), not(0));
 
@@ -145,7 +145,7 @@ class Http2HeadersTest {
         assertThat(http2Headers.scheme(), is("https"));
         assertThat(http2Headers.path(), is("/index.html"));
         assertThat(http2Headers.authority(), is("www.example.com"));
-        assertThat(requestHeaders.get(CUSTOM_HEADER_NAME).value(), is("custom-value"));
+        assertThat(requestHeaders.get(CUSTOM_HEADER_NAME).get(), is("custom-value"));
 
         assertThat("Dynamic table should not be empty", dynamicTable.currentTableSize(), not(0));
 
@@ -214,7 +214,7 @@ class Http2HeadersTest {
         assertThat(http2Headers.scheme(), is("http"));
         assertThat(http2Headers.path(), is("/"));
         assertThat(http2Headers.authority(), is("www.example.com"));
-        assertThat(requestHeaders.get(HeaderNames.create("cache-control")).value(), is("no-cache"));
+        assertThat(requestHeaders.get(HeaderNames.create("cache-control")).get(), is("no-cache"));
 
         assertThat("Dynamic table should not be empty", dynamicTable.currentTableSize(), not(0));
 
@@ -235,7 +235,7 @@ class Http2HeadersTest {
         assertThat(http2Headers.scheme(), is("https"));
         assertThat(http2Headers.path(), is("/index.html"));
         assertThat(http2Headers.authority(), is("www.example.com"));
-        assertThat(requestHeaders.get(CUSTOM_HEADER_NAME).value(), is("custom-value"));
+        assertThat(requestHeaders.get(CUSTOM_HEADER_NAME).get(), is("custom-value"));
 
         assertThat("Dynamic table should not be empty", dynamicTable.currentTableSize(), not(0));
 

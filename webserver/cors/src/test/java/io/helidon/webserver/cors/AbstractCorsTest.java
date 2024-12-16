@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -178,11 +178,11 @@ abstract class AbstractCorsTest extends CorsRouting {
 
             assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers()
-                               .get(ACCESS_CONTROL_ALLOW_ORIGIN).value(), is(fooOrigin()));
+                               .get(ACCESS_CONTROL_ALLOW_ORIGIN).get(), is(fooOrigin()));
             assertThat(response.headers()
-                               .get(ACCESS_CONTROL_ALLOW_CREDENTIALS).value(), is("true"));
+                               .get(ACCESS_CONTROL_ALLOW_CREDENTIALS).get(), is("true"));
             assertThat(response.headers()
-                               .get(ACCESS_CONTROL_ALLOW_METHODS).value(), is("PUT"));
+                               .get(ACCESS_CONTROL_ALLOW_METHODS).get(), is("PUT"));
             assertThat(response.headers()
                                .get(ACCESS_CONTROL_ALLOW_HEADERS).values(), containsString(fooHeader()));
             assertThat(response.headers(), noHeader(ACCESS_CONTROL_MAX_AGE));
@@ -204,8 +204,8 @@ abstract class AbstractCorsTest extends CorsRouting {
             assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_ORIGIN, "http://foo.bar"));
             assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true"));
             assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_METHODS, "PUT"));
-            assertThat(response.headers().get(ACCESS_CONTROL_ALLOW_HEADERS).value(), containsString("X-foo"));
-            assertThat(response.headers().get(ACCESS_CONTROL_ALLOW_HEADERS).value(), containsString("X-bar"));
+            assertThat(response.headers().get(ACCESS_CONTROL_ALLOW_HEADERS).get(), containsString("X-foo"));
+            assertThat(response.headers().get(ACCESS_CONTROL_ALLOW_HEADERS).get(), containsString("X-bar"));
             assertThat(response.headers(), noHeader(ACCESS_CONTROL_MAX_AGE));
         }
     }
@@ -226,8 +226,8 @@ abstract class AbstractCorsTest extends CorsRouting {
             assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_ORIGIN, "http://foo.bar"));
             assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true"));
             assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_METHODS, "PUT"));
-            assertThat(response.headers().get(ACCESS_CONTROL_ALLOW_HEADERS).value(), containsString("X-foo"));
-            assertThat(response.headers().get(ACCESS_CONTROL_ALLOW_HEADERS).value(), containsString("X-bar"));
+            assertThat(response.headers().get(ACCESS_CONTROL_ALLOW_HEADERS).get(), containsString("X-foo"));
+            assertThat(response.headers().get(ACCESS_CONTROL_ALLOW_HEADERS).get(), containsString("X-bar"));
             assertThat(response.headers(), noHeader(ACCESS_CONTROL_MAX_AGE));
         }
     }

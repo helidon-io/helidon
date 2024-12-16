@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,15 +44,19 @@ public abstract class SocketWriter implements DataWriter {
      * @param socket           socket to write to
      * @param writeQueueLength maximal number of queued writes, write operation will block if the queue is full; if set to
      *                         {code 1} or lower, write queue is disabled and writes are direct to socket (blocking)
+     * @param smartAsyncWrites flag to enable smart async writes, see {@link io.helidon.common.socket.SmartSocketWriter}
      * @return a new socket writer
      */
     public static SocketWriter create(ExecutorService executor,
                                       HelidonSocket socket,
-                                      int writeQueueLength) {
+                                      int writeQueueLength,
+                                      boolean smartAsyncWrites) {
         if (writeQueueLength <= 1) {
             return new SocketWriterDirect(socket);
         } else {
-            return new SocketWriterAsync(executor, socket, writeQueueLength);
+            return smartAsyncWrites
+                    ? new SmartSocketWriter(executor, socket, writeQueueLength)
+                    : new SocketWriterAsync(executor, socket, writeQueueLength);
         }
     }
 

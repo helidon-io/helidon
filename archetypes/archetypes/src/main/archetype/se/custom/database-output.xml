@@ -201,14 +201,12 @@ docker run --rm --name mongo -p 27017:27017 mongo
                         <value>io.helidon.dbclient.health.DbClientHealthCheck</value>
                     </list>
                     <list key="Main-main">
-                        <value><![CDATA[
-        ObserveFeature observe = ObserveFeature.builder()
-                .config(config.get("server.features.observe"))
-                .addObserver(HealthObserver.builder()
-                                     .addCheck(DbClientHealthCheck.create(dbClient, config.get("db.health-check")))
-                                     .build())
-                .build();
-]]></value>
+                        <value><![CDATA[ObserveFeature observe = ObserveFeature.builder()
+        .addObserver(HealthObserver.builder()
+                             .addCheck(DbClientHealthCheck.create(dbClient, config.get("db.health-check")))
+                             .build())
+        .build();]]>
+                        </value>
                     </list>
                     <list key="Main-server-builder">
                         <value>.addFeature(observe)</value>

@@ -24,16 +24,19 @@
     <parent>
         <groupId>io.helidon.integrations.cdi</groupId>
         <artifactId>helidon-integrations-cdi-project</artifactId>
-        <version>4.1.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-integrations-cdi-jpa</artifactId>
     <name>Helidon CDI Integrations JPA</name>
 
     <properties>
-      <doclint>-syntax</doclint>
-      <eclipselink.skip>false</eclipselink.skip>
-      <hibernate.skip>false</hibernate.skip>
-      <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+        <doclint>-syntax</doclint>
+        <eclipselink.skip>false</eclipselink.skip>
+        <helidon.jta.immediateEnlistment>false</helidon.jta.immediateEnlistment>
+        <helidon.jta.interposedSynchronizations>true</helidon.jta.interposedSynchronizations>
+        <helidon.jta.preemptiveEnlistmentChecks>true</helidon.jta.preemptiveEnlistmentChecks>
+        <hibernate.skip>false</hibernate.skip>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
     </properties>
 
     <dependencies>
@@ -108,6 +111,11 @@
             <artifactId>jakarta.transaction-api</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.eclipse.microprofile.config</groupId>
+            <artifactId>microprofile-config-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
 
         <!-- Runtime-scoped dependencies. -->
         <dependency>
@@ -143,6 +151,12 @@
             <groupId>com.sun.xml.bind</groupId>
             <artifactId>jaxb-impl</artifactId>
             <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.config</groupId>
+            <artifactId>helidon-microprofile-config</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
         </dependency>
 
         <!-- Test-scoped dependencies. -->
@@ -291,6 +305,9 @@
                     <reportNameSuffix>eclipselink</reportNameSuffix>
                     <skip>${eclipselink.skip}</skip>
                     <systemPropertyVariables>
+                        <helidon.jta.immediateEnlistment>${helidon.jta.immediateEnlistment}</helidon.jta.immediateEnlistment>
+                        <helidon.jta.interposedSynchronizations>${helidon.jta.interposedSynchronizations}</helidon.jta.interposedSynchronizations>
+                        <helidon.jta.preemptiveEnlistmentChecks>${helidon.jta.preemptiveEnlistmentChecks}</helidon.jta.preemptiveEnlistmentChecks>
                         <java.util.logging.config.file>${project.basedir}/src/test/logging.properties</java.util.logging.config.file>
                     </systemPropertyVariables>
                     <testClassesDirectory>${project.build.directory}/eclipselink/test-classes</testClassesDirectory>

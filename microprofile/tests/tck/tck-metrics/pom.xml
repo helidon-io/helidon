@@ -24,8 +24,7 @@
     <parent>
         <groupId>io.helidon.microprofile.tests.tck</groupId>
         <artifactId>helidon-microprofile-tests-tck-project</artifactId>
-        <version>4.1.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
     <artifactId>tck-metrics</artifactId>
     <name>Helidon Microprofile Tests TCK Metrics</name>
@@ -131,6 +130,10 @@
                     <systemPropertyVariables>
                         <context.root/> <!-- Suppress the TCK's default of /optionalTCK -->
                         <metrics.rest-request.enabled>true</metrics.rest-request.enabled> <!-- off by default -->
+                        <!-- @Deprecated(forRemoval = true) - remove setting of gc-time-type for Helidon 5
+                         This is required starting in 4.1 to use a gauge instead of the backward-compatible counter
+                         for gc.time. -->
+                        <metrics.gc-time-type>gauge</metrics.gc-time-type>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import io.helidon.http.sse.SseEvent;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webclient.sse.SseSource;
+import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
@@ -44,7 +45,8 @@ class SseClientTest extends SseBaseTest {
 
     private final Http1Client client;
 
-    SseClientTest(Http1Client client) {
+    SseClientTest(WebServer webServer, Http1Client client) {
+        super(webServer);
         this.client = client;
     }
 

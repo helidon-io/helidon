@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Represents {@code 'Set-Cookie'} header value specified by <a href="https://tools.ietf.org/html/rfc6265">RFC6265</a>.
@@ -52,15 +54,6 @@ public class SetCookie {
         this.secure = builder.secure;
         this.httpOnly = builder.httpOnly;
         this.sameSite = builder.sameSite;
-    }
-
-    /**
-     * Gets cookie's name.
-     *
-     * @return the name.
-     */
-    public String name() {
-        return name;
     }
 
     /**
@@ -125,32 +118,15 @@ public class SetCookie {
                 hasNoValue(partName, partValue);
                 builder.httpOnly(true);
                 break;
+            case "samesite":
+                hasValue(partName, partValue);
+                builder.sameSite(SameSite.valueOf(partValue.toUpperCase(Locale.ROOT)));
+                break;
             default:
                 throw new IllegalArgumentException("Unexpected Set-Cookie part: " + partName);
             }
         }
         return builder.build();
-    }
-
-    /**
-     * Text representation of this cookie.
-     *
-     * @return cookie text
-     */
-    public String text() {
-        return toString();
-    }
-
-    private static void hasNoValue(String partName, String partValue) {
-        if (partValue != null) {
-            throw new IllegalArgumentException("Set-Cookie parameter " + partName + " has to have no value!");
-        }
-    }
-
-    private static void hasValue(String partName, String partValue) {
-        if (partValue == null) {
-            throw new IllegalArgumentException("Set-Cookie parameter " + partName + " has to have a value!");
-        }
     }
 
     /**
@@ -163,6 +139,96 @@ public class SetCookie {
     public static SetCookie create(String name, String value) {
         return builder(name, value)
                 .build();
+    }
+
+    /**
+     * Name of the cookie.
+     *
+     * @return the name.
+     */
+    public String name() {
+        return name;
+    }
+
+    /**
+     * Value of the cookie.
+     *
+     * @return value
+     */
+    public String value() {
+        return value;
+    }
+
+    /**
+     * Expiration of cookie.
+     *
+     * @return expiration if defined
+     */
+    public Optional<ZonedDateTime> expires() {
+        return Optional.ofNullable(expires);
+    }
+
+    /**
+     * Max age of cookie.
+     *
+     * @return max age if defined
+     */
+    public Optional<Duration> maxAge() {
+        return Optional.ofNullable(maxAge);
+    }
+
+    /**
+     * Domain of cookie.
+     *
+     * @return domain if defined
+     */
+    public Optional<String> domain() {
+        return Optional.ofNullable(domain);
+    }
+
+    /**
+     * Path of cookie.
+     *
+     * @return path if defined
+     */
+    public Optional<String> path() {
+        return Optional.ofNullable(path);
+    }
+
+    /**
+     * Secure attribute of cookie.
+     *
+     * @return whether secure was set
+     */
+    public boolean secure() {
+        return secure;
+    }
+
+    /**
+     * HttpOnly attribute of cookie.
+     *
+     * @return whether {@code HttpOnly} was set
+     */
+    public boolean httpOnly() {
+        return httpOnly;
+    }
+
+    /**
+     * Same site attribute of cookie.
+     *
+     * @return same site if defined
+     */
+    public Optional<SameSite> sameSite() {
+        return Optional.ofNullable(sameSite);
+    }
+
+    /**
+     * Text representation of this cookie.
+     *
+     * @return cookie text
+     */
+    public String text() {
+        return toString();
     }
 
     /**
@@ -209,6 +275,57 @@ public class SetCookie {
             result.append(sameSite.text());
         }
         return result.toString();
+    }
+
+    private static void hasNoValue(String partName, String partValue) {
+        if (partValue != null) {
+            throw new IllegalArgumentException("Set-Cookie parameter " + partName + " has to have no value!");
+        }
+    }
+
+    private static void hasValue(String partName, String partValue) {
+        if (partValue == null) {
+            throw new IllegalArgumentException("Set-Cookie parameter " + partName + " has to have a value!");
+        }
+    }
+
+    /**
+     * The SameSite attribute of the Set-Cookie HTTP response header allows you to declare if your cookie should be restricted
+     * to a first-party or same-site context.
+     */
+    public enum SameSite {
+        /**
+         * Cookies are not sent on normal cross-site subrequests (for example to load images or frames into a third party site)
+         * , but are sent when a user is navigating to the origin site (i.e., when following a link).
+         *
+         * This is the default cookie value if SameSite has not been explicitly specified in recent browser versions
+         */
+        LAX("Lax"),
+        /**
+         * Cookies will only be sent in a first-party context and not be sent along with requests initiated by third party
+         * websites.
+         */
+        STRICT("Strict"),
+        /**
+         * Cookies will be sent in all contexts, i.e. in responses to both first-party and cross-origin requests. If
+         * SameSite=None is set, the cookie Secure attribute must also be set (or the cookie will be blocked).
+         */
+        NONE("None");
+
+        private final String text;
+
+        SameSite(String text) {
+            this.text = text;
+        }
+
+        /**
+         * Text to write to the same site cookie param.
+         *
+         * @return text to send in cookie
+         */
+        public String text() {
+            return text;
+        }
     }
 
     /**
@@ -344,45 +461,6 @@ public class SetCookie {
         public Builder sameSite(SameSite sameSite) {
             this.sameSite = sameSite;
             return this;
-        }
-    }
-
-    /**
-     * The SameSite attribute of the Set-Cookie HTTP response header allows you to declare if your cookie should be restricted
-     * to a first-party or same-site context.
-     */
-    public enum SameSite {
-        /**
-         * Cookies are not sent on normal cross-site subrequests (for example to load images or frames into a third party site)
-         * , but are sent when a user is navigating to the origin site (i.e., when following a link).
-         *
-         * This is the default cookie value if SameSite has not been explicitly specified in recent browser versions
-         */
-        LAX("Lax"),
-        /**
-         * Cookies will only be sent in a first-party context and not be sent along with requests initiated by third party
-         * websites.
-         */
-        STRICT("Strict"),
-        /**
-         * Cookies will be sent in all contexts, i.e. in responses to both first-party and cross-origin requests. If
-         * SameSite=None is set, the cookie Secure attribute must also be set (or the cookie will be blocked).
-         */
-        NONE("None");
-
-        private final String text;
-
-        SameSite(String text) {
-            this.text = text;
-        }
-
-        /**
-         * Text to write to the same site cookie param.
-         *
-         * @return text to send in cookie
-         */
-        public String text() {
-            return text;
         }
     }
 }

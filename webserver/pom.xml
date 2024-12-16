@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>4.1.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
     <groupId>io.helidon.webserver</groupId>
     <artifactId>helidon-webserver-project</artifactId>
@@ -46,6 +46,7 @@
         <module>testing</module>
         <module>webserver</module>
         <module>websocket</module>
+        <module>concurrency-limits</module>
     </modules>
 
     <profiles>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,13 +103,13 @@ class CustomScalars {
      * An instance of a custom offset date/time scalar (with default formatting).
      */
      static final GraphQLScalarType CUSTOM_OFFSET_DATE_TIME_SCALAR =
-            newOffsetDateTimeScalar(FORMATTED_OFFSET_DATETIME_SCALAR);
+            newDateTimeScalar(FORMATTED_OFFSET_DATETIME_SCALAR);
 
     /**
      * An instance of a custom offset date/time scalar (with default formatting).
      */
      static final GraphQLScalarType CUSTOM_ZONED_DATE_TIME_SCALAR =
-            newZonedDateTimeScalar(FORMATTED_ZONED_DATETIME_SCALAR);
+            newDateTimeScalar(FORMATTED_ZONED_DATETIME_SCALAR);
 
     /**
      * An instance of a custom time scalar (with default formatting).
@@ -128,40 +128,6 @@ class CustomScalars {
      * @return a new custom date/time scalar
      */
      static GraphQLScalarType newDateTimeScalar(String name) {
-        GraphQLScalarType originalScalar = ExtendedScalars.DateTime;
-
-        return GraphQLScalarType.newScalar()
-                .coercing(new DateTimeCoercing())
-                .name(name)
-                .description("Custom: " + originalScalar.getDescription())
-                .build();
-    }
-
-    /**
-     * Return a new custom offset date/time scalar.
-     *
-     * @param name the name of the scalar
-     * @return a new custom date/time scalar
-     */
-    @SuppressWarnings("unchecked")
-     static GraphQLScalarType newOffsetDateTimeScalar(String name) {
-        GraphQLScalarType originalScalar = ExtendedScalars.DateTime;
-
-        return GraphQLScalarType.newScalar()
-                .coercing(new DateTimeCoercing())
-                .name(name)
-                .description("Custom: " + originalScalar.getDescription())
-                .build();
-    }
-
-    /**
-     * Return a new custom zoned date/time scalar.
-     *
-     * @param name the name of the scalar
-     * @return a new custom date/time scalar
-     */
-    @SuppressWarnings("unchecked")
-     static GraphQLScalarType newZonedDateTimeScalar(String name) {
         GraphQLScalarType originalScalar = ExtendedScalars.DateTime;
 
         return GraphQLScalarType.newScalar()

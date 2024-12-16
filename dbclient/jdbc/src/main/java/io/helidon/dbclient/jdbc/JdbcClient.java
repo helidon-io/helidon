@@ -36,6 +36,7 @@ class JdbcClient extends DbClientBase implements DbClient {
      */
     JdbcClient(JdbcClientBuilder builder) {
         super(JdbcClientContext.jdbcBuilder()
+                .missingMapParametersAsNull(builder.missingMapParametersAsNull())
                 .statements(builder.statements())
                 .dbMapperManager(builder.dbMapperManager())
                 .mapperManager(builder.mapperManager())

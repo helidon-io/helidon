@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ package io.helidon.webserver.grpc;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.google.protobuf.MessageLite;
+import com.google.protobuf.Message;
 import io.grpc.MethodDescriptor;
-import io.grpc.protobuf.lite.ProtoLiteUtils;
+import io.grpc.protobuf.ProtoUtils;
 
 final class ProtoMarshaller {
     private static final Map<Class<?>, MethodDescriptor.Marshaller<?>> CACHE = new ConcurrentHashMap<>();
@@ -35,12 +35,12 @@ final class ProtoMarshaller {
         if (result != null) {
             return result;
         }
-        // i may create it twice, but that should not really matter
+        // it may create it twice, but that should not really matter
         try {
             java.lang.reflect.Method getDefaultInstance = clazz.getDeclaredMethod("getDefaultInstance");
-            MessageLite instance = (MessageLite) getDefaultInstance.invoke(clazz);
+            Message instance = (Message) getDefaultInstance.invoke(clazz);
 
-            result = (MethodDescriptor.Marshaller<T>) ProtoLiteUtils.marshaller(instance);
+            result = (MethodDescriptor.Marshaller<T>) ProtoUtils.marshaller(instance);
             MethodDescriptor.Marshaller<T> current = (MethodDescriptor.Marshaller<T>) CACHE.putIfAbsent(clazz, result);
             return current == null ? result : current;
         } catch (ReflectiveOperationException e) {

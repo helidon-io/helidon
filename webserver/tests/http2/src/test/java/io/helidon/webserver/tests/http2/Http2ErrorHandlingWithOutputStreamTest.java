@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,6 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ServerTest
@@ -141,7 +140,7 @@ class Http2ErrorHandlingWithOutputStreamTest {
     void testOk() {
         var response = request("/");
 
-        assertEquals(200, response.statusCode());
+        assertThat(response.statusCode(), is(200));
         assertThat(response.body(), is("ok"));
     }
 
@@ -149,7 +148,7 @@ class Http2ErrorHandlingWithOutputStreamTest {
     void testGetOutputStreamThenError_expect_CustomErrorHandlerMessage() {
         var response = request("/get-outputStream");
 
-        assertEquals(418, response.statusCode());
+        assertThat(response.statusCode(), is(418));
         assertThat(response.body(), is("TeaPotIAm"));
         assertThat(response.headers().firstValue(ERROR_HEADER_NAME.lowerCase()), is(Optional.of("err")));
         assertThat(response.headers().firstValue(MAIN_HEADER_NAME.lowerCase()), is(emptyOptional()));
@@ -159,7 +158,7 @@ class Http2ErrorHandlingWithOutputStreamTest {
     void testGetOutputStreamWriteOnceThenError_expect_CustomErrorHandlerMessage() {
         var response = request("/get-outputStream-writeOnceThenError");
 
-        assertEquals(418, response.statusCode());
+        assertThat(response.statusCode(), is(418));
         assertThat(response.body(), is("TeaPotIAm"));
         assertThat(response.headers().firstValue(ERROR_HEADER_NAME.lowerCase()), is(Optional.of("err")));
         assertThat(response.headers().firstValue(MAIN_HEADER_NAME.lowerCase()), is(emptyOptional()));
@@ -185,7 +184,7 @@ class Http2ErrorHandlingWithOutputStreamTest {
     void testGetOutputStreamTryWithResourcesThenError_expect_CustomErrorHandlerMessage() {
         var response = request("/get-outputStream-tryWithResources");
 
-        assertEquals(418, response.statusCode());
+        assertThat(response.statusCode(), is(418));
         assertThat(response.body(), is("TeaPotIAm"));
         assertThat(response.headers().firstValue(ERROR_HEADER_NAME.lowerCase()), is(Optional.of("err")));
         assertThat(response.headers().firstValue(MAIN_HEADER_NAME.lowerCase()), is(emptyOptional()));

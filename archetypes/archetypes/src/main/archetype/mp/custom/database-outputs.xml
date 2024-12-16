@@ -364,7 +364,7 @@ For details on an Oracle Docker image, see https://github.com/oracle/docker-imag
                         </map>
                         <map>
                             <value key="groupId">com.oracle.database.jdbc</value>
-                            <value key="artifactId">ucp</value>
+                            <value key="artifactId">ucp11</value>
                             <value key="scope">runtime</value>
                         </map>
                     </list>

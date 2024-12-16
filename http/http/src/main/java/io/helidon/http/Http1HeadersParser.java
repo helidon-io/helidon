@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,14 +26,29 @@ import io.helidon.common.buffers.LazyString;
  * Used by both HTTP server and client to parse headers from {@link io.helidon.common.buffers.DataReader}.
  */
 public final class Http1HeadersParser {
-    // TODO expand set of fastpath headers
     private static final byte[] HD_HOST = (HeaderNameEnum.HOST.defaultCase() + ":").getBytes(StandardCharsets.UTF_8);
     private static final byte[] HD_ACCEPT = (HeaderNameEnum.ACCEPT.defaultCase() + ":").getBytes(StandardCharsets.UTF_8);
     private static final byte[] HD_CONNECTION =
             (HeaderNameEnum.CONNECTION.defaultCase() + ":").getBytes(StandardCharsets.UTF_8);
-
     private static final byte[] HD_USER_AGENT =
             (HeaderNameEnum.USER_AGENT.defaultCase() + ":").getBytes(StandardCharsets.UTF_8);
+    private static final long CLOSE_WORD = ' '
+            | 'c' << 8
+            | 'l' << 16
+            | 'o' << 24
+            | (long) 's' << 32
+            | (long) 'e' << 40;
+    private static final long KEEP_ALIVE_WORD_1 = ' '
+            | 'k' << 8
+            | 'e' << 16
+            | 'e' << 24
+            | (long) 'p' << 32
+            | (long) '-' << 40
+            | (long) 'a' << 48
+            | (long) 'l' << 56;
+    private static final long KEEP_ALIVE_WORD_2 = 'i'
+            | 'v' << 8
+            | 'e' << 16;
 
     private Http1HeadersParser() {
     }
@@ -56,18 +71,24 @@ public final class Http1HeadersParser {
                 return headers;
             }
 
-            HeaderName header = readHeaderName(reader, maxLength, validate);
+            HeaderName header = readHeaderName(reader, maxLength);
             maxLength -= header.defaultCase().length() + 2;
             int eol = reader.findNewLine(maxLength);
             if (eol == maxLength) {
                 throw new IllegalStateException("Header size exceeded");
             }
-            // we do not need the string until somebody asks for this header (unless validation is on)
-            LazyString value = reader.readLazyString(StandardCharsets.US_ASCII, eol);
+            // optimization for Connection, as we always need to analyze it
+            Header headerValue;
+            if (header.equals(HeaderNames.CONNECTION)) {
+                headerValue = connectionHeaderValue(reader, eol);
+            } else {
+                // we do not need the string until somebody asks for this header (unless validation is on)
+                LazyString value = reader.readLazyString(StandardCharsets.US_ASCII, eol);
+                headerValue = HeaderValues.create(header, value);
+            }
             reader.skip(2);
             maxLength -= eol + 1;
 
-            Header headerValue = HeaderValues.create(header, value);
             headers.add(headerValue);
             if (validate) {
                 headerValue.validate();
@@ -78,9 +99,45 @@ public final class Http1HeadersParser {
         }
     }
 
+    private static Header connectionHeaderValue(DataReader reader, int eol) {
+        byte[] bytes = reader.readBytes(eol);
+
+        // space and `keep-alive`
+        if (bytes.length == 11) {
+            if (isKeepAlive(bytes)) {
+                return HeaderValues.CONNECTION_KEEP_ALIVE;
+            }
+        }
+        // space and `close`
+        if (bytes.length == 6 && isClose(bytes)) {
+            return HeaderValues.CONNECTION_CLOSE;
+        }
+        // some other (unexpected) combination
+        return HeaderValues.create(HeaderNames.CONNECTION, new LazyString(bytes, 0, bytes.length, StandardCharsets.US_ASCII));
+    }
+
+    private static boolean isKeepAlive(byte[] buffer) {
+        if (Bytes.toWord(buffer, 0) != KEEP_ALIVE_WORD_1) {
+            return false;
+        }
+        long endWord = buffer[8] & 0xff
+                | (buffer[9] & 0xff) << 8
+                | (buffer[10] & 0xff) << 16;
+        return endWord == KEEP_ALIVE_WORD_2;
+    }
+
+    private static boolean isClose(byte[] buffer) {
+        long word = buffer[0] & 0xff
+                | (buffer[1] & 0xff) << 8
+                | (buffer[2] & 0xff) << 16
+                | ((long) buffer[3] & 0xff) << 24
+                | ((long) buffer[4]  & 0xff) << 32
+                | ((long) buffer[5]  & 0xff) << 40;
+        return word == CLOSE_WORD;
+    }
+
     private static HeaderName readHeaderName(DataReader reader,
-                                             int maxLength,
-                                             boolean validate) {
+                                             int maxLength) {
         switch (reader.lookup()) {
         case (byte) 'H' -> {
             if (reader.startsWith(HD_HOST)) {

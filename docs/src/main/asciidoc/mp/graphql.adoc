@@ -132,7 +132,7 @@ additional information on how to change the location of these resources.
 
 If you wish to use the
 link:https://github.com/graphql/graphiql[GraphQL UI] then please see the
-link:{helidon-github-tree-url}/examples/microprofile/graphql[GraphQL MP Example].
+link:{helidon-github-examples-url}/microprofile/graphql[GraphQL MP Example].
 
 == Configuration
 
@@ -154,7 +154,7 @@ include::{rootdir}/includes/graphql.adoc[]
 == Examples
 
 For a complete example, see
-link:{helidon-github-tree-url}/examples/microprofile/graphql[GraphQL MP Example].
+link:{helidon-github-examples-url}/microprofile/graphql[GraphQL MP Example].
 
 == Additional Information
 

@@ -20,8 +20,10 @@ import java.net.URI;
 
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQueryWriteable;
+
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -63,7 +65,12 @@ class ClientUriTest {
     void testQueryParams() {
         UriQueryWriteable query = UriQueryWriteable.create();
         query.fromQueryString("p1=v1&p2=v2&p3=%2F%2Fv3%2F%2F");
-        ClientUri helper = ClientUri.create(URI.create("http://localhost:8080/loom/quick?" + query.value()));
+        assertThat(query.get("p1"), is("v1"));
+        assertThat(query.get("p2"), is("v2"));
+        assertThat(query.get("p3"), is("//v3//"));
+        assertThat(query.getRaw("p3"), is("%2F%2Fv3%2F%2F"));
+
+        ClientUri helper = ClientUri.create(URI.create("http://localhost:8080/loom/quick?" + query.rawValue()));
 
         assertThat(helper.authority(), is("localhost:8080"));
         assertThat(helper.host(), is("localhost"));
@@ -74,6 +81,13 @@ class ClientUriTest {
         assertThat(helper.query().get("p2"), is("v2"));
         assertThat(helper.query().get("p3"), is("//v3//"));
         assertThat(helper.query().getRaw("p3"), is("%2F%2Fv3%2F%2F"));
+    }
+
+    @Test
+    void testQueryMultipleValues() {
+        UriQueryWriteable query = UriQueryWriteable.create();
+        query.fromQueryString("p1=v1&p1=v2");
+        assertThat(query.all("p1"), hasItems("v1", "v2"));
     }
 
     @Test

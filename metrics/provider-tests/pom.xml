@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.metrics</groupId>
         <artifactId>helidon-metrics-project</artifactId>
-        <version>4.1.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-metrics-provider-tests</artifactId>
     <name>Helidon Metrics Provider Tests</name>
@@ -150,27 +150,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>pipeline</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <systemPropertyVariables>
-                                <helidon.concurrentGauge.minRequiredSeconds>45</helidon.concurrentGauge.minRequiredSeconds>
-                                <helidon.histogram.tolerance>0.25</helidon.histogram.tolerance>
-                            </systemPropertyVariables>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
-
-
-
 </project>

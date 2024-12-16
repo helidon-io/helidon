@@ -10,7 +10,7 @@ This example demonstrates Helidon's integration with Oracle Cloud Infrastructure
 6. Logs published to OCI Logging Service
 7. OCI Custom Logs Monitoring using Unified Monitoring Agent
 8. Health and Liveness checks
-9. Configuration profiles for switching between `config_file` and `instance_principal` configurations
+9. Configuration profiles for switching between `config-file` and `instance-principals` configurations
 
 This project demonstrates OpenApi-driven development approach where the practice of designing and building APIs is done first, 
 then creating the rest of an application around them is implemented next. Below are the modules that are part of this project:

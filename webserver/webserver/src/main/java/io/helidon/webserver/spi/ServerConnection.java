@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,9 @@ package io.helidon.webserver.spi;
 import java.time.Duration;
 import java.util.concurrent.Semaphore;
 
+import io.helidon.common.concurrency.limits.Limit;
+import io.helidon.common.concurrency.limits.NoopSemaphore;
+
 /**
  * Server connection abstraction, used by any provider to handle a socket connection.
  */
@@ -32,8 +35,30 @@ public interface ServerConnection {
      *                         releasing it when the request ends; please be very careful, as this may lead to complete stop
      *                         of the server if incorrectly implemented
      * @throws InterruptedException to interrupt any waiting state and terminate this connection
+     * @deprecated implement {@link #handle(io.helidon.common.concurrency.limits.Limit)} instead
      */
-    void handle(Semaphore requestSemaphore) throws InterruptedException;
+    @Deprecated(forRemoval = true, since = "4.2.0")
+    default void handle(Semaphore requestSemaphore) throws InterruptedException {
+        throw new IllegalStateException("This method must be implemented, unless handle(Limit) is implemented");
+    }
+
+    /**
+     * Start handling the connection. Data is provided through
+     * {@link ServerConnectionSelector#connection(io.helidon.webserver.ConnectionContext)}.
+     *
+     * @param limit that is responsible for maximal concurrent request limit, the connection implementation
+     *              is responsible invoking each request within the limit's
+     *              {@link io.helidon.common.concurrency.limits.Limit#invoke(java.util.concurrent.Callable)}
+     * @throws InterruptedException to interrupt any waiting state and terminate this connection
+     */
+    @SuppressWarnings("removal") // usage will be removed with the deprecated types
+    default void handle(Limit limit) throws InterruptedException {
+        if (limit instanceof io.helidon.common.concurrency.limits.SemaphoreLimit sl) {
+            handle(sl.semaphore());
+        } else {
+            handle(NoopSemaphore.INSTANCE);
+        }
+    }
 
     /**
      * How long is this connection idle. This is a duration from the last request to now.

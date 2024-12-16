@@ -30,6 +30,7 @@ import io.helidon.codegen.classmodel.Method;
 import io.helidon.codegen.classmodel.TypeArgument;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
+import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.codegen.CodegenUtil.capitalize;
 import static io.helidon.common.types.TypeNames.LIST;
@@ -43,8 +44,10 @@ class TypeHandlerMap extends TypeHandler {
     private final TypeName implTypeName;
     private final boolean sameGeneric;
 
-    TypeHandlerMap(String name, String getterName, String setterName, TypeName declaredType, boolean sameGeneric) {
-        super(name, getterName, setterName, declaredType);
+    TypeHandlerMap(TypeName blueprintType,
+                   TypedElementInfo annotatedMethod,
+                   String name, String getterName, String setterName, TypeName declaredType, boolean sameGeneric) {
+        super(blueprintType, annotatedMethod, name, getterName, setterName, declaredType);
         this.sameGeneric = sameGeneric;
 
         this.implTypeName = collectionImplType(MAP);
@@ -131,9 +134,18 @@ class TypeHandlerMap extends TypeHandler {
 
     @Override
     TypeName argumentTypeName() {
+        TypeName firstType = declaredType().typeArguments().get(0);
+        if (!(TypeNames.STRING.equals(firstType) || toPrimitive(firstType).primitive() || firstType.array())) {
+            firstType = toWildcard(firstType);
+        }
+        TypeName secondType = declaredType().typeArguments().get(1);
+        if (!(TypeNames.STRING.equals(secondType) || toPrimitive(secondType).primitive() || secondType.array())) {
+            secondType = toWildcard(secondType);
+        }
+
         return TypeName.builder(MAP)
-                .addTypeArgument(toWildcard(declaredType().typeArguments().get(0)))
-                .addTypeArgument(toWildcard(declaredType().typeArguments().get(1)))
+                .addTypeArgument(firstType)
+                .addTypeArgument(secondType)
                 .build();
     }
 

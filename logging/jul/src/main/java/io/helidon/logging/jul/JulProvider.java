@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,6 +100,10 @@ public class JulProvider implements LoggingProvider {
         if (runtime || NativeImageHelper.isBuildTime()) {
             String when = runtime ? WHEN_RUNTIME : WHEN_INIT;
             Logger.getLogger(JulProvider.class.getName()).info("Logging at " + when + " configured using " + source);
+        } else {
+            // build time without native image (when not in native, this is executed only on class initialization,
+            // so for the user it is runtime)
+            Logger.getLogger(JulProvider.class.getName()).info("Logging at " + WHEN_RUNTIME + " configured using " + source);
         }
     }
 

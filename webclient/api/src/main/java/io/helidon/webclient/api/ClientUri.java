@@ -18,7 +18,6 @@ package io.helidon.webclient.api;
 
 import java.net.URI;
 
-import io.helidon.common.uri.UriEncoding;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriInfo;
 import io.helidon.common.uri.UriPath;
@@ -194,11 +193,10 @@ public class ClientUri implements UriInfo {
 
         uriBuilder.path(resolvePath(uriBuilder.path().path(), uri.getPath()));
 
-        String queryString = uri.getQuery();
+        String queryString = uri.getRawQuery();
         if (queryString != null) {
             // class URI does not decode +'s, so we do it here
-            query.fromQueryString(queryString.indexOf('+') >= 0 ? UriEncoding.decodeUri(queryString)
-                    : queryString);
+            query.fromQueryString(queryString.replaceAll("\\+", "%20"));
         }
 
         if (uri.getRawFragment() != null) {
