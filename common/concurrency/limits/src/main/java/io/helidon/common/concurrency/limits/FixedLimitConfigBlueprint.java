@@ -19,6 +19,7 @@ package io.helidon.common.concurrency.limits;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.Semaphore;
+import java.util.function.Supplier;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
@@ -95,6 +96,13 @@ interface FixedLimitConfigBlueprint extends Prototype.Factory<FixedLimit> {
      * @return semaphore instance
      */
     Optional<Semaphore> semaphore();
+
+    /**
+     * A clock that supplies nanosecond time.
+     *
+     * @return supplier of current nanoseconds, defaults to {@link java.lang.System#nanoTime()}
+     */
+    Optional<Supplier<Long>> clock();
 
     /**
      * Whether to collect metrics for the AIMD implementation.
