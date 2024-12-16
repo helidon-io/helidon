@@ -80,6 +80,7 @@
                     </dependency>
                 </dependencies>
                 <configuration>
+                    <generateMain>true</generateMain>
                     <packageName>my.updated</packageName>
                     <mainClassName>UpdatedMain</mainClassName>
                     <bindingClassName>UpdatedBinding</bindingClassName>

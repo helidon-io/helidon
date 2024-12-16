@@ -31,7 +31,7 @@ public interface DependencyPlanBinder {
      * @param descriptor the service to receive the injection plan.
      * @return the binder to use for binding the injection plan to the service provider
      */
-    Binder bindTo(ServiceInfo descriptor);
+    Binder service(ServiceInfo descriptor);
 
     /**
      * Bind all discovered interceptors.
@@ -53,129 +53,12 @@ public interface DependencyPlanBinder {
          * Binds a single service to the injection point identified by the id.
          * The injection point expects a single service instance.
          *
-         * @param dependency the injection point identity
-         * @param descriptor the service descriptor to bind to this identity
+         * @param dependency  the injection point identity
+         * @param descriptor  the service descriptor to bind to this identity
          * @return the binder builder
          */
         Binder bind(Dependency dependency,
-                    ServiceInfo descriptor);
-
-        /**
-         * Bind to an optional field, with zero or one services.
-         * The injection point expects an {@link java.util.Optional} of service instance.
-         *
-         * @param dependency  injection point identity
-         * @param descriptors the service descriptor to bind (zero or one)
-         * @return the binder builder
-         */
-        Binder bindOptional(Dependency dependency,
-                            ServiceInfo... descriptors);
-
-        /**
-         * Binds to a list field, with zero or more services.
-         * The injection point expects a {@link java.util.List} of service instances.
-         *
-         * @param dependency  the injection point identity
-         * @param descriptors service descriptors to bind to this identity (zero or more)
-         * @return the binder builder
-         */
-        Binder bindList(Dependency dependency,
-                        ServiceInfo... descriptors);
-
-        /**
-         * Binds to a supplier field.
-         * The injection point expects a {@link java.util.function.Supplier} of service.
-         *
-         * @param dependency the injection point identity
-         * @param descriptor the service descriptor to bind to this identity.
-         * @return the binder builder
-         */
-        Binder bindSupplier(Dependency dependency,
-                            ServiceInfo descriptor);
-
-        /**
-         * Bind to a supplier of optional field.
-         * The injection point expects a {@link java.util.function.Supplier} of {@link java.util.Optional} of service.
-         *
-         * @param dependency injection point identity
-         * @param descriptor the service descriptor to bind (zero or one)
-         * @return the binder builder
-         */
-        Binder bindSupplierOfOptional(Dependency dependency,
-                                      ServiceInfo... descriptor);
-
-        /**
-         * Bind to an optional supplier field.
-         * The injection point expects a {@link java.util.function.Supplier} of {@link java.util.Optional} of service.
-         *
-         * @param dependency injection point identity
-         * @param descriptor the service descriptor to bind (zero or one)
-         * @return the binder builder
-         */
-        Binder bindOptionalOfSupplier(Dependency dependency,
-                                      ServiceInfo... descriptor);
-
-        /**
-         * Bind to a supplier of list.
-         * The injection point expects a {@link java.util.function.Supplier} of {@link java.util.List} of services.
-         *
-         * @param dependency  the injection point identity
-         * @param descriptors service descriptor to bind to this identity (zero or more)
-         * @return the binder builder
-         */
-        Binder bindSupplierOfList(Dependency dependency,
-                                  ServiceInfo... descriptors);
-
-        /**
-         * Bind to a list of suppliers.
-         * The injection point expects a {@link java.util.List} of {@link java.util.function.Supplier Suppliers} of service.
-         *
-         * @param dependency  the injection point identity
-         * @param descriptors service descriptor to bind to this identity (zero or more)
-         * @return the binder builder
-         */
-        Binder bindListOfSuppliers(Dependency dependency,
-                                   ServiceInfo... descriptors);
-
-        /**
-         * Represents a null bind.
-         *
-         * @param dependency the injection point identity
-         * @return the binder builder
-         */
-        Binder bindNull(Dependency dependency);
-
-        /**
-         * Bind service instance.
-         *
-         * @param dependency the injection point identity
-         * @param descriptor the service descriptor to bind
-         * @return the binder builder
-         */
-        Binder bindServiceInstance(Dependency dependency, ServiceInfo descriptor);
-
-        /**
-         * Bind to a list of service instances.
-         *
-         * @param dependency  the injection point identity
-         * @param descriptors the service descriptors to bind (zero or more)
-         * @return the binder builder
-         */
-        Binder bindServiceInstanceList(Dependency dependency, ServiceInfo... descriptors);
-
-        /**
-         * Bind to an optional of service instance.
-         *
-         * @param dependency the injection point identity
-         * @param descriptor the service descriptor to bind (zero or one)
-         * @return the binder builder
-         */
-        Binder bindOptionalOfServiceInstance(Dependency dependency, ServiceInfo... descriptor);
-
-        /**
-         * Commits the bindings for this service provider.
-         */
-        void commit();
+                    ServiceInfo... descriptor);
 
     }
 

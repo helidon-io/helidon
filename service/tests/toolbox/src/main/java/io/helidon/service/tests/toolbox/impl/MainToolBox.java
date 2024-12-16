@@ -30,8 +30,8 @@ import io.helidon.service.tests.toolbox.ToolBox;
 @Service.Singleton
 public class MainToolBox implements ToolBox {
 
-    private final List<Supplier<Tool>> allTools;
-    private final List<Supplier<Hammer>> allHammers;
+    private final Supplier<List<Tool>> allTools;
+    private final Supplier<List<Hammer>> allHammers;
     private final Supplier<Hammer> bigHammer;
     private final Screwdriver screwdriver;
     public int postConstructCallCount;
@@ -43,10 +43,10 @@ public class MainToolBox implements ToolBox {
     private Supplier<Hammer> setPreferredHammer;
 
     @Service.Inject
-    MainToolBox(List<Supplier<Tool>> allTools,
+    MainToolBox(Supplier<List<Tool>> allTools,
                 Screwdriver screwdriver,
                 @Service.Named("big") Supplier<Hammer> bigHammer,
-                List<Supplier<Hammer>> allHammers) {
+                Supplier<List<Hammer>> allHammers) {
         this.allTools = Objects.requireNonNull(allTools);
         this.screwdriver = Objects.requireNonNull(screwdriver);
         this.bigHammer = bigHammer;
@@ -54,7 +54,7 @@ public class MainToolBox implements ToolBox {
     }
 
     @Override
-    public List<Supplier<Tool>> toolsInBox() {
+    public Supplier<List<Tool>> toolsInBox() {
         return allTools;
     }
 
@@ -63,7 +63,7 @@ public class MainToolBox implements ToolBox {
         return preferredHammer;
     }
 
-    public List<Supplier<Hammer>> allHammers() {
+    public Supplier<List<Hammer>> allHammers() {
         return allHammers;
     }
 

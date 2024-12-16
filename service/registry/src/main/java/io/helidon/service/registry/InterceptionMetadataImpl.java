@@ -112,11 +112,11 @@ class InterceptionMetadataImpl implements InterceptionMetadata {
         List<Supplier<Interception.Interceptor>> result = new ArrayList<>();
 
         for (ServiceManager<Interception.Interceptor> interceptor : allInterceptors) {
-            if (applicable(typeAnnotations, interceptor.injectDescriptor())) {
+            if (applicable(typeAnnotations, interceptor.descriptor())) {
                 result.add(new ServiceSupply<>(Lookup.EMPTY, List.of(interceptor)));
                 continue;
             }
-            if (applicable(element.annotations(), interceptor.injectDescriptor())) {
+            if (applicable(element.annotations(), interceptor.descriptor())) {
                 result.add(new ServiceSupply<>(Lookup.EMPTY, List.of(interceptor)));
             }
         }

@@ -19,7 +19,6 @@ package io.helidon.service.registry;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
@@ -60,8 +59,8 @@ final class ActivatorsPerLookup {
     static class SingleServiceActivator<T> extends Activators.BaseActivator<T> {
         protected OnDemandInstance<T> serviceInstance;
 
-        SingleServiceActivator(ServiceProvider<T> provider) {
-            super(provider);
+        SingleServiceActivator(ServiceProvider<T> provider, DependencyContext dependencyContext) {
+            super(provider, dependencyContext);
         }
 
         @Override
@@ -75,7 +74,7 @@ final class ActivatorsPerLookup {
 
         @Override
         protected void construct(ActivationResult.Builder response) {
-            this.serviceInstance = new OnDemandInstance<>(InjectionContext.create(provider.injectionPlan()),
+            this.serviceInstance = new OnDemandInstance<>(dependencyContext,
                                                           provider.interceptionMetadata(),
                                                           provider.descriptor());
         }
@@ -90,8 +89,8 @@ final class ActivatorsPerLookup {
      * {@code MyService implements Supplier<Contract>}.
      */
     static class SupplierActivator<T> extends SingleServiceActivator<T> {
-        SupplierActivator(ServiceProvider<T> provider) {
-            super(provider);
+        SupplierActivator(ServiceProvider<T> provider, DependencyContext dependencyContext) {
+            super(provider, dependencyContext);
         }
 
         @Override
@@ -133,8 +132,10 @@ final class ActivatorsPerLookup {
         private final Set<ResolvedType> supportedContracts;
         private final boolean anyMatch;
 
-        QualifiedFactoryActivator(ServiceProvider<T> provider, GeneratedService.QualifiedFactoryDescriptor qpd) {
-            super(provider);
+        QualifiedFactoryActivator(ServiceProvider<T> provider,
+                                  DependencyContext dependencyContext,
+                                  GeneratedService.QualifiedFactoryDescriptor qpd) {
+            super(provider, dependencyContext);
             this.supportedQualifier = qpd.qualifierType();
             this.supportedContracts = provider.descriptor().contracts()
                     .stream()
@@ -184,8 +185,8 @@ final class ActivatorsPerLookup {
      * {@code MyService implements InjectionPointProvider}.
      */
     static class IpFactoryActivator<T> extends SingleServiceActivator<T> {
-        IpFactoryActivator(ServiceProvider<T> provider) {
-            super(provider);
+        IpFactoryActivator(ServiceProvider<T> provider, DependencyContext dependencyContext) {
+            super(provider, dependencyContext);
         }
 
         @SuppressWarnings("unchecked")
@@ -215,8 +216,8 @@ final class ActivatorsPerLookup {
      * {@code MyService implements ServicesProvider}.
      */
     static class ServicesFactoryActivator<T> extends SingleServiceActivator<T> {
-        ServicesFactoryActivator(ServiceProvider<T> provider) {
-            super(provider);
+        ServicesFactoryActivator(ServiceProvider<T> provider, DependencyContext dependencyContext) {
+            super(provider, dependencyContext);
         }
 
         @SuppressWarnings("unchecked")
@@ -244,16 +245,20 @@ final class ActivatorsPerLookup {
      */
     static class PerInstanceActivator<T> extends Activators.BaseActivator<T> {
         private final CoreServiceRegistry registry;
+        private final Bindings.ServiceBindingPlan bindingPlan;
         private final ResolvedType createFor;
 
         private List<QualifiedOnDemandInstance<T>> serviceInstances;
 
         PerInstanceActivator(CoreServiceRegistry registry,
+                             DependencyContext dependencyContext,
+                             Bindings.ServiceBindingPlan bindingPlan,
                              ServiceProvider<T> provider,
                              GeneratedService.PerInstanceDescriptor dbd) {
-            super(provider);
+            super(provider, dependencyContext);
 
             this.registry = registry;
+            this.bindingPlan = bindingPlan;
             this.createFor = ResolvedType.create(dbd.createFor());
         }
 
@@ -269,7 +274,7 @@ final class ActivatorsPerLookup {
                             .stream()
                             .flatMap(List::stream)
                             .map(qi -> it.registryInstance(Lookup.EMPTY, qi)))
-                    .map(it -> QualifiedOnDemandInstance.create(provider, it))
+                    .map(it -> QualifiedOnDemandInstance.create(provider, bindingPlan, dependencyContext, it))
                     .collect(Collectors.toList());
         }
 
@@ -291,6 +296,8 @@ final class ActivatorsPerLookup {
     private record QualifiedOnDemandInstance<T>(OnDemandInstance<T> serviceInstance,
                                                 Set<Qualifier> qualifiers) {
         static <T> QualifiedOnDemandInstance<T> create(ServiceProvider<T> provider,
+                                                       Bindings.ServiceBindingPlan bindingPlan,
+                                                       DependencyContext dependencyContext,
                                                        ServiceInstance<?> driver) {
             Set<Qualifier> qualifiers = driver.qualifiers();
             Qualifier name = qualifiers.stream()
@@ -304,11 +311,13 @@ final class ActivatorsPerLookup {
                     .collect(Collectors.toSet());
             newQualifiers.add(name);
 
-            Map<Dependency, IpPlan<?>> injectionPlan = Activators.PerInstanceActivator.updatePlan(provider.injectionPlan(),
-                                                                                                  driver,
-                                                                                                  name);
+            DependencyContext targetDependencyContext =
+                    Activators.PerInstanceActivator.updatePlan(bindingPlan,
+                                                               dependencyContext,
+                                                               driver,
+                                                               name);
 
-            return new QualifiedOnDemandInstance<>(new OnDemandInstance<>(InjectionContext.create(injectionPlan),
+            return new QualifiedOnDemandInstance<>(new OnDemandInstance<>(targetDependencyContext,
                                                                           provider.interceptionMetadata(),
                                                                           provider.descriptor()),
                                                    newQualifiers);

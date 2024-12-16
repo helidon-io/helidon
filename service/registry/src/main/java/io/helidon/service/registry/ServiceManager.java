@@ -30,12 +30,15 @@ class ServiceManager<T> {
     private final ServiceProvider<T> provider;
     private final boolean explicitInstance;
     private final Supplier<Activator<T>> activatorSupplier;
+    private final CoreServiceRegistry registry;
     private final Supplier<Scope> scopeSupplier;
 
-    ServiceManager(Supplier<Scope> scopeSupplier,
+    ServiceManager(CoreServiceRegistry registry,
+                   Supplier<Scope> scopeSupplier,
                    ServiceProvider<T> provider,
                    boolean explicitInstance,
                    Supplier<Activator<T>> activatorSupplier) {
+        this.registry = registry;
         this.scopeSupplier = scopeSupplier;
         this.provider = provider;
         this.explicitInstance = explicitInstance;
@@ -47,12 +50,14 @@ class ServiceManager<T> {
         return provider.descriptor().serviceType().classNameWithEnclosingNames();
     }
 
-    void ensureInjectionPlan() {
+    void ensureBindingPlan() {
         if (explicitInstance) {
             // we do not need injection plan, if service was provided as an instance
             return;
         }
-        provider.injectionPlan();
+        registry.bindings()
+                .bindingPlan(provider.descriptor())
+                .ensure();
     }
 
     ServiceInstance<T> registryInstance(Lookup lookup, QualifiedInstance<T> instance) {
@@ -61,15 +66,7 @@ class ServiceManager<T> {
                                          instance);
     }
 
-    DependencyPlanBinder.Binder servicePlanBinder() {
-        return provider.servicePlanBinder();
-    }
-
     ServiceInfo descriptor() {
-        return provider.descriptor();
-    }
-
-    ServiceInfo injectDescriptor() {
         return provider.descriptor();
     }
 

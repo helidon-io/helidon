@@ -54,7 +54,29 @@ final class ServiceSupplies {
             result.addAll(thisManager);
         }
 
-        result.sort(RegistryInstanceComparator.instance());
+        if (result.isEmpty() || result.size() == 1) {
+            traceLookupInstances(lookup, result);
+            return List.copyOf(result);
+        }
+
+        /*
+        The instances are now ordered by weight of the service providers (implementation or factory)
+        We now need to update the ordering, to put unqualified instances first (unless a qualified lookup was done)
+        We cannot re-order them using the usual comparator, as the weight of the instance is never set
+         */
+        if (lookup.qualifiers().isEmpty()) {
+            List<ServiceInstance<T>> unqualified = new ArrayList<>();
+            List<ServiceInstance<T>> qualified = new ArrayList<>();
+            for (ServiceInstance<T> instance : result) {
+                if (instance.qualifiers().isEmpty()) {
+                    unqualified.add(instance);
+                } else {
+                    qualified.add(instance);
+                }
+            }
+            unqualified.addAll(qualified);
+            result = unqualified;
+        }
 
         traceLookupInstances(lookup, result);
 

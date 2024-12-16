@@ -34,6 +34,7 @@ import io.helidon.common.types.TypeNames;
 import io.helidon.service.codegen.ServiceCodegenTypes;
 import io.helidon.service.registry.Binding;
 import io.helidon.service.registry.Dependency;
+import io.helidon.service.registry.DependencyCardinality;
 import io.helidon.service.registry.DependencyContext;
 import io.helidon.service.registry.DependencyPlanBinder;
 import io.helidon.service.registry.Event;
@@ -45,9 +46,11 @@ import io.helidon.service.registry.InterceptionException;
 import io.helidon.service.registry.InterceptionInvoker;
 import io.helidon.service.registry.InterceptionMetadata;
 import io.helidon.service.registry.Qualifier;
+import io.helidon.service.registry.RegistryStartupProvider;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceDescriptor;
 import io.helidon.service.registry.ServiceInstance;
+import io.helidon.service.registry.ServiceLoader__ServiceDescriptor;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
@@ -93,6 +96,7 @@ class ServiceCodegenTypesTest {
         checkField(toCheck, checked, fields, "SERVICE_DEPENDENCY", Dependency.class);
         checkField(toCheck, checked, fields, "SERVICE_DEPENDENCY_CONTEXT", DependencyContext.class);
         checkField(toCheck, checked, fields, "SERVICE_DESCRIPTOR", ServiceDescriptor.class);
+        checkField(toCheck, checked, fields, "REGISTRY_STARTUP_PROVIDER", RegistryStartupProvider.class);
 
         checkField(toCheck, checked, fields, "BUILDER_BLUEPRINT", Prototype.Blueprint.class);
         checkField(toCheck, checked, fields, "GENERATED_ANNOTATION", Generated.class);
@@ -114,8 +118,11 @@ class ServiceCodegenTypesTest {
         checkField(toCheck, checked, fields, "SERVICE_QUALIFIED_FACTORY", Service.QualifiedFactory.class);
 
         checkField(toCheck, checked, fields, "SERVICE_CONFIG", ServiceRegistryConfig.class);
+        checkField(toCheck, checked, fields, "SERVICE_CONFIG_BUILDER", ServiceRegistryConfig.Builder.class);
         checkField(toCheck, checked, fields, "SERVICE_REGISTRY", ServiceRegistry.class);
         checkField(toCheck, checked, fields, "SERVICE_REGISTRY_MANAGER", ServiceRegistryManager.class);
+        checkField(toCheck, checked, fields, "DEPENDENCY_CARDINALITY", DependencyCardinality.class);
+        checkField(toCheck, checked, fields, "SERVICE_LOADER_DESCRIPTOR", ServiceLoader__ServiceDescriptor.class);
 
         // api.Interception.*
         checkField(toCheck, checked, fields, "INTERCEPTION_INTERCEPTED", Interception.Intercepted.class);
@@ -168,6 +175,10 @@ class ServiceCodegenTypesTest {
         checkField(toCheck, checked, fields, "LIST_OF_DEPENDENCIES", TypeName.builder()
                 .type(List.class)
                 .addTypeArgument(TypeName.create(Dependency.class))
+                .build());
+        checkField(toCheck, checked, fields, "LIST_OF_DOUBLES", TypeName.builder()
+                .type(List.class)
+                .addTypeArgument(TypeName.create(Double.class))
                 .build());
         checkField(toCheck, checked, fields, "SET_OF_QUALIFIERS", TypeName.builder()
                 .type(Set.class)

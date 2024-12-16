@@ -81,6 +81,7 @@
                 </dependencies>
                 <configuration>
                     <failOnWarning>true</failOnWarning>
+                    <generateMain>true</generateMain>
                 </configuration>
             </plugin>
         </plugins>

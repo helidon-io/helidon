@@ -44,12 +44,12 @@ class TableSaw extends AbstractSaw {
 
     @Service.Inject
     @Service.Named(CoarseBlade.NAME)
-    List<Supplier<AbstractBlade>> coarseBladeFieldInjectedPkgPrivateProviderListInSubClass;
+    Supplier<List<AbstractBlade>> coarseBladeFieldInjectedPkgPrivateProviderListInSubClass;
 
     Supplier<AbstractBlade> setterInjectedPkgPrivateProviderInSubClass;
     Optional<AbstractBlade> setterInjectedPkgPrivateOptionalInSubClass;
     List<AbstractBlade> setterInjectedPkgPrivateListInSubClass;
-    List<Supplier<AbstractBlade>> setterInjectedPkgPrivateProviderListInSubClass;
+    Supplier<List<AbstractBlade>> setterInjectedPkgPrivateProviderListInSubClass;
     int setterInjectedPkgPrivateProviderInSubClassInjectedCount;
     int setterInjectedPkgPrivateOptionalInSubClassInjectedCount;
     int setterInjectedPkgPrivateListInSubClassInjectedCount;
@@ -136,7 +136,7 @@ class TableSaw extends AbstractSaw {
     }
 
     @Service.Inject
-    void setBladeProviderListInSubclass(List<Supplier<AbstractBlade>> blades) {
+    void setBladeProviderListInSubclass(Supplier<List<AbstractBlade>> blades) {
         setterInjectedPkgPrivateProviderListInSubClass = blades;
         setterInjectedPkgPrivateProviderListInSubClassInjectedCount++;
     }

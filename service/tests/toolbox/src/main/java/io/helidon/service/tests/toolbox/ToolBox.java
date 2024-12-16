@@ -32,7 +32,7 @@ public interface ToolBox {
      *
      * @return for testing
      */
-    List<Supplier<Tool>> toolsInBox();
+    Supplier<List<Tool>> toolsInBox();
 
     /**
      * Testing.

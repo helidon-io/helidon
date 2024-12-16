@@ -10,8 +10,25 @@ The Helidon Service Maven Plugin provides the following goals:
 This goal creates artifacts that are only valid for the service (assembled from libraries and its own sources).
 This goal generates:
 
-1. Application Binding - a mapping of services to injection points (to bypass runtime lookups) - generates class `Injection__Binding`
-2. Application Main - a generated main class that registers all services (to bypass service discovery) - generates class `ApplicationMain`
+1. Application Binding - a mapping of services to injection points (to bypass runtime lookups), and of service descriptors (to bypass runtime service discovery and reflection) - generates class `Application__Binding`
+
+To create a custom main class, use the following:
+```java
+public static void main(String[] args) {
+    // this will disable service discovery
+    ServiceRegistryManager.start(Application__Binding.create());
+    // alternative - to provide custom configuration; the configuration will only be updated from the generated binding class,
+    // all other options in the config will be left intact
+    // this will honor service discovery configured in the config!
+    // also if any run level is configured, run levels will not be modified; if you do not want to run any run level annotated
+    // service, simply set max run level to 0
+    ServiceRegistryManager.start(Application__Binding.create(), ServiceRegistryConfig.builder().build());
+}
+```
+
+To use a generated main class, enable it with the maven plugin, an `ApplicationMain` class will be code generated with
+a similar content.
+
 
 Usage of this plugin goal is not required, yet it is recommended for final application module, it will add
 - binding for injection points, to avoid runtime lookups

@@ -27,7 +27,6 @@ import io.helidon.common.types.TypeName;
  * <p>
  * Binding instances MUST NOT have injection points.
  */
-@Service.Contract
 public interface Binding {
     /**
      * Type name of this interface.
@@ -42,9 +41,21 @@ public interface Binding {
     String name();
 
     /**
-     * Configure injection points and dependencies in this application.
+     * For each service in this application, bind services that satisfy its injection points.
      *
-     * @param binder the binder used to register the service provider injection plans
+     * @param binder the binder used to register the service provider dependency injection plan
      */
-    void configure(DependencyPlanBinder binder);
+    void binding(DependencyPlanBinder binder);
+
+    /**
+     * Register all services with the configuration.
+     * When application binding is available to the registry, automatic discovery of services is disabled, and only services
+     * registered in this method will be used by the registry.
+     * <p>
+     * The services registered in this method must be aligned with {@link #binding(DependencyPlanBinder)}, as otherwise
+     * inconsistent registry would be created.
+     *
+     * @param builder configuration builder to register service descriptors
+     */
+    void configure(ServiceRegistryConfig.Builder builder);
 }

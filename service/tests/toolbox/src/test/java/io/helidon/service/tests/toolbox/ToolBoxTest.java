@@ -84,7 +84,7 @@ class ToolBoxTest {
         assertThat(mtb.preDestroyCallCount, equalTo(0));
         assertThat(mtb.setterCallCount, equalTo(1));
 
-        List<Supplier<Tool>> allTools = mtb.toolsInBox();
+        List<Tool> allTools = mtb.toolsInBox().get();
         assertThat(allTools, hasSize(7));
         assertThat(mtb.screwdriver(), notNullValue());
 
@@ -94,22 +94,21 @@ class ToolBoxTest {
         assertThat(hammer.get(), instanceOf(BigHammer.class));
 
         List<String> toolTypes = allTools.stream()
-                .map(Supplier::get)
                 .map(Object::getClass)
                 .map(Class::getSimpleName)
                 .toList();
-        assertThat(toolTypes, contains("SledgeHammer", // weight + 2, tbox.impl.SledgeHammer
-                                       "BigHammer", // weight + 1, tbox.impl.BigHammer
-                                       "TableSaw",  // tbox.TableSaw
-                                       "AwlImpl", // tbox.impl.AwlImpl
-                                       "HandSaw", // tbox.impl.HandSaw
-                                       "Screwdriver", // tbox.impl.Screwdriver
-                                       "LittleHammer" // tbox.impl.LittleHammer, has qualifier Named
+        assertThat(toolTypes, contains("SledgeHammer", // unqualified, weight + 2, tbox.impl.SledgeHammer
+                                       "TableSaw",  // unqualified, default weight, tbox.TableSaw
+                                       "AwlImpl", // unqualified, default weight, tbox.impl.AwlImpl
+                                       "HandSaw", // unqualified, default weight, tbox.impl.HandSaw
+                                       "Screwdriver", // unqualified, default weight, tbox.impl.Screwdriver
+                                       "BigHammer", // qualified - named, preferred, weight + 1, tbox.impl.BigHammer
+                                       "LittleHammer" // qualified - named, default weight, tbox.impl.LittleHammer
         ));
 
         List<String> hammers = mtb.allHammers()
+                .get()
                 .stream()
-                .map(Supplier::get)
                 .map(Object::getClass)
                 .map(Class::getSimpleName)
                 .toList();

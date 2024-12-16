@@ -117,9 +117,10 @@ interface ServiceRegistryConfigBlueprint {
 
     /**
      * Flag indicating whether compile-time generated {@link io.helidon.service.registry.Binding}'s
-     * should be used at initialization.
-     * Even if set to {@code true}, this is effective only if an {@link io.helidon.service.registry.Binding}
-     * was generated using Helidon Service Maven Plugin.
+     * should be used at initialization when starting the registry using
+     * {@link io.helidon.service.registry.ServiceRegistryManager#start(Binding)}.
+     * <p>
+     * This option is ignored when starting the service registry in any other way.
      *
      * @return the flag indicating whether the provider is permitted to use binding generated code from compile-time,
      *         defaults to {@code true}
@@ -127,4 +128,29 @@ interface ServiceRegistryConfigBlueprint {
      */
     @Option.DefaultBoolean(true)
     boolean useBinding();
+
+    /**
+     * Maximal run level to handle when starting from {@link io.helidon.service.registry.ServiceRegistryManager#start(Binding)}.
+     * This setting is ignored when starting registry using
+     * other means, as run levels are not handled by default.
+     *
+     * @return maximal run level to lookup during application startup when using generated binding
+     */
+    @Option.DefaultDouble(Double.MAX_VALUE)
+    double maxRunLevel();
+
+    /**
+     * Run levels that should be initialized at startup.
+     * Generated {@link io.helidon.service.registry.Binding} will configure all declared run levels of services in the
+     * application.
+     * <p>
+     * Note that the result WILL be ordered before use, so initialization will always be handled from the smallest run level
+     * to the highest.
+     *
+     * @return run levels to initialize, up to {@link #maxRunLevel()}, only used when starting the registry through
+     * {@link io.helidon.service.registry.ServiceRegistryManager#start(Binding)}
+     * or {@link io.helidon.service.registry.ServiceRegistryManager#start(Binding, ServiceRegistryConfig)}
+     */
+    @Option.Singular
+    List<Double> runLevels();
 }

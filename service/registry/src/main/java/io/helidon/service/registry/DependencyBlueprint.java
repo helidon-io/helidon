@@ -29,9 +29,9 @@ import io.helidon.common.types.TypeName;
 
 /**
  * Dependency metadata.
- * The basic dependency supports other services to be passed to a constructor parameter.
- * The dependency may be a contract, {@link java.util.List} of contracts, or an {@link java.util.Optional}
- * of contract, or {@link java.util.function.Supplier} of any of these.
+ * <p>
+ * Dependencies can be injected into a service through a constructor. We also support field injection, though it is not
+ * recommended due to complicated unit testing.
  */
 @Prototype.Blueprint
 interface DependencyBlueprint {
@@ -140,4 +140,28 @@ interface DependencyBlueprint {
      */
     @Option.Redundant(stringValue = false)
     Optional<String> method();
+
+    /**
+     * Cardinality of this dependency. Defaults to {@link io.helidon.service.registry.DependencyCardinality#REQUIRED}.
+     *
+     * @return cardinality of this dependency
+     */
+    @Option.Default("REQUIRED")
+    DependencyCardinality cardinality();
+
+    /**
+     * Whether this dependency uses {@link io.helidon.service.registry.ServiceInstance}.
+     * Defaults to {@code false}, which means the service is injected via its contract.
+     *
+     * @return whether the dependency is declared as a {@link io.helidon.service.registry.ServiceInstance}
+     */
+    boolean isServiceInstance();
+
+    /**
+     * Whether this dependency uses a {@link java.util.function.Supplier} instead of a direct instance.
+     * This defaults to {@code false}.
+     *
+     * @return whether the dependency injection point uses a supplier
+     */
+    boolean isSupplier();
 }

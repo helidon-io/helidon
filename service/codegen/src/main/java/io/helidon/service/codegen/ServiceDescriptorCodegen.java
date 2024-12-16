@@ -61,6 +61,7 @@ import static io.helidon.codegen.CodegenUtil.toConstantName;
 import static io.helidon.service.codegen.CodegenHelper.annotationsField;
 import static io.helidon.service.codegen.ServiceCodegenTypes.ANY_GENERIC_TYPE;
 import static io.helidon.service.codegen.ServiceCodegenTypes.BUILDER_BLUEPRINT;
+import static io.helidon.service.codegen.ServiceCodegenTypes.DEPENDENCY_CARDINALITY;
 import static io.helidon.service.codegen.ServiceCodegenTypes.GENERIC_T_TYPE;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INTERCEPTION_DELEGATE;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INTERCEPTION_EXTERNAL_DELEGATE;
@@ -815,7 +816,7 @@ public class ServiceDescriptorCodegen {
         return method.parameterArguments()
                 .stream()
                 .map(param -> {
-                    String constantName = "IP_PARAM_" + paramCounter.getAndIncrement();
+                    String constantName = "DEP_" + paramCounter.getAndIncrement();
                     var assignment = translateParameter(param.typeName(), constantName);
                     return new ParamDefinition(method,
                                                methodConstantName,
@@ -848,7 +849,7 @@ public class ServiceDescriptorCodegen {
         constructor.parameterArguments()
                 .stream()
                 .map(param -> {
-                    String constantName = "IP_PARAM_" + paramCounter.getAndIncrement();
+                    String constantName = "DEP_" + paramCounter.getAndIncrement();
                     var assignment = translateParameter(param.typeName(), constantName);
                     return new ParamDefinition(constructor,
                                                null,
@@ -877,7 +878,7 @@ public class ServiceDescriptorCodegen {
                             List<ParamDefinition> result,
                             AtomicInteger paramCounter,
                             TypedElementInfo field) {
-        String constantName = "IP_PARAM_" + paramCounter.getAndIncrement();
+        String constantName = "DEP_" + paramCounter.getAndIncrement();
         var assignment = translateParameter(field.typeName(), constantName);
 
         result.add(new ParamDefinition(field,
@@ -1069,6 +1070,7 @@ public class ServiceDescriptorCodegen {
                                       List<ParamDefinition> params) {
         // constant for injection points
         for (ParamDefinition param : params) {
+            DependencyMetadata dependencyMetadata = dependencyMetadata(param);
             classModel.addField(field -> field
                     .accessModifier(AccessModifier.PUBLIC)
                     .isStatic(true)
@@ -1145,11 +1147,122 @@ public class ServiceDescriptorCodegen {
                             }
                         }
 
+                        if (!dependencyMetadata.cardinality.equals("REQUIRED")) {
+                            // only set if not default
+                            it.addContent(".cardinality(")
+                                    .addContent(DEPENDENCY_CARDINALITY)
+                                    .addContent(".")
+                                    .addContent(dependencyMetadata.cardinality())
+                                    .addContentLine(")");
+                        }
+                        if (dependencyMetadata.serviceInstance()) {
+                            it.addContent(".isServiceInstance(")
+                                    .addContent(String.valueOf(dependencyMetadata.serviceInstance()))
+                                    .addContentLine(")");
+                        }
+                        if (dependencyMetadata.supplier()) {
+                            it.addContent(".isSupplier(")
+                                    .addContent(String.valueOf(dependencyMetadata.supplier()))
+                                    .addContentLine(")");
+                        }
+
                         it.addContent(".build()")
                                 .decreaseContentPadding()
                                 .decreaseContentPadding();
                     }));
         }
+    }
+
+    private DependencyMetadata dependencyMetadata(ParamDefinition param) {
+        TypeName declared = param.declaredType();
+
+        // supplier is honored only on the first level (i.e. we do not support Optional<Supplier> or List<Supplier>)
+        boolean isSupplier = declared.isSupplier();
+        boolean isServiceInstance;
+        /*
+        REQUIRED
+        OPTIONAL
+        LIST
+         */
+        String cardinality;
+
+        if (isSupplier) {
+            // Supplier<List>, Supplier<ServiceInstance>, Supplier<Contract>, Supplier<Optional<ServiceInstance>> ...
+            declared = declared.typeArguments().getFirst();
+        }
+
+        if (declared.isSupplier()) {
+            throw new CodegenException("Dependency is declared as a Supplier<Supplier<>> - this is not supported",
+                                       param.elementInfo().originatingElementValue());
+        }
+
+        if (declared.isOptional()) {
+            // lists cannot be optional
+            cardinality = "OPTIONAL";
+            TypeName actualContract = declared.typeArguments().getFirst();
+            if (actualContract.isSupplier()) {
+                throw new CodegenException("Dependency has Optional<Supplier<>> - this is not supported, please use "
+                                                   + "Supplier<Optional>",
+                                           param.elementInfo().originatingElementValue());
+            }
+            if (actualContract.isOptional()) {
+                throw new CodegenException("Dependency has Optional<Optional<>> - this is not supported",
+                                           param.elementInfo().originatingElementValue());
+            }
+            if (actualContract.isList()) {
+                throw new CodegenException("Dependency has Optional<List<>> - this is not supported, Lists are empty if "
+                                                   + "no service satisfies them, so please use List<> instead",
+                                           param.elementInfo().originatingElementValue());
+            }
+            isServiceInstance = isServiceInstance(actualContract);
+        } else if (isServiceInstance(declared)) {
+            // service instance is a direct map to an instance, so cannot be list or optional
+            cardinality = "REQUIRED";
+            isServiceInstance = true;
+
+            TypeName actualContract = declared.typeArguments().getFirst();
+            if (actualContract.isSupplier()) {
+                throw new CodegenException("Dependency has ServiceInstance<Supplier<>> - this is not supported, please use "
+                                                   + "Supplier<ServiceInstance<>>",
+                                           param.elementInfo().originatingElementValue());
+            }
+            if (actualContract.isOptional()) {
+                throw new CodegenException("Dependency has ServiceInstance<Optional<>> - this is not supported, please use "
+                                                   + "Optional<ServiceInstance<?>>",
+                                           param.elementInfo().originatingElementValue());
+            }
+            if (actualContract.isList()) {
+                throw new CodegenException("Dependency has ServiceInstance<List<>> - this is not supported, please use"
+                                                   + "List<ServiceInstance<>>",
+                                           param.elementInfo().originatingElementValue());
+            }
+        } else if (declared.isList()) {
+            cardinality = "LIST";
+            TypeName actualContract = declared.typeArguments().getFirst();
+            if (actualContract.isSupplier()) {
+                throw new CodegenException("Dependency has List<Supplier<>> - this is not supported, please use "
+                                                   + "Supplier<List<>>",
+                                           param.elementInfo().originatingElementValue());
+            }
+            if (actualContract.isOptional()) {
+                throw new CodegenException("Dependency has List<Optional<>> - this is not supported",
+                                           param.elementInfo().originatingElementValue());
+            }
+            if (actualContract.isList()) {
+                throw new CodegenException("Dependency has List<List<>> - this is not supported",
+                                           param.elementInfo().originatingElementValue());
+            }
+            isServiceInstance = isServiceInstance(actualContract);
+        } else {
+            cardinality = "REQUIRED";
+            isServiceInstance = false;
+        }
+
+        return new DependencyMetadata(cardinality, isServiceInstance, isSupplier);
+    }
+
+    private boolean isServiceInstance(TypeName typeName) {
+        return typeName.equals(SERVICE_SERVICE_INSTANCE);
     }
 
     private String ipIdDescription(TypeInfo service, ParamDefinition param) {
@@ -2364,6 +2477,11 @@ public class ServiceDescriptorCodegen {
                     }
                 })
         );
+    }
+
+    private record DependencyMetadata(String cardinality,
+                                      boolean serviceInstance,
+                                      boolean supplier) {
     }
 
     private record GenericTypeDeclaration(String constantName,

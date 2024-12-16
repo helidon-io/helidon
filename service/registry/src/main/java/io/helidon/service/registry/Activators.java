@@ -74,21 +74,29 @@ final class Activators {
 
     static <T> Supplier<Activator<T>> create(CoreServiceRegistry registry, ServiceProvider<T> provider) {
         ServiceDescriptor<T> descriptor = provider.descriptor();
+        // as this is going to create an instance of the service, we need the dependency context
+        var bindingPlan = registry.bindings().bindingPlan(descriptor);
+        DependencyContext dependencyContext = new BindingDependencyContext(bindingPlan);
 
         if (descriptor.scope().equals(Service.PerLookup.TYPE)) {
             return switch (descriptor.factoryType()) {
                 case NONE -> new MissingDescribedActivator<>(provider);
                 case SERVICE -> {
                     if (descriptor instanceof PerInstanceDescriptor dbd) {
-                        yield () -> new ActivatorsPerLookup.PerInstanceActivator<>(registry, provider, dbd);
+                        yield () -> new ActivatorsPerLookup.PerInstanceActivator<>(registry,
+                                                                                   dependencyContext,
+                                                                                   bindingPlan,
+                                                                                   provider,
+                                                                                   dbd);
                     }
-                    yield () -> new ActivatorsPerLookup.SingleServiceActivator<>(provider);
+                    yield () -> new ActivatorsPerLookup.SingleServiceActivator<>(provider, dependencyContext);
                 }
-                case SUPPLIER -> () -> new ActivatorsPerLookup.SupplierActivator<>(provider);
-                case SERVICES -> () -> new ActivatorsPerLookup.ServicesFactoryActivator<>(provider);
-                case INJECTION_POINT -> () -> new ActivatorsPerLookup.IpFactoryActivator<>(provider);
+                case SUPPLIER -> () -> new ActivatorsPerLookup.SupplierActivator<>(provider, dependencyContext);
+                case SERVICES -> () -> new ActivatorsPerLookup.ServicesFactoryActivator<>(provider, dependencyContext);
+                case INJECTION_POINT -> () -> new ActivatorsPerLookup.IpFactoryActivator<>(provider, dependencyContext);
                 case QUALIFIED -> () ->
                         new ActivatorsPerLookup.QualifiedFactoryActivator<>(provider,
+                                                                            dependencyContext,
                                                                             (QualifiedFactoryDescriptor) descriptor);
             };
         } else {
@@ -96,28 +104,62 @@ final class Activators {
                 case NONE -> new MissingDescribedActivator<>(provider);
                 case SERVICE -> {
                     if (descriptor instanceof PerInstanceDescriptor dbd) {
-                        yield () -> new PerInstanceActivator<>(registry, provider, dbd);
+                        yield () -> new PerInstanceActivator<>(registry, provider, dependencyContext, bindingPlan, dbd);
                     }
-                    yield () -> new Activators.SingleServiceActivator<>(provider);
+                    yield () -> new Activators.SingleServiceActivator<>(provider, dependencyContext);
                 }
-                case SUPPLIER -> () -> new Activators.SupplierActivator<>(provider);
-                case SERVICES -> () -> new ServicesFactoryActivator<>(provider);
-                case INJECTION_POINT -> () -> new IpFactoryActivator<>(provider);
+                case SUPPLIER -> () -> new Activators.SupplierActivator<>(provider, dependencyContext);
+                case SERVICES -> () -> new ServicesFactoryActivator<>(provider, dependencyContext);
+                case INJECTION_POINT -> () -> new IpFactoryActivator<>(provider, dependencyContext);
                 case QUALIFIED -> () ->
                         new QualifiedFactoryActivator<>(provider,
+                                                        dependencyContext,
                                                         (QualifiedFactoryDescriptor) descriptor);
             };
         }
     }
 
+    interface InstanceHolder<T> {
+        static <T> InstanceHolder<T> create(ServiceProvider<T> serviceProvider, DependencyContext dependencyContext) {
+            // the same instance is returned for the lifetime of the service provider
+            return new InstanceHolderImpl<>(dependencyContext,
+                                            serviceProvider.interceptionMetadata(),
+                                            serviceProvider.descriptor());
+        }
+
+        // we use the instance holder to hold either the actual instance,
+        // or the factory; this is a place for improvement
+        @SuppressWarnings("unchecked")
+        static <T> InstanceHolder<T> create(Object instance) {
+            return new FixedInstanceHolder<>((T) instance);
+        }
+
+        T get();
+
+        default void construct() {
+        }
+
+        default void inject() {
+        }
+
+        default void postConstruct() {
+        }
+
+        default void preDestroy() {
+        }
+    }
+
     abstract static class BaseActivator<T> implements Activator<T> {
         final ServiceProvider<T> provider;
+        final DependencyContext dependencyContext;
+
         private final ReadWriteLock instanceLock = new ReentrantReadWriteLock();
 
         volatile ActivationPhase currentPhase = ActivationPhase.INIT;
 
-        BaseActivator(ServiceProvider<T> provider) {
+        BaseActivator(ServiceProvider<T> provider, DependencyContext dependencyContext) {
             this.provider = provider;
+            this.dependencyContext = dependencyContext;
         }
 
         // three states
@@ -365,9 +407,9 @@ final class Activators {
         private final Optional<List<QualifiedInstance<T>>> instances;
 
         FixedActivator(ServiceProvider<T> provider, T instance) {
-            super(provider);
+            super(provider, null);
 
-            List<QualifiedInstance<T>> values = List.of(QualifiedInstance.create(instance, provider.serviceInfo().qualifiers()));
+            List<QualifiedInstance<T>> values = List.of(QualifiedInstance.create(instance, provider.descriptor().qualifiers()));
             this.instances = Optional.of(values);
         }
 
@@ -381,7 +423,7 @@ final class Activators {
         private final Supplier<Optional<List<QualifiedInstance<T>>>> instances;
 
         FixedSupplierActivator(ServiceProvider<T> provider, Supplier<T> instanceSupplier) {
-            super(provider);
+            super(provider, null);
 
             instances = LazyValue.create(() -> {
                 List<QualifiedInstance<T>> values = List.of(QualifiedInstance.create(instanceSupplier.get(),
@@ -400,8 +442,8 @@ final class Activators {
     static class FixedIpFactoryActivator<T> extends IpFactoryActivator<T> {
 
         FixedIpFactoryActivator(ServiceProvider<T> provider,
-                                       InjectionPointFactory<T> instance) {
-            super(provider);
+                                InjectionPointFactory<T> instance) {
+            super(provider, null);
             serviceInstance = InstanceHolder.create(instance);
         }
     }
@@ -409,7 +451,7 @@ final class Activators {
     static class FixedServicesFactoryActivator<T> extends ServicesFactoryActivator<T> {
         FixedServicesFactoryActivator(ServiceProvider<T> provider,
                                       Service.ServicesFactory<T> factory) {
-            super(provider);
+            super(provider, null);
             serviceInstance = InstanceHolder.create(factory);
         }
     }
@@ -417,7 +459,7 @@ final class Activators {
     static class FixedQualifiedFactoryActivator<T> extends QualifiedFactoryActivator<T> {
         FixedQualifiedFactoryActivator(ServiceProvider<T> provider,
                                        QualifiedFactory<T, ?> factory) {
-            super(provider, (QualifiedFactoryDescriptor) provider.descriptor());
+            super(provider, null, (QualifiedFactoryDescriptor) provider.descriptor());
             serviceInstance = InstanceHolder.create(factory);
         }
     }
@@ -431,8 +473,8 @@ final class Activators {
         protected InstanceHolder<T> serviceInstance;
         protected List<QualifiedInstance<T>> targetInstances;
 
-        SingleServiceActivator(ServiceProvider<T> provider) {
-            super(provider);
+        SingleServiceActivator(ServiceProvider<T> provider, DependencyContext dependencyContext) {
+            super(provider, dependencyContext);
         }
 
         @Override
@@ -451,7 +493,7 @@ final class Activators {
                 lock.lock();
                 if (serviceInstance == null) {
                     // it may have been set explicitly when creating registry
-                    this.serviceInstance = InstanceHolder.create(provider, provider.injectionPlan());
+                    this.serviceInstance = InstanceHolder.create(provider, dependencyContext);
                 }
                 this.serviceInstance.construct();
             } finally {
@@ -495,8 +537,8 @@ final class Activators {
      * {@code MyService implements Supplier<Contract>}.
      */
     static class SupplierActivator<T> extends SingleServiceActivator<T> {
-        SupplierActivator(ServiceProvider<T> provider) {
-            super(provider);
+        SupplierActivator(ServiceProvider<T> provider, DependencyContext dependencyContext) {
+            super(provider, dependencyContext);
         }
 
         @Override
@@ -531,8 +573,10 @@ final class Activators {
         private final Set<ResolvedType> supportedContracts;
         private final boolean anyMatch;
 
-        QualifiedFactoryActivator(ServiceProvider<T> provider, QualifiedFactoryDescriptor qpd) {
-            super(provider);
+        QualifiedFactoryActivator(ServiceProvider<T> provider,
+                                  DependencyContext dependencyContext,
+                                  QualifiedFactoryDescriptor qpd) {
+            super(provider, dependencyContext);
             this.supportedQualifier = qpd.qualifierType();
             this.supportedContracts = provider.descriptor()
                     .contracts()
@@ -588,8 +632,8 @@ final class Activators {
      * {@code MyService implements InjectionPointProvider}.
      */
     static class IpFactoryActivator<T> extends SingleServiceActivator<T> {
-        IpFactoryActivator(ServiceProvider<T> provider) {
-            super(provider);
+        IpFactoryActivator(ServiceProvider<T> provider, DependencyContext dependencyContext) {
+            super(provider, dependencyContext);
         }
 
         @Override
@@ -624,8 +668,8 @@ final class Activators {
      * {@code MyService implements ServicesProvider}.
      */
     static class ServicesFactoryActivator<T> extends SingleServiceActivator<T> {
-        ServicesFactoryActivator(ServiceProvider<T> provider) {
-            super(provider);
+        ServicesFactoryActivator(ServiceProvider<T> provider, DependencyContext dependencyContext) {
+            super(provider, dependencyContext);
         }
 
         @Override
@@ -672,39 +716,50 @@ final class Activators {
         private final CoreServiceRegistry registry;
         private final ResolvedType createFor;
         private final Lookup createForLookup;
+        private final Bindings.ServiceBindingPlan bindingPlan;
+
         private List<QualifiedServiceInstance<T>> serviceInstances;
         private List<QualifiedInstance<T>> targetInstances;
 
-        PerInstanceActivator(CoreServiceRegistry registry, ServiceProvider<T> provider, PerInstanceDescriptor dbd) {
-            super(provider);
+        PerInstanceActivator(CoreServiceRegistry registry,
+                             ServiceProvider<T> provider,
+                             DependencyContext dependencyContext,
+                             Bindings.ServiceBindingPlan bindingPlan,
+                             PerInstanceDescriptor dbd) {
+            super(provider, dependencyContext);
 
             this.registry = registry;
+            this.bindingPlan = bindingPlan;
             this.createFor = ResolvedType.create(dbd.createFor());
             this.createForLookup = Lookup.builder()
                     .addContract(createFor)
                     .build();
         }
 
-        static Map<Dependency, IpPlan<?>> updatePlan(Map<Dependency, IpPlan<?>> injectionPlan,
-                                                     ServiceInstance<?> driver,
-                                                     Qualifier name) {
-
-            Set<Dependency> ips = Set.copyOf(injectionPlan.keySet());
+        static DependencyContext updatePlan(Bindings.ServiceBindingPlan injectionPlan,
+                                            DependencyContext dependencyContext,
+                                            ServiceInstance<?> driver,
+                                            Qualifier name) {
 
             Set<ResolvedType> contracts = driver.contracts();
 
-            Map<Dependency, IpPlan<?>> updatedPlan = new HashMap<>(injectionPlan);
+            Map<Dependency, Supplier<Object>> targetPlan = new HashMap<>();
 
-            for (Dependency dependency : ips) {
+            for (Bindings.DependencyBinding binding : injectionPlan.allBindings()) {
+                Dependency dependency = binding.dependency();
+
+                boolean updated = false;
                 // injection point for the driving instance
                 if (contracts.contains(ResolvedType.create(dependency.contract()))
                         && dependency.qualifiers().isEmpty()) {
-                    if (ServiceInstance.TYPE.equals(dependency.typeName())) {
-                        // if the injection point has the same contract, no qualifiers, then it is the driving instance
-                        updatedPlan.put(dependency, new IpPlan<>(() -> driver, injectionPlan.get(dependency).descriptors()));
+                    updated = true;
+                    // if the injection point has the same contract, no qualifiers, then it is the driving instance
+                    if (dependency.isServiceInstance()) {
+                        // return ServiceInstance
+                        targetPlan.put(dependency, () -> driver);
                     } else {
-                        // if the injection point has the same contract, no qualifiers, then it is the driving instance
-                        updatedPlan.put(dependency, new IpPlan<>(driver, injectionPlan.get(dependency).descriptors()));
+                        // return instance
+                        targetPlan.put(dependency, driver::get);
                     }
                 }
                 // injection point for the service name
@@ -713,14 +768,18 @@ final class Activators {
                     if (dependency.qualifiers()
                             .stream()
                             .anyMatch(it -> Service.InstanceName.TYPE.equals(it.typeName()))) {
-                        updatedPlan.put(dependency,
-                                        new IpPlan<>(() -> name.value().orElse(Service.Named.DEFAULT_NAME),
-                                                     injectionPlan.get(dependency).descriptors()));
+                        updated = true;
+                        targetPlan.put(dependency, () -> name.value().orElse(Service.Named.DEFAULT_NAME));
                     }
+                }
+
+                if (!updated) {
+                    // fallback to original instance
+                    targetPlan.put(dependency, () -> dependencyContext.dependency(dependency));
                 }
             }
 
-            return updatedPlan;
+            return new SupplierDependencyContext(targetPlan);
         }
 
         @Override
@@ -728,7 +787,7 @@ final class Activators {
             // at this moment, we must resolve services that are driving this instance
 
             // we do not want to use lookup, as that is doing too much for us
-            List<ServiceInstance<Object>> drivingInstances = driversFromPlan(provider.injectionPlan(), createFor)
+            List<ServiceInstance<Object>> drivingInstances = driversFromPlan(bindingPlan, createFor)
                     .stream()
                     .map(registry::serviceManager)
                     .flatMap(it -> it.activator()
@@ -739,7 +798,7 @@ final class Activators {
                     .toList();
 
             serviceInstances = drivingInstances.stream()
-                    .map(it -> QualifiedServiceInstance.create(provider, it))
+                    .map(it -> QualifiedServiceInstance.create(provider, bindingPlan, dependencyContext, it))
                     .toList();
             for (QualifiedServiceInstance<T> serviceInstance : serviceInstances) {
                 serviceInstance.serviceInstance().construct();
@@ -795,23 +854,27 @@ final class Activators {
             return Optional.of(List.copyOf(response));
         }
 
-        private List<ServiceInfo> driversFromPlan(Map<Dependency, IpPlan<?>> ipSupplierMap, ResolvedType createFor) {
+        private List<ServiceInfo> driversFromPlan(Bindings.ServiceBindingPlan ipSupplierMap, ResolvedType createFor) {
             // I need the list of descriptors from the injection plan
-            for (Map.Entry<Dependency, IpPlan<?>> entry : ipSupplierMap.entrySet()) {
-                Dependency dependency = entry.getKey();
+            for (Bindings.DependencyBinding binding : ipSupplierMap.allBindings()) {
+                Dependency dependency = binding.dependency();
                 if (createFor.equals(ResolvedType.create(dependency.contract()))
                         && dependency.qualifiers().size() == 1
                         && dependency.qualifiers().contains(Qualifier.WILDCARD_NAMED)) {
-                    return List.of(entry.getValue().descriptors());
+                    return binding.descriptors();
                 }
             }
+
             // there is not
             return registry.servicesByContract(createFor);
         }
 
         private record QualifiedServiceInstance<T>(InstanceHolder<T> serviceInstance,
                                                    Set<Qualifier> qualifiers) {
-            static <T> QualifiedServiceInstance<T> create(ServiceProvider<T> provider, ServiceInstance<?> driver) {
+            static <T> QualifiedServiceInstance<T> create(ServiceProvider<T> provider,
+                                                          Bindings.ServiceBindingPlan bindingPlan,
+                                                          DependencyContext dependencyContext,
+                                                          ServiceInstance<?> driver) {
                 Set<Qualifier> qualifiers = driver.qualifiers();
                 Qualifier name = qualifiers.stream()
                         .filter(not(Qualifier.WILDCARD_NAMED::equals))
@@ -824,40 +887,10 @@ final class Activators {
                         .collect(Collectors.toSet());
                 newQualifiers.add(name);
 
-                Map<Dependency, IpPlan<?>> injectionPlan = updatePlan(provider.injectionPlan(), driver, name);
+                DependencyContext targetDependencyContext = updatePlan(bindingPlan, dependencyContext, driver, name);
 
-                return new QualifiedServiceInstance<>(InstanceHolder.create(provider, injectionPlan), newQualifiers);
+                return new QualifiedServiceInstance<>(InstanceHolder.create(provider, targetDependencyContext), newQualifiers);
             }
-        }
-    }
-
-    interface InstanceHolder<T> {
-        static <T> InstanceHolder<T> create(ServiceProvider<T> serviceProvider, Map<Dependency, IpPlan<?>> injectionPlan) {
-            // the same instance is returned for the lifetime of the service provider
-            return new InstanceHolderImpl<>(InjectionContext.create(injectionPlan),
-                                            serviceProvider.interceptionMetadata(),
-                                            serviceProvider.descriptor());
-        }
-
-        // we use the instance holder to hold either the actual instance,
-        // or the factory; this is a place for improvement
-        @SuppressWarnings("unchecked")
-        static <T> InstanceHolder<T> create(Object instance) {
-            return new FixedInstanceHolder<>((T) instance);
-        }
-
-        T get();
-
-        default void construct() {
-        }
-
-        default void inject() {
-        }
-
-        default void postConstruct() {
-        }
-
-        default void preDestroy() {
         }
     }
 
@@ -882,14 +915,12 @@ final class Activators {
         private volatile T instance;
 
         private InstanceHolderImpl(DependencyContext ctx,
-                               InterceptionMetadata interceptionMetadata,
-                               ServiceDescriptor<T> source) {
+                                   InterceptionMetadata interceptionMetadata,
+                                   ServiceDescriptor<T> source) {
             this.ctx = ctx;
             this.interceptionMetadata = interceptionMetadata;
             this.source = source;
         }
-
-
 
         @Override
         public T get() {
@@ -925,7 +956,7 @@ final class Activators {
         private final String serviceType;
 
         private MissingDescribedActivator(ServiceProvider<T> provider) {
-            this.serviceType = provider.serviceInfo().serviceType().fqName();
+            this.serviceType = provider.descriptor().serviceType().fqName();
 
             if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
                 LOGGER.log(System.Logger.Level.DEBUG,

@@ -162,6 +162,11 @@ public final class ServiceCodegenTypes {
     public static final TypeName SERVICE_CONFIG =
             TypeName.create("io.helidon.service.registry.ServiceRegistryConfig");
     /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.ServiceRegistryConfig.Builder}.
+     */
+    public static final TypeName SERVICE_CONFIG_BUILDER =
+            TypeName.create("io.helidon.service.registry.ServiceRegistryConfig.Builder");
+    /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.ServiceRegistry}.
      */
     public static final TypeName SERVICE_REGISTRY =
@@ -171,6 +176,16 @@ public final class ServiceCodegenTypes {
      */
     public static final TypeName SERVICE_REGISTRY_MANAGER =
             TypeName.create("io.helidon.service.registry.ServiceRegistryManager");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.DependencyCardinality}.
+     */
+    public static final TypeName DEPENDENCY_CARDINALITY =
+            TypeName.create("io.helidon.service.registry.DependencyCardinality");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.DependencyCardinality}.
+     */
+    public static final TypeName SERVICE_LOADER_DESCRIPTOR =
+            TypeName.create("io.helidon.service.registry.ServiceLoader__ServiceDescriptor");
     /**
      * {@link io.helidon.common.types.TypeName} for
      * {@code io.helidon.service.registry.GeneratedService.PerInstanceDescriptor}.
@@ -287,6 +302,12 @@ public final class ServiceCodegenTypes {
             TypeName.create("io.helidon.service.registry.GeneratedService.QualifiedFactoryInterceptionWrapper");
 
     /**
+     * {@link io.helidon.common.types.TypeName} for
+     * {@code io.helidon.service.registry.RegistryStartupProvider}.
+     */
+    public static final TypeName REGISTRY_STARTUP_PROVIDER =
+            TypeName.create("io.helidon.service.registry.RegistryStartupProvider");
+    /**
      * A Set of Qualifier.
      */
     public static final TypeName SET_OF_QUALIFIERS = TypeName.builder(TypeNames.SET)
@@ -313,6 +334,12 @@ public final class ServiceCodegenTypes {
             .addTypeArgument(TypeNames.STRING)
             .build();
     /**
+     * A list of Double.
+     */
+    public static final TypeName LIST_OF_DOUBLES = TypeName.builder(TypeNames.LIST)
+            .addTypeArgument(TypeNames.BOXED_DOUBLE)
+            .build();
+    /**
      * A list of Dependency.
      */
     public static final TypeName LIST_OF_DEPENDENCIES = TypeName.builder(TypeNames.LIST)
@@ -334,3 +361,5 @@ public final class ServiceCodegenTypes {
     private ServiceCodegenTypes() {
     }
 }
+
+

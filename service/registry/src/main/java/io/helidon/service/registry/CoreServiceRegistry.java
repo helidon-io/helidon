@@ -82,11 +82,16 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
     private final Lock scopeHandlerInstancesLock = new ReentrantLock();
     private final boolean interceptionEnabled;
     private final InterceptionMetadata interceptionMetadata;
+    private final ServiceManager<String> serviceManagerForInstanceName;
 
     // runtime fields (to obtain actual service instances)
     // service descriptor to its manager
     private final Map<ServiceInfo, ServiceManager<?>> servicesByDescriptor = new IdentityHashMap<>();
     private final ActivationRequest activationRequest;
+
+    private final Bindings bindings;
+    private final boolean allowLateBinding;
+
     private Map<ServiceInfo, ServiceManager<Interception.Interceptor>> interceptors;
 
     @SuppressWarnings("unchecked")
@@ -106,6 +111,9 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
         this.interceptionMetadata = interceptionEnabled
                 ? InterceptionMetadataImpl.create(this)
                 : InterceptionMetadataImpl.noop();
+        // again - we leak our instance early, but it is not used until runtime from bindings
+        this.bindings = new Bindings(this);
+        this.allowLateBinding = config.allowLateBinding();
 
         // these must be bound here, as the instance exists now
         // (and we do not want to allow post-constructor binding)
@@ -133,6 +141,8 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
         For each known service descriptor, create an appropriate service manager
          */
         descriptors.forEach(descriptor -> {
+            bindings.register(descriptor);
+
             Object instance = explicitInstances.get(descriptor);
             ServiceProvider<Object> provider = new ServiceProvider<>(
                     this,
@@ -141,19 +151,23 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
             if (instance != null) {
                 Activator<Object> activator = Activators.create(provider, instance);
                 servicesByDescriptor.put(descriptor,
-                                         new ServiceManager<>(scopeSupplier(descriptor),
+                                         new ServiceManager<>(this,
+                                                              scopeSupplier(descriptor),
                                                               provider,
                                                               true,
                                                               () -> activator));
             } else {
                 // we must always prefer explicit instances - so if specified, we will never override it
                 servicesByDescriptor.putIfAbsent(descriptor,
-                                                 new ServiceManager<>(scopeSupplier(descriptor),
+                                                 new ServiceManager<>(this,
+                                                                      scopeSupplier(descriptor),
                                                                       provider,
                                                                       false,
                                                                       Activators.create(this, provider)));
             }
         });
+
+        this.serviceManagerForInstanceName = new InstanceNameServiceManager(this);
     }
 
     @Override
@@ -361,6 +375,10 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
         return metrics;
     }
 
+    Bindings bindings() {
+        return bindings;
+    }
+
     <T> void add(Class<T> contract, double weight, T instance) {
         stateWriteLock.lock();
         try {
@@ -377,7 +395,8 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
                                                                          vt);
                 Activator<Object> activator = Activators.create(provider, instance);
 
-                servicesByDescriptor.put(vt, new ServiceManager<>(scopeSupplier(vt),
+                servicesByDescriptor.put(vt, new ServiceManager<>(this,
+                                                                  scopeSupplier(vt),
                                                                   provider,
                                                                   true,
                                                                   () -> activator));
@@ -396,6 +415,11 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
 
     @SuppressWarnings("unchecked")
     <T> void set(Class<T> contract, T[] instances) {
+        if (!allowLateBinding) {
+            throw new ServiceRegistryException("This service registry instance does not support late binding, as it was "
+                                                       + "explicitly disabled through registry configuration: " + id);
+        }
+
         stateWriteLock.lock();
         try {
             ResolvedType contractType = ResolvedType.create(contract);
@@ -413,7 +437,8 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
                                                                              vt);
                     Activator<Object> activator = Activators.create(provider, instance);
 
-                    servicesByDescriptor.put(vt, new ServiceManager<>(scopeSupplier(vt),
+                    servicesByDescriptor.put(vt, new ServiceManager<>(this,
+                                                                      scopeSupplier(vt),
                                                                       provider,
                                                                       true,
                                                                       () -> activator));
@@ -432,11 +457,14 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
                                                                + "A service provider must have exactly one instance.");
                 }
                 Activator<Object> activator = Activators.create(provider, instances[0]);
-                servicesByDescriptor.put(serviceInfo, new ServiceManager<>(scopeSupplier(serviceInfo),
+                servicesByDescriptor.put(serviceInfo, new ServiceManager<>(this,
+                                                                           scopeSupplier(serviceInfo),
                                                                            provider,
                                                                            true,
                                                                            () -> activator));
             }
+            // reset bindings, as build-time binding would ignore instances explicitly set
+            bindings.forgetContract(contractType);
         } finally {
             stateWriteLock.unlock();
         }
@@ -461,6 +489,9 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
 
     @SuppressWarnings("unchecked")
     <T> ServiceManager<T> serviceManager(ServiceInfo info) {
+        if (info == InstanceName__ServiceDescriptor.INSTANCE) {
+            return (ServiceManager<T>) serviceManagerForInstanceName;
+        }
         ServiceManager<T> result = (ServiceManager<T>) servicesByDescriptor.get(info);
         if (result == null) {
             throw new ServiceRegistryException("Attempt to use service info not managed by this registry: " + info);
@@ -480,7 +511,7 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
             Set<ServiceInfo> ordered = new TreeSet<>(SERVICE_INFO_COMPARATOR);
             for (ServiceInfo serviceInfo : serviceInfos) {
                 ServiceManager<Object> serviceManager = this.serviceManager(serviceInfo);
-                ordered.add(serviceManager.injectDescriptor());
+                ordered.add(serviceManager.descriptor());
             }
 
             // there may be more than one application, we need to add to existing
@@ -539,7 +570,7 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
 
     void ensureInjectionPlans() {
         servicesByDescriptor.values()
-                .forEach(ServiceManager::ensureInjectionPlan);
+                .forEach(ServiceManager::ensureBindingPlan);
     }
 
     private void cacheAndAccess(Lookup lookup, List<ServiceInfo> result) {

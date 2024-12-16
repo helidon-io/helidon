@@ -625,6 +625,19 @@ Service instance based (to obtain registry metadata in addition to the instance)
 2. `Optional<ServiceInstance<Contract>>`
 3. `List<ServiceInstance<Contract>>`
 
+## Why are some dependency options not supported
+
+We do not support dependencies of types `List<Supplier<Contract>>` and `Optional<Supplier<Contract>>`, even though other frameworks (such as CDI) do have similar concepts.
+
+The reason is that we resolve all injection points as late as possible, and injecting these types would require an early resolution of instances.
+
+As we support optional factories (i.e. `Supplier<Optional<Contract>>`), and the concept of `ServicesFactory<Contract>`, we 
+do not know how many instances (and if any) are available at the time of injecting to a service.
+
+So if we supported `List<Supplier<Contract>>`, we would still need to resolve all the instances, so just use `List<Contract>` 
+for this purpose. If a supplier is need to break dependency cycle, use `Supplier<List<Contract>>`, and you will get instances
+resolved only once you call `get()` on the supplier.
+
 # Glossary
 
 | Term            | Description                                                                                                                                                                                                   |

@@ -33,12 +33,12 @@ public abstract class AbstractSaw extends Verification implements Tool {
     @Service.Inject Supplier<AbstractBlade> fieldInjectedPkgPrivateProviderInAbstractBase;
     @Service.Inject Optional<AbstractBlade> fieldInjectedPkgPrivateOptionalInAbstractBase;
     @Service.Inject List<AbstractBlade> fieldInjectedPkgPrivateListInAbstractBase;
-    @Service.Inject List<Supplier<AbstractBlade>> fieldInjectedPkgPrivateProviderListInAbstractBase;
+    @Service.Inject Supplier<List<AbstractBlade>> fieldInjectedPkgPrivateProviderListInAbstractBase;
 
     Supplier<AbstractBlade> setterInjectedPkgPrivateProviderInAbstractBase;
     Optional<AbstractBlade> setterInjectedPkgPrivateOptionalInAbstractBase;
     List<AbstractBlade> setterInjectedPkgPrivateListInAbstractBase;
-    List<Supplier<AbstractBlade>> setterInjectedPkgPrivateProviderListInAbstractBase;
+    Supplier<List<AbstractBlade>> setterInjectedPkgPrivateProviderListInAbstractBase;
 
     int setterInjectedPkgPrivateProviderInAbstractBaseInjectedCount;
     int setterInjectedPkgPrivateOptionalInAbstractBaseInjectedCount;
@@ -46,7 +46,7 @@ public abstract class AbstractSaw extends Verification implements Tool {
     int setterInjectedPkgPrivateProviderListInAbstractBaseInjectedCount;
 
     @Service.Inject
-    public void setBladeProviders(List<Supplier<AbstractBlade>> blades) {
+    public void setBladeProviders(Supplier<List<AbstractBlade>> blades) {
         setterInjectedPkgPrivateProviderListInAbstractBase = blades;
         setterInjectedPkgPrivateProviderListInAbstractBaseInjectedCount++;
     }
@@ -59,8 +59,16 @@ public abstract class AbstractSaw extends Verification implements Tool {
                 + ".fieldInjectedProtectedProviderInAbstractBase", null, false, DullBlade.class);
         verifyInjected(fieldInjectedProtectedListInAbstractBase, getClass()
                 + ".fieldInjectedProtectedListInAbstractBase", null, 1, AbstractBlade.class);
-        verifyInjected(setterInjectedPkgPrivateProviderListInAbstractBase, getClass()
-                + ".setterInjectedPkgPrivateProviderListInAbstractBase", null, 1, Supplier.class);
+        verifyInjected(setterInjectedPkgPrivateProviderListInAbstractBase,
+                       getClass() + ".setterInjectedPkgPrivateProviderListInAbstractBase",
+                       null,
+                       false,
+                       List.class);
+        verifyInjected(setterInjectedPkgPrivateProviderListInAbstractBase.get(),
+                       getClass() + ".setterInjectedPkgPrivateProviderListInAbstractBase",
+                       null,
+                       1,
+                       AbstractBlade.class);
 
         // we use cardinality of the InjectionPointProvider
         verifyInjected(fieldInjectedPkgPrivateProviderInAbstractBase, getClass()
@@ -69,8 +77,16 @@ public abstract class AbstractSaw extends Verification implements Tool {
                 + ".fieldInjectedPkgPrivateOptionalInAbstractBase", null, true, DullBlade.class);
         verifyInjected(fieldInjectedPkgPrivateListInAbstractBase, getClass()
                 + ".fieldInjectedPkgPrivateListInAbstractBase", null, 1, DullBlade.class);
-        verifyInjected(fieldInjectedPkgPrivateProviderListInAbstractBase, getClass()
-                + ".fieldInjectedPkgPrivateProviderListInAbstractBase", null, 1, Supplier.class);
+        verifyInjected(fieldInjectedPkgPrivateProviderListInAbstractBase,
+                       getClass() + ".fieldInjectedPkgPrivateProviderListInAbstractBase",
+                       null,
+                       false,
+                       List.class);
+        verifyInjected(fieldInjectedPkgPrivateProviderListInAbstractBase.get(),
+                       getClass() + ".fieldInjectedPkgPrivateProviderListInAbstractBase",
+                       null,
+                       1,
+                       AbstractBlade.class);
 
         // we use cardinality of the InjectionPointProvider
         verifyInjected(setterInjectedPkgPrivateProviderInAbstractBase, getClass()
@@ -82,8 +98,16 @@ public abstract class AbstractSaw extends Verification implements Tool {
         verifyInjected(setterInjectedPkgPrivateListInAbstractBase, getClass()
                                + ".setBladeList(List<AbstractBlade> blades)",
                        setterInjectedPkgPrivateListInAbstractBaseInjectedCount, 1, DullBlade.class);
-        verifyInjected(fieldInjectedPkgPrivateProviderListInAbstractBase, getClass()
-                + ".fieldInjectedPkgPrivateProviderListInAbstractBase", null, 1, Supplier.class);
+        verifyInjected(fieldInjectedPkgPrivateProviderListInAbstractBase,
+                       getClass() + ".fieldInjectedPkgPrivateProviderListInAbstractBase",
+                       null,
+                       false,
+                       List.class);
+        verifyInjected(fieldInjectedPkgPrivateProviderListInAbstractBase.get(),
+                       getClass() + ".fieldInjectedPkgPrivateProviderListInAbstractBase",
+                       null,
+                       1,
+                       AbstractBlade.class);
     }
 
     @Service.Inject

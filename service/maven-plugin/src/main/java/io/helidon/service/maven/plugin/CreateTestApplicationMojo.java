@@ -66,6 +66,11 @@ public class CreateTestApplicationMojo extends CreateApplicationAbstractMojo {
     }
 
     @Override
+    boolean generateMain() {
+        return false;
+    }
+
+    @Override
     protected Path generatedSourceDirectory() {
         return generatedTestSourcesDirectory.toPath();
     }

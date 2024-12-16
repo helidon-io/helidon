@@ -18,6 +18,8 @@ package io.helidon.service.maven.plugin;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -25,6 +27,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import io.helidon.codegen.CodegenException;
@@ -32,33 +36,31 @@ import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.codegen.classmodel.Method;
-import io.helidon.codegen.compiler.Compiler;
-import io.helidon.codegen.compiler.CompilerOptions;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
-import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.ResolvedType;
-import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
 import io.helidon.service.codegen.DescriptorClassCode;
 import io.helidon.service.codegen.HelidonMetaInfServices;
-import io.helidon.service.codegen.RegistryCodegenContext;
-import io.helidon.service.codegen.ServiceDescriptorCodegen;
 import io.helidon.service.metadata.DescriptorMetadata;
 import io.helidon.service.registry.Dependency;
 import io.helidon.service.registry.Interception;
 import io.helidon.service.registry.Lookup;
 import io.helidon.service.registry.Qualifier;
+import io.helidon.service.registry.Service.RunLevel;
+import io.helidon.service.registry.ServiceDescriptor;
 import io.helidon.service.registry.ServiceInfo;
 import io.helidon.service.registry.ServiceLoader__ServiceDescriptor;
 
-import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_CONTRACT;
-import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_PROVIDER;
+import static io.helidon.service.codegen.ServiceCodegenTypes.LIST_OF_DOUBLES;
+import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_RUN_LEVEL;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_BINDING;
+import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_CONFIG_BUILDER;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_INJECTION_POINT_FACTORY;
+import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_LOADER_DESCRIPTOR;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_PLAN_BINDER;
-import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_SERVICE_INSTANCE;
 
 /**
  * The default implementation for {@link BindingGenerator}.
@@ -81,18 +83,18 @@ class BindingGenerator {
      * @param serviceTypes      types to process
      * @param typeName          generated binding type name
      * @param moduleName        name of the module of this maven module
-     * @param compilerOptions   compilation options
+     * @param sourcesToCompile  list of sources to compile
      */
     void createBinding(WrappedServices injectionServices,
                        Set<TypeName> serviceTypes,
                        TypeName typeName,
                        String moduleName,
-                       CompilerOptions compilerOptions) {
+                       List<Path> sourcesToCompile) {
         Objects.requireNonNull(injectionServices);
         Objects.requireNonNull(serviceTypes);
 
         try {
-            codegen(injectionServices, serviceTypes, typeName, moduleName, compilerOptions);
+            codegen(injectionServices, serviceTypes, typeName, moduleName, sourcesToCompile);
         } catch (CodegenException ce) {
             handleError(ce);
         } catch (Throwable te) {
@@ -104,7 +106,7 @@ class BindingGenerator {
                  Set<TypeName> serviceTypes,
                  TypeName typeName,
                  String moduleName,
-                 CompilerOptions compilerOptions) {
+                 List<Path> sourcesToCompile) {
         ClassModel.Builder classModel = ClassModel.builder()
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .copyright(CodegenUtil.copyright(GENERATOR,
@@ -121,7 +123,7 @@ class BindingGenerator {
 
         // deprecated default constructor - binding should always be service loaded
         classModel.addConstructor(ctr -> ctr
-                .accessModifier(AccessModifier.PACKAGE_PRIVATE));
+                .accessModifier(AccessModifier.PRIVATE));
 
         // public String name()
         classModel.addMethod(nameMethod -> nameMethod
@@ -130,40 +132,56 @@ class BindingGenerator {
                 .name("name")
                 .addContentLine("return \"" + moduleName + "\";"));
 
-        // public void configure(ServiceInjectionPlanBinder binder)
-        classModel.addMethod(configureMethod -> configureMethod
+        // public void binding(DependencyPlanBinder binder)
+        classModel.addMethod(bindingMethod -> bindingMethod
                 .addAnnotation(Annotations.OVERRIDE)
-                .name("configure")
+                .name("binding")
                 // constructors of services for service loader are usually deprecated in Helidon
                 .addAnnotation(Annotation.create(SuppressWarnings.class, "deprecation"))
                 .addParameter(binderParam -> binderParam
                         .name("binder")
                         .type(SERVICE_PLAN_BINDER))
+                .update(it -> createBindingMethodBody(injectionServices,
+                                                      serviceTypes,
+                                                      it)));
+
+        // public void configure(ServiceRegistryConfig.Builder builder)
+        classModel.addMethod(configureMethod -> configureMethod
+                .addAnnotation(Annotations.OVERRIDE)
+                .name("configure")
+                .addParameter(configBuilder -> configBuilder
+                        .name("builder")
+                        .type(SERVICE_CONFIG_BUILDER)
+                )
                 .update(it -> createConfigureMethodBody(injectionServices,
-                                                        serviceTypes,
-                                                        it)));
+                                                        classModel,
+                                                        it))
+        );
+        // static Application__Binding create()
+        classModel.addMethod(create -> create
+                .accessModifier(AccessModifier.PACKAGE_PRIVATE)
+                .returnType(typeName)
+                .name("create")
+                .isStatic(true)
+                .description("Create a new application binding instance.")
+                .addContent("return new ")
+                .addContent(typeName.className())
+                .addContentLine("();")
+        );
 
         Path generated = ctx.filer()
                 .writeSourceFile(classModel.build());
 
-        TypeInfo appTypeInfo = createAppTypeInfo(typeName);
-        RegistryCodegenContext registryCodegenContext = RegistryCodegenContext.create(ctx);
         MavenRoundContext roundContext = new MavenRoundContext(ctx);
-        ServiceDescriptorCodegen descriptorCodegen = ServiceDescriptorCodegen.create(registryCodegenContext);
-        descriptorCodegen.service(GENERATOR,
-                                  roundContext,
-                                  List.of(appTypeInfo),
-                                  appTypeInfo);
 
-        List<Path> toCompile = new ArrayList<>();
-        toCompile.add(generated);
+        sourcesToCompile.add(generated);
 
         HelidonMetaInfServices services = HelidonMetaInfServices.create(ctx.filer(), moduleName);
 
         for (DescriptorClassCode descriptor : roundContext.descriptors()) {
             Path path = ctx.filer().writeSourceFile(descriptor.classCode().classModel().build(),
                                                     descriptor.classCode().originatingElements());
-            toCompile.add(path);
+            sourcesToCompile.add(path);
 
             services.add(DescriptorMetadata.create(descriptor.registryType(),
                                                    descriptor.classCode().newType(),
@@ -173,7 +191,6 @@ class BindingGenerator {
         }
 
         services.write();
-        Compiler.compile(compilerOptions, toCompile.toArray(new Path[0]));
     }
 
     BindingPlan bindingPlan(WrappedServices services,
@@ -229,7 +246,7 @@ class BindingGenerator {
                     .addContent(")");
         } else {
             // the usual singleton instance
-            return it -> it.addContent(serviceInfo.descriptorType().fqName())
+            return it -> it.addContent(serviceInfo.descriptorType())
                     .addContent(".INSTANCE");
         }
     }
@@ -259,18 +276,148 @@ class BindingGenerator {
         return hasContract || hasDependencies;
     }
 
-    private TypeInfo createAppTypeInfo(TypeName typeName) {
-        return TypeInfo.builder()
-                .kind(ElementKind.CLASS)
-                .typeName(typeName)
-                // to trigger generation of descriptor
-                .addAnnotation(Annotation.create(SERVICE_ANNOTATION_PROVIDER))
-                .addInterfaceTypeInfo(TypeInfo.builder()
-                                              .kind(ElementKind.INTERFACE)
-                                              .typeName(SERVICE_BINDING)
-                                              .addAnnotation(Annotation.create(SERVICE_ANNOTATION_CONTRACT))
-                                              .build())
-                .build();
+    private void createConfigureMethodBody(WrappedServices services,
+                                           ClassModel.Builder classModel,
+                                           Method.Builder method) {
+        /*
+        This method will:
+        - configure all run levels
+        - configure all services to avoid service discovery
+         */
+
+        configureRunLevels(services, classModel, method);
+        registerServiceDescriptors(services, classModel, method);
+    }
+
+    private void configureRunLevels(WrappedServices services, ClassModel.Builder classModel, Method.Builder method) {
+
+        /*
+        private static final List<Double> RUN_LEVELS = List.of(12D, 100D);
+        builder.runLevels(RUN_LEVELS);
+         */
+        runLevelsConstantField(classModel, services);
+        method.addContentLine("builder.runLevels(RUN_LEVELS);");
+
+    }
+
+    static void runLevelsConstantField(ClassModel.Builder classModel, WrappedServices services) {
+        Set<Double> runLevels = new TreeSet<>();
+
+        for (ServiceInfo serviceInfo : services.all()) {
+            if (serviceInfo.runLevel().isPresent()) {
+                runLevels.add(serviceInfo.runLevel().get());
+            }
+        }
+
+        List<Double> runLevelList = List.copyOf(runLevels);
+        classModel.addField(runLevelsField -> runLevelsField
+                .accessModifier(AccessModifier.PRIVATE)
+                .isStatic(true)
+                .isFinal(true)
+                .type(LIST_OF_DOUBLES)
+                .name("RUN_LEVELS")
+                .addContent(List.class)
+                .addContent(".of(")
+                .update(fieldBuilder -> {
+                    for (int i = 0; i < runLevelList.size(); i++) {
+                        double current = runLevelList.get(i);
+                        if (Double.compare(RunLevel.STARTUP, current) == 0) {
+                            fieldBuilder.addContent(SERVICE_ANNOTATION_RUN_LEVEL)
+                                    .addContent(".STARTUP");
+                        } else if (Double.compare(RunLevel.SERVER, current) == 0) {
+                            fieldBuilder.addContent(SERVICE_ANNOTATION_RUN_LEVEL)
+                                    .addContent(".SERVER");
+                        } else if (Double.compare(RunLevel.NORMAL, current) == 0) {
+                            fieldBuilder.addContent(SERVICE_ANNOTATION_RUN_LEVEL)
+                                    .addContent(".NORMAL");
+                        } else {
+                            fieldBuilder.addContent(String.valueOf(current))
+                                    .addContent("D");
+                        }
+                        if (i == runLevelList.size() - 1) {
+                            fieldBuilder.addContentLine("");
+                        } else {
+                            fieldBuilder.addContentLine(",");
+                        }
+                    }
+                })
+                .addContent(")")
+        );
+    }
+
+    private void registerServiceDescriptors(WrappedServices services, ClassModel.Builder classModel, Method.Builder method) {
+        List<ServiceLoader__ServiceDescriptor> serviceLoaded = new ArrayList<>();
+        List<TypeName> serviceDescriptors = new ArrayList<>();
+
+        // for each discovered service, add it to the configuration
+        for (ServiceInfo serviceInfo : services.all()) {
+            if (serviceInfo instanceof ServiceLoader__ServiceDescriptor sl) {
+                serviceLoaded.add(sl);
+            } else {
+                serviceDescriptors.add(serviceInfo.descriptorType());
+            }
+        }
+
+        Map<TypeName, String> providerConstants = new HashMap<>();
+        AtomicInteger constantCounter = new AtomicInteger();
+
+        serviceLoaded.stream()
+                .sorted(serviceLoaderComparator())
+                .forEach(it -> addServiceLoader(classModel, method, providerConstants, constantCounter, it));
+
+        if (!serviceLoaded.isEmpty() && !serviceDescriptors.isEmpty()) {
+            // visually separate service loaded services from service descriptors
+            method.addContentLine("");
+        }
+
+        // viceDescriptor(ImperativeFeature__ServiceDescriptor.INSTANCE);
+        serviceDescriptors.stream()
+                .sorted()
+                .forEach(it -> method
+                        .addContent("builder.addServiceDescriptor(")
+                        .addContent(it)
+                        .addContentLine(".INSTANCE);"));
+    }
+
+    private void addServiceLoader(ClassModel.Builder classModel,
+                                  Method.Builder main,
+                                  Map<TypeName, String> providerConstants,
+                                  AtomicInteger constantCounter,
+                                  ServiceLoader__ServiceDescriptor sl) {
+        // Generated code:
+        // builder.addServiceDescriptor(serviceLoader(PROVIDER_1,
+        //                                           YamlConfigParser.class,
+        //                                           () -> new io.helidon.config.yaml.YamlConfigParser(),
+        //                                           90.0));
+        TypeName providerInterface = sl.providerInterface();
+        String constantName = providerConstants.computeIfAbsent(providerInterface, it -> {
+            int i = constantCounter.getAndIncrement();
+            String constant = "PROVIDER_" + i;
+            classModel.addField(field -> field
+                    .accessModifier(AccessModifier.PRIVATE)
+                    .isStatic(true)
+                    .isFinal(true)
+                    .type(TypeNames.TYPE_NAME)
+                    .name(constant)
+                    .addContentCreate(providerInterface));
+            return constant;
+        });
+
+        main.addContent("builder.addServiceDescriptor(")
+                .addContent(SERVICE_LOADER_DESCRIPTOR)
+                .addContent(".create(")
+                .addContent(constantName)
+                .addContentLine(",")
+                .increaseContentPadding()
+                .increaseContentPadding()
+                .increaseContentPadding()
+                .addContent(sl.serviceType()).addContentLine(".class,")
+                .addContent("() -> new ").addContent(sl.serviceType()).addContentLine("(),")
+                .addContent(String.valueOf(sl.weight()))
+                .addContentLine("));")
+                .decreaseContentPadding()
+                .decreaseContentPadding()
+                .decreaseContentPadding();
     }
 
     private void handleError(CodegenException ce) {
@@ -344,9 +491,9 @@ class BindingGenerator {
         return services.all(lookup);
     }
 
-    private void createConfigureMethodBody(WrappedServices services,
-                                           Set<TypeName> serviceTypes,
-                                           Method.Builder method) {
+    private void createBindingMethodBody(WrappedServices services,
+                                         Set<TypeName> serviceTypes,
+                                         Method.Builder method) {
         // find all interceptors and bind them
         List<ServiceInfo> interceptors =
                 services.all(Lookup.builder()
@@ -378,8 +525,7 @@ class BindingGenerator {
             method.addContentLine("")
                     .decreaseContentPadding();
         }
-        method.addContentLine(");")
-                .addContentLine("");
+        method.addContentLine(");");
 
         // first collect required dependencies by descriptor
         Map<TypeName, Set<Binding>> injectionPlan = new LinkedHashMap<>();
@@ -390,12 +536,12 @@ class BindingGenerator {
             }
         }
 
-        boolean supportNulls = false;
         // we group all bindings by descriptor they belong to
         injectionPlan.forEach((descriptorType, bindings) -> {
-            method.addContent("binder.bindTo(")
+            method.addContentLine("")
+                    .addContent("binder.service(")
                     .addContent(descriptorType.genericTypeName())
-                    .addContentLine(".INSTANCE)")
+                    .addContent(".INSTANCE)")
                     .increaseContentPadding();
 
             for (Binding binding : bindings) {
@@ -404,171 +550,54 @@ class BindingGenerator {
                         .addContent(".")
                         .addContent(binding.dependency.descriptorConstant());
 
-                buildTimeBinding(method, binding, ipId, supportNulls);
+                buildTimeBinding(method, binding, ipId);
             }
 
             /*
             Commit the dependencies
              */
-            method.addContentLine(".commit();")
-                    .decreaseContentPadding()
-                    .addContentLine("");
+            method.addContentLine(";")
+                    .decreaseContentPadding();
         });
     }
 
     /*
-    Very similar code is used for runtime discovery in ServiceProvider.planForIp
+    Very similar code is used for runtime discovery in io.helidon.service.registry.Bindings.DependencyBinding.discoverBinding
     make sure this is doing the same thing!
     Here we code generate the calls to the binding class
     */
     private void buildTimeBinding(Method.Builder method,
                                   Binding binding,
-                                  Consumer<ContentBuilder<?>> ipId,
-                                  boolean supportNulls) {
+                                  Consumer<ContentBuilder<?>> ipId) {
 
-        Dependency injectionPoint = binding.dependency();
         List<ServiceInfo> discovered = binding.descriptors();
         Iterator<Consumer<ContentBuilder<?>>> descriptors = discovered.stream()
                 .map(BindingGenerator::toContentBuilder)
                 .iterator();
 
-        TypeName ipType = injectionPoint.typeName();
+        method.addContentLine("")
+                .addContent(".bind(")
+                .update(ipId::accept);
 
-        // now there are a few options - optional, list, and single instance
-        if (ipType.isList()) {
-            TypeName typeOfList = ipType.typeArguments().getFirst();
-            if (typeOfList.isSupplier()) {
-                // inject List<Supplier<Contract>>
-                method.addContent(".bindListOfSuppliers(");
-            } else if (typeOfList.equals(SERVICE_SERVICE_INSTANCE)) {
-                method.addContent(".bindServiceInstanceList(");
-            } else {
-                // inject List<Contract>
-                method.addContent(".bindList(");
-            }
-            method.update(ipId::accept);
-
-            if (discovered.isEmpty()) {
-                method.addContentLine(")");
-            } else {
-                method.addContent(", ")
-                        .update(it -> {
-                            while (descriptors.hasNext()) {
-                                descriptors.next().accept(it);
-                                if (descriptors.hasNext()) {
-                                    it.addContent(", ");
-                                }
-                            }
-                        })
-                        .addContentLine(")");
-            }
-        } else if (ipType.isOptional()) {
-            TypeName typeOfOptional = ipType.typeArguments().getFirst();
-            if (typeOfOptional.isSupplier()) {
-                // inject Optional<Supplier<Contract>>
-                method.addContent(".bindOptionalOfSupplier(");
-            } else if (typeOfOptional.equals(SERVICE_SERVICE_INSTANCE)) {
-                // inject Optional<ServiceInstance<Contract>>
-                method.addContent(".bindOptionalOfServiceInstance(");
-            } else {
-                // inject Optional<Contract>
-                method.addContent(".bindOptional(");
-            }
-            method.update(ipId::accept);
-
-            if (discovered.isEmpty()) {
-                method.addContentLine(")");
-            } else {
-                method.addContent(", ");
-                descriptors.next().accept(method);
-                method.addContentLine(")");
-            }
-        } else if (ipType.isSupplier()) {
-            // one of the supplier options
-
-            TypeName typeOfSupplier = ipType.typeArguments().getFirst();
-            if (typeOfSupplier.isOptional()) {
-                // inject Supplier<Optional<Contract>>
-                method.addContent(".bindSupplierOfOptional(")
-                        .update(ipId::accept);
-                if (discovered.isEmpty()) {
-                    method.addContentLine(")");
-                } else {
-                    method.addContent(", ");
-                    descriptors.next().accept(method);
-                    method.addContentLine(")");
-                }
-            } else if (typeOfSupplier.isList()) {
-                // inject Supplier<List<Contract>>
-                method.addContent(".bindSupplierOfList(")
-                        .update(ipId::accept);
-                if (discovered.isEmpty()) {
-                    method.addContentLine(")");
-                } else {
-                    method.addContent(", ")
-                            .update(it -> {
-                                while (descriptors.hasNext()) {
-                                    descriptors.next().accept(it);
-                                    if (descriptors.hasNext()) {
-                                        it.addContent(", ");
-                                    }
-                                }
-                            })
-                            .addContentLine(")");
-                }
-            } else {
-                // inject Supplier<Contract>
-                method.addContent(".bindSupplier(")
-                        .update(ipId::accept);
-
-                if (discovered.isEmpty()) {
-                    // null binding is not supported at runtime
-                    throw new CodegenException("Injection point requires a value, but no provider discovered: "
-                                                       + injectionPoint);
-                }
-                method.addContent(", ");
-                descriptors.next().accept(method);
-                method.addContentLine(")");
-            }
-        } else if (ipType.equals(SERVICE_SERVICE_INSTANCE)) {
-            // inject Contract
-            if (discovered.isEmpty()) {
-                if (supportNulls) {
-                    method.addContent(".bindNull(")
-                            .update(ipId::accept)
-                            .addContentLine(")");
-                } else {
-                    // null binding is not supported at runtime
-                    throw new CodegenException("Injection point requires a value, but no provider discovered: "
-                                                       + injectionPoint);
-                }
-            } else {
-                method.addContent(".bindServiceInstance(")
-                        .update(ipId::accept)
-                        .addContent(", ")
-                        .update(descriptors.next()::accept)
-                        .addContentLine(")");
-            }
+        if (discovered.isEmpty()) {
+            method.addContent(")");
         } else {
-            // inject Contract
-            if (discovered.isEmpty()) {
-                if (supportNulls) {
-                    method.addContent(".bindNull(")
-                            .update(ipId::accept)
-                            .addContentLine(")");
-                } else {
-                    // null binding is not supported at runtime
-                    throw new CodegenException("Injection point requires a value, but no provider discovered: "
-                                                       + injectionPoint);
-                }
-            } else {
-                method.addContent(".bind(")
-                        .update(ipId::accept)
-                        .addContent(", ")
-                        .update(descriptors.next()::accept)
-                        .addContentLine(")");
-            }
+            method.addContent(", ")
+                    .update(it -> {
+                        while (descriptors.hasNext()) {
+                            descriptors.next().accept(it);
+                            if (descriptors.hasNext()) {
+                                it.addContent(", ");
+                            }
+                        }
+                    })
+                    .addContent(")");
         }
+    }
+
+    private Comparator<ServiceLoader__ServiceDescriptor> serviceLoaderComparator() {
+        return Comparator.comparing(ServiceLoader__ServiceDescriptor::providerInterface)
+                .thenComparing(ServiceDescriptor::serviceType);
     }
 
     record InjectionPlan(List<ServiceInfo> unqualifiedProviders,
@@ -580,8 +609,8 @@ class BindingGenerator {
     }
 
     /**
-     * @param dependency to bind to
-     * @param descriptors    matching descriptors
+     * @param dependency  to bind to
+     * @param descriptors matching descriptors
      */
     record Binding(Dependency dependency,
                    List<ServiceInfo> descriptors) {

@@ -31,11 +31,9 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
-import io.helidon.common.types.TypedElementInfo;
 import io.helidon.service.metadata.DescriptorMetadata;
 
 /**
@@ -63,7 +61,6 @@ public final class ServiceRegistryManager {
             })
             .thenComparing(ServiceInfo::serviceType);
     private static final System.Logger LOGGER = System.getLogger(ServiceRegistryManager.class.getName());
-    private static final InterceptionMetadata NO_OP_INTERCEPT_META = new NoOpInterceptMeta();
 
     private final ReentrantReadWriteLock lifecycleLock = new ReentrantReadWriteLock();
     private final ServiceRegistryConfig config;
@@ -74,6 +71,71 @@ public final class ServiceRegistryManager {
     ServiceRegistryManager(ServiceRegistryConfig config, ServiceDiscovery serviceDiscovery) {
         this.config = config;
         this.discovery = serviceDiscovery;
+    }
+
+    /**
+     * Create a new manager based on the provided binding (usually code generated), and start the service registry
+     * services according to the configured run levels. Honor configured options.
+     * <p>
+     * Configuration options are handled as follows:
+     * <ul>
+     *     <li>{@link ServiceRegistryConfig#runLevels()} - if any run level is configured, it is honored; if no run levels
+     *          are configured (the default), run levels are updated from generated bindings; to disable any run levels, set
+     *          the {@link ServiceRegistryConfig#maxRunLevel()} to 0</li>
+     *     <li>{@link ServiceRegistryConfig#discoverServices()} - honored as configured; as default is {@code true},
+     *     we recommend you set this to {@code false}, as all services should be registered explicitly via the generated
+     *     binding</li>
+     *     <li>{@link ServiceRegistryConfig#serviceDescriptors()} - honored, and additional descriptors are added via the
+     *     generated binding; usually this should not be configured by hand, as there should not be additional descriptors
+     *     that were not discovered by the plugin that generates build time binding</li>
+     *     <li>All other configuration options are honored as configured, and not updated</li>
+     * </ul>
+     *
+     * @param binding generated binding
+     * @param config  configuration to use (see rules above)
+     * @return a new registry manager with an initialized registry
+     */
+    public static ServiceRegistryManager start(Binding binding, ServiceRegistryConfig config) {
+        ServiceRegistryConfig.Builder configBuilder = ServiceRegistryConfig.builder(config)
+                .update(binding::configure);
+
+        if (!config.runLevels().isEmpty()) {
+            configBuilder.runLevels(config.runLevels());
+        }
+
+        ServiceRegistryConfig updatedConfig = configBuilder.build();
+        ServiceRegistryManager manager = create(updatedConfig);
+
+        return boundManager(binding, updatedConfig, manager);
+    }
+
+    /**
+     * Start the service registry with no generated binding with the provided config.
+     * This method honors {@link ServiceRegistryConfig#maxRunLevel()} and {@link ServiceRegistryConfig#runLevels()}
+     * to initialize services that fit.
+     *
+     * @param config configuration of the service registry
+     * @return a new registry manager with initialized registry
+     */
+    public static ServiceRegistryManager start(ServiceRegistryConfig config) {
+        return start(new NoOpBinding(), config);
+    }
+
+    /**
+     * Create a new manager based on the provided binding (usually code generated), and start the service registry
+     * services according to the configured run levels.
+     *
+     * @param binding generated binding
+     * @return a new registry manager with an initialized registry
+     */
+    public static ServiceRegistryManager start(Binding binding) {
+        ServiceRegistryConfig config = ServiceRegistryConfig.builder()
+                .discoverServices(false)
+                .update(binding::configure)
+                .build();
+
+        ServiceRegistryManager manager = create(config);
+        return boundManager(binding, config, manager);
     }
 
     /**
@@ -104,8 +166,90 @@ public final class ServiceRegistryManager {
      *
      * @return service registry ready to be used
      */
-    @SuppressWarnings("checkstyle:methodLength") // already condensed; further extraction would decrease readability
     public ServiceRegistry registry() {
+        return registry(new NoOpBinding());
+    }
+
+    /**
+     * Shutdown the managed service registry.
+     */
+    public void shutdown() {
+        Lock lock = lifecycleLock.writeLock();
+        try {
+            lock.lock();
+            if (registry == null) {
+                // registry was never requested,
+                return;
+            }
+
+            registry.shutdown();
+            registry = null;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private static ServiceRegistryManager boundManager(Binding binding,
+                                                       ServiceRegistryConfig config,
+                                                       ServiceRegistryManager manager) {
+        ServiceRegistry registry = manager.registry(binding);
+        GlobalServiceRegistry.registry(registry);
+
+        double maxRunLevel = config.maxRunLevel();
+        List<Double> runLevels = new ArrayList<>(config.runLevels());
+        Collections.sort(runLevels);
+        for (Double runLevel : runLevels) {
+            if (runLevel > maxRunLevel) {
+                // no more
+                break;
+            }
+
+            List<Object> all = registry.all(Lookup.builder()
+                                                    .addScope(Service.Singleton.TYPE)
+                                                    .runLevel(runLevel)
+                                                    .build());
+            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                LOGGER.log(System.Logger.Level.DEBUG, "Starting services in run level: " + runLevel + ": ");
+                for (Object o : all) {
+                    LOGGER.log(System.Logger.Level.DEBUG, "\t" + o);
+                }
+            } else if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                LOGGER.log(System.Logger.Level.TRACE, "Starting services in run level: " + runLevel);
+            }
+        }
+
+        return manager;
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static ServiceDescriptor<?> virtualDescriptor(ServiceRegistryConfig config,
+                                                          ServiceDiscovery discovery,
+                                                          ServiceDescriptor<?> descriptor) {
+        TypeName serviceType = descriptor.serviceType();
+        var fromConfig = config.serviceDescriptors()
+                .stream()
+                .filter(registered -> registered.serviceType().equals(serviceType))
+                .findFirst();
+
+        if (fromConfig.isPresent()) {
+            return fromConfig.get();
+        }
+
+        return discovery.allMetadata()
+                .stream()
+                .filter(handler -> contains(handler.contracts(), serviceType))
+                .map(DescriptorHandler::descriptor)
+                .filter(desc -> desc.serviceType().equals(serviceType))
+                .findFirst()
+                .map(it -> (ServiceDescriptor) it)
+                .orElse(descriptor);
+    }
+
+    private static boolean contains(Set<ResolvedType> contracts, TypeName type) {
+        return contracts.stream().anyMatch(it -> it.type().equals(type));
+    }
+
+    private ServiceRegistry registry(Binding binding) {
         Lock readLock = lifecycleLock.readLock();
         try {
             readLock.lock();
@@ -138,8 +282,6 @@ public final class ServiceRegistryManager {
             Map<TypedQualifiedProviderKey, Set<ServiceInfo>> typedQualifiedProviders =
                     new HashMap<>();
 
-            List<ServiceDescriptor<Binding>> bindings = new ArrayList<>();
-
             config.serviceInstances()
                     .forEach((desc, instance) -> {
                         var descriptor = desc;
@@ -149,8 +291,7 @@ public final class ServiceRegistryManager {
                         }
 
                         descriptors.add(descriptor);
-                        bind(bindings,
-                             scopeHandlers,
+                        bind(scopeHandlers,
                              servicesByType,
                              servicesByContract,
                              qualifiedProvidersByQualifier,
@@ -161,8 +302,7 @@ public final class ServiceRegistryManager {
 
             for (var descriptor : config.serviceDescriptors()) {
                 descriptors.add(descriptor);
-                bind(bindings,
-                     scopeHandlers,
+                bind(scopeHandlers,
                      servicesByType,
                      servicesByContract,
                      qualifiedProvidersByQualifier,
@@ -184,19 +324,14 @@ public final class ServiceRegistryManager {
                 }
 
                 ServiceDescriptor<?> descriptor = descriptorMeta.descriptor();
-                if (contains(descriptor.contracts(), Binding.TYPE)) {
-                    bindings.add((ServiceDescriptor<Binding>) descriptor);
-                    // applications are not bound to the registry
-                } else {
-                    descriptors.add(descriptor);
-                    bind(bindings,
-                         scopeHandlers,
-                         servicesByType,
-                         servicesByContract,
-                         qualifiedProvidersByQualifier,
-                         typedQualifiedProviders,
-                         descriptor);
-                }
+
+                descriptors.add(descriptor);
+                bind(scopeHandlers,
+                     servicesByType,
+                     servicesByContract,
+                     qualifiedProvidersByQualifier,
+                     typedQualifiedProviders,
+                     descriptor);
             }
 
             // add service registry information (service registry cannot be overridden in any way)
@@ -206,8 +341,7 @@ public final class ServiceRegistryManager {
             descriptors.add(scopesDescriptor);
             descriptors.add(registryDescriptor);
 
-            bind(bindings,
-                 scopeHandlers,
+            bind(scopeHandlers,
                  servicesByType,
                  servicesByContract,
                  qualifiedProvidersByQualifier,
@@ -217,8 +351,7 @@ public final class ServiceRegistryManager {
             ServiceDescriptor<?> interceptDescriptor = InterceptionMetadata__ServiceDescriptor.INSTANCE;
             descriptors.add(interceptDescriptor);
 
-            bind(bindings,
-                 scopeHandlers,
+            bind(scopeHandlers,
                  servicesByType,
                  servicesByContract,
                  qualifiedProvidersByQualifier,
@@ -246,14 +379,8 @@ public final class ServiceRegistryManager {
                                                typedQualifiedProviders,
                                                accessedContracts);
 
-            // now check if we have an application, and if so, apply it
             if (config.useBinding()) {
-                for (ServiceDescriptor<Binding> binding : bindings) {
-                    // applications cannot have dependencies
-                    Binding bindingInstance = (Binding) binding.instantiate(DependencyContext.create(Map.of()),
-                                                                            NO_OP_INTERCEPT_META);
-                    bindingInstance.configure(new ApplicationPlanBinder(bindingInstance, registry));
-                }
+                binding.binding(new ApplicationPlanBinder(binding, registry));
             }
 
             // and if application was not bound using binding(s), we need to create the bindings now
@@ -265,66 +392,12 @@ public final class ServiceRegistryManager {
         }
     }
 
-    /**
-     * Shutdown the managed service registry.
-     */
-    public void shutdown() {
-        Lock lock = lifecycleLock.writeLock();
-        try {
-            lock.lock();
-            if (registry == null) {
-                // registry was never requested,
-                return;
-            }
-
-            registry.shutdown();
-            registry = null;
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    @SuppressWarnings("rawtypes")
-    private static ServiceDescriptor<?> virtualDescriptor(ServiceRegistryConfig config,
-                                                          ServiceDiscovery discovery,
-                                                          ServiceDescriptor<?> descriptor) {
-        TypeName serviceType = descriptor.serviceType();
-        var fromConfig = config.serviceDescriptors()
-                .stream()
-                .filter(registered -> registered.serviceType().equals(serviceType))
-                .findFirst();
-        if (fromConfig.isPresent()) {
-            return fromConfig.get();
-        }
-
-        return discovery.allMetadata()
-                .stream()
-                .filter(handler -> contains(handler.contracts(), serviceType))
-                .map(DescriptorHandler::descriptor)
-                .filter(desc -> desc.serviceType().equals(serviceType))
-                .findFirst()
-                .map(it -> (ServiceDescriptor) it)
-                .orElse(descriptor);
-    }
-
-    private static boolean contains(Set<ResolvedType> contracts, TypeName type) {
-        return contracts.stream().anyMatch(it -> it.type().equals(type));
-    }
-
-    @SuppressWarnings("unchecked")
-    private void bind(List<ServiceDescriptor<Binding>> bindings,
-                      Map<TypeName, ServiceInfo> scopeHandlers,
+    private void bind(Map<TypeName, ServiceInfo> scopeHandlers,
                       Map<TypeName, ServiceInfo> servicesByType,
                       Map<ResolvedType, Set<ServiceInfo>> servicesByContract,
                       Map<TypeName, Set<ServiceInfo>> qualifiedProvidersByQualifier,
                       Map<TypedQualifiedProviderKey, Set<ServiceInfo>> typedQualifiedProviders,
                       ServiceDescriptor<?> descriptor) {
-
-        if (contains(descriptor.contracts(), Binding.TYPE)) {
-            bindings.add((ServiceDescriptor<Binding>) descriptor);
-            // application is not bound to the registry
-            return;
-        }
 
         if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
             if (descriptor instanceof ServiceLoader__ServiceDescriptor sl) {
@@ -418,21 +491,23 @@ public final class ServiceRegistryManager {
 
         private final Binding appInstance;
         private final CoreServiceRegistry registry;
+        private final Bindings bindings;
 
         private ApplicationPlanBinder(Binding appInstance, CoreServiceRegistry registry) {
             this.appInstance = appInstance;
             this.registry = registry;
+            this.bindings = registry.bindings();
         }
 
         @Override
-        public Binder bindTo(ServiceInfo descriptor) {
-            ServiceManager<Object> serviceManager = registry.serviceManager(descriptor);
+        public Binder service(ServiceInfo descriptor) {
+            Bindings.ServiceBindingPlan serviceBindingPlan = bindings.bindingPlan(descriptor);
 
             if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                LOGGER.log(System.Logger.Level.DEBUG, "binding injection plan to " + serviceManager);
+                LOGGER.log(System.Logger.Level.DEBUG, "binding injection plan to " + descriptor.serviceType().fqName());
             }
 
-            return serviceManager.servicePlanBinder();
+            return new ServiceBinder(serviceBindingPlan);
         }
 
         @Override
@@ -444,28 +519,36 @@ public final class ServiceRegistryManager {
         public String toString() {
             return "Service binder for application: " + appInstance.name();
         }
+
+        private static class ServiceBinder implements Binder {
+            private final Bindings.ServiceBindingPlan serviceBindingPlan;
+
+            ServiceBinder(Bindings.ServiceBindingPlan serviceBindingPlan) {
+                this.serviceBindingPlan = serviceBindingPlan;
+            }
+
+            @Override
+            public Binder bind(Dependency dependency, ServiceInfo... descriptor) {
+                serviceBindingPlan.binding(dependency)
+                        .bind(List.of(descriptor));
+
+                return this;
+            }
+        }
     }
 
-    private static class NoOpInterceptMeta implements InterceptionMetadata {
+    private static class NoOpBinding implements Binding {
         @Override
-        public <T> InterceptionInvoker<T> createInvoker(ServiceInfo descriptor,
-                                                        Set<Qualifier> typeQualifiers,
-                                                        List<Annotation> typeAnnotations,
-                                                        TypedElementInfo element,
-                                                        InterceptionInvoker<T> targetInvoker,
-                                                        Set<Class<? extends Throwable>> checkedExceptions) {
-            return targetInvoker;
+        public String name() {
+            return "no-op";
         }
 
         @Override
-        public <T> InterceptionInvoker<T> createInvoker(Object serviceInstance,
-                                                        ServiceInfo descriptor,
-                                                        Set<Qualifier> typeQualifiers,
-                                                        List<Annotation> typeAnnotations,
-                                                        TypedElementInfo element,
-                                                        InterceptionInvoker<T> targetInvoker,
-                                                        Set<Class<? extends Throwable>> checkedExceptions) {
-            return targetInvoker;
+        public void binding(DependencyPlanBinder binder) {
+        }
+
+        @Override
+        public void configure(ServiceRegistryConfig.Builder builder) {
         }
     }
 }

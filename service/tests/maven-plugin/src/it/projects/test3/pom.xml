@@ -81,7 +81,6 @@
                 </dependencies>
                 <configuration>
                     <generateBinding>false</generateBinding>
-                    <generateMain>false</generateMain>
                     <failOnWarning>true</failOnWarning>
                 </configuration>
             </plugin>
