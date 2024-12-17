@@ -14,15 +14,21 @@
  * limitations under the License.
  */
 
-package io.helidon.service.codegen;
+package io.helidon.config;
 
-import java.util.Set;
+import java.util.Optional;
+import java.util.function.Supplier;
 
-import io.helidon.codegen.ClassCode;
-import io.helidon.common.types.ResolvedType;
+import io.helidon.service.registry.Service;
 
-record DescriptorClassCodeImpl(ClassCode classCode,
-                               double weight,
-                               Set<ResolvedType> contracts,
-                               Set<ResolvedType> factoryContracts) implements DescriptorClassCode {
+/**
+ * A ServiceRegistry factory that creates the meta config only if it is defined.
+ */
+@Service.Singleton
+class MetaConfigFactory implements Supplier<Optional<MetaConfig>> {
+    @Override
+    public Optional<MetaConfig> get() {
+        return MetaConfig.metaConfig()
+                .map(it -> new MetaConfig());
+    }
 }

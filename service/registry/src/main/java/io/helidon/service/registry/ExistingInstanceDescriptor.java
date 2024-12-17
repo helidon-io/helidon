@@ -119,9 +119,4 @@ public final class ExistingInstanceDescriptor<T> implements ServiceDescriptor<T>
     public int hashCode() {
         return Objects.hash(instance, contracts, weight);
     }
-
-    @Override
-    public TypeName scope() {
-        return Service.Singleton.TYPE;
-    }
 }

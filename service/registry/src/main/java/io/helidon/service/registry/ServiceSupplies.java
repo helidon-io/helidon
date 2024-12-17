@@ -17,7 +17,6 @@
 package io.helidon.service.registry;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -208,57 +207,5 @@ final class ServiceSupplies {
                     .stream()
                     .collect(Collectors.toUnmodifiableList());
         }
-    }
-
-    private static class RegistryInstanceComparator implements Comparator<ServiceInstance<?>> {
-        private static final RegistryInstanceComparator INSTANCE = new RegistryInstanceComparator();
-
-        private RegistryInstanceComparator() {
-        }
-
-        /**
-         * Returns a service provider comparator.
-         *
-         * @return the service provider comparator
-         */
-        static RegistryInstanceComparator instance() {
-            return INSTANCE;
-        }
-
-        @Override
-        public int compare(ServiceInstance<?> p1,
-                           ServiceInstance<?> p2) {
-            if (p1 == p2) {
-                return 0;
-            }
-
-            // unqualified instances always first (even if lower weight)
-            if (p1.qualifiers().isEmpty() && !p2.qualifiers().isEmpty()) {
-                return -1;
-            }
-
-            if (p2.qualifiers().isEmpty() && !p1.qualifiers().isEmpty()) {
-                return 1;
-            }
-
-            // @default name before any other name
-            if (p1.qualifiers().contains(Qualifier.DEFAULT_NAMED) && !p2.qualifiers().contains(Qualifier.DEFAULT_NAMED)) {
-                return -1;
-            }
-
-            if (p2.qualifiers().contains(Qualifier.DEFAULT_NAMED) && !p1.qualifiers().contains(Qualifier.DEFAULT_NAMED)) {
-                return 1;
-            }
-
-            // weights
-            int comp = Double.compare(p2.weight(), p1.weight());
-            if (comp != 0) {
-                return comp;
-            }
-
-            // last by name
-            return p1.serviceType().compareTo(p2.serviceType());
-        }
-
     }
 }

@@ -44,6 +44,7 @@
 
     <modules>
         <module>codegen</module>
+        <module>config</module>
         <module>registry</module>
         <module>inject</module>
         <module>lookup</module>

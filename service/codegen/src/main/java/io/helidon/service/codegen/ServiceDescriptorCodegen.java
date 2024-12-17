@@ -298,8 +298,7 @@ public class ServiceDescriptorCodegen {
             metaInfFactoryContracts.add(ResolvedType.create(serviceTypeName));
         }
 
-        roundCtx.addDescriptor("core",
-                               serviceTypeName,
+        roundCtx.addDescriptor(serviceTypeName,
                                service.descriptorType(),
                                classModel,
                                weight(typeInfo).orElse(Weighted.DEFAULT_WEIGHT),
@@ -386,8 +385,7 @@ public class ServiceDescriptorCodegen {
         Set<ResolvedType> serviceContracts = new HashSet<>(contracts);
         serviceContracts.add(ResolvedType.create(serviceTypeName));
 
-        roundCtx.addDescriptor("core",
-                               serviceTypeName,
+        roundCtx.addDescriptor(serviceTypeName,
                                service.descriptorType(),
                                classModel,
                                weight(serviceDescriptor.typeInfo()).orElse(Weighted.DEFAULT_WEIGHT),
@@ -561,9 +559,6 @@ public class ServiceDescriptorCodegen {
             return ServiceSuperType.create();
         }
         TypeInfo superType = superTypeInfoOptional.get();
-        String serviceType = superType.hasAnnotation(SERVICE_ANNOTATION_PROVIDER)
-                ? "core"
-                : "inject";
 
         TypeName expectedSuperDescriptor = ctx.descriptorType(superType.typeName());
         TypeName superTypeToExtend = TypeName.builder(expectedSuperDescriptor)
@@ -571,12 +566,12 @@ public class ServiceDescriptorCodegen {
                 .build();
         for (TypeInfo service : services) {
             if (service.typeName().equals(superType.typeName())) {
-                return ServiceSuperType.create(service, serviceType, superTypeToExtend);
+                return ServiceSuperType.create(service, superTypeToExtend);
             }
         }
         // if not found in current list, try checking existing types
         return ctx.typeInfo(expectedSuperDescriptor)
-                .map(it -> ServiceSuperType.create(superType, serviceType, superTypeToExtend))
+                .map(it -> ServiceSuperType.create(superType, superTypeToExtend))
                 .orElseGet(ServiceSuperType::create);
     }
 
@@ -1514,7 +1509,7 @@ public class ServiceDescriptorCodegen {
                     .returnType(LIST_OF_DEPENDENCIES)
                     .name("dependencies")
                     .update(it -> {
-                        if (hasSuperType && !service.superType().serviceType().equals("core")) {
+                        if (hasSuperType) {
                             it.addContent("return ")
                                     .addContent(SERVICE_G_DEPENDENCY_SUPPORT)
                                     .addContentLine(".combineDependencies(DEPENDENCIES, super.dependencies());");

@@ -29,19 +29,16 @@ public interface DescriptorClassCode {
      * Create a new instance.
      *
      * @param classCode        class code that contains necessary information for the generated class.
-     * @param registryType     type of registry that generates the descriptor (core, inject)
      * @param weight           weight of the service this descriptor describes
      * @param contracts        contracts of the service (i.e. {@code MyContract})
      * @param factoryContracts factory contracts of this service (i.e. {@code Supplier<MyContract>})
      * @return a new class code of service descriptor
      */
     static DescriptorClassCode create(ClassCode classCode,
-                                      String registryType,
                                       double weight,
                                       Set<ResolvedType> contracts,
                                       Set<ResolvedType> factoryContracts) {
         return new DescriptorClassCodeImpl(classCode,
-                                           registryType,
                                            weight,
                                            contracts,
                                            factoryContracts);
@@ -53,13 +50,6 @@ public interface DescriptorClassCode {
      * @return class code
      */
     ClassCode classCode();
-
-    /**
-     * Type of registry of this descriptor.
-     *
-     * @return registry type
-     */
-    String registryType();
 
     /**
      * Weight of the new descriptor.

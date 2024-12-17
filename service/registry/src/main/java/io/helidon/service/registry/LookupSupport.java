@@ -131,13 +131,9 @@ final class LookupSupport {
             } else {
                 builder.dependency().ifPresent(existing -> {
                     // clear if contained only IP stuff
-                    boolean shouldClear = true;
-                    if (!builder.qualifiers().equals(existing.qualifiers())) {
-                        shouldClear = false;
+                    boolean shouldClear = builder.qualifiers().equals(existing.qualifiers());
 
-                    }
-                    if (!(
-                            builder.contracts().contains(ResolvedType.create(existing.contract()))
+                    if (!(builder.contracts().contains(ResolvedType.create(existing.contract()))
                                     && builder.contracts().size() == 1)) {
                         shouldClear = false;
                     }

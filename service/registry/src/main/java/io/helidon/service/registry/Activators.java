@@ -560,8 +560,19 @@ final class Activators {
             }
             // the instance list is created just once, hardcoded to the instance we have just created
             Supplier<T> instanceSupplier = (Supplier<T>) serviceInstance.get();
-            this.targetInstances = List.of(QualifiedInstance.create(instanceSupplier.get(),
-                                                                    provider.descriptor().qualifiers()));
+            T value = instanceSupplier.get();
+            if (value instanceof Optional opt) {
+                if (opt.isPresent()) {
+                    value = (T) opt.get();
+                    this.targetInstances = List.of(QualifiedInstance.create(value,
+                                                                            provider.descriptor().qualifiers()));
+                } else {
+                    this.targetInstances = List.of();
+                }
+            } else {
+                this.targetInstances = List.of(QualifiedInstance.create(value,
+                                                                        provider.descriptor().qualifiers()));
+            }
         }
     }
 

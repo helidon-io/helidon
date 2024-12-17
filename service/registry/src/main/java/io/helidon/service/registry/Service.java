@@ -442,15 +442,6 @@ public final class Service {
         TypeName TYPE = TypeName.create(Descriptor.class);
 
         /**
-         * Type of service registry that should read this descriptor. Defaults to
-         * {@value DescriptorHandler#REGISTRY_TYPE_CORE}, so the descriptor must only implement
-         * {@link io.helidon.service.registry.ServiceDescriptor}.
-         *
-         * @return type of registry this descriptor supports
-         */
-        String registryType() default DescriptorHandler.REGISTRY_TYPE_CORE;
-
-        /**
          * The weight of the service. This is required for predefined descriptors, as we do not want
          * to instantiate them unless really needed.
          *

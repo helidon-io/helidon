@@ -183,8 +183,7 @@ class BindingGenerator {
                                                     descriptor.classCode().originatingElements());
             sourcesToCompile.add(path);
 
-            services.add(DescriptorMetadata.create(descriptor.registryType(),
-                                                   descriptor.classCode().newType(),
+            services.add(DescriptorMetadata.create(descriptor.classCode().newType(),
                                                    descriptor.weight(),
                                                    descriptor.contracts(),
                                                    Set.of()));

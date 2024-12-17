@@ -23,6 +23,7 @@ import io.helidon.service.registry.Lookup;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryManager;
+import io.helidon.service.registry.Services;
 
 /**
  * We must provide a main class when using modularized jar file with main class attribute,
@@ -36,11 +37,13 @@ public class Main {
     }
 
     public static void main(String[] args) {
+        System.out.println(System.getProperties());
         LogConfig.configureRuntime();
 
         // makes sure global config is initialized
-        Config config = GlobalConfig.config();
-        GlobalConfig.config(() -> config);
+        Config config = Config.create();
+        GlobalConfig.config(() -> config, true);
+        Services.set(Config.class, config);
 
         ServiceRegistry registry = ServiceRegistryManager.create()
                 .registry();

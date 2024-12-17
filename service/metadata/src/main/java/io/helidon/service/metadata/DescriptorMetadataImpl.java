@@ -25,15 +25,13 @@ import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 import io.helidon.metadata.hson.Hson;
 
-record DescriptorMetadataImpl(String registryType,
-                              double weight,
+record DescriptorMetadataImpl(double weight,
                               TypeName descriptorType,
                               Set<ResolvedType> contracts,
                               Set<ResolvedType> factoryContracts) implements DescriptorMetadata {
 
     private static final int CURRENT_DESCRIPTOR_VERSION = 1;
     private static final int DEFAULT_DESCRIPTOR_VERSION = 1;
-    private static final String HSON_TYPE = "type";
     private static final String HSON_WEIGHT = "weight";
     private static final String HSON_DESCRIPTOR = "descriptor";
     private static final String HSON_CONTRACTS = "contracts";
@@ -50,7 +48,6 @@ record DescriptorMetadataImpl(String registryType,
                                                     + service.stringValue(HSON_DESCRIPTOR, "N/A"));
         }
 
-        String type = service.stringValue(HSON_TYPE, REGISTRY_TYPE_CORE);
         TypeName descriptor = service.stringValue(HSON_DESCRIPTOR)
                 .map(TypeName::create)
                 .orElseThrow(() -> new IllegalStateException("Could not parse service metadata "
@@ -70,16 +67,13 @@ record DescriptorMetadataImpl(String registryType,
                 .map(ResolvedType::create)
                 .collect(Collectors.toSet());
 
-        return new DescriptorMetadataImpl(type, weight, descriptor, contracts, factoryContracts);
+        return new DescriptorMetadataImpl(weight, descriptor, contracts, factoryContracts);
     }
 
     @Override
     public Hson.Struct toHson() {
         var builder = Hson.structBuilder();
 
-        if (!registryType.equals(REGISTRY_TYPE_CORE)) {
-            builder.set(HSON_TYPE, registryType);
-        }
         if (weight != Weighted.DEFAULT_WEIGHT) {
             builder.set(HSON_WEIGHT, weight);
         }

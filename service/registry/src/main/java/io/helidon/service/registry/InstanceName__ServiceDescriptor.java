@@ -58,11 +58,6 @@ public class InstanceName__ServiceDescriptor implements ServiceDescriptor<String
     }
 
     @Override
-    public TypeName scope() {
-        return Service.Singleton.TYPE;
-    }
-
-    @Override
     public FactoryType factoryType() {
         return FactoryType.NONE;
     }

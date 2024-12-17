@@ -309,10 +309,9 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
                     if (!result.isEmpty()) {
                         traceLookup(lookup, "by single contract", result);
                         if (cacheEnabled) {
-                            cacheAndAccess(lookup, result);
-                        } else {
-                            result.forEach(this::accessed);
+                            cache.put(lookup, result);
                         }
+
                         return result;
                     }
                 }
@@ -350,9 +349,7 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
             }
 
             if (cacheEnabled) {
-                cacheAndAccess(lookup, result);
-            } else {
-                result.forEach(this::accessed);
+                cache.put(lookup, result);
             }
 
             traceLookup(lookup, "full result", result);
@@ -534,6 +531,7 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
 
         for (ServiceInfo service : lookupServices(lookup)) {
             result.add(serviceManager(service));
+            accessed(service);
         }
 
         return result;
@@ -571,11 +569,6 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
     void ensureInjectionPlans() {
         servicesByDescriptor.values()
                 .forEach(ServiceManager::ensureBindingPlan);
-    }
-
-    private void cacheAndAccess(Lookup lookup, List<ServiceInfo> result) {
-        cache.put(lookup, result);
-        result.forEach(this::accessed);
     }
 
     private void accessed(ServiceInfo service) {

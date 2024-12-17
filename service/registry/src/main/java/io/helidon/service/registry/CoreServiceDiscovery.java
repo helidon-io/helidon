@@ -171,8 +171,7 @@ class CoreServiceDiscovery implements ServiceDiscovery {
         }
 
         ServiceDescriptor<Object> descriptor = ServiceLoader__ServiceDescriptor.create(providerType, provider, weight);
-        return new DescriptorHandlerImpl(DescriptorMetadata.create("core",
-                                                                   descriptor.descriptorType(),
+        return new DescriptorHandlerImpl(DescriptorMetadata.create(descriptor.descriptorType(),
                                                                    weight,
                                                                    descriptor.contracts(),
                                                                    descriptor.factoryContracts()),
@@ -217,11 +216,6 @@ class CoreServiceDiscovery implements ServiceDiscovery {
         @Override
         public ServiceDescriptor<?> descriptor() {
             return descriptorSupplier.get();
-        }
-
-        @Override
-        public String registryType() {
-            return metadata.registryType();
         }
 
         @Override

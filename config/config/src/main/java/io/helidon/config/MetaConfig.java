@@ -31,7 +31,6 @@ import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.OverrideSource;
 import io.helidon.config.spi.PollingStrategy;
 import io.helidon.config.spi.RetryPolicy;
-import io.helidon.service.registry.Service;
 
 /**
  * Meta configuration.
@@ -69,7 +68,6 @@ import io.helidon.service.registry.Service;
  *     <li>Classpath resource config source for resource {@code default.yaml} that is mandatory</li>
  * </ul>
  */
-@Service.Provider
 public final class MetaConfig {
     private static final System.Logger LOGGER = System.getLogger(MetaConfig.class.getName());
     private static final Set<MediaType> SUPPORTED_MEDIA_TYPES;
@@ -97,7 +95,7 @@ public final class MetaConfig {
 
     /**
      * Create configuration from meta configuration (files or classpath resources), or create a default config instance
-     *  if meta configuration is not present.
+     * if meta configuration is not present.
      *
      * @return a config instance
      */
@@ -177,7 +175,8 @@ public final class MetaConfig {
     /**
      * Load a config source (or config sources) based on its meta configuration.
      * The metaConfig must contain a key {@code type} that defines the type of the source to be found via providers, and
-     *   a key {@code properties} with configuration of the config sources
+     * a key {@code properties} with configuration of the config sources
+     *
      * @param sourceMetaConfig meta configuration of a config source
      * @return config source instance
      * @see Config.Builder#config(Config)
@@ -207,15 +206,6 @@ public final class MetaConfig {
         }
     }
 
-    /**
-     * Meta configuration if provided, or empty config if not.
-     *
-     * @return meta configuration
-     */
-    public Config metaConfiguration() {
-        return this.metaConfig;
-    }
-
     // override config source
     static OverrideSource overrideSource(Config sourceMetaConfig) {
         String type = sourceMetaConfig.get("type").asString().get();
@@ -238,6 +228,15 @@ public final class MetaConfig {
                 .ifPresent(list -> list.forEach(it -> configSources.addAll(MetaConfig.configSource(it))));
 
         return configSources;
+    }
+
+    /**
+     * Meta configuration if provided, or empty config if not.
+     *
+     * @return meta configuration
+     */
+    public Config metaConfiguration() {
+        return this.metaConfig;
     }
 
     private static Config createDefault() {

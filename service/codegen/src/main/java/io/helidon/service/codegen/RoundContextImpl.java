@@ -133,15 +133,13 @@ class RoundContextImpl implements RegistryRoundContext {
     }
 
     @Override
-    public void addDescriptor(String registryType,
-                              TypeName serviceType,
+    public void addDescriptor(TypeName serviceType,
                               TypeName descriptorType,
                               ClassModel.Builder descriptor,
                               double weight,
                               Set<ResolvedType> contracts,
                               Set<ResolvedType> factoryContracts,
                               Object... originatingElements) {
-        Objects.requireNonNull(registryType);
         Objects.requireNonNull(serviceType);
         Objects.requireNonNull(descriptorType);
         Objects.requireNonNull(descriptor);
@@ -150,7 +148,6 @@ class RoundContextImpl implements RegistryRoundContext {
 
         addDescriptorConsumer
                 .accept(new DescriptorClassCodeImpl(new ClassCode(descriptorType, descriptor, serviceType, originatingElements),
-                                                    registryType,
                                                     weight,
                                                     contracts,
                                                     factoryContracts));

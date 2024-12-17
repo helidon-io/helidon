@@ -88,11 +88,6 @@ public class VirtualDescriptor implements ServiceDescriptor<Object> {
     }
 
     @Override
-    public TypeName scope() {
-        return Service.Singleton.TYPE;
-    }
-
-    @Override
     public String toString() {
         return "VirtualDescriptor for contract " + serviceType + " (" + weight + ")";
     }

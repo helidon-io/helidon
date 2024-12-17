@@ -41,8 +41,7 @@ class MavenRoundContext implements RegistryRoundContext {
     }
 
     @Override
-    public void addDescriptor(String registryType,
-                              TypeName serviceType,
+    public void addDescriptor(TypeName serviceType,
                               TypeName descriptorType,
                               ClassModel.Builder descriptor,
                               double weight,
@@ -53,7 +52,7 @@ class MavenRoundContext implements RegistryRoundContext {
                                      descriptor,
                                      serviceType,
                                      originatingElements);
-        descriptors.add(DescriptorClassCode.create(cc, registryType, weight, contracts, factoryContracts));
+        descriptors.add(DescriptorClassCode.create(cc, weight, contracts, factoryContracts));
     }
 
     @Override

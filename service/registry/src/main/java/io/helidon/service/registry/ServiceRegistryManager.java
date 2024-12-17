@@ -34,7 +34,6 @@ import java.util.stream.Collectors;
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
-import io.helidon.service.metadata.DescriptorMetadata;
 
 /**
  * Manager is responsible for managing the state of a {@link io.helidon.service.registry.ServiceRegistry}.
@@ -310,19 +309,7 @@ public final class ServiceRegistryManager {
                      descriptor);
             }
 
-            boolean logUnsupported = LOGGER.isLoggable(System.Logger.Level.TRACE);
-
             for (var descriptorMeta : discovery.allMetadata()) {
-                String registryType = descriptorMeta.registryType();
-                if (!(DescriptorMetadata.REGISTRY_TYPE_CORE.equals(registryType) || "inject".equals(registryType))) {
-                    // we support only core and inject
-                    if (logUnsupported) {
-                        LOGGER.log(System.Logger.Level.TRACE,
-                                   "Ignoring service of type \"" + descriptorMeta.registryType() + "\": " + descriptorMeta);
-                    }
-                    continue;
-                }
-
                 ServiceDescriptor<?> descriptor = descriptorMeta.descriptor();
 
                 descriptors.add(descriptor);

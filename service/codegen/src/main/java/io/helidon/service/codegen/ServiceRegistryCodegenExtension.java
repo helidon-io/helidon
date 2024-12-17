@@ -113,11 +113,8 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
                     .map(ResolvedType::create)
                     .collect(Collectors.toUnmodifiableSet());
 
-            String registryType = descriptorAnnot.stringValue("registryType").orElse("core");
-
             // predefined service descriptor
-            generatedServiceDescriptors.add(DescriptorMetadata.create(registryType,
-                                                                      typeInfo.typeName(),
+            generatedServiceDescriptors.add(DescriptorMetadata.create(typeInfo.typeName(),
                                                                       weight,
                                                                       contracts,
                                                                       Set.of()));
@@ -196,8 +193,7 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
         // generate all code
         for (var descriptor : descriptors) {
             ClassCode classCode = descriptor.classCode();
-            generatedServiceDescriptors.add(DescriptorMetadata.create(descriptor.registryType(),
-                                                                      classCode.newType(),
+            generatedServiceDescriptors.add(DescriptorMetadata.create(classCode.newType(),
                                                                       descriptor.weight(),
                                                                       descriptor.contracts(),
                                                                       descriptor.factoryContracts()));

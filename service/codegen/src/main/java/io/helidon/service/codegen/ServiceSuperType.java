@@ -27,11 +27,9 @@ import io.helidon.common.types.TypeName;
  */
 public final class ServiceSuperType {
     private final TypeInfo typeInfo;
-    private final String descriptorType;
     private final TypeName descriptorTypeName;
 
-    private ServiceSuperType(TypeInfo typeInfo, String descriptorType, TypeName descriptoryTypeName) {
-        this.descriptorType = descriptorType;
+    private ServiceSuperType(TypeInfo typeInfo, TypeName descriptoryTypeName) {
         this.descriptorTypeName = descriptoryTypeName;
         this.typeInfo = typeInfo;
     }
@@ -40,16 +38,14 @@ public final class ServiceSuperType {
      * Create a registry based super type.
      *
      * @param typeInfo           type info of the super type
-     * @param descriptorType     descriptor type (core, inject etc.) of the descriptor
      * @param descriptorTypeName type name of the service descriptor of the extended type
      * @return a new super type for a real super type
      */
-    public static ServiceSuperType create(TypeInfo typeInfo, String descriptorType, TypeName descriptorTypeName) {
+    public static ServiceSuperType create(TypeInfo typeInfo, TypeName descriptorTypeName) {
         Objects.requireNonNull(typeInfo);
-        Objects.requireNonNull(descriptorType);
         Objects.requireNonNull(descriptorTypeName);
 
-        return new ServiceSuperType(typeInfo, descriptorType, descriptorTypeName);
+        return new ServiceSuperType(typeInfo, descriptorTypeName);
     }
 
     /**
@@ -58,7 +54,7 @@ public final class ServiceSuperType {
      * @return super type that is not present
      */
     public static ServiceSuperType create() {
-        return new ServiceSuperType(null, null, null);
+        return new ServiceSuperType(null, null);
     }
 
     /**
@@ -77,16 +73,6 @@ public final class ServiceSuperType {
      */
     public boolean empty() {
         return typeInfo == null;
-    }
-
-    /**
-     * Type of the service descriptor, either {@code core} for core service registry, or other depending on supported
-     * types (such as {@code inject}).
-     *
-     * @return type of the service
-     */
-    public String serviceType() {
-        return descriptorType == null ? "core" : descriptorType;
     }
 
     /**
