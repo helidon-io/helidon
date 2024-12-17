@@ -161,7 +161,7 @@ class Bindings {
                     .build();
         }
 
-        public List<ServiceInfo> descriptors() {
+        List<ServiceInfo> descriptors() {
             return serviceInfos;
         }
 
@@ -269,19 +269,12 @@ class Bindings {
 
         private void discoverBinding() {
             // lookup services, exclude ourselves (when doing chained injection, we lookup by weight)
-            List<ServiceInfo> found = registry.lookupServices(lookup)
+            // we need all service descriptors, as a service may not yield a service
+            // (such as optional suppliers, ServicesFactory etc.), so we use the next one
+            this.serviceInfos = registry.lookupServices(lookup)
                     .stream()
                     .filter(it -> it != serviceInfo)
                     .collect(Collectors.toList());
-            if (found.isEmpty() && (dependency.cardinality() == DependencyCardinality.REQUIRED)) {
-                throw new ServiceRegistryException("There is no service in registry that satisfied this dependency: "
-                                                           + dependency);
-            }
-
-            // we need all service descriptors, as a service may not yield a service
-            // (such as optional suppliers, ServicesFactory etc.), so we use the next one
-
-            this.serviceInfos = found;
         }
 
         private static class DependencySupplier implements Supplier<Object> {
