@@ -85,7 +85,7 @@ class HelidonTestConfigTest {
     }
 
     private static AddConfig addConfig(String key, String value) {
-        return ProxyHelper.annotation(AddConfig.class, attr -> switch (attr) {
+        return Proxies.annotation(AddConfig.class, attr -> switch (attr) {
             case "key" -> key;
             case "value" -> value;
             default -> null;
@@ -93,7 +93,7 @@ class HelidonTestConfigTest {
     }
 
     private static Configuration configuration(boolean useExisting, String... configSources) {
-        return ProxyHelper.annotation(Configuration.class, attr -> switch (attr) {
+        return Proxies.annotation(Configuration.class, attr -> switch (attr) {
             case "useExisting" -> useExisting;
             case "configSources" -> configSources;
             default -> null;

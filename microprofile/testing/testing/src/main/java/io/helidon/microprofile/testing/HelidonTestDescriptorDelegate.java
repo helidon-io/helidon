@@ -15,10 +15,13 @@
  */
 package io.helidon.microprofile.testing;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 /**
  * Descriptor delegate.
@@ -81,5 +84,17 @@ class HelidonTestDescriptorDelegate<T extends AnnotatedElement> implements Helid
     @Override
     public List<Method> addConfigSources() {
         return delegate.addConfigSources();
+    }
+
+    @Override
+    public <A extends Annotation, C extends Annotation> Stream<A> annotations(Class<A> aType,
+                                                                              Class<C> cType,
+                                                                              Function<C, A[]> function) {
+        return delegate.annotations(aType, cType, function);
+    }
+
+    @Override
+    public <A extends Annotation> Stream<A> annotations(Class<A> aType) {
+        return delegate.annotations(aType);
     }
 }

@@ -19,7 +19,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -204,30 +203,15 @@ public abstract class HelidonTestDescriptorBase<T extends AnnotatedElement> impl
                 .toList();
     }
 
-    /**
-     * Get annotations.
-     *
-     * @param aType    annotation type
-     * @param cType    annotation container type
-     * @param function function to inflate from container
-     * @param <A>      annotation type
-     * @param <C>      container type
-     * @return annotations
-     */
-    protected <A extends Annotation, C extends Annotation> Stream<A> annotations(Class<A> aType,
+    @Override
+    public <A extends Annotation, C extends Annotation> Stream<A> annotations(Class<A> aType,
                                                                                  Class<C> cType,
                                                                                  Function<C, A[]> function) {
         return filterAnnotations(annotated, aType, cType, function);
     }
 
-    /**
-     * Get annotations.
-     *
-     * @param aType annotation type
-     * @param <A>   annotation type
-     * @return annotations
-     */
-    protected <A extends Annotation> Stream<A> annotations(Class<A> aType) {
+    @Override
+    public <A extends Annotation> Stream<A> annotations(Class<A> aType) {
         return filterAnnotations(annotated, aType);
     }
 

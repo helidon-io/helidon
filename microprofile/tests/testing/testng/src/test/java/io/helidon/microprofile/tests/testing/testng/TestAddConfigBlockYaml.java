@@ -34,7 +34,7 @@ import org.testng.annotations.Test;
     another2:
       key: "another2.value"
 """)
-class TestAddConfigBlockYaml {
+public class TestAddConfigBlockYaml {
 
     @Inject
     @ConfigProperty(name = "another1.key")

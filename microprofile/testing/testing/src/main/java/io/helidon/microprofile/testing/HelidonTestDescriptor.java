@@ -15,11 +15,14 @@
  */
 package io.helidon.microprofile.testing;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import jakarta.enterprise.inject.spi.Extension;
 
@@ -114,4 +117,36 @@ public interface HelidonTestDescriptor<T extends AnnotatedElement> {
                 .anyMatch(Predicate.isEqual(type));
     }
 
+    /**
+     * Get annotations.
+     *
+     * @param aType    annotation type
+     * @param cType    annotation container type
+     * @param function function to inflate from container
+     * @param <A>      annotation type
+     * @param <C>      container type
+     * @return annotations
+     */
+    <A extends Annotation, C extends Annotation> Stream<A> annotations(Class<A> aType,
+                                                                       Class<C> cType,
+                                                                       Function<C, A[]> function);
+
+    /**
+     * Get annotations.
+     *
+     * @param aType annotation type
+     * @param <A>   annotation type
+     * @return annotations
+     */
+    <A extends Annotation> Stream<A> annotations(Class<A> aType);
+
+    /**
+     * Test if an annotation of the given type is present.
+     *
+     * @param type annotation type
+     * @return {@code true} if found, {@code false} otherwise
+     */
+    default boolean containsAnnotation(Class<? extends Annotation> type) {
+        return annotations(type).findFirst().isPresent();
+    }
 }

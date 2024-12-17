@@ -36,7 +36,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 @HelidonTest
 @AddBean(TestMockBeanArgumentMatcher.Resource.class)
 @AddBean(TestMockBeanArgumentMatcher.Service.class)
-class TestMockBeanArgumentMatcher {
+public class TestMockBeanArgumentMatcher {
 
     @MockBean
     private Service service;

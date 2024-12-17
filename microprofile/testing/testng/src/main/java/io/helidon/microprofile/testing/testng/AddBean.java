@@ -23,8 +23,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import jakarta.enterprise.context.ApplicationScoped;
-
 /**
  * Add a CDI bean to the container.
  * <p>

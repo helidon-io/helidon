@@ -15,7 +15,7 @@
  */
 package io.helidon.microprofile.testing.testng;
 
-import io.helidon.microprofile.testing.ProxyHelper;
+import io.helidon.microprofile.testing.Instrumented;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
@@ -23,7 +23,7 @@ import org.testng.IModuleFactory;
 import org.testng.ITestContext;
 
 /**
- * A Guice module factory that instantiates instrumented classes.
+ * A simple Guice module factory that instantiates the instrumented test class.
  */
 public class HelidonTestNgModuleFactory implements IModuleFactory {
     @Override
@@ -37,7 +37,7 @@ public class HelidonTestNgModuleFactory implements IModuleFactory {
 
         ModuleImpl(Class<T> testClass) {
             this.testClass = testClass;
-            this.testInstance = ProxyHelper.allocateInstance(testClass);
+            this.testInstance = Instrumented.allocateInstance(testClass);
         }
 
         @Override

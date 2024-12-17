@@ -17,11 +17,12 @@
 package io.helidon.microprofile.testing.junit5;
 
 import java.lang.reflect.Method;
+import java.util.List;
 
 import io.helidon.microprofile.testing.HelidonTestInfo.ClassInfo;
 import io.helidon.microprofile.testing.HelidonTestInfo.MethodInfo;
 import io.helidon.microprofile.testing.HelidonTestScope;
-import io.helidon.microprofile.testing.ProxyHelper;
+import io.helidon.microprofile.testing.Instrumented;
 
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
@@ -39,6 +40,7 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
 
 import static io.helidon.microprofile.testing.HelidonTestInfo.classInfo;
 import static io.helidon.microprofile.testing.HelidonTestInfo.methodInfo;
+import static io.helidon.microprofile.testing.Instrumented.instrument;
 import static io.helidon.microprofile.testing.junit5.ContextHelper.classContext;
 import static io.helidon.microprofile.testing.junit5.ContextHelper.lookup;
 import static io.helidon.microprofile.testing.junit5.ContextHelper.store;
@@ -93,11 +95,13 @@ public class HelidonJunitExtension implements BeforeEachCallback,
         // Use a proxy to start the container after the test instance creation
         // The container is started lazily when invoking a method
         // or when resolving parameters
-        return ProxyHelper.proxyDelegate(context.getRequiredTestClass(), (type, method) -> {
-            // class context store specific to the intercepted method
-            Store store = store(context, method);
-            return requiredContainer(store).resolveInstance(type);
-        });
+        Class<?> testClass = instrument(context.getRequiredTestClass(), List.of(), List.of(),
+                (type, method) -> {
+                    // class context store specific to the intercepted method
+                    Store store = store(context, method);
+                    return requiredContainer(store).resolveInstance(type);
+                });
+        return Instrumented.allocateInstance(testClass);
     }
 
     @Override

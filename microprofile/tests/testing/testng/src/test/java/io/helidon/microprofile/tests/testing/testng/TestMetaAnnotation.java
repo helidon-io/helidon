@@ -36,7 +36,7 @@ import org.testng.annotations.Test;
 @TestMetaAnnotation.MetaAnnotation
 // @HelidonTest is still mandatory in the test and it has no effect in the MetaAnnotation
 @HelidonTest
-class TestMetaAnnotation {
+public class TestMetaAnnotation {
 
     @Inject
     MyBean bean;

@@ -23,7 +23,6 @@ import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -43,17 +42,11 @@ public class TestDefaults {
     private String shouldNotExist;
 
     private boolean beforeClassCalled;
-    private boolean beforeTestCalled;
     private boolean beforeMethodCalled;
 
     @BeforeClass
     void beforeClass() {
         beforeClassCalled = true;
-    }
-
-    @BeforeTest
-    void beforeTest() {
-        beforeTestCalled = true;
     }
 
     @BeforeMethod
@@ -70,7 +63,6 @@ public class TestDefaults {
     @Test
     void testLifecycleMethodsCalled() {
         assertThat(beforeClassCalled, is(true));
-//        assertThat(beforeTestCalled, is(true));
         assertThat(beforeMethodCalled, is(true));
     }
 }

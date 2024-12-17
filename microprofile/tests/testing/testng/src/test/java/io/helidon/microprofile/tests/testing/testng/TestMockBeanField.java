@@ -37,7 +37,7 @@ import org.testng.annotations.Test;
 @HelidonTest
 @AddBean(TestMockBeanField.Resource.class)
 @AddBean(TestMockBeanField.Service.class)
-class TestMockBeanField {
+public class TestMockBeanField {
 
     @Inject
     @MockBean

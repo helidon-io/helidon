@@ -15,6 +15,7 @@
  */
 package io.helidon.microprofile.testing;
 
+import java.lang.annotation.Annotation;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
@@ -56,7 +57,8 @@ public sealed interface HelidonTestInfo<T extends AnnotatedElement> extends Heli
      * @return ClassInfo
      */
     static ClassInfo classInfo(Class<?> element, Function<Class<?>, HelidonTestDescriptor<Class<?>>> function) {
-        return ClassInfo.CACHE.compute(element.getName(), (e, r) -> {
+        Class<?> clazz = Instrumented.unwrap(element);
+        return ClassInfo.CACHE.compute(clazz.getName(), (e, r) -> {
             if (r == null || r.get() == null) {
                 return new SoftReference<>(new ClassInfo(function.apply(element)));
             }
@@ -289,6 +291,22 @@ public sealed interface HelidonTestInfo<T extends AnnotatedElement> extends Heli
             return classInfo.addConfigSources();
         }
 
+        @Override
+        public <A extends Annotation, C extends Annotation> Stream<A> annotations(Class<A> aType,
+                                                                                  Class<C> cType,
+                                                                                  Function<C, A[]> function) {
+            return Stream.concat(
+                    descriptor.annotations(aType, cType, function),
+                    classInfo.annotations(aType, cType, function));
+        }
+
+        @Override
+        public <A extends Annotation> Stream<A> annotations(Class<A> aType) {
+            return Stream.concat(
+                    descriptor.annotations(aType),
+                    classInfo.annotations(aType));
+        }
+
         /**
          * Indicate if the container should be reset.
          * For a class this is resolved via {@code HelidonTest#resetPerTest()}.
@@ -330,10 +348,10 @@ public sealed interface HelidonTestInfo<T extends AnnotatedElement> extends Heli
 
         @Override
         public String toString() {
-            return "MethodInfo{" +
-                   "method=" + element().getName() +
-                   ", class=" + classInfo.element().getName() +
-                   '}';
+            return "MethodInfo{"
+                   + "method=" + element().getName()
+                   + ", class=" + classInfo.element().getName()
+                   + '}';
         }
 
         private static <T> List<T> concat(List<T> l1, List<T> l2) {
