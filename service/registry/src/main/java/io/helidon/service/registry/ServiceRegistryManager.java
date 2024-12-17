@@ -74,7 +74,9 @@ public final class ServiceRegistryManager {
 
     /**
      * Create a new manager based on the provided binding (usually code generated), and start the service registry
-     * services according to the configured run levels. Honor configured options.
+     * services according to the configured run levels.
+     * <p>
+     * Registers the registry as the {@link io.helidon.service.registry.GlobalServiceRegistry}.
      * <p>
      * Configuration options are handled as follows:
      * <ul>
@@ -112,6 +114,8 @@ public final class ServiceRegistryManager {
      * Start the service registry with no generated binding with the provided config.
      * This method honors {@link ServiceRegistryConfig#maxRunLevel()} and {@link ServiceRegistryConfig#runLevels()}
      * to initialize services that fit.
+     * <p>
+     * Registers the registry as the {@link io.helidon.service.registry.GlobalServiceRegistry}.
      *
      * @param config configuration of the service registry
      * @return a new registry manager with initialized registry
@@ -123,6 +127,8 @@ public final class ServiceRegistryManager {
     /**
      * Create a new manager based on the provided binding (usually code generated), and start the service registry
      * services according to the configured run levels.
+     * <p>
+     * Registers the registry as the {@link io.helidon.service.registry.GlobalServiceRegistry}.
      *
      * @param binding generated binding
      * @return a new registry manager with an initialized registry
