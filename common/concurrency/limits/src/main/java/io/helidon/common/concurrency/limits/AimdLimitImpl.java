@@ -195,27 +195,33 @@ class AimdLimitImpl {
             String namePrefix = (socketName.startsWith("@") ? socketName.substring(1) : socketName)
                     + "_" + config.name();
 
+            // actual value of limit at this time
             Gauge.Builder<Integer> limitBuilder = metricsFactory.gaugeBuilder(
                     namePrefix + "_limit", limit::get).scope(VENDOR);
             meterRegistry.getOrCreate(limitBuilder);
 
+            // count of current requests running
             Gauge.Builder<Integer> concurrentRequestsBuilder = metricsFactory.gaugeBuilder(
                     namePrefix + "_concurrent_requests", concurrentRequests::get).scope(VENDOR);
             meterRegistry.getOrCreate(concurrentRequestsBuilder);
 
+            // count of number of requests rejected
             Gauge.Builder<Integer> rejectedRequestsBuilder = metricsFactory.gaugeBuilder(
                     namePrefix + "_rejected_requests", rejectedRequests::get).scope(VENDOR);
             meterRegistry.getOrCreate(rejectedRequestsBuilder);
 
+            // actual number of requests queued
             Gauge.Builder<Integer> queueLengthBuilder = metricsFactory.gaugeBuilder(
                     namePrefix + "_queue_length", semaphore::getQueueLength).scope(VENDOR);
             meterRegistry.getOrCreate(queueLengthBuilder);
 
+            // histogram of round-trip times, excluding any time queued
             Timer.Builder rttTimerBuilder = metricsFactory.timerBuilder(namePrefix + "_rtt")
                     .scope(VENDOR)
                     .baseUnit(Timer.BaseUnits.MILLISECONDS);
             rttTimer = meterRegistry.getOrCreate(rttTimerBuilder);
 
+            // histogram of wait times for a permit in queue
             Timer.Builder waitTimerBuilder = metricsFactory.timerBuilder(namePrefix + "_queue_wait_time")
                     .scope(VENDOR)
                     .baseUnit(Timer.BaseUnits.MILLISECONDS);
