@@ -277,8 +277,16 @@ public final class Service {
     }
 
     /**
-     * Indicates the desired startup sequence for a service class. This is not used internally by Injection, but is available as a
-     * convenience to the caller in support for a specific startup sequence for service activations.
+     * Indicates the desired startup sequence for a service class.
+     *
+     * Helidon honors run levels only when using one of the start methods on
+     * {@link io.helidon.service.registry.ServiceRegistryManager}:
+     * <ul>
+     *     <li>{@link io.helidon.service.registry.ServiceRegistryManager#start()}</li>
+     *     <li>{@link io.helidon.service.registry.ServiceRegistryManager#start(Binding)}</li>
+     *     <li>{@link io.helidon.service.registry.ServiceRegistryManager#start(Binding, ServiceRegistryConfig)}</li>
+     *     <li>{@link io.helidon.service.registry.ServiceRegistryManager#start(ServiceRegistryConfig)}</li>
+     * </ul>
      */
     @Documented
     @Retention(RetentionPolicy.CLASS)

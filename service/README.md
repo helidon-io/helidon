@@ -291,8 +291,7 @@ class MyImpl implements MyContract {
 }
 ```
 
-This means the service instance itself is an implementation of the contract, and when this service is used to satisfy an injection
-point, we will get an instance of `MyImpl`.
+This means the service instance itself is an implementation of the contract, and when this service is used to satisfy a dependency injection point, we will get an instance of `MyImpl`.
 
 But such an approach is only feasible if the contract is an interface, and we are fine with doing a full implementation.
 There may be cases, where this is not sufficient:
@@ -549,26 +548,76 @@ Lookup parameter options:
 
 # Startup
 
-The following options are available to start a service registry (and the application):
+Helidon provides a Maven plugin (`io.helidon.service:helidon-service-maven-plugin`, goal `create-application`) to generate
+build time bindings, that can be used to start the service registry without any classpath discovery and reflection.
+Default name is `ApplicationBinding` (customizable)
 
-1. Use API to create an `io.helidon.service.registry.ServiceRegistryManager`
-2. Use the Helidon startup class `io.helidon.Main`, which will use the injection main class through service loader
-3. Use a generated main class, by default named `ApplicationMain` in the main package of the application (supports customization)
+Methods that accept the bindings are on `io.helidon.service.registry.ServiceRegistryManager`:
+1. `start(Binding)` - starts the service registry with the generated binding, initializing all singleton and per-lookup services annotated with a `@RunLevel` annotation (i.e. `start(ApplicationBinding.create())`)
+2. `start(Binding, ServiceRegistryConfig)` - same as above, allows for customization of configuration, if used, do not forget to set discovery to `false` to prevent automated discovery from the classpath
+
+All options to start a Helidon application that uses service registry:
+1. A custom Main method using `ServiceRegistryManager.start(...)` methods, or `ServiceRegistryManager.create(...)` methods
+2. A generated `ApplicationMain` - optional feature of the Maven plugin, requires property `generateMain` to be set to `true`
+3. The Helidon startup class `io.helidon.Main`, which will start the registry manager and initialize all `RunLevel` services, though it uses service discover (which in turn must use reflection to get service descriptor instances) 
+
+## Generated Binding
+
+Helidon Service Maven plugin must be configured to generate binding. Binding is only used by the application 
+(i.e. not by library modules).
+
+Example of Maven plugin configuration:
+```xml
+<plugin>
+    <groupId>io.helidon.service</groupId>
+    <artifactId>helidon-service-maven-plugin</artifactId>
+    <version>${helidon.version}</version>
+    <executions>
+        <execution>
+            <id>create-application</id>
+            <goals>
+                <goal>create-application</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+```
+
+A class `ApplicationBinding` is generated with 
+- all dependency injection point bindings (i.e. which services satisfy injection points, to bypass analysis at startup)
+- registration of all service descriptor with config (to avoid discovery and reflection at runtime)
+- all run levels to initialize (to avoid service registry lookup that returns all services at runtime)
+
+The generated binding can be used to start a service registry as mentioned above, via `ServiceRegistryManager`.
 
 ## Generated Main Class
 
-To generate a main class, the Helidon Service Inject Maven plugin must be configured.
-This is expected to be configured only for an application (i.e. not for library modules) - this is the reason we do not generate it automatically.
+Helidon Service Maven plugin must be configured to generate a Main class. Main class is only used by the application
+(i.e. not by library modules).
 
-The generated main class will contain full, reflection less configuration of the service registry. It registers all services directly through API, and disables service discovery from classpath.
+Example of Maven plugin configuration (`generateMain` is `false` by default):
+```xml
+<plugin>
+    <groupId>io.helidon.service</groupId>
+    <artifactId>helidon-service-maven-plugin</artifactId>
+    <version>${helidon.version}</version>
+    <executions>
+        <execution>
+            <id>create-application</id>
+            <goals>
+                <goal>create-application</goal>
+            </goals>
+        </execution>
+    </executions>
+    <configuration>
+        <generateMain>true</generateMain>
+    </configuration>
+</plugin>
+```
 
-The Main class can also be customized; to do this:
-1. Create a custom class (let's call it `CustomMain` as an example)
-2. The class must extend the injection main class (`public abstract class CustomMain extends InjectionMain`)
-3. The class must be annotated with `@Service.Main`, so it is discovered by annotation processor
-4. Implement any desired methods; the generated class will only implement `serviceDescriptors(ServiceRegistryConfig.Builder configBuilder)` (always), and `discoverServices()` (if created from the Maven plugin)
+The generated class will use the generated binding to start service registry.
 
-For details on how to configure your build, see [Maven Plugin](../maven-plugin/README.md).
+For details on how to configure your build, see [Maven Plugin](./maven-plugin/README.md).
 
 # Other
 

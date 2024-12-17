@@ -54,6 +54,12 @@
             <version>${version.plugin.helidon-build-tools}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <!-- here to make sure we have correctly ordered build -->
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-maven-plugin</artifactId>
+            <scope>runtime</scope>
+        </dependency>
     </dependencies>
 
     <build>

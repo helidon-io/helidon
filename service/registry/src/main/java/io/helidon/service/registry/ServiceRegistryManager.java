@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -113,7 +114,7 @@ public final class ServiceRegistryManager {
     /**
      * Start the service registry with no generated binding with the provided config.
      * This method honors {@link ServiceRegistryConfig#maxRunLevel()} and {@link ServiceRegistryConfig#runLevels()}
-     * to initialize services that fit.
+     * to initialize services that fit. In case {@code runLevels} are empty, the registry will initialize all run levels.
      * <p>
      * Registers the registry as the {@link io.helidon.service.registry.GlobalServiceRegistry}.
      *
@@ -121,7 +122,22 @@ public final class ServiceRegistryManager {
      * @return a new registry manager with initialized registry
      */
     public static ServiceRegistryManager start(ServiceRegistryConfig config) {
-        return start(new NoOpBinding(), config);
+        ServiceRegistryManager manager = start(new NoOpBinding(), config);
+        ServiceRegistry registry = manager.registry();
+        if (config.runLevels().isEmpty()) {
+            double maxRunLevel = config.maxRunLevel();
+
+            List<Double> runLevels = registry.lookupServices(Lookup.EMPTY)
+                    .stream()
+                    .map(ServiceInfo::runLevel)
+                    .flatMap(Optional::stream)
+                    .distinct()
+                    .sorted()
+                    .collect(Collectors.toUnmodifiableList());
+
+            initializeRunLevels(registry, maxRunLevel, runLevels);
+        }
+        return manager;
     }
 
     /**
@@ -141,6 +157,18 @@ public final class ServiceRegistryManager {
 
         ServiceRegistryManager manager = create(config);
         return boundManager(binding, config, manager);
+    }
+
+    /**
+     * Create a new manager with default configuration, and initialize all services that have a
+     * {@link io.helidon.service.registry.Service.RunLevel} defined in ascending order (only singletons are initialized).
+     * <p>
+     * Registers the registry as the {@link io.helidon.service.registry.GlobalServiceRegistry}.
+     *
+     * @return a new registry manager with an initialized registry
+     */
+    public static ServiceRegistryManager start() {
+        return start(ServiceRegistryConfig.create());
     }
 
     /**
@@ -194,22 +222,14 @@ public final class ServiceRegistryManager {
         }
     }
 
-    private static ServiceRegistryManager boundManager(Binding binding,
-                                                       ServiceRegistryConfig config,
-                                                       ServiceRegistryManager manager) {
-        RegistryStartupProvider.registerShutdownHandler(manager);
-        ServiceRegistry registry = manager.registry(binding);
-        GlobalServiceRegistry.registry(registry);
-
-        double maxRunLevel = config.maxRunLevel();
-        List<Double> runLevels = new ArrayList<>(config.runLevels());
-        Collections.sort(runLevels);
+    private static void initializeRunLevels(ServiceRegistry registry, double maxRunLevel, List<Double> runLevels) {
         for (Double runLevel : runLevels) {
             if (runLevel > maxRunLevel) {
                 // no more
                 break;
             }
 
+            // first all singletons
             List<Object> all = registry.all(Lookup.builder()
                                                     .addScope(Service.Singleton.TYPE)
                                                     .runLevel(runLevel)
@@ -222,7 +242,34 @@ public final class ServiceRegistryManager {
             } else if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
                 LOGGER.log(System.Logger.Level.TRACE, "Starting services in run level: " + runLevel);
             }
+
+            // then all per lookup
+            all = registry.all(Lookup.builder()
+                                       .addScope(Service.PerLookup.TYPE)
+                                       .runLevel(runLevel)
+                                       .build());
+            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                LOGGER.log(System.Logger.Level.DEBUG, "Starting per lookup services in run level: " + runLevel + ": ");
+                for (Object o : all) {
+                    LOGGER.log(System.Logger.Level.DEBUG, "\t" + o);
+                }
+            } else if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                LOGGER.log(System.Logger.Level.TRACE, "Starting per lookup services in run level: " + runLevel);
+            }
         }
+    }
+
+    private static ServiceRegistryManager boundManager(Binding binding,
+                                                       ServiceRegistryConfig config,
+                                                       ServiceRegistryManager manager) {
+        RegistryStartupProvider.registerShutdownHandler(manager);
+        ServiceRegistry registry = manager.registry(binding);
+        GlobalServiceRegistry.registry(registry);
+
+        double maxRunLevel = config.maxRunLevel();
+        List<Double> runLevels = new ArrayList<>(config.runLevels());
+        Collections.sort(runLevels);
+        initializeRunLevels(registry, maxRunLevel, runLevels);
 
         return manager;
     }

@@ -16,9 +16,6 @@
 
 package io.helidon.service.registry;
 
-import java.util.List;
-import java.util.Optional;
-
 import io.helidon.Main;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
@@ -31,8 +28,6 @@ import io.helidon.spi.HelidonStartupProvider;
  */
 @Weight(Weighted.DEFAULT_WEIGHT) // explicit default weight, this should be the "default" startup class
 public class RegistryStartupProvider implements HelidonStartupProvider {
-    private static final System.Logger LOGGER = System.getLogger(RegistryStartupProvider.class.getName());
-
     /**
      * Default constructor required by {@link java.util.ServiceLoader}.
      *
@@ -57,35 +52,7 @@ public class RegistryStartupProvider implements HelidonStartupProvider {
 
     @Override
     public void start(String[] arguments) {
-        var manager = ServiceRegistryManager.create();
-        var registry = manager.registry();
-        registerShutdownHandler(manager);
-
-        for (Double runLevel : runLevels(registry)) {
-            List<Object> all = registry.all(Lookup.builder()
-                                                    .addScope(Service.Singleton.TYPE)
-                                                    .runLevel(runLevel)
-                                                    .build());
-            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
-                LOGGER.log(System.Logger.Level.DEBUG, "Starting services in run level: " + runLevel + ": ");
-                for (Object o : all) {
-                    LOGGER.log(System.Logger.Level.DEBUG, "\t" + o);
-                }
-            } else if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                LOGGER.log(System.Logger.Level.TRACE, "Starting services in run level: " + runLevel);
-            }
-        }
-    }
-
-    private List<Double> runLevels(ServiceRegistry registry) {
-        // child classes will have this method code generated at build time
-        return registry.lookupServices(Lookup.EMPTY)
-                .stream()
-                .map(ServiceInfo::runLevel)
-                .flatMap(Optional::stream)
-                .distinct()
-                .sorted()
-                .toList();
+        ServiceRegistryManager.start();
     }
 
     // higher than default, so we stop server as a service, not through shutdown
