@@ -212,6 +212,11 @@
                         </execution>
                     </executions>
                 </plugin>
+                <plugin>
+                    <groupId>io.helidon.service</groupId>
+                    <artifactId>helidon-service-project</artifactId>
+                    <version>${helidon.version}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
     </build>
