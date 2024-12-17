@@ -33,6 +33,29 @@ final class ServiceSupplies {
     private ServiceSupplies() {
     }
 
+    private static <T> Optional<ServiceInstance<T>> oneInstance(Lookup lookup,
+                                                                List<ServiceManager<T>> serviceManagers) {
+        // we may have more than one service manager, as the first one(s) may not provide a value
+        traceLookup(lookup, "explode, filter, and sort");
+
+        for (ServiceManager<T> serviceManager : serviceManagers) {
+            Optional<ServiceInstance<T>> thisManager = serviceManager.activator()
+                    .instances(lookup)
+                    .stream()
+                    .flatMap(List::stream)
+                    .map(it -> serviceManager.registryInstance(lookup, it))
+                    .findFirst();
+
+            traceLookupInstance(lookup, serviceManager, thisManager.map(List::of).orElseGet(List::of));
+
+            if (thisManager.isPresent()) {
+                return thisManager;
+            }
+        }
+
+        return Optional.empty();
+    }
+
     private static <T> List<ServiceInstance<T>> explodeFilterAndSort(Lookup lookup,
                                                                      List<ServiceManager<T>> serviceManagers) {
         // this method is called when we resolve instances, so we can safely assume any scope is active
@@ -133,9 +156,7 @@ final class ServiceSupplies {
 
             Supplier<T> supplier;
 
-            supplier = () -> explodeFilterAndSort(lookup, managers)
-                    .stream()
-                    .findFirst()
+            supplier = () -> oneInstance(lookup, managers)
                     .map(ServiceInstance::get)
                     .orElseThrow(() -> new ServiceRegistryException(
                             "Neither of matching services could provide a value. Descriptors: " + managers + ", "
@@ -158,9 +179,7 @@ final class ServiceSupplies {
 
         @Override
         public Optional<T> get() {
-            Optional<ServiceInstance<T>> first = explodeFilterAndSort(super.lookup, super.managers)
-                    .stream()
-                    .findFirst();
+            Optional<ServiceInstance<T>> first = oneInstance(super.lookup, super.managers);
             return first.map(Supplier::get);
         }
     }
@@ -173,9 +192,7 @@ final class ServiceSupplies {
 
         @Override
         public Optional<ServiceInstance<T>> get() {
-            return explodeFilterAndSort(super.lookup, super.managers)
-                    .stream()
-                    .findFirst();
+            return oneInstance(super.lookup, super.managers);
         }
     }
 
