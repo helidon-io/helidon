@@ -26,7 +26,6 @@ import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 
-import static io.helidon.service.codegen.ServiceCodegenTypes.REGISTRY_STARTUP_PROVIDER;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_CONFIG;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_REGISTRY_MANAGER;
 
@@ -105,9 +104,6 @@ class MainGenerator {
         } else {
             method.addContentLine("config);");
         }
-
-        method.addContent(REGISTRY_STARTUP_PROVIDER)
-                .addContentLine(".registerShutdownHandler(manager);");
     }
 
 }

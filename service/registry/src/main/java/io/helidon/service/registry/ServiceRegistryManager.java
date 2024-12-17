@@ -197,6 +197,7 @@ public final class ServiceRegistryManager {
     private static ServiceRegistryManager boundManager(Binding binding,
                                                        ServiceRegistryConfig config,
                                                        ServiceRegistryManager manager) {
+        RegistryStartupProvider.registerShutdownHandler(manager);
         ServiceRegistry registry = manager.registry(binding);
         GlobalServiceRegistry.registry(registry);
 
