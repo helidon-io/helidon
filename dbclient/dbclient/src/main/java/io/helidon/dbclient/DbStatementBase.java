@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,11 @@ package io.helidon.dbclient;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
@@ -110,6 +113,7 @@ public abstract class DbStatementBase<S extends DbStatement<S>> implements DbSta
 
     @Override
     public S namedParam(Object parameters) {
+        Objects.requireNonNull(parameters, "Missing instance containing parameters");
         @SuppressWarnings("unchecked")
         Class<Object> theClass = (Class<Object>) parameters.getClass();
         params(context.dbMapperManager().toNamedParameters(parameters, theClass));
@@ -118,9 +122,28 @@ public abstract class DbStatementBase<S extends DbStatement<S>> implements DbSta
 
     @Override
     public S indexedParam(Object parameters) {
+        Objects.requireNonNull(parameters, "Missing instance containing parameters");
         @SuppressWarnings("unchecked")
         Class<Object> theClass = (Class<Object>) parameters.getClass();
         params(context.dbMapperManager().toIndexedParameters(parameters, theClass));
+        return identity();
+    }
+
+    @Override
+    public S indexedParam(Object parameters, String... names) {
+        Objects.requireNonNull(parameters, "Missing instance containing parameters");
+        Objects.requireNonNull(names, "Missing parameter names");
+        if (names.length == 0) {
+            throw new IllegalArgumentException("Missing parameter names");
+        }
+        @SuppressWarnings("unchecked")
+        Class<Object> theClass = (Class<Object>) parameters.getClass();
+        Map<String, ?> namedParameters = context.dbMapperManager().toNamedParameters(parameters, theClass);
+        List<Object> indexedParameters = new ArrayList<>(names.length);
+        for (String name : names) {
+            indexedParameters.add(namedParameters.get(name));
+        }
+        params(Collections.unmodifiableList(indexedParameters));
         return identity();
     }
 

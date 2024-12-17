@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,6 +80,18 @@ public interface DbStatement<D extends DbStatement<D>> {
      * @return updated db statement
      */
     D indexedParam(Object parameters);
+
+    /**
+     * Configure parameters using {@link Object} instance with registered mapper.
+     * The statement must use indexed parameters and configure them by order in the array provided by mapper.
+     * Indexed parameters are generated using provided list of parameter names.
+     *
+     * @param parameters {@link Object} instance containing parameters
+     * @param names parameter names from the map of statement named parameters returned by the
+     *              {@link DbMapper#toNamedParameters(Object)} method
+     * @return updated db statement
+     */
+    D indexedParam(Object parameters, String... names);
 
     /**
      * Add next parameter to the list of ordered parameters (e.g. the ones that use {@code ?} in SQL).

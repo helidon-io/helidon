@@ -27,7 +27,8 @@ db:
     create-pokemons: |
       CREATE TABLE Pokemons (
         id INTEGER NOT NULL PRIMARY KEY,
-        name VARCHAR(64) NOT NULL
+        name VARCHAR(64) NOT NULL,
+        healthy BOOLEAN NOT NULL
       )
     create-poketypes: |
       CREATE TABLE PokemonTypes (
@@ -38,11 +39,11 @@ db:
     drop-pokemons: "DROP TABLE Pokemons"
     drop-poketypes: "DROP TABLE PokemonTypes"
     insert-type: "INSERT INTO Types(id, name) VALUES(?, ?)"
-    insert-pokemon: "INSERT INTO Pokemons(id, name) VALUES(?, ?)"
+    insert-pokemon: "INSERT INTO Pokemons(id, name, healthy) VALUES(?, ?, ?)"
     insert-poketype: "INSERT INTO PokemonTypes(id_pokemon, id_type) VALUES(?, ?)"
-    insert-pokemon-named-arg: "INSERT INTO Pokemons(id, name) VALUES(:id, :name)"
-    insert-pokemon-order-arg: "INSERT INTO Pokemons(id, name) VALUES(?, ?)"
-    insert-pokemon-order-arg-rev: "INSERT INTO Pokemons(name, id) VALUES(?, ?)"
+    insert-pokemon-named-arg: "INSERT INTO Pokemons(id, name, healthy) VALUES(:id, :name, :healthy)"
+    insert-pokemon-order-arg: "INSERT INTO Pokemons(id, name, healthy) VALUES(?, ?, ?)"
+    insert-pokemon-order-arg-rev: "INSERT INTO Pokemons(name, id, healthy) VALUES(?, ?, ?)"
     update-pokemon-named-arg: "UPDATE Pokemons SET name=:name WHERE id=:id"
     update-pokemon-order-arg: "UPDATE Pokemons SET name=? WHERE id=?"
     delete-pokemon-named-arg: "DELETE FROM Pokemons WHERE id=:id"
@@ -50,12 +51,12 @@ db:
     delete-pokemon-full-named-arg: "DELETE FROM Pokemons WHERE name=:name AND id=:id"
     delete-pokemon-full-order-arg: "DELETE FROM Pokemons WHERE name=? AND id=?"
     select-types: SELECT id as "id", name as "name" FROM Types
-    select-pokemons: SELECT id as "id", name as "name" FROM Pokemons
+    select-pokemons: SELECT id as "id", name as "name", healthy as "healthy" FROM Pokemons
     select-poketypes: SELECT id_pokemon as "id_pokemon", id_type as "id_type" FROM PokemonTypes p WHERE id_pokemon = ?
     select-poketypes-all: SELECT id_pokemon as "id_pokemon", id_type as "id_type" FROM PokemonTypes
-    select-pokemon-named-arg: SELECT id as "id", name as "name" FROM Pokemons WHERE name=:name
-    select-pokemon-order-arg: SELECT id as "id", name as "name" FROM Pokemons WHERE name=?
-    select-pokemon-by-id: SELECT id as "id", name as "name" FROM Pokemons WHERE id=?
+    select-pokemon-named-arg: SELECT id as "id", name as "name", healthy as "healthy" FROM Pokemons WHERE name=:name
+    select-pokemon-order-arg: SELECT id as "id", name as "name", healthy as "healthy" FROM Pokemons WHERE name=?
+    select-pokemon-by-id: SELECT id as "id", name as "name", healthy as "healthy" FROM Pokemons WHERE id=?
     select-pokemons-idrng-named-arg: SELECT id as "id", name as "name" FROM Pokemons WHERE id > :idmin AND id < :idmax
     select-pokemons-idrng-order-arg: SELECT id as "id", name as "name" FROM Pokemons WHERE id > ? AND id < ?
     select-pokemons-idname-named-arg: SELECT id, name FROM Pokemons WHERE name=:name AND id=:id
