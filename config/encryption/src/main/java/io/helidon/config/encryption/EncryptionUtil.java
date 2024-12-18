@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,16 +22,9 @@ import java.nio.file.Paths;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
-import java.security.spec.KeySpec;
 import java.util.Base64;
 import java.util.Objects;
 import java.util.Optional;
-
-import javax.crypto.Cipher;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.PBEKeySpec;
-import javax.crypto.spec.SecretKeySpec;
 
 import io.helidon.common.Base64Value;
 import io.helidon.common.LazyValue;
@@ -55,9 +48,7 @@ public final class EncryptionUtil {
 
     private static final int SALT_LENGTH = 16;
     private static final int NONCE_LENGTH = 12; //(Also called IV) Needs to be 12 when using GCM!
-    private static final int SEED_LENGTH = 16;
     private static final int HASH_ITERATIONS = 10000;
-    private static final int KEY_LENGTH_LEGACY = 128;
     private static final int KEY_LENGTH = 256;
 
     private EncryptionUtil() {
@@ -312,17 +303,4 @@ public final class EncryptionUtil {
         return Optional.ofNullable(System.getenv(envVariable));
     }
 
-    private static Cipher cipherLegacy(char[] masterPassword, byte[] salt, int cipherMode) throws ConfigEncryptionException {
-        try {
-            SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
-            KeySpec keySpec = new PBEKeySpec(masterPassword, salt, HASH_ITERATIONS, KEY_LENGTH_LEGACY);
-            SecretKeySpec spec = new SecretKeySpec(secretKeyFactory.generateSecret(keySpec).getEncoded(), "AES");
-            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            cipher.init(cipherMode, spec, new IvParameterSpec(salt));
-
-            return cipher;
-        } catch (Exception e) {
-            throw new ConfigEncryptionException("Failed to prepare a cipher instance", e);
-        }
-    }
 }
