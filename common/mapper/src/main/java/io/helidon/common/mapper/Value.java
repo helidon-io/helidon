@@ -42,7 +42,7 @@ public interface Value<T> {
      * @param <T>           type of the value
      * @return a value backed by data
      */
-    static <T> Value<T> create(MapperManager mapperManager, String name, T value, String... qualifiers) {
+    static <T> Value<T> create(Mappers mapperManager, String name, T value, String... qualifiers) {
         Objects.requireNonNull(name, "Name of the Value must not be null");
         Objects.requireNonNull(value, "Value content for Value " + name + " must not be null, use empty(String) instead");
         return new ValueBacked<>(mapperManager, name, value, qualifiers);
@@ -59,7 +59,7 @@ public interface Value<T> {
      * @param <T>           type of the value
      * @return a value backed by data
      */
-    static <T> Value<T> create(MapperManager mapperManager, String name, T value, GenericType<T> type, String... qualifiers) {
+    static <T> Value<T> create(Mappers mapperManager, String name, T value, GenericType<T> type, String... qualifiers) {
         Objects.requireNonNull(name, "Name of the Value must not be null");
         Objects.requireNonNull(value, "Value content for Value " + name + " must not be null, use empty(String) instead");
         return new ValueBacked<>(mapperManager, name, value, type, qualifiers);

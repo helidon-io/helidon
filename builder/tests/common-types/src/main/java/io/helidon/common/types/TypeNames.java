@@ -30,6 +30,7 @@ import java.util.function.Supplier;
 
 import io.helidon.common.Generated;
 import io.helidon.common.GenericType;
+import io.helidon.common.Size;
 
 /**
  * Commonly used type names.
@@ -87,6 +88,13 @@ public final class TypeNames {
      * Type name for {@link java.lang.annotation.Target}.
      */
     public static final TypeName TARGET = TypeName.create(Target.class);
+    /**
+     * Wildcard type name, represented in code by {@code ?}.
+     */
+    public static final TypeName WILDCARD = TypeName.builder()
+            .className("?")
+            .wildcard(true)
+            .build();
 
     /*
     Primitive types and their boxed counterparts
@@ -199,6 +207,10 @@ public final class TypeNames {
      * Helidon {@link io.helidon.common.GenericType}.
      */
     public static final TypeName GENERIC_TYPE = TypeName.create(GenericType.class);
+    /**
+     * Type name for {@link io.helidon.common.Size}.
+     */
+    public static final TypeName SIZE = TypeName.create(Size.class);
 
     private TypeNames() {
     }

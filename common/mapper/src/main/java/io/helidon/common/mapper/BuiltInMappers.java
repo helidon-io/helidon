@@ -44,6 +44,7 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
+import io.helidon.common.Weight;
 import io.helidon.common.mapper.spi.MapperProvider;
 
 /*
@@ -51,6 +52,7 @@ import io.helidon.common.mapper.spi.MapperProvider;
  * This does not contain many of date/time mapping, as that is context sensitive (e.g. you need a different
  * format depending on the component used).
  */
+@Weight(10)
 class BuiltInMappers implements MapperProvider {
     private static final Map<ClassPair, Mapper<?, ?>> MAPPERS;
 

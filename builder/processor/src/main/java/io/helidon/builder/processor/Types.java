@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,6 @@ final class Types {
     static final String FACTORY_METHOD = "io.helidon.builder.api.Prototype.FactoryMethod";
     static final String PROTOTYPE_BUILDER = "io.helidon.builder.api.Prototype.Builder";
     static final String PROTOTYPE_CONFIGURED = "io.helidon.builder.api.Prototype.Configured";
-    static final String PROTOTYPE_CONFIGURED_BUILDER = "io.helidon.builder.api.Prototype.ConfiguredBuilder";
     static final String PROTOTYPE_BLUEPRINT = "io.helidon.builder.api.Prototype.Blueprint";
     static final String PROTOTYPE_FACTORY = "io.helidon.builder.api.Prototype.Factory";
     static final String PROTOTYPE_ANNOTATED = "io.helidon.builder.api.Prototype.Annotated";
@@ -110,6 +109,10 @@ final class Types {
     static final TypeName LINKED_HASH_MAP_TYPE = TypeName.create(LinkedHashMap.class);
     static final TypeName LINKED_HASH_SET_TYPE = TypeName.create(LinkedHashSet.class);
     static final TypeName ARRAY_LIST_TYPE = TypeName.create(ArrayList.class);
+
+    static final TypeName CONFIG_CONFIGURED_BUILDER = TypeName.create(
+            "io.helidon.common.config.ConfigBuilderSupport.ConfiguredBuilder");
+    static final TypeName CONFIG_BUILDER_SUPPORT = TypeName.create("io.helidon.common.config.ConfigBuilderSupport");
 
     private Types() {
     }

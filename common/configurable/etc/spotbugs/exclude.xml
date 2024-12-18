@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -41,5 +41,10 @@
         <Class name="io.helidon.http.RequestedUriDiscoveryContext$UnsafeRequestedUriSettingsException"/>
         <Method name="&lt;init&gt;"/>
         <Bug pattern = "VA_FORMAT_STRING_USES_NEWLINE"/>
+    </Match>
+    <Match>
+        <!-- deprecated, need the common to decouple from config -->
+        <Class name="io.helidon.common.configurable.LruCache" />
+        <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE" />
     </Match>
 </FindBugsFilter>

@@ -669,7 +669,7 @@ include::{sourcedir}/mp/guides/MpTutorialSnippets.java[tag=snippet_8, indent=0]
  link:{microprofile-health-spec-url}##_protocol_and_wireformat[MicroProfile Health Protocol and Wireformat] document.
 <2> This class also has the `ApplicationScoped` annotation, as seen previously.
 <3> The `GreetingProvider` is injected using Context and Dependency
- Injection.  This example will use the greeting to determine whether
+ Service.  This example will use the greeting to determine whether
  the application is healthy, this is a contrived example for demonstration
  purposes.
 <4> Health checks must implement the `HealthCheck` functional interface, which

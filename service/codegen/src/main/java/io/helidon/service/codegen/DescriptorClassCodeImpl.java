@@ -22,7 +22,6 @@ import io.helidon.codegen.ClassCode;
 import io.helidon.common.types.ResolvedType;
 
 record DescriptorClassCodeImpl(ClassCode classCode,
-                               String registryType,
                                double weight,
                                Set<ResolvedType> contracts,
                                Set<ResolvedType> factoryContracts) implements DescriptorClassCode {
