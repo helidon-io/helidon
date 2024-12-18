@@ -131,6 +131,7 @@ public class OpenTelemetryTracerProvider implements TracerProvider {
      * Returns a Helidon {@link io.helidon.tracing.Span} which wraps the provided OpenTelemetry
      * {@link io.opentelemetry.api.trace.Span}.
      *
+     * @param helidonTracer     the Helidon tracer from which to create the span
      * @param openTelemetrySpan native OTel span to wrap
      * @param isNoop            whether the native span is a no-op span
      * @return Helidon span wrapping the native OTel span

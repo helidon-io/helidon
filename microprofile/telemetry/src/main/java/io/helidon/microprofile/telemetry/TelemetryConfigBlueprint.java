@@ -30,6 +30,12 @@ interface TelemetryConfigBlueprint {
      */
     String TELEMETRY_CONFIG_KEY = "telemetry";
 
+    /**
+     * Injection type for injected OpenTelemetry objects such as {@link io.opentelemetry.api.trace.Tracer} and
+     * {@link io.opentelemetry.api.trace.Span}.
+     *
+     * @return injection type
+     */
     @Option.Configured
     @Option.Default(InjectionType.DEFAULT)
     InjectionType injectionType();

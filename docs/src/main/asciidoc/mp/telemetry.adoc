@@ -204,6 +204,15 @@ include::{sourcedir}/mp/TelemetrySnippets.java[tag=snippet_6, indent=0]
 
 include::{rootdir}/includes/tracing/common-callbacks.adoc[tags=defs;detailed,leveloffset=+1]
 
+==== Using Span Listeners with Injection
+By default, Helidon _does not_ notify registered span listeners of life cycle events that involve an injected OpenTelemetry `Tracer` or `Span`.
+
+To enable this notification for injected telemetry objects configure `telemetry.injection-type` to `neutral` (overriding the default of `native`). See the <<Configuration,Configuration>> section for more information. Helidon then injects wrappers around the OpenTelemetry native objects instead of the OpenTelemetry native objects themselves. The wrappers notify registered listeners of life cycle changes.
+
+Note that although the injected neutral objects implement the corresponding OpenTelemetry interfaces, they _are not_ type-compatible with the underlying OpenTelemetry implementation types, so code that uses `instanceof` or other type-sensitive logic that refers to OpenTelemetry implementation types will not work. The injected neutral objects implement the
+link:{tracing-javadoc-base-url}/io/helidon/tracing/Wrapper.html[`io.helidon.tracing.Wrapper` interface]
+which declares the `unwrap` method. You can check and cast an injected neutral object to `Wrapper` and invokes its `unwrap` method to get access to the underlying OpenTelemetry object.
+
 === Controlling Automatic Span Creation
 By default, Helidon MP Telemetry creates a new child span for each incoming REST request and for each outgoing REST client request. You can selectively control if Helidon creates these automatic spans on a request-by-request basis by adding a very small amount of code to your project.
 
@@ -261,6 +270,12 @@ The OpenTelemetry Java Agent may influence the work of MicroProfile Telemetry, o
 `otel.agent.present=true`
 
 This way, Helidon will explicitly get all the configuration and objects from the Agent, thus allowing correct span hierarchy settings.
+
+=== Helidon Telemetry Configuration
+
+include::{rootdir}/config/io_helidon_microprofile_telemetry_TelemetryConfig.adoc[leveloffset=+1,tag=config]
+
+The <<Using Span Listeners with Injection, Using Span Listeners with Injection>> section describes the effect of this configuration.
 
 [[examples]]
 == Examples
