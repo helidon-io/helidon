@@ -25,6 +25,7 @@ import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.SpanListener;
+import io.helidon.tracing.Tracer;
 import io.helidon.tracing.WritableBaggage;
 
 import io.opentelemetry.api.baggage.Baggage;
@@ -42,6 +43,22 @@ class OpenTelemetrySpan implements Span {
 
     OpenTelemetrySpan(io.opentelemetry.api.trace.Span span, List<SpanListener> spanListeners) {
         this(span, new MutableOpenTelemetryBaggage(), spanListeners);
+    }
+
+    /**
+     * Creates a Helidon wrapper around an OTel span.
+     * <p>
+     * This constructor can be used to create a Helidon span when producing an OTel span for injection of the current
+     * OTel span. Under OTel semantics if there is no current span then a request for it returns a no-op span. The Helidon
+     * semantics for span listeners is that they are not notified for no-op spans. So this constructor allows us to create
+     * a Helidon wrapper span with the correct listener semantics, accounting for whether the OTel span is no-op or not.
+     *
+     * @param helidonTracer the Helidon tracer
+     * @param span          the native OTel span
+     * @param isNoop        whether the OTel span is a no-op
+     */
+    OpenTelemetrySpan(Tracer helidonTracer, io.opentelemetry.api.trace.Span span, boolean isNoop) {
+        this(span, isNoop ? List.of() : helidonTracer.unwrap(OpenTelemetryTracer.class).spanListeners());
     }
 
     OpenTelemetrySpan(io.opentelemetry.api.trace.Span span, Baggage baggage, List<SpanListener> spanListeners) {
@@ -145,6 +162,10 @@ class OpenTelemetrySpan implements Span {
         }
         throw new IllegalArgumentException("Cannot provide an instance of " + spanClass.getName()
                                                    + ", telemetry span is: " + delegate.getClass().getName());
+    }
+
+    List<SpanListener> spanListeners() {
+        return List.copyOf(spanListeners);
     }
 
     Limited limited() {

@@ -18,10 +18,10 @@ package io.helidon.microprofile.telemetry;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
 import io.helidon.config.Config;
+import io.helidon.config.mp.MpConfig;
 import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
 import io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracerProvider;
 
@@ -30,11 +30,7 @@ import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.baggage.BaggageBuilder;
 import io.opentelemetry.api.baggage.BaggageEntry;
-import io.opentelemetry.api.common.AttributeKey;
-import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.SpanContext;
-import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.sdk.autoconfigure.AutoConfiguredOpenTelemetrySdk;
 import io.opentelemetry.sdk.autoconfigure.spi.ConfigProperties;
@@ -51,6 +47,9 @@ import jakarta.inject.Inject;
  */
 @ApplicationScoped
 class OpenTelemetryProducer {
+
+    static final String INJECTION_TYPE = "telemetry.injection-type";
+
     private static final System.Logger LOGGER = System.getLogger(OpenTelemetryProducer.class.getName());
     private static final String HELIDON_SERVICE_NAME = "HELIDON_MICROPROFILE_TELEMETRY";
     private static final String SERVICE_NAME = "service.name";
@@ -72,6 +71,8 @@ class OpenTelemetryProducer {
     private volatile io.helidon.tracing.Tracer helidonTracer;
 
     private final org.eclipse.microprofile.config.Config mpConfig;
+
+    private Producer producer;
 
     @Inject
     OpenTelemetryProducer(Config config, org.eclipse.microprofile.config.Config mpConfig) {
@@ -125,6 +126,11 @@ class OpenTelemetryProducer {
 
         tracer = openTelemetry.getTracer(exporterName);
         helidonTracer = HelidonOpenTelemetry.create(openTelemetry, tracer, Map.of());
+        TelemetryConfig telemetryConfig =
+                TelemetryConfig.create(MpConfig.toHelidonConfig(mpConfig).get(TelemetryConfig.TELEMETRY_CONFIG_KEY));
+        producer = (telemetryConfig.injectionType() == InjectionType.NEUTRAL)
+                ? WrappedProducer.create(helidonTracer)
+                : NativeOpenTelemetryProducer.create(tracer);
         OpenTelemetryTracerProvider.globalTracer(helidonTracer);
     }
 
@@ -146,7 +152,7 @@ class OpenTelemetryProducer {
      */
     @Produces
     Tracer tracer() {
-        return tracer;
+        return producer.tracer();
     }
 
     /**
@@ -166,57 +172,7 @@ class OpenTelemetryProducer {
      */
     @Produces
     Span span() {
-        return new Span() {
-            @Override
-            public <T> Span setAttribute(AttributeKey<T> key, T value) {
-                return Span.current().setAttribute(key, value);
-            }
-
-            @Override
-            public Span addEvent(String name, Attributes attributes) {
-                return Span.current().addEvent(name, attributes);
-            }
-
-            @Override
-            public Span addEvent(String name, Attributes attributes, long timestamp, TimeUnit unit) {
-                return Span.current().addEvent(name, attributes, timestamp, unit);
-            }
-
-            @Override
-            public Span setStatus(StatusCode statusCode, String description) {
-                return Span.current().setStatus(statusCode, description);
-            }
-
-            @Override
-            public Span recordException(Throwable exception, Attributes additionalAttributes) {
-                return Span.current().recordException(exception, additionalAttributes);
-            }
-
-            @Override
-            public Span updateName(String name) {
-                return Span.current().updateName(name);
-            }
-
-            @Override
-            public void end() {
-                Span.current().end();
-            }
-
-            @Override
-            public void end(long timestamp, TimeUnit unit) {
-                Span.current().end(timestamp, unit);
-            }
-
-            @Override
-            public SpanContext getSpanContext() {
-                return Span.current().getSpanContext();
-            }
-
-            @Override
-            public boolean isRecording() {
-                return Span.current().isRecording();
-            }
-        };
+        return producer.span();
     }
 
     /**
@@ -225,36 +181,53 @@ class OpenTelemetryProducer {
      * @return a {@link io.opentelemetry.api.baggage.Baggage}.
      */
     @Produces
-    @ApplicationScoped
     Baggage baggage() {
-        return new Baggage() {
-            @Override
-            public int size() {
-                return Baggage.current().size();
-            }
-
-            @Override
-            public void forEach(BiConsumer<? super String, ? super BaggageEntry> consumer) {
-                Baggage.current().forEach(consumer);
-            }
-
-            @Override
-            public Map<String, BaggageEntry> asMap() {
-                return Baggage.current().asMap();
-            }
-
-            @Override
-            public String getEntryValue(String entryKey) {
-                return Baggage.current().getEntryValue(entryKey);
-            }
-
-            @Override
-            public BaggageBuilder toBuilder() {
-                return Baggage.current().toBuilder();
-            }
-        };
+        return producer.baggage();
     }
 
+    interface Producer {
+
+        Tracer tracer();
+
+        Span span();
+
+        /**
+         * Produces a {@link io.opentelemetry.api.baggage.Baggage} instance for injection.
+         * <p>
+         *     Note that we do not need to return a wrapper around the baggage because the span listener interface has no
+         *     callback method related to baggage.
+         *
+         * @return OTel baggage instance
+         */
+        default Baggage baggage() {
+            return new Baggage() {
+                @Override
+                public int size() {
+                    return Baggage.current().size();
+                }
+
+                @Override
+                public void forEach(BiConsumer<? super String, ? super BaggageEntry> consumer) {
+                    Baggage.current().forEach(consumer);
+                }
+
+                @Override
+                public Map<String, BaggageEntry> asMap() {
+                    return Baggage.current().asMap();
+                }
+
+                @Override
+                public String getEntryValue(String entryKey) {
+                    return Baggage.current().getEntryValue(entryKey);
+                }
+
+                @Override
+                public BaggageBuilder toBuilder() {
+                    return Baggage.current().toBuilder();
+                }
+            };
+        }
+    }
 
     // Process "otel." properties from microprofile config file.
     private Map<String, String> getTelemetryProperties() {
@@ -292,5 +265,7 @@ class OpenTelemetryProducer {
     private String getServiceName(ConfigProperties c) {
         return c.getString(SERVICE_NAME_PROPERTY, HELIDON_SERVICE_NAME);
     }
+
+
 
 }
