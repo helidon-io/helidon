@@ -25,6 +25,7 @@ import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
@@ -113,6 +114,44 @@ public class OpenTelemetryTracerProvider implements TracerProvider {
         // Create the span directly with the retrieved baggage. Ideally, it will be our writable baggage because we had put it
         // there in the context.
         return Optional.of(HelidonOpenTelemetry.create(otelSpan, otelBaggage));
+    }
+
+    /**
+     * Returns a Helidon {@link io.helidon.tracing.Tracer} which wraps the provided OpenTelemetry
+     * {@link io.opentelemetry.api.trace.Tracer}.
+     *
+     * @param openTelemetryTracer native OTel tracer to wrap
+     * @return Helidon tracer wrapping the native OTel tracer
+     */
+    public static Tracer tracer(io.opentelemetry.api.trace.Tracer openTelemetryTracer) {
+        return new OpenTelemetryTracer(GlobalOpenTelemetry.get(), openTelemetryTracer, Map.of());
+    }
+
+    /**
+     * Returns a Helidon {@link io.helidon.tracing.Span} which wraps the provided OpenTelemetry
+     * {@link io.opentelemetry.api.trace.Span}.
+     *
+     * @param openTelemetrySpan native OTel span to wrap
+     * @param isNoop            whether the native span is a no-op span
+     * @return Helidon span wrapping the native OTel span
+     */
+    public static Span span(Tracer helidonTracer, io.opentelemetry.api.trace.Span openTelemetrySpan, boolean isNoop) {
+        return new OpenTelemetrySpan(helidonTracer, openTelemetrySpan, isNoop);
+    }
+
+    /**
+     * Returns a Helidon {@link io.helidon.tracing.Scope} which wraps the provided OpenTelemetry
+     * {@link io.opentelemetry.context.Scope}.
+     *
+     * @param helidonTracer      Helidon {@link io.helidon.tracing.Tracer}
+     * @param helidonSpan        Helidon {@link io.helidon.tracing.Span} associated with the scope
+     * @param openTelemetryScope OpenTelemetry {@code Scope} to be wrapped
+     * @return Helidon {@link Scope} wrapping the OpenTelemetry {@code Scope}
+     */
+    public static Scope scope(Tracer helidonTracer, Span helidonSpan, io.opentelemetry.context.Scope openTelemetryScope) {
+        return new OpenTelemetryScope(helidonTracer.unwrap(OpenTelemetryTracer.class),
+                                      helidonSpan.unwrap(OpenTelemetrySpan.class),
+                                      openTelemetryScope);
     }
 
     @Override
