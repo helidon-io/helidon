@@ -32,6 +32,7 @@ import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.Context;
 
 import static io.opentelemetry.context.Context.current;
 
@@ -107,6 +108,16 @@ public final class HelidonOpenTelemetry {
     }
 
     /**
+     * Wrap an Open Telemetry context..
+     *
+     * @param context Open Telemetry context
+     * @return Helidon {@link io.helidon.tracing.SpanContext}
+     */
+    public static io.helidon.tracing.SpanContext create(Context context) {
+        return new OpenTelemetrySpanContext(context);
+    }
+
+    /**
      * Check if OpenTelemetry is present by indirect properties.
      * This class does best explicit check if OTEL_AGENT_PRESENT_PROPERTY config property is set and uses its
      * value to set the behaviour of OpenTelemetry producer.
@@ -167,6 +178,19 @@ public final class HelidonOpenTelemetry {
             return current().getClass().getName().contains("agent");
         }
 
+    }
+
+    /**
+     * Invokes listeners known to the specified Helidon span using the provided operation.
+     *
+     * @param helidonSpan Helidon {@link io.helidon.tracing.Span} whose listeners are to be invoked
+     * @param logger      logger for reporting exceptions during listener invocations
+     * @param operation   operation to invoke on each listener
+     */
+    public static void invokeListeners(io.helidon.tracing.Span helidonSpan,
+                                       System.Logger logger,
+                                       Consumer<SpanListener> operation) {
+        invokeListeners(helidonSpan.unwrap(OpenTelemetrySpan.class).spanListeners(), logger, operation);
     }
 
     static void invokeListeners(List<SpanListener> spanListeners, System.Logger logger, Consumer<SpanListener> operation) {

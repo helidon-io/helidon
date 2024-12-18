@@ -37,6 +37,19 @@ class OpenTelemetryScope implements Scope {
         this.spanListeners = spanListeners;
     }
 
+    /**
+     * Creates a new Helidon {@link io.helidon.tracing.Scope} which wraps an existing OTel {@link io.opentelemetry.context.Scope}.
+     *
+     * @param helidonTracer Helidon tracer
+     * @param span          Helidon span
+     * @param scope         OTel scope
+     */
+    OpenTelemetryScope(OpenTelemetryTracer helidonTracer,
+                       OpenTelemetrySpan span,
+                       io.opentelemetry.context.Scope scope) {
+        this(span, scope, helidonTracer.spanListeners());
+    }
+
     @Override
     public void close() {
         if (closed.compareAndSet(false, true) && delegate != null) {

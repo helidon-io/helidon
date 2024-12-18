@@ -28,4 +28,9 @@
         <Method name="&lt;init&gt;"/>
         <Bug pattern = "VA_FORMAT_STRING_USES_NEWLINE"/>
     </Match>
+    <Match>
+        <!-- False positives in multiple methods - see https://github.com/spotbugs/spotbugs/issues/3235 -->
+        <Class name="io.helidon.microprofile.telemetry.WrappedProducer$WrappedSpanBuilder"/>
+        <Bug pattern = "RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT"/>
+    </Match>
 </FindBugsFilter>
