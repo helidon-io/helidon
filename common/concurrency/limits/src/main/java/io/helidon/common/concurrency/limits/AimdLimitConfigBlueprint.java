@@ -97,7 +97,7 @@ interface AimdLimitConfigBlueprint extends Prototype.Factory<AimdLimit> {
 
     /**
      * How many requests can be enqueued waiting for a permit after
-     * the {@link #maxLimit()} is reached.
+     * the max limit is reached.
      * Note that this may not be an exact behavior due to concurrent invocations.
      * We use {@link java.util.concurrent.Semaphore#getQueueLength()} in the
      * {@link io.helidon.common.concurrency.limits.AimdLimit} implementation.
@@ -107,7 +107,7 @@ interface AimdLimitConfigBlueprint extends Prototype.Factory<AimdLimit> {
      * @return number of requests to enqueue
      */
     @Option.Configured
-    @Option.DefaultInt(FixedLimit.DEFAULT_QUEUE_LENGTH)
+    @Option.DefaultInt(AimdLimit.DEFAULT_QUEUE_LENGTH)
     int queueLength();
 
     /**
@@ -117,7 +117,7 @@ interface AimdLimitConfigBlueprint extends Prototype.Factory<AimdLimit> {
      * @return duration of the timeout
      */
     @Option.Configured
-    @Option.Default(FixedLimit.DEFAULT_QUEUE_TIMEOUT_DURATION)
+    @Option.Default(AimdLimit.DEFAULT_QUEUE_TIMEOUT_DURATION)
     Duration queueTimeout();
 
     /**
