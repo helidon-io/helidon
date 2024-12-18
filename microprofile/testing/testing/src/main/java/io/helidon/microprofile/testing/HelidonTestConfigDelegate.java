@@ -39,7 +39,7 @@ import io.helidon.config.spi.LazyConfigSource;
 /**
  * Config delegate.
  * <p>
- * Also implements a {@link io.helidon.config.Config Helidon Config} delegate backed by a {@link io.helidon.config.spi.LazyConfigSource}
+ * Also implements a {@link Config Helidon Config} delegate backed by a {@link LazyConfigSource}
  * to support "just in time" caching when using {@link io.helidon.config.Config Helidon Config}.
  */
 abstract class HelidonTestConfigDelegate implements org.eclipse.microprofile.config.Config, Config {
@@ -47,7 +47,7 @@ abstract class HelidonTestConfigDelegate implements org.eclipse.microprofile.con
     private final LazyValue<Config> hdelegate = LazyValue.create(this::delegate0);
     private final Map<org.eclipse.microprofile.config.Config, List<String>> cache = new HashMap<>();
 
-    /**
+    /*
      * Get the MicroProfile config delegate.
      *
      * @return delegate

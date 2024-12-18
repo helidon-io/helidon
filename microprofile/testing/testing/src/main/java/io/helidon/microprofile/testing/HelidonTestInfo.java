@@ -42,25 +42,25 @@ public sealed interface HelidonTestInfo<T extends AnnotatedElement> extends Heli
     /**
      * Create a new class info.
      *
-     * @param element class
+     * @param clazz class
      * @return ClassInfo
      */
-    static ClassInfo classInfo(Class<?> element) {
-        return classInfo(element, HelidonTestDescriptorImpl::new);
+    static ClassInfo classInfo(Class<?> clazz) {
+        return classInfo(clazz, HelidonTestDescriptorImpl::new);
     }
 
     /**
      * Create a new class info.
      *
-     * @param element  class
+     * @param clazz    class
      * @param function descriptor factory
      * @return ClassInfo
      */
-    static ClassInfo classInfo(Class<?> element, Function<Class<?>, HelidonTestDescriptor<Class<?>>> function) {
-        Class<?> clazz = Instrumented.unwrap(element);
-        return ClassInfo.CACHE.compute(clazz.getName(), (e, r) -> {
+    static ClassInfo classInfo(Class<?> clazz, Function<Class<?>, HelidonTestDescriptor<Class<?>>> function) {
+        Class<?> theClass = Instrumented.unwrap(clazz);
+        return ClassInfo.CACHE.compute(theClass.getName(), (e, r) -> {
             if (r == null || r.get() == null) {
-                return new SoftReference<>(new ClassInfo(function.apply(element)));
+                return new SoftReference<>(new ClassInfo(function.apply(clazz)));
             }
             return r;
         }).get();
@@ -95,15 +95,15 @@ public sealed interface HelidonTestInfo<T extends AnnotatedElement> extends Heli
     /**
      * Create a new method info.
      *
-     * @param element   method
+     * @param method    method
      * @param classInfo class info
      * @param function  descriptor factory
      * @return MethodInfo
      */
-    static MethodInfo methodInfo(Method element, ClassInfo classInfo, Function<Method, HelidonTestDescriptor<Method>> function) {
-        return MethodInfo.CACHE.compute(MethodInfo.cacheKey(element, classInfo), (e, r) -> {
+    static MethodInfo methodInfo(Method method, ClassInfo classInfo, Function<Method, HelidonTestDescriptor<Method>> function) {
+        return MethodInfo.CACHE.compute(MethodInfo.cacheKey(method, classInfo), (e, r) -> {
             if (r == null || r.get() == null) {
-                return new SoftReference<>(new MethodInfo(function.apply(element), classInfo));
+                return new SoftReference<>(new MethodInfo(function.apply(method), classInfo));
             }
             return r;
         }).get();
@@ -156,6 +156,24 @@ public sealed interface HelidonTestInfo<T extends AnnotatedElement> extends Heli
     ClassInfo classInfo();
 
     /**
+     * Indicate if the container should be reset.
+     * For a class this is resolved via {@code HelidonTest#resetPerTest()}.
+     * For a method this is inferred if any of the following annotations is used:
+     * <ul>
+     *     <li>{@link Configuration}</li>
+     *     <li>{@link AddExtension}</li>
+     *     <li>{@link AddBean}</li>
+     *     <li>{@link AddJaxRs}</li>
+     *     <li>{@link DisableDiscovery}</li>
+     * </ul>
+     *
+     * @return {@code true} if reset is required, {@code false} otherwise
+     */
+    default boolean requiresReset() {
+        return false;
+    }
+
+    /**
      * Class info.
      */
     final class ClassInfo extends HelidonTestDescriptorDelegate<Class<?>> implements HelidonTestInfo<Class<?>> {
@@ -178,6 +196,17 @@ public sealed interface HelidonTestInfo<T extends AnnotatedElement> extends Heli
         @Override
         public ClassInfo classInfo() {
             return this;
+        }
+
+        /**
+         * Test if any method in the represented class is annotated with the given type.
+         *
+         * @param aType annotation type
+         * @return {@code true} if found, {@code false} otherwise
+         */
+        public boolean isTestClass(Class<? extends Annotation> aType) {
+            return Stream.of(element().getDeclaredMethods())
+                    .anyMatch(m -> m.isAnnotationPresent(aType));
         }
 
         @Override
@@ -307,20 +336,7 @@ public sealed interface HelidonTestInfo<T extends AnnotatedElement> extends Heli
                     classInfo.annotations(aType));
         }
 
-        /**
-         * Indicate if the container should be reset.
-         * For a class this is resolved via {@code HelidonTest#resetPerTest()}.
-         * For a method this is inferred if any of the following annotations is used:
-         * <ul>
-         *     <li>{@link Configuration}</li>
-         *     <li>{@link AddExtension}</li>
-         *     <li>{@link AddBean}</li>
-         *     <li>{@link AddJaxRs}</li>
-         *     <li>{@link DisableDiscovery}</li>
-         * </ul>
-         *
-         * @return {@code true} if reset is required, {@code false} otherwise
-         */
+        @Override
         public boolean requiresReset() {
             return classInfo.resetPerTest()
                    || descriptor.configuration().isPresent()

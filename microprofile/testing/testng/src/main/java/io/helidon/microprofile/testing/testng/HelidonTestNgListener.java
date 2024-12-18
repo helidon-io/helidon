@@ -16,47 +16,42 @@
 
 package io.helidon.microprofile.testing.testng;
 
+import java.lang.System.Logger;
+import java.lang.System.Logger.Level;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import io.helidon.microprofile.testing.HelidonTestContainer;
 import io.helidon.microprofile.testing.HelidonTestInfo;
 import io.helidon.microprofile.testing.HelidonTestInfo.ClassInfo;
 import io.helidon.microprofile.testing.HelidonTestInfo.MethodInfo;
 import io.helidon.microprofile.testing.HelidonTestScope;
+import io.helidon.microprofile.testing.Instrumented;
 import io.helidon.microprofile.testing.Proxies;
 
 import org.testng.IAlterSuiteListener;
-import org.testng.IClass;
 import org.testng.IClassListener;
-import org.testng.IConfigurationListener;
-import org.testng.IInvokedMethod;
-import org.testng.IInvokedMethodListener;
 import org.testng.ISuite;
 import org.testng.ISuiteListener;
 import org.testng.ITestClass;
 import org.testng.ITestListener;
 import org.testng.ITestNGMethod;
-import org.testng.ITestResult;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Guice;
+import org.testng.annotations.Test;
 import org.testng.xml.XmlClass;
 import org.testng.xml.XmlSuite;
 import org.testng.xml.XmlTest;
 
-import static io.helidon.microprofile.testing.HelidonTestInfo.classInfo;
-import static io.helidon.microprofile.testing.HelidonTestInfo.methodInfo;
-import static io.helidon.microprofile.testing.Instrumented.instrument;
-
 /**
  * A TestNG listener that integrates CDI with TestNG to support Helidon MP.
  * <p>
- * This extension starts a CDI container and adds the test class as a bean with support for injection. The test class uses
- * a CDI scope that follows the test lifecycle as defined by {@code TODO}.
+ * This extension starts a CDI container and adds the test class as a bean with support for injection.
  * <p>
  * The container is started lazily during test execution to ensure that it is started after all other extensions.
  * <p>
@@ -91,12 +86,12 @@ import static io.helidon.microprofile.testing.Instrumented.instrument;
  *
  * @see HelidonTest
  */
-public class HelidonTestNgListener implements ITestListener,
-                                              IClassListener,
-                                              IInvokedMethodListener,
-                                              IConfigurationListener,
-                                              ISuiteListener,
-                                              IAlterSuiteListener {
+public class HelidonTestNgListener extends HelidonTestNgListenerBase implements ITestListener,
+                                                                                IClassListener,
+                                                                                ISuiteListener,
+                                                                                IAlterSuiteListener {
+
+    private static final Logger LOGGER = System.getLogger(HelidonTestNgListener.class.getName());
 
     private static final List<Annotation> TYPE_ANNOTATIONS = List.of(
             Proxies.annotation(Guice.class, attr -> {
@@ -106,12 +101,9 @@ public class HelidonTestNgListener implements ITestListener,
                 return null;
             }));
 
-    private static final List<Class<? extends Annotation>> METHOD_EXCLUDES = List.of(
-            BeforeTest.class);
+    private static final List<Class<? extends Annotation>> METHOD_EXCLUDES = List.of(BeforeTest.class);
 
-    // TODO remove thread local
-    private static final ThreadLocal<HelidonTestContainer> CONTAINER = new ThreadLocal<>();
-
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final Map<HelidonTestInfo<?>, HelidonTestContainer> containers = new ConcurrentHashMap<>();
 
     @Override
@@ -119,18 +111,22 @@ public class HelidonTestNgListener implements ITestListener,
         for (XmlSuite suite : suites) {
             for (XmlTest test : suite.getTests()) {
                 for (XmlClass xmlClass : test.getXmlClasses()) {
-                    ClassInfo classInfo = classInfo(xmlClass.getSupportClass(), HelidonTestDescriptorImpl::new);
-                    if (Modifier.isAbstract(classInfo.element().getModifiers())
-                        || Modifier.isFinal(classInfo.element().getModifiers())) {
-                        // TODO check if contains @Test
-                        // TODO warning if final ?
-                        continue;
+                    ClassInfo classInfo = classInfo(xmlClass.getSupportClass());
+                    if (classInfo.isTestClass(Test.class)) {
+                        Class<?> testClass = classInfo.element();
+                        if (Modifier.isAbstract(testClass.getModifiers())) {
+                            continue;
+                        }
+                        if (Modifier.isFinal(testClass.getModifiers())) {
+                            LOGGER.log(Level.WARNING, "Cannot instrument final class: " + classInfo.id());
+                            continue;
+                        }
+                        // Instrument the test class
+                        // Add a @Guice annotation to install HelidonTestNgModuleFactory
+                        // Use a proxy to start the container lazily
+                        xmlClass.setClass(Instrumented.instrument(testClass,
+                                TYPE_ANNOTATIONS, METHOD_EXCLUDES, this::resolveInstance));
                     }
-                    // Use a proxy to start the container after the test instance creation
-                    // The container is started lazily when invoking a method
-                    // We also add @Guice(moduleFactory = HelidonTestNgModuleFactory.class)
-                    xmlClass.setClass(instrument(classInfo.element(),
-                            TYPE_ANNOTATIONS, METHOD_EXCLUDES, this::testInstance));
                 }
             }
         }
@@ -139,82 +135,77 @@ public class HelidonTestNgListener implements ITestListener,
     @Override
     public void onStart(ISuite suite) {
         for (ITestNGMethod tm : suite.getAllMethods()) {
-            // replace the test class with a decorator to customize the name
+            // replace the built-in ITestClass with a decorator
             // to hide the instrumented class name in the test results
             tm.setTestClass(TestClassDecorator.decorate(tm.getTestClass()));
         }
     }
 
     @Override
-    public void beforeInvocation(IInvokedMethod im, ITestResult tr) {
-        initContainer(tr, im.getTestMethod());
+    void onBeforeInvocation(ClassInfo classInfo, MethodInfo methodInfo, HelidonTestInfo<?> testInfo) {
+        HelidonTestContainer container;
+        try {
+            lock.readLock().lock();
+
+            // current container for the test class
+            container = containers.get(classInfo);
+
+            // close the container if the method requires a reset
+            if (methodInfo.requiresReset() && container != null) {
+                container.close();
+                containers.remove(classInfo);
+                container = null;
+            }
+        } finally {
+            lock.readLock().unlock();
+        }
+
+        // create the container
+        if (container == null) {
+            try {
+                lock.writeLock().lock();
+                container = containers.get(classInfo);
+                if (container == null) {
+                    HelidonTestScope scope = HelidonTestScope.ofContainer();
+                    if (methodInfo.requiresReset()) {
+                        container = new HelidonTestContainer(methodInfo, scope, HelidonTestExtensionImpl::new);
+                    } else {
+                        container = new HelidonTestContainer(classInfo, scope, HelidonTestExtensionImpl::new);
+                    }
+                    containers.put(classInfo, container);
+                }
+            } finally {
+                lock.writeLock().unlock();
+            }
+        }
+        containers.putIfAbsent(methodInfo, container);
+        containers.putIfAbsent(testInfo, container);
     }
 
     @Override
-    public void afterInvocation(IInvokedMethod im, ITestResult tr) {
-        HelidonTestInfo<?> testInfo = testInfo(tr, im.getTestMethod());
-        if (requiresReset(testInfo)) {
-            closeContainer(testInfo);
-        }
-        CONTAINER.remove();
+    void onAfterInvocation(MethodInfo methodInfo, HelidonTestInfo<?> testInfo, boolean last) {
+        onAfter(methodInfo, last && testInfo.requiresReset());
     }
 
     @Override
     public void onAfterClass(ITestClass tc) {
-        closeContainer(testInfo(tc));
+        onAfter(classInfo(tc.getRealClass()), true);
     }
 
-    private <T> T testInstance(Class<T> type, Method method) {
-        HelidonTestContainer container = CONTAINER.get();
+    private void onAfter(HelidonTestInfo<?> testInfo, boolean closeContainer) {
+        containers.computeIfPresent(testInfo, (k, v) -> {
+            if (closeContainer) {
+                v.close();
+            }
+            return null;
+        });
+    }
+
+    private <T> T resolveInstance(Class<T> type, Method method) {
+        HelidonTestContainer container = containers.get(methodInfo(type, method));
         if (container == null) {
             throw new IllegalStateException("Container not set");
         }
         return container.resolveInstance(type);
-    }
-
-    private void initContainer(ITestResult tr, ITestNGMethod tm) {
-        HelidonTestInfo<?> testInfo = testInfo(tr, tm);
-        HelidonTestContainer container = containers.compute(testInfo.classInfo(),
-                (i, c) -> {
-                    boolean requireReset = requiresReset(testInfo);
-                    if (requireReset && c != null) {
-                        c.close();
-                    }
-                    if (c == null || c.closed()) {
-                        HelidonTestScope scope = HelidonTestScope.ofContainer();
-                        if (requireReset) {
-                            c = new HelidonTestContainer(testInfo, scope, HelidonTestExtensionImpl::new);
-                        } else {
-                            c = new HelidonTestContainer(testInfo.classInfo(), scope, HelidonTestExtensionImpl::new);
-                        }
-                    }
-                    return c;
-                });
-        containers.putIfAbsent(testInfo, container);
-        CONTAINER.set(container);
-    }
-
-    private void closeContainer(HelidonTestInfo<?> testInfo) {
-        HelidonTestContainer container = containers.remove(testInfo);
-        if (container != null) {
-            container.close();
-        }
-    }
-
-    private HelidonTestInfo<?> testInfo(ITestResult tr, ITestNGMethod tm) {
-        ClassInfo classInfo = testInfo(tr.getTestClass());
-        return tm != null ? testInfo(tm.getConstructorOrMethod().getMethod(), classInfo) : classInfo;
-    }
-
-    private ClassInfo testInfo(IClass ic) {
-        return classInfo(ic.getRealClass(), HelidonTestDescriptorImpl::new);
-    }
-
-    private MethodInfo testInfo(Method method, ClassInfo classInfo) {
-        return methodInfo(method, classInfo, HelidonTestDescriptorImpl::new);
-    }
-
-    private static boolean requiresReset(HelidonTestInfo<?> testInfo) {
-        return testInfo instanceof MethodInfo methodInfo && methodInfo.requiresReset();
     }
 }
