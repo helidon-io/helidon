@@ -169,6 +169,7 @@ public class OpenTelemetryTracerProvider implements TracerProvider {
     public void global(Tracer tracer) {
         if (tracer instanceof OpenTelemetryTracer ott) {
             globalTracer(ott);
+            return;
         }
         throw new IllegalArgumentException("Tracer must be an instance of Helidon OpenTelemetry tracer. "
                                                    + "Please use HelidonOpenTelemetry to create such instance");
