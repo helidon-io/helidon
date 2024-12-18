@@ -475,7 +475,9 @@ public abstract class ProcessRunner {
                         .append("--jvm", opts.stream()
                                 .map(option -> String.format("'%s'", option))
                                 .collect(Collectors.joining(" ")))
-                        .append(args)
+                        .append(args.stream()
+                                .map(argument -> String.format("'%s'", argument))
+                                .collect(Collectors.joining(" ")))
                         .command();
             }
             return new CommandBuilder("target/" + finalName + "-jri/bin/start")
