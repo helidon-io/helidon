@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,13 +23,13 @@ import java.util.function.Function;
 import io.helidon.common.GenericType;
 
 class ValueBacked<T> implements OptionalValue<T> {
-    private final MapperManager mapperManager;
+    private final Mappers mapperManager;
     private final String name;
     private final T value;
     private final GenericType<T> type;
     private final String[] qualifiers;
 
-    ValueBacked(MapperManager mapperManager, String name, T value, GenericType<T> type, String[] qualifiers) {
+    ValueBacked(Mappers mapperManager, String name, T value, GenericType<T> type, String[] qualifiers) {
         Objects.requireNonNull(mapperManager);
         Objects.requireNonNull(name);
         Objects.requireNonNull(value);
@@ -41,7 +41,7 @@ class ValueBacked<T> implements OptionalValue<T> {
         this.qualifiers = qualifiers;
     }
 
-    ValueBacked(MapperManager mapperManager, String name, T value, String[] qualifiers) {
+    ValueBacked(Mappers mapperManager, String name, T value, String[] qualifiers) {
         this(mapperManager, name, value, null, qualifiers);
     }
 

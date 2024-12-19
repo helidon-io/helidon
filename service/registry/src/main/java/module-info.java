@@ -32,13 +32,13 @@ module io.helidon.service.registry {
 
     requires io.helidon.service.metadata;
     requires io.helidon.metadata.hson;
+    requires io.helidon;
 
-    requires transitive io.helidon.common.config;
     requires transitive io.helidon.builder.api;
     requires transitive io.helidon.common.types;
 
     exports io.helidon.service.registry;
-    exports io.helidon.service.registry.spi;
 
-    uses io.helidon.service.registry.spi.ServiceRegistryManagerProvider;
+    provides io.helidon.spi.HelidonStartupProvider
+            with io.helidon.service.registry.RegistryStartupProvider;
 }
