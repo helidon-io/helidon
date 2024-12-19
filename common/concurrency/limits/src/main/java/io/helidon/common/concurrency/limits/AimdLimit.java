@@ -34,6 +34,15 @@ import io.helidon.common.config.Config;
 @SuppressWarnings("removal")
 @RuntimeType.PrototypedBy(AimdLimitConfig.class)
 public class AimdLimit implements Limit, SemaphoreLimit, RuntimeType.Api<AimdLimitConfig> {
+    /**
+     * Default length of the queue.
+     */
+    public static final int DEFAULT_QUEUE_LENGTH = 0;
+    /**
+     * Timeout of a request that is enqueued.
+     */
+    public static final String DEFAULT_QUEUE_TIMEOUT_DURATION = "PT1S";
+
     static final String TYPE = "aimd";
 
     private final AimdLimitConfig config;
@@ -109,7 +118,7 @@ public class AimdLimit implements Limit, SemaphoreLimit, RuntimeType.Api<AimdLim
 
     @Override
     public Optional<Token> tryAcquire(boolean wait) {
-        return aimdLimitImpl.tryAcquire();
+        return aimdLimitImpl.tryAcquire(wait);
     }
 
     @SuppressWarnings("removal")
@@ -136,5 +145,10 @@ public class AimdLimit implements Limit, SemaphoreLimit, RuntimeType.Api<AimdLim
     @Override
     public Limit copy() {
         return config.build();
+    }
+
+    @Override
+    public void init(String socketName) {
+        aimdLimitImpl.initMetrics(socketName, config);
     }
 }
