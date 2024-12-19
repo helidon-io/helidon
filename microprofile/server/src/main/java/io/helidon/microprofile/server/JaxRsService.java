@@ -66,6 +66,7 @@ import org.glassfish.jersey.server.ContainerException;
 import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.ContainerResponse;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.server.spi.Container;
 import org.glassfish.jersey.server.spi.ContainerResponseWriter;
 
@@ -95,6 +96,14 @@ class JaxRsService implements HttpService {
     }
 
     static JaxRsService create(ResourceConfig resourceConfig, InjectionManager injectionManager) {
+
+        // Silence warnings from Jersey. See 9019
+        if (!resourceConfig.hasProperty(CommonProperties.PROVIDER_DEFAULT_DISABLE)) {
+            resourceConfig.addProperties(Map.of(CommonProperties.PROVIDER_DEFAULT_DISABLE, "DATASOURCE"));
+        }
+        if (!resourceConfig.hasProperty(ServerProperties.WADL_FEATURE_DISABLE)) {
+            resourceConfig.addProperties(Map.of(ServerProperties.WADL_FEATURE_DISABLE, "true"));
+        }
 
         InjectionManager ij = injectionManager == null ? null : new InjectionManagerWrapper(injectionManager, resourceConfig);
         ApplicationHandler appHandler = new ApplicationHandler(resourceConfig,
