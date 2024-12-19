@@ -98,10 +98,8 @@ class JaxRsService implements HttpService {
 
     static JaxRsService create(ResourceConfig resourceConfig, InjectionManager injectionManager) {
 
-        Config config = ConfigProvider.getConfig();
-
         // Silence warnings from Jersey. See 9019. Allow overriding to pass tck
-        Boolean suppressDatasourceProvider = config.getOptionalValue(SUPPRESS_DATASOURCE_PROVIDER, Boolean.class).orElse(true);
+        boolean suppressDatasourceProvider = Boolean.parseBoolean(System.getProperty(SUPPRESS_DATASOURCE_PROVIDER, "true"));
         if (!resourceConfig.hasProperty(CommonProperties.PROVIDER_DEFAULT_DISABLE) && suppressDatasourceProvider) {
             resourceConfig.addProperties(Map.of(CommonProperties.PROVIDER_DEFAULT_DISABLE, "DATASOURCE"));
         }
@@ -114,6 +112,7 @@ class JaxRsService implements HttpService {
                                                                new WebServerBinder(),
                                                                ij);
         Container container = new HelidonJerseyContainer(appHandler);
+        Config config = ConfigProvider.getConfig();
 
         // This configuration via system properties is for the Jersey Client API. Any
         // response in an exception will be mapped to an empty one to prevent data leaks
