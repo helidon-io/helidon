@@ -57,6 +57,6 @@ set correctly to use docker-for-desktop.
 kubectl config get-contexts
 kubectl config use-context docker-for-desktop
 kubectl cluster-info
-kubectl version --short
+kubectl version
 kubectl get nodes
 ----

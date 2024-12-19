@@ -35,7 +35,7 @@ include::{rootdir}/about/introduction.adoc[tag=prereqs]
 java -version
 mvn --version
 docker --version
-kubectl version --short
+kubectl version
 ----
 
 == Setting `JAVA_HOME`
