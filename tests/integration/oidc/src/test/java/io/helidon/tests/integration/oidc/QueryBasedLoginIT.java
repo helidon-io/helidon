@@ -24,8 +24,6 @@ import jakarta.ws.rs.core.Form;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.client.ClientProperties;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.tests.integration.oidc.TestResource.EXPECTED_TEST_MESSAGE;
