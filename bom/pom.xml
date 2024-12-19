@@ -1089,6 +1089,11 @@
             </dependency>
             <!-- Testing -->
             <dependency>
+                <groupId>io.helidon.common.testing</groupId>
+                <artifactId>helidon-common-testing-virtual-threads</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.microprofile.testing</groupId>
                 <artifactId>helidon-microprofile-testing-junit5</artifactId>
                 <version>${helidon.version}</version>

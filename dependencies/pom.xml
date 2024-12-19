@@ -95,6 +95,7 @@
         <version.lib.jersey>3.1.9</version.lib.jersey>
         <version.lib.jgit>6.7.0.202309050840-r</version.lib.jgit>
         <version.lib.junit>5.9.3</version.lib.junit>
+        <version.lib.junit-platform-testkit>1.11.3</version.lib.junit-platform-testkit>
         <version.lib.kafka>3.8.1</version.lib.kafka>
         <version.lib.log4j>2.21.1</version.lib.log4j>
         <version.lib.logback>1.4.14</version.lib.logback>
@@ -1283,6 +1284,11 @@
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-core</artifactId>
                 <version>${version.lib.hamcrest}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-testkit</artifactId>
+                <version>${version.lib.junit-platform-testkit}</version>
             </dependency>
             <dependency>
                 <groupId>org.testcontainers</groupId>

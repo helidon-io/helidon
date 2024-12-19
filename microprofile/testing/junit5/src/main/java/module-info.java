@@ -31,6 +31,7 @@ module io.helidon.microprofile.testing.junit5 {
     requires static io.helidon.microprofile.server;
     requires static jersey.cdi1x;
     requires static jersey.weld2.se;
+    requires io.helidon.common.testing.vitualthreads;
 
     exports io.helidon.microprofile.testing.junit5;
 

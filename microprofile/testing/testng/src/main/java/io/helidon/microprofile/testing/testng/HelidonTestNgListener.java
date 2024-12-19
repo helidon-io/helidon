@@ -26,6 +26,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URL;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -36,6 +37,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.helidon.common.testing.virtualthreads.PinningRecorder;
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
@@ -89,6 +91,7 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
     private List<AddBean> classLevelBeans = new ArrayList<>();
     private ConfigMeta classLevelConfigMeta = new ConfigMeta();
     private boolean classLevelDisableDiscovery = false;
+    private boolean helidonTest;
     private boolean resetPerTest;
 
     private Class<?> testClass;
@@ -96,15 +99,22 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
     private ConfigProviderResolver configProviderResolver;
     private Config config;
     private SeContainer container;
+    private PinningRecorder pinningRecorder;
 
     @Override
     public void onBeforeClass(ITestClass iTestClass) {
-
         testClass = iTestClass.getRealClass();
+        HelidonTest testAnnot = testClass.getAnnotation(HelidonTest.class);
+        if (testAnnot == null) {
+            return;
+        }
+        helidonTest = true;
+        resetPerTest = testAnnot.resetPerTest();
 
         List<Annotation> metaAnnotations = extractMetaAnnotations(testClass);
 
         AddConfig[] configs = getAnnotations(testClass, AddConfig.class, metaAnnotations);
+
         classLevelConfigMeta.addConfig(configs);
         classLevelConfigMeta.configuration(getAnnotation(testClass, Configuration.class, metaAnnotations));
         classLevelConfigMeta.addConfigBlock(getAnnotation(testClass, AddConfigBlock.class, metaAnnotations));
@@ -116,9 +126,9 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
         AddBean[] beans = getAnnotations(testClass, AddBean.class, metaAnnotations);
         classLevelBeans.addAll(Arrays.asList(beans));
 
-        HelidonTest testAnnot = testClass.getAnnotation(HelidonTest.class);
-        if (testAnnot != null) {
-            resetPerTest = testAnnot.resetPerTest();
+        if (testAnnot.pinningDetection()) {
+            pinningRecorder = PinningRecorder.create();
+            pinningRecorder.record(Duration.ofMillis(testAnnot.pinningThreshold()));
         }
 
         DisableDiscovery discovery = getAnnotation(testClass, DisableDiscovery.class, metaAnnotations);
@@ -157,14 +167,25 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
 
     @Override
     public void onAfterClass(ITestClass testClass) {
+        if (!helidonTest) {
+            return;
+        }
+
         if (!resetPerTest) {
             releaseConfig();
             stopContainer();
+        }
+        if (pinningRecorder != null) {
+            pinningRecorder.close();
+            pinningRecorder = null;
         }
     }
 
     @Override
     public void onTestStart(ITestResult result) {
+        if (!helidonTest) {
+            return;
+        }
 
         if (resetPerTest) {
             Method method = result.getMethod().getConstructorOrMethod().getMethod();
@@ -197,6 +218,10 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
 
     @Override
     public void onTestFailure(ITestResult iTestResult) {
+        if (!helidonTest) {
+            return;
+        }
+
         if (resetPerTest) {
             releaseConfig();
             stopContainer();
@@ -205,6 +230,10 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
 
     @Override
     public void onTestSuccess(ITestResult iTestResult) {
+        if (!helidonTest) {
+            return;
+        }
+
         if (resetPerTest) {
             releaseConfig();
             stopContainer();
@@ -327,7 +356,7 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
         for (Annotation testAnnotation : testAnnotations) {
             List<Annotation> annotations = List.of(testAnnotation.annotationType().getAnnotations());
             List<Class<?>> annotationsClass = annotations.stream()
-                    .map(a -> a.annotationType()).collect(Collectors.toList());
+                    .map(Annotation::annotationType).collect(Collectors.toList());
             if (!Collections.disjoint(TEST_ANNOTATIONS, annotationsClass)) {
                 // Contains at least one of HELIDON_TEST_ANNOTATIONS
                 return annotations;
@@ -645,4 +674,5 @@ public class HelidonTestNgListener implements IClassListener, ITestListener {
     private static final class SingletonLiteral extends AnnotationLiteral<Singleton> implements Singleton {
         static final SingletonLiteral INSTANCE = new SingletonLiteral();
     }
+
 }

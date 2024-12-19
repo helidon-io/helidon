@@ -31,6 +31,7 @@ include::{rootdir}/includes/mp.adoc[]
 - <<Usage, Usage>>
 - <<API, API>>
 - <<Examples, Examples>>
+- <<Virtual Threads, Virtual Threads>>
 - <<Reference, Reference>>
 
 == Overview
@@ -149,6 +150,34 @@ include::{sourcedir}/mp/testing/TestingNgSnippets.java[tag=snippet_2, indent=0]
 <2> Set disabled Bean discovery.
 <3> Add JaxRs support to the current test class.
 <4> Define a `RequestScoped` bean.
+
+
+== Virtual Threads
+Helidon tests are able to detect Virtual Threads pinning. A situation when carrier thread is blocked
+in a way, that virtual thread scheduler can't use it for scheduling of other virtual threads.
+This can happen for example when blocking native code is invoked, or prior to the JDK 24 when
+blocking IO operation happens in a synchronized block.
+Pinning can in some cases negatively affect application performance.
+
+[source,java]
+.Enable pinning detection
+----
+include::{sourcedir}/mp/testing/TestingNgSnippets.java[tag=snippet_3, indent=0]
+----
+
+Pinning is considered as harmful when it takes longer than 20 milliseconds,
+that is also the default when detecting it within Helidon tests.
+
+Pinning threshold can be changed with:
+
+[source,java]
+.Configure pinning threshold
+----
+include::{sourcedir}/mp/testing/TestingNgSnippets.java[tag=snippet_4, indent=0]
+----
+<1> Change pinning threshold from default(20) to 50 milliseconds.
+
+When pinning is detected, test fails with stacktrace pointing to the line of code causing it.
 
 == Reference
 
