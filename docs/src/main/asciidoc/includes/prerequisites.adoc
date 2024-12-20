@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -32,7 +32,9 @@ ifndef::h1-prefix[:h1-prefix: SE]
 // tag::prerequisites-table-rows[]
 // tag::prerequisites-table-rows-core[]
 |https://www.oracle.com/technetwork/java/javase/downloads[Java{nbsp}SE{nbsp}21] (http://jdk.java.net[Open{nbsp}JDK{nbsp}21]) |Helidon requires Java 21+.
+// tag::prerequisites-table-rows-maven[]
 |https://maven.apache.org/download.cgi[Maven 3.8+]|Helidon requires Maven 3.8+.
+// end::prerequisites-table-rows-maven[]
 // end::prerequisites-table-rows-core[]
 |https://docs.docker.com/install/[Docker 18.09+]|If you want to build and run Docker containers.
 |https://kubernetes.io/docs/tasks/tools/install-kubectl/[Kubectl 1.16.5+]|If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster (you can xref:{rootdir}/about/kubernetes.adoc[install one on your desktop].
@@ -98,3 +100,14 @@ include::prerequisites.adoc[tag=prerequisites-table-rows]
 |=======
 include::prerequisites.adoc[tag=prerequisites-setup]
 // end::prerequisites-graal[]
+
+// tag::prerequisites-crac[]
+[role="flex, sm7"]
+|=======
+| Linux/x64 or Linux/ARM64 | While CRaC snapshotting can be simulated on MacOS or Windows, full CRaC functionality is only available on Linux/x64 and Linux/ARM64.
+include::prerequisites.adoc[tag=prerequisites-table-rows-maven]
+| https://www.azul.com/downloads/?version=java-21-lts&package=jdk-crac#zulu[Azul Zulu JDK CRaC 21+] |
+ Zulu Warp CRaC engine allows snapshotting without elevated privileges
+|=======
+//include::prerequisites.adoc[tag=prerequisites-setup]
+// end::prerequisites-crac[]

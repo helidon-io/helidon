@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,13 +81,18 @@ class Http1ConnectionCache extends ClientConnectionCache {
     }
 
     @Override
+    public void evict() {
+        cache.values().stream()
+                .flatMap(Collection::stream)
+                .forEach(TcpClientConnection::closeResource);
+    }
+
+    @Override
     public void closeResource() {
         if (closed.getAndSet(true)) {
             return;
         }
-        cache.values().stream()
-                .flatMap(Collection::stream)
-                .forEach(TcpClientConnection::closeResource);
+        evict();
     }
 
     private boolean handleKeepAlive(boolean defaultKeepAlive, WritableHeaders<?> headers) {

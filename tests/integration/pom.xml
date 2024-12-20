@@ -69,6 +69,7 @@
         <module>h2spec</module>
         <module>mp-telemetry</module>
         <module>mp-jaxrs-preserve-headers</module>
+        <module>crac</module>
     </modules>
 
     <dependencyManagement>

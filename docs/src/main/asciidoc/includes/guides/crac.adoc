@@ -1,0 +1,307 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2025 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+ifndef::rootdir[:rootdir: {docdir}/../..]
+
+:guidesdir: {rootdir}/{flavor-lc}/guides
+
+:zulu-version: 23.0.1
+ifdef::se-flavor[]
+:checkpoint-size: 74
+endif::se-flavor[]
+ifdef::mp-flavor[]
+:checkpoint-size: 124
+endif::mp-flavor[]
+:cracked-docker-image: helidon-quickstart-{flavor-lc}-crac
+
+== Introduction
+
+CRaC - Coordinated Restore at Checkpoint
+
+== What You Need
+
+For this 10 minute tutorial, you will need the following:
+
+include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites-crac]
+
+== Install JDK with CRaC support
+
+There are two JDK builds with CRaC support as of now to choose from.
+
+- https://www.azul.com/downloads/?version=java-21-lts&package=jdk-crac#zulu[Azul Zulu]
+- https://bell-sw.com/pages/downloads/?package=jdk-crac&version=java-21[BellSoft Liberica JDK]
+
+In this example we will use Azul implementation with Warp CRaC engine.
+Warp CRaC engine allows creating snapshots without elevated privileges.
+That not only simplifies the example, but it is very practical for K8s usage.
+
+Use https://sdkman.io[SDKMAN!] to install Azul JDK with Warp CRaC engine:
+
+[source,bash,subs="attributes+"]
+----
+sdk install java {zulu-version}.crac-zulu
+----
+
+== Generate the Project
+
+Generate the project using the Helidon {flavor-uc} Quickstart Maven archetype.
+
+[source,bash,subs="attributes+"]
+----
+mvn -U archetype:generate -DinteractiveMode=false \
+    -DarchetypeGroupId=io.helidon.archetypes \
+    -DarchetypeArtifactId=helidon-quickstart-{flavor-lc} \
+    -DarchetypeVersion={helidon-version} \
+    -DgroupId=io.helidon.examples \
+    -DartifactId=helidon-quickstart-{flavor-lc} \
+    -Dpackage=io.helidon.examples.quickstart.{flavor-lc}
+
+----
+
+The archetype generates a Maven project in your current directory
+(for example, `helidon-quickstart-{flavor-lc}`). Change into this directory and build.
+
+[source,bash,subs="attributes+"]
+----
+cd helidon-quickstart-{flavor-lc}
+----
+
+Add dependency for Helidon CRaC support to `pom.xml`. This allows Helidon to properly close and
+reopen resources which would normally break snapshot creation.
+
+[source,xml,subs="attributes+"]
+----
+<dependency>
+    <groupId>io.helidon.integrations.crac</groupId>
+    <artifactId>helidon-integrations-crac</artifactId>
+</dependency>
+----
+
+Build the project.
+
+[source,bash,subs="attributes+"]
+----
+mvn package
+----
+
+Check if you are using Java build with CRaC support.
+
+[source,bash,subs="attributes+"]
+----
+➜  helidon-quickstart-{flavor-lc} java -version
+openjdk version "{zulu-version}" 2024-10-15
+OpenJDK Runtime Environment Zulu23.30+13-CRaC-CA (build {zulu-version})
+OpenJDK 64-Bit Server VM Zulu23.30+13-CRaC-CA (build {zulu-version}, mixed mode, sharing)
+----
+
+At this point you can run the application using the CRaC aware JVM:
+
+[source,bash,subs="attributes+"]
+----
+java -XX:CRaCEngine=warp -XX:CRaCCheckpointTo=./target/cr -jar target/helidon-quickstart-{flavor-lc}.jar
+----
+
+[TIP]
+If you hit `Unrecognized VM option` at this point, check if you are using correct JVM with CRaC support.
+
+You should see in the output that Helidon {flavor-uc} has started with CRaC feature enabled.
+
+ifdef::se-flavor[]
+[source,bash,subs="attributes+"]
+----
+Helidon SE {helidon-version} features: [CRaC, Config, Encoding, Health, Media, Metrics, Observe, Registry, WebServer]
+[0x3f87bd99] http://0.0.0.0:8080 bound for socket '@default'
+Started all channels in 9 milliseconds. 521 milliseconds since JVM startup. Java {zulu-version}
+WEB server is up! http://localhost:8080/simple-greet
+----
+endif::se-flavor[]
+ifdef::mp-flavor[]
+[source,bash,subs="attributes+"]
+----
+Started all channels in 10 milliseconds. 1937 milliseconds since JVM startup. Java {zulu-version}
+Server started on http://localhost:8080 in 1941 milliseconds (since JVM startup).
+Helidon MP {helidon-version} features: [CDI, CRaC, Config, Health, Metrics, Open API, Server]
+----
+endif::mp-flavor[]
+
+In another shell test an endpoint:
+
+[source,bash]
+----
+curl -X GET http://localhost:8080/greet
+----
+
+The application should respond with `{"message":"Hello World!"}`
+
+For more information about the Quickstart application and other endpoints it supports see the
+xref:{guidesdir}/quickstart.adoc[Helidon {flavor-uc} Quickstart Guide].
+
+== Creating snapshot
+
+In another shell trigger the snapshot creation with https://docs.oracle.com/en/java/javase/21/docs/specs/man/jcmd.html[jcmd] command `JDK.checkpoint`:
+
+[source,bash,subs="attributes+"]
+----
+jcmd $(jcmd | grep helidon-quickstart-{flavor-lc}.jar | awk '{print $2}') JDK.checkpoint
+----
+
+[source,bash,subs="attributes+"]
+----
+warp: Checkpoint 138991 to ./target/cr
+warp: Checkpoint successful!
+[1]    138991 killed     java -XX:CRaCEngine=warp -XX:CRaCCheckpointTo=./target/cr -jar
+----
+
+[source,bash,subs="attributes+"]
+----
+➜  helidon-quickstart-{flavor-lc} ls -la ./target/cr
+total 124M
+-rw------- 1 frank frank {checkpoint-size}M Feb  1 19:12 core.img
+----
+
+=== Restoring from snapshot
+
+Run following command to restore your application from saved snapshot.
+
+[source,bash,subs="attributes+"]
+----
+java -XX:CRaCEngine=warp -XX:CRaCRestoreFrom=./target/cr
+----
+
+[TIP]
+If you hit `Unrecognized VM option` at this point, check if you are using correct JDK with CRaC support.
+
+Expected output shows that application restore from snapshot is drastically faster than previous start.
+
+ifdef::se-flavor[]
+[source,bash,subs="attributes+"]
+----
+➜  helidon-quickstart-se java -XX:CRaCEngine=warp -XX:CRaCRestoreFrom=./target/cr
+warp: Restore successful!
+[0x21a39da4] http://0.0.0.0:8080 bound for socket '@default'
+Restored all channels in 2 milliseconds. 20 milliseconds since JVM snapshot restore. Java {zulu-version}
+----
+endif::se-flavor[]
+ifdef::mp-flavor[]
+[source,bash,subs="attributes+"]
+----
+➜  helidon-quickstart-mp java -XX:CRaCEngine=warp -XX:CRaCRestoreFrom=./target/cr
+warp: Restore successful!
+[0x501ce1b2] http://0.0.0.0:8080 bound for socket '@default'
+Restored all channels in 3 milliseconds. 43 milliseconds since JVM snapshot restore. Java {zulu-version}
+----
+endif::mp-flavor[]
+
+Yep, it starts fast. You can exercise the application's endpoints as before.
+
+=== Multi-stage Docker build
+
+Build Docker image with pre-warmed snapshot.
+
+[TIP]
+For this example you don't need Linux OS but docker environment is needed.
+
+Create `Dockerfile.crac` in your project folder with following content.
+
+[source,dockerfile,subs="attributes+"]
+----
+# syntax=docker/dockerfile:1.7-labs
+ARG BASE_IMAGE=azul/zulu-openjdk:23-jdk-crac-latest
+FROM $BASE_IMAGE AS build
+RUN apt-get update && apt-get install -y maven
+
+WORKDIR /helidon
+
+# Create a first layer to cache the "Maven World" in the local repository.
+# Incremental docker builds will always resume after that, unless you update
+# the pom
+ADD pom.xml .
+RUN mvn package -Dmaven.test.skip -Declipselink.weave.skip
+
+# Do the Maven build!
+# Incremental docker builds will resume here when you change sources
+ADD src src
+RUN mvn package -DskipTests
+
+FROM build AS checkpoint
+ENV ENDPOINT=http://localhost:8080/simple-greet
+RUN apt-get update && apt-get install -y curl siege
+ENV PATH="$PATH:$JAVA_HOME/bin"
+
+# Copy the binary built in the 1st stage
+COPY --from=build /helidon/target/helidon-quickstart-{flavor-lc}.jar ./
+COPY --from=build /helidon/target/libs ./libs
+
+# We use here-doc syntax to inline the script that will
+# start the application, warm it up and checkpoint
+RUN <<END_OF_SCRIPT
+#!/bin/bash
+java -XX:CPUFeatures=generic -XX:CRaCEngine=warp \
+    -XX:CRaCCheckpointTo=./cr -jar ./helidon-quickstart-{flavor-lc}.jar &
+PID=$!
+# Wait until the connection is opened
+until curl --output /dev/null --silent --fail $ENDPOINT; do
+    sleep 0.1;
+done
+# Warm-up the server by executing 100k requests against it
+siege -c 1 -r 100000 -b $ENDPOINT
+# Trigger the checkpoint
+jcmd ./helidon-quickstart-{flavor-lc}.jar JDK.checkpoint
+# Wait until the process completes, returning success
+# (wait would return exit code 137)
+wait $PID || true
+END_OF_SCRIPT
+
+FROM $BASE_IMAGE
+ENV PATH="$PATH:$JAVA_HOME/bin"
+WORKDIR /helidon
+
+# Copy checkpoint creted in the 2st stage
+COPY --from=checkpoint /helidon/target/helidon-quickstart-{flavor-lc}.jar ./
+COPY --from=checkpoint /helidon/target/libs ./libs
+COPY --from=checkpoint /helidon/cr ./cr
+CMD [ "java", "-XX:CRaCEngine=warp", "-XX:CRaCRestoreFrom=/helidon/cr" ]
+----
+
+[TIP]
+This does a full build inside the Docker container. The first
+time you run it, it will take a while because it is downloading all
+of the Maven dependencies and caching them in a Docker layer.
+Subsequent builds will be much faster as long as you don't change
+the `pom.xml` file. If the pom is modified then the dependencies
+will be re-downloaded.
+
+Build the application, notice that warmup and snapshot of the application
+is created during build time in the 2nd stage. For warming up the https://github.com/JoeDog/siege[siege]
+load testing utility is used. Dockerfile is based on Radim Vansa's
+https://foojay.io/today/warp-the-new-crac-engine[article]
+introducing Warp CRaC engine.
+
+[source,bash,subs="attributes+"]
+----
+docker build -t {cracked-docker-image} -f Dockerfile.crac .
+----
+
+Start the application directly from snapshot created at build time.
+
+[source,bash,subs="attributes+"]
+----
+docker run --rm -p 8080:8080 {cracked-docker-image}:latest
+----
+
+Again, it starts fast. You can exercise the application's endpoints as before.

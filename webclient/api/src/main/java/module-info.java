@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,7 @@ module io.helidon.webclient.api {
     requires transitive io.helidon.http.encoding;
     requires transitive io.helidon.http.media;
     requires transitive io.helidon.http;
+    requires io.helidon.common.resumable;
 
     exports io.helidon.webclient.api;
     exports io.helidon.webclient.spi;

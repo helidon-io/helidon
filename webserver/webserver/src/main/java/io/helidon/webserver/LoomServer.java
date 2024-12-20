@@ -16,7 +16,6 @@
 
 package io.helidon.webserver;
 
-import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -40,6 +39,8 @@ import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.features.HelidonFeatures;
 import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.common.resumable.Resumable;
+import io.helidon.common.resumable.ResumableSupport;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
@@ -47,10 +48,7 @@ import io.helidon.spi.HelidonShutdownHandler;
 import io.helidon.webserver.http.DirectHandlers;
 import io.helidon.webserver.spi.ServerFeature;
 
-import org.crac.Core;
-import org.crac.Resource;
-
-class LoomServer implements WebServer, Resource {
+class LoomServer implements WebServer, Resumable {
     private static final System.Logger LOGGER = System.getLogger(LoomServer.class.getName());
     private static final String EXIT_ON_STARTED_KEY = "exit.on.started";
     private static final AtomicInteger WEBSERVER_COUNTER = new AtomicInteger(1);
@@ -105,7 +103,7 @@ class LoomServer implements WebServer, Resource {
         });
 
         listeners = Map.copyOf(listenerMap);
-        Core.getGlobalContext().register(this);
+        ResumableSupport.get().register(this);
     }
 
     @Override
@@ -121,7 +119,7 @@ class LoomServer implements WebServer, Resource {
         try {
             lifecycleLock.lockInterruptibly();
         } catch (InterruptedException e) {
-            throw new RuntimeException("Interrupted", e);
+            throw new IllegalStateException("Webserver start was interrupted");
         }
         try {
             if (running.compareAndSet(false, true)) {
@@ -144,7 +142,7 @@ class LoomServer implements WebServer, Resource {
         try {
             lifecycleLock.lockInterruptibly();
         } catch (InterruptedException e) {
-            throw new RuntimeException("Interrupted", e);
+            throw new IllegalStateException("Webserver stop was interrupted", e);
         }
         try {
             if (running.get()) {
@@ -223,7 +221,8 @@ class LoomServer implements WebServer, Resource {
             registerShutdownHook();
         }
         now = System.currentTimeMillis() - now;
-        long uptime = ManagementFactory.getRuntimeMXBean().getUptime();
+        // JVM uptime or since restore
+        long uptime = ResumableSupport.get().uptime();
 
         LOGGER.log(System.Logger.Level.INFO, "Started all channels in "
                 + now + " milliseconds. "
@@ -294,11 +293,11 @@ class LoomServer implements WebServer, Resource {
     }
 
     @Override
-    public void beforeCheckpoint(org.crac.Context<? extends Resource> context) throws Exception {
+    public void suspend() {
         try {
             lifecycleLock.lockInterruptibly();
         } catch (InterruptedException e) {
-            throw new RuntimeException("Interrupted", e);
+            throw new IllegalStateException("Interrupted during snapshot checkpoint.", e);
         }
         try {
             if (running.get()) {
@@ -312,11 +311,12 @@ class LoomServer implements WebServer, Resource {
     }
 
     @Override
-    public void afterRestore(org.crac.Context<? extends Resource> context) throws Exception {
+    public void resume() {
+        long now = System.currentTimeMillis();
         try {
             lifecycleLock.lockInterruptibly();
         } catch (InterruptedException e) {
-            throw new RuntimeException("Interrupted", e);
+            throw new IllegalStateException("Interrupted during snapshot restore.", e);
         }
         try {
             if (running.get()) {
@@ -327,6 +327,11 @@ class LoomServer implements WebServer, Resource {
         } finally {
             lifecycleLock.unlock();
         }
+        now = System.currentTimeMillis() - now;
+        LOGGER.log(System.Logger.Level.INFO, "Restored all channels in "
+                + now + " milliseconds. "
+                + ResumableSupport.get().uptimeSinceResume() + " milliseconds since JVM snapshot restore. "
+                + "Java " + Runtime.version());
     }
 
     private record ListenerFuture(ServerListener listener, Future<?> future) {

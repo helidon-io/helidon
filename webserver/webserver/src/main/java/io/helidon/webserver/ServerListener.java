@@ -76,9 +76,7 @@ class ServerListener implements ListenerContext {
     private final Router router;
     private final HelidonTaskExecutor readerExecutor;
     private final ExecutorService sharedExecutor;
-    private Thread serverThread;
     private final DirectHandlers directHandlers;
-    private CompletableFuture<Void> closeFuture;
     private final Tls tls;
     private final SocketOptions connectionOptions;
     private final InetSocketAddress configuredAddress;
@@ -95,6 +93,8 @@ class ServerListener implements ListenerContext {
     private volatile boolean inCheckpoint;
     private volatile int connectedPort;
     private volatile ServerSocket serverSocket;
+    private volatile Thread serverThread;
+    private volatile CompletableFuture<Void> closeFuture;
 
     @SuppressWarnings("unchecked")
     ServerListener(String socketName,
@@ -238,6 +238,8 @@ class ServerListener implements ListenerContext {
         try {
             // Stop listening for connections
             serverSocket.close();
+            // Close all active connections
+            activeConnections().forEach(connection -> connection.close(true));
 
             if (shutdownExecutors) {
                 // Shutdown reader executor

@@ -26,6 +26,8 @@ import java.util.function.Consumer;
 
 import io.helidon.Main;
 import io.helidon.common.LazyValue;
+import io.helidon.common.resumable.Resumable;
+import io.helidon.common.resumable.ResumableSupport;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.Metrics;
@@ -52,7 +54,7 @@ import jdk.jfr.consumer.RecordingStream;
  * JFR delivers events in batches. For performance the values we track are stored as longs without
  * concern for concurrent updates which should not happen anyway.
  */
-public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutdownHandler {
+public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutdownHandler, Resumable {
 
     // Parts of the meter names.
     static final String METER_NAME_PREFIX = "vthreads.";
@@ -89,6 +91,7 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
         }
 
         Main.addShutdownHandler(this);
+        ResumableSupport.get().register(this);
         pinnedVirtualThreadsThresholdMillis = metricsConfig.virtualThreadsPinnedThreshold().toMillis();
 
         var meterBuilders = new ArrayList<>(List.of(
@@ -118,6 +121,16 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
         if (recordingStream != null) {
             stopRecordingStream();
         }
+    }
+
+    @Override
+    public void suspend() {
+        this.shutdown();
+    }
+
+    @Override
+    public void resume() {
+        this.startRecordingStream();
     }
 
     // For testing

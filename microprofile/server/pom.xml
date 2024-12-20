@@ -59,6 +59,10 @@
             <artifactId>helidon-webserver-static-content</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-resumable</artifactId>
+        </dependency>
+        <dependency>
             <groupId>jakarta.interceptor</groupId>
             <artifactId>jakarta.interceptor-api</artifactId>
         </dependency>
