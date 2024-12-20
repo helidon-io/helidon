@@ -1,7 +1,7 @@
 <!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
 <!--
 
-    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -20,7 +20,10 @@
 <suite name="testNG-tests" verbose="10" configfailurepolicy="continue">
     <test name="testNG-integration-tests">
         <packages>
-            <package name="io.helidon.microprofile.testing.testng"/>
+            <package name="io.helidon.microprofile.tests.testing.testng">
+                <!-- Test executed programmatically by TestPinnedThread -->
+                <exclude name="io.helidon.microprofile.testing.testng.programmatic"/>
+            </package>
         </packages>
     </test>
 </suite>

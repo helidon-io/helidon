@@ -32,6 +32,10 @@
         Integration with Mocking to support tests with CDI injection
     </description>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>jakarta.enterprise</groupId>

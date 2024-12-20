@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.net.URI;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -33,6 +34,7 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.config.GlobalConfig;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.common.testing.virtualthreads.PinningRecorder;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webserver.ListenerConfig;
 import io.helidon.webserver.Router;
@@ -66,6 +68,7 @@ class HelidonServerJunitExtension extends JunitExtensionBase
     private final List<ServerJunitExtension> extensions;
 
     private WebServer server;
+    private PinningRecorder pinningRecorder;
 
     HelidonServerJunitExtension() {
         this.extensions = HelidonServiceLoader.create(ServiceLoader.load(ServerJunitExtension.class)).asList();
@@ -80,6 +83,11 @@ class HelidonServerJunitExtension extends JunitExtensionBase
         ServerTest testAnnot = testClass.getAnnotation(ServerTest.class);
         if (testAnnot == null) {
             throw new IllegalStateException("Invalid test class for this extension: " + testClass);
+        }
+
+        if (testAnnot.pinningDetection()) {
+            pinningRecorder = PinningRecorder.create();
+            pinningRecorder.record(Duration.ofMillis(testAnnot.pinningThreshold()));
         }
 
         WebServerConfig.Builder builder = WebServer.builder()
@@ -113,6 +121,11 @@ class HelidonServerJunitExtension extends JunitExtensionBase
         }
 
         super.afterAll(extensionContext);
+
+        if (pinningRecorder != null) {
+            pinningRecorder.close();
+            pinningRecorder = null;
+        }
     }
 
     @Override
