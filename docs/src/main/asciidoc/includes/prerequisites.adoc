@@ -46,7 +46,7 @@ ifndef::h1-prefix[:h1-prefix: SE]
 java -version
 mvn --version
 docker --version
-kubectl version --short
+kubectl version
 ----
 
 [source,bash]
