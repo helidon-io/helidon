@@ -21,13 +21,6 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.util.List;
-import java.util.Optional;
-
-import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.config.Config;
-import io.helidon.common.config.ConfiguredProvider;
-import io.helidon.common.config.NamedService;
 
 /**
  * Prototype is generated from a prototype blueprint, and it is expected to be part of the public API of the module.
@@ -70,102 +63,6 @@ public final class Prototype {
         default BUILDER self() {
             return (BUILDER) this;
         }
-    }
-
-    /**
-     * Extension of {@link io.helidon.builder.api.Prototype.Builder} that supports configuration.
-     * If a blueprint is marked as {@code @Configured}, build will accept configuration.
-     *
-     * @param <BUILDER>   type of the builder
-     * @param <PROTOTYPE> type of the prototype to be built
-     */
-    public interface ConfiguredBuilder<BUILDER, PROTOTYPE> extends Builder<BUILDER, PROTOTYPE> {
-        /**
-         * Update builder from configuration.
-         * Any configured option that is defined on this prototype will be checked in configuration, and if it exists,
-         * it will override current value for that option on this builder.
-         * Options that do not exist in the provided config will not impact current values.
-         * The config instance is kept and may be used in builder decorator, it is not available in prototype implementation.
-         *
-         * @param config configuration to use
-         * @return updated builder instance
-         */
-        BUILDER config(Config config);
-
-        /**
-         * Discover services from configuration.
-         * If already configured instances already contain a service of the same type and name that would be added from
-         * configuration, the configuration would be ignored (e.g. the user must make a choice whether to configure, or
-         * set using an API).
-         *
-         * @param config               configuration located at the parent node of the service providers
-         * @param configKey            configuration key of the provider list
-         *                             (either a list node, or object, where each child is one service)
-         * @param serviceLoader        helidon service loader for the expected type
-         * @param providerType         type of the service provider interface
-         * @param configType           type of the configured service
-         * @param allFromServiceLoader whether all services from service loader should be used, or only the ones with configured
-         *                             node
-         * @param existingInstances    already configured instances
-         * @param <S>                  type of the expected service
-         * @param <T>                  type of the configured service provider that creates instances of S
-         * @return list of discovered services, ordered by {@link io.helidon.common.Weight} (highest weight is first in the list)
-         */
-        default <S extends NamedService, T extends ConfiguredProvider<S>> List<S>
-        discoverServices(Config config,
-                         String configKey,
-                         HelidonServiceLoader<T> serviceLoader,
-                         Class<T> providerType,
-                         Class<S> configType,
-                         boolean allFromServiceLoader,
-                         List<S> existingInstances) {
-            return ProvidedUtil.discoverServices(config,
-                                                 configKey,
-                                                 serviceLoader,
-                                                 providerType,
-                                                 configType,
-                                                 allFromServiceLoader,
-                                                 existingInstances);
-        }
-
-        /**
-         * Discover service from configuration. If an instance is already configured using a builder, it will not be
-         * discovered from configuration (e.g. the user must make a choice whether to configure, or set using API).
-         *
-         * @param config               configuration located at the parent node of the service providers
-         * @param configKey            configuration key of the provider list
-         *                             (either a list node, or object, where each child is one service - this method requires
-         *                             *                             zero to one configured services)
-         * @param serviceLoader        helidon service loader for the expected type
-         * @param providerType         type of the service provider interface
-         * @param configType           type of the configured service
-         * @param allFromServiceLoader whether all services from service loader should be used, or only the ones with configured
-         *                             node
-         * @param existingValue        value already configured, if the name is same as discovered from configuration
-         * @param <S>                  type of the expected service
-         * @param <T>                  type of the configured service provider that creates instances of S
-         * @return the first service (ordered by {@link io.helidon.common.Weight} that is discovered, or empty optional if none
-         *         is found
-         */
-        @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-        default <S extends NamedService, T extends ConfiguredProvider<S>> Optional<S>
-        discoverService(Config config,
-                        String configKey,
-                        HelidonServiceLoader<T> serviceLoader,
-                        Class<T> providerType,
-                        Class<S> configType,
-                        boolean allFromServiceLoader,
-                        Optional<S> existingValue) {
-            return ProvidedUtil.discoverService(config,
-                                                configKey,
-                                                serviceLoader,
-                                                providerType,
-                                                configType,
-                                                allFromServiceLoader,
-                                                existingValue);
-        }
-
-
     }
 
     /**
@@ -262,7 +159,7 @@ public final class Prototype {
 
     /**
      * A blueprint annotated with this annotation will create a prototype that can be created from a
-     * {@link io.helidon.common.config.Config} instance. The builder will also have a method {@code config(Config)} that
+     * {@code io.helidon.common.config.Config} instance. The builder will also have a method {@code config(Config)} that
      * reads all options annotated with {@link io.helidon.builder.api.Option.Configured} from the config.
      */
     @Target(ElementType.TYPE)

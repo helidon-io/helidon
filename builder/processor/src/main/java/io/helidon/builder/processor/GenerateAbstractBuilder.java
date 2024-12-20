@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,10 +40,10 @@ import io.helidon.common.types.Annotations;
 import io.helidon.common.types.TypeName;
 
 import static io.helidon.builder.processor.Types.CHAR_ARRAY_TYPE;
+import static io.helidon.builder.processor.Types.CONFIG_CONFIGURED_BUILDER;
 import static io.helidon.builder.processor.Types.CONFIG_TYPE;
 import static io.helidon.builder.processor.Types.OVERRIDE;
 import static io.helidon.builder.processor.Types.PROTOTYPE_BUILDER;
-import static io.helidon.builder.processor.Types.PROTOTYPE_CONFIGURED_BUILDER;
 import static io.helidon.builder.processor.Types.STRING_TYPE;
 import static io.helidon.common.processor.GeneratorTools.capitalize;
 import static io.helidon.common.processor.classmodel.ClassModel.TYPE_TOKEN;
@@ -93,7 +93,7 @@ final class GenerateAbstractBuilder {
 
             if (typeContext.configuredData().configured() || hasConfig(typeContext.propertyData().properties())) {
                 builder.addInterface(TypeName.builder()
-                                             .from(TypeName.create(PROTOTYPE_CONFIGURED_BUILDER))
+                                             .from(CONFIG_CONFIGURED_BUILDER)
                                              .addTypeArgument(TypeName.createFromGenericDeclaration("BUILDER"))
                                              .addTypeArgument(TypeName.createFromGenericDeclaration("PROTOTYPE"))
                                              .build());
