@@ -42,6 +42,7 @@
     <modules>
         <module>common</module>
         <module>cdi</module>
+        <module>crac</module>
         <module>graal</module>
         <module>db</module>
         <module>jdbc</module>

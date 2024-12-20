@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,10 +31,10 @@ module io.helidon.webserver {
     requires io.helidon.common.features;
     requires io.helidon.common.task;
     requires io.helidon.common.uri;
+    requires io.helidon.common.resumable;
     requires io.helidon.logging.common;
     requires java.management;
     requires io.helidon;
-    requires crac;
 
     requires transitive io.helidon.common.buffers;
     requires transitive io.helidon.common.context;

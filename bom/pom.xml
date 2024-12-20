@@ -625,6 +625,11 @@
                 <artifactId>helidon-common-concurrency-limits</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.common</groupId>
+                <artifactId>helidon-common-resumable</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
             <!-- db client -->
             <dependency>
@@ -896,6 +901,11 @@
             <dependency>
                 <groupId>io.helidon.integrations.graal</groupId>
                 <artifactId>helidon-mp-graal-native-image-extension</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.crac</groupId>
+                <artifactId>helidon-integrations-crac</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
