@@ -125,6 +125,7 @@
                         <webServerHost>localhost</webServerHost>
                         <webServerPort>8080</webServerPort>
                         <jersey.config.client.ignoreExceptionResponse>false</jersey.config.client.ignoreExceptionResponse>
+                        <jersey.config.server.suppressDataSourceProvider>false</jersey.config.server.suppressDataSourceProvider>
                         <jersey.config.allowSystemPropertiesProvider>true</jersey.config.allowSystemPropertiesProvider>
                         <org.jboss.weld.bootstrap.concurrentDeployment>false</org.jboss.weld.bootstrap.concurrentDeployment>
                         <org.jboss.weld.construction.relaxed>false</org.jboss.weld.construction.relaxed>

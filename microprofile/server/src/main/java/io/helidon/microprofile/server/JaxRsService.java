@@ -66,6 +66,7 @@ import org.glassfish.jersey.server.ContainerException;
 import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.ContainerResponse;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.server.spi.Container;
 import org.glassfish.jersey.server.spi.ContainerResponseWriter;
 
@@ -74,6 +75,7 @@ class JaxRsService implements HttpService {
      * If set to {@code "true"}, Jersey will ignore responses in exceptions.
      */
     static final String IGNORE_EXCEPTION_RESPONSE = "jersey.config.client.ignoreExceptionResponse";
+    static final String SUPPRESS_DATASOURCE_PROVIDER = "jersey.config.server.suppressDataSourceProvider";
 
     private static final System.Logger LOGGER = System.getLogger(JaxRsService.class.getName());
     private static final Type REQUEST_TYPE = (new GenericType<Ref<ServerRequest>>() { }).getType();
@@ -95,6 +97,15 @@ class JaxRsService implements HttpService {
     }
 
     static JaxRsService create(ResourceConfig resourceConfig, InjectionManager injectionManager) {
+
+        // Silence warnings from Jersey. See 9019. Allow overriding to pass tck
+        boolean suppressDatasourceProvider = Boolean.parseBoolean(System.getProperty(SUPPRESS_DATASOURCE_PROVIDER, "true"));
+        if (!resourceConfig.hasProperty(CommonProperties.PROVIDER_DEFAULT_DISABLE) && suppressDatasourceProvider) {
+            resourceConfig.addProperties(Map.of(CommonProperties.PROVIDER_DEFAULT_DISABLE, "DATASOURCE"));
+        }
+        if (!resourceConfig.hasProperty(ServerProperties.WADL_FEATURE_DISABLE)) {
+            resourceConfig.addProperties(Map.of(ServerProperties.WADL_FEATURE_DISABLE, "true"));
+        }
 
         InjectionManager ij = injectionManager == null ? null : new InjectionManagerWrapper(injectionManager, resourceConfig);
         ApplicationHandler appHandler = new ApplicationHandler(resourceConfig,
