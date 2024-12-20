@@ -165,7 +165,7 @@ public class CoordinatorService implements HttpService {
 
     private void init() {
         lraPersistentRegistry.load(this);
-        recoveryTask = Scheduling.fixedRateBuilder()
+        recoveryTask = Scheduling.fixedRate()
                 .delay(config.get("recovery-interval").asLong().orElse(200L))
                 .initialDelay(200)
                 .timeUnit(TimeUnit.MILLISECONDS)
@@ -173,7 +173,7 @@ public class CoordinatorService implements HttpService {
                 .build();
 
         if (config.get("periodical-persist").asBoolean().orElse(false)) {
-            persistTask = Scheduling.fixedRateBuilder()
+            persistTask = Scheduling.fixedRate()
                     .delay(config.get("persist-interval").asLong().orElse(5000L))
                     .initialDelay(200)
                     .timeUnit(TimeUnit.MILLISECONDS)
