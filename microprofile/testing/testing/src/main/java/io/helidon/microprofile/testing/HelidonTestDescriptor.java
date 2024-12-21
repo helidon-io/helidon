@@ -139,4 +139,14 @@ public interface HelidonTestDescriptor<T extends AnnotatedElement> {
      * @return annotations
      */
     <A extends Annotation> Stream<A> annotations(Class<A> aType);
+
+    /**
+     * Test if an annotation of the given type is found.
+     *
+     * @param aType annotation type
+     * @return {@code true} if found
+     */
+    default boolean containsAnnotation(Class<? extends Annotation> aType) {
+        return annotations(aType).findFirst().isPresent();
+    }
 }

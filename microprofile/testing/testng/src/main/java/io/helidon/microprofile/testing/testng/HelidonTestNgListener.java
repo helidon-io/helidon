@@ -22,31 +22,28 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import io.helidon.microprofile.testing.HelidonTestContainer;
 import io.helidon.microprofile.testing.HelidonTestInfo;
 import io.helidon.microprofile.testing.HelidonTestInfo.ClassInfo;
 import io.helidon.microprofile.testing.HelidonTestInfo.MethodInfo;
 import io.helidon.microprofile.testing.HelidonTestScope;
-import io.helidon.microprofile.testing.Instrumented;
 import io.helidon.microprofile.testing.Proxies;
+import io.helidon.microprofile.testing.HelidonTestSynchronizer;
 
 import org.testng.IAlterSuiteListener;
-import org.testng.IClassListener;
 import org.testng.ISuite;
 import org.testng.ISuiteListener;
-import org.testng.ITestClass;
 import org.testng.ITestListener;
 import org.testng.ITestNGMethod;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Guice;
-import org.testng.annotations.Test;
 import org.testng.xml.XmlClass;
 import org.testng.xml.XmlSuite;
 import org.testng.xml.XmlTest;
+
+import static io.helidon.microprofile.testing.Instrumented.instrument;
+import static io.helidon.microprofile.testing.Instrumented.isInstrumented;
 
 /**
  * A TestNG listener that integrates CDI with TestNG to support Helidon MP.
@@ -87,7 +84,6 @@ import org.testng.xml.XmlTest;
  * @see HelidonTest
  */
 public class HelidonTestNgListener extends HelidonTestNgListenerBase implements ITestListener,
-                                                                                IClassListener,
                                                                                 ISuiteListener,
                                                                                 IAlterSuiteListener {
 
@@ -103,8 +99,8 @@ public class HelidonTestNgListener extends HelidonTestNgListenerBase implements 
 
     private static final List<Class<? extends Annotation>> METHOD_EXCLUDES = List.of(BeforeTest.class);
 
-    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-    private final Map<HelidonTestInfo<?>, HelidonTestContainer> containers = new ConcurrentHashMap<>();
+    private final HelidonTestSynchronizer sync = new HelidonTestSynchronizer();
+    private volatile HelidonTestContainer container;
 
     @Override
     public void alter(List<XmlSuite> suites) {
@@ -112,20 +108,19 @@ public class HelidonTestNgListener extends HelidonTestNgListenerBase implements 
             for (XmlTest test : suite.getTests()) {
                 for (XmlClass xmlClass : test.getXmlClasses()) {
                     ClassInfo classInfo = classInfo(xmlClass.getSupportClass());
-                    if (classInfo.isTestClass(Test.class)) {
+                    if (classInfo.containsAnnotation(HelidonTest.class)) {
                         Class<?> testClass = classInfo.element();
                         if (Modifier.isAbstract(testClass.getModifiers())) {
                             continue;
                         }
                         if (Modifier.isFinal(testClass.getModifiers())) {
-                            LOGGER.log(Level.WARNING, "Cannot instrument final class: " + classInfo.id());
+                            LOGGER.log(Level.WARNING, "Cannot instrument final class: " + testClass.getName());
                             continue;
                         }
                         // Instrument the test class
                         // Add a @Guice annotation to install HelidonTestNgModuleFactory
                         // Use a proxy to start the container lazily
-                        xmlClass.setClass(Instrumented.instrument(testClass,
-                                TYPE_ANNOTATIONS, METHOD_EXCLUDES, this::resolveInstance));
+                        xmlClass.setClass(instrument(testClass, TYPE_ANNOTATIONS, METHOD_EXCLUDES, this::resolve));
                     }
                 }
             }
@@ -135,74 +130,91 @@ public class HelidonTestNgListener extends HelidonTestNgListenerBase implements 
     @Override
     public void onStart(ISuite suite) {
         for (ITestNGMethod tm : suite.getAllMethods()) {
-            // replace the built-in ITestClass with a decorator
-            // to hide the instrumented class name in the test results
-            tm.setTestClass(TestClassDecorator.decorate(tm.getTestClass()));
+            if (isInstrumented(tm.getTestClass().getRealClass())) {
+                // replace the built-in ITestClass with a decorator
+                // to hide the instrumented class name in the test results
+                tm.setTestClass(HelidonTestNgClassDecorator.decorate(tm.getTestClass()));
+            }
         }
     }
 
     @Override
-    void onBeforeInvocation(ClassInfo classInfo, MethodInfo methodInfo, HelidonTestInfo<?> testInfo) {
-        HelidonTestContainer container;
-        try {
-            lock.readLock().lock();
+    boolean filterClass(Class<?> cls) {
+        return isInstrumented(cls);
+    }
 
-            // current container for the test class
-            container = containers.get(classInfo);
+    // TODO use LOGGER instead of system out (it may produce better output ordering)
 
-            // close the container if the method requires a reset
-            if (methodInfo.requiresReset() && container != null) {
-                container.close();
-                containers.remove(classInfo);
-                container = null;
-            }
-        } finally {
-            lock.readLock().unlock();
-        }
-
-        // create the container
-        if (container == null) {
-            try {
-                lock.writeLock().lock();
-                container = containers.get(classInfo);
-                if (container == null) {
-                    HelidonTestScope scope = HelidonTestScope.ofContainer();
-                    if (methodInfo.requiresReset()) {
-                        container = new HelidonTestContainer(methodInfo, scope, HelidonTestExtensionImpl::new);
-                    } else {
-                        container = new HelidonTestContainer(classInfo, scope, HelidonTestExtensionImpl::new);
+    @Override
+    void onBeforeInvocation(MethodInfo methodInfo, HelidonTestInfo<?> testInfo, boolean last) {
+        if (testInfo.requiresReset()) {
+            sync.awaitMethods();
+            System.out.println("onBeforeInvocation: " + testInfo + ", thread: " + Thread.currentThread().getName());
+            close(testInfo);
+            sync.acquireContainer();
+            container = new HelidonTestContainer(testInfo, HelidonTestScope.ofContainer(), HelidonTestExtensionImpl::new);
+        } else {
+            System.out.println("onBeforeInvocation: " + testInfo + ", thread: " + Thread.currentThread().getName());
+            if (container == null) {
+                try {
+                    sync.acquireContainer();
+                    if (container == null) {
+                        HelidonTestScope scope = HelidonTestScope.ofContainer();
+                        HelidonTestInfo<?> containerInfo = testInfo.requiresReset() ? testInfo : testInfo.classInfo();
+                        container = new HelidonTestContainer(containerInfo, scope, HelidonTestExtensionImpl::new);
                     }
-                    containers.put(classInfo, container);
+                } finally {
+                    // container is shared
+                    sync.releaseContainer();
                 }
-            } finally {
-                lock.writeLock().unlock();
             }
         }
-        containers.putIfAbsent(methodInfo, container);
-        containers.putIfAbsent(testInfo, container);
+        if (last) {
+            sync.startMethod(testInfo);
+        }
     }
 
     @Override
     void onAfterInvocation(MethodInfo methodInfo, HelidonTestInfo<?> testInfo, boolean last) {
-        onAfter(methodInfo, last && testInfo.requiresReset());
+        System.out.println("onAfterInvocation: " + methodInfo + ", thread: " + Thread.currentThread().getName());
+        if (last) {
+            if (testInfo.requiresReset()) {
+                close(testInfo);
+                sync.releaseContainer();
+            }
+            sync.completeMethod(testInfo);
+        }
     }
 
     @Override
-    public void onAfterClass(ITestClass tc) {
-        onAfter(classInfo(tc.getRealClass()), true);
+    public void onBeforeClass(ClassInfo classInfo) {
+        try {
+            sync.acquireClass();
+        } finally {
+            System.out.println("onBeforeClass: " + classInfo + ", thread: " + Thread.currentThread().getName());
+        }
     }
 
-    private void onAfter(HelidonTestInfo<?> testInfo, boolean closeContainer) {
-        containers.computeIfPresent(testInfo, (k, v) -> {
-            if (closeContainer) {
-                v.close();
-            }
-            return null;
-        });
+    @Override
+    public void onAfterClass(ClassInfo classInfo) {
+        try {
+            System.out.println("onAfterClass: " + classInfo + ", thread: " + Thread.currentThread().getName());
+            close(classInfo);
+        } finally {
+            sync.releaseClass();
+        }
     }
 
-    private <T> T resolveInstance(Class<T> type, Method method) {
-        HelidonTestContainer container = containers.get(methodInfo(type, method));
+    private void close(HelidonTestInfo<?> testInfo) {
+        if (container != null) {
+            System.out.println("close: " + testInfo + ", thread: " + Thread.currentThread().getName());
+            container.close();
+            container = null;
+        }
+    }
+
+    private <T> T resolve(Class<T> type, Method method) {
+        System.out.println("resolve: " + method + ", thread: " + Thread.currentThread().getName());
         if (container == null) {
             throw new IllegalStateException("Container not set");
         }

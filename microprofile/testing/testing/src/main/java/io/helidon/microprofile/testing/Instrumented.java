@@ -67,16 +67,13 @@ public interface Instrumented {
     }
 
     /**
-     * Get the non-instrumented type of the given class.
+     * Test if the given type is instrumented.
      *
      * @param type type
-     * @return non-instrumented class
+     * @return {@code true} if instrumented, {@code false} otherwise
      */
-    static Class<?> unwrap(Class<?> type) {
-        if (Set.of(type.getInterfaces()).contains(Instrumented.class)) {
-            return type.getSuperclass();
-        }
-        return type;
+    static boolean isInstrumented(Class<?> type) {
+        return Set.of(type.getInterfaces()).contains(Instrumented.class);
     }
 
     /**

@@ -238,30 +238,29 @@ class ReflectionHelper {
      */
     static <T extends Annotation> Stream<T> filterAnnotations(List<Annotated<?>> annotations, Class<T> annotationType) {
         return filterAnnotated(annotations, annotationType)
-                .flatMap(it -> it.annotations.stream())
-                .map(annotationType::cast);
+                .flatMap(it -> it.annotations.stream());
     }
 
     /**
      * Checks that the given class is public.
      *
-     * @param clazz class
-     * @param <T>   class type
-     * @return clazz
+     * @param cls class
+     * @param <T> class type
+     * @return Class
      * @throws java.lang.IllegalArgumentException if the given class is not public
      */
-    static <T> Class<T> requirePublic(Class<T> clazz) throws IllegalArgumentException {
-        if (!Modifier.isPublic(clazz.getModifiers())) {
-            throw new IllegalArgumentException(clazz.getName() + " is not public");
+    static <T> Class<T> requirePublic(Class<T> cls) throws IllegalArgumentException {
+        if (!Modifier.isPublic(cls.getModifiers())) {
+            throw new IllegalArgumentException(cls.getName() + " is not public");
         }
-        return clazz;
+        return cls;
     }
 
     /**
      * Checks that the given method is static.
      *
      * @param method method
-     * @return clazz
+     * @return Method
      * @throws java.lang.IllegalArgumentException if the given class is not public
      */
     static Method requireStatic(Method method) throws IllegalArgumentException {

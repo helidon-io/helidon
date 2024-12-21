@@ -30,6 +30,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static io.helidon.microprofile.testing.Instrumented.isInstrumented;
+
 /**
  * Metadata of the test class or method that triggers the creation of a CDI container.
  *
@@ -42,25 +44,25 @@ public sealed interface HelidonTestInfo<T extends AnnotatedElement> extends Heli
     /**
      * Create a new class info.
      *
-     * @param clazz class
+     * @param cls class
      * @return ClassInfo
      */
-    static ClassInfo classInfo(Class<?> clazz) {
-        return classInfo(clazz, HelidonTestDescriptorImpl::new);
+    static ClassInfo classInfo(Class<?> cls) {
+        return classInfo(cls, HelidonTestDescriptorImpl::new);
     }
 
     /**
      * Create a new class info.
      *
-     * @param clazz    class
+     * @param cls      class
      * @param function descriptor factory
      * @return ClassInfo
      */
-    static ClassInfo classInfo(Class<?> clazz, Function<Class<?>, HelidonTestDescriptor<Class<?>>> function) {
-        Class<?> theClass = Instrumented.unwrap(clazz);
+    static ClassInfo classInfo(Class<?> cls, Function<Class<?>, HelidonTestDescriptor<Class<?>>> function) {
+        Class<?> theClass = isInstrumented(cls) ? cls.getSuperclass() : cls;
         return ClassInfo.CACHE.compute(theClass.getName(), (e, r) -> {
             if (r == null || r.get() == null) {
-                return new SoftReference<>(new ClassInfo(function.apply(clazz)));
+                return new SoftReference<>(new ClassInfo(function.apply(cls)));
             }
             return r;
         }).get();
@@ -69,13 +71,13 @@ public sealed interface HelidonTestInfo<T extends AnnotatedElement> extends Heli
     /**
      * Create a new class info.
      *
-     * @param descriptor class descriptor
+     * @param desc class descriptor
      * @return ClassInfo
      */
-    static ClassInfo classInfo(HelidonTestDescriptor<Class<?>> descriptor) {
-        return ClassInfo.CACHE.compute(descriptor.element().getName(), (e, r) -> {
+    static ClassInfo classInfo(HelidonTestDescriptor<Class<?>> desc) {
+        return ClassInfo.CACHE.compute(desc.element().getName(), (e, r) -> {
             if (r == null || r.get() == null) {
-                return new SoftReference<>(new ClassInfo(descriptor));
+                return new SoftReference<>(new ClassInfo(desc));
             }
             return r;
         }).get();
@@ -112,14 +114,14 @@ public sealed interface HelidonTestInfo<T extends AnnotatedElement> extends Heli
     /**
      * Create a new method info.
      *
-     * @param descriptor method descriptor
-     * @param classInfo  class info
+     * @param desc      method descriptor
+     * @param classInfo class info
      * @return MethodInfo
      */
-    static MethodInfo methodInfo(HelidonTestDescriptor<Method> descriptor, ClassInfo classInfo) {
-        return MethodInfo.CACHE.compute(MethodInfo.cacheKey(descriptor.element(), classInfo), (e, r) -> {
+    static MethodInfo methodInfo(HelidonTestDescriptor<Method> desc, ClassInfo classInfo) {
+        return MethodInfo.CACHE.compute(MethodInfo.cacheKey(desc.element(), classInfo), (e, r) -> {
             if (r == null || r.get() == null) {
-                return new SoftReference<>(new MethodInfo(descriptor, classInfo));
+                return new SoftReference<>(new MethodInfo(desc, classInfo));
             }
             return r;
         }).get();
@@ -196,17 +198,6 @@ public sealed interface HelidonTestInfo<T extends AnnotatedElement> extends Heli
         @Override
         public ClassInfo classInfo() {
             return this;
-        }
-
-        /**
-         * Test if any method in the represented class is annotated with the given type.
-         *
-         * @param aType annotation type
-         * @return {@code true} if found, {@code false} otherwise
-         */
-        public boolean isTestClass(Class<? extends Annotation> aType) {
-            return Stream.of(element().getDeclaredMethods())
-                    .anyMatch(m -> m.isAnnotationPresent(aType));
         }
 
         @Override

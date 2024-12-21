@@ -24,6 +24,7 @@ import java.util.Set;
 import io.helidon.microprofile.testing.testng.AddBean;
 import io.helidon.microprofile.testing.testng.AddConfig;
 import io.helidon.microprofile.testing.testng.AddExtension;
+import io.helidon.microprofile.testing.testng.DisableDiscovery;
 import io.helidon.microprofile.testing.testng.HelidonTest;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -43,12 +44,23 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @HelidonTest(resetPerTest = true)
 public class TestPerMethod {
-    private final static List<SeContainer> ALL_CONTAINERS = new LinkedList<>();
+    private final static List<CDI<Object>> ALL_CONTAINERS = new LinkedList<>();
+
+    @Test
+    void testWithParameter() {
+        ALL_CONTAINERS.add(CDI.current());
+    }
+
+    @Test
+    @DisableDiscovery
+    void testWithParameterNoDiscovery() {
+        ALL_CONTAINERS.add(CDI.current());
+    }
 
     @Test
     @AddConfig(key = "key-1", value = "value-1")
     @AddBean(MyBean.class)
-    public void testWithAdditionalConfig() {
+    void testWithAdditionalConfig() {
         String configured = CDI.current()
                 .select(MyBean.class)
                 .get()
@@ -59,15 +71,15 @@ public class TestPerMethod {
 
     @Test
     @AddExtension(MyExtension.class)
-    public void testCustomExtension() {
+    void testCustomExtension() {
         assertThat("Extension should have been called, as it observes application scope", MyExtension.called, is(true));
     }
 
     @AfterClass
-    static void validateContainerInstances() {
+    void validateContainerInstances() {
         Set<Integer> used = new HashSet<>();
         try {
-            for (SeContainer container : ALL_CONTAINERS) {
+            for (CDI<Object> container : ALL_CONTAINERS) {
                 if (!used.add(System.identityHashCode(container))) {
                     Assert.fail("Container instance used twice: " + container);
                 }
@@ -77,7 +89,7 @@ public class TestPerMethod {
         }
     }
 
-    public static class MyBean {
+    static class MyBean {
         private final String configured;
 
         @Inject

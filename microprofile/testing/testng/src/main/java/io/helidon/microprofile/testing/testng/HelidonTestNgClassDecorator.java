@@ -19,13 +19,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import io.helidon.microprofile.testing.Instrumented;
-
 import org.testng.ITestClass;
 import org.testng.ITestNGMethod;
 import org.testng.internal.ITestClassConfigInfo;
 import org.testng.xml.XmlClass;
 import org.testng.xml.XmlTest;
+
+import static io.helidon.microprofile.testing.Instrumented.isInstrumented;
 
 /**
  * A decorator for {@link ITestClass} that is used to customize the value of {@link ITestClass#getName()}.
@@ -33,9 +33,9 @@ import org.testng.xml.XmlTest;
  *
  * @param delegate delegate
  */
-record TestClassDecorator(ITestClass delegate) implements ITestClass, ITestClassConfigInfo {
+record HelidonTestNgClassDecorator(ITestClass delegate) implements ITestClass, ITestClassConfigInfo {
 
-    private static final Map<ITestClass, TestClassDecorator> CACHE = new ConcurrentHashMap<>();
+    private static final Map<ITestClass, HelidonTestNgClassDecorator> CACHE = new ConcurrentHashMap<>();
 
     /**
      * Decorate the given test class.
@@ -44,8 +44,8 @@ record TestClassDecorator(ITestClass delegate) implements ITestClass, ITestClass
      * @return decorated test class
      */
     static ITestClass decorate(ITestClass tc) {
-        if (!(tc instanceof TestClassDecorator)) {
-            return CACHE.computeIfAbsent(tc, TestClassDecorator::new);
+        if (!(tc instanceof HelidonTestNgClassDecorator)) {
+            return CACHE.computeIfAbsent(tc, HelidonTestNgClassDecorator::new);
         }
         return tc;
     }
@@ -72,7 +72,8 @@ record TestClassDecorator(ITestClass delegate) implements ITestClass, ITestClass
 
     @Override
     public String getName() {
-        return Instrumented.unwrap(getRealClass()).getName();
+        Class<?> realClass = getRealClass();
+        return isInstrumented(realClass) ? realClass.getSuperclass().getName() : realClass.getName();
     }
 
     @Override

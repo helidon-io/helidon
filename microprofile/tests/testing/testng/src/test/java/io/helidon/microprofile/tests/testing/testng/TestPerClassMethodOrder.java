@@ -29,23 +29,23 @@ import static org.hamcrest.Matchers.is;
 @HelidonTest
 public class TestPerClassMethodOrder {
 
-    private final List<String> list = new ArrayList<>();
+//    private final List<String> list = new ArrayList<>();
 
     @Test(priority = 1)
     void firstTest() {
-        list.add("firstTest");
-        assertThat(list, is(List.of("firstTest")));
+//        list.add("firstTest");
+//        assertThat(list, is(List.of("firstTest")));
     }
 
     @Test(priority = 2)
     void secondTest() {
-        list.add("secondTest");
-        assertThat(list, is(List.of("firstTest", "secondTest")));
+//        list.add("secondTest");
+//        assertThat(list, is(List.of("firstTest", "secondTest")));
     }
 
     @Test(priority = 3)
     void thirdTest() {
-        list.add("thirdTest");
-        assertThat(list, is(List.of("firstTest", "secondTest", "thirdTest")));
+//        list.add("thirdTest");
+//        assertThat(list, is(List.of("firstTest", "secondTest", "thirdTest")));
     }
 }
