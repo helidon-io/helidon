@@ -75,7 +75,7 @@ class JaxRsService implements HttpService {
      * If set to {@code "true"}, Jersey will ignore responses in exceptions.
      */
     static final String IGNORE_EXCEPTION_RESPONSE = "jersey.config.client.ignoreExceptionResponse";
-    static final String SUPPRESS_DATASOURCE_PROVIDER = "jersey.config.server.suppressDataSourceProvider";
+    static final String DISABLE_DATASOURCE_PROVIDER = "jersey.config.server.disableDataSourceProvider";
 
     private static final System.Logger LOGGER = System.getLogger(JaxRsService.class.getName());
     private static final Type REQUEST_TYPE = (new GenericType<Ref<ServerRequest>>() { }).getType();
@@ -98,9 +98,14 @@ class JaxRsService implements HttpService {
 
     static JaxRsService create(ResourceConfig resourceConfig, InjectionManager injectionManager) {
 
-        // Silence warnings from Jersey. See 9019. Allow overriding to pass tck
-        boolean suppressDatasourceProvider = Boolean.parseBoolean(System.getProperty(SUPPRESS_DATASOURCE_PROVIDER, "true"));
-        if (!resourceConfig.hasProperty(CommonProperties.PROVIDER_DEFAULT_DISABLE) && suppressDatasourceProvider) {
+        Config config = ConfigProvider.getConfig();
+
+        // Silence warnings from Jersey by disabling the default data source provider. See 9019.
+        // To pass TCK we support a system property to control whether or not we disable the default provider
+        // We also support the property via MicroProfile config in case a user wants to control the property.
+        boolean disableDatasourceProvider = config.getOptionalValue(DISABLE_DATASOURCE_PROVIDER, Boolean.class)
+                .orElseGet(() -> Boolean.parseBoolean(System.getProperty(DISABLE_DATASOURCE_PROVIDER, "true")));
+        if (!resourceConfig.hasProperty(CommonProperties.PROVIDER_DEFAULT_DISABLE) && disableDatasourceProvider) {
             resourceConfig.addProperties(Map.of(CommonProperties.PROVIDER_DEFAULT_DISABLE, "DATASOURCE"));
         }
         if (!resourceConfig.hasProperty(ServerProperties.WADL_FEATURE_DISABLE)) {
@@ -112,7 +117,6 @@ class JaxRsService implements HttpService {
                                                                new WebServerBinder(),
                                                                ij);
         Container container = new HelidonJerseyContainer(appHandler);
-        Config config = ConfigProvider.getConfig();
 
         // This configuration via system properties is for the Jersey Client API. Any
         // response in an exception will be mapped to an empty one to prevent data leaks
