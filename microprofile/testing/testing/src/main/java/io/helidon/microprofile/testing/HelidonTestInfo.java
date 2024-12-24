@@ -358,6 +358,7 @@ public sealed interface HelidonTestInfo<T extends AnnotatedElement> extends Heli
             return "MethodInfo{"
                    + "method=" + element().getName()
                    + ", class=" + classInfo.element().getName()
+                   + ", requiresReset=" + requiresReset()
                    + '}';
         }
 

@@ -33,9 +33,9 @@ import static io.helidon.microprofile.testing.Instrumented.isInstrumented;
  *
  * @param delegate delegate
  */
-record HelidonTestNgClassDecorator(ITestClass delegate) implements ITestClass, ITestClassConfigInfo {
+record ClassDecorator(ITestClass delegate) implements ITestClass, ITestClassConfigInfo {
 
-    private static final Map<ITestClass, HelidonTestNgClassDecorator> CACHE = new ConcurrentHashMap<>();
+    private static final Map<ITestClass, ClassDecorator> CACHE = new ConcurrentHashMap<>();
 
     /**
      * Decorate the given test class.
@@ -44,8 +44,8 @@ record HelidonTestNgClassDecorator(ITestClass delegate) implements ITestClass, I
      * @return decorated test class
      */
     static ITestClass decorate(ITestClass tc) {
-        if (!(tc instanceof HelidonTestNgClassDecorator)) {
-            return CACHE.computeIfAbsent(tc, HelidonTestNgClassDecorator::new);
+        if (!(tc instanceof ClassDecorator)) {
+            return CACHE.computeIfAbsent(tc, ClassDecorator::new);
         }
         return tc;
     }
