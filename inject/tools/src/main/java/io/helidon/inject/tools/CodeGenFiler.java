@@ -477,6 +477,7 @@ public class CodeGenFiler {
     private Optional<Path> codegenResourceFilerOut(String outPath,
                                                    String body,
                                                    Optional<Function<InputStream, String>> optFnUpdater) {
+        outPath = outPath.replace(File.separator, "/");
         Messager messager = messager();
         if (!filerWriterEnabled()) {
             messager.log("(disabled) Writing " + outPath + " with:\n" + body);
