@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,16 +94,6 @@ class ConfigMapperManager implements ConfigMapper {
     @Override
     public <T> T map(String value, GenericType<T> type, String key) throws MissingValueException, ConfigMappingException {
         return map(simpleConfig(key, value), type);
-    }
-
-    @SuppressWarnings("unchecked")
-    <T> Optional<? extends BiFunction<Config, ConfigMapper, T>> mapper(GenericType<T> type) {
-        Mapper<T> mapper = (Mapper<T>) mappers.get(type);
-        if (null == mapper) {
-            return mapperProviders.findMapper(type, Config.Key.create(""));
-        } else {
-            return Optional.of(mapper);
-        }
     }
 
     private <T> Mapper<T> findMapper(GenericType<T> type, Config.Key key) {
