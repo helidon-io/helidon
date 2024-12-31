@@ -45,6 +45,27 @@ public final class ServiceOptions {
                              Set.of(TypeName.create(Serializable.class)),
                              TypeName::create,
                              new GenericType<Set<TypeName>>() { });
+    /**
+     * Which {@code InterceptionStrategy} to use.
+     */
+    public static final Option<InterceptionStrategy> INTERCEPTION_STRATEGY =
+            Option.create("helidon.registry.interceptionStrategy",
+                          "Which interception strategy to use (NONE, EXPLICIT, ALL_RUNTIME, ALL_RETAINED)",
+                          InterceptionStrategy.EXPLICIT,
+                          InterceptionStrategy::valueOf,
+                          GenericType.create(InterceptionStrategy.class));
+
+    /**
+     * Additional meta annotations that mark scope annotations. This can be used to include
+     * jakarta.enterprise.context.NormalScope annotated types as scopes.
+     */
+    public static final Option<Set<TypeName>> SCOPE_META_ANNOTATIONS =
+            Option.createSet("helidon.registry.scopeMetaAnnotations",
+                             "Additional meta annotations that mark scope annotations. This can be used to include"
+                                     + "jakarta.enterprise.context.NormalScope annotated types as scopes.",
+                             Set.of(),
+                             TypeName::create,
+                             new GenericType<Set<TypeName>>() { });
 
     private ServiceOptions() {
     }

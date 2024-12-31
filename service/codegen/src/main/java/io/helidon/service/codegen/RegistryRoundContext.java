@@ -32,7 +32,6 @@ public interface RegistryRoundContext extends RoundContext {
     /**
      * Add a new service descriptor.
      *
-     * @param registryType        service registry this descriptor is designed for (core is the "top" level)
      * @param serviceType         type of the service (the implementation class we generate descriptor for)
      * @param descriptorType      type of the service descriptor
      * @param descriptor          descriptor class model
@@ -42,10 +41,7 @@ public interface RegistryRoundContext extends RoundContext {
      * @param originatingElements possible originating elements (such as Element in APT, or ClassInfo in classpath scanning)
      * @throws java.lang.IllegalStateException if an attempt is done to register a new descriptor for the same type
      */
-    // all parameters are needed, no sense in creating a builder
-    @SuppressWarnings("checkstyle:ParameterNumber")
-    void addDescriptor(String registryType,
-                       TypeName serviceType,
+    void addDescriptor(TypeName serviceType,
                        TypeName descriptorType,
                        ClassModel.Builder descriptor,
                        double weight,

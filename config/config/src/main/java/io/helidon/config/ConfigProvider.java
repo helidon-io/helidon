@@ -18,37 +18,35 @@ package io.helidon.config;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.helidon.common.config.Config;
-import io.helidon.common.config.ConfigException;
-import io.helidon.common.config.ConfigValue;
-import io.helidon.common.config.GlobalConfig;
 import io.helidon.config.spi.ConfigFilter;
 import io.helidon.config.spi.ConfigMapperProvider;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.service.registry.Service;
 
-@Service.Provider
-@Service.ExternalContracts(Config.class)
-class ConfigProvider implements Config {
+@Service.Singleton
+class ConfigProvider implements Supplier<Config> {
     private final Config config;
 
-    ConfigProvider(Supplier<MetaConfig> metaConfig,
+    @SuppressWarnings("removal")
+    @Service.Inject
+    ConfigProvider(Supplier<Optional<MetaConfig>> metaConfig,
                    Supplier<List<ConfigSource>> configSources,
                    Supplier<List<ConfigParser>> configParsers,
                    Supplier<List<ConfigFilter>> configFilters,
                    Supplier<List<ConfigMapperProvider>> configMappers) {
-        if (GlobalConfig.configured()) {
-            config = GlobalConfig.config();
+        if (io.helidon.common.config.GlobalConfig.configured()) {
+            config = io.helidon.common.config.GlobalConfig.config();
         } else {
             config = io.helidon.config.Config.builder()
-                    .config(metaConfig.get().metaConfiguration())
+                    .update(it -> metaConfig.get().ifPresent(metaConfigInstance ->
+                                                               it.config(metaConfigInstance.metaConfiguration())))
                     .update(it -> configSources.get()
                             .forEach(it::addSource))
                     .update(it -> defaultConfigSources(it, configParsers))
@@ -69,81 +67,8 @@ class ConfigProvider implements Config {
     }
 
     @Override
-    public Key key() {
-        return config.key();
-    }
-
-    @Override
-    public Config root() {
-        return config.root();
-    }
-
-    @Override
-    public Config get(String key) throws io.helidon.common.config.ConfigException {
-        return config.get(key);
-    }
-
-    @Override
-    public Config detach() throws io.helidon.common.config.ConfigException {
-        return config.detach();
-    }
-
-    @Override
-    public boolean exists() {
-        return config.exists();
-    }
-
-    @Override
-    public boolean isLeaf() {
-        return config.isLeaf();
-    }
-
-    @Override
-    public boolean isObject() {
-        return config.isObject();
-    }
-
-    @Override
-    public boolean isList() {
-        return config.isList();
-    }
-
-    @Override
-    public boolean hasValue() {
-        return config.hasValue();
-    }
-
-    @Override
-    public <T> io.helidon.common.config.ConfigValue<T> as(Class<T> type) {
-        return config.as(type);
-    }
-
-    @Override
-    public <T> io.helidon.common.config.ConfigValue<T> map(Function<Config, T> mapper) {
-        return config.map(mapper);
-    }
-
-    @Override
-    public <T> io.helidon.common.config.ConfigValue<List<T>> asList(Class<T> type) throws
-            io.helidon.common.config.ConfigException {
-        return config.asList(type);
-    }
-
-    @Override
-    public <T> io.helidon.common.config.ConfigValue<List<T>> mapList(Function<Config, T> mapper) throws
-            io.helidon.common.config.ConfigException {
-        return config.mapList(mapper);
-    }
-
-    @Override
-    public <C extends Config> io.helidon.common.config.ConfigValue<List<C>> asNodeList() throws
-            io.helidon.common.config.ConfigException {
-        return config.asNodeList();
-    }
-
-    @Override
-    public ConfigValue<Map<String, String>> asMap() throws ConfigException {
-        return config.asMap();
+    public Config get() {
+        return config;
     }
 
     private void defaultConfigSources(io.helidon.config.Config.Builder configBuilder,

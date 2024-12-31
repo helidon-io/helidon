@@ -24,6 +24,7 @@
         <groupId>io.helidon.service.tests</groupId>
         <artifactId>helidon-service-tests-project</artifactId>
         <version>4.2.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -39,14 +40,6 @@
         <dependency>
             <groupId>io.helidon.service</groupId>
             <artifactId>helidon-service-registry</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.service.inject</groupId>
-            <artifactId>helidon-service-inject-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.service.inject</groupId>
-            <artifactId>helidon-service-inject</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>

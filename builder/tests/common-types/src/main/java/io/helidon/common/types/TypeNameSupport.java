@@ -18,6 +18,7 @@ package io.helidon.common.types;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -190,6 +191,11 @@ final class TypeNameSupport {
             for (Type actualTypeArgument : actualTypeArguments) {
                 builder.addTypeArgument(TypeName.create(actualTypeArgument));
             }
+            return;
+        }
+        if (reflectGenericType instanceof WildcardType) {
+            builder.className("?");
+            builder.wildcard(true);
             return;
         }
 

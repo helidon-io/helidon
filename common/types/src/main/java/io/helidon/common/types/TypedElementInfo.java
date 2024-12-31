@@ -74,6 +74,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         private final List<Annotation> elementTypeAnnotations = new ArrayList<>();
         private final List<Annotation> inheritedAnnotations = new ArrayList<>();
         private final List<TypeName> componentTypes = new ArrayList<>();
+        private final List<TypeName> typeParameters = new ArrayList<>();
         private final List<TypedElementInfo> parameterArguments = new ArrayList<>();
         private final Set<TypeName> throwsChecked = new LinkedHashSet<>();
         private final Set<Modifier> elementModifiers = new LinkedHashSet<>();
@@ -84,6 +85,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         private boolean isElementTypeAnnotationsMutated;
         private boolean isInheritedAnnotationsMutated;
         private boolean isParameterArgumentsMutated;
+        private boolean isTypeParametersMutated;
         private ElementKind kind;
         private ElementSignature signature;
         private Object originatingElement;
@@ -132,6 +134,10 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             addThrowsChecked(prototype.throwsChecked());
             originatingElement(prototype.originatingElement());
             signature(prototype.signature());
+            if (!isTypeParametersMutated) {
+                typeParameters.clear();
+            }
+            addTypeParameters(prototype.typeParameters());
             if (!isAnnotationsMutated) {
                 annotations.clear();
             }
@@ -187,6 +193,14 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             addThrowsChecked(builder.throwsChecked);
             builder.originatingElement().ifPresent(this::originatingElement);
             builder.signature().ifPresent(this::signature);
+            if (isTypeParametersMutated) {
+                if (builder.isTypeParametersMutated) {
+                    addTypeParameters(builder.typeParameters);
+                }
+            } else {
+                typeParameters.clear();
+                addTypeParameters(builder.typeParameters);
+            }
             if (isAnnotationsMutated) {
                 if (builder.isAnnotationsMutated) {
                     addAnnotations(builder.annotations);
@@ -408,7 +422,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * @return updated builder instance
          * @see #modifiers()
          */
-        public BUILDER modifiers(Set<? extends String> modifiers) {
+        public BUILDER modifiers(Set<String> modifiers) {
             Objects.requireNonNull(modifiers);
             this.modifiers.clear();
             this.modifiers.addAll(modifiers);
@@ -422,7 +436,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * @return updated builder instance
          * @see #modifiers()
          */
-        public BUILDER addModifiers(Set<? extends String> modifiers) {
+        public BUILDER addModifiers(Set<String> modifiers) {
             Objects.requireNonNull(modifiers);
             this.modifiers.addAll(modifiers);
             return self();
@@ -660,6 +674,68 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         public BUILDER originatingElement(Object originatingElement) {
             Objects.requireNonNull(originatingElement);
             this.originatingElement = originatingElement;
+            return self();
+        }
+
+        /**
+         * Type parameters of this element. Such as when a method is declared as {@code <T> T generate(Class<T> type)},
+         * this would return the generic type {@code T} with no upper or lower bounds.
+         *
+         * @param typeParameters list of type parameters of this element
+         * @return updated builder instance
+         * @see #typeParameters()
+         */
+        public BUILDER typeParameters(List<? extends TypeName> typeParameters) {
+            Objects.requireNonNull(typeParameters);
+            isTypeParametersMutated = true;
+            this.typeParameters.clear();
+            this.typeParameters.addAll(typeParameters);
+            return self();
+        }
+
+        /**
+         * Type parameters of this element. Such as when a method is declared as {@code <T> T generate(Class<T> type)},
+         * this would return the generic type {@code T} with no upper or lower bounds.
+         *
+         * @param typeParameters list of type parameters of this element
+         * @return updated builder instance
+         * @see #typeParameters()
+         */
+        public BUILDER addTypeParameters(List<? extends TypeName> typeParameters) {
+            Objects.requireNonNull(typeParameters);
+            isTypeParametersMutated = true;
+            this.typeParameters.addAll(typeParameters);
+            return self();
+        }
+
+        /**
+         * Type parameters of this element. Such as when a method is declared as {@code <T> T generate(Class<T> type)},
+         * this would return the generic type {@code T} with no upper or lower bounds.
+         *
+         * @param typeParameter list of type parameters of this element
+         * @return updated builder instance
+         * @see #typeParameters()
+         */
+        public BUILDER addTypeParameter(TypeName typeParameter) {
+            Objects.requireNonNull(typeParameter);
+            this.typeParameters.add(typeParameter);
+            isTypeParametersMutated = true;
+            return self();
+        }
+
+        /**
+         * Type parameters of this element. Such as when a method is declared as {@code <T> T generate(Class<T> type)},
+         * this would return the generic type {@code T} with no upper or lower bounds.
+         *
+         * @param consumer list of type parameters of this element
+         * @return updated builder instance
+         * @see #typeParameters()
+         */
+        public BUILDER addTypeParameter(Consumer<TypeName.Builder> consumer) {
+            Objects.requireNonNull(consumer);
+            var builder = TypeName.builder();
+            consumer.accept(builder);
+            this.typeParameters.add(builder.build());
             return self();
         }
 
@@ -979,6 +1055,16 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         }
 
         /**
+         * Type parameters of this element. Such as when a method is declared as {@code <T> T generate(Class<T> type)},
+         * this would return the generic type {@code T} with no upper or lower bounds.
+         *
+         * @return the type parameters
+         */
+        public List<TypeName> typeParameters() {
+            return typeParameters;
+        }
+
+        /**
          * List of declared and known annotations for this element.
          * Note that "known" implies that the annotation is visible, which depends
          * upon the context in which it was build (such as the {@link java.lang.annotation.Retention of the annotation}).
@@ -1120,6 +1206,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             private final List<Annotation> elementTypeAnnotations;
             private final List<Annotation> inheritedAnnotations;
             private final List<TypeName> componentTypes;
+            private final List<TypeName> typeParameters;
             private final List<TypedElementInfo> parameterArguments;
             private final Optional<TypeName> enclosingType;
             private final Optional<Object> originatingElement;
@@ -1154,6 +1241,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
                 this.throwsChecked = Collections.unmodifiableSet(new LinkedHashSet<>(builder.throwsChecked()));
                 this.originatingElement = builder.originatingElement();
                 this.signature = builder.signature().get();
+                this.typeParameters = List.copyOf(builder.typeParameters());
                 this.annotations = List.copyOf(builder.annotations());
                 this.inheritedAnnotations = List.copyOf(builder.inheritedAnnotations());
             }
@@ -1249,6 +1337,11 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             }
 
             @Override
+            public List<TypeName> typeParameters() {
+                return typeParameters;
+            }
+
+            @Override
             public List<Annotation> annotations() {
                 return annotations;
             }
@@ -1273,6 +1366,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
                         && Objects.equals(parameterArguments, other.parameterArguments())
                         && Objects.equals(throwsChecked, other.throwsChecked())
                         && Objects.equals(signature, other.signature())
+                        && Objects.equals(typeParameters, other.typeParameters())
                         && Objects.equals(annotations, other.annotations())
                         && Objects.equals(inheritedAnnotations, other.inheritedAnnotations());
             }
@@ -1286,6 +1380,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
                                     parameterArguments,
                                     throwsChecked,
                                     signature,
+                                    typeParameters,
                                     annotations,
                                     inheritedAnnotations);
             }

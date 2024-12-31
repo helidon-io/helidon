@@ -200,6 +200,7 @@ class BuilderCodegen implements CodegenExtension {
                                          TypeName builderTypeName,
                                          List<TypeArgument> typeArguments,
                                          String ifaceName) {
+
         classModel.addMethod(builder -> {
             builder.isStatic(true)
                     .name("builder")
@@ -438,7 +439,7 @@ class BuilderCodegen implements CodegenExtension {
                                       blueprint.typeName(),
                                       blueprint.originatingElementValue());
 
-        if (typeContext.typeInfo().supportsServiceRegistry() && typeContext.propertyData().hasProvider()) {
+        if (typeContext.typeInfo().supportsServiceRegistry()) {
             for (PrototypeProperty property : typeContext.propertyData().properties()) {
                 if (property.configuredOption().provider()) {
                     this.serviceLoaderContracts.add(property.configuredOption().providerType().genericTypeName().fqName());

@@ -64,4 +64,11 @@ public interface ResolvedType {
      * @return the type name this resolved type represents
      */
     TypeName type();
+
+    /**
+     * The resolved name including all type arguments.
+     *
+     * @return fully qualified class name with all type arguments
+     */
+    String resolvedName();
 }

@@ -100,9 +100,16 @@ class CoreServiceDiscovery implements ServiceDiscovery {
 
             return (Class) cl.loadClass(className.fqName());
         } catch (ClassNotFoundException e) {
-            throw new ServiceRegistryException("Resolution of type \"" + className.fqName()
-                                                       + "\" to class failed.",
-                                               e);
+            try {
+                // fall back to classloader of our class
+                return (Class) CoreServiceDiscovery.class.getClassLoader().loadClass(className.fqName());
+            } catch (ClassNotFoundException ex) {
+                var toThrow = new ServiceRegistryException("Resolution of type \"" + className.fqName()
+                                                           + "\" to class failed.",
+                                                   ex);
+                toThrow.addSuppressed(e);
+                throw toThrow;
+            }
         }
     }
 
@@ -164,8 +171,7 @@ class CoreServiceDiscovery implements ServiceDiscovery {
         }
 
         ServiceDescriptor<Object> descriptor = ServiceLoader__ServiceDescriptor.create(providerType, provider, weight);
-        return new DescriptorHandlerImpl(DescriptorMetadata.create("core",
-                                                                   descriptor.descriptorType(),
+        return new DescriptorHandlerImpl(DescriptorMetadata.create(descriptor.descriptorType(),
                                                                    weight,
                                                                    descriptor.contracts(),
                                                                    descriptor.factoryContracts()),
@@ -210,11 +216,6 @@ class CoreServiceDiscovery implements ServiceDiscovery {
         @Override
         public ServiceDescriptor<?> descriptor() {
             return descriptorSupplier.get();
-        }
-
-        @Override
-        public String registryType() {
-            return metadata.registryType();
         }
 
         @Override

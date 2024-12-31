@@ -41,6 +41,7 @@ import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.builder.codegen.Types.OPTION_DEFAULT;
+import static io.helidon.builder.codegen.Types.SERVICES;
 import static io.helidon.common.types.TypeNames.BOXED_BOOLEAN;
 import static io.helidon.common.types.TypeNames.BOXED_BYTE;
 import static io.helidon.common.types.TypeNames.BOXED_CHAR;
@@ -162,6 +163,34 @@ class TypeHandler {
     @Override
     public String toString() {
         return declaredType.fqName() + " " + name;
+    }
+
+    void updateBuilderFromServices(ContentBuilder<?> content, String builder) {
+        /*
+        Services.first(Type.class).ifPresent(builder::option);
+         */
+        content.addContent(SERVICES)
+                .addContent(".first(")
+                .addContent(actualType())
+                .addContent(".class).ifPresent(")
+                .addContent(builder)
+                .addContent("::")
+                .addContent(setterName())
+                .addContentLine(");");
+    }
+
+    void updateBuilderFromRegistry(ContentBuilder<?> content, String builder, String registry) {
+        /*
+        registry.first(Type.class).ifPresent(builder::option);
+         */
+        content.addContent(registry)
+                .addContent(".first(")
+                .addContent(actualType())
+                .addContent(".class).ifPresent(")
+                .addContent(builder)
+                .addContent("::")
+                .addContent(setterName())
+                .addContentLine(");");
     }
 
     TypeName builderGetterType(boolean required, boolean hasDefault) {

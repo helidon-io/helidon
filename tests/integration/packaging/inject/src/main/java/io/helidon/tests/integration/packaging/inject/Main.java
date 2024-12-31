@@ -19,14 +19,17 @@ package io.helidon.tests.integration.packaging.inject;
 import io.helidon.common.config.Config;
 import io.helidon.common.config.GlobalConfig;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.service.inject.InjectRegistryManager;
-import io.helidon.service.inject.api.InjectRegistry;
-import io.helidon.service.inject.api.Injection;
-import io.helidon.service.inject.api.Lookup;
+import io.helidon.service.registry.Lookup;
+import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceRegistry;
+import io.helidon.service.registry.ServiceRegistryManager;
+import io.helidon.service.registry.Services;
 
 /**
  * We must provide a main class when using modularized jar file with main class attribute,
  * as we cannot use a main class from another module (at least not easily).
+ * <p>
+ * This should be replaced once the maven plugin fully supports main classes (if..).
  */
 public class Main {
     static {
@@ -37,13 +40,14 @@ public class Main {
         LogConfig.configureRuntime();
 
         // makes sure global config is initialized
-        Config config = GlobalConfig.config();
-        GlobalConfig.config(() -> config);
+        Config config = Config.create();
+        GlobalConfig.config(() -> config, true);
+        Services.set(Config.class, config);
 
-        InjectRegistry registry = InjectRegistryManager.create()
+        ServiceRegistry registry = ServiceRegistryManager.create()
                 .registry();
         registry.get(Lookup.builder()
-                             .runLevel(Injection.RunLevel.SERVER)
+                             .runLevel(Service.RunLevel.SERVER)
                              .build());
     }
 }

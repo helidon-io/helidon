@@ -16,16 +16,22 @@
 
 package io.helidon.service.registry;
 
+import java.util.Optional;
+import java.util.Set;
+
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.GenericType;
+import io.helidon.common.types.AccessModifier;
+import io.helidon.common.types.Annotation;
+import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
 
 /**
  * Dependency metadata.
- * The basic dependency supports other services to be passed to a constructor parameter.
- * The dependency may be a contract, {@link java.util.List} of contracts, or an {@link java.util.Optional}
- * of contract, or {@link java.util.function.Supplier} of any of these.
+ * <p>
+ * Dependencies can be injected into a service through a constructor. We also support field injection, though it is not
+ * recommended due to complicated unit testing.
  */
 @Prototype.Blueprint
 interface DependencyBlueprint {
@@ -86,4 +92,76 @@ interface DependencyBlueprint {
      */
     @Option.Redundant(stringValue = false)
     TypeName typeName();
+
+    /**
+     * Kind of element we inject into (constructor, field, method).
+     *
+     * @return element kind (for parameters, the containing element)
+     */
+    @Option.Default("CONSTRUCTOR")
+    ElementKind elementKind();
+
+    /**
+     * The qualifier type annotations on this element.
+     *
+     * @return the qualifier type annotations on this element
+     */
+    @Option.Singular
+    @Option.Redundant(stringValue = false)
+    // kind + service type + name is a unique identification already
+    Set<Qualifier> qualifiers();
+
+    /**
+     * The access modifier on the injection point/receiver.
+     * Defaults to {@link io.helidon.common.types.AccessModifier#PACKAGE_PRIVATE}.
+     *
+     * @return the access
+     */
+    @Option.Default("PACKAGE_PRIVATE")
+    @Option.Redundant
+    // kind + service type + name is a unique identification already
+    AccessModifier access();
+
+    /**
+     * The annotations on this element.
+     *
+     * @return the annotations on this element
+     */
+    @Option.Singular
+    @Option.Redundant
+    // kind + service type + name is a unique identification already
+    Set<Annotation> annotations();
+
+    /**
+     * Top level method that declares this method.
+     * This is to provide information about overridden methods, as we should only inject such methods once.
+     *
+     * @return unique identification of a declaring method
+     */
+    @Option.Redundant(stringValue = false)
+    Optional<String> method();
+
+    /**
+     * Cardinality of this dependency. Defaults to {@link io.helidon.service.registry.DependencyCardinality#REQUIRED}.
+     *
+     * @return cardinality of this dependency
+     */
+    @Option.Default("REQUIRED")
+    DependencyCardinality cardinality();
+
+    /**
+     * Whether this dependency uses {@link io.helidon.service.registry.ServiceInstance}.
+     * Defaults to {@code false}, which means the service is injected via its contract.
+     *
+     * @return whether the dependency is declared as a {@link io.helidon.service.registry.ServiceInstance}
+     */
+    boolean isServiceInstance();
+
+    /**
+     * Whether this dependency uses a {@link java.util.function.Supplier} instead of a direct instance.
+     * This defaults to {@code false}.
+     *
+     * @return whether the dependency injection point uses a supplier
+     */
+    boolean isSupplier();
 }

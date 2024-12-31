@@ -33,6 +33,11 @@ class ResolvedTypeImpl implements ResolvedType, Comparable<ResolvedType> {
     }
 
     @Override
+    public String resolvedName() {
+        return resolvedName;
+    }
+
+    @Override
     public int hashCode() {
         return noTypes ? typeName.hashCode() : resolvedName.hashCode();
     }

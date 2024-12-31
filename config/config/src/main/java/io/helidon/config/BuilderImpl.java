@@ -46,6 +46,7 @@ import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.MergingStrategy;
 import io.helidon.config.spi.OverrideSource;
+import io.helidon.service.registry.ServiceRegistry;
 
 /**
  * {@link Config} Builder implementation.
@@ -351,6 +352,12 @@ class BuilderImpl implements Config.Builder {
                               keyResolvingFailOnMissing,
                               aliasGenerator)
                 .newConfig();
+    }
+
+    @Override
+    public Config.Builder serviceRegistry(ServiceRegistry serviceRegistry) {
+        // not yet implemented
+        return this;
     }
 
     private static void addBuiltInMapperServices(List<PrioritizedMapperProvider> prioritizedMappers) {

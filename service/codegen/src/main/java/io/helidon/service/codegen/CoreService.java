@@ -212,12 +212,12 @@ class CoreService {
 
         for (TypeInfo service : services) {
             if (service.typeName().equals(superType.typeName())) {
-                return ServiceSuperType.create(service, "core", superTypeToExtend);
+                return ServiceSuperType.create(service, superTypeToExtend);
             }
         }
         // if not found in current list, try checking existing types
         return ctx.typeInfo(expectedSuperDescriptor)
-                .map(it -> ServiceSuperType.create(superType, "core", superTypeToExtend))
+                .map(it -> ServiceSuperType.create(superType, superTypeToExtend))
                 .orElseGet(ServiceSuperType::create);
     }
 

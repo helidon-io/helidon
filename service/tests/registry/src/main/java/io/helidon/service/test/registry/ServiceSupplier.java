@@ -21,7 +21,7 @@ import java.util.function.Supplier;
 
 import io.helidon.service.registry.Service;
 
-@Service.Provider
+@Service.PerLookup
 class ServiceSupplier implements Supplier<SuppliedContract> {
     private static final AtomicInteger COUNTER = new AtomicInteger();
 

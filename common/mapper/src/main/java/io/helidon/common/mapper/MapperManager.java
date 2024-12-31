@@ -38,14 +38,20 @@ import io.helidon.common.mapper.spi.MapperProvider;
  * found for the {@link io.helidon.common.GenericType} pair, an attempt is to locate a mapper for
  * the underlying class *IF* the generic type represents a simple class (e.g. not a generic type declaration)</li>
  * </ul>
+ *
+ * @deprecated use {@link io.helidon.common.mapper.Mappers} instead
  */
-public interface MapperManager {
+@Deprecated(forRemoval = true, since = "4.2.0")
+public interface MapperManager extends Mappers {
     /**
      * Get an instance of the configured global manager. If none is explicitly set, an instance is created using
      * discovered and built-in mappers.
      *
      * @return global mapper manager
+     * @deprecated use {@link io.helidon.service.registry.Services#get(Class)} - i.e. {@code Services.get(Mappers.class)}, or
+     *          use your registry instance in a similar way
      */
+    @Deprecated(forRemoval = true, since = "4.2.0")
     static MapperManager global() {
         return GlobalManager.mapperManager();
     }
@@ -54,7 +60,11 @@ public interface MapperManager {
      * Configure a new global mapper manager.
      *
      * @param manager mapper manager to use
+     * @deprecated use {@link io.helidon.service.registry.Services#set(Class, Object[])} -
+     *      i.e. {@code Services.get(Mappers.class, myMappers)} before the program starts
+     *      (must be configured before it is first used)
      */
+    @Deprecated(forRemoval = true, since = "4.2.0")
     static void global(MapperManager manager) {
         GlobalManager.mapperManager(manager);
     }
@@ -63,7 +73,9 @@ public interface MapperManager {
      * Create a fluent API builder to create a customized mapper manager.
      *
      * @return a new builder
+     * @deprecated use {@link io.helidon.common.mapper.Mappers#builder()} instead
      */
+    @Deprecated(forRemoval = true, since = "4.2.0")
     static Builder builder() {
         return new Builder();
     }
@@ -73,7 +85,9 @@ public interface MapperManager {
      * loaded {@link io.helidon.common.mapper.spi.MapperProvider MapperProviders}.
      *
      * @return create a new mapper manager from service loader
+     * @deprecated use {@link io.helidon.common.mapper.Mappers#create()} instead
      */
+    @Deprecated(forRemoval = true, since = "4.2.0")
     static MapperManager create() {
         return MapperManager.builder().build();
     }
@@ -127,7 +141,10 @@ public interface MapperManager {
 
     /**
      * Fluent API builder for {@link io.helidon.common.mapper.MapperManager}.
+     *
+     * @deprecated use {@link io.helidon.common.mapper.MappersConfig.Builder}, obtained from {@link Mappers#builder()}
      */
+    @Deprecated(since = "4.2.0", forRemoval = true)
     final class Builder implements io.helidon.common.Builder<Builder, MapperManager> {
         private HelidonServiceLoader.Builder<MapperProvider> providers = HelidonServiceLoader
                 .builder(ServiceLoader.load(MapperProvider.class));
@@ -146,7 +163,7 @@ public interface MapperManager {
             }
             providers.addService(new DefaultMapperProvider(), 0);
             providers.useSystemServiceLoader(discoverServices);
-            return new MapperManagerImpl(this);
+            return new MappersImpl(this);
         }
 
         /**
@@ -172,7 +189,9 @@ public interface MapperManager {
          *                 documentation for details about priority handling)
          * @return updated builder instance
          * @see #addMapperProvider(io.helidon.common.mapper.spi.MapperProvider)
+         * @deprecated we have switched to using weights instead of priority, this method will be removed without replacement
          */
+        @Deprecated(forRemoval = true, since = "4.2.0")
         public Builder addMapperProvider(MapperProvider provider, int priority) {
             this.providers.addService(provider, priority);
             return this;
