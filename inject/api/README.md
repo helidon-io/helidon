@@ -1,6 +1,6 @@
 This module contains all the API and SPI types that are applicable to a Helidon Injection based application.
 
-The API can logically be broken up into two categories - declarative types and imperative/programmatic types. The declarative form is the most common approach for using Service.
+The API can logically be broken up into two categories - declarative types and imperative/programmatic types. The declarative form is the most common approach for using Injection.
 
 The declarative API is small and based upon annotations. This is because most of the supporting annotation types actually come directly from both of the standard javax/jakarta inject and javax/jakarta annotation modules. These standard annotations are supplemented with these proprietary annotation types offered here from Injection:
 
@@ -72,7 +72,7 @@ public class BladeProvider implements InjectionPointProvider<AbstractBlade> {
 ```
 
 ## Injectable Constructs
-Any service can declare field, method, or constructor injection points. The only caveat is that these injectable elements must either be public or package private. Generally speaking, it is considered a best practice to (a) use only an injectable constructor, and (b) only inject <i>Provider</i> instances. Here is an example for best practice depicting all possible usages for injection types supported by Helidon Service.
+Any service can declare field, method, or constructor injection points. The only caveat is that these injectable elements must either be public or package private. Generally speaking, it is considered a best practice to (a) use only an injectable constructor, and (b) only inject <i>Provider</i> instances. Here is an example for best practice depicting all possible usages for injection types supported by Helidon Injection.
 
 ```java
 @Singleton

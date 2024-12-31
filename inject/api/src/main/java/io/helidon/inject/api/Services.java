@@ -26,7 +26,7 @@ import io.helidon.common.types.TypeName;
  * application, along with the contracts (i.e., interfaces) they advertise, the qualifiers that optionally describe them, and oll
  * of each services' dependencies on other service contracts, etc.
  * <p>
- * Collectively these service instances are considered "the managed service instances" under Service. A {@link ServiceProvider}
+ * Collectively these service instances are considered "the managed service instances" under Injection. A {@link ServiceProvider}
  * wrapper
  * provides lifecycle management on the underlying service instances that each provider "manages" in terms of activation, scoping,
  * etc. The service providers are typically created during compile-time processing when the Injection APT processor is applied to your

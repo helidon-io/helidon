@@ -118,7 +118,7 @@ public class CodeGenFiler {
     }
 
     /**
-     * Returns the path to the target scratch directory for Service.
+     * Returns the path to the target scratch directory for Injection.
      *
      * @param targetOutputPath the target class output path
      * @return the target scratch path

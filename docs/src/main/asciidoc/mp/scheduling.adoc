@@ -148,7 +148,7 @@ include::{sourcedir}/mp/SchedulingSnippets.java[tag=snippet_6, indent=0]
 include::{sourcedir}/mp/SchedulingSnippets.java[tag=snippet_7, indent=0]
 ----
 
-=== Scheduled Metadata Service.
+=== Scheduled Metadata Injection.
 
 [source,java]
 .Example with invocation metadata
