@@ -105,7 +105,7 @@
         <version.lib.maven.plugin.api>3.9.3</version.lib.maven.plugin.api>
         <version.lib.maven.plugin.project>2.2.1</version.lib.maven.plugin.project>
         <version.lib.apiguardian.api>1.1.2</version.lib.apiguardian.api>
-        <version.lib.groovy>2.4.16</version.lib.groovy>
+        <version.lib.groovy>2.4.21</version.lib.groovy>
         <!--
         !Version statement! - end
         -->
