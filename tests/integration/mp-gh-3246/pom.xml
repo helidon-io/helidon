@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
     <parent>
         <artifactId>helidon-tests-integration-project</artifactId>
         <groupId>io.helidon.tests.integration</groupId>
-        <version>4.1.6-SNAPSHOT</version>
+        <version>4.1.7-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
