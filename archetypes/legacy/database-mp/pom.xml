@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.archetypes</groupId>
         <artifactId>helidon-archetypes-legacy-project</artifactId>
-        <version>4.1.6-SNAPSHOT</version>
+        <version>4.1.7-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-database-mp</artifactId>
     <packaging>helidon-archetype</packaging>
