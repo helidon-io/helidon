@@ -11,6 +11,17 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [4.1.6]
+
+This release contains important bugfixes and is recommended for all users of Helidon 4.
+
+A minimum of Java 21 is required to use Helidon 4.
+
+### CHANGES
+
+- WebServer: Http/2 revamp  [9599](https://github.com/helidon-io/helidon/pull/9599)
+- Docs: Add xref to telemetry feature from tracing deprecation warning [9602](https://github.com/helidon-io/helidon/pull/9602)
+
 ## [4.1.5]
 
 This release contains important bugfixes and is recommended for all users of Helidon 4.
@@ -1529,6 +1540,7 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/oracle/helidon/pull/4737)
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
+[4.1.6]: https://github.com/oracle/helidon/compare/4.1.5...4.1.6
 [4.1.5]: https://github.com/oracle/helidon/compare/4.1.4...4.1.5
 [4.1.4]: https://github.com/oracle/helidon/compare/4.1.3...4.1.4
 [4.1.3]: https://github.com/oracle/helidon/compare/4.1.2...4.1.3
