@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -104,13 +104,27 @@ curl http://localhost:8080{metrics-endpoint}
 // end::build-and-run-intro[]
 
 ///////////////////////////////////////////////////////////////////////////////
+// Referrer must set :prom-output-scope-prefix: to mp_ if the output is to match MP (the scope tag name is mp_scope) and to empty to match SE (the tag name is just scope).
 // tag::metrics-prometheus-output[]
-# TYPE base:classloader_current_loaded_class_count counter
-# HELP base:classloader_current_loaded_class_count Displays the number of classes that are currently loaded in the Java virtual machine.
-base:classloader_current_loaded_class_count 7511
-# TYPE base:classloader_total_loaded_class_count counter
-# HELP base:classloader_total_loaded_class_count Displays the total number of classes that have been loaded since the Java virtual machine has started execution.
-base:classloader_total_loaded_class_count 7512
+[source,text,subs="attributes+"]
+.Text response (partial):
+----
+# HELP classloader_loadedClasses_count Displays the number of classes that are currently loaded in the Java virtual machine.
+# TYPE classloader_loadedClasses_count gauge
+classloader_loadedClasses_count{{prom-output-scope-prefix}scope="base",} 4878.0
+# HELP classloader_unloadedClasses_total Displays the total number of classes unloaded since the Java virtual machine has started execution.
+# TYPE classloader_unloadedClasses_total counter
+classloader_unloadedClasses_total{{prom-output-scope-prefix}scope="base",} 0.0
+# HELP classloader_loadedClasses_total Displays the total number of classes that have been loaded since the Java virtual machine has started execution.
+# TYPE classloader_loadedClasses_total counter
+classloader_loadedClasses_total{{prom-output-scope-prefix}scope="base",} 4878.0
+# HELP vthreads_submitFailures Virtual thread submit failures since metrics start-up
+# TYPE vthreads_submitFailures gauge
+vthreads_submitFailures{{prom-output-scope-prefix}scope="base",} 0.0
+# HELP vthreads_pinned Number of pinned virtual threads since metrics start-up
+# TYPE vthreads_pinned gauge
+vthreads_pinned{{prom-output-scope-prefix}scope="base",} 0.0
+----
 // end::metrics-prometheus-output[]
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -125,25 +139,41 @@ curl -H "Accept: application/json"  http://localhost:8080{metrics-endpoint}
 // end::curl-metrics-json[]
 
 // tag::base-metrics-json-output[]
-    "gc.total;name=G1 Young Generation": 1,
-    "cpu.systemLoadAverage": 4.451171875,
-    "classloader.loadedClasses.count": 3582,
-    "thread.count": 18,
+    "gc.total;name=G1 Young Generation": 2,
+    "cpu.systemLoadAverage": 11.0546875,
+    "classloader.loadedClasses.count": 5124.0,
+    "thread.count": 23.0,
     "classloader.unloadedClasses.total": 0,
-    "jvm.uptime": 36.9478,
+    "vthreads.recentPinned": {
+      "count": 0,
+      "max": 0.0,
+      "mean": 0.0,
+      "elapsedTime": 0.0,
+      "p0.5": 0.0,
+      "p0.75": 0.0,
+      "p0.95": 0.0,
+      "p0.98": 0.0,
+      "p0.99": 0.0,
+      "p0.999": 0.0
+    },
+    "jvm.uptime": 138.233,
     "gc.time;name=G1 Young Generation": 0,
     "memory.committedHeap": 541065216,
-    "thread.max.count": 19,
-    "cpu.availableProcessors": 8,
-    "classloader.loadedClasses.total": 3582,
-    "thread.daemon.count": 16,
+    "thread.max.count": 26.0,
+    "vthreads.pinned": 0,
+    "cpu.availableProcessors": 8.0,
+    "classloader.loadedClasses.total": 5124,
+    "thread.daemon.count": 20.0,
     "memory.maxHeap": 8589934592,
-    "memory.usedHeap": 20491248
+    "memory.usedHeap": 2.774652E+7,
+    "thread.starts": 28.0,
+    "vthreads.submitFailures": 0
 // end::base-metrics-json-output[]
 // tag::vendor-metrics-json-output[]
   "vendor": {
     "requests.count": 3
   }
+
 // end::vendor-metrics-json-output[]
 
 // tag::get-single-metric[]
@@ -182,6 +212,7 @@ By adding a `metrics` section to your application configuration you can control 
 // end::controlling-intro-part-1[]
 // tag::controlling-intro-part-2[]
 *  Select whether to collect <<basic-and-extended-kpi,extended key performance indicator {metrics}>>.
+*  Select which <<observing-vthreads,virtual threads {metrics}>> to report.
 // end::controlling-intro-part-2[]
 // end::controlling-intro[]
 
@@ -369,6 +400,52 @@ server:
 ----
 endif::se-flavor[]
 // end::KPI[]
+
+// tag::virtualThreadsMetrics[]
+[[observing-vthreads]]
+==== Observing Virtual Threads Behavior
+:vthreads-prefix: vthreads
+Helidon maintains several {metrics} related to virtual threads as summarized in the next table.
+
+.{metrics_uc} for Virtual Threads
+[cols="2,5,1"]
+|===
+| {metric_uc} name | Usage | Reported by default
+
+| `{vthreads-prefix}.count` | Current number of active virtual threads. | no
+| `{vthreads-prefix}.pinned` | Number of times virtual threads have been pinned. | yes
+| `{vthreads-prefix}.recentPinned` | Distribution of the duration of thread pinning. ^1^ | yes
+| `{vthreads-prefix}.started` | Number of virtual threads started. | no
+| `{vthreads-prefix}.submitFailed` | Number of times submissions of a virtual thread to a platform carrier thread failed. | yes
+|===
+^1^ Distribution summaries can discard stale data, so the `recentPinned` summary might not reflect all thread pinning activity.
+
+// tag::virtualThreadsMetricsConfig[]
+For performance reasons Helidon does not by default report the {metrics} related to the count of virtual threads.
+Enable these {metrics} using configuration.
+
+[CAUTION]
+Enabling virtual thread counts can degrade the performance of your server. Do so with care.
+
+.Enabling Virtual Thread Counts
+ifdef::mp-flavor[]
+[source,properties]
+----
+metrics.virtual-threads.count.enabled=true
+----
+endif::[]
+ifdef::se-flavor[]
+[source,yaml]
+----
+metrics:
+  virtual-threads:
+    count:
+      enabled: true
+----
+endif::[]
+// end::virtualThreadsMetricsConfig[]
+
+// end::virtualThreadsMetrics[]
 // end::controlling[]
 
 // tag::metrics-metadata[]
