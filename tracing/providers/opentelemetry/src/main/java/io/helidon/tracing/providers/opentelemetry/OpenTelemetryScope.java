@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,19 @@ class OpenTelemetryScope implements Scope {
         this.span = span;
         delegate = scope;
         this.spanListeners = spanListeners;
+    }
+
+    /**
+     * Creates a new Helidon {@link io.helidon.tracing.Scope} which wraps an existing OTel {@link io.opentelemetry.context.Scope}.
+     *
+     * @param helidonTracer Helidon tracer
+     * @param span          Helidon span
+     * @param scope         OTel scope
+     */
+    OpenTelemetryScope(OpenTelemetryTracer helidonTracer,
+                       OpenTelemetrySpan span,
+                       io.opentelemetry.context.Scope scope) {
+        this(span, scope, helidonTracer.spanListeners());
     }
 
     @Override

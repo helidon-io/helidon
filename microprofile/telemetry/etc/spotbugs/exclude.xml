@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2024 Oracle and/or its affiliates.
+    Copyright (c) 2024, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -27,5 +27,10 @@
         <Class name="io.helidon.microprofile.telemetry.HelidonTelemetryContainerFilter"/>
         <Method name="&lt;init&gt;"/>
         <Bug pattern = "VA_FORMAT_STRING_USES_NEWLINE"/>
+    </Match>
+    <Match>
+        <!-- False positives in multiple methods - see https://github.com/spotbugs/spotbugs/issues/3235 -->
+        <Class name="io.helidon.microprofile.telemetry.WrappedProducer$WrappedSpanBuilder"/>
+        <Bug pattern = "RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT"/>
     </Match>
 </FindBugsFilter>
