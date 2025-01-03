@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -34,9 +34,9 @@ include::{rootdir}/includes/se.adoc[]
 ** <<Configuring the WebServer in a Configuration File, Configuring the WebServer in a Configuration File>>
 ** <<Configuring TLS, Configuring TLS>>
 ** <<Configuration Options, Configuration Options>>
-*** <<Routing, Routing>>
-*** <<Request Handling, Request Handling>>
-*** <<Error Handling, Error Handling>>
+- <<Routing, Routing>>
+** <<Request Handling, Request Handling>>
+** <<Error Handling, Error Handling>>
 - <<Server Features, Server Features>>
 ** <<Access Log, Access Log>>
 ** <<Context, Context>>
@@ -291,6 +291,16 @@ include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_7, indent=0]
 In this example, the `GET` handler matches requests to `/hello/subpath`.
 
 [[anchor-http-feature]]
+
+=== Server Lifecycle
+
+In Helidon 4 your `HttpService` can interpose on the server lifecycle by overriding the `beforeStart` and `afterStop` methods:
+[source,java]
+.Helidon 4.x server lifecycle
+----
+include::{sourcedir}/se/guides/Upgrade4xSnippets.java[tag=snippet_10, indent=0]
+----
+
 === Using `HttpFeature`
 
 By implementing the `io.helidon.webserver.http.HttpFeature` interface, you can organize multiple routes and/or filters into

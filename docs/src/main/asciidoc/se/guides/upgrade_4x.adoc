@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -71,6 +71,25 @@ include::{sourcedir}/se/guides/Upgrade4xSnippets.java[tag=snippet_2, indent=0]
 <3> Print a message when the Server is started.
 
 Just create it, configure it, and wait for it to start. If any exceptions happen, they are handled the traditional way using available language constructions.
+
+== Server Lifecycle
+
+In Helidon 3.x you provided code to run after WebServer startup and after WebServer shutdown using asynchronous constructs:
+
+[source,java]
+.Helidon 3.x server lifecycle
+----
+include::{sourcedir}/se/guides/Upgrade4xSnippets.java[tag=snippet_9, indent=0]
+----
+
+In Helidon 4 your `HttpService` can interpose on the server lifecycle by overriding the `beforeStart` and `afterStop` methods:
+[source,java]
+.Helidon 4.x server lifecycle
+----
+include::{sourcedir}/se/guides/Upgrade4xSnippets.java[tag=snippet_10, indent=0]
+----
+
+No special API is needed for after server starup since the server starts sycnhronously as described in the previous section.
 
 == Server Features and Media Support Discovery
 
