@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,6 +100,10 @@ public class SystemMetersProvider implements MetersProvider {
                                      + "virtual machine started or "
                                      + "peak was reset. This includes daemon and "
                                      + "non-daemon threads.");
+    private static final Metadata.Builder THREAD_STARTS = Metadata.builder()
+            .withName("thread.starts")
+            .withDescription("Displays the total number of platform threads created and also started "
+                                    + "since the Java virtual machine started.");
     private static final Metadata.Builder CL_LOADED_COUNT = Metadata.builder()
             .withName("classloader.loadedClasses.count")
             .withDescription("Displays the number of classes that are currently loaded in "
@@ -242,6 +246,7 @@ public class SystemMetersProvider implements MetersProvider {
         registerGauge(result, metadata(THREAD_COUNT), threadBean, ThreadMXBean::getThreadCount);
         registerGauge(result, metadata(THREAD_DAEMON_COUNT), threadBean, ThreadMXBean::getDaemonThreadCount);
         registerGauge(result, metadata(THREAD_MAX_COUNT), threadBean, ThreadMXBean::getPeakThreadCount);
+        registerGauge(result, metadata(THREAD_STARTS), threadBean, ThreadMXBean::getTotalStartedThreadCount);
 
         ClassLoadingMXBean clBean = ManagementFactory.getClassLoadingMXBean();
         registerGauge(result, metadata(CL_LOADED_COUNT), clBean, ClassLoadingMXBean::getLoadedClassCount);

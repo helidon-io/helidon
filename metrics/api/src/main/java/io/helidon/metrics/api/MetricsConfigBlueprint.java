@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -197,6 +197,18 @@ interface MetricsConfigBlueprint {
     @Option.Configured
     @Option.DefaultBoolean(false)
     boolean restRequestEnabled();
+
+    /**
+     * Whether the virtual thread count should be exposed as a meter.
+     * <p>
+     * Enabling the virtual thread count meters can degrade performance of the server because the server must monitor Java
+     * Flight Recorder events for virtual thread starts and stops to maintain the count.
+     *
+     * @return true if the metrics system should compute virtual thread count meters
+     */
+    @Option.Configured("virtual-threads.count.enabled")
+    @Option.DefaultBoolean(false)
+    boolean virtualThreadCountEnabled();
 
     /**
      * Metrics configuration node.

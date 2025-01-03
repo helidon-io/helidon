@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ include::{rootdir}/includes/mp.adoc[]
 :metric_uc: Metric
 :metrics_uc: Metrics
 :metrics-endpoint: /metrics
+:prom-output-scope-prefix: mp_
 
 include::{rootdir}/includes/guides/metrics.adoc[tag=intro]
 include::{rootdir}/includes/guides/metrics.adoc[tag=create-sample-project]
@@ -35,19 +36,7 @@ include::{rootdir}/includes/guides/metrics.adoc[tag=using-built-in-metrics-intro
 include::{rootdir}/includes/guides/metrics.adoc[tag=build-and-run-intro]
 
 
-[source,text]
-.Text response: (partial)
-----
-# HELP classloader_loadedClasses_total Displays the total number of classes that have been loaded since the Java virtual machine has started execution.
-# TYPE classloader_loadedClasses_total counter
-classloader_loadedClasses_total{mp_scope="base",} 8146.0
-# HELP requests_count_total Each request (regardless of HTTP method) will increase this counter
-# TYPE requests_count_total counter
-requests_count_total{mp_scope="vendor",} 1.0
-# HELP jvm_uptime_seconds Displays the start time of the Java virtual machine in seconds. This attribute displays the approximate time when the Java virtual machine started.
-# TYPE jvm_uptime_seconds gauge
-jvm_uptime_seconds{mp_scope="base",} 7.3770
-----
+include::{rootdir}/includes/guides/metrics.adoc[tag=metrics-prometheus-output]
 
 include::{rootdir}/includes/guides/metrics.adoc[tag=curl-metrics-json]
 
@@ -72,8 +61,10 @@ include::{rootdir}/includes/guides/metrics.adoc[tag=curl-metrics-json]
     "cpu.systemLoadAverage": 10.3388671875,
     "classloader.loadedClasses.count": 8224,
     "thread.count": 19,
+    "vthreads.pinned": 0,
     "classloader.unloadedClasses.total": 0,
-    "jvm.uptime": 36.8224
+    "jvm.uptime": 36.8224,
+    "vthreads.submitFailures": 0
   }
 }
 ----
@@ -89,6 +80,8 @@ include::{rootdir}/includes/guides/metrics.adoc[tag=controlling-intro-part-2]
 include::{rootdir}/includes/guides/metrics.adoc[tag=disabling-whole]
 
 include::{rootdir}/includes/guides/metrics.adoc[tag=KPI]
+
+include::{rootdir}/includes/guides/metrics.adoc[tag=virtualThreadsMetrics]
 
 [[controlling-rest-request-metrics]]
 ==== Controlling `REST.request` Metrics
