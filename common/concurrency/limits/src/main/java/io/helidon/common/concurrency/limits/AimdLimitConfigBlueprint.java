@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,4 +94,48 @@ interface AimdLimitConfigBlueprint extends Prototype.Factory<AimdLimit> {
      */
     @Option.Default(AimdLimit.TYPE)
     String name();
+
+    /**
+     * How many requests can be enqueued waiting for a permit after
+     * the max limit is reached.
+     * Note that this may not be an exact behavior due to concurrent invocations.
+     * We use {@link java.util.concurrent.Semaphore#getQueueLength()} in the
+     * {@link io.helidon.common.concurrency.limits.AimdLimit} implementation.
+     * Default value is {@value AimdLimit#DEFAULT_QUEUE_LENGTH}.
+     * If set to {code 0}, there is no queueing.
+     *
+     * @return number of requests to enqueue
+     */
+    @Option.Configured
+    @Option.DefaultInt(AimdLimit.DEFAULT_QUEUE_LENGTH)
+    int queueLength();
+
+    /**
+     * How long to wait for a permit when enqueued.
+     * Defaults to {@value AimdLimit#DEFAULT_QUEUE_TIMEOUT_DURATION}
+     *
+     * @return duration of the timeout
+     */
+    @Option.Configured
+    @Option.Default(AimdLimit.DEFAULT_QUEUE_TIMEOUT_DURATION)
+    Duration queueTimeout();
+
+    /**
+     * Whether the {@link java.util.concurrent.Semaphore} should be {@link java.util.concurrent.Semaphore#isFair()}.
+     * Defaults to {@code false}.
+     *
+     * @return whether this should be a fair semaphore
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(false)
+    boolean fair();
+
+    /**
+     * Whether to collect metrics for the AIMD implementation.
+     *
+     * @return metrics flag
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(false)
+    boolean enableMetrics();
 }
