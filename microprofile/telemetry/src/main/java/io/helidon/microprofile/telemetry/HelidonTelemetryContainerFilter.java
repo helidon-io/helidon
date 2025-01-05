@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,9 +106,9 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
             LOGGER.log(System.Logger.Level.WARNING,
                        String.format("""
                                Current OpenTelemetry semantic conventions include the HTTP method as part of REST span
-                               names. Your configuration does not set mp.%s to true, so your service uses the legacy span name
+                               names. Your configuration does not set %s to true, so your service uses the legacy span name
                                format which excludes the HTTP method. This feature is deprecated and marked for removal in a
-                               future major release of Helidon. Consider adding a setting of mp.%1$s to 'true' in your
+                               future major release of Helidon. Consider adding a setting of %1$s to 'true' in your
                                configuration to migrate to the current conventions.""",
                                SPAN_NAME_INCLUDES_METHOD));
         }
