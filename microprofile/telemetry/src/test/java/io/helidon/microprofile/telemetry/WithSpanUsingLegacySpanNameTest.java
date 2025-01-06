@@ -22,7 +22,6 @@ import java.util.stream.Stream;
 
 import io.helidon.microprofile.testing.junit5.AddConfig;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -45,14 +44,6 @@ class WithSpanUsingLegacySpanNameTest extends WithSpanTestBase {
             }
         }
     }
-//    static {
-//        logger.addHandler(memoryLogHandler);
-//    }
-
-//    @AfterAll
-//    static void cleanup() {
-//        logger.removeHandler(memoryLogHandler);
-//    }
 
     @ParameterizedTest()
     @MethodSource()
