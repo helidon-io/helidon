@@ -1110,7 +1110,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.integrations.oci.sdk</groupId>
-            <artifactId>helidon-integrations-oci-sdk-processor</artifactId>
+            <artifactId>helidon-integrations-oci-sdk-codegen</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.integrations.oci.sdk</groupId>
