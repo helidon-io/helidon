@@ -92,7 +92,7 @@
         <version.lib.jboss.classfilewriter>1.3.0.Final</version.lib.jboss.classfilewriter>
         <version.lib.jboss.logging>3.5.3.Final</version.lib.jboss.logging>
         <version.lib.jaxb-runtime>4.0.3</version.lib.jaxb-runtime>
-        <version.lib.jersey>3.1.9</version.lib.jersey>
+        <version.lib.jersey>3.1.10</version.lib.jersey>
         <version.lib.jgit>6.7.0.202309050840-r</version.lib.jgit>
         <version.lib.junit>5.9.3</version.lib.junit>
         <version.lib.junit-platform-testkit>1.11.3</version.lib.junit-platform-testkit>
