@@ -74,7 +74,7 @@ ServiceConfig serviceConfig = ServiceConfig.builder()
 === Features
 
 - Reflection-free implementation; no bytecode manipulation.
-- Support for inheritance in prototypes and blueprints (within the same module).
+- Support for inheritance in prototypes and blueprints.
 - Automatic Javadoc generation.
 - Seamless integration with Helidon Config for property initialization, default values, and advanced customization.
 - Optional generation of factory, prototype, and builder methods.
@@ -233,7 +233,7 @@ interface ServiceConfigBlueprint {
     String name();
 
     @Option.Configured
-    @Option.Default(50)               // <3>
+    @Option.DefaultInt(50)            // <3>
     int pageSize();
 }
 ----
@@ -311,13 +311,11 @@ public class Service implements RuntimeType.Api<ServiceConfig> {             // 
     }
 
     public static Service create(ServiceConfig serviceConfig) {              // <4>
-        return serviceConfig.build();
+        rreturn new ServiceImpl(serviceConfig);
     }
 
     public static Service create(Consumer<ServiceConfig.Builder> consumer) { // <5>
-        return create(ServiceConfig.builder()
-                              .update(consumer)
-                              .buildPrototype());
+        return builder().update(consumer).build();
     }
 }
 ----
@@ -338,7 +336,7 @@ interface ServiceConfigBlueprint extends Prototype.Factory<Service> { // <1>
     String name();
 
     @Option.Configured
-    @Option.Default(50)
+    @Option.DefaultInt(50)
     int pageSize();
 }
 ----
@@ -395,7 +393,7 @@ Interfaces:
 
 [cols="2,1,5"]
 |===
-| Annotation                    | Required | Description
+| Interface                    | Required | Description
 | `RuntimeType.Api`             | No       | Runtime type must implement this interface to mark which prototype is used to create it
 | `Prototype.Factory`           | No       | If blueprint implements factory, it means the prototype is used to create a single runtime type and will have methods `build` and `get` both on builder an on prototype interface that create a new instance of the runtime object
 | `Prototype.BuilderDecorator`  | No       | Custom decorator to modify builder before validation is done in method `build`
@@ -410,17 +408,17 @@ Interfaces:
 [cols="1,5"]
 |===
 | Annotation              | Description
-| `@Option.Singular`      | For collection based options. Adds setter for a single value (for `List<String> algorithms()`, there would be the following setters: `algorithms(List<String>)`, `addAlgorithms(List<String>)`, `addAlgorithm(String)`)
-| `@Option.Configured`    | For options that are configured from config (must be explicitly marked, default is not-configured), also ignored unless `@Prototype.Configured` is specified on the blueprint interface
-| `@Option.Required`      | We can recognize required options through signature in most cases (any option that does not return an `Optional` and does not have a default value); this option is useful for primitive types, where we need an explicit value set, rather than using the primitive's default value
-| `@Option.Provider`      | Satisfied by a provider implementation, see javadoc for details
-| `@Option.AllowedValues` | Allowed values for the property, not required for `enum`, where we create this automatically, though we can configure description of each value (works automatically for `enum` defined in the same module); the description is used for generated documentation
-| `@Option.SameGeneric`   | Advanced configuration of a Map, where the map accepts two typed values, and we must use the same generic on setters (such as `Map<Class<Object>, Object>` - `<T> Builder put(Class<T>, T)`)
-| `@Option.Redundant`     | Marks an option that is not used by equals and hashCode methods
-| `@Option.Confidential`  | Marks an option that will not be visible in `toString()`
-| `@Option.Deprecated`    | Marks a deprecated option that has a replacement option in this builder, use Java's deprecation for other cases, they will be honored in the generated code
-| `@Option.Type`          | Explicitly defined type of a property (may include generics), in case the type is code generated in the current module, and we cannot obtain the correct information from the annotation processing environment
-| `@Option.Decorator`     | Support for field decoration (to do side-effects on setter call)
+| `Option.Singular`      | For collection based options. Adds setter for a single value (for `List<String> algorithms()`, there would be the following setters: `algorithms(List<String>)`, `addAlgorithms(List<String>)`, `addAlgorithm(String)`)
+| `Option.Configured`    | For options that are configured from config (must be explicitly marked, default is not-configured), also ignored unless `@Prototype.Configured` is specified on the blueprint interface
+| `Option.Required`      | We can recognize required options through signature in most cases (any option that does not return an `Optional` and does not have a default value); this option is useful for primitive types, where we need an explicit value set, rather than using the primitive's default value
+| `Option.Provider`      | Satisfied by a provider implementation, see javadoc for details
+| `Option.AllowedValues` | Allowed values for the property, not required for `enum`, where we create this automatically, though we can configure description of each value (works automatically for `enum` defined in the same module); the description is used for generated documentation
+| `Option.SameGeneric`   | Advanced configuration of a Map, where the map accepts two typed values, and we must use the same generic on setters (such as `Map<Class<Object>, Object>` - `<T> Builder put(Class<T>, T)`)
+| `Option.Redundant`     | Marks an option that is not used by equals and hashCode methods
+| `Option.Confidential`  | Marks an option that will not be visible in `toString()`
+| `Option.Deprecated`    | Marks a deprecated option that has a replacement option in this builder, use Java's deprecation for other cases, they will be honored in the generated code
+| `Option.Type`          | Explicitly defined type of a property (may include generics), in case the type is code generated in the current module, and we cannot obtain the correct information from the annotation processing environment
+| `Option.Decorator`     | Support for field decoration (to do side-effects on setter call)
 |===
 
 To configure default value(s) of an option, one of the following annotations can be used (mutually exclusive!).
@@ -429,11 +427,11 @@ Most defaults support an array, to provide default values for collections.
 [cols="1,5"]
 |===
 | Annotation               | Description
-| `@Option.Default`        | Default value(s) that are `String` or we support coercion to the correct type (`enum`, `Duration`)
-| `@Option.DefaultInt`     | Default value(s) that are `int`
-| `@Option.DefaultLong`    | Default value(s) that are `long`
-| `@Option.DefaultDouble`  | Default value(s) that are `double`
-| `@Option.DefaultBoolean` | Default value(s) that are `boolean`
-| `@Option.DefaultMethod`  | Static method to invoke to obtain a default value
-| `@Option.DefaultCode`    | Source code to add to the generated assignment, single line only supported
+| `Option.Default`        | Default value(s) that are `String` or we support coercion to the correct type (`enum`, `Duration`)
+| `Option.DefaultInt`     | Default value(s) that are `int`
+| `Option.DefaultLong`    | Default value(s) that are `long`
+| `Option.DefaultDouble`  | Default value(s) that are `double`
+| `Option.DefaultBoolean` | Default value(s) that are `boolean`
+| `Option.DefaultMethod`  | Static method to invoke to obtain a default value
+| `Option.DefaultCode`    | Source code to add to the generated assignment, single line only supported
 |===
