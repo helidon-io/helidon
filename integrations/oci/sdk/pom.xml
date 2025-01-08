@@ -33,6 +33,7 @@
 
     <modules>
         <module>cdi</module>
+        <module>codegen</module>
         <module>runtime</module>
     </modules>
 

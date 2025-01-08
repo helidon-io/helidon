@@ -31,7 +31,7 @@
     <artifactId>helidon-integrations-oci-sdk-tests-project</artifactId>
     <name>Helidon Integrations OCI Injection Tests</name>
 
-    <description>Helidon Injection Framework Testing for the OCI SDK</description>
+    <description>Helidon Service Registry Framework Testing for the OCI SDK</description>
 
     <packaging>pom</packaging>
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,14 +72,14 @@ public class RegistryStartupProvider implements HelidonStartupProvider {
                 registryManager.shutdown();
             } catch (Exception e) {
                 logger.log(System.Logger.Level.ERROR,
-                           "Failed to shutdown Helidon Inject registry",
+                           "Failed to shutdown Helidon Service Registry registry",
                            e);
             }
         }
 
         @Override
         public String toString() {
-            return "Helidon Inject shutdown handler";
+            return "Helidon Service Registry shutdown handler";
         }
     }
 }

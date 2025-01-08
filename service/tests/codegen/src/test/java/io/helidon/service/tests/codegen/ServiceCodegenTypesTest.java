@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,7 @@ import io.helidon.service.registry.Interception;
 import io.helidon.service.registry.InterceptionException;
 import io.helidon.service.registry.InterceptionInvoker;
 import io.helidon.service.registry.InterceptionMetadata;
+import io.helidon.service.registry.Lookup;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.RegistryStartupProvider;
 import io.helidon.service.registry.Service;
@@ -123,6 +124,8 @@ class ServiceCodegenTypesTest {
         checkField(toCheck, checked, fields, "SERVICE_REGISTRY_MANAGER", ServiceRegistryManager.class);
         checkField(toCheck, checked, fields, "DEPENDENCY_CARDINALITY", DependencyCardinality.class);
         checkField(toCheck, checked, fields, "SERVICE_LOADER_DESCRIPTOR", ServiceLoader__ServiceDescriptor.class);
+        checkField(toCheck, checked, fields, "SERVICE_LOOKUP", Lookup.class);
+        checkField(toCheck, checked, fields, "SERVICE_QUALIFIED_INSTANCE", Service.QualifiedInstance.class);
 
         // api.Interception.*
         checkField(toCheck, checked, fields, "INTERCEPTION_INTERCEPTED", Interception.Intercepted.class);

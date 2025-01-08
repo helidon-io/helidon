@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,24 +17,23 @@
 package io.helidon.integrations.oci.sdk.tests.test.module2;
 
 import java.util.Objects;
+import java.util.function.Supplier;
+
+import io.helidon.service.registry.Service;
 
 import com.oracle.bmc.objectstorage.ObjectStorage;
 import com.oracle.bmc.objectstorage.requests.GetNamespaceRequest;
 import com.oracle.bmc.objectstorage.responses.GetNamespaceResponse;
-import jakarta.inject.Inject;
-import jakarta.inject.Named;
-import jakarta.inject.Provider;
-import jakarta.inject.Singleton;
 
-@Singleton
+@Service.Singleton
 class AnotherServiceUsingObjectStorage {
 
-    @Inject
+    @Service.Inject
     ObjectStorage objStorageClient;
-    Provider<ObjectStorage> standbyObjStorageClientProvider;
+    Supplier<ObjectStorage> standbyObjStorageClientProvider;
 
-    @Inject
-    void setStandbyObjectStorageProvider(@Named("StandbyProfile") Provider<ObjectStorage> standbyObjStorageClientProvider) {
+    @Service.Inject
+    void setStandbyObjectStorageProvider(@Service.Named("StandbyProfile") Supplier<ObjectStorage> standbyObjStorageClientProvider) {
         this.standbyObjStorageClientProvider = Objects.requireNonNull(standbyObjStorageClientProvider);
     }
 
