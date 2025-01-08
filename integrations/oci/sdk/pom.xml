@@ -33,7 +33,6 @@
 
     <modules>
         <module>cdi</module>
-        <module>processor</module>
         <module>runtime</module>
     </modules>
 

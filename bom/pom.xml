@@ -1441,50 +1441,6 @@
                 <version>${helidon.version}</version>
             </dependency>
 
-            <!-- Injection Core -->
-            <dependency>
-                <groupId>io.helidon.inject</groupId>
-                <artifactId>helidon-inject-api</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.inject</groupId>
-                <artifactId>helidon-inject-tools</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.inject</groupId>
-                <artifactId>helidon-inject-processor</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.inject</groupId>
-                <artifactId>helidon-inject-testing</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.inject</groupId>
-                <artifactId>helidon-inject-runtime</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-
-            <!-- Injection Config-Driven related -->
-            <dependency>
-                <groupId>io.helidon.inject.configdriven</groupId>
-                <artifactId>helidon-inject-configdriven-api</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.inject.configdriven</groupId>
-                <artifactId>helidon-inject-configdriven-runtime</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.inject.configdriven</groupId>
-                <artifactId>helidon-inject-configdriven-processor</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-
             <!-- Service registry -->
             <dependency>
                 <groupId>io.helidon.service</groupId>
