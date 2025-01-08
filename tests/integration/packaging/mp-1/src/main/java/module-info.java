@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,9 +40,6 @@ module io.helidon.tests.integration.packaging.mp.one {
     // this is required, as otherwise the beans from this module
     // never reach health check CDI extension
     requires io.helidon.health.checks;
-
-    // needed to compile injection generated classes
-    requires static io.helidon.inject.runtime;
 
     exports io.helidon.tests.integration.packaging.mp1;
     exports io.helidon.tests.integration.packaging.mp1.other;

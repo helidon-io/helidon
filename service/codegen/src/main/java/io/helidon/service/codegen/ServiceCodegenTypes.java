@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -126,6 +126,11 @@ public final class ServiceCodegenTypes {
     public static final TypeName SERVICE_QUALIFIED_FACTORY = TypeName.create(
             "io.helidon.service.registry.Service.QualifiedFactory");
     /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Service.QualifiedInstance}.
+     */
+    public static final TypeName SERVICE_QUALIFIED_INSTANCE = TypeName.create(
+            "io.helidon.service.registry.Service.QualifiedInstance");
+    /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Dependency}.
      */
     public static final TypeName SERVICE_DEPENDENCY = TypeName.create("io.helidon.service.registry.Dependency");
@@ -186,6 +191,11 @@ public final class ServiceCodegenTypes {
      */
     public static final TypeName SERVICE_LOADER_DESCRIPTOR =
             TypeName.create("io.helidon.service.registry.ServiceLoader__ServiceDescriptor");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Lookup}.
+     */
+    public static final TypeName SERVICE_LOOKUP =
+            TypeName.create("io.helidon.service.registry.Lookup");
     /**
      * {@link io.helidon.common.types.TypeName} for
      * {@code io.helidon.service.registry.GeneratedService.PerInstanceDescriptor}.

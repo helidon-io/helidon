@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ JUnitLauncher.builder()
         .parameter("basedir", basedir.getAbsolutePath())
         .reportsDir(basedir)
         .outputFile(new File(basedir, "test.log"))
-        .suiteId("helidon-inject-maven-plugin-it-test1")
-        .suiteDisplayName("Helidon Inject Maven Plugin Integration Test 1")
+        .suiteId("helidon-service-maven-plugin-it-test1")
+        .suiteDisplayName("Helidon Service Maven Plugin Integration Test 1")
         .build()
         .launch()

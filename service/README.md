@@ -258,7 +258,7 @@ the specified qualifiers.
 One qualifier is provided out-of-the-box - the `@Service.Named` (and `@Service.NamedByType` which does the same thing,
 only the name is the fully qualified class name of the provided class).
 
-Named instances are used by some feature of Helidon Inject itself.
+Named instances are used by some features of Helidon Service Registry itself.
 
 # Service Lifecycle
 
@@ -300,7 +300,7 @@ There may be cases, where this is not sufficient:
 - the provided contract is not an interface
 - the provided instance may not be created at all (i.e. it is optional)
 
-This can be done by implementing one of the factory interfaces Helidon Inject supports:
+This can be done by implementing one of the factory interfaces Helidon Service Registry supports:
 
 - `java.util.function.Supplier` - a factory that supplies a single instance (can also be `Supplier<Optional<MyContract>>`)
 - `io.helidon.service.registry.Service.ServicesFactory` - a factory that creates zero or more contract implementations

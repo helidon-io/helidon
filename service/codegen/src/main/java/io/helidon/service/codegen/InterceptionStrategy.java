@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ package io.helidon.service.codegen;
  * Possible strategies to interception.
  * Whether interception is supported, and this is honored depends on implementation.
  * <p>
- * The strategy is (in Helidon inject) only honored at compilation time. At runtime, it can only be enabled or disabled.
+ * The strategy is (in Helidon service registry) only honored at compilation time. At runtime, it can only be enabled or disabled.
  */
 public enum InterceptionStrategy {
     /**

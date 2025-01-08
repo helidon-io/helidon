@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import io.helidon.common.types.TypeName;
 
 /**
  * Services for a specific scope.
- * This type is owned by Helidon Injection, and cannot be customized.
+ * This type is owned by Helidon Service Registry, and cannot be customized.
  * When a scope is properly accessible through its {@link Service.ScopeHandler},
  * {@link #activate()}
  * must be invoked by its control, to make sure all eager services are correctly activated.

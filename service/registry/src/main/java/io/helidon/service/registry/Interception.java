@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import java.lang.annotation.Target;
 
 /**
  * Interception annotations and types.
- * This is the entry point for any annotation and type related to interception in Helidon Inject.
+ * This is the entry point for any annotation and type related to interception in Helidon Service Registry.
  */
 public final class Interception {
     private Interception() {

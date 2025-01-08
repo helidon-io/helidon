@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ public interface InjectAssignment {
      *
      * @param typeName    type of the processed injection point, may be a generic type such as {@link java.util.List},
      *                    {@link java.util.Optional} (these are the types expected to be supported)
-     * @param valueSource code that obtains value from Helidon injection (if this method returns a non-empty optional,
+     * @param valueSource code that obtains value from Helidon Service Registry (if this method returns a non-empty optional,
      *                    the provided value will be an {@link java.util.Optional} {@link java.util.function.Supplier},
      *                    {@link java.util.List} of {@link java.util.function.Supplier}, or a {@link java.util.function.Supplier}
      *                    as returned by the {@link Assignment#usedType()};
