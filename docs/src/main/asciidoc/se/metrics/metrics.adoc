@@ -32,7 +32,6 @@ include::{rootdir}/includes/se.adoc[]
 :meter_uc: Meter
 :meters_uc: Meters
 :metrics-endpoint: /observe/metrics
-:toc:
 
 == Contents
 
