@@ -32,6 +32,7 @@ include::{rootdir}/includes/se.adoc[]
 :meter_uc: Meter
 :meters_uc: Meters
 :metrics-endpoint: /observe/metrics
+:toc:
 
 == Contents
 
@@ -45,7 +46,7 @@ include::{rootdir}/includes/se.adoc[]
 ** <<Example Application Code, Example Application Code>>
 ** <<Example Configuration, Example Configuration>>
  - <<Additional Information, Additional Information>>
-** <<References, References>
+** <<References, References>>
 ** <<Support for the Prometheus Metrics API, Support for the Prometheus Metrics API>>
 
 == Overview
