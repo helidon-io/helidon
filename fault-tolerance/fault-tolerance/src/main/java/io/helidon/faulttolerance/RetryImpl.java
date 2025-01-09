@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
+import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.Tag;
+
 class RetryImpl implements Retry {
+
     private final ErrorChecker errorChecker;
     private final long maxTimeNanos;
     private final RetryPolicy retryPolicy;
@@ -34,12 +38,21 @@ class RetryImpl implements Retry {
     private final AtomicLong retryCounter = new AtomicLong(0L);
     private final String name;
 
+    private Counter callsCounterMetric;
+    private Counter retryCounterMetric;
+
     RetryImpl(RetryConfig retryConfig) {
         this.name = retryConfig.name().orElseGet(() -> "retry-" + System.identityHashCode(retryConfig));
         this.errorChecker = ErrorChecker.create(retryConfig.skipOn(), retryConfig.applyOn());
         this.maxTimeNanos = retryConfig.overallTimeout().toNanos();
         this.retryPolicy = retryConfig.retryPolicy().orElseThrow();
         this.retryConfig = retryConfig;
+
+        if (MetricsUtils.metricsEnabled()) {
+            Tag nameTag = Tag.create("name", name);
+            callsCounterMetric = MetricsUtils.counterBuilder(FT_RETRY_CALLS_TOTAL, nameTag);
+            retryCounterMetric = MetricsUtils.counterBuilder(FT_RETRY_RETRIES_TOTAL, nameTag);
+        }
     }
 
     @Override
@@ -57,6 +70,9 @@ class RetryImpl implements Retry {
         RetryContext<? extends T> context = new RetryContext<>();
         while (true) {
             try {
+                if (MetricsUtils.metricsEnabled()) {
+                    callsCounterMetric.increment();
+                }
                 return supplier.get();
             } catch (Throwable t) {
                 Throwable throwable = SupplierHelper.unwrapThrowable(t);
@@ -87,6 +103,10 @@ class RetryImpl implements Retry {
 
             // now we are retrying for sure
             retryCounter.getAndIncrement();
+            if (MetricsUtils.metricsEnabled()) {
+                retryCounterMetric.increment();
+            }
+
             // just block current thread, we are expected to run in Virtual threads with Loom
             try {
                 Thread.sleep(Duration.ofMillis(delayMillis));

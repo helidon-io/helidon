@@ -49,6 +49,14 @@
             <artifactId>helidon-builder-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.metrics</groupId>
+            <artifactId>helidon-metrics-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-registry</artifactId>
+        </dependency>
+        <dependency>
             <!--
             Used to declare Features in module-info.java
             -->
@@ -69,6 +77,16 @@
         <dependency>
             <groupId>io.helidon.common.testing</groupId>
             <artifactId>helidon-common-testing-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.metrics</groupId>
+            <artifactId>helidon-metrics</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-yaml</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,17 @@ import io.helidon.builder.api.RuntimeType;
  */
 @RuntimeType.PrototypedBy(TimeoutConfig.class)
 public interface Timeout extends FtHandler, RuntimeType.Api<TimeoutConfig> {
+
+    /**
+     * Counter for all the calls in a timeout.
+     */
+    String FT_TIMEOUT_CALLS_TOTAL = "ft.timeout.calls.total";
+
+    /**
+     * Histogram of execution durations.
+     */
+    String FT_TIMEOUT_EXECUTIONDURATION = "ft.timeout.executionDuration";
+
     /**
      * Create a timeout based on configuration.
      *

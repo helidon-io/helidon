@@ -25,19 +25,16 @@ import java.util.function.Supplier;
 import io.helidon.logging.common.LogConfig;
 
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-class BulkheadTest extends BulkheadBaseTest {
+class BulkheadMetricsTest extends BulkheadBaseTest {
 
     @BeforeAll
     static void setupTest() {
@@ -121,85 +118,5 @@ class BulkheadTest extends BulkheadBaseTest {
         // Unblock enqueued task and get result
         enqueued.unblock();
         enqueuedResult.get(WAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
-    }
-
-    @Test
-    void testBulkheadQueue() throws InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
-        // Create bulkhead of 1 with a queue of 1000
-        Bulkhead bulkhead = Bulkhead.builder()
-                .limit(1)
-                .queueLength(1000)
-                .build();
-
-        // Submit request to bulkhead of limit 1
-        Task first = new Task(0);
-        CompletableFuture<?> firstFuture = Async.invokeStatic(() -> bulkhead.invoke(first::run));
-
-        // Wait until started before submitting additional tasks
-        if (!first.waitUntilStarted(WAIT_TIMEOUT_MILLIS)) {
-            fail("Task first not started");
-        }
-
-        // Submit additional request to fill up queue
-        Task[] tasks = new Task[999];
-        for (int i = 0; i < tasks.length; i++) {
-            Task task = new Task(i + 1);
-            tasks[i] = task;
-            CompletableFuture<?> f = Async.invokeStatic(() -> bulkhead.invoke(task::run));
-            tasks[i].future(f);
-        }
-
-        // Verify all tasks are queued and unblock them
-        for (Task task : tasks) {
-            assertFalse(task.isStarted());
-            task.unblock();
-        }
-
-        // Let first complete operation and free bulkhead
-        assertTrue(first.isBlocked());
-        first.unblock();
-        firstFuture.get(WAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
-
-        // Get all results
-        for (Task task : tasks) {
-            task.future().get(WAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
-        }
-    }
-
-    @RepeatedTest(100)
-    void testBulkheadWithError() throws InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
-        // Create bulkhead of 1 with a queue of 1
-        Bulkhead bulkhead = Bulkhead.builder()
-                .limit(1)
-                .queueLength(1)
-                .build();
-
-        // First check exception throw using synchronous call
-        assertThrows(IllegalStateException.class,
-                () -> bulkhead.invoke(() -> { throw new IllegalStateException(); }));
-
-        // Send 2 tasks to bulkhead, one that fails
-        Task inProgress = new Task(0);
-        CompletableFuture<?> inProgressFuture = Async.invokeStatic(
-                () -> bulkhead.invoke(inProgress::run));
-
-        // Verify completion of inProgress task
-        if (!inProgress.waitUntilStarted(WAIT_TIMEOUT_MILLIS)) {
-            fail("Task inProgress never started");
-        }
-
-        // as we use an async to submit to bulkhead, we should wait until the first task is submitted
-        CompletableFuture<?> failedFuture = Async.invokeStatic(
-                () -> bulkhead.invoke(() -> { throw new IllegalStateException(); }));
-
-        inProgress.unblock();
-        inProgressFuture.get(WAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
-
-        // Verify failure of other task
-        ExecutionException executionException = assertThrows(ExecutionException.class,
-                () -> failedFuture.get(WAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS));
-        Throwable cause = executionException.getCause();
-        assertThat(cause, notNullValue());
-        assertThat(cause, instanceOf(IllegalStateException.class));
     }
 }

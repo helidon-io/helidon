@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,11 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
+import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.Gauge;
+import io.helidon.metrics.api.Tag;
+import io.helidon.metrics.api.Timer;
+
 class BulkheadImpl implements Bulkhead {
     private static final System.Logger LOGGER = System.getLogger(BulkheadImpl.class.getName());
 
@@ -46,6 +51,11 @@ class BulkheadImpl implements Bulkhead {
     private final Set<Supplier<?>> cancelledSuppliers = new CopyOnWriteArraySet<>();
     private final BulkheadConfig config;
 
+    private Counter callsCounterMetric;
+    private Timer waitingDurationMetric;
+    private Gauge<Long> executionsRunningMetric;
+    private Gauge<Long> executionsWaitingMetric;
+
     BulkheadImpl(BulkheadConfig config) {
         this.inProgress = new Semaphore(config.limit(), true);
         this.name = config.name().orElseGet(() -> "bulkhead-" + System.identityHashCode(config));
@@ -55,6 +65,18 @@ class BulkheadImpl implements Bulkhead {
                 : new ZeroCapacityQueue();
         this.inProgressLock = new ReentrantLock(true);
         this.config = config;
+
+        if (MetricsUtils.metricsEnabled()) {
+            Tag nameTag = Tag.create("name", name);
+            callsCounterMetric = MetricsUtils.counterBuilder(FT_BULKHEAD_CALLS_TOTAL, nameTag);
+            waitingDurationMetric = MetricsUtils.timerBuilder(FT_BULKHEAD_WAITINGDURATION, nameTag);
+            executionsRunningMetric = MetricsUtils.gaugeBuilder(FT_BULKHEAD_EXECUTIONSRUNNING,
+                                                                concurrentExecutions::get,
+                                                                nameTag);
+            executionsWaitingMetric = MetricsUtils.gaugeBuilder(FT_BULKHEAD_EXECUTIONSRUNNING,
+                                                                () -> 0L,       // todo
+                                                                nameTag);
+        }
     }
 
     @Override

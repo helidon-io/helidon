@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,9 +26,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class CircuitBreakerTest {
+class CircuitBreakerTest extends CircuitBreakerBaseTest {
 
     private static final long WAIT_TIMEOUT_MILLIS = 2000;
 
@@ -96,41 +95,5 @@ class CircuitBreakerTest {
         good(breaker);
 
         assertThat(breaker.state(), is(CircuitBreaker.State.OPEN));
-    }
-
-    private void breakerOpen(CircuitBreaker breaker) {
-        Request good = new Request();
-        assertThrows(CircuitBreakerOpenException.class, () -> breaker.invoke(good::invoke));
-    }
-
-    private void bad(CircuitBreaker breaker) {
-        Failing failing = new Failing(new IllegalStateException("Fail"));
-        assertThrows(IllegalStateException.class, () -> breaker.invoke(failing::invoke));
-    }
-
-    private void good(CircuitBreaker breaker) {
-        Request good = new Request();
-        breaker.invoke(good::invoke);
-    }
-
-    private static class Failing {
-        private final RuntimeException exception;
-
-        Failing(RuntimeException exception) {
-            this.exception = exception;
-        }
-
-        Integer invoke() {
-            throw exception;
-        }
-    }
-
-    private static class Request {
-        Request() {
-        }
-
-        Integer invoke() {
-            return 1;
-        }
     }
 }

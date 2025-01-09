@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
+import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.Tag;
+import io.helidon.metrics.api.Timer;
+
 class TimeoutImpl implements Timeout {
     private static final System.Logger LOGGER = System.getLogger(TimeoutImpl.class.getName());
 
@@ -32,12 +36,21 @@ class TimeoutImpl implements Timeout {
     private final String name;
     private final TimeoutConfig config;
 
+    private Counter callsCounterMetric;
+    private Timer executionDurationMetric;
+
     TimeoutImpl(TimeoutConfig config) {
         this.timeoutMillis = config.timeout().toMillis();
         this.executor = config.executor().orElseGet(FaultTolerance.executor());
         this.currentThread = config.currentThread();
         this.name = config.name().orElseGet(() -> "timeout-" + System.identityHashCode(config));
         this.config = config;
+
+        if (MetricsUtils.metricsEnabled()) {
+            Tag nameTag = Tag.create("name", name);
+            callsCounterMetric = MetricsUtils.counterBuilder(FT_TIMEOUT_CALLS_TOTAL, nameTag);
+            executionDurationMetric = MetricsUtils.timerBuilder(FT_TIMEOUT_EXECUTIONDURATION, nameTag);
+        }
     }
 
     @Override
@@ -52,11 +65,20 @@ class TimeoutImpl implements Timeout {
 
     @Override
     public <T> T invoke(Supplier<? extends T> supplier) {
+        if (MetricsUtils.metricsEnabled()) {
+            callsCounterMetric.increment();
+        }
+
+        long start = MetricsUtils.metricsEnabled() ? System.nanoTime() : 0L;
         if (!currentThread) {
             try {
-                return CompletableFuture.supplyAsync(supplier, executor)
+                T res = CompletableFuture.supplyAsync(supplier, executor)
                         .orTimeout(timeoutMillis, TimeUnit.MILLISECONDS)
                         .get();
+                if (MetricsUtils.metricsEnabled()) {
+                    executionDurationMetric.record(System.nanoTime() - start, TimeUnit.NANOSECONDS);
+                }
+                return res;
             } catch (Throwable t) {
                 throw mapThrowable(t, null);
             }
@@ -87,6 +109,10 @@ class TimeoutImpl implements Timeout {
             } catch (Throwable t) {
                 throw mapThrowable(t, interrupted);
             } finally {
+                if (MetricsUtils.metricsEnabled()) {
+                    executionDurationMetric.record(System.nanoTime() - start, TimeUnit.NANOSECONDS);
+                }
+
                 interruptLock.lock();
                 try {
                     callReturned.set(true);
@@ -106,7 +132,6 @@ class TimeoutImpl implements Timeout {
         Throwable throwable = SupplierHelper.unwrapThrowable(t);
         if (throwable instanceof InterruptedException) {
             return new TimeoutException("Call interrupted", throwable);
-
         } else if (throwable instanceof java.util.concurrent.TimeoutException) {
             return new TimeoutException("Timeout reached", throwable.getCause());
         } else if (interrupted != null && interrupted.get()) {
