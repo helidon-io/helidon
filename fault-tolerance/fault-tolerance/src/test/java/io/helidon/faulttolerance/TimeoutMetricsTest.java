@@ -18,16 +18,23 @@ package io.helidon.faulttolerance;
 
 import java.time.Duration;
 
+import io.helidon.config.Config;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class TimeoutMetricsTest {
+
+    @BeforeAll
+    static void setupTest() {
+        FaultTolerance.config(Config.create());
+    }
 
     @Test
     void testTimeout() {

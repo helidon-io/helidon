@@ -35,6 +35,7 @@ class TimeoutImpl implements Timeout {
     private final boolean currentThread;
     private final String name;
     private final TimeoutConfig config;
+    private final boolean metricsEnabled;
 
     private Counter callsCounterMetric;
     private Timer executionDurationMetric;
@@ -46,7 +47,8 @@ class TimeoutImpl implements Timeout {
         this.name = config.name().orElseGet(() -> "timeout-" + System.identityHashCode(config));
         this.config = config;
 
-        if (MetricsUtils.metricsEnabled()) {
+        this.metricsEnabled = config.enableMetrics() || MetricsUtils.enableMetrics();
+        if (metricsEnabled) {
             Tag nameTag = Tag.create("name", name);
             callsCounterMetric = MetricsUtils.counterBuilder(FT_TIMEOUT_CALLS_TOTAL, nameTag);
             executionDurationMetric = MetricsUtils.timerBuilder(FT_TIMEOUT_EXECUTIONDURATION, nameTag);
@@ -65,17 +67,17 @@ class TimeoutImpl implements Timeout {
 
     @Override
     public <T> T invoke(Supplier<? extends T> supplier) {
-        if (MetricsUtils.metricsEnabled()) {
+        if (metricsEnabled) {
             callsCounterMetric.increment();
         }
 
-        long start = MetricsUtils.metricsEnabled() ? System.nanoTime() : 0L;
+        long start = metricsEnabled ? System.nanoTime() : 0L;
         if (!currentThread) {
             try {
                 T res = CompletableFuture.supplyAsync(supplier, executor)
                         .orTimeout(timeoutMillis, TimeUnit.MILLISECONDS)
                         .get();
-                if (MetricsUtils.metricsEnabled()) {
+                if (metricsEnabled) {
                     executionDurationMetric.record(System.nanoTime() - start, TimeUnit.NANOSECONDS);
                 }
                 return res;
@@ -109,7 +111,7 @@ class TimeoutImpl implements Timeout {
             } catch (Throwable t) {
                 throw mapThrowable(t, interrupted);
             } finally {
-                if (MetricsUtils.metricsEnabled()) {
+                if (metricsEnabled) {
                     executionDurationMetric.record(System.nanoTime() - start, TimeUnit.NANOSECONDS);
                 }
 

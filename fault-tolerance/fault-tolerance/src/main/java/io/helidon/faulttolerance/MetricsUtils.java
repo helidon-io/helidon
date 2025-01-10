@@ -26,19 +26,17 @@ import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
-import io.helidon.service.registry.ServiceRegistry;
-import io.helidon.service.registry.ServiceRegistryManager;
 
+import static io.helidon.faulttolerance.FaultTolerance.FT_METRICS_ENABLED;
 import static io.helidon.metrics.api.Meter.Scope.VENDOR;
 
 @SuppressWarnings("unchecked")
 class MetricsUtils {
 
-    private static final String FT_METRICS_ENABLED = "ft.metrics.enabled";
     private static final MetricsFactory METRICS_FACTORY = MetricsFactory.getInstance();
     private static final MeterRegistry METRICS_REGISTRY = Metrics.globalRegistry();
 
-    private static volatile Boolean metricsEnabled;
+    private static volatile Boolean enableMetrics;
 
     private MetricsUtils() {
     }
@@ -49,13 +47,12 @@ class MetricsUtils {
      *
      * @return value of metrics flag
      */
-    static boolean metricsEnabled() {
-        if (metricsEnabled == null) {
-            ServiceRegistry registry = ServiceRegistryManager.create().registry();
-            Config config = registry.get(Config.class);
-            metricsEnabled = config.get(FT_METRICS_ENABLED).asBoolean().orElse(false);
+    static boolean enableMetrics() {
+        if (enableMetrics == null) {
+            Config config = FaultTolerance.config();
+            enableMetrics = config.get(FT_METRICS_ENABLED).asBoolean().orElse(false);
         }
-        return metricsEnabled;
+        return enableMetrics;
     }
 
     static <T extends Number> Gauge<T> gaugeBuilder(String name, Supplier<T> supplier, Tag... tags) {

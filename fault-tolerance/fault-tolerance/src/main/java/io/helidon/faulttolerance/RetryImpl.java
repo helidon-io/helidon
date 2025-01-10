@@ -37,18 +37,20 @@ class RetryImpl implements Retry {
     private final RetryConfig retryConfig;
     private final AtomicLong retryCounter = new AtomicLong(0L);
     private final String name;
+    private final boolean metricsEnabled;
 
     private Counter callsCounterMetric;
     private Counter retryCounterMetric;
 
-    RetryImpl(RetryConfig retryConfig) {
-        this.name = retryConfig.name().orElseGet(() -> "retry-" + System.identityHashCode(retryConfig));
-        this.errorChecker = ErrorChecker.create(retryConfig.skipOn(), retryConfig.applyOn());
-        this.maxTimeNanos = retryConfig.overallTimeout().toNanos();
-        this.retryPolicy = retryConfig.retryPolicy().orElseThrow();
-        this.retryConfig = retryConfig;
+    RetryImpl(RetryConfig config) {
+        this.name = config.name().orElseGet(() -> "retry-" + System.identityHashCode(config));
+        this.errorChecker = ErrorChecker.create(config.skipOn(), config.applyOn());
+        this.maxTimeNanos = config.overallTimeout().toNanos();
+        this.retryPolicy = config.retryPolicy().orElseThrow();
+        this.retryConfig = config;
 
-        if (MetricsUtils.metricsEnabled()) {
+        this.metricsEnabled = config.enableMetrics() || MetricsUtils.enableMetrics();
+        if (metricsEnabled) {
             Tag nameTag = Tag.create("name", name);
             callsCounterMetric = MetricsUtils.counterBuilder(FT_RETRY_CALLS_TOTAL, nameTag);
             retryCounterMetric = MetricsUtils.counterBuilder(FT_RETRY_RETRIES_TOTAL, nameTag);
@@ -70,7 +72,7 @@ class RetryImpl implements Retry {
         RetryContext<? extends T> context = new RetryContext<>();
         while (true) {
             try {
-                if (MetricsUtils.metricsEnabled()) {
+                if (metricsEnabled) {
                     callsCounterMetric.increment();
                 }
                 return supplier.get();
@@ -103,7 +105,7 @@ class RetryImpl implements Retry {
 
             // now we are retrying for sure
             retryCounter.getAndIncrement();
-            if (MetricsUtils.metricsEnabled()) {
+            if (metricsEnabled) {
                 retryCounterMetric.increment();
             }
 

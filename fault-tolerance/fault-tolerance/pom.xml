@@ -53,10 +53,6 @@
             <artifactId>helidon-metrics-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.service</groupId>
-            <artifactId>helidon-service-registry</artifactId>
-        </dependency>
-        <dependency>
             <!--
             Used to declare Features in module-info.java
             -->

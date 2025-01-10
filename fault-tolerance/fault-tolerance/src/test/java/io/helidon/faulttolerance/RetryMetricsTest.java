@@ -20,15 +20,23 @@ import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
+import io.helidon.config.Config;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Tag;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class RetryMetricsTest {
+
+    @BeforeAll
+    static void setupTest() {
+        FaultTolerance.config(Config.create());
+    }
 
     @Test
     void testRetry() {

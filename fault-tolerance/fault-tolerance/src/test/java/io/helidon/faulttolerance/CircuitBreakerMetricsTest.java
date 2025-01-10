@@ -18,9 +18,11 @@ package io.helidon.faulttolerance;
 
 import java.time.Duration;
 
+import io.helidon.config.Config;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Tag;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.faulttolerance.CircuitBreaker.FT_CIRCUITBREAKER_CALLS_TOTAL;
@@ -29,6 +31,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 class CircuitBreakerMetricsTest extends CircuitBreakerBaseTest {
+
+    @BeforeAll
+    static void setupTest() {
+        FaultTolerance.config(Config.create());
+    }
 
     @Test
     void testCircuitBreaker() {

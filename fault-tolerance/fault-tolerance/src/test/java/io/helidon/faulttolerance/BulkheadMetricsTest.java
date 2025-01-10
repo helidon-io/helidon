@@ -22,15 +22,24 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
+import io.helidon.config.Config;
 import io.helidon.logging.common.LogConfig;
+import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.Gauge;
+import io.helidon.metrics.api.Tag;
+import io.helidon.metrics.api.Timer;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.faulttolerance.Bulkhead.FT_BULKHEAD_CALLS_TOTAL;
+import static io.helidon.faulttolerance.Bulkhead.FT_BULKHEAD_EXECUTIONSREJECTED;
+import static io.helidon.faulttolerance.Bulkhead.FT_BULKHEAD_EXECUTIONSRUNNING;
+import static io.helidon.faulttolerance.Bulkhead.FT_BULKHEAD_EXECUTIONSWAITING;
+import static io.helidon.faulttolerance.Bulkhead.FT_BULKHEAD_WAITINGDURATION;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -39,6 +48,7 @@ class BulkheadMetricsTest extends BulkheadBaseTest {
     @BeforeAll
     static void setupTest() {
         LogConfig.configureRuntime();
+        FaultTolerance.config(Config.create());
     }
 
     @Test
@@ -68,6 +78,13 @@ class BulkheadMetricsTest extends BulkheadBaseTest {
             fail("Task inProgress not started");
         }
 
+        // Check metrics
+        Tag nameTag = Tag.create("name", bulkhead.name());
+        Counter callsTotal = MetricsUtils.counter(FT_BULKHEAD_CALLS_TOTAL, nameTag);
+        assertThat(callsTotal.count(), is(1L));
+        Gauge<Long> running = MetricsUtils.gauge(FT_BULKHEAD_EXECUTIONSRUNNING, nameTag);
+        assertThat(running.value(), is(1L));
+
         // Submit new task that should be queued
         Task enqueued = new Task(1);
         CompletableFuture<Integer> enqueuedResult = Async.invokeStatic(
@@ -79,28 +96,21 @@ class BulkheadMetricsTest extends BulkheadBaseTest {
         }
         assertEventually(() -> bulkhead.stats().waitingQueueSize() == 1, WAIT_TIMEOUT_MILLIS);
 
+        // Check metrics
+        assertThat(callsTotal.count(), is(2L));
+        Gauge<Long> waiting = MetricsUtils.gauge(FT_BULKHEAD_EXECUTIONSWAITING, nameTag);
+        assertThat(waiting.value(), is(1L));
+
         // Submit new task that should be rejected
-        Task rejected = new Task(2);
-        CompletableFuture<Async> asyncRejected = new CompletableFuture<>();
-        CompletableFuture<Integer> rejectedResult = Async.invokeStatic(
-                () -> bulkhead.invoke(rejected::run),
-                asyncRejected);
-        asyncRejected.get();        // waits for async to start
+        Task rejectedTask = new Task(2);
+        assertThrows(BulkheadException.class, () -> bulkhead.invoke(rejectedTask::run));
 
-        assertThat(inProgress.isStarted(), is(true));
-        assertThat(inProgress.isBlocked(), is(true));
-        assertThat(enqueued.isStarted(), is(false));
-        assertThat(enqueued.isBlocked(), is(true));
-        assertThat(rejected.isStarted(), is(false));
-        assertThat(rejected.isBlocked(), is(true));
-
-        // Verify rejected task was indeed rejected
-        ExecutionException executionException = assertThrows(ExecutionException.class,
-                () -> rejectedResult.get(WAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS));
-        Throwable cause = executionException.getCause();
-        assertThat(cause, notNullValue());
-        assertThat(cause, instanceOf(BulkheadException.class));
-        assertThat(cause.getMessage(), is("Bulkhead queue \"" + name + "\" is full"));
+        // Check metrics
+        assertThat(callsTotal.count(), is(3L));
+        Gauge<Long> rejected = MetricsUtils.gauge(FT_BULKHEAD_EXECUTIONSREJECTED, nameTag);
+        assertThat(rejected.value(), is(1L));
+        Timer waitingDuration = MetricsUtils.timer(FT_BULKHEAD_WAITINGDURATION, nameTag);
+        assertThat(waitingDuration.count(), greaterThan(0L));
 
         // Unblock inProgress task and get result to free bulkhead
         inProgress.unblock();
@@ -110,13 +120,17 @@ class BulkheadMetricsTest extends BulkheadBaseTest {
         if (!enqueued.waitUntilStarted(WAIT_TIMEOUT_MILLIS)) {
             fail("Task enqueued not started");
         }
-        assertThat(enqueued.isStarted(), is(true));
-        assertThat(enqueued.isBlocked(), is(true));
-        assertThat(rejected.isStarted(), is(false));
-        assertThat(rejected.isBlocked(), is(true));
+
+        // Check metrics
+        assertThat(running.value(), is(1L));
+        assertThat(waiting.value(), is(0L));
 
         // Unblock enqueued task and get result
         enqueued.unblock();
         enqueuedResult.get(WAIT_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+
+        // Check metrics
+        assertThat(running.value(), is(0L));
+        assertThat(waiting.value(), is(0L));
     }
 }

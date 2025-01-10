@@ -54,6 +54,11 @@ public interface Bulkhead extends FtHandler, RuntimeType.Api<BulkheadConfig> {
     String FT_BULKHEAD_EXECUTIONSWAITING = "ft.bulkhead.executionsWaiting";
 
     /**
+     * Gauge of number of executions rejected by the bulkhead.
+     */
+    String FT_BULKHEAD_EXECUTIONSREJECTED = "ft.bulkhead.executionsRejected";
+
+    /**
      * Create {@link Bulkhead} from its configuration.
      *
      * @param config configuration of a bulkhead to create

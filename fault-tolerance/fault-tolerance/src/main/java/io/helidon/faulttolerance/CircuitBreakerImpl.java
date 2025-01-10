@@ -49,6 +49,7 @@ class CircuitBreakerImpl implements CircuitBreaker {
     private final ErrorChecker errorChecker;
     private final String name;
     private final CircuitBreakerConfig config;
+    private final boolean metricsEnabled;
 
     private Counter callsCounterMetric;
     private Counter openedCounterMetric;
@@ -62,7 +63,8 @@ class CircuitBreakerImpl implements CircuitBreaker {
         this.name = config.name().orElseGet(() -> "circuit-breaker-" + System.identityHashCode(config));
         this.config = config;
 
-        if (MetricsUtils.metricsEnabled()) {
+        this.metricsEnabled = config.enableMetrics() || MetricsUtils.enableMetrics();
+        if (metricsEnabled) {
             Tag nameTag = Tag.create("name", name);
             callsCounterMetric = MetricsUtils.counterBuilder(FT_CIRCUITBREAKER_CALLS_TOTAL, nameTag);
             openedCounterMetric = MetricsUtils.counterBuilder(FT_CIRCUITBREAKER_OPENED_TOTAL, nameTag);
@@ -81,7 +83,7 @@ class CircuitBreakerImpl implements CircuitBreaker {
 
     @Override
     public <T> T invoke(Supplier<? extends T> supplier) {
-        if (MetricsUtils.metricsEnabled()) {
+        if (metricsEnabled) {
             callsCounterMetric.increment();
         }
         return switch (state.get()) {
@@ -147,7 +149,7 @@ class CircuitBreakerImpl implements CircuitBreaker {
                 // if we successfully switch to open, we need to schedule switch to half-open
                 scheduleHalf();
                 // update metrics for this transition
-                if (MetricsUtils.metricsEnabled()) {
+                if (metricsEnabled) {
                     openedCounterMetric.increment();
                 }
             }
