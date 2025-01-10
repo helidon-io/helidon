@@ -54,7 +54,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - if: ${{ inputs.free-space == 'true' }}
+    - if: ${{ inputs.free-space == 'true' && runner.os != 'Windows'}}
       # See https://github.com/actions/runner-images/issues/2840
       name: Free disk space
       shell: bash
@@ -141,7 +141,7 @@ runs:
       shell: bash
     - name: Archive test results
       # https://github.com/actions/upload-artifact/issues/240
-      if: ${{ inputs.test-artifact-name != '' && runner.os != 'Windows' && always() }}
+      if: ${{ inputs.test-artifact-name != '' && always() }}
       uses: actions/upload-artifact@v4
       with:
         if-no-files-found: 'ignore'
