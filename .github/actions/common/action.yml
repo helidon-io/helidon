@@ -140,7 +140,6 @@ runs:
       run: ${{ inputs.run }}
       shell: bash
     - name: Archive test results
-      # https://github.com/actions/upload-artifact/issues/240
       if: ${{ inputs.test-artifact-name != '' && always() }}
       uses: actions/upload-artifact@v4
       with:
