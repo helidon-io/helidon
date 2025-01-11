@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.systemmeters;
 
+import java.io.File;
 import java.util.Map;
 
 import io.helidon.config.Config;
@@ -37,7 +38,8 @@ class TestVirtualThreadsMetersConfigs {
 
     @Test void checkCustomFilePath() {
         Config config = Config.just(ConfigSources.create(Map.of("virtual-threads.configuration",
-                                                                "src/test/resources/metrics-test.jfc")));
+                                                                "src/test/resources/metrics-test.jfc.xml".replaceAll("/",
+                                                                                                                 File.separator))));
         MetricsFactory metricsFactory = MetricsFactory.getInstance(config);
         VThreadSystemMetersProvider provider = new VThreadSystemMetersProvider();
         provider.meterBuilders(metricsFactory);
