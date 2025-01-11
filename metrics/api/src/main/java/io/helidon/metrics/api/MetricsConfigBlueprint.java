@@ -15,7 +15,6 @@
  */
 package io.helidon.metrics.api;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
