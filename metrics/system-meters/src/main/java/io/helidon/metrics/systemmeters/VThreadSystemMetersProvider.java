@@ -15,6 +15,10 @@
  */
 package io.helidon.metrics.systemmeters;
 
+import java.io.IOException;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -25,10 +29,12 @@ import io.helidon.common.LazyValue;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Timer;
 import io.helidon.metrics.spi.MetersProvider;
 
+import jdk.jfr.Configuration;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingStream;
 
@@ -73,7 +79,7 @@ public class VThreadSystemMetersProvider implements MetersProvider {
     @Override
     public Collection<Meter.Builder<?, ?>> meterBuilders(MetricsFactory metricsFactory) {
 
-        var rs = new RecordingStream();
+        var rs = new RecordingStream(effectiveConfiguration(metricsFactory.metricsConfig()));
 
         List<Meter.Builder<?, ?>> meterBuilders = new ArrayList<>(List.of(
                 Gauge.builder(METER_NAME_PREFIX + SUBMIT_FAILURES, () -> virtualThreadSubmitFails)
@@ -144,5 +150,26 @@ public class VThreadSystemMetersProvider implements MetersProvider {
     private void recordThreadPin(RecordedEvent event) {
         pinnedVirtualThreads++;
         recentPinnedVirtualThreads.get().record(event.getDuration());
+    }
+
+    private static Configuration effectiveConfiguration(MetricsConfig metricsConfig) {
+        /*
+        Interpret the VFR configuration as the name of a predefined configuration first. If that fails, then treat it as a Path.
+         */
+        String vfrConfigFromMetricsConfig = metricsConfig.virtualThreadsConfig();
+        Configuration result;
+        try {
+            try {
+                result = Configuration.getConfiguration(vfrConfigFromMetricsConfig);
+            } catch (NoSuchFileException e) {
+                result = Configuration.create(Path.of(vfrConfigFromMetricsConfig));
+            }
+            return result;
+        } catch (IOException | ParseException e) {
+            throw new RuntimeException("Unable to use specified Java Flight Recorder configuration '"
+                                               + vfrConfigFromMetricsConfig
+                                               + "'",
+                                       e);
+        }
     }
 }

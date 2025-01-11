@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.api;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -209,6 +210,16 @@ interface MetricsConfigBlueprint {
     @Option.Configured("virtual-threads.count.enabled")
     @Option.DefaultBoolean(false)
     boolean virtualThreadCountEnabled();
+
+    /**
+     * Java Flight Recorded configuration, either a predefined configuration name or a file spec to a custom file, for use in
+     * monitoring Java Flight Recorder events for virtual thread meters.
+     *
+     * @return the JFR configuration name or file path
+     */
+    @Option.Configured("virtual-threads.configuration")
+    @Option.Default("default")
+    String virtualThreadsConfig();
 
     /**
      * Metrics configuration node.

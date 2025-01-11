@@ -405,22 +405,36 @@ endif::se-flavor[]
 [[observing-vthreads]]
 ==== Observing Virtual Threads Behavior
 :vthreads-prefix: vthreads
-Helidon maintains several {metrics} related to virtual threads as summarized in the next table.
+Helidon maintains several {metrics} related to virtual threads as summarized in the next table. Helidon might rely on Java Flight Recorder (JFR) events and JMX MXBeans in computing the {metric} values. Be aware that limitations or changes in the values provided by these sources are outside the control of Helidon.
 
 .{metrics_uc} for Virtual Threads
-[cols="2,5,1"]
+[cols="2,5,3,1"]
 |===
-| {metric_uc} name | Usage | Reported by default
+| {metric_uc} name | Usage | Source | Reported by default
 
-| `{vthreads-prefix}.count` | Current number of active virtual threads. | no
-| `{vthreads-prefix}.pinned` | Number of times virtual threads have been pinned. | yes
-| `{vthreads-prefix}.recentPinned` | Distribution of the duration of thread pinning. ^1^ | yes
-| `{vthreads-prefix}.started` | Number of virtual threads started. | no
-| `{vthreads-prefix}.submitFailed` | Number of times submissions of a virtual thread to a platform carrier thread failed. | yes
+| `{vthreads-prefix}.count` | Current number of active virtual threads. | JFR `jdk.virtualThreadStart` and `jdk.virtualThreadEnd` events| no
+| `{vthreads-prefix}.pinned` | Number of times virtual threads have been pinned. | JFR `jdk.virtualThreadPinned` event | yes
+| `{vthreads-prefix}.recentPinned` | Distribution of the duration of thread pinning. ^1^ | JFR `jdk.virtualThreadPinned` event | yes
+| `{vthreads-prefix}.started` | Number of virtual threads started. | JFR `jdk.virtualThreadStart` event | no
+| `{vthreads-prefix}.submitFailed` | Number of times submissions of a virtual thread to a platform carrier thread failed. | JFR `jdk.virtualThreadSubmitFailed` event | yes
 |===
 ^1^ Distribution summaries can discard stale data, so the `recentPinned` summary might not reflect all thread pinning activity.
 
 // tag::virtualThreadsMetricsConfig[]
+==== Configuring Virtual Threads Metrics
+===== Specifying Java Flight Recorder Configuration
+Helidon relies on Java Flight Recorder (JFR) events to implement the virtual threads {metrics}. The JDK includes some predefined JFR configurations and users can provide their own, customized configurations.
+
+By default, Helidon uses the predefined JFR configuration named `default` when subscribing to JFR events.
+
+To change that assign the optional `metrics.virtual-threads.configuration` configuration setting to either:
+
+* the _name_ of a predefined JFR configuration, or
+* the _file path_ of a custom JFR configuration file.
+
+Specifying a JFR configuration name or path that Helidon cannot resolve or load causes the server start-up to fail.
+
+===== Controlling Virtual Thread Counts
 For performance reasons Helidon does not by default report the {metrics} related to the count of virtual threads.
 Enable these {metrics} using configuration.
 
