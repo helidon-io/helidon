@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,9 @@ module io.helidon.webserver.testing.junit5 {
     requires transitive io.helidon.common.testing.http.junit5;
     requires transitive io.helidon.webclient;
     requires transitive io.helidon.webserver;
+    requires transitive io.helidon.testing.junit5;
     requires transitive org.junit.jupiter.api;
+    requires io.helidon.service.registry;
 
     exports io.helidon.webserver.testing.junit5;
     exports io.helidon.webserver.testing.junit5.spi;

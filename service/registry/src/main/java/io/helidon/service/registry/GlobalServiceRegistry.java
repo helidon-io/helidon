@@ -44,7 +44,8 @@ public final class GlobalServiceRegistry {
      * global registry instance.
      * <p>
      * This is to allow testing in parallel, where we need the global registry instance restricted to a single test.
-     * In normal application runtime, the fallback is to use {@link io.helidon.common.context.Contexts#globalContext()}.
+     * <p>
+     * In normal application runtime we use {@link io.helidon.common.context.Contexts#globalContext()}.
      */
     public static final String STATIC_CONTEXT_CLASSIFIER = "helidon-registry-static-context";
 

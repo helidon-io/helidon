@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,9 @@ class SecurityConfigSupport {
             if (security.isPresent()) {
                 return;
             }
-            security = Contexts.globalContext().get(Security.class);
+            security = Contexts.context()
+                    .orElseGet(Contexts::globalContext)
+                    .get(Security.class);
             if (security.isPresent()) {
                 target.security(security.get());
                 return;
