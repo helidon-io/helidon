@@ -79,7 +79,11 @@ public class VThreadSystemMetersProvider implements MetersProvider {
     @Override
     public Collection<Meter.Builder<?, ?>> meterBuilders(MetricsFactory metricsFactory) {
 
-        var rs = new RecordingStream(effectiveConfiguration(metricsFactory.metricsConfig()));
+        Configuration jfrConfiguration = effectiveConfiguration(metricsFactory.metricsConfig());
+        if (jfrConfiguration == null) {
+            return List.of();
+        }
+        var rs = new RecordingStream(jfrConfiguration);
 
         List<Meter.Builder<?, ?>> meterBuilders = new ArrayList<>(List.of(
                 Gauge.builder(METER_NAME_PREFIX + SUBMIT_FAILURES, () -> virtualThreadSubmitFails)
@@ -113,7 +117,7 @@ public class VThreadSystemMetersProvider implements MetersProvider {
 
     private static void listenFor(RecordingStream rs, Map<String, Consumer<RecordedEvent>> events) {
         // Enable events of interest explicitly (as well as registering the callback) to be sure we get the events
-        // despite what the defaults might be.
+        // despite what the specified configuration might indicate.
 
         events.forEach((eventName, callback) -> {
             rs.enable(eventName);
