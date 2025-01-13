@@ -99,12 +99,13 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        os: [ ubuntu-20.04 ]
+        os: [ ubuntu-20.04, windows-2022 ]
         moduleSet: [ core, it, dbclient, dbclient-oracle, others ]
         include:
           - { os: ubuntu-20.04, platform: linux }
+          - { os: windows-2022, platform: windows }
     runs-on: ${{ matrix.os }}
-    name: tests/${{ matrix.moduleSet }}
+    name: tests/${{ matrix.moduleSet }}-${{matrix.platform}}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -112,7 +113,7 @@ jobs:
       - uses: ./.github/actions/common
         with:
           build-cache: read-only
-          test-artifact-name: tests-${{ matrix.moduleSet }}
+          test-artifact-name: tests-${{ matrix.moduleSet }}-${{ matrix.platform }}
           run: |
             mvn ${MAVEN_ARGS} \
               -DreactorRule=tests \
@@ -311,11 +312,12 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        os: [ ubuntu-20.04, macos-14 ]
+        os: [ ubuntu-20.04, macos-14, windows-2022 ]
         packaging: [ jar, jlink ]
         include:
           - { os: ubuntu-20.04, platform: linux }
           - { os: macos-14, platform: macos }
+          - { os: windows-2022, platform: windows }
     runs-on: ${{ matrix.os }}
     name: tests/packaging-${{ matrix.packaging }}-${{ matrix.platform }}
     steps:
@@ -337,11 +339,12 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        os: [ ubuntu-20.04, macos-14 ]
+        os: [ ubuntu-20.04, macos-14, windows-2022 ]
         module: [ mp-1, mp-2, mp-3, se-1, inject ]
         include:
           - { os: ubuntu-20.04, platform: linux }
           - { os: macos-14, platform: macos }
+          - { os: windows-2022, platform: windows }
     runs-on: ${{ matrix.os }}
     name: tests/native-image-${{ matrix.module }}-${{ matrix.platform }}
     steps:

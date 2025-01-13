@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,12 @@ package io.helidon.tests.integration.packaging.mp1;
 import io.helidon.tests.integration.harness.ProcessRunner.ExecMode;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
+@DisabledOnOs(value = OS.WINDOWS,
+        disabledReason = "JFR event recording is not supported on windows yet " +
+                "https://www.graalvm.org/latest/reference-manual/native-image/debugging-and-diagnostics/JFR/")
 class Mp1NativeTestIT extends Mp1PackagingTestIT {
 
     @Override

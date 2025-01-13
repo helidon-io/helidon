@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,8 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 import static java.lang.System.Logger.Level.DEBUG;
 
@@ -106,6 +108,7 @@ public class AckMpTest extends AbstractMPTest {
 
     @Test
     @Order(2)
+    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "https://github.com/helidon-io/helidon/issues/8509")
     void resendAckTestPart2(SeContainer cdi) {
             MockConnector mockConnector = cdi.select(MockConnector.class, TEST_CONNECTOR_ANNOTATION).get();
 

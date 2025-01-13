@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.webclient.grpc.tests;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 
 import io.helidon.common.configurable.Resource;
@@ -87,7 +88,10 @@ class GrpcClientUriTest extends GrpcBaseTest {
                 .build();
         StringServiceGrpc.StringServiceBlockingStub service = StringServiceGrpc.newBlockingStub(grpcClient.channel());
 
-        Retry retry = Retry.builder().calls(2).build();
+        Retry retry = Retry.builder()
+                .overallTimeout(Duration.ofMillis(5000))
+                .calls(2)
+                .build();
         Strings.StringMessage res = retry.invoke(() -> service.upper(newStringMessage("hello")));
         assertThat(res.getText(), is("HELLO"));
         assertThat(latch.getCount(), is(0L));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,31 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-
 package io.helidon.microprofile.telemetry;
 
 import java.util.List;
 
-import io.helidon.http.Status;
-import io.helidon.microprofile.telemetry.InMemorySpanExporterProvider;
 import io.helidon.microprofile.testing.junit5.AddBean;
-import io.helidon.microprofile.testing.junit5.AddConfig;
-import io.helidon.microprofile.testing.junit5.AddExtension;
+import io.helidon.microprofile.testing.junit5.AddConfigBlock;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
+import io.helidon.tracing.Span;
+import io.helidon.tracing.Tracer;
 
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.opentelemetry.sdk.trace.data.SpanData;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.client.WebTarget;
-import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -53,10 +47,12 @@ import static org.hamcrest.Matchers.is;
 @AddBean(RestSpanHierarchyTest.SpanResource.class)
 @AddBean(InMemorySpanExporter.class)
 @AddBean(InMemorySpanExporterProvider.class)
-@AddConfig(key = "otel.service.name", value = "helidon-mp-telemetry")
-@AddConfig(key = "otel.sdk.disabled", value = "false")
-@AddConfig(key = "telemetry.span.full.url", value = "false")
-@AddConfig(key = "otel.traces.exporter", value = "in-memory")
+@AddConfigBlock("""
+        otel.service.name=helidon-mp-telemetry
+        otel.sdk.disabled=false
+        otel.traces.exporter=in-memory
+        telemetry.span.full.url=false
+        """)
 public class RestSpanHierarchyTest {
 
     @Inject
@@ -72,7 +68,6 @@ public class RestSpanHierarchyTest {
 
     @Test
     void spanHierarchy() {
-
         assertThat(webTarget.path("mixed").request().get().getStatus(), is(Response.Status.OK.getStatusCode()));
 
         List<SpanData> spanItems = spanExporter.getFinishedSpanItems(4);
@@ -81,11 +76,9 @@ public class RestSpanHierarchyTest {
         assertThat(spanItems.get(0).getAttributes().get(AttributeKey.stringKey("attribute")), is("value"));
         assertThat(spanItems.get(0).getParentSpanId(), is(spanItems.get(1).getSpanId()));
 
-
         assertThat(spanItems.get(1).getKind(), is(INTERNAL));
         assertThat(spanItems.get(1).getName(), is("mixed_parent"));
         assertThat(spanItems.get(1).getParentSpanId(), is(spanItems.get(2).getSpanId()));
-
 
         assertThat(spanItems.get(2).getKind(), is(SERVER));
         assertThat(spanItems.get(2).getName(), is("/mixed"));
@@ -119,17 +112,16 @@ public class RestSpanHierarchyTest {
     public static class SpanResource {
 
         @Inject
-        private io.helidon.tracing.Tracer helidonTracerInjected;
-
+        private Tracer helidonTracerInjected;
 
         @GET
         @Path("mixed")
         @WithSpan("mixed_parent")
         public Response mixedSpan() {
 
-            io.helidon.tracing.Tracer helidonTracer = io.helidon.tracing.Tracer.global();
-            io.helidon.tracing.Span mixedSpan = helidonTracer.spanBuilder("mixed_inner")
-                    .kind(io.helidon.tracing.Span.Kind.SERVER)
+            Tracer helidonTracer = Tracer.global();
+            Span mixedSpan = helidonTracer.spanBuilder("mixed_inner")
+                    .kind(Span.Kind.SERVER)
                     .tag("attribute", "value")
                     .start();
             mixedSpan.end();
@@ -142,8 +134,8 @@ public class RestSpanHierarchyTest {
         @WithSpan("mixed_parent_injected")
         public Response mixedSpanInjected() {
 
-            io.helidon.tracing.Span mixedSpan = helidonTracerInjected.spanBuilder("mixed_inner_injected")
-                    .kind(io.helidon.tracing.Span.Kind.SERVER)
+            Span mixedSpan = helidonTracerInjected.spanBuilder("mixed_inner_injected")
+                    .kind(Span.Kind.SERVER)
                     .tag("attribute", "value")
                     .start();
             mixedSpan.end();

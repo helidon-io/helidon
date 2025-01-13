@@ -16,6 +16,7 @@
 
 package io.helidon.integrations.oci.sdk.runtime;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
@@ -159,7 +160,14 @@ class OciAuthenticationDetailsProvider implements Service.InjectionPointFactory<
     }
 
     static String userHomePrivateKeyPath(OciConfig ociConfig) {
-        return Paths.get(System.getProperty("user.home"), ".oci", ociConfig.authKeyFile()).toString();
+        return normalizePath(Paths.get(System.getProperty("user.home"), ".oci", ociConfig.authKeyFile()).toString());
+    }
+
+    private static String normalizePath(String value) {
+        if (value == null) {
+            return null;
+        }
+        return value.replace(File.separator, "/");
     }
 
 
