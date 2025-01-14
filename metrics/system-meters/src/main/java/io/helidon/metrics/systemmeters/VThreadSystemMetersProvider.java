@@ -15,10 +15,6 @@
  */
 package io.helidon.metrics.systemmeters;
 
-import java.io.IOException;
-import java.nio.file.NoSuchFileException;
-import java.nio.file.Path;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -34,7 +30,6 @@ import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Timer;
 import io.helidon.metrics.spi.MetersProvider;
 
-import jdk.jfr.Configuration;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingStream;
 
@@ -69,6 +64,7 @@ public class VThreadSystemMetersProvider implements MetersProvider {
     private long pinnedVirtualThreads;
     private long virtualThreads;
     private long virtualThreadStarts;
+    private long pinnedVirtualThreadsThresholdMillis;
 
     /**
      * For service loading.
@@ -79,14 +75,15 @@ public class VThreadSystemMetersProvider implements MetersProvider {
     @Override
     public Collection<Meter.Builder<?, ?>> meterBuilders(MetricsFactory metricsFactory) {
 
-        Configuration jfrConfiguration = effectiveConfiguration(metricsFactory.metricsConfig());
-        if (jfrConfiguration == null) {
+        MetricsConfig metricsConfig = metricsFactory.metricsConfig();
+        if (!metricsConfig.virtualThreadsEnabled()) {
             return List.of();
         }
 
-        RecordingStream recordingStream = (System.getenv("SKIP_CONFIG") != null)
-                ? new RecordingStream()
-                : new RecordingStream(jfrConfiguration);
+        var recordingStream = new RecordingStream();
+        pinnedVirtualThreadsThresholdMillis = metricsConfig.virtualThreadsPinnedThreshold().toMillis();
+        recordingStream.setSettings(Map.of("jdk.VirtualThreadPinned#threshold",
+                                            pinnedVirtualThreadsThresholdMillis + " ms"));
 
         List<Meter.Builder<?, ?>> meterBuilders = new ArrayList<>(List.of(
                 Gauge.builder(METER_NAME_PREFIX + SUBMIT_FAILURES, () -> virtualThreadSubmitFails)
@@ -116,6 +113,11 @@ public class VThreadSystemMetersProvider implements MetersProvider {
 
         recordingStream.startAsync();
         return meterBuilders;
+    }
+
+    // For testing
+    long pinnedVirtualThreadsThresholdMillis() {
+        return pinnedVirtualThreadsThresholdMillis;
     }
 
     private static void listenFor(RecordingStream rs, Map<String, Consumer<RecordedEvent>> events) {
@@ -157,26 +159,5 @@ public class VThreadSystemMetersProvider implements MetersProvider {
     private void recordThreadPin(RecordedEvent event) {
         pinnedVirtualThreads++;
         recentPinnedVirtualThreads.get().record(event.getDuration());
-    }
-
-    private static Configuration effectiveConfiguration(MetricsConfig metricsConfig) {
-        /*
-        Interpret the VFR configuration as the name of a predefined configuration first. If that fails, then treat it as a Path.
-         */
-        String vfrConfigFromMetricsConfig = metricsConfig.virtualThreadsConfig();
-        Configuration result;
-        try {
-            try {
-                result = Configuration.getConfiguration(vfrConfigFromMetricsConfig);
-            } catch (NoSuchFileException e) {
-                result = Configuration.create(Path.of(vfrConfigFromMetricsConfig));
-            }
-            return result;
-        } catch (IOException | ParseException e) {
-            throw new RuntimeException("Unable to use specified Java Flight Recorder configuration '"
-                                               + vfrConfigFromMetricsConfig
-                                               + "'",
-                                       e);
-        }
     }
 }

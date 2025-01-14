@@ -421,18 +421,48 @@ Helidon maintains several {metrics} related to virtual threads as summarized in 
 ^1^ Distribution summaries can discard stale data, so the `recentPinned` summary might not reflect all thread pinning activity.
 
 // tag::virtualThreadsMetricsConfig[]
-==== Configuring Virtual Threads Metrics
-===== Specifying Java Flight Recorder Configuration
-Helidon relies on Java Flight Recorder (JFR) events to implement the virtual threads {metrics}. The JDK includes some predefined JFR configurations and users can provide their own, customized configurations.
+==== Configuring Virtual Threads {metrics_uc}
+===== Disabling Virtual Threads {metrics_uc} Entirely
+Gathering data to compute the {metrics} for virtual threads is designed to be as efficient as possible, but doing so still imposes a small load on the server and by default Helidon exposes only the {metrics} related to virtual threads noted in the table above.
 
-By default, Helidon uses the predefined JFR configuration named `default` when subscribing to JFR events.
+To disable all {metrics} describing virtual threads, include a config setting as shown in the following example:
 
-To change that assign the optional `metrics.virtual-threads.configuration` configuration setting to either:
+.Disabling virtual thread metrics entirely
+ifdef::mp-flavor[]
+[source,properties]
+----
+metrics.virtual-threads.enabled = false
+----
+endif::mp-flavor[]
+ifdef::se-flavor[]
+[source,yaml]
+----
+metrics:
+  virtual-threads:
+    enabled: false
+----
+endif::se-flavor[]
 
-* the _name_ of a predefined JFR configuration, or
-* the _file path_ of a custom JFR configuration file.
+===== Controlling Measurements of Pinned Virtual Threads
+Helidon measures pinned virtual threads only when the thread is pinned for a length of time at or above a threshold. Control the threshold by configuring the threshold as shown in the example below.
 
-Specifying a JFR configuration name or path that Helidon cannot resolve or load causes the server start-up to fail.
+.Setting virtual thread pinning threshold to 100 ms
+ifdef::mp-flavor[]
+[source,properties]
+----
+metrics.virtual-threads.pinned.threshold=PT0.100S
+----
+endif::mp-flavor[]
+ifdef::se-flavor[]
+[source,yaml]
+----
+metrics:
+  virtual-threads:
+    pinned:
+      threshold: PT0.100S
+----
+endif::se-flavor[]
+The threshold value is a `Duration` string, such as `PT0.100S` for 100 milliseconds.
 
 ===== Controlling Virtual Thread Counts
 For performance reasons Helidon does not by default report the {metrics} related to the count of virtual threads.
