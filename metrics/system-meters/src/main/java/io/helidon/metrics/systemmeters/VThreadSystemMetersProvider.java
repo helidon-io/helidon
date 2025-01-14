@@ -83,7 +83,10 @@ public class VThreadSystemMetersProvider implements MetersProvider {
         if (jfrConfiguration == null) {
             return List.of();
         }
-        var rs = new RecordingStream(jfrConfiguration);
+
+        RecordingStream recordingStream = (System.getenv("SKIP_CONFIG") != null)
+                ? new RecordingStream()
+                : new RecordingStream(jfrConfiguration);
 
         List<Meter.Builder<?, ?>> meterBuilders = new ArrayList<>(List.of(
                 Gauge.builder(METER_NAME_PREFIX + SUBMIT_FAILURES, () -> virtualThreadSubmitFails)
@@ -96,7 +99,7 @@ public class VThreadSystemMetersProvider implements MetersProvider {
                         .description("Pinned virtual thread durations")
                         .scope(METER_SCOPE)));
 
-        listenFor(rs, Map.of("jdk.VirtualThreadSubmitFailed", this::recordSubmitFail,
+        listenFor(recordingStream, Map.of("jdk.VirtualThreadSubmitFailed", this::recordSubmitFail,
                              "jdk.VirtualThreadPinned", this::recordThreadPin));
 
         if (metricsFactory.metricsConfig().virtualThreadCountEnabled()) {
@@ -107,11 +110,11 @@ public class VThreadSystemMetersProvider implements MetersProvider {
                                       .description("Number of virtual thread starts")
                                       .scope(METER_SCOPE));
 
-            listenFor(rs, Map.of("jdk.VirtualThreadStart", this::recordThreadStart,
+            listenFor(recordingStream, Map.of("jdk.VirtualThreadStart", this::recordThreadStart,
                                  "jdk.VirtualThreadEnd", this::recordThreadEnd));
         }
 
-        rs.startAsync();
+        recordingStream.startAsync();
         return meterBuilders;
     }
 
