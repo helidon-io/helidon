@@ -18,6 +18,7 @@ package io.helidon.faulttolerance;
 import java.util.List;
 import java.util.function.Supplier;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.config.Config;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Gauge;
@@ -33,8 +34,8 @@ import static io.helidon.metrics.api.Meter.Scope.VENDOR;
 @SuppressWarnings("unchecked")
 class MetricsUtils {
 
-    private static final MetricsFactory METRICS_FACTORY = MetricsFactory.getInstance();
-    private static final MeterRegistry METRICS_REGISTRY = Metrics.globalRegistry();
+    private static final LazyValue<MetricsFactory> METRICS_FACTORY = LazyValue.create(MetricsFactory::getInstance);
+    private static final LazyValue<MeterRegistry> METRICS_REGISTRY = LazyValue.create(Metrics::globalRegistry);
 
     private static volatile Boolean enableMetrics;
 
@@ -55,39 +56,39 @@ class MetricsUtils {
         return enableMetrics;
     }
 
-    static <T extends Number> Gauge<T> gaugeBuilder(String name, Supplier<T> supplier, Tag... tags) {
-        Gauge.Builder<T> builder = METRICS_FACTORY.gaugeBuilder(name, supplier).scope(VENDOR);
+    static <T extends Number> void gaugeBuilder(String name, Supplier<T> supplier, Tag... tags) {
+        Gauge.Builder<T> builder = METRICS_FACTORY.get().gaugeBuilder(name, supplier).scope(VENDOR);
         List<Tag> tagList = List.of(tags);
         builder.tags(tagList);
-        METRICS_REGISTRY.getOrCreate(builder);
-        return METRICS_REGISTRY.gauge(name, tagList).orElseThrow();
+        METRICS_REGISTRY.get().getOrCreate(builder);
+        METRICS_REGISTRY.get().gauge(name, tagList).orElseThrow();
     }
 
     static Counter counterBuilder(String name, Tag... tags) {
-        Counter.Builder builder = METRICS_FACTORY.counterBuilder(name).scope(VENDOR);
+        Counter.Builder builder = METRICS_FACTORY.get().counterBuilder(name).scope(VENDOR);
         List<Tag> tagList = List.of(tags);
         builder.tags(tagList);
-        METRICS_REGISTRY.getOrCreate(builder);
-        return METRICS_REGISTRY.counter(name, tagList).orElseThrow();
+        METRICS_REGISTRY.get().getOrCreate(builder);
+        return METRICS_REGISTRY.get().counter(name, tagList).orElseThrow();
     }
 
     static Timer timerBuilder(String name, Tag... tags) {
-        Timer.Builder builder = METRICS_FACTORY.timerBuilder(name).scope(VENDOR);
+        Timer.Builder builder = METRICS_FACTORY.get().timerBuilder(name).scope(VENDOR);
         List<Tag> tagList = List.of(tags);
         builder.tags(tagList);
-        METRICS_REGISTRY.getOrCreate(builder);
-        return METRICS_REGISTRY.timer(name, tagList).orElseThrow();
+        METRICS_REGISTRY.get().getOrCreate(builder);
+        return METRICS_REGISTRY.get().timer(name, tagList).orElseThrow();
     }
 
     static <T extends Number> Gauge<T> gauge(String name, Tag... tags) {
-        return METRICS_REGISTRY.gauge(name, List.of(tags)).orElseThrow();
+        return METRICS_REGISTRY.get().gauge(name, List.of(tags)).orElseThrow();
     }
 
     static Counter counter(String name, Tag... tags) {
-        return METRICS_REGISTRY.counter(name, List.of(tags)).orElseThrow();
+        return METRICS_REGISTRY.get().counter(name, List.of(tags)).orElseThrow();
     }
 
     static Timer timer(String name, Tag... tags) {
-        return METRICS_REGISTRY.timer(name, List.of(tags)).orElseThrow();
+        return METRICS_REGISTRY.get().timer(name, List.of(tags)).orElseThrow();
     }
 }
