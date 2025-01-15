@@ -25,6 +25,7 @@ import io.helidon.common.LazyValue;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Timer;
 import io.helidon.metrics.spi.MetersProvider;
@@ -63,6 +64,7 @@ public class VThreadSystemMetersProvider implements MetersProvider {
     private long pinnedVirtualThreads;
     private long virtualThreads;
     private long virtualThreadStarts;
+    private long pinnedVirtualThreadsThresholdMillis;
 
     /**
      * For service loading.
@@ -73,7 +75,15 @@ public class VThreadSystemMetersProvider implements MetersProvider {
     @Override
     public Collection<Meter.Builder<?, ?>> meterBuilders(MetricsFactory metricsFactory) {
 
-        var rs = new RecordingStream();
+        MetricsConfig metricsConfig = metricsFactory.metricsConfig();
+        if (!metricsConfig.virtualThreadsEnabled()) {
+            return List.of();
+        }
+
+        var recordingStream = new RecordingStream();
+        pinnedVirtualThreadsThresholdMillis = metricsConfig.virtualThreadsPinnedThreshold().toMillis();
+        recordingStream.setSettings(Map.of("jdk.VirtualThreadPinned#threshold",
+                                            pinnedVirtualThreadsThresholdMillis + " ms"));
 
         List<Meter.Builder<?, ?>> meterBuilders = new ArrayList<>(List.of(
                 Gauge.builder(METER_NAME_PREFIX + SUBMIT_FAILURES, () -> virtualThreadSubmitFails)
@@ -86,7 +96,7 @@ public class VThreadSystemMetersProvider implements MetersProvider {
                         .description("Pinned virtual thread durations")
                         .scope(METER_SCOPE)));
 
-        listenFor(rs, Map.of("jdk.VirtualThreadSubmitFailed", this::recordSubmitFail,
+        listenFor(recordingStream, Map.of("jdk.VirtualThreadSubmitFailed", this::recordSubmitFail,
                              "jdk.VirtualThreadPinned", this::recordThreadPin));
 
         if (metricsFactory.metricsConfig().virtualThreadCountEnabled()) {
@@ -97,17 +107,21 @@ public class VThreadSystemMetersProvider implements MetersProvider {
                                       .description("Number of virtual thread starts")
                                       .scope(METER_SCOPE));
 
-            listenFor(rs, Map.of("jdk.VirtualThreadStart", this::recordThreadStart,
+            listenFor(recordingStream, Map.of("jdk.VirtualThreadStart", this::recordThreadStart,
                                  "jdk.VirtualThreadEnd", this::recordThreadEnd));
         }
 
-        rs.startAsync();
+        recordingStream.startAsync();
         return meterBuilders;
     }
 
+    // For testing
+    long pinnedVirtualThreadsThresholdMillis() {
+        return pinnedVirtualThreadsThresholdMillis;
+    }
+
     private static void listenFor(RecordingStream rs, Map<String, Consumer<RecordedEvent>> events) {
-        // Enable events of interest explicitly (as well as registering the callback) to be sure we get the events
-        // despite what the defaults might be.
+        // Enable events of interest explicitly (as well as registering the callback) to be sure we receive the events we need.
 
         events.forEach((eventName, callback) -> {
             rs.enable(eventName);

@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.api;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -199,6 +200,15 @@ interface MetricsConfigBlueprint {
     boolean restRequestEnabled();
 
     /**
+     * Whether Helidon should expose meters related to virtual threads.
+     *
+     * @return true to include meters related to virtual threads
+     */
+    @Option.Configured("virtual-threads.enabled")
+    @Option.DefaultBoolean(true)
+    boolean virtualThreadsEnabled();
+
+    /**
      * Whether the virtual thread count should be exposed as a meter.
      * <p>
      * Enabling the virtual thread count meters can degrade performance of the server because the server must monitor Java
@@ -209,6 +219,15 @@ interface MetricsConfigBlueprint {
     @Option.Configured("virtual-threads.count.enabled")
     @Option.DefaultBoolean(false)
     boolean virtualThreadCountEnabled();
+
+    /**
+     * Threshold for sampling pinned virtual threads to include in the pinned threads meter.
+     *
+     * @return threshold used to filter virtual thread pinning events
+     */
+    @Option.Configured("virtual-threads.pinned.threshold")
+    @Option.Default("PT0.020S")
+    Duration virtualThreadsPinnedThreshold();
 
     /**
      * Metrics configuration node.
