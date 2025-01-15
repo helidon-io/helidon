@@ -121,8 +121,7 @@ public class VThreadSystemMetersProvider implements MetersProvider {
     }
 
     private static void listenFor(RecordingStream rs, Map<String, Consumer<RecordedEvent>> events) {
-        // Enable events of interest explicitly (as well as registering the callback) to be sure we get the events
-        // despite what the specified configuration might indicate.
+        // Enable events of interest explicitly (as well as registering the callback) to be sure we receive the events we need.
 
         events.forEach((eventName, callback) -> {
             rs.enable(eventName);
