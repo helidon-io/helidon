@@ -124,7 +124,7 @@
         <version.plugin.exec>3.1.0</version.plugin.exec>
         <version.plugin.failsafe>3.1.2</version.plugin.failsafe>
         <version.plugin.glassfish-copyright>2.3</version.plugin.glassfish-copyright>
-        <version.plugin.helidon-build-tools>4.0.14</version.plugin.helidon-build-tools>
+        <version.plugin.helidon-build-tools>4.0.15</version.plugin.helidon-build-tools>
         <version.plugin.hibernate-enhance>${version.lib.hibernate}</version.plugin.hibernate-enhance>
         <version.plugin.install>3.1.2</version.plugin.install>
         <version.plugin.invoker>3.2.2</version.plugin.invoker>
