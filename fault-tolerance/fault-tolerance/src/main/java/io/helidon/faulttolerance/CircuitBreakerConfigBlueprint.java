@@ -105,7 +105,7 @@ interface CircuitBreakerConfigBlueprint extends Prototype.Factory<CircuitBreaker
     /**
      * Flag to enable metrics for this instance. The value of this flag is
      * combined with the global config entry
-     * {@link io.helidon.faulttolerance.FaultTolerance#FT_METRICS_ENABLED}.
+     * {@link io.helidon.faulttolerance.FaultTolerance#FT_METRICS_DEFAULT_ENABLED}.
      * If either of these flags is {@code true}, then metrics will be enabled
      * for the instance.
      *

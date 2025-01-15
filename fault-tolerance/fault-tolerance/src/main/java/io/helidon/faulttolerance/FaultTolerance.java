@@ -51,10 +51,10 @@ public final class FaultTolerance {
 
     /**
      * Config key to enable metrics in Fault Tolerance. This flag can be overridden by
-     * each FT operation. See for example {@link BulkheadConfigBlueprint#enableMetrics()}.
+     * each FT command builder. See for example {@link BulkheadConfigBlueprint#enableMetrics()}.
      * All metrics are disabled by default.
      */
-    public static final String FT_METRICS_ENABLED = "ft.metrics.enabled";
+    public static final String FT_METRICS_DEFAULT_ENABLED = "ft.metrics.default-enabled";
 
     private static final System.Logger LOGGER = System.getLogger(FaultTolerance.class.getName());
 

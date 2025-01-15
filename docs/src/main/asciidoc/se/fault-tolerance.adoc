@@ -277,7 +277,7 @@ the application developer or automatically by the API.
 |===
 ^|Name ^|Tags ^|Description
 |ft.bulkhead.calls.total | name="<bulkhead-name>" | Counter for all calls entering a bulkhead
-|ft.bulkhead.waitingDuration | name="<bulkhead-name>" | Histogram of waiting times to enter a bulkhead
+|ft.bulkhead.waitingDuration | name="<bulkhead-name>" | Distribution summary of waiting times to enter a bulkhead
 |ft.bulkhead.executionsRunning | name="<bulkhead-name>" | Gauge whose value is the number of executions running in a bulkhead
 |ft.bulkhead.executionsWaiting | name="<bulkhead-name>" | Gauge whose value is the number of executions waiting in a bulkhead
 |===
@@ -304,14 +304,14 @@ closed to open state
 |===
 ^|Name ^|Tags ^|Description
 |ft.timeout.calls.total | name="<timeout-name>" | Counter for all calls entering a timeout
-|ft.timeout.executionDuration | name="<timeout-name>" | Histogram of all execution durations in a timeout
+|ft.timeout.executionDuration | name="<timeout-name>" | Distribution summary of all execution durations in a timeout
 |===
 
 === Enabling Metrics Programmatically
 
 Metrics can be enabled programmatically either globally or, if disabled globally, individually for
 each command instance. To enable metrics globally, call `FaultTolerance.config(Config)` passing
-a Config instance that sets `ft.metrics.enabled=true`. This must be done on application startup,
+a Config instance that sets `ft.metrics.default-enabled=true`. This must be done on application startup,
 before any command instances are created.
 
 If metrics are not enabled globally, they can be enabled programmatically on each command instance
@@ -326,7 +326,6 @@ include::{sourcedir}/se/FaultToleranceSnippets.java[tag=snippet_8, indent=0]
 
 NOTE: The global config setting always takes precedence: that is, if metrics are enabled
 globally, they *cannot* be disabled individually by calling `enableMetrics(false)`.
-
 
 == Examples
 

@@ -47,7 +47,7 @@ class TimeoutImpl implements Timeout {
         this.name = config.name().orElseGet(() -> "timeout-" + System.identityHashCode(config));
         this.config = config;
 
-        this.metricsEnabled = config.enableMetrics() || MetricsUtils.enableMetrics();
+        this.metricsEnabled = config.enableMetrics() || MetricsUtils.defaultEnabled();
         if (metricsEnabled) {
             Tag nameTag = Tag.create("name", name);
             callsCounterMetric = MetricsUtils.counterBuilder(FT_TIMEOUT_CALLS_TOTAL, nameTag);
@@ -74,15 +74,15 @@ class TimeoutImpl implements Timeout {
         long start = metricsEnabled ? System.nanoTime() : 0L;
         if (!currentThread) {
             try {
-                T res = CompletableFuture.supplyAsync(supplier, executor)
+                return CompletableFuture.supplyAsync(supplier, executor)
                         .orTimeout(timeoutMillis, TimeUnit.MILLISECONDS)
                         .get();
+            } catch (Throwable t) {
+                throw mapThrowable(t, null);
+            } finally {
                 if (metricsEnabled) {
                     executionDurationMetric.record(System.nanoTime() - start, TimeUnit.NANOSECONDS);
                 }
-                return res;
-            } catch (Throwable t) {
-                throw mapThrowable(t, null);
             }
         } else {
             Thread thisThread = Thread.currentThread();

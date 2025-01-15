@@ -28,7 +28,7 @@ import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 
-import static io.helidon.faulttolerance.FaultTolerance.FT_METRICS_ENABLED;
+import static io.helidon.faulttolerance.FaultTolerance.FT_METRICS_DEFAULT_ENABLED;
 import static io.helidon.metrics.api.Meter.Scope.VENDOR;
 
 @SuppressWarnings("unchecked")
@@ -37,7 +37,7 @@ class MetricsUtils {
     private static final LazyValue<MetricsFactory> METRICS_FACTORY = LazyValue.create(MetricsFactory::getInstance);
     private static final LazyValue<MeterRegistry> METRICS_REGISTRY = LazyValue.create(Metrics::globalRegistry);
 
-    private static volatile Boolean enableMetrics;
+    private static volatile Boolean defaultEnabled;
 
     private MetricsUtils() {
     }
@@ -48,12 +48,12 @@ class MetricsUtils {
      *
      * @return value of metrics flag
      */
-    static boolean enableMetrics() {
-        if (enableMetrics == null) {
+    static boolean defaultEnabled() {
+        if (defaultEnabled == null) {
             Config config = FaultTolerance.config();
-            enableMetrics = config.get(FT_METRICS_ENABLED).asBoolean().orElse(false);
+            defaultEnabled = config.get(FT_METRICS_DEFAULT_ENABLED).asBoolean().orElse(false);
         }
-        return enableMetrics;
+        return defaultEnabled;
     }
 
     static <T extends Number> void gaugeBuilder(String name, Supplier<T> supplier, Tag... tags) {

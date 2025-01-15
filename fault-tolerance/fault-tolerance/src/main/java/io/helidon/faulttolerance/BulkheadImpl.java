@@ -66,7 +66,7 @@ class BulkheadImpl implements Bulkhead {
         this.inProgressLock = new ReentrantLock(true);
         this.config = config;
 
-        this.metricsEnabled = config.enableMetrics() || MetricsUtils.enableMetrics();
+        this.metricsEnabled = config.enableMetrics() || MetricsUtils.defaultEnabled();
         if (metricsEnabled) {
             Tag nameTag = Tag.create("name", name);
             callsCounterMetric = MetricsUtils.counterBuilder(FT_BULKHEAD_CALLS_TOTAL, nameTag);

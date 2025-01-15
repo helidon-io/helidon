@@ -49,7 +49,7 @@ class RetryImpl implements Retry {
         this.retryPolicy = config.retryPolicy().orElseThrow();
         this.retryConfig = config;
 
-        this.metricsEnabled = config.enableMetrics() || MetricsUtils.enableMetrics();
+        this.metricsEnabled = config.enableMetrics() || MetricsUtils.defaultEnabled();
         if (metricsEnabled) {
             Tag nameTag = Tag.create("name", name);
             callsCounterMetric = MetricsUtils.counterBuilder(FT_RETRY_CALLS_TOTAL, nameTag);

@@ -16,4 +16,4 @@
 
 ft:
   metrics:
-    enabled: true
+    default-enabled: true
