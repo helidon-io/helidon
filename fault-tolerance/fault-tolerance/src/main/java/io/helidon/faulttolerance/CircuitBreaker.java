@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,18 @@ import io.helidon.builder.api.RuntimeType;
  */
 @RuntimeType.PrototypedBy(CircuitBreakerConfig.class)
 public interface CircuitBreaker extends FtHandler, RuntimeType.Api<CircuitBreakerConfig> {
+
+    /**
+     * Counter for all the calls in a timeout.
+     */
+    String FT_CIRCUITBREAKER_CALLS_TOTAL = "ft.circuitbreaker.calls.total";
+
+    /**
+     * Counter for the number of times a circuit breaks has moved from
+     * {@link State#CLOSED} to {@link State#OPEN}.
+     */
+    String FT_CIRCUITBREAKER_OPENED_TOTAL = "ft.circuitbreaker.opened.total";
+
     /**
      * Create a new circuit builder based on its configuration.
      *

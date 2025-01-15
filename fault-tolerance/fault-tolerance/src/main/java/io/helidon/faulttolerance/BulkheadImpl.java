@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,10 +27,15 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
+
+import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.Tag;
+import io.helidon.metrics.api.Timer;
 
 class BulkheadImpl implements Bulkhead {
     private static final System.Logger LOGGER = System.getLogger(BulkheadImpl.class.getName());
@@ -42,9 +47,14 @@ class BulkheadImpl implements Bulkhead {
     private final AtomicLong concurrentExecutions = new AtomicLong(0L);
     private final AtomicLong callsAccepted = new AtomicLong(0L);
     private final AtomicLong callsRejected = new AtomicLong(0L);
+    private final AtomicLong callsWaiting = new AtomicLong(0L);
     private final List<QueueListener> listeners;
     private final Set<Supplier<?>> cancelledSuppliers = new CopyOnWriteArraySet<>();
     private final BulkheadConfig config;
+    private final boolean metricsEnabled;
+
+    private Counter callsCounterMetric;
+    private Timer waitingDurationMetric;
 
     BulkheadImpl(BulkheadConfig config) {
         this.inProgress = new Semaphore(config.limit(), true);
@@ -55,6 +65,16 @@ class BulkheadImpl implements Bulkhead {
                 : new ZeroCapacityQueue();
         this.inProgressLock = new ReentrantLock(true);
         this.config = config;
+
+        this.metricsEnabled = config.enableMetrics() || MetricsUtils.defaultEnabled();
+        if (metricsEnabled) {
+            Tag nameTag = Tag.create("name", name);
+            callsCounterMetric = MetricsUtils.counterBuilder(FT_BULKHEAD_CALLS_TOTAL, nameTag);
+            waitingDurationMetric = MetricsUtils.timerBuilder(FT_BULKHEAD_WAITINGDURATION, nameTag);
+            MetricsUtils.gaugeBuilder(FT_BULKHEAD_EXECUTIONSRUNNING, concurrentExecutions::get, nameTag);
+            MetricsUtils.gaugeBuilder(FT_BULKHEAD_EXECUTIONSWAITING, callsWaiting::get, nameTag);
+            MetricsUtils.gaugeBuilder(FT_BULKHEAD_EXECUTIONSREJECTED, callsRejected::get, nameTag);
+        }
     }
 
     @Override
@@ -76,6 +96,9 @@ class BulkheadImpl implements Bulkhead {
         // execute immediately if semaphore can be acquired
         boolean acquired;
         try {
+            if (metricsEnabled) {
+                callsCounterMetric.increment();
+            }
             acquired = inProgress.tryAcquire();
         } catch (Throwable t) {
             inProgressLock.unlock();
@@ -105,11 +128,23 @@ class BulkheadImpl implements Bulkhead {
         try {
             // block current thread until barrier is retracted
             Barrier barrier;
+            long start = 0L;
             try {
                 listeners.forEach(l -> l.enqueueing(supplier));
+                if (metricsEnabled) {
+                    start = System.nanoTime();
+                    callsWaiting.incrementAndGet();
+                }
                 barrier = queue.enqueue(supplier);
             } finally {
-                inProgressLock.unlock(); // we have enqueued, now we can wait
+                try {
+                    if (metricsEnabled) {
+                        waitingDurationMetric.record(System.nanoTime() - start, TimeUnit.NANOSECONDS);
+                        callsWaiting.decrementAndGet();
+                    }
+                } finally {
+                    inProgressLock.unlock(); // we have enqueued, now we can wait
+                }
             }
 
             if (barrier == null) {

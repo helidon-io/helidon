@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
-import static java.lang.System.Logger.Level.TRACE;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
@@ -38,10 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-class BulkheadTest {
-    private static final System.Logger LOGGER = System.getLogger(BulkheadTest.class.getName());
-
-    private static final long WAIT_TIMEOUT_MILLIS = 5000;
+class BulkheadTest extends BulkheadBaseTest {
 
     @BeforeAll
     static void setupTest() {
@@ -205,68 +201,5 @@ class BulkheadTest {
         Throwable cause = executionException.getCause();
         assertThat(cause, notNullValue());
         assertThat(cause, instanceOf(IllegalStateException.class));
-    }
-
-    /**
-     * A task to submit to a bulkhead. Can be checked for startup and manually
-     * unblocked for completion.
-     */
-    private static class Task {
-        private final CountDownLatch started = new CountDownLatch(1);
-        private final CountDownLatch blocked = new CountDownLatch(1);
-
-        private final int index;
-        private CompletableFuture<?> future;
-
-        Task(int index) {
-            this.index = index;
-        }
-
-        int run() {
-            LOGGER.log(TRACE, "Task " + index + " running on thread " + Thread.currentThread().getName());
-
-            started.countDown();
-            try {
-                blocked.await();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-            return index;
-        }
-
-        boolean isStarted() {
-            return started.getCount() == 0;
-        }
-
-        boolean waitUntilStarted(long millis) throws InterruptedException {
-            return started.await(millis, TimeUnit.MILLISECONDS);
-        }
-
-        boolean isBlocked() {
-            return blocked.getCount() == 1;
-        }
-
-        void unblock() {
-            blocked.countDown();
-        }
-
-        void future(CompletableFuture<?> future) {
-            this.future = future;
-        }
-
-        CompletableFuture<?> future() {
-            return future;
-        }
-    }
-
-    private static void assertEventually(Supplier<Boolean> predicate, long millis) throws InterruptedException {
-        long start = System.currentTimeMillis();
-        do {
-            if (predicate.get()) {
-                return;
-            }
-            Thread.sleep(100);
-        } while (System.currentTimeMillis() - start <= millis);
-        fail("Predicate failed after " + millis + " milliseconds");
     }
 }

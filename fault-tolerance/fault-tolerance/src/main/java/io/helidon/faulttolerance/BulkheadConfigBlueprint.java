@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,6 +77,19 @@ interface BulkheadConfigBlueprint extends Prototype.Factory<Bulkhead> {
      * @return name of this bulkhead
      */
     Optional<String> name();
+
+    /**
+     * Flag to enable metrics for this instance. The value of this flag is
+     * combined with the global config entry
+     * {@link io.helidon.faulttolerance.FaultTolerance#FT_METRICS_DEFAULT_ENABLED}.
+     * If either of these flags is {@code true}, then metrics will be enabled
+     * for the instance.
+     *
+     * @return metrics enabled flag
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(false)
+    boolean enableMetrics();
 
     class BuilderDecorator implements Prototype.BuilderDecorator<BulkheadConfig.BuilderBase<?, ?>> {
         @Override
