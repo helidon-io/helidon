@@ -262,19 +262,13 @@ in Helidon when a method is decorated with multiple annotations.
 == Metrics
 
 The Helidon Fault Tolerance module has support for some basic metrics to monitor
-certain conditions. Metrics are disabled by default, but can be enabled via config by
-setting the property `ft.metrics.enabled=true` and by including an actual metrics
-implementation in your classpath.
+certain application conditions. Metrics are disabled by default, but can be enabled
+via config by setting the property `ft.metrics.enabled=true` and by including an actual
+metrics implementation in your classpath. For more information about metrics implementations
+see xref:{rootdir}/se/metrics/metrics.adoc[Helidon Metrics].
 
-```
-<dependency>
-    <groupId>io.helidon.metrics</groupId>
-    <artifactId>helidon-metrics</artifactId>
-</dependency>
-```
-
-The following tables lists all the metrics created by the Fault Tolerance module.
-Note that these metrics are generated per instance, and that each instance _must_
+The following tables list all the metrics created by the Fault Tolerance module.
+Note that these metrics are generated per command instance, and that each instance _must_
 be identified by a unique name --assigned either programmatically by
 the application developer or automatically by the API.
 
