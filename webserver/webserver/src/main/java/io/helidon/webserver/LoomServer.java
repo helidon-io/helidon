@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +53,7 @@ class LoomServer implements WebServer {
     private static final AtomicInteger WEBSERVER_COUNTER = new AtomicInteger(1);
 
     private final Map<String, ServerListener> listeners;
+    private final Runnable afterStartNotifier;
     private final AtomicBoolean running = new AtomicBoolean();
     private final Lock lifecycleLock = new ReentrantLock();
     private final ExecutorService executorService;
@@ -101,6 +102,7 @@ class LoomServer implements WebServer {
         });
 
         listeners = Map.copyOf(listenerMap);
+        afterStartNotifier = () -> listeners.values().forEach(l -> l.router().afterStart(this));
     }
 
     @Override
@@ -224,6 +226,8 @@ class LoomServer implements WebServer {
                 + now + " milliseconds. "
                 + uptime + " milliseconds since JVM startup. "
                 + "Java " + Runtime.version());
+
+        afterStartNotifier.run();
 
         if ("!".equals(System.getProperty(EXIT_ON_STARTED_KEY))) {
             LOGGER.log(System.Logger.Level.INFO, String.format("Exiting, -D%s set.", EXIT_ON_STARTED_KEY));

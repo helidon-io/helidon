@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,6 +60,14 @@ public interface Router {
      * This is called before server opens ports.
      */
     void beforeStart();
+
+    /**
+     * This is called after the server's listeners have successfully started.
+     *
+     * @param webServer the {@link WebServer} that has successfully started
+     */
+    default void afterStart(WebServer webServer) {
+    }
 
     /**
      * List of all conifgured routings.
