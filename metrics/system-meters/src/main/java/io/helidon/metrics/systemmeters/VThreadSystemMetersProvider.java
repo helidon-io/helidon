@@ -27,6 +27,7 @@ import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 import io.helidon.metrics.spi.MetersProvider;
 
@@ -129,10 +130,12 @@ public class VThreadSystemMetersProvider implements MetersProvider {
         });
     }
 
-    private Timer findPinned() {
-        var result = Metrics.globalRegistry().timer(METER_NAME_PREFIX + PINNED, List.of());
+    // visible for testing
+    Timer findPinned() {
+        var result = Metrics.globalRegistry().timer(METER_NAME_PREFIX + RECENT_PINNED,
+                                                    List.of(Tag.create("scope", METER_SCOPE)));
         if (result.isEmpty()) {
-            throw new IllegalStateException(METER_NAME_PREFIX + "pinned meter expected but not registered");
+            throw new IllegalStateException(METER_NAME_PREFIX + RECENT_PINNED + " meter expected but not registered");
         }
         return result.get();
     }

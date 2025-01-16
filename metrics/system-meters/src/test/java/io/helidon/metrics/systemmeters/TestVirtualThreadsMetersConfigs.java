@@ -100,4 +100,14 @@ class TestVirtualThreadsMetersConfigs {
 
     }
 
+    @Test
+    void checkRecentPinnedTimerLookup() {
+        Config config = Config.just(ConfigSources.create(Map.of("virtual-threads.pinned.threshold", "PT0.040S")));
+        MetricsFactory metricsFactory = MetricsFactory.getInstance(config);
+        VThreadSystemMetersProvider provider = new VThreadSystemMetersProvider();
+        provider.meterBuilders(metricsFactory);
+
+        provider.findPinned();
+    }
+
 }
