@@ -111,6 +111,8 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
       - uses: ./.github/actions/common
+        # disable others on windows
+        if: ${{ matrix.platform != 'windows' || matrix.moduleSet != 'others'}}
         with:
           build-cache: read-only
           test-artifact-name: tests-${{ matrix.moduleSet }}-${{ matrix.platform }}
