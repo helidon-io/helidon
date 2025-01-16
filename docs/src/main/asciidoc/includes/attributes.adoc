@@ -277,7 +277,7 @@ endif::[]
 :oracle-ucp-javadoc-base-url: https://docs.oracle.com/en/database/oracle/oracle-database/{version-lib-oracle-ucp}/jjuar
 
 :micrometer-url: https://micrometer.io
-:micrometer-api-url: https://docs.micrometer.io/micrometer/reference/concepts.html
+:micrometer-api-url: https://docs.micrometer.io/micrometer/reference/concepts
 :micrometer-javadoc-base-url: https://javadoc.io/doc/io.micrometer
 :micrometer-javadoc-registry-prometheus-base-url: {micrometer-javadoc-base-url}/micrometer-registry-prometheus/{version-lib-micrometer}/io/micrometer/prometheus
 
@@ -289,6 +289,10 @@ endif::[]
 :openapi-generator-tool-docs-url: {openapi-generator-tool-base-url}/blob/{openapi-generator-site-version}/docs
 :openapi-generator-tool-generators-docs-url: {openapi-generator-tool-docs-url}/generators
 :openapi-generator-tool-site-url: https://openapi-generator.tech
+
+// Exposition formats for metrics
+:prometheus-exposition-format-doc-url: https://github.com/prometheus/docs/blob/main/content/docs/instrumenting/exposition_formats.md
+:openmetrics-format-doc-url: https://github.com/prometheus/OpenMetrics/blob/main/specification/OpenMetrics.md
 
 // GraalVM
 :graalvm-jdk-version: 21
