@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import io.helidon.common.LazyValue;
@@ -27,7 +28,7 @@ import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
-import io.helidon.metrics.api.Tag;
+import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.api.Timer;
 import io.helidon.metrics.spi.MetersProvider;
 
@@ -133,7 +134,8 @@ public class VThreadSystemMetersProvider implements MetersProvider {
     // visible for testing
     Timer findPinned() {
         var result = Metrics.globalRegistry().timer(METER_NAME_PREFIX + RECENT_PINNED,
-                                                    List.of(Tag.create("scope", METER_SCOPE)));
+                                                    SystemTagsManager.instance().withScopeTag(new ArrayList<>(),
+                                                                                              Optional.of(METER_SCOPE)));
         if (result.isEmpty()) {
             throw new IllegalStateException(METER_NAME_PREFIX + RECENT_PINNED + " meter expected but not registered");
         }
