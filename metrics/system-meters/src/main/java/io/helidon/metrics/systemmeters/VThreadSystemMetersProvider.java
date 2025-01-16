@@ -17,6 +17,7 @@ package io.helidon.metrics.systemmeters;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -134,7 +135,7 @@ public class VThreadSystemMetersProvider implements MetersProvider {
     // visible for testing
     Timer findPinned() {
         var result = Metrics.globalRegistry().timer(METER_NAME_PREFIX + RECENT_PINNED,
-                                                    SystemTagsManager.instance().withScopeTag(new ArrayList<>(),
+                                                    SystemTagsManager.instance().withScopeTag(Collections.emptyList(),
                                                                                               Optional.of(METER_SCOPE)));
         if (result.isEmpty()) {
             throw new IllegalStateException(METER_NAME_PREFIX + RECENT_PINNED + " meter expected but not registered");
