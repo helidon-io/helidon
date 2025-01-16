@@ -32,7 +32,7 @@ env:
   JAVA_VERSION: 21
   GRAALVM_VERSION: 21.0.3
   JAVA_DISTRO: oracle
-  MAVEN_ARGS: |
+  MVN_ARGS: |
     -B -fae -e
     -Dmaven.wagon.httpconnectionManager.ttlSeconds=60
     -Dmaven.wagon.http.retryHandler.count=3
@@ -88,8 +88,8 @@ jobs:
           build-cache: read-write
           maven-cache: read-write
           run: |
-            mvn ${MAVEN_ARGS} build-cache:go-offline
-            mvn ${MAVEN_ARGS} -T8 \
+            mvn ${MVN_ARGS} build-cache:go-offline
+            mvn ${MVN_ARGS} -T8 \
               -Dorg.slf4j.simpleLogger.showThreadName=true \
               -DskipTests \
               -Ptests \
@@ -111,13 +111,11 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
       - uses: ./.github/actions/common
-        # disable others on windows
-        if: ${{ matrix.platform != 'windows' || matrix.moduleSet != 'others'}}
         with:
           build-cache: read-only
           test-artifact-name: tests-${{ matrix.moduleSet }}-${{ matrix.platform }}
           run: |
-            mvn ${MAVEN_ARGS} \
+            mvn ${MVN_ARGS} \
               -DreactorRule=tests \
               -DmoduleSet=${{ matrix.moduleSet }} \
               -Dsurefire.reportNameSuffix=${{ matrix.platform }} \
@@ -139,7 +137,7 @@ jobs:
           build-cache: read-only
           test-artifact-name: tests-tck-${{ matrix.moduleSet }}
           run: |
-            mvn ${MAVEN_ARGS} \
+            mvn ${MVN_ARGS} \
               -DreactorRule=tck \
               -DmoduleSet=${{ matrix.moduleSet }} \
               verify
@@ -159,7 +157,7 @@ jobs:
         with:
           build-cache: read-only
           run: |
-            mvn ${MAVEN_ARGS} -T8 \
+            mvn ${MVN_ARGS} -T8 \
               -Dorg.slf4j.simpleLogger.showThreadName=true \
               -DreactorRule=default \
               -DmoduleSet=${{ matrix.moduleSet }} \
@@ -185,7 +183,7 @@ jobs:
             **/target/state-javadoc.xml
             **/target/*-javadoc.jar
           run: |
-            mvn ${MAVEN_ARGS} -T8 \
+            mvn ${MVN_ARGS} -T8 \
               -Dorg.slf4j.simpleLogger.showThreadName=true \
               -DreactorRule=default \
               -DmoduleSet=${{ matrix.moduleSet }} \
@@ -209,7 +207,7 @@ jobs:
             */target/state-docs.xml
             */target/*-docs.jar
           run: |
-            mvn ${MAVEN_ARGS} \
+            mvn ${MVN_ARGS} \
               -Dcache.recordSuffix=docs \
               -f docs/pom.xml \
               -Pjavadoc \
@@ -284,7 +282,7 @@ jobs:
           native-image: ${{ matrix.packaging == 'native' }}
           test-artifact-name: tests-archetypes-${{ matrix.group }}-${{ matrix.packaging }}
           run: |
-            mvn ${MAVEN_ARGS} \
+            mvn ${MVN_ARGS} \
               -f archetypes/archetypes/pom.xml \
               -Darchetype.test.permutationStartIndex=${{ matrix.start }} \
               -Darchetype.test.permutationEndIndex=${{ matrix.end }} \
@@ -305,7 +303,7 @@ jobs:
           build-cache: read-only
           test-artifact-name: tests-legacy-archetypes
           run: |
-            mvn ${MAVEN_ARGS} \
+            mvn ${MVN_ARGS} \
               -f archetypes/pom.xml \
               -Darchetype.test.generatePermutations=false \
               install
@@ -332,7 +330,7 @@ jobs:
           build-cache: read-only
           test-artifact-name: tests-packaging-${{ matrix.packaging }}-${{ matrix.platform }}
           run: |
-            mvn ${MAVEN_ARGS} \
+            mvn ${MVN_ARGS} \
               -f tests/integration/packaging/pom.xml \
               -P${{ matrix.packaging }}-image \
               verify
@@ -360,7 +358,7 @@ jobs:
           native-image: true
           test-artifact-name: tests-native-image-${{ matrix.module }}-${{ matrix.platform }}
           run: |
-            mvn ${MAVEN_ARGS} \
+            mvn ${MVN_ARGS} \
               -f tests/integration/packaging/pom.xml \
               -pl ${{ matrix.module }} \
               -Pnative-image \
