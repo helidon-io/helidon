@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+# Copyright (c) 2019, 2025 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -63,10 +63,10 @@ for ((i=0;i<${#ARGS[@]};i++))
   ARG=${ARGS[${i}]}
   case ${ARG} in
   "--staged")
-    MAVEN_ARGS="${MAVEN_ARGS} -Possrh-staging"
+    MVN_ARGS="${MVN_ARGS} -Possrh-staging"
     ;;
   "--clean")
-    MAVEN_ARGS="${MAVEN_ARGS} -Dmaven.repo.local=.m2/repository"
+    MVN_ARGS="${MVN_ARGS} -Dmaven.repo.local=.m2/repository"
     ;;
   "--version="*)
     VERSION=${ARG#*=}
@@ -234,7 +234,7 @@ test_archetype(){
   printf "\n*******************************************\n\n"
 
   # shellcheck disable=SC2086
-  mvn ${MAVEN_ARGS} -U \
+  mvn ${MVN_ARGS} -U \
     -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId="helidon-${ARCHETYPE}" \
@@ -249,7 +249,7 @@ test_archetype(){
   printf "\n*******************************************\n\n"
 
   # shellcheck disable=SC2086
-  mvn ${MAVEN_ARGS} \
+  mvn ${MVN_ARGS} \
     -f "helidon-${ARCHETYPE}/pom.xml" \
     clean package
 
@@ -268,7 +268,7 @@ test_archetype(){
   printf "\n*******************************************\n\n"
 
   # shellcheck disable=SC2086
-  mvn ${MAVEN_ARGS} \
+  mvn ${MVN_ARGS} \
     -f "helidon-${ARCHETYPE}/pom.xml" \
     -DskipTests \
     -Pjlink-image \
@@ -294,7 +294,7 @@ readonly LOG_FILE
 mkdir -p "${WORK_DIR}"
 
 maven_settings > "${WORK_DIR}/settings.xml"
-MAVEN_ARGS="${MAVEN_ARGS} -s ${WORK_DIR}/settings.xml"
+MVN_ARGS="${MVN_ARGS} -s ${WORK_DIR}/settings.xml"
 
 exec 1>> >(tee  "${LOG_FILE}")
 exec 2>> >(tee  "${LOG_FILE}")

@@ -134,8 +134,8 @@ runs:
           build-cache-${{ github.run_id }}-
     - name: Exec
       env:
-        MAVEN_ARGS: |
-          ${{ env.MAVEN_ARGS }}
+        MVN_ARGS: |
+          ${{ env.MVN_ARGS }}
           -Dmaven.repo.local=${{ github.workspace }}/.m2/repository
       run: ${{ inputs.run }}
       shell: bash
