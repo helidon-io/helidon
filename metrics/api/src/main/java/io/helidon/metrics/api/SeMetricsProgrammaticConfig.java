@@ -24,8 +24,24 @@ import io.helidon.metrics.spi.MetricsProgrammaticConfig;
  */
 public class SeMetricsProgrammaticConfig implements MetricsProgrammaticConfig {
 
+    /**
+     * For service loading.
+     */
+    public SeMetricsProgrammaticConfig() {
+    }
+
+    @Override
+    public Optional<String> scopeTagName() {
+        return Optional.of("scope");
+    }
+
     @Override
     public Optional<String> appTagName() {
         return Optional.of("app");
+    }
+
+    @Override
+    public Optional<String> scopeDefaultValue() {
+        return Optional.of(Meter.Scope.DEFAULT);
     }
 }
