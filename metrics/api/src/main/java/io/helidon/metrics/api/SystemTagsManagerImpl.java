@@ -49,7 +49,6 @@ class SystemTagsManagerImpl implements SystemTagsManager {
     private static final Collection<Consumer<SystemTagsManager>> ON_CHANGE_SUBSCRIBERS = new ArrayList<>();
 
     private final Map<String, String> systemTagPairs = new TreeMap<>();
-    private final Set<String> systemTagNames = new HashSet<>(); // tag names for global tags and app
     private final Set<String> systemAndScopeTagNames = new HashSet<>(); // tag names for globa tags, app, and scope
 
     /*
@@ -67,10 +66,8 @@ class SystemTagsManagerImpl implements SystemTagsManager {
 
     private SystemTagsManagerImpl(MetricsConfig metricsConfig) {
 
-        metricsConfig.tags().forEach(tag -> {
-            systemTagNames.add(tag.key());
-            systemTagPairs.put(tag.key(), tag.value());
-        });
+        metricsConfig.tags().forEach(tag ->
+                                             systemTagPairs.put(tag.key(), tag.value()));
 
         // Add a tag for the app name if there is an appName setting in config AND we have a setting
         // from somewhere for the tag name to use for recording the app name.
@@ -79,13 +76,11 @@ class SystemTagsManagerImpl implements SystemTagsManager {
                 .filter(Predicate.not(String::isBlank))
                 .ifPresent(tagNameToUse ->
                                    metricsConfig.appName()
-                                           .ifPresent(appNameToUse -> {
-                                               systemTagPairs.put(tagNameToUse, appNameToUse);
-                                               systemTagNames.add(tagNameToUse);
-                                           })
+                                           .ifPresent(appNameToUse ->
+                                                              systemTagPairs.put(tagNameToUse, appNameToUse))
                 );
 
-        systemAndScopeTagNames.addAll(systemTagNames);
+        systemAndScopeTagNames.addAll(systemTagPairs.keySet());
         metricsConfig.scoping().tagName().ifPresent(scopeTagNameToUse -> {
             systemAndScopeTagNames.add(scopeTagNameToUse);
             scopeTagName = scopeTagNameToUse;
@@ -137,7 +132,7 @@ class SystemTagsManagerImpl implements SystemTagsManager {
 
     @Override
     public Iterable<Tag> withoutSystemTags(Iterable<Tag> tags) {
-        return without(tags, systemTagNames);
+        return without(tags, systemTagPairs.keySet());
     }
 
     @Override
