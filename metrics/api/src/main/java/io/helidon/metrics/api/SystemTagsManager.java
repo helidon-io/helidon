@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.metrics.api;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -118,6 +119,18 @@ public interface SystemTagsManager {
      * @return system tags
      */
     Iterable<Tag> displayTags();
+
+    /**
+     * Returns name/value pairs of system tags, avoiding constructing the provider's {@link io.helidon.metrics.api.Tag}
+     * implementations for each.
+     *
+     * @return system tag name/value pairs
+     */
+    default Map<String, String> displayTagPairs() {
+        Map<String, String> result = new TreeMap<>();
+        displayTags().forEach(tag -> result.put(tag.key(), tag.value()));
+        return result;
+    }
 
     /**
      * Scans the provided tag names and throws an exception if any is a reserved tag name.

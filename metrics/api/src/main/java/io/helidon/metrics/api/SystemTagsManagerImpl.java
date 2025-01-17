@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.StreamSupport;
 
+import io.helidon.common.LazyValue;
 import io.helidon.metrics.spi.MetricsProgrammaticConfig;
 
 /**
@@ -47,19 +48,29 @@ class SystemTagsManagerImpl implements SystemTagsManager {
 
     private static final Collection<Consumer<SystemTagsManager>> ON_CHANGE_SUBSCRIBERS = new ArrayList<>();
 
-    private final List<Tag> systemTags; // global tags plus the app tag, if any specified
+    private final Map<String, String> systemTagPairs = new TreeMap<>();
     private final Set<String> systemTagNames = new HashSet<>(); // tag names for global tags and app
     private final Set<String> systemAndScopeTagNames = new HashSet<>(); // tag names for globa tags, app, and scope
+
+    /*
+    Defer invoking Tag.create because that could create a infinite recursive loop; Tag.create invokes
+    MetricsFactory.getInstance().tagCreate and MetricsFactory.getInstance could trigger another attempt to instantiate this
+    SystemTagsManagerImpl.
+     */
+    private final LazyValue<List<Tag>> systemTags = LazyValue.create(() ->
+             systemTagPairs.entrySet().stream()
+                     .map(entry -> Tag.create(entry.getKey(), entry.getValue()))
+                     .toList()); // global tags plus the app
+    // tag, if any specified
     private String scopeTagName;
     private String defaultScopeValue;
 
     private SystemTagsManagerImpl(MetricsConfig metricsConfig) {
 
-        metricsConfig.tags().forEach(tag -> systemTagNames.add(tag.key()));
-        systemAndScopeTagNames.addAll(systemTagNames);
-        metricsConfig.scoping().tagName().ifPresent(systemAndScopeTagNames::add);
-
-        List<Tag> result = new ArrayList<>(metricsConfig.tags());
+        metricsConfig.tags().forEach(tag -> {
+            systemTagNames.add(tag.key());
+            systemTagPairs.put(tag.key(), tag.value());
+        });
 
         // Add a tag for the app name if there is an appName setting in config AND we have a setting
         // from somewhere for the tag name to use for recording the app name.
@@ -68,14 +79,17 @@ class SystemTagsManagerImpl implements SystemTagsManager {
                 .filter(Predicate.not(String::isBlank))
                 .ifPresent(tagNameToUse ->
                                    metricsConfig.appName()
-                                           .ifPresent(appNameToUse -> result.add(Tag.create(tagNameToUse, appNameToUse)))
+                                           .ifPresent(appNameToUse -> {
+                                               systemTagPairs.put(tagNameToUse, appNameToUse);
+                                               systemTagNames.add(tagNameToUse);
+                                           })
                 );
 
-        systemTags = List.copyOf(result);
-
-        // Set the scope tag, if appropriate.
-        metricsConfig.scoping().tagName()
-                .ifPresent(tagNameToUse -> scopeTagName = tagNameToUse);
+        systemAndScopeTagNames.addAll(systemTagNames);
+        metricsConfig.scoping().tagName().ifPresent(scopeTagNameToUse -> {
+            systemAndScopeTagNames.add(scopeTagNameToUse);
+            scopeTagName = scopeTagNameToUse;
+        });
         defaultScopeValue = metricsConfig.scoping().defaultValue().orElse(null);
     }
 
@@ -85,7 +99,6 @@ class SystemTagsManagerImpl implements SystemTagsManager {
 
     // for testing
     private SystemTagsManagerImpl() {
-        systemTags = List.of();
         scopeTagName = "scope";
     }
 
@@ -105,7 +118,7 @@ class SystemTagsManagerImpl implements SystemTagsManager {
 
     static SystemTagsManagerImpl instance(MetricsConfig metricsConfig) {
         instance = createWithoutSaving(metricsConfig);
-        ON_CHANGE_SUBSCRIBERS.forEach(sub -> sub.accept(instance()));
+        ON_CHANGE_SUBSCRIBERS.forEach(sub -> sub.accept(instance));
         return instance;
     }
 
@@ -180,7 +193,12 @@ class SystemTagsManagerImpl implements SystemTagsManager {
 
     @Override
     public Iterable<Tag> displayTags() {
-        return List.copyOf(systemTags);
+        return List.copyOf(systemTags.get());
+    }
+
+    @Override
+    public Map<String, String> displayTagPairs() {
+        return Map.copyOf(systemTagPairs);
     }
 
     @Override
