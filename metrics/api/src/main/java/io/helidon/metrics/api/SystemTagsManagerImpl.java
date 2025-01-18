@@ -17,6 +17,7 @@ package io.helidon.metrics.api;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -188,12 +189,12 @@ class SystemTagsManagerImpl implements SystemTagsManager {
 
     @Override
     public Iterable<Tag> displayTags() {
-        return List.copyOf(systemTags.get());
+        return Collections.unmodifiableCollection(systemTags.get());
     }
 
     @Override
     public Map<String, String> displayTagPairs() {
-        return Map.copyOf(systemTagPairs);
+        return Collections.unmodifiableMap(systemTagPairs);
     }
 
     @Override
