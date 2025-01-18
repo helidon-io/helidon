@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package io.helidon.http;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,8 +24,6 @@ import java.util.List;
  * Internal utility methods.
  */
 final class Utils {
-    static final Runnable EMPTY_RUNNABLE = () -> {
-    };
 
     private Utils() {
     }
@@ -78,36 +74,6 @@ final class Utils {
             result.add(token.toString());
         }
         return result;
-    }
-
-    /**
-     * Unwrap from double-quotes - if exists.
-     *
-     * @param str string to unwrap.
-     * @return unwrapped string.
-     */
-    static String unwrap(String str) {
-        if (str.length() >= 2 && '"' == str.charAt(0) && '"' == str.charAt(str.length() - 1)) {
-            return str.substring(1, str.length() - 1);
-        }
-        return str;
-    }
-
-    /**
-     * Appends the content of the given byte buffer into the given output stream.
-     *
-     * @param out        the stream where to append the byte buffer
-     * @param byteBuffer the byte buffer to append to the stream
-     * @throws java.io.IOException in case of an IO problem
-     */
-    static void write(ByteBuffer byteBuffer, OutputStream out) throws IOException {
-        if (byteBuffer.hasArray()) {
-            out.write(byteBuffer.array(), byteBuffer.arrayOffset() + byteBuffer.position(), byteBuffer.remaining());
-        } else {
-            byte[] buff = new byte[byteBuffer.remaining()];
-            byteBuffer.get(buff);
-            out.write(buff);
-        }
     }
 
     /**
