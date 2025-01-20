@@ -226,7 +226,8 @@ public final class Service {
      * A qualifier that can restrict injection to specifically named instances, or that qualifies services with that name.
      */
     @Qualifier
-    @Retention(RetentionPolicy.CLASS)
+    // we need runtime retention policy to correctly handle CDI integration
+    @Retention(RetentionPolicy.RUNTIME)
     @Documented
     @Target({ElementType.CONSTRUCTOR, ElementType.METHOD, ElementType.PARAMETER, ElementType.FIELD, ElementType.TYPE})
     public @interface Named {

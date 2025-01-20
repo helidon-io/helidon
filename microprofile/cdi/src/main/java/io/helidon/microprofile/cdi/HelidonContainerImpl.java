@@ -21,7 +21,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -49,7 +48,6 @@ import jakarta.enterprise.inject.Any;
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.CDI;
-import jakarta.enterprise.inject.spi.Extension;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.weld.AbstractCDI;
@@ -149,7 +147,6 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
         LOGGER.fine(() -> "Initializing CDI container " + id);
 
         addHelidonBeanDefiningAnnotations("jakarta.ws.rs.Path",
-                                          "jakarta.ws.rs.ApplicationPath",
                                           "jakarta.ws.rs.ext.Provider",
                                           "jakarta.websocket.server.ServerEndpoint",
                                           "org.eclipse.microprofile.graphql.GraphQLApi",
@@ -176,11 +173,7 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
 
         setProperties(new HashMap<>(properties));
 
-        ServiceLoader.load(Extension.class).findFirst().ifPresent(it -> {
-            // adding an empty extension to start even with just extensions on classpath
-            // Weld would fail (as it sets the extensions after checking if they are empty)
-            addExtension(new Extension() { });
-        });
+        addExtension(new InjectExtension());
 
         Deployment deployment = createDeployment(resourceLoader, bootstrap);
         // we need to configure custom proxy services to

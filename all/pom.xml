@@ -784,6 +784,18 @@
             <artifactId>helidon-integrations-vault-cdi</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.integrations.langchain4j</groupId>
+            <artifactId>helidon-integrations-langchain4j</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.langchain4j</groupId>
+            <artifactId>helidon-integrations-langchain4j-codegen</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.langchain4j.providers</groupId>
+            <artifactId>helidon-integrations-langchain4j-providers-open-ai</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.openapi</groupId>
             <artifactId>helidon-openapi</artifactId>
         </dependency>
@@ -1115,6 +1127,10 @@
         <dependency>
             <groupId>io.helidon.metadata</groupId>
             <artifactId>helidon-metadata-hson</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.metadata</groupId>
+            <artifactId>helidon-metadata-reflection</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.integrations.oci.sdk</groupId>

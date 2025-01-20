@@ -97,6 +97,10 @@
         <version.lib.junit>5.9.3</version.lib.junit>
         <version.lib.junit-platform-testkit>1.11.3</version.lib.junit-platform-testkit>
         <version.lib.kafka>3.8.1</version.lib.kafka>
+        <!-- Kotlin: dependency convergence requirement, we never use this directly -->
+        <version.lib.kotlin>1.9.10</version.lib.kotlin>
+        <version.lib.langchain4j>0.35.0</version.lib.langchain4j>
+        <version.lib.langchain4j.oracle>0.1.0</version.lib.langchain4j.oracle>
         <version.lib.log4j>2.21.1</version.lib.log4j>
         <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
         <version.lib.maven-wagon>2.10</version.lib.maven-wagon>
@@ -962,6 +966,53 @@
                 <artifactId>kafka-clients</artifactId>
                 <version>${version.lib.kafka}</version>
             </dependency>
+            <!-- Langchain4j integration -->
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j-cohere</artifactId>
+                <version>${version.lib.langchain4j}</version>
+            </dependency>
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j-ollama</artifactId>
+                <version>${version.lib.langchain4j}</version>
+            </dependency>
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j-open-ai</artifactId>
+                <version>${version.lib.langchain4j}</version>
+            </dependency>
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j-oracle</artifactId>
+                <version>${version.lib.langchain4j}</version>
+            </dependency>
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j</artifactId>
+                <version>${version.lib.langchain4j}</version>
+            </dependency>
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j-core</artifactId>
+                <version>${version.lib.langchain4j}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-stdlib</artifactId>
+                <version>${version.lib.kotlin}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-stdlib-common</artifactId>
+                <version>${version.lib.kotlin}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-stdlib-jdk8</artifactId>
+                <version>${version.lib.kotlin}</version>
+            </dependency>
+            <!-- Jersey -->
             <dependency>
                 <groupId>org.glassfish.jersey.media</groupId>
                 <artifactId>jersey-media-json-binding</artifactId>
