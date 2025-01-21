@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -134,7 +134,6 @@ public class ConfigAsciidocGenerator {
                 .filter(method -> !Modifier.isStatic(method.getModifiers()))
                 .filter(method -> !Void.class.equals(method.getReturnType()))
                 .filter(method -> asMethodsFilter.test(method) || mapMethodsFilter.test(method))
-                //.peek(method -> System.out.println(methodToString(method)))
                 .collect(Collectors.toSet());
 
         buffer.append("= Common Accessor Methods\n");
@@ -300,7 +299,7 @@ public class ConfigAsciidocGenerator {
                 .collect(Collectors.joining(","));
 
         AccessType accessType = AccessType.of(withDefault, optional);
-        MethodDesc methodDesc = new MethodDesc(kindDesc, methodName, params, accessType);
+        MethodDesc methodDesc = new MethodDesc(methodName, params);
 
         Map<AccessType, MethodDesc> typeMethods = methods.computeIfAbsent(kindDesc, (tn) -> new HashMap<>());
         if (typeMethods.containsKey(accessType)) {
@@ -319,12 +318,6 @@ public class ConfigAsciidocGenerator {
                 .replaceAll("\\? extends T", "T")
                 .replaceAll(" ", "")
                 ;
-    }
-
-    private static String methodToString(Method method) {
-        StringBuilder sb = new StringBuilder(method.getName());
-        sb.append(" (").append(Arrays.toString(method.getParameters())).append(" ) : " + method.getGenericReturnType());
-        return sb.toString();
     }
 
     private static class KindDesc implements Comparable<KindDesc> {
@@ -389,27 +382,19 @@ public class ConfigAsciidocGenerator {
             }
             if (firstParamClass != null && method.getParameterCount() > 0) {
                 Class<?> currentFirstParameterClass = method.getParameters()[0].getType();
-                if (firstParamClass.isAssignableFrom(currentFirstParameterClass)) {
-                    return true;
-                } else {
-                    //System.out.println("Not acceptable class: " + currentFirstParameterClass);
-                }
+                return firstParamClass.isAssignableFrom(currentFirstParameterClass);
             }
             return false;
         }
     }
 
     private static class MethodDesc {
-        private KindDesc kind;
         private String name;
         private String params;
-        private AccessType accessType;
 
-        public MethodDesc(KindDesc kind, String name, String params, AccessType accessType) {
-            this.kind = kind;
+        public MethodDesc(String name, String params) {
             this.name = name;
             this.params = params;
-            this.accessType = accessType;
         }
 
         public String format() {
@@ -425,18 +410,14 @@ public class ConfigAsciidocGenerator {
     }
 
     private enum AccessType {
-        COMMON("Common", false, false),
-        WITH_DEFAULT("With Default", true, false),
-        OPTIONAL("Optional", false, true);
+        COMMON("Common"),
+        WITH_DEFAULT("With Default"),
+        OPTIONAL("Optional");
 
         private String desc;
-        private boolean withDefault;
-        private boolean optional;
 
-        AccessType(String desc, boolean withDefault, boolean optional) {
+        AccessType(String desc) {
             this.desc = desc;
-            this.withDefault = withDefault;
-            this.optional = optional;
         }
 
         public static AccessType of(boolean withDefault, boolean optional) {
