@@ -16,7 +16,13 @@
 
 package io.helidon.webserver.tests.resourcelimit;
 
+import java.util.Collections;
+import java.util.Optional;
+
 import io.helidon.common.concurrency.limits.AimdLimit;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.metrics.api.Timer;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webserver.WebServerConfig;
@@ -29,22 +35,23 @@ import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
 
 @ServerTest
 class AimdLimitMetricsTest {
 
     private static final String[] METRIC_NAMES = {
-            "default_aimd_queue_length",
-            "default_aimd_rejected_requests",
-            "default_aimd_rtt_seconds",
-            "default_aimd_rtt_seconds_max",
-            "default_aimd_queue_wait_time_seconds",
-            "default_aimd_queue_wait_time_seconds_max",
-            "default_aimd_concurrent_requests",
-            "default_aimd_limit"
+            "aimd_queue_length",
+            "aimd_rejected_requests",
+            "aimd_rtt_seconds",
+            "aimd_rtt_seconds_max",
+            "aimd_queue_wait_time_seconds",
+            "aimd_queue_wait_time_seconds_max",
+            "aimd_concurrent_requests",
+            "aimd_limit"
     };
 
     private final WebClient webClient;
@@ -80,6 +87,7 @@ class AimdLimitMetricsTest {
         try (HttpClientResponse res = webClient.get("/greet").request()) {
             assertThat(res.status().code(), is(200));
         }
+
         try (HttpClientResponse res = webClient.get("/observe/metrics").request()) {
             String s = res.as(String.class);
             for (String metricName : METRIC_NAMES) {
@@ -87,5 +95,10 @@ class AimdLimitMetricsTest {
             }
             assertThat(res.status().code(), is(200));
         }
+
+        MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry();
+        Optional<Timer> rtt = meterRegistry.timer("aimd_rtt", Collections.emptyList());
+        assertThat(rtt.isPresent(), is(true));
+        assertThat(rtt.get().count(), is(greaterThan(0L)));
     }
 }

@@ -16,6 +16,7 @@
 
 package io.helidon.common.concurrency.limits;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Semaphore;
@@ -30,6 +31,7 @@ import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 
 import static io.helidon.metrics.api.Meter.Scope.VENDOR;
@@ -260,36 +262,55 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
         if (config.enableMetrics()) {
             MetricsFactory metricsFactory = MetricsFactory.getInstance();
             MeterRegistry meterRegistry = Metrics.globalRegistry();
-            String namePrefix = (socketName.startsWith("@") ? socketName.substring(1) : socketName)
-                    + "_" + config.name();
+
+            // define tag if socket is not the default
+            Tag socketNameTag = null;
+            if (!socketName.equals("@default")) {
+                socketNameTag = Tag.create("socketName", socketName);
+            }
 
             if (semaphore != null) {
                 // actual number of requests queued
                 Gauge.Builder<Integer> queueLengthBuilder = metricsFactory.gaugeBuilder(
-                        namePrefix + "_queue_length", semaphore::getQueueLength).scope(VENDOR);
+                        config.name() + "_queue_length", semaphore::getQueueLength).scope(VENDOR);
+                if (socketNameTag != null) {
+                    queueLengthBuilder.tags(List.of(socketNameTag));
+                }
                 meterRegistry.getOrCreate(queueLengthBuilder);
             }
 
             // count of current requests running
             Gauge.Builder<Integer> concurrentRequestsBuilder = metricsFactory.gaugeBuilder(
-                    namePrefix + "_concurrent_requests", concurrentRequests::get).scope(VENDOR);
+                    config.name() + "_concurrent_requests", concurrentRequests::get).scope(VENDOR);
+            if (socketNameTag != null) {
+                concurrentRequestsBuilder.tags(List.of(socketNameTag));
+            }
             meterRegistry.getOrCreate(concurrentRequestsBuilder);
 
             // actual number of requests queued
             Gauge.Builder<Integer> rejectedRequestsBuilder = metricsFactory.gaugeBuilder(
-                    namePrefix + "_rejected_requests", rejectedRequests::get).scope(VENDOR);
+                    config.name() + "_rejected_requests", rejectedRequests::get).scope(VENDOR);
+            if (socketNameTag != null) {
+                rejectedRequestsBuilder.tags(List.of(socketNameTag));
+            }
             meterRegistry.getOrCreate(rejectedRequestsBuilder);
 
             // histogram of round-trip times, excluding any time queued
-            Timer.Builder rttTimerBuilder = metricsFactory.timerBuilder(namePrefix + "_rtt")
+            Timer.Builder rttTimerBuilder = metricsFactory.timerBuilder(config.name() + "_rtt")
                     .scope(VENDOR)
                     .baseUnit(Timer.BaseUnits.MILLISECONDS);
+            if (socketNameTag != null) {
+                rttTimerBuilder.tags(List.of(socketNameTag));
+            }
             rttTimer = meterRegistry.getOrCreate(rttTimerBuilder);
 
             // histogram of wait times for a permit in queue
-            Timer.Builder waitTimerBuilder = metricsFactory.timerBuilder(namePrefix + "_queue_wait_time")
+            Timer.Builder waitTimerBuilder = metricsFactory.timerBuilder(config.name() + "_queue_wait_time")
                     .scope(VENDOR)
                     .baseUnit(Timer.BaseUnits.MILLISECONDS);
+            if (socketNameTag != null) {
+                waitTimerBuilder.tags(List.of(socketNameTag));
+            }
             queueWaitTimer = meterRegistry.getOrCreate(waitTimerBuilder);
         }
     }
