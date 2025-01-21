@@ -78,13 +78,6 @@ class LimitHandlers {
         private final long timeoutMillis;
         private final Supplier<Token> tokenSupplier;
 
-        QueuedSemaphoreHandler(Semaphore semaphore, int queueLength, Duration queueTimeout) {
-            this.semaphore = semaphore;
-            this.queueLength = queueLength;
-            this.timeoutMillis = queueTimeout.toMillis();
-            this.tokenSupplier = () -> new SemaphoreToken(semaphore);
-        }
-
         QueuedSemaphoreHandler(Semaphore semaphore, int queueLength, Duration queueTimeout, Supplier<Token> tokenSupplier) {
             this.semaphore = semaphore;
             this.queueLength = queueLength;
@@ -116,29 +109,6 @@ class LimitHandlers {
         @Override
         public Semaphore semaphore() {
             return semaphore;
-        }
-    }
-
-    static class SemaphoreToken implements LimitAlgorithm.Token {
-        private final Semaphore semaphore;
-
-        SemaphoreToken(Semaphore semaphore) {
-            this.semaphore = semaphore;
-        }
-
-        @Override
-        public void dropped() {
-            semaphore.release();
-        }
-
-        @Override
-        public void ignore() {
-            semaphore.release();
-        }
-
-        @Override
-        public void success() {
-            semaphore.release();
         }
     }
 }

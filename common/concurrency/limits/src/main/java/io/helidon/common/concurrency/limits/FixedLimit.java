@@ -48,10 +48,12 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
      * Default limit, meaning unlimited execution.
      */
     public static final int DEFAULT_LIMIT = 0;
+
     /**
      * Default length of the queue.
      */
     public static final int DEFAULT_QUEUE_LENGTH = 0;
+
     /**
      * Timeout of a request that is enqueued.
      */
@@ -88,7 +90,8 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
             this.queueLength = Math.max(0, config.queueLength());
             this.handler = new LimitHandlers.QueuedSemaphoreHandler(semaphore,
                                                                     queueLength,
-                                                                    config.queueTimeout());
+                                                                    config.queueTimeout(),
+                                                                    () -> new FixedLimit.FixedToken(clock, concurrentRequests));
         }
     }
 
@@ -288,6 +291,47 @@ public class FixedLimit implements Limit, SemaphoreLimit, RuntimeType.Api<FixedL
                     .scope(VENDOR)
                     .baseUnit(Timer.BaseUnits.MILLISECONDS);
             queueWaitTimer = meterRegistry.getOrCreate(waitTimerBuilder);
+        }
+    }
+
+    private class FixedToken implements Limit.Token {
+        private final long startTime;
+
+        private FixedToken(Supplier<Long> clock, AtomicInteger concurrentRequests) {
+            startTime = clock.get();
+            concurrentRequests.incrementAndGet();
+        }
+
+        @Override
+        public void dropped() {
+            try {
+                updateMetrics(startTime, clock.get());
+            } finally {
+                semaphore.release();
+            }
+        }
+
+        @Override
+        public void ignore() {
+            concurrentRequests.decrementAndGet();
+            semaphore.release();
+        }
+
+        @Override
+        public void success() {
+            try {
+                updateMetrics(startTime, clock.get());
+                concurrentRequests.decrementAndGet();
+            } finally {
+                semaphore.release();
+            }
+        }
+    }
+
+    void updateMetrics(long startTime, long endTime) {
+        long rtt = endTime - startTime;
+        if (rttTimer != null) {
+            rttTimer.record(rtt, TimeUnit.NANOSECONDS);
         }
     }
 }
