@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ public class EtcdV2Client implements EtcdClient {
      *
      * @deprecated
      */
-    EtcdV2Client(URI... uris) {
+    public EtcdV2Client(URI... uris) {
         etcd = new mousio.etcd4j.EtcdClient(uris);
         etcd.setRetryHandler(new RetryWithTimeout(100, 2000));
     }
