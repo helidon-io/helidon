@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,15 +49,16 @@ public class WebSecurityFromConfigTest extends WebSecurityTests {
 
         Security security = Security.builder()
                 .config(config.get("security"))
-                .addAuditProvider(myAuditProvider).build();
+                .addAuditProvider(myAuditProvider)
+                .build();
         // needed for other features, such as integration with webserver
-        Contexts.globalContext().register(security);
+        Context context = Contexts.context()
+                .orElseGet(Contexts::globalContext);
 
-        Context context = Context.create();
+        context.register(security);
         context.register(myAuditProvider);
 
         serverBuilder
-                .serverContext(context)
                 .config(config.get("server"))
                 .routing(routing -> routing.get("/*", (req, res) -> {
                     Optional<SecurityContext> securityContext = Contexts.context()

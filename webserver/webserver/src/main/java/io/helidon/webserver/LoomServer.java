@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,6 +69,7 @@ class LoomServer implements WebServer {
         this.context = serverConfig.serverContext()
                 .orElseGet(() -> Context.builder()
                         .id("web-" + WEBSERVER_COUNTER.getAndIncrement())
+                        .update(it -> Contexts.context().ifPresent(it::parent))
                         .build());
         this.serverConfig = serverConfig;
         this.executorService = ExecutorsFactory.newLoomServerVirtualThreadPerTaskExecutor();
@@ -259,8 +260,10 @@ class LoomServer implements WebServer {
 
         for (ServerListener listener : listeners.values()) {
             futures.add(new ListenerFuture(listener, executorService.submit(() -> {
-                Thread.currentThread().setName(taskName + " " + listener);
-                task.accept(listener);
+                Contexts.runInContext(context, () -> {
+                    Thread.currentThread().setName(taskName + " " + listener);
+                    task.accept(listener);
+                });
             })));
         }
         for (ListenerFuture listenerFuture : futures) {
