@@ -41,6 +41,7 @@ import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.InternalServerException;
+import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;
 import io.helidon.microprofile.server.HelidonHK2InjectionManagerFactory.InjectionManagerWrapper;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
@@ -201,6 +202,7 @@ class JaxRsService implements HttpService {
     }
 
     private void doHandle(Context ctx, ServerRequest req, ServerResponse res) {
+        ServerResponseHeaders savedResponseHeaders = ServerResponseHeaders.create(res.headers());
         BaseUriRequestUri uris = BaseUriRequestUri.resolve(req);
         ContainerRequest requestContext = new ContainerRequest(uris.baseUri,
                                                                uris.requestUri,
@@ -250,6 +252,7 @@ class JaxRsService implements HttpService {
                 if (res instanceof RoutingResponse routing) {
                     if (routing.reset()) {
                         res.status(Status.OK_200);
+                        savedResponseHeaders.forEach(res::header);
                         routing.next();
                     }
                 }
