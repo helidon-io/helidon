@@ -369,6 +369,22 @@ server:
 
 See xref:{rootdir}/config/io_helidon_webserver_staticcontent_StaticContentFeature.adoc[Static Content Feature Configuration Reference] for details. The only difference is that we set welcome file to `index.html` by default.
 
+=== Re-direct root using `server.base-path`
+
+To redirect requests for the root path (`/`) to another path you can use the `server.base-path` property:
+
+[source,yaml]
+----
+server:
+  base-path: /static/index.html
+----
+
+For any HTTP request for `/` this will return a 301 with the `Location:` header set to the value of `server.base-path`.
+This is often used with Static Content Support to serve a specific `index.html`  when `/` is requested.
+
+Note that this feature is not for setting a context root for applications. To configure alternate context roots see
+see xref:jaxrs/jaxrs-applications.adoc#_setting_application_path[Setting Application Path].
+
 === Example configuration of routing
 
 A full configuration example (YAML):
