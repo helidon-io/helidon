@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,6 +82,7 @@ import org.eclipse.microprofile.openapi.models.media.Schema;
 import org.eclipse.microprofile.openapi.models.servers.ServerVariable;
 import org.jboss.jandex.IndexView;
 import org.yaml.snakeyaml.TypeDescription;
+import org.yaml.snakeyaml.introspector.Property;
 import org.yaml.snakeyaml.introspector.PropertySubstitute;
 
 import static io.helidon.webserver.cors.CorsEnabledServiceHelper.CORS_CONFIG_KEY;
@@ -307,8 +308,9 @@ public abstract class OpenAPISupport implements Service {
             if (Extensible.class.isAssignableFrom(td.getType())) {
                 td.addExtensions();
             }
-            if (td.hasDefaultProperty()) {
-                td.substituteProperty("default", Object.class, "getDefaultValue", "setDefaultValue");
+            Property defaultProperty = td.defaultProperty();
+            if (defaultProperty != null) {
+                td.substituteProperty("default", defaultProperty.getType(), "getDefaultValue", "setDefaultValue");
                 td.addExcludes("defaultValue");
             }
             if (isRef(td)) {
