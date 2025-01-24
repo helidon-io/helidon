@@ -31,7 +31,6 @@ import static org.hamcrest.Matchers.not;
 class TestTracerAtStartup {
 
     @Test
-    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "https://github.com/helidon-io/helidon/issues/9513")
     void checkForFullFeaturedTracerAtStartup() {
         assertThat("Global tracer from start-up extension",
                    TestExtension.globalTracerAtStartup.unwrap(io.opentelemetry.api.trace.Tracer.class).getClass().getName(),
