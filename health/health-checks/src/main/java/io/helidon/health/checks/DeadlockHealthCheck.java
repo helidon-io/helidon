@@ -106,8 +106,8 @@ public class DeadlockHealthCheck implements HealthCheck {
                 LOGGER.log(Level.TRACE, "Health check observed deadlocked threads: " + Arrays.toString(deadlockedThreads));
             }
         } catch (Throwable e) {
-            // ThreadBean does not work - probably in native image. Report UP, not ERROR, because we do not want that failure to
-            // contaminate the overall health result.
+            // ThreadBean does not work - probably in native image. Report ERROR, not DOWN, because we do not know that
+            // there are deadlocks which DOWN should imply; we simply cannot find out.
             LOGGER.log(Level.TRACE, "Error invoking ThreadMXBean to find deadlocks; cannot complete this healthcheck", e);
             builder.status(Status.ERROR);
         }
