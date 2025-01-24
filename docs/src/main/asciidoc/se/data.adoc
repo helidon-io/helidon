@@ -1,0 +1,687 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= About Helidon Data Repository
+:description: Helidon Data Repository
+:keywords: helidon, se, database, data, repository
+:feature-name: Data Repository
+:rootdir: {docdir}/..
+
+include::{rootdir}/includes/se.adoc[]
+
+== Contents
+
+-  <<Overview, Overview>>
+-  <<Maven Coordinates, Maven Coordinates>>
+-  <<Annotation Processor, Annotation Processor>>
+-  <<Usage, Usage>>
+-  <<Helidon Config, Helidon Config>>
+-  <<SE Application, SE Application>>
+-  <<Repository Interface, Repository Interface>>
+-  <<Pagination, Pagination>>
+-  <<Dynamic Sorting, Dynamic Sorting>>
+-  <<Persistence Session Access, Persistence Session Access>>
+
+== Overview
+
+The Helidon SE Data Repository provides a unified API for working with database queries.
+Data repository queries are an abstraction on top of Object–relational mapping (ORM). This
+allows compile time translation of interfaces with query definitions into implementing classes.
+
+Supported ORM is Jakarta Persistence 3.1 and EclipseLink or Hibernate providers.
+
+include::{rootdir}/includes/dependencies.adoc[]
+
+[source,xml]
+----
+        <dependency>
+            <groupId>io.helidon.data</groupId>
+            <artifactId>helidon-data</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.data.jakarta.persistence</groupId>
+            <artifactId>helidon-data-jakarta-persistence-gapi</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.data.jakarta.persistence</groupId>
+            <artifactId>helidon-data-jakarta-persistence</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+----
+
+Data Repository GAPI module depends on Jakarta Persistence 3.1.
+
+Jakarta Persistence provider (EclipseLink) and Database (MySQL) JDBC driver runtime dependencies:
+[source,xml]
+----
+        <dependency>
+            <groupId>org.eclipse.persistence</groupId>
+            <artifactId>org.eclipse.persistence.jpa</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.persistence</groupId>
+            <artifactId>org.eclipse.persistence.core</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+----
+
+== Annotation Processor
+
+Both ORM entity model and data repository interfaces require specific annotation processor configuration:
+
+[source,xml]
+----
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>io.helidon.codegen</groupId>
+                            <artifactId>helidon-codegen-apt</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.service</groupId>
+                            <artifactId>helidon-service-codegen</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.data.codegen</groupId>
+                            <artifactId>helidon-data-codegen</artifactId>
+                            <version>${project.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.data.jakarta.persistence</groupId>
+                            <artifactId>helidon-data-jakarta-persistence-codegen</artifactId>
+                            <version>${project.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+----
+
+== Usage
+
+The Data Repository provides API and tools to implement database queries using interface method prototypes.
+There are two ways how such a query may be defined:
+
+* using method annotated with `@Data.Query`
+
+[source,java]
+----
+    @Data.Query("SELECT p FROM Pet p WHERE p.category.name = :categoryName")
+    List<Pet> listPetsByCategory(String categoryName);
+----
+
+* using method name as query definition
+
+[source,java]
+----
+    Optional<Pet> findByName(String name);
+----
+
+== Helidon Config
+
+The data repository must be configured before you begin. In the example below we'll use Helidon Config to set up data repository
+with EclipseLink and MySQL database:
+[source,yaml]
+----
+data:
+  provider.jakarta:
+    username: "user"
+    password: "password"
+    connection-string: "jdbc:mysql://localhost:3306/pets"
+    jdbc-driver: "com.mysql.cj.jdbc.Driver"
+    # EclipseLink properties
+    properties:
+      eclipselink.target-database: "MySQL"
+      eclipselink.target-server: "None"
+      eclipselink.weaving: false
+      eclipselink.logging.level.weaver: "OFF"
+      eclipselink.logging.parameters: true
+      jakarta.persistence.schema-generation.database.action: none
+----
+
+== SE Application
+
+Data repository must be initialized using programmatic API in Java SE application:
+
+[source,java]
+----
+DataRegistry helidonData = DataRegistry.create(config.get("data"));
+----
+
+`DataRegistry` instance can be used now to create repository interface instances:
+
+[source,java]
+----
+PetRepository pets = helidonData.repository(PetRepository.class);
+----
+
+== Repository Interface
+
+Data repository interfaces are interfces annotated with the `@Data.Repository` annotation and extending `Data.GenericRepository`
+interface.
+The `@Data.Repository` annotation has no argument. The `Data.GenericRepository` has no methods, but has two generic arguments
+`E` and `ID`. Argument `E` is the type of the persistence entity and argument `ID` is the type of entity primary key attribute.
+
+The `Data.GenericRepository` interface is extended by additional interfaces to add specific features:
+
+[cols=2*]
+|===
+|Interface |Description
+
+|`Data.GenericRepository<E, ID>`
+|Root interface with entity type and primary key type as generic arguments.
+
+|`Data.BasicRepository<E, ID>`
+|Extends `GenericRepository`, adds set of basic entity life-cycle operations.
+
+|`Data.CrudRepository<E, ID>`
+|Extends `BasicRepository`, adds `insert` and `update` methods to contain full set of CRUD operations.
+
+|`Data.PageableRepository<E, ID>`
+|Extends `GenericRepository`, adds pagination support.
+|===
+
+=== Repository Interface Methods
+
+Repository interface can contain three kinds of methods:
+
+* methods inherited from an ancestor interface
+* methods with query defined by `@Data.Query` annotation
+* methods with query defined by method name
+
+Following `PetRepository` interface contains all kinds of methods: methods inherited from `CrudRepository` interface, methods
+`findByName` and `listNameOrderByName` with query defined by method name and finally method `listPetsByCategory` with query defined
+by `@Data.Query` annotation:
+
+[source,java]
+----
+@Data.Repository
+public interface PetRepository extends Data.CrudRepository<Pet, Integer> {
+
+    Optional<Pet> findByName(String name);
+
+    Slice<String> listNameOrderByName(PageRequest request);
+
+    @Data.Query("SELECT p FROM Pet p WHERE p.category.name = :categoryName")
+    List<Pet> listPetsByCategory(String categoryName);
+}
+----
+
+==== Method with query defined by `@Data.Query` annotation
+
+This kind of method requires `@Data.Query` annotation to be always present on the method. `@Data.Query` annotation has single
+`String` argument with the database query. Currently only JPQL is supported as the database query.
+Method arguments must match the data query arguments:
+
+* in case of named arguments, each named argument from the query must have corresponding argument of the same name in method
+  arguments. Method arguments can be in any order.
+
+[source,java]
+----
+    @Data.Query("SELECT p FROM Player p WHERE p.name = :name AND p.trainer.name = :trainerName")
+    Optional<Pokemon> selectByNameAndTrainer(String trainerName, String name);
+----
+
+* in case of indexed arguments, each indexed argument from the query must have argument in corresponding order in method
+arguments. Arguments are indexed from '1'.
+
+[source,java]
+----
+    @Data.Query("SELECT k FROM Keeper k WHERE k.name = $2 AND k.id = $1")
+    Optional<Trainer> selectKeeperByNameAndId(int id, String name);
+----
+
+Supported return types are
+
+* the query row types (entity class, entity attribute class, additional query result types),
+* List, Collection, Stream and Optional with query row type as generic argument
+* and Page or Slice with query row type as generic argument.
+
+==== Method with query defined by method name
+
+This kind of method defines the query by the name of the method. Method has no query specific annotation and its name must
+follow _query by method name_ specific grammar:
+
+[source,text]
+----
+        method-name  :: <query> | <delete>
+
+        query        :: <action> [ <projection> ] [ "By" <criteria>  [ "OrderBy" <order> ] ]
+                            | <all-action> "All" [ "OrderBy" <order> ]
+        delete       :: [ <prefix> ] "delete" "By" <criteria> ] | [ <prefix> ] "delete" [ "All" ]
+
+        action       :: <action-l> | [ <prefix> ] <action-u>
+        all-action   :: <all-action-l> | [ <prefix> ] <all-action-u>
+
+        prefix       :: [a-zA-Z0-9]*
+        action-l     :: "count" |  "exists" | "get" | <all-action>
+        all-action-l :: "find" | "list" | "stream"
+        action-u     :: "Count" |  "Exists" | "Get" | <all-action>
+        all-action-u :: "Find" | "List" | "Stream"
+
+        projection   :: [ <expression> ] [ <property> ]
+        expression   :: "First" <number> [ "Distinct" ] | "Distinct"
+                            | "Max" | "Min" | "Sum" | "Avg"
+        property     :: <identifier> [ "_" <identifier> ]
+        identifier   :: [a-zA-Z][a-zA-Z0-9]*
+        number       :: [0-9]+
+
+        criteria     :: <condition> { <logical-operator> <condition> }
+        condition    :: <property> [ [ "Not" ] [ "IgnoreCase" ] <operator>  ]
+        operator     :: "After" | "Before" | Contains" | "EndsWith" | "StartsWith" | "Equal"
+                            | "LessThan" | "LessThanEqual" | "GreaterThan" | "GreaterThanEqual"
+                            | "Between" | "Like" | "In" | "Empty" | "Null" | "True" | "False"
+        logical-operator :: "And" | "Or"
+
+        order        :: <property> [ <direction> [ <order> ] ]
+        direction    :: "Asc" | "Desc"
+----
+
+===== Method name prefix and return type
+
+Method can have user defined prefix. This prefix must start with letter followed by sequence of letters and digits. This prefix
+has no influence on the query. Prefix can be used to distinguish between methods with the same query but different result type.
+If prefix is used, the following `query-action` or `all-action` identifier must start with capital letter.
+
+[source,java]
+----
+    Number countByName(String name);
+    long longCountByName(String name);
+    Long boxedLongCountByName(String name);
+    int intCountByName(String name);
+    Integer boxedIntCountByName(String name);
+    short shortCountByName(String name);
+    Short boxedShortCountByName(String name);
+----
+
+Return type of the method depends on action keyword being used.
+
+[cols=3*]
+|===
+|Keyword |Types |Description
+
+|count
+|numeric type
+|Number of rows matching the query criteria.
+
+|exists
+|`boolean` or `Boolean`
+|Whether at least one row matching the query criteria exists.
+
+|get
+|query row type
+|Single row from the database, throws an exception when result is not a single row.
+
+|find
+|`Optional` of query row type
+|Empty result or single row from the database, throws an exception when result returns more than a single row .
+
+|list
+|`Collection` or `List` of query row type
+|List of rows from the database.
+
+|list
+|`Slice` or `Page` of query row type
+|Pageable result of rows from the database.
+
+|stream
+|`Stream` of query row type
+|Stream of rows from the database.
+|===
+
+NOTE: Validation of the keyword and return type mapping is not fully implemented so current code generator is less restrictive.
+      But this may change in next releases.
+
+===== Projection part of the query
+
+Projection part of the method name is optional and may follow right after the return type keyword. The projection consists
+of 2 parts, `expression` and `property`.
+
+The expression keywords are:
+
+[cols=3*]
+|===
+|Keyword |Example |Description
+
+|Distinct
+|`listDistinctNameByTrainer_Name`
+|Only different values are returned.
+
+|First<number>
+|`listFirst10ByAge`
+|Returns up to `<number>` of database rows.
+
+|Min
+|`getMinPoints`
+|Returns minimum value of entity property. Requires numeric type.
+
+|Max
+|`getMaxPoints`
+|Returns maximum value of entity property. Requires numeric type.
+
+|Sum
+|`getSumPoints`
+|Returns sum of all entity property values. Requires numeric type.
+
+|Avg
+|`getAvgPoints`
+|Returns average value of all entity properties values. Requires floating point type.
+|===
+
+Property is the entity property. The property is composed of the entity properties names separated by '_' character, e.g.
+`Trainer_Name` of the `Player` entity points to the `name` property of the `Trainer` entity which is present in the `Player`
+entity as the `trainer` property:
+
+[source,java]
+----
+@Entity
+public class Player {
+    Trainer trainer;
+}
+
+@Entity
+public class Trainer {
+    String name;
+}
+
+@Data.Repository
+public interface PokemonRepository extends Data.GenericRepository<Pokemon, Integer> {
+    List<String> listTrainer_Name();
+}
+----
+
+This will result in following Jakarta Persistence code to be generated (`em` is `EntityManager em`):
+[source,java]
+----
+    em.createQuery("SELECT p.trainer.name FROM Player p", String.class)
+            .getResultList();
+----
+
+===== Criteria part of the query
+
+Criteria part of the method name is optional and represents the `WHERE` clause of the database query. It is a logical expression
+composed of individual conditions joined by `AND` and `OR` logical operators.
+Single criteria condition is the `property` which may be followed by set of criteria keywords. E.g. `NameIgnoreCaseNotEndsWith`
+which consists of the entity property `name` and `IgnoreCase`, `Not` and `EndsWith` keywords.
+
+Criteria condition keywords are of 2 types:
+
+* `IgnoreCase` and `Not` keywords which can used before the condition keyword as modifiers
+* the condition keyword, for example `EndsWith`
+
+The condition keyword can consume method arguments. Each keyword has exact number of arguments being consumed. Method arguments
+are being consumed in the same order as is the order of the condition keywords in the method name.
+
+Criteria condition modifiers:
+
+[cols=2*]
+|===
+|Keyword |Description
+
+|Not
+|Negates following criteria condition .
+
+|IgnoreCase
+|Makes following criteria condition case-insensitive.
+|===
+
+Criteria condition keywords:
+
+[cols=3*]
+|===
+|Keyword |Arguments |Description
+
+|After
+|1
+|The property value is after the given value.
+
+|Before
+|1
+|The property value is before the given value.
+
+|Contains
+|1
+|The property value contains the given value. Requires `String` property and method argument.
+
+|EndsWith
+|1
+|The property value ends with the given value. Requires `String` property and method argument.
+
+|StartsWith
+|1
+|The property value starts with the given value. Requires `String` property and method argument.
+
+|Equal
+|1
+|The property value is equal to the given value.
+
+|LessThan
+|1
+|The property value is less than the given value. Requires `Comparable` property and method argument.
+
+|LessThanEqual
+|1
+|The property value is less than or equal to the given value. Requires `Comparable` property and method argument.
+
+|GreaterThan
+|1
+|The property value is greater than the given value. Requires `Comparable` property and method argument.
+
+|GreaterThanEqual
+|1
+|The property value is greater than or equal to the given value. Requires `Comparable` property and method argument.
+
+|Between
+|2
+|The property value is between the given values. Requires `Comparable` properties and method arguments.
+
+|Like
+|1
+|The property value is `LIKE` the given value, equivalent to JPQL `LIKE` keyword. Requires `String` property and method argument.
+
+|In
+|1
+|The property value is in the given collection. Requires `Collection<T>` method argument and property of type `T`.
+
+|Empty
+|0
+|The property value is empty. Requires `Collection` property.
+
+|Null
+|0
+|The property value is `NULL`.
+
+|True
+|0
+|The property value is `true`. Requires `boolean` or `Boolean` property.
+
+|False
+|0
+|The property value is `false`. Requires `boolean` or `Boolean` property.
+|===
+
+Logical operators:
+
+[cols=2*]
+|===
+|Keyword |Description
+
+|And
+|Logical `AND` of conditions before and after the operator.
+
+|Or
+|Logical `OR` of conditions before and after the operator.
+|===
+
+Logical operators precedence in JPQL is defined in Jakarta Persistence 3.1 specification, chapter _4.6.6. Operators and Operator
+Precedence_: operator `AND` has higher precedence than `OR`. Generated JPQL does not contain any brackets.
+When used with dynamic sorting, `CriteriaBuilder` API is used to build the query and `AND` operator will always be the inner one
+to be evaluated 1st, e.g.:
+
+[source,java]
+----
+    stmt.where(cb.or(
+            cb.and(
+                cb.equal(root.get("name"), cb.parameter(String.class, "name")),
+                cb.equal(root.get("hp"), cb.parameter(Integer.class, "hp"))),
+            cb.equal(root.get("id"), cb.parameter(Integer.class, "id"))));
+----
+
+===== Sorting part of the query
+
+Sorting part of the method name is optional and represents the `ORDER BY` clause of the database query. It is list of sorting
+rules. Single sorting rule is the property followed by optional order direction keyword.
+If more than one sorting rule is present, rules must be separated by the order direction keywords so only the last keyword
+is optional.
+
+Ordering keywords:
+
+[cols=2*]
+|===
+|Keyword |Description
+
+|Asc
+|Returned collection is sorted in ascending order.
+
+|Desc
+|Returned collection is sorted in descending order.
+|===
+
+Default `Asc` keyword is applied when missing after the `property`.
+
+An example of repository method with sorting:
+
+[source,java]
+----
+    List<Player> findAllOrderByAgeAscName();
+----
+
+== Pagination
+
+Pagination allows user to split the data collection into individual pages. When pagination is used, the repository method
+must have an argument of `PageRequest` type. Return type of the method is `Slice` or `Page`.
+The `PageRequest` argument of the method defines size of the page and index of the page (starting from `0`) to be returned.
+
+Returned page content types:
+
+[cols=2*]
+|===
+|Name |Description
+
+|Slice
+|Contains page data as `List` or `Stream` and `PageRequest` to return this page.
+
+|Page
+|Contains page data as `List` or `Stream`, total size of the result across all pages and `PageRequest` to return this page.
+|===
+
+An example of repository method with pagination:
+
+[source,java]
+----
+    Slice<Player> listOrderByName(PageRequest pageRequest);
+----
+
+== Dynamic Sorting
+
+Sorting part of the method name defines static sorting rule which cannot be modified in runtime. Dynamic sorting allows user
+to define additional sorting rule which is defined in runtime. Dynamic sorting is triggered by adding an argument of `Sort`
+type to the repository method. Both rules can be used simultaneously.
+
+An example of repository method with dynamic sorting:
+
+[source,java]
+----
+    List<Player> findByAgeBetween(int min, int max, Sort sort);
+----
+
+Static sorting rules from the method name are always applied first and dynamic rules are added after them as seen in following
+example. Let's have repository method with both sorting rules applied:
+
+[source,java]
+----
+    List<Player> findByAgeBetweenOrderByAge(int min, int max, Sort sort);
+----
+
+Following code based on `CriteriaBuilder` API will be generated to apply the sorting rules:
+
+[source,java]
+----
+    CriteriaBuilder cb = em.getCriteriaBuilder();
+    CriteriaQuery<Player> stmt = cb.createQuery(Player.class);
+    // ...
+    List<Order> orderBy = new ArrayList<>();
+    orderBy.add(cb.asc(root.get("age")));
+    sort.orderBy().forEach(order ->
+            orderBy.add(switch (order.direction()) {
+                case ASC -> cb.asc(root.get(order.property()));
+                case DESC -> cb.desc(root.get(order.property()));
+            }));
+    stmt.orderBy(orderBy);
+----
+
+== Persistence Session Access
+
+User can get access to persistence provider session to implement more complex tasks which are not supported by this framework.
+This feature is available to the data repository interface which extends `Data.SessionRepository<S>` interface. Generic argument
+`S` is the persistence session type, e.g. `EntityManager`.
+
+`Data.SessionRepository<S>` interface contains methods to provide session managed by data repository framework so there is no need
+to handle session instance life-cycle.
+
+[source,java]
+----
+@Data.Repository
+public interface PlayerRepository
+        extends Data.GenericRepository<Player, Integer>, Data.SessionRepository<EntityManager> {
+}
+----
+
+Now EntityManager instance is available through Data.SessionRepository<EntityManager> interface methods:
+
+[source,java]
+----
+public class PlayerService {
+
+    private final PlayerRepository pr;
+
+    PlayerService(DataRegistry data) {
+        this.pr = data.repository(PlayerRepository.class);
+    }
+
+    public List<Player> myPlayerQuery(String name) {
+        return pr.call(em -> em.createQuery("SELECT p FROM Player p WHERE name = :name", Player.class)
+                .setParameter("name", name)
+                .getResultList());
+    }
+
+}
+----
+
+NOTE: `EntityManager` instance is valid only while `call` method is being executed. This instance must not be stored and used after
+      this method has ended.
