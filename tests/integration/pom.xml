@@ -68,6 +68,7 @@
         <module>tls-revocation-config</module>
         <module>h2spec</module>
         <module>mp-telemetry</module>
+        <module>mp-jaxrs-preserve-headers</module>
     </modules>
 
     <dependencyManagement>
