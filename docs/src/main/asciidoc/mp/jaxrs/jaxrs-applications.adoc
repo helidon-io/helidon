@@ -23,7 +23,15 @@
 
 include::{rootdir}/includes/mp.adoc[]
 
-== Jakarta REST Applications
+== Content
+
+- <<Overview, Overview>>
+- <<Discovery of REST Beans, Discovery of REST Beans>>
+- <<Setting Application Path, Setting Application Path>>
+- <<Access to Application Instances, Access to Application Instances>>
+- <<Injection Managers in Helidon, Injection Managers in Helidon>>
+
+== Overview
 
 The Jakarta REST specification (formerly JAX-RS) defines the notion of an `Application`
 subclass whose methods return resource and provider classes, singletons and properties. This is the
