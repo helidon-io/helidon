@@ -369,6 +369,12 @@ backend:
                   type: "icon"
                   value: "storage"
               - type: "PAGE"
+                title: "Data Repository"
+                source: "data.adoc"
+                glyph:
+                  type: "icon"
+                  value: "storage"
+              - type: "PAGE"
                 title: "Discovery"
                 source: "discovery.adoc"
                 glyph:
