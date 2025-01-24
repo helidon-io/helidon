@@ -147,7 +147,26 @@
                         <configuration>
                             <systemPropertyVariables>
                                 <otel.bsp.schedule.delay>${otel.bsp.schedule.delay}</otel.bsp.schedule.delay>
+                                <otel.sdk.disabled>false</otel.sdk.disabled>
                             </systemPropertyVariables>
+                            <excludes>
+                                <exclude>**/AgentDetectorTest.java</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <!--
+                        This test does not need an active OTel SDK so run it separately to prevent it from running first
+                        and leaving other tests with a no-op Otel which will cause them to fail.
+                         -->
+                        <id>agent-detector-tests</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/AgentDetectorTest.java</include>
+                            </includes>
                         </configuration>
                     </execution>
                 </executions>
