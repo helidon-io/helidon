@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2024 Oracle and/or its affiliates.
+    Copyright (c) 2024, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -73,17 +73,17 @@
                         <path>
                             <groupId>io.helidon.codegen</groupId>
                             <artifactId>helidon-codegen-apt</artifactId>
-                            <version>${helidon.version}</version>
+                            <version>${project.version}</version>
                         </path>
                         <path>
                             <groupId>io.helidon.service</groupId>
                             <artifactId>helidon-service-codegen</artifactId>
-                            <version>${helidon.version}</version>
+                            <version>${project.version}</version>
                         </path>
                         <path>
                             <groupId>io.helidon.codegen</groupId>
                             <artifactId>helidon-codegen-helidon-copyright</artifactId>
-                            <version>${helidon.version}</version>
+                            <version>${project.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
@@ -91,17 +91,17 @@
                     <dependency>
                         <groupId>io.helidon.codegen</groupId>
                         <artifactId>helidon-codegen-apt</artifactId>
-                        <version>${helidon.version}</version>
+                        <version>${project.version}</version>
                     </dependency>
                     <dependency>
                         <groupId>io.helidon.service</groupId>
                         <artifactId>helidon-service-codegen</artifactId>
-                        <version>${helidon.version}</version>
+                        <version>${project.version}</version>
                     </dependency>
                     <dependency>
                         <groupId>io.helidon.codegen</groupId>
                         <artifactId>helidon-codegen-helidon-copyright</artifactId>
-                        <version>${helidon.version}</version>
+                        <version>${project.version}</version>
                     </dependency>
                 </dependencies>
             </plugin>
@@ -131,7 +131,7 @@
             <plugin>
                 <groupId>io.helidon.service</groupId>
                 <artifactId>helidon-service-maven-plugin</artifactId>
-                <version>${helidon.version}</version>
+                <version>${project.version}</version>
                 <executions>
                     <execution>
                         <id>create-application</id>
