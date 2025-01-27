@@ -102,17 +102,15 @@ public class VThreadSystemMetersProvider implements MetersProvider {
         listenFor(recordingStream, Map.of("jdk.VirtualThreadSubmitFailed", this::recordSubmitFail,
                              "jdk.VirtualThreadPinned", this::recordThreadPin));
 
-        if (metricsFactory.metricsConfig().virtualThreadCountEnabled()) {
-            meterBuilders.add(Gauge.builder(METER_NAME_PREFIX + COUNT, () -> virtualThreads)
-                                      .description("Active virtual threads")
-                                      .scope(METER_SCOPE));
-            meterBuilders.add(Gauge.builder(METER_NAME_PREFIX + STARTS, () -> virtualThreadStarts)
-                                      .description("Number of virtual thread starts")
-                                      .scope(METER_SCOPE));
+        meterBuilders.add(Gauge.builder(METER_NAME_PREFIX + COUNT, () -> virtualThreads)
+                                  .description("Active virtual threads")
+                                  .scope(METER_SCOPE));
+        meterBuilders.add(Gauge.builder(METER_NAME_PREFIX + STARTS, () -> virtualThreadStarts)
+                                  .description("Number of virtual thread starts")
+                                  .scope(METER_SCOPE));
 
-            listenFor(recordingStream, Map.of("jdk.VirtualThreadStart", this::recordThreadStart,
-                                 "jdk.VirtualThreadEnd", this::recordThreadEnd));
-        }
+        listenFor(recordingStream, Map.of("jdk.VirtualThreadStart", this::recordThreadStart,
+                             "jdk.VirtualThreadEnd", this::recordThreadEnd));
 
         recordingStream.startAsync();
         return meterBuilders;

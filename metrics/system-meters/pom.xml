@@ -94,21 +94,21 @@
                         <id>default-test</id>
                         <configuration>
                             <excludes>
-                                <exclude>**/TestVirtualThreadsMetersWithCounts.java</exclude>
+                                <exclude>**/TestVirtualThreads*.java</exclude>
                             </excludes>
                         </configuration>
                     </execution>
                     <execution>
-                        <id>test-with-virtual-thread-counts</id>
+                        <id>test-with-virtual-thread-meters</id>
                         <goals>
                             <goal>test</goal>
                         </goals>
                         <configuration>
                             <includes>
-                                <include>**/TestVirtualThreadsMetersWithCounts.java</include>
+                                <include>**/TestVirtualThreads*.java</include>
                             </includes>
                             <systemPropertyVariables>
-                                <metrics.virtual-threads.count.enabled>true</metrics.virtual-threads.count.enabled>
+                                <metrics.virtual-threads.enabled>true</metrics.virtual-threads.enabled>
                             </systemPropertyVariables>
                         </configuration>
                     </execution>

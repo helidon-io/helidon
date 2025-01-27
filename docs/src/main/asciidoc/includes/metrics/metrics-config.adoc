@@ -86,6 +86,7 @@ Metrics configuration is quite extensive and powerful and, therefore, a bit comp
 The rest of this section illustrates some of the most common scenarios:
 
 * <<config-disable,Disable metrics entirely.>>
+* <<config-virtual-threads,Choose whether to report virtual threads {metrics}>>.
 * <<config-kpi,Choose whether to collect extended key performance indicator metrics.>>
 ifdef::mp-flavor[]
 * <<config-rest-request,Control `REST.request` metrics collection.>>
@@ -113,9 +114,9 @@ server:
           enabled: false
 ----
 endif::[]
-Helidon does not update metrics, and the `{metrics-endpoint}` endpoints respond with `404`..
+Helidon does not update metrics, and the `{metrics-endpoint}` endpoints respond with `404`.
 
-==== Enabling {metrics_uc} for Virtual Thread Counts
+[#config-virtual-threads]
 include::{rootdir}/includes/guides/metrics.adoc[tag=virtualThreadsMetricsConfig]
 
 [#config-kpi]

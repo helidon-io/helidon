@@ -218,7 +218,7 @@ public final class Mp1Main {
         });
 
         invoke(collector, "Application metric registry", "Timers.size(): 1", aBean::appRegistry);
-        invoke(collector, "Base metric registry", "Timers.size(): 1", aBean::baseRegistry);
+        invoke(collector, "Base metric registry", "Timers.size(): 0", aBean::baseRegistry);
 
         // JWT-Auth
         validateJwtProtectedResource(collector, target, jwtToken);

@@ -47,29 +47,12 @@ class TestVirtualThreadsMetersConfigs {
         MetricsFactory metricsFactory = MetricsFactory.getInstance(config);
         VThreadSystemMetersProvider provider = new VThreadSystemMetersProvider();
         var meterBuilders = provider.meterBuilders(metricsFactory);
-        assertThat("Default meter builders",
-                   meterBuilders,
-                   containsInAnyOrder(allOf(withName(equalTo(METER_NAME_PREFIX + PINNED)),
-                                            instanceOf(Gauge.Builder.class)),
-                                      allOf(withName(equalTo(METER_NAME_PREFIX + SUBMIT_FAILURES)),
-                                            instanceOf(Gauge.Builder.class)),
-                                      allOf(withName(equalTo(METER_NAME_PREFIX + RECENT_PINNED)),
-                                            instanceOf(Timer.Builder.class))));
-        assertThat("Pinned thread threshold", provider.pinnedVirtualThreadsThresholdMillis(), equalTo(20L));
-    }
-
-    @Test
-    void checkVirtualThreadMetersDisabled() {
-        Config config = Config.just(ConfigSources.create(Map.of("virtual-threads.enabled", "false")));
-        MetricsFactory metricsFactory = MetricsFactory.getInstance(config);
-        VThreadSystemMetersProvider provider = new VThreadSystemMetersProvider();
-        var meterBuilders = provider.meterBuilders(metricsFactory);
-        assertThat("Meter builders with virtual threads meters disabled", meterBuilders, empty());
+        assertThat("Meter builders with default config", meterBuilders, empty());
     }
 
     @Test
     void checkVirtualThreadCountMetersEnabled() {
-        Config config = Config.just(ConfigSources.create(Map.of("virtual-threads.count.enabled", "true")));
+        Config config = Config.just(ConfigSources.create(Map.of("virtual-threads.enabled", "true")));
         MetricsFactory metricsFactory = MetricsFactory.getInstance(config);
         VThreadSystemMetersProvider provider = new VThreadSystemMetersProvider();
         var meterBuilders = provider.meterBuilders(metricsFactory);
@@ -91,7 +74,8 @@ class TestVirtualThreadsMetersConfigs {
 
     @Test
     void checkPinnedThreadThreshold() {
-        Config config = Config.just(ConfigSources.create(Map.of("virtual-threads.pinned.threshold", "PT0.040S")));
+        Config config = Config.just(ConfigSources.create(Map.of("virtual-threads.enabled", "true",
+                                                                "virtual-threads.pinned.threshold", "PT0.040S")));
         MetricsFactory metricsFactory = MetricsFactory.getInstance(config);
         VThreadSystemMetersProvider provider = new VThreadSystemMetersProvider();
         provider.meterBuilders(metricsFactory);
@@ -102,7 +86,8 @@ class TestVirtualThreadsMetersConfigs {
 
     @Test
     void checkRecentPinnedTimerLookup() {
-        Config config = Config.just(ConfigSources.create(Map.of("virtual-threads.pinned.threshold", "PT0.040S")));
+        Config config = Config.just(ConfigSources.create(Map.of("virtual-threads.enabled", "true",
+                                                                "virtual-threads.pinned.threshold", "PT0.040S")));
         MetricsFactory metricsFactory = MetricsFactory.getInstance(config);
         VThreadSystemMetersProvider provider = new VThreadSystemMetersProvider();
         provider.meterBuilders(metricsFactory);
