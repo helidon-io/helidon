@@ -48,6 +48,7 @@ import jakarta.enterprise.inject.Any;
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.CDI;
+import jakarta.enterprise.inject.spi.Extension;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.weld.AbstractCDI;
@@ -173,7 +174,8 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
 
         setProperties(new HashMap<>(properties));
 
-        addExtension(new InjectExtension());
+        // this is required for correct startup
+        addExtension(new Extension() {});
 
         Deployment deployment = createDeployment(resourceLoader, bootstrap);
         // we need to configure custom proxy services to
