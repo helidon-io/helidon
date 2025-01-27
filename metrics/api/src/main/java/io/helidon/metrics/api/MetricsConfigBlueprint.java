@@ -205,20 +205,8 @@ interface MetricsConfigBlueprint {
      * @return true to include meters related to virtual threads
      */
     @Option.Configured("virtual-threads.enabled")
-    @Option.DefaultBoolean(true)
-    boolean virtualThreadsEnabled();
-
-    /**
-     * Whether the virtual thread count should be exposed as a meter.
-     * <p>
-     * Enabling the virtual thread count meters can degrade performance of the server because the server must monitor Java
-     * Flight Recorder events for virtual thread starts and stops to maintain the count.
-     *
-     * @return true if the metrics system should compute virtual thread count meters
-     */
-    @Option.Configured("virtual-threads.count.enabled")
     @Option.DefaultBoolean(false)
-    boolean virtualThreadCountEnabled();
+    boolean virtualThreadsEnabled();
 
     /**
      * Threshold for sampling pinned virtual threads to include in the pinned threads meter.

@@ -212,7 +212,7 @@ By adding a `metrics` section to your application configuration you can control 
 // end::controlling-intro-part-1[]
 // tag::controlling-intro-part-2[]
 *  Select whether to collect <<basic-and-extended-kpi,extended key performance indicator {metrics}>>.
-*  Select which <<observing-vthreads,virtual threads {metrics}>> to report.
+*  Control reporting of <<controlling-vthreads,virtual threads {metrics}>>.
 // end::controlling-intro-part-2[]
 // end::controlling-intro[]
 
@@ -402,36 +402,39 @@ endif::se-flavor[]
 // end::KPI[]
 
 // tag::virtualThreadsMetrics[]
-[[observing-vthreads]]
-==== Observing Virtual Threads Behavior
+[[controlling-vthreads]]
+==== Controlling Meters Related to Virtual Threads Behavior
 :vthreads-prefix: vthreads
-Helidon maintains several {metrics} related to virtual threads as summarized in the next table. Helidon might rely on Java Flight Recorder (JFR) events and JMX MXBeans in computing the {metric} values. Be aware that limitations or changes in the values provided by these sources are outside the control of Helidon.
+Helidon optionally maintains several {metrics} related to virtual threads as summarized in the next table. Helidon might rely on Java Flight Recorder (JFR) events and JMX MBeans in computing the {metric} values. Be aware that limitations or changes in the values provided by these sources are outside the control of Helidon.
+
+For performance reasons Helidon does not report virtual thread {metrics} unless you enable them using configuration.
 
 .{metrics_uc} for Virtual Threads
-[cols="2,5,3,1"]
+[cols="2,5,3"]
 |===
-| {metric_uc} name | Usage | Source | Reported by default
+| {metric_uc} name | Usage | Source
 
-| `{vthreads-prefix}.count` | Current number of active virtual threads. | JFR `jdk.virtualThreadStart` and `jdk.virtualThreadEnd` events| no
-| `{vthreads-prefix}.pinned` | Number of times virtual threads have been pinned. | JFR `jdk.virtualThreadPinned` event | yes
-| `{vthreads-prefix}.recentPinned` | Distribution of the duration of thread pinning. ^1^ | JFR `jdk.virtualThreadPinned` event | yes
-| `{vthreads-prefix}.started` | Number of virtual threads started. | JFR `jdk.virtualThreadStart` event | no
-| `{vthreads-prefix}.submitFailed` | Number of times submissions of a virtual thread to a platform carrier thread failed. | JFR `jdk.virtualThreadSubmitFailed` event | yes
+| `{vthreads-prefix}.count` | Current number of active virtual threads. | JFR `jdk.virtualThreadStart` and `jdk.virtualThreadEnd` events
+| `{vthreads-prefix}.pinned` | Number of times virtual threads have been pinned. | JFR `jdk.virtualThreadPinned` event
+| `{vthreads-prefix}.recentPinned` | Distribution of the duration of thread pinning. ^1^ | JFR `jdk.virtualThreadPinned` event
+| `{vthreads-prefix}.started` | Number of virtual threads started. | JFR `jdk.virtualThreadStart` event
+| `{vthreads-prefix}.submitFailed` | Number of times submissions of a virtual thread to a platform carrier thread failed. | JFR `jdk.virtualThreadSubmitFailed` event
 |===
+^1^ Distribution summaries can discard stale data, so the `recentPinned` summary might not reflect all thread pinning activity.
 ^1^ Distribution summaries can discard stale data, so the `recentPinned` summary might not reflect all thread pinning activity.
 
 // tag::virtualThreadsMetricsConfig[]
 ==== Configuring Virtual Threads {metrics_uc}
-===== Disabling Virtual Threads {metrics_uc} Entirely
-Gathering data to compute the {metrics} for virtual threads is designed to be as efficient as possible, but doing so still imposes a small load on the server and by default Helidon exposes only the {metrics} related to virtual threads noted in the table above.
+===== Enabling Virtual Threads {metrics_uc}
+Gathering data to compute the {metrics} for virtual threads is designed to be as efficient as possible, but doing so still imposes a load on the server and by default Helidon does not report {metrics} related to virtual threads.
 
-To disable all {metrics} describing virtual threads, include a config setting as shown in the following example:
+To enable the {metrics} describing virtual threads include a config setting as shown in the following example.
 
-.Disabling virtual thread metrics entirely
+.Enabling virtual thread {metrics}
 ifdef::mp-flavor[]
 [source,properties]
 ----
-metrics.virtual-threads.enabled = false
+metrics.virtual-threads.enabled = true
 ----
 endif::mp-flavor[]
 ifdef::se-flavor[]
@@ -439,12 +442,12 @@ ifdef::se-flavor[]
 ----
 metrics:
   virtual-threads:
-    enabled: false
+    enabled: true
 ----
 endif::se-flavor[]
 
 ===== Controlling Measurements of Pinned Virtual Threads
-Helidon measures pinned virtual threads only when the thread is pinned for a length of time at or above a threshold. Control the threshold by configuring the threshold as shown in the example below.
+Helidon measures pinned virtual threads only when the thread is pinned for a length of time at or above a threshold. Control the threshold as shown in the example below.
 
 .Setting virtual thread pinning threshold to 100 ms
 ifdef::mp-flavor[]
@@ -464,29 +467,6 @@ metrics:
 endif::se-flavor[]
 The threshold value is a `Duration` string, such as `PT0.100S` for 100 milliseconds.
 
-===== Controlling Virtual Thread Counts
-For performance reasons Helidon does not by default report the {metrics} related to the count of virtual threads.
-Enable these {metrics} using configuration.
-
-[CAUTION]
-Enabling virtual thread counts can degrade the performance of your server. Do so with care.
-
-.Enabling Virtual Thread Counts
-ifdef::mp-flavor[]
-[source,properties]
-----
-metrics.virtual-threads.count.enabled=true
-----
-endif::[]
-ifdef::se-flavor[]
-[source,yaml]
-----
-metrics:
-  virtual-threads:
-    count:
-      enabled: true
-----
-endif::[]
 // end::virtualThreadsMetricsConfig[]
 
 // end::virtualThreadsMetrics[]
