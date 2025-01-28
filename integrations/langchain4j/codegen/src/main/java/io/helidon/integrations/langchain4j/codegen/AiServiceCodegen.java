@@ -44,7 +44,6 @@ import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_MODE
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_RETRIEVER_AUGMENTOR;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_SERVICE;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_STREAMING_CHAT_MODEL;
-import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_TOOL;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_TOOLS;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_AI_SERVICES;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_CHAT_MEMORY;
@@ -93,7 +92,6 @@ class AiServiceCodegen implements CodegenExtension {
             List<TypeName> toolTypes = tools.typeValues()
                     .orElseGet(List::of);
 
-            Annotation.create(AI_TOOL);
             List<String> toolParameters = new ArrayList<>();
             int index = 1;
             for (TypeName toolType : toolTypes) {

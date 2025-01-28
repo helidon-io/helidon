@@ -298,8 +298,7 @@ class DescribedService {
         }
 
         for (Annotation annotation : serviceTypeInfo.annotations()) {
-            if (serviceTypeInfo.hasMetaAnnotation(annotation.typeName(),
-                                                  SERVICE_ANNOTATION_QUALIFIER)) {
+            if (annotation.hasMetaAnnotation(SERVICE_ANNOTATION_QUALIFIER)) {
                 qualifiers.add(annotation);
             }
         }

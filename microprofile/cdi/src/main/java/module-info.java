@@ -73,7 +73,7 @@ module io.helidon.microprofile.cdi {
 
     provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.microprofile.cdi.ExecuteOnExtension,
-                    ServiceRegistryExtension;
+                    io.helidon.microprofile.cdi.ServiceRegistryExtension;
 
     opens io.helidon.microprofile.cdi to weld.core.impl;
 
