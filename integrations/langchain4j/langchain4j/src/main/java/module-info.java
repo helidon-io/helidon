@@ -14,10 +14,24 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Aot;
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.common.features.api.Preview;
+
 /**
  * Langchain4j main integration module and API.
  */
+@Feature(value = "Langchain4j",
+         description = "Langchain4j Integration",
+         in = {HelidonFlavor.SE, HelidonFlavor.MP},
+         path = "Langchain4j"
+)
+@Aot(value = false, description = "Not yet supported in native image")
+@Preview
 module io.helidon.integrations.langchain4j {
+    requires static io.helidon.common.features.api;
+
     requires transitive io.helidon.common.config;
     requires transitive io.helidon.builder.api;
     requires transitive io.helidon.service.registry;

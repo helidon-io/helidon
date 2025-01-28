@@ -14,10 +14,22 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.common.features.api.Preview;
+
 /**
  * Provides integration with OpenAi models.
  */
+@Feature(value = "Langchain4j OpenAI",
+         description = "Langchain4j OpenAI Provider Integration",
+         in = {HelidonFlavor.SE, HelidonFlavor.MP},
+         path = {"Langchain4j", "OpenAI"}
+)
+@Preview
 module io.helidon.integrations.langchain4j.providers.openai {
+    requires static io.helidon.common.features.api;
+
     requires langchain4j.open.ai;
     requires langchain4j.core;
 
