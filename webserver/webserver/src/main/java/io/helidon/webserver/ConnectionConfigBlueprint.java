@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,12 @@ import io.helidon.builder.api.Prototype;
 
 /**
  * Configuration of a server connection (for each connection created by clients).
+ *
+ * @deprecated use {@link io.helidon.common.socket.SocketOptionsBlueprint} instead
  */
 @Prototype.Blueprint
 @Prototype.Configured
+@Deprecated(forRemoval = true, since = "4.2.0")
 interface ConnectionConfigBlueprint {
     /**
      * Default read timeout duration.

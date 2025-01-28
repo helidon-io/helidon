@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ Still, there might be cases where you wish to change configuration options from 
 For details on the following options please see:
 
 * xref:../../se/webserver.adoc#_configuration_options[WebServer Configuration]
-* xref:../../config/io_helidon_webserver_ConnectionConfig.adoc[WebServer Connection Configuration]
 * xref:../../config/io_helidon_common_socket_SocketOptions.adoc[WebServer Socket Configuration]
 
 == Summary of Tuning Options
@@ -51,7 +50,6 @@ server:
 
   # Depends on the workload and kernel version
   backlog: NNNN
-  receive-buffer-size: NNNNN
   write-buffer-size: NNNNN
   write-queue-length: NN # 0 means direct write
 
