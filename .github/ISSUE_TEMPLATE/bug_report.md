@@ -1,13 +1,17 @@
+---
+name: Bug report
+about: Create a report to help us improve
+title: ''
+labels: ''
+assignees: ''
 
-[//]: # "Please remove these comments"
-[//]: # "Provide a general summary of the issue in the Title above"
+---
 
 ## Environment Details
 * Helidon Version:
 * Helidon SE or Helidon MP
 * JDK version:
 * OS:
-* Docker version (if applicable):
 
 ----------
 
@@ -19,4 +23,5 @@
 ## Steps to reproduce
 [//]: # "Step by step instructions to reproduce the problem"
 [//]: # "Provide sample code/application if relevant"
+
 
