@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.systemmeters;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -23,6 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import io.helidon.Main;
 import io.helidon.common.LazyValue;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.Meter;
@@ -32,6 +34,7 @@ import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.api.Timer;
 import io.helidon.metrics.spi.MetersProvider;
+import io.helidon.spi.HelidonShutdownHandler;
 
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingStream;
@@ -49,7 +52,7 @@ import jdk.jfr.consumer.RecordingStream;
  * JFR delivers events in batches. For performance the values we track are stored as longs without
  * concern for concurrent updates which should not happen anyway.
  */
-public class VThreadSystemMetersProvider implements MetersProvider {
+public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutdownHandler {
 
     // Parts of the meter names.
     static final String METER_NAME_PREFIX = "vthreads.";
@@ -68,6 +71,8 @@ public class VThreadSystemMetersProvider implements MetersProvider {
     private long virtualThreads;
     private long virtualThreadStarts;
     private long pinnedVirtualThreadsThresholdMillis;
+    private RecordingStream recordingStream;
+    private MetricsConfig metricsConfig;
 
     /**
      * For service loading.
@@ -78,17 +83,15 @@ public class VThreadSystemMetersProvider implements MetersProvider {
     @Override
     public Collection<Meter.Builder<?, ?>> meterBuilders(MetricsFactory metricsFactory) {
 
-        MetricsConfig metricsConfig = metricsFactory.metricsConfig();
+        metricsConfig = metricsFactory.metricsConfig();
         if (!metricsConfig.virtualThreadsEnabled()) {
             return List.of();
         }
 
-        var recordingStream = new RecordingStream();
+        Main.addShutdownHandler(this);
         pinnedVirtualThreadsThresholdMillis = metricsConfig.virtualThreadsPinnedThreshold().toMillis();
-        recordingStream.setSettings(Map.of("jdk.VirtualThreadPinned#threshold",
-                                            pinnedVirtualThreadsThresholdMillis + " ms"));
 
-        List<Meter.Builder<?, ?>> meterBuilders = new ArrayList<>(List.of(
+        var meterBuilders = new ArrayList<>(List.of(
                 Gauge.builder(METER_NAME_PREFIX + SUBMIT_FAILURES, () -> virtualThreadSubmitFails)
                         .description("Virtual thread submit failures")
                         .scope(METER_SCOPE),
@@ -97,28 +100,54 @@ public class VThreadSystemMetersProvider implements MetersProvider {
                         .scope(METER_SCOPE),
                 Timer.builder(METER_NAME_PREFIX + RECENT_PINNED)
                         .description("Pinned virtual thread durations")
-                        .scope(METER_SCOPE)));
+                        .scope(METER_SCOPE),
+                Gauge.builder(METER_NAME_PREFIX + COUNT, () -> virtualThreads)
+                        .description("Active virtual threads")
+                        .scope(METER_SCOPE),
+                Gauge.builder(METER_NAME_PREFIX + STARTS, () -> virtualThreadStarts)
+                        .description("Number of virtual thread starts")
+                        .scope(METER_SCOPE)
+                ));
 
-        listenFor(recordingStream, Map.of("jdk.VirtualThreadSubmitFailed", this::recordSubmitFail,
-                             "jdk.VirtualThreadPinned", this::recordThreadPin));
-
-        meterBuilders.add(Gauge.builder(METER_NAME_PREFIX + COUNT, () -> virtualThreads)
-                                  .description("Active virtual threads")
-                                  .scope(METER_SCOPE));
-        meterBuilders.add(Gauge.builder(METER_NAME_PREFIX + STARTS, () -> virtualThreadStarts)
-                                  .description("Number of virtual thread starts")
-                                  .scope(METER_SCOPE));
-
-        listenFor(recordingStream, Map.of("jdk.VirtualThreadStart", this::recordThreadStart,
-                             "jdk.VirtualThreadEnd", this::recordThreadEnd));
-
-        recordingStream.startAsync();
+        startRecordingStream();
         return meterBuilders;
+    }
+
+    @Override
+    public void shutdown() {
+        if (recordingStream != null) {
+            stopRecordingStream();
+        }
     }
 
     // For testing
     long pinnedVirtualThreadsThresholdMillis() {
         return pinnedVirtualThreadsThresholdMillis;
+    }
+
+    private void startRecordingStream() {
+
+        this.recordingStream = new RecordingStream();
+        recordingStream.setSettings(Map.of("jdk.VirtualThreadPinned#threshold",
+                                           pinnedVirtualThreadsThresholdMillis + " ms"));
+
+        listenFor(recordingStream, Map.of("jdk.VirtualThreadSubmitFailed", this::recordSubmitFail,
+                                          "jdk.VirtualThreadPinned", this::recordThreadPin,
+                                          "jdk.VirtualThreadStart", this::recordThreadStart,
+                                          "jdk.VirtualThreadEnd", this::recordThreadEnd));
+
+        recordingStream.startAsync();
+    }
+
+    private void stopRecordingStream() {
+        try {
+            LOGGER.log(System.Logger.Level.INFO, "Stopping recording stream");
+            recordingStream.close();
+            recordingStream.awaitTermination(Duration.ofSeconds(10));
+            recordingStream = null;
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static void listenFor(RecordingStream rs, Map<String, Consumer<RecordedEvent>> events) {

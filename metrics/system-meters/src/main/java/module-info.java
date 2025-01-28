@@ -26,8 +26,8 @@ import io.helidon.common.features.api.HelidonFlavor;
          path = {"Metrics", "System Meters"}
 )
 module io.helidon.metrics.systemmeters {
+    requires io.helidon;
     requires io.helidon.common.features.api;
-    requires io.helidon.common;
     requires io.helidon.metrics.api;
     requires java.management;
     requires jdk.jfr;
