@@ -46,8 +46,11 @@ import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
 import jakarta.enterprise.inject.spi.Extension;
 import org.jboss.weld.literal.NamedLiteral;
 
+/**
+ * {@link java.util.ServiceLoader} provider implementation of CDI extension to add service registry types as CDI beans.
+ */
 @SuppressWarnings({"unchecked", "rawtypes"})
-public class InjectExtension implements Extension {
+public class ServiceRegistryExtension implements Extension {
     @SuppressWarnings("unchecked")
     void registerQualifiers(@Observes BeforeBeanDiscovery bbd) {
         var registry = GlobalServiceRegistry.registry();

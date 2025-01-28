@@ -25,7 +25,14 @@ import io.helidon.common.types.TypeName;
 
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_TOOL;
 
+/**
+ * A {@link java.util.ServiceLoader} provider implementation of a {@link io.helidon.codegen.spi.TypeMapperProvider}
+ * to handle Tool annotated types.
+ */
 public class LcToolsMapperProvider implements TypeMapperProvider {
+    /**
+     * Public no-arg constructor required by {@link java.util.ServiceLoader}.
+     */
     public LcToolsMapperProvider() {
     }
 

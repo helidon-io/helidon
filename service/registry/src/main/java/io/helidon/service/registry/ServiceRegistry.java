@@ -303,6 +303,7 @@ public interface ServiceRegistry {
      * lookups trigger a full registry scan.
      *
      * @param lookup lookup criteria to find matching services
+     * @param <T> type of the expected result, use {@link java.lang.Object} for results with more than one contract
      * @return a list of qualified service instances that match the lookup criteria
      */
     <T> List<ServiceInstance<T>> lookupInstances(Lookup lookup);

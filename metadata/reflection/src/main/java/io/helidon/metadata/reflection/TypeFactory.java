@@ -31,6 +31,14 @@ public final class TypeFactory {
     private TypeFactory() {
     }
 
+    /**
+     * Create a class from a type name.
+     * This is using {@link java.lang.Class#forName(String)} to obtain a class instance.
+     *
+     * @param typeName type to convert to class
+     * @return a class representing the type (ignoring generics)
+     * @throws java.lang.IllegalArgumentException in case the class cannot be created
+     */
     public static Class<?> toClass(TypeName typeName) {
         try {
             return Class.forName(typeName.fqName());
@@ -45,6 +53,12 @@ public final class TypeFactory {
         }
     }
 
+    /**
+     * Convert a type name to a {@link java.lang.reflect.Type}.
+     *
+     * @param typeName type name
+     * @return a Type representing the type name, may be a class, wildcard, or parameterized type
+     */
     public static Type toType(TypeName typeName) {
         if (typeName.wildcard()) {
             return new WildcardTypeImpl(typeName);

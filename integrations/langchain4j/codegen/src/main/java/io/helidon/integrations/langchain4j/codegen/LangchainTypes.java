@@ -19,7 +19,7 @@ package io.helidon.integrations.langchain4j.codegen;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
 
-class LangchainTypes {
+final class LangchainTypes {
     static final TypeName AI_SERVICE = TypeName.create("io.helidon.integrations.langchain4j.Ai.Service");
     static final TypeName AI_CHAT_MODEL = TypeName.create("io.helidon.integrations.langchain4j.Ai.ChatModel");
     static final TypeName AI_STREAMING_CHAT_MODEL = TypeName.create("io.helidon.integrations.langchain4j.Ai.StreamingChatModel");
@@ -41,4 +41,7 @@ class LangchainTypes {
     static final TypeName LC_MODERATION_MODEL = TypeName.create("dev.langchain4j.model.moderation.ModerationModel");
     static final TypeName LC_RETRIEVAL_AUGMENTOR = TypeName.create("dev.langchain4j.rag.RetrievalAugmentor");
     static final TypeName LC_CONTENT_RETRIEVER = TypeName.create("dev.langchain4j.rag.content.retriever.ContentRetriever");
+
+    private LangchainTypes() {
+    }
 }
