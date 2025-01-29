@@ -40,9 +40,6 @@ include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites]
 
 Helidon's WebClient is used to perform HTTP REST requests to target endpoints and handle their responses.
 
-*Note*: WebClient is still experimental and not intended for production use. APIs and features are not yet fully tested
-and are subject to change.
-
 WebClient provides the following features:
 
     * *User-friendly*:
