@@ -661,7 +661,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                 throw new IOException("Stream already closed");
             }
             if (isNoEntityStatus && buffer.available() > 0) {
-                throw new IllegalStateException("Attempting to write data on a response with status " + status);
+                throw new IllegalStateException("Attempting to write data on a response with status " + status.get());
             }
 
             if (!isChunked) {
