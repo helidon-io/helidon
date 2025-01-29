@@ -86,7 +86,7 @@ class OpenAiImageModelFactory implements Service.ServicesFactory<OpenAiImageMode
         config.logResponses().ifPresent(builder::logResponses);
         config.withPersisting().ifPresent(builder::withPersisting);
         config.persistTo().ifPresent(value -> builder.persistTo(Path.of(value)));
-        config.proxy().ifPresent(p -> builder.proxy(RegistryHelper.named(registry, Proxy.class, p)));
+        config.proxy().ifPresent(p -> builder.proxy(RegistryHelper.named(registry, p, Proxy.class)));
         if (!config.customHeaders().isEmpty()) {
             builder.customHeaders(config.customHeaders());
         }

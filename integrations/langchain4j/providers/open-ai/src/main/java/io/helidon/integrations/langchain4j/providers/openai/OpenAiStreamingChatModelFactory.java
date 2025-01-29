@@ -98,8 +98,8 @@ class OpenAiStreamingChatModelFactory implements Service.ServicesFactory<OpenAiS
         config.timeout().ifPresent(builder::timeout);
         config.logRequests().ifPresent(builder::logRequests);
         config.logResponses().ifPresent(builder::logResponses);
-        config.tokenizer().ifPresent(t -> builder.tokenizer(RegistryHelper.named(registry, Tokenizer.class, t)));
-        config.proxy().ifPresent(p -> builder.proxy(RegistryHelper.named(registry, Proxy.class, p)));
+        config.tokenizer().ifPresent(t -> builder.tokenizer(RegistryHelper.named(registry, t, Tokenizer.class)));
+        config.proxy().ifPresent(p -> builder.proxy(RegistryHelper.named(registry, p, Proxy.class)));
         if (!config.customHeaders().isEmpty()) {
             builder.customHeaders(config.customHeaders());
         }

@@ -69,7 +69,6 @@ public class ServiceRegistryExtension implements Extension {
     }
 
     void registerInjectBeans(@Observes AfterBeanDiscovery abd, BeanManager bm) {
-
         var registry = GlobalServiceRegistry.registry();
         List<ServiceInfo> allServices = registry.lookupServices(Lookup.EMPTY);
         Set<UniqueBean> processedTypes = new HashSet<>();

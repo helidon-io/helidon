@@ -78,7 +78,7 @@ class OpenAiModerationModelFactory implements Service.ServicesFactory<OpenAiMode
         config.maxRetries().ifPresent(builder::maxRetries);
         config.logRequests().ifPresent(builder::logRequests);
         config.logResponses().ifPresent(builder::logResponses);
-        config.proxy().ifPresent(p -> builder.proxy(RegistryHelper.named(registry, Proxy.class, p)));
+        config.proxy().ifPresent(p -> builder.proxy(RegistryHelper.named(registry, p, Proxy.class)));
         if (!config.customHeaders().isEmpty()) {
             builder.customHeaders(config.customHeaders());
         }

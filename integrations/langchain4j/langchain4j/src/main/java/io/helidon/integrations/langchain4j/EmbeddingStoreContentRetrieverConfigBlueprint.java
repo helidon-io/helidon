@@ -20,6 +20,7 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.service.registry.Service;
 
 /**
  * Configuration class for {@link EmbeddingStoreContentRetrieverConfigBlueprint}.
@@ -35,19 +36,28 @@ interface EmbeddingStoreContentRetrieverConfigBlueprint {
     String CONFIG_ROOT = "langchain4j.rag.embedding-store-content-retriever";
 
     /**
+     * If set to {@code false}, embedding store content retriever will be disabled even if configured.
+     *
+     * @return whether the content retriever should be enabled
+     */
+    @Option.Configured
+    boolean enabled();
+
+    /**
      * Gets the embedding store CDI bean name or "discovery:auto" if the bean must be discovered automatically.
      *
      * @return an {@link java.util.Optional} containing the embedding store bean name or "discovery:auto" if the bean must be
-     * discovered automatically
+     *         discovered automatically
      */
     @Option.Configured
-    Optional<String> embeddingStore();
+    @Option.Default(Service.Named.DEFAULT_NAME)
+    String embeddingStore();
 
     /**
      * Gets the embedding model CDI bean name or "discovery:auto" if the bean must be discovered automatically.
      *
      * @return an {@link java.util.Optional} containing the embedding model bean name or "discovery:auto" if the bean must be
-     * discovered automatically
+     *         discovered automatically
      */
     @Option.Configured
     Optional<String> embeddingModel();

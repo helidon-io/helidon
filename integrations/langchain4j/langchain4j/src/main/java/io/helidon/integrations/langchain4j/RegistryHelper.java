@@ -16,6 +16,7 @@
 
 package io.helidon.integrations.langchain4j;
 
+import io.helidon.common.types.TypeName;
 import io.helidon.service.registry.Lookup;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.Service;
@@ -31,18 +32,38 @@ public class RegistryHelper {
     /**
      * Get a named service instance from the registry.
      *
-     * @param registry registry
-     * @param clazz    contract to get
-     * @param name     name of the instance
      * @param <T>      type of the instance
+     * @param registry registry
+     * @param name     name of the instance
+     * @param clazz    contract to get
      * @return a named instance
      */
-    public static <T> T named(ServiceRegistry registry, Class<T> clazz, String name) {
+    public static <T> T named(ServiceRegistry registry, String name, Class<T> clazz) {
         if (Service.Named.DEFAULT_NAME.equals(name)) {
             return registry.get(clazz);
         } else {
             return registry.get(Lookup.builder()
                                         .addContract(clazz)
+                                        .addQualifier(Qualifier.createNamed(name))
+                                        .build());
+        }
+    }
+
+    /**
+     * Get a named service instance from the registry.
+     *
+     * @param <T>      type of the instance
+     * @param registry registry
+     * @param name     name of the instance
+     * @param typeName contract to get
+     * @return a named instance
+     */
+    public static <T> T named(ServiceRegistry registry, String name, TypeName typeName) {
+        if (Service.Named.DEFAULT_NAME.equals(name)) {
+            return registry.get(typeName);
+        } else {
+            return registry.get(Lookup.builder()
+                                        .addContract(typeName)
                                         .addQualifier(Qualifier.createNamed(name))
                                         .build());
         }
