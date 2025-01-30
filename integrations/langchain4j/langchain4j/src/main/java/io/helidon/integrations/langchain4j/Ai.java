@@ -19,6 +19,8 @@ package io.helidon.integrations.langchain4j;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
+import io.helidon.service.registry.Service;
+
 import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -115,6 +117,37 @@ public final class Ai {
          */
         String value();
     }
+
+    /**
+     * Annotation to specify a {@link dev.langchain4j.memory.chat.MessageWindowChatMemory} for the service.
+     * This annotation is mutually exclusive with {@link io.helidon.integrations.langchain4j.Ai.ChatMemory}.
+     */
+    @Target(TYPE)
+    @Retention(RUNTIME)
+    public @interface ChatMemoryWindow {
+        /**
+         * The window of the chat memory.
+         *
+         * @return number of messages to keep in the chat window
+         */
+        int value();
+
+        /**
+         * Id of the chat memory window, defaults to {@link io.helidon.service.registry.Service.Named#DEFAULT_NAME}.
+         *
+         * @return id of the chat memory window
+         */
+        String id() default io.helidon.service.registry.Service.Named.DEFAULT_NAME;
+
+        /**
+         * Name qualifier of {@link dev.langchain4j.store.memory.chat.ChatMemoryStore},
+         * defaults to default of Lanchain4j (in-memory store).
+         *
+         * @return name qualifier of chat memory store
+         */
+        String store() default io.helidon.service.registry.Service.Named.DEFAULT_NAME;
+    }
+
 
     /**
      * Annotation to specify a ChatMemoryProvider for the service.

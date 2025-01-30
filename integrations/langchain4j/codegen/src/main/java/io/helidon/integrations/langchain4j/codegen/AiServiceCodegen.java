@@ -19,6 +19,7 @@ package io.helidon.integrations.langchain4j.codegen;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenException;
@@ -38,6 +39,7 @@ import io.helidon.service.codegen.ServiceCodegenTypes;
 
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_CHAT_MEMORY;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_CHAT_MEMORY_PROVIDER;
+import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_CHAT_MEMORY_WINDOW;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_CHAT_MODEL;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_CONTENT_RETRIEVER;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_MODERATION_MODEL;
@@ -48,6 +50,8 @@ import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.AI_TOOL
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_AI_SERVICES;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_CHAT_MEMORY;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_CHAT_MEMORY_PROVIDER;
+import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_CHAT_MEMORY_STORE;
+import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_CHAT_MEMORY_WINDOW;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_CHAT_MODEL;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_CONTENT_RETRIEVER;
 import static io.helidon.integrations.langchain4j.codegen.LangchainTypes.LC_MODERATION_MODEL;
@@ -205,6 +209,9 @@ class AiServiceCodegen implements CodegenExtension {
                 .addContentLine(".class);")
                 .addContentLine("")
                 .update(it -> {
+                    aiServicesChatMemoryConstructor(it,
+                                                    autoDiscovery,
+                                                    aiInterface);
                     // all parameters and assignments to builder
                     aiServicesParameter(it,
                                         autoDiscovery,
@@ -218,18 +225,6 @@ class AiServiceCodegen implements CodegenExtension {
                                         AI_STREAMING_CHAT_MODEL,
                                         LC_STREAMING_CHAT_MODEL,
                                         "streamingChatLanguageModel");
-                    aiServicesParameter(it,
-                                        autoDiscovery,
-                                        aiInterface,
-                                        AI_CHAT_MEMORY,
-                                        LC_CHAT_MEMORY,
-                                        "chatMemory");
-                    aiServicesParameter(it,
-                                        autoDiscovery,
-                                        aiInterface,
-                                        AI_CHAT_MEMORY_PROVIDER,
-                                        LC_CHAT_MEMORY_PROVIDER,
-                                        "chatMemoryProvider");
                     aiServicesParameter(it,
                                         autoDiscovery,
                                         aiInterface,
@@ -265,6 +260,69 @@ class AiServiceCodegen implements CodegenExtension {
         );
 
         roundCtx.addGeneratedType(generatedType, classModel, aiInterfaceType, aiInterface.originatingElementValue());
+    }
+
+    private void aiServicesChatMemoryConstructor(Constructor.Builder ctr, boolean autoDiscovery, TypeInfo aiInterface) {
+        Optional<Annotation> chatMemoryWindow = aiInterface.findAnnotation(AI_CHAT_MEMORY_WINDOW);
+
+        if (chatMemoryWindow.isPresent()) {
+            Annotation annotation = chatMemoryWindow.get();
+            chatMemoryWindow(ctr, annotation);
+
+            return;
+        }
+
+        aiServicesParameter(ctr,
+                            autoDiscovery,
+                            aiInterface,
+                            AI_CHAT_MEMORY,
+                            LC_CHAT_MEMORY,
+                            "chatMemory");
+
+        aiServicesParameter(ctr,
+                            autoDiscovery,
+                            aiInterface,
+                            AI_CHAT_MEMORY_PROVIDER,
+                            LC_CHAT_MEMORY_PROVIDER,
+                            "chatMemoryProvider");
+    }
+
+    private void chatMemoryWindow(Constructor.Builder ctr, Annotation annotation) {
+        Optional<String> storeName = annotation.stringValue("store")
+                .filter(it -> !it.equals("@default"));
+
+        storeName.ifPresent(storeQualifier -> ctr.addParameter(parameter -> parameter
+                .name("chatMemoryStore")
+                .type(LC_CHAT_MEMORY_STORE)
+                .addAnnotation(namedAnnotation(storeQualifier))
+        ));
+
+        // no constructor parameter, just create the instance
+        ctr.addContent("var chatMemory = ")
+                .addContent(LC_CHAT_MEMORY_WINDOW)
+                .addContentLine(".builder()")
+                .increaseContentPadding()
+                .increaseContentPadding()
+                .addContent(".maxMessages(")
+                // required
+                .addContent(String.valueOf(annotation.intValue().orElseThrow()))
+                .addContentLine(")")
+                .addContent(".id(\"")
+                // has default
+                .addContent(annotation.stringValue("id").orElseThrow())
+                .addContentLine("\")")
+                // if store name is defined
+                .update(it -> {
+                    if (storeName.isPresent()) {
+                        it.addContentLine(".chatMemoryStore(chatMemoryStore)");
+                    }
+                })
+                .addContentLine(".build();")
+                .decreaseContentPadding()
+                .decreaseContentPadding()
+                .addContentLine("");
+
+        ctr.addContentLine("builder.chatMemory(chatMemory);");
     }
 
     private TypeName aiServicesType(TypeName interfaceType) {

@@ -24,6 +24,7 @@ final class LangchainTypes {
     static final TypeName AI_CHAT_MODEL = TypeName.create("io.helidon.integrations.langchain4j.Ai.ChatModel");
     static final TypeName AI_STREAMING_CHAT_MODEL = TypeName.create("io.helidon.integrations.langchain4j.Ai.StreamingChatModel");
     static final TypeName AI_CHAT_MEMORY = TypeName.create("io.helidon.integrations.langchain4j.Ai.ChatMemory");
+    static final TypeName AI_CHAT_MEMORY_WINDOW = TypeName.create("io.helidon.integrations.langchain4j.Ai.ChatMemoryWindow");
     static final TypeName AI_CHAT_MEMORY_PROVIDER = TypeName.create("io.helidon.integrations.langchain4j.Ai.ChatMemoryProvider");
     static final TypeName AI_MODERATION_MODEL = TypeName.create("io.helidon.integrations.langchain4j.Ai.ModerationModel");
     static final TypeName AI_CONTENT_RETRIEVER = TypeName.create("io.helidon.integrations.langchain4j.Ai.ContentRetriever");
@@ -37,10 +38,12 @@ final class LangchainTypes {
     static final TypeName LC_CHAT_MODEL = TypeName.create("dev.langchain4j.model.chat.ChatLanguageModel");
     static final TypeName LC_STREAMING_CHAT_MODEL = TypeName.create("dev.langchain4j.model.chat.StreamingChatLanguageModel");
     static final TypeName LC_CHAT_MEMORY = TypeName.create("dev.langchain4j.memory.ChatMemory");
+    static final TypeName LC_CHAT_MEMORY_STORE = TypeName.create("dev.langchain4j.store.memory.chat.ChatMemoryStore");
     static final TypeName LC_CHAT_MEMORY_PROVIDER = TypeName.create("dev.langchain4j.memory.chat.ChatMemoryProvider");
     static final TypeName LC_MODERATION_MODEL = TypeName.create("dev.langchain4j.model.moderation.ModerationModel");
     static final TypeName LC_RETRIEVAL_AUGMENTOR = TypeName.create("dev.langchain4j.rag.RetrievalAugmentor");
     static final TypeName LC_CONTENT_RETRIEVER = TypeName.create("dev.langchain4j.rag.content.retriever.ContentRetriever");
+    static final TypeName LC_CHAT_MEMORY_WINDOW = TypeName.create("dev.langchain4j.memory.chat.MessageWindowChatMemory");
 
     private LangchainTypes() {
     }
