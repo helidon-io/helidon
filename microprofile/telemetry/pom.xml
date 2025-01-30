@@ -156,6 +156,7 @@
                             </systemPropertyVariables>
                             <excludes>
                                 <exclude>**/AgentDetectorTest.java</exclude>
+                                <exclude>**/TestSpanListenersWithInjection.java</exclude>
                             </excludes>
                         </configuration>
                     </execution>
@@ -171,6 +172,21 @@
                         <configuration>
                             <includes>
                                 <include>**/AgentDetectorTest.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>test-listeners-with-injection</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <otel.bsp.schedule.delay>${otel.bsp.schedule.delay}</otel.bsp.schedule.delay>
+                                <otel.sdk.disabled>false</otel.sdk.disabled>
+                            </systemPropertyVariables>
+                            <includes>
+                                <include>**/TestSpanListenersWithInjection.java</include>
                             </includes>
                         </configuration>
                     </execution>

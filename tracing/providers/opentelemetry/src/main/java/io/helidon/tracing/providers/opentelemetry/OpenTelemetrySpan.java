@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Context;
 
-class OpenTelemetrySpan implements Span {
+class OpenTelemetrySpan implements Span.Extended<io.opentelemetry.context.Scope> {
     private static final System.Logger LOGGER = System.getLogger(OpenTelemetrySpan.class.getName());
     private final io.opentelemetry.api.trace.Span delegate;
     private final Baggage baggage;
@@ -108,10 +108,12 @@ class OpenTelemetrySpan implements Span {
 
     @Override
     public Scope activate() {
-        io.opentelemetry.context.Scope scope = otelContextWithSpanAndBaggage().makeCurrent();
-        var result = new OpenTelemetryScope(this, scope, spanListeners);
-        HelidonOpenTelemetry.invokeListeners(spanListeners, LOGGER, listener -> listener.activated(limited(), result.limited()));
-        return result;
+        return completeActivation(otelContextWithSpanAndBaggage().makeCurrent());
+    }
+
+    @Override
+    public Scope activate(io.opentelemetry.context.Scope nativeScope) {
+        return completeActivation(nativeScope);
     }
 
     @Override
@@ -221,6 +223,12 @@ class OpenTelemetrySpan implements Span {
             }
         });
         return builder.build();
+    }
+
+    private Scope completeActivation(io.opentelemetry.context.Scope otelScope) {
+        var result = new OpenTelemetryScope(this, otelScope, spanListeners);
+        HelidonOpenTelemetry.invokeListeners(spanListeners, LOGGER, listener -> listener.activated(limited(), result.limited()));
+        return result;
     }
 
     private record Limited(OpenTelemetrySpan delegate) implements Span {

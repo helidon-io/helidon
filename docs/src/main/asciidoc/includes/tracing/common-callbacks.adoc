@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2024 Oracle and/or its affiliates.
+    Copyright (c) 2024, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ Applications and libraries can register listeners to be notified at several mome
 * After a scope is closed
 
 // end::intro[]
-
+// tag::detailed-after-intro[]
 The next sections explain how you can write and add a listener and what it can do. See the link:{tracing-api-javadoc}/{listener-type}.html[`{listener-type}`] Javadoc for more information.
 
 === Understanding What Listeners Do
@@ -152,7 +152,7 @@ Helidon invokes each listener's methods in the following order:
 |====
 
 
-
+// end::detailed-after-intro[]
 // end::detailed[]
 
 // tag::brief[]

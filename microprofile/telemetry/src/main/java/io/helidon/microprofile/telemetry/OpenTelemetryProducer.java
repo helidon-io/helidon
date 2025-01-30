@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,7 +97,7 @@ class OpenTelemetryProducer {
 
             //Initialize OpenTelemetry
             if (!isTelemetryDisabled()) {
-                openTelemetry = AutoConfiguredOpenTelemetrySdk.builder()
+                var candidateOpenTelemetry = AutoConfiguredOpenTelemetrySdk.builder()
                         .addPropertiesCustomizer(x -> telemetryProperties)
                         .addResourceCustomizer(this::customizeResource)
                         .setServiceClassLoader(Thread.currentThread().getContextClassLoader())
@@ -105,7 +105,8 @@ class OpenTelemetryProducer {
                         .build()
                         .getOpenTelemetrySdk();
 
-                if (openTelemetry != null) {
+                if (candidateOpenTelemetry != null) {
+                    openTelemetry = OtelProxy.openTelemetry(candidateOpenTelemetry);
                     if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
                         LOGGER.log(System.Logger.Level.TRACE, "Telemetry Auto Configured");
                     }
@@ -124,7 +125,9 @@ class OpenTelemetryProducer {
         }
 
         tracer = openTelemetry.getTracer(exporterName);
-        helidonTracer = HelidonOpenTelemetry.create(openTelemetry, tracer, Map.of());
+        helidonTracer = (tracer instanceof OtelProxy.ProxiedTracer proxiedTracer)
+                ? proxiedTracer.helidonTracer()
+                : HelidonOpenTelemetry.create(openTelemetry, tracer, Map.of());
         OpenTelemetryTracerProvider.globalTracer(helidonTracer);
     }
 
@@ -255,6 +258,10 @@ class OpenTelemetryProducer {
         };
     }
 
+    // For testing
+    String exporterName() {
+        return exporterName;
+    }
 
     // Process "otel." properties from microprofile config file.
     private Map<String, String> getTelemetryProperties() {
@@ -292,5 +299,4 @@ class OpenTelemetryProducer {
     private String getServiceName(ConfigProperties c) {
         return c.getString(SERVICE_NAME_PROPERTY, HELIDON_SERVICE_NAME);
     }
-
 }

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -202,7 +202,23 @@ include::{sourcedir}/mp/TelemetrySnippets.java[tag=snippet_6, indent=0]
 <2> Use the injected baggage.
 <3> Use `Baggage.current()` to access the current baggage.
 
-include::{rootdir}/includes/tracing/common-callbacks.adoc[tags=defs;detailed,leveloffset=+1]
+include::{rootdir}/includes/tracing/common-callbacks.adoc[tags=defs;intro,leveloffset=+1]
+
+As an implementation of MicroProfile Telemetry, Helidon allows your code to inject the OpenTelemetry `Tracer` and the current `Span` (if any). The following table summarizes how Helidon delivers lifecycle notifications for OpenTelemetry tracing objects.
+
+.Helidon Span Lifecycle Events for OpenTelemetry Objects
+|===
+| OpenTelemetry Object | OpenTelemetry Operation | link:{tracing-api-javadoc}/{listener-type}.html[`{listener-type}`] Callback
+
+.2+| `SpanBuilder` from the injected `Tracer` .2+| `startSpan` | `starting`
+|  `started`
+.2+| Injected `Span` or a `Span` built from a `SpanBuilder` obtained from the injected `Tracer` | `end` | `ended`
+| `makeCurrent` | `activated`
+| `Scope` returned from `makeCurrent` invoked on one of the above `Span` objects | `close` | `closed`
+|===
+Callback support works _only_ for the specific objects in the table. Helidon cannot provide callback support for arbitrary  OpenTelemetry objects your code gets directly from the OpenTelemetry APIs.
+
+include::{rootdir}/includes/tracing/common-callbacks.adoc[tag=detailed-after-intro,leveloffset=+1]
 
 === Controlling Automatic Span Creation
 By default, Helidon MP Telemetry creates a new child span for each incoming REST request and for each outgoing REST client request. You can selectively control if Helidon creates these automatic spans on a request-by-request basis by adding a very small amount of code to your project.

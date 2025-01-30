@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -315,5 +315,24 @@ public interface Span {
             throw new IllegalArgumentException("This instance cannot be unwrapped to " + type.getName()
                                                        + ", this builder: " + getClass().getName());
         }
+    }
+
+    /**
+     * Span with extended behavior for special cases; most code should use {@link io.helidon.tracing.Span} instead.
+     *
+     * @param <T> type of the native scope
+     *
+     * @see io.helidon.tracing.Span
+     */
+    interface Extended<T> extends Span {
+
+        /**
+         * Activates the span using the provided native scope.
+         *
+         * @param nativeScope native scope to activate
+         *
+         * @return {@link io.helidon.tracing.Scope} resulting from activating the native scope
+         */
+        Scope activate(T nativeScope);
     }
 }
