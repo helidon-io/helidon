@@ -36,6 +36,7 @@ module io.helidon.integrations.langchain4j {
     requires transitive io.helidon.builder.api;
     requires transitive io.helidon.service.registry;
     requires langchain4j.core;
+    requires langchain4j;
 
     exports io.helidon.integrations.langchain4j;
 }
