@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -151,7 +151,10 @@ interface ListenerConfigBlueprint {
      * Listener receive buffer size.
      *
      * @return buffer size in bytes
+     * @deprecated use {@link SocketOptions#socketReceiveBufferSize()} instead
+     * via {@link #connectionOptions()}.
      */
+    @Deprecated(forRemoval = true, since = "4.2.0")
     @Option.Configured
     Optional<Integer> receiveBufferSize();
 
@@ -201,7 +204,9 @@ interface ListenerConfigBlueprint {
      * Configuration of a connection (established from client against our server).
      *
      * @return connection configuration
+     * @deprecated use {@link #connectionOptions()} instead
      */
+    @Deprecated(forRemoval = true, since = "4.2.0")
     @Option.Configured
     Optional<ConnectionConfig> connectionConfig();
 
