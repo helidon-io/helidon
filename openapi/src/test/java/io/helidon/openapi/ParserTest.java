@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,12 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.config.testing.OptionalMatcher;
 import org.eclipse.microprofile.openapi.models.OpenAPI;
 import org.eclipse.microprofile.openapi.models.Paths;
 import org.eclipse.microprofile.openapi.models.parameters.Parameter;
+import org.eclipse.microprofile.openapi.models.servers.Server;
+import org.eclipse.microprofile.openapi.models.servers.ServerVariable;
 
 import org.junit.jupiter.api.Test;
 
@@ -117,6 +120,24 @@ class ParserTest {
 // TODO - uncomment the following once full $ref support is in place
 //        assertThat(openAPI.getPaths().getPathItem("/pet").getPUT().getRequestBody().getDescription(),
 //                containsString("needs to be added to the store"));
+    }
+
+    @Test
+    void testComplicatedPetstoreDocument() throws IOException {
+        OpenAPI openAPI = parse(helper,"/petstore-with-fake-endpoints-models-for-testing.yml",
+                OpenAPISupport.OpenAPIMediaType.YAML);
+        assertThat(openAPI.getOpenapi(), is("3.0.0"));
+        assertThat("Default for server variable 'port'",
+                openAPI.getPaths()
+                        .getPathItem("/pet")
+                        .getServers()
+                        .stream()
+                        .filter(server -> server.getUrl().equals("http://{server}.swagger.io:{port}/v2"))
+                        .map(Server::getVariables)
+                        .map(map -> map.get("server"))
+                        .map(ServerVariable::getDefaultValue)
+                        .findFirst(),
+                OptionalMatcher.value(is("petstore")));
     }
 
     static OpenAPI parse(SnakeYAMLParserHelper<ExpandedTypeDescription> helper, String path,
