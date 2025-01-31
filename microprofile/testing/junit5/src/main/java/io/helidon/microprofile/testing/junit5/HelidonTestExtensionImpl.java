@@ -17,7 +17,6 @@ package io.helidon.microprofile.testing.junit5;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -99,7 +98,7 @@ final class HelidonTestExtensionImpl extends HelidonTestExtension {
 
     @Override
     protected void processParameterAnnotation(Annotation annotation) {
-        if (Objects.requireNonNull(annotation) instanceof Socket s) {
+        if (annotation instanceof Socket s) {
             processSocket(s, s.value());
         } else {
             super.processParameterAnnotation(annotation);
@@ -108,7 +107,7 @@ final class HelidonTestExtensionImpl extends HelidonTestExtension {
 
     @Override
     protected void processFieldAnnotation(Annotation annotation) {
-        if (Objects.requireNonNull(annotation) instanceof Socket s) {
+        if (annotation instanceof Socket s) {
             processSocket(s, s.value());
         } else {
             super.processFieldAnnotation(annotation);

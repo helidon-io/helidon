@@ -47,7 +47,7 @@ public @interface Configuration {
      *     <li>{@link AddConfigBlock}</li>
      * </ul>
      * <p>
-     * If set to {@code true}, only the existing (or default) MicroProfile configuration is used
+     * If set to {@code true}, only the existing (or default) MicroProfile configuration is used as-is
      * and the annotations listed previously are ignored.
      * <p>
      * You can use {@link org.eclipse.microprofile.config.spi.ConfigProviderResolver ConfigProviderResolver} to define

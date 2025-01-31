@@ -32,7 +32,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @AddBean(TestAlternativeObserver.AlternativeObserver.class)
-@AddBean(TestAlternativeObserver.AlternativeObserver.class)
 @HelidonTest
 public class TestAlternativeObserver {
 

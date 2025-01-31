@@ -345,7 +345,7 @@ To enable mock mupport add the following dependency to your project’s pom.xml.
 
 === Usage
 
-Use the link:{mp-mocking-javadoc-url}/MockBean.html[`@MockBean`] annotation to inject an instrumentd CDI bean in your test,
+Use the link:{mp-mocking-javadoc-url}/MockBean.html[`@MockBean`] annotation to inject an instrumented CDI bean in your test,
  and customize it in the test method.
 
 ==== Example

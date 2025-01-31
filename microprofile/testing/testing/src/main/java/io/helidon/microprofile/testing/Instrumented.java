@@ -22,7 +22,6 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
@@ -59,6 +58,7 @@ public interface Instrumented {
             Field field = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
             field.setAccessible(true);
             sun.misc.Unsafe unsafe = (sun.misc.Unsafe) field.get(null);
+            // allocateInstance is OK to use (not planned for removal by JEP471)
             return type.cast(unsafe.allocateInstance(type));
         } catch (InstantiationException
                  | IllegalAccessException
@@ -74,7 +74,12 @@ public interface Instrumented {
      * @return {@code true} if instrumented, {@code false} otherwise
      */
     static boolean isInstrumented(Class<?> type) {
-        return Set.of(type.getInterfaces()).contains(Instrumented.class);
+        for (Class<?> iface : type.getInterfaces()) {
+            if (iface.equals(Instrumented.class)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
