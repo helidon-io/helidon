@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -150,6 +150,18 @@ class OpenTelemetryProducer {
     }
 
     /**
+     * Produces an instance of the current OpenTelemetry Tracer which provides span builders and spans which support
+     * span listener callbacks.
+     *
+     * @return Tracer capable of life cycle callbacks.
+     */
+    @Produces
+    @CallbackEnabled
+    Tracer callbackEnabledTracer() {
+        return HelidonOpenTelemetry.callbackEnable(helidonTracer);
+    }
+
+    /**
      * Provides an instance of the current Helidon API Tracer.
      *
      * @return Tracer.
@@ -217,6 +229,19 @@ class OpenTelemetryProducer {
                 return Span.current().isRecording();
             }
         };
+    }
+
+    /**
+     * Produces an OpenTelemetry {@link io.opentelemetry.api.trace.Span} that invokes life cycle callbacks.
+     *
+     * @return callback-capable {@code Span}
+     */
+    @Produces
+    @CallbackEnabled
+    Span callbackEnabledSpan() {
+        return (Span) io.helidon.tracing.Span.current()
+                .map(HelidonOpenTelemetry::callbackEnable)
+                .orElse(HelidonOpenTelemetry.callbackEnable(span()));
     }
 
     /**
