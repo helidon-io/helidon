@@ -27,4 +27,22 @@ public interface Scope extends AutoCloseable {
      * @return if this scope is closed
      */
     boolean isClosed();
+
+    /**
+     * Access the underlying scope by specific type.
+     * This is a dangerous operation that will succeed only if the scope is of expected type. This practically
+     * removes abstraction capabilities of this API.
+     *
+     * @param scopeClass type to access
+     * @param <T>        type of the scope
+     * @return instance of the scope
+     * @throws java.lang.IllegalArgumentException in case the scope cannot provide the expected type
+     */
+    default <T> T unwrap(Class<T> scopeClass) {
+        try {
+            return scopeClass.cast(this);
+        } catch (ClassCastException e) {
+            throw new IllegalArgumentException("This scope is not compatible with " + scopeClass.getName());
+        }
+    }
 }
