@@ -132,10 +132,10 @@ public final class HelidonOpenTelemetry {
      * io.opentelemetry.api.trace.Tracer nativeOtelTracer; // previously-assigned
      * io.helidon.tracing.api.SpanListener mySpanListener; // previously-assigned
      *
-     * io.opentelemetry.api.trace.Tracer callbackEnabledOtelTracer = HelidonOpenTelemetry.callbackEnable(nativeOtelTracer);
+     * io.opentelemetry.api.trace.Tracer callbackEnabledOtelTracer = HelidonOpenTelemetry.callbackEnabledFrom(nativeOtelTracer);
      * callbackEnabledOtelTracer.unwrap(io.helidon.tracing.api.Tracer.class).register(mySpanListener);
      *}
-     * Code which has a Helidon {@code Tracer} should instead invoke {@link #callbackEnable(io.helidon.tracing.Tracer)},
+     * Code which has a Helidon {@code Tracer} should instead invoke {@link #callbackEnabledFrom(io.helidon.tracing.Tracer)},
      * passing the Helidon tracer. Then Helidon will automatically notify all listeners already registered with the
      * Helidon tracer.
      *
@@ -144,8 +144,8 @@ public final class HelidonOpenTelemetry {
      * @param <T>        specific type of the tracer to return
      * @return an OpenTelemetry {@code Tracer} and {@link io.helidon.tracing.Wrapper} able to notify span lifecycle listeners
      */
-    public static <T extends Tracer & Wrapper> T callbackEnable(Tracer otelTracer) {
-        return callbackEnable(new OpenTelemetryTracer(GlobalOpenTelemetry.get(), otelTracer, Map.of()));
+    public static <T extends Tracer & Wrapper> T callbackEnabledFrom(Tracer otelTracer) {
+        return callbackEnabledFrom(new OpenTelemetryTracer(GlobalOpenTelemetry.get(), otelTracer, Map.of()));
     }
 
     /**
@@ -157,38 +157,38 @@ public final class HelidonOpenTelemetry {
      * @param <T>           specific type of the tracer to return
      * @return an OpenTelemetry {@code Tracer} and {@link io.helidon.tracing.Wrapper} able to notify span lifecycle listeners
      */
-    public static <T extends Tracer & Wrapper> T callbackEnable(io.helidon.tracing.Tracer helidonTracer) {
+    public static <T extends Tracer & Wrapper> T callbackEnabledFrom(io.helidon.tracing.Tracer helidonTracer) {
         return (T) WrappedTracer.create(helidonTracer);
     }
 
     /**
-     * Provides an OpenTelemetry {@link io.opentelemetry.api.trace.Span} implementation which delegates to the {@code Span}
+     * Returns an OpenTelemetry {@link io.opentelemetry.api.trace.Span} implementation which delegates to the {@code Span}
      * managed by the supplied Helidon {@link io.helidon.tracing.Span} and which also provides
      * {@link io.opentelemetry.context.Scope} instances capable of notifying registered
      * {@link io.helidon.tracing.SpanListener} objects.
      * <p>
      * This method internally creates a new Helidon {@link io.helidon.tracing.Span} to perform the notifications.
      * Code which already has a Helidon {@code Span} from which it unwrapped the OpenTelemetry span should instead invoke
-     * {@link #callbackEnable(io.helidon.tracing.Span)}, passing the Helidon tracer.
+     * {@link #callbackEnabledFrom(io.helidon.tracing.Span)}, passing the Helidon tracer.
      *
      * @param otelSpan the native OpenTelemetry {@code Span} to expose as a callback-enabled OpenTelemetry {@code Span}
      * @param <T>      specific type of the Span to return
      * @return an OpenTelemetry {@code Span} and {@link io.helidon.tracing.Wrapper} which also performs lifecycle callbacks
      */
-    public static <T extends Span & Wrapper> T callbackEnable(Span otelSpan) {
+    public static <T extends Span & Wrapper> T callbackEnabledFrom(Span otelSpan) {
         return (T) WrappedSpan.create(create(otelSpan));
     }
 
     /**
-     * Provides a {@link io.opentelemetry.api.trace.Span} implementation which delegates to the provided Helidon {@code Span}
-     * managed by {@link io.helidon.tracing.Span}, thereby notifying registered {@link io.helidon.tracing.SpanListener}
+     * Returns a {@link io.opentelemetry.api.trace.Span} implementation which delegates to the provided Helidon
+     * {@link io.helidon.tracing.Span}, thereby notifying registered {@link io.helidon.tracing.SpanListener}
      * objects of span lifecycle events.
      *
      * @param <T> specific type of the {@code Span} to return
      * @param helidonSpan the Helidon {@code Span} to expose as a callback-enabled OpenTelemetry {@code Span}
      * @return an OpenTelemetry {@code Span} and {@link io.helidon.tracing.Wrapper} which also performs lifecycle callbacks
      **/
-    public static <T extends Span & Wrapper> T callbackEnable(io.helidon.tracing.Span helidonSpan) {
+    public static <T extends Span & Wrapper> T callbackEnabledFrom(io.helidon.tracing.Span helidonSpan) {
         return (T) WrappedSpan.create(helidonSpan);
     }
 

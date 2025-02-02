@@ -158,7 +158,7 @@ class OpenTelemetryProducer {
     @Produces
     @CallbackEnabled
     Tracer callbackEnabledTracer() {
-        return HelidonOpenTelemetry.callbackEnable(helidonTracer);
+        return HelidonOpenTelemetry.callbackEnabledFrom(helidonTracer);
     }
 
     /**
@@ -240,8 +240,8 @@ class OpenTelemetryProducer {
     @CallbackEnabled
     Span callbackEnabledSpan() {
         return (Span) io.helidon.tracing.Span.current()
-                .map(HelidonOpenTelemetry::callbackEnable)
-                .orElse(HelidonOpenTelemetry.callbackEnable(span()));
+                .map(HelidonOpenTelemetry::callbackEnabledFrom)
+                .orElse(HelidonOpenTelemetry.callbackEnabledFrom(span()));
     }
 
     /**

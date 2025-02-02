@@ -54,7 +54,7 @@ class TestCallbackEnabledOtelTypes {
 
     @Test
     void testSpanFromWrappedTracer() {
-        Tracer wrappedOtelTracer = HelidonOpenTelemetry.callbackEnable(helidonTracer);
+        Tracer wrappedOtelTracer = HelidonOpenTelemetry.callbackEnabledFrom(helidonTracer);
 
         checkListenerCounts("Init", 0, 0, 0, 0, 0);
 
@@ -76,7 +76,7 @@ class TestCallbackEnabledOtelTypes {
     @Test
     void testNotificationsStartingWithHelidonTracer() {
 
-        var wrappedOtelTracer = HelidonOpenTelemetry.callbackEnable(helidonTracer);
+        var wrappedOtelTracer = HelidonOpenTelemetry.callbackEnabledFrom(helidonTracer);
         assertThat("Unwrapped Helidon tracer from callback-enabled OTel tracer",
                    wrappedOtelTracer.unwrap(io.helidon.tracing.Tracer.class),
                    sameInstance(helidonTracer));
@@ -105,7 +105,7 @@ class TestCallbackEnabledOtelTypes {
     void testNotificationsVStartingWithOtelTracer() {
 
         var nativeOtelTracer = GlobalOpenTelemetry.getTracer("new-otel-tracer");
-        var wrappedOtelTracer = HelidonOpenTelemetry.callbackEnable(nativeOtelTracer);
+        var wrappedOtelTracer = HelidonOpenTelemetry.callbackEnabledFrom(nativeOtelTracer);
 
         // Explicitly register the listener with the new Helidon tracer that's inside the callback-enabled OTel tracer.
         var internalHelidonTracer = wrappedOtelTracer.unwrap(io.helidon.tracing.Tracer.class);
