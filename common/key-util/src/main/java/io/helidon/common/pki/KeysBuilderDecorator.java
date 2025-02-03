@@ -93,7 +93,7 @@ class KeysBuilderDecorator implements Prototype.BuilderDecorator<Keys.BuilderBas
         Optional<String> keyAliasConfigured = keystoreConfig.keyAlias();
         String keyAlias = keyAliasConfigured.orElse(KeystoreKeysBlueprint.DEFAULT_PRIVATE_KEY_ALIAS);
 
-        if (builder.privateKey().isEmpty()) {
+        if (builder.privateKey().isEmpty() || !keystoreConfig.trustStore()) {
             boolean guessing = keyAliasConfigured.isEmpty();
             try {
                 builder.privateKey(PkiUtil.loadPrivateKey(keyStore, keyAlias, keyPassword));
@@ -106,7 +106,7 @@ class KeysBuilderDecorator implements Prototype.BuilderDecorator<Keys.BuilderBas
             }
         }
         List<X509Certificate> certChain = null;
-        if (builder.certChain().isEmpty()) {
+        if (builder.certChain().isEmpty() || !keystoreConfig.trustStore()) {
             Optional<String> certChainAliasConfigured = keystoreConfig.certChainAlias();
             boolean guessing = certChainAliasConfigured.isEmpty();
             String certChainAlias = certChainAliasConfigured.orElse(keyAlias);
