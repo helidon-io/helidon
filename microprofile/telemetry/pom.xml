@@ -156,6 +156,7 @@
                             </systemPropertyVariables>
                             <excludes>
                                 <exclude>**/AgentDetectorTest.java</exclude>
+                                <exclude>**/TestSpanListenersWithInjection.java</exclude>
                             </excludes>
                         </configuration>
                     </execution>
@@ -171,6 +172,17 @@
                         <configuration>
                             <includes>
                                 <include>**/AgentDetectorTest.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>callback-enabled-injection-test</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/TestSpanListenersWithInjection.java</include>
                             </includes>
                         </configuration>
                     </execution>
