@@ -291,35 +291,35 @@ public final class AnnotationFactory {
             }
             if (int.class.equals(returnType)) {
                 return annotation.intValue(name)
-                        .orElseGet(() -> (int) method.getDefaultValue());
+                        .orElseGet(() -> (Integer) method.getDefaultValue());
             }
             if (long.class.equals(returnType)) {
                 return annotation.longValue(name)
-                        .orElseGet(() -> (long) method.getDefaultValue());
+                        .orElseGet(() -> (Long) method.getDefaultValue());
             }
             if (boolean.class.equals(returnType)) {
                 return annotation.booleanValue(name)
-                        .orElseGet(() -> (boolean) method.getDefaultValue());
+                        .orElseGet(() -> (Boolean) method.getDefaultValue());
             }
             if (double.class.equals(returnType)) {
                 return annotation.doubleValue(name)
-                        .orElseGet(() -> (double) method.getDefaultValue());
+                        .orElseGet(() -> (Double) method.getDefaultValue());
             }
             if (float.class.equals(returnType)) {
                 return annotation.floatValue(name)
-                        .orElseGet(() -> (float) method.getDefaultValue());
+                        .orElseGet(() -> (Float) method.getDefaultValue());
             }
             if (byte.class.equals(returnType)) {
                 return annotation.byteValue(name)
-                        .orElseGet(() -> (byte) method.getDefaultValue());
+                        .orElseGet(() -> (Byte) method.getDefaultValue());
             }
             if (char.class.equals(returnType)) {
                 return annotation.charValue(name)
-                        .orElseGet(() -> (char) method.getDefaultValue());
+                        .orElseGet(() -> (Character) method.getDefaultValue());
             }
             if (short.class.equals(returnType)) {
                 return annotation.shortValue(name)
-                        .orElseGet(() -> (short) method.getDefaultValue());
+                        .orElseGet(() -> (Short) method.getDefaultValue());
             }
             if (returnType.isEnum()) {
                 return annotation.enumValue(name, (Class) returnType)

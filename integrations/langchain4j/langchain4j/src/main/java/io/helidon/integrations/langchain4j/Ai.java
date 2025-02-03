@@ -19,8 +19,6 @@ package io.helidon.integrations.langchain4j;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-import io.helidon.service.registry.Service;
-
 import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -147,7 +145,6 @@ public final class Ai {
          */
         String store() default io.helidon.service.registry.Service.Named.DEFAULT_NAME;
     }
-
 
     /**
      * Annotation to specify a ChatMemoryProvider for the service.

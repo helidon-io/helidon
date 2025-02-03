@@ -318,7 +318,8 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
 
             // table scan :-(
             metrics.fullScan();
-            servicesByType.values()
+            // we need to go through each service descriptor if it matches
+            servicesByDescriptor.keySet()
                     .stream()
                     .filter(lookup::matches)
                     .sorted(SERVICE_INFO_COMPARATOR)
@@ -360,7 +361,17 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
 
     @Override
     public <T> List<ServiceInstance<T>> lookupInstances(Lookup lookup) {
-        return new ServiceSupplies.ServiceInstanceSupplyList<T>(lookup, lookupManagers(lookup))
+        Lookup instanceLookup;
+        if (lookup.factoryTypes().isEmpty() && lookup.serviceType().isPresent()) {
+            // in case the factories are not requested, but a specific service type is, we only use
+            // service manager for that service, but we want instances, not the factory itself
+            instanceLookup = Lookup.builder(lookup)
+                    .clearServiceType()
+                    .build();
+        } else {
+            instanceLookup = lookup;
+        }
+        return new ServiceSupplies.ServiceInstanceSupplyList<T>(instanceLookup, lookupManagers(lookup))
                 .get();
     }
 
@@ -381,7 +392,58 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
         return bindings;
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    void add(ServiceDescriptor descriptor) {
+        if (!allowLateBinding) {
+            throw new ServiceRegistryException("This service registry instance does not support late binding, as it was "
+                                                       + "explicitly disabled through registry configuration: " + id);
+        }
+        stateWriteLock.lock();
+        try {
+            Set<ResolvedType> contracts = descriptor.contracts();
+            contracts.forEach(this::checkValidContract);
+
+            ServiceProvider<Object> provider = new ServiceProvider<>(this,
+                                                                     descriptor);
+            Supplier<Activator<Object>> activator = Activators.create(this, provider);
+            servicesByDescriptor.put(descriptor, new ServiceManager<>(this,
+                                                                      scopeSupplier(descriptor),
+                                                                      provider,
+                                                                      true,
+                                                                      activator));
+
+            for (ResolvedType contract : contracts) {
+                ServiceInfo serviceInfo = servicesByType.get(contract.type());
+                if (serviceInfo != null) {
+                    throw new ServiceRegistryException("Cannot add a custom service descriptor for a service implementation: "
+                                                               + contract.type());
+                }
+
+                Set<ServiceInfo> serviceInfos = new TreeSet<>(SERVICE_INFO_COMPARATOR);
+                var existing = servicesByContract.get(contract);
+                if (existing != null) {
+                    // we may add new contracts in case somebody injects Object; this should only be done
+                    // for contracts already known by the registry
+                    serviceInfos.addAll(existing);
+                }
+
+                serviceInfos.add(descriptor);
+
+                // replace the instances
+                servicesByContract.put(contract, serviceInfos);
+                // reset bindings, as build-time binding would ignore instances explicitly set
+                bindings.forgetContract(contract);
+            }
+        } finally {
+            stateWriteLock.unlock();
+        }
+    }
+
     <T> void add(Class<T> contract, double weight, T instance) {
+        if (!allowLateBinding) {
+            throw new ServiceRegistryException("This service registry instance does not support late binding, as it was "
+                                                       + "explicitly disabled through registry configuration: " + id);
+        }
         stateWriteLock.lock();
         try {
             ResolvedType contractType = ResolvedType.create(contract);
@@ -410,6 +472,8 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
                 throw new ServiceRegistryException("Cannot add a service instance for service implementation: "
                                                            + contract.getName());
             }
+            // reset bindings, as build-time binding would ignore instances explicitly set
+            bindings.forgetContract(contractType);
         } finally {
             stateWriteLock.unlock();
         }
@@ -579,16 +643,29 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
     private void accessed(ServiceInfo service) {
         stateReadLock.lock();
         try {
-            accessedContracts.get(ResolvedType.create(service.serviceType())).set(true);
+            accessed(ResolvedType.create(service.serviceType()));
             service.contracts()
-                    .forEach(it -> accessedContracts.get(it).set(true));
+                    .forEach(this::accessed);
         } finally {
             stateReadLock.unlock();
         }
     }
 
+    private void accessed(ResolvedType type) {
+        AtomicBoolean atomicBoolean = accessedContracts.get(type);
+        if (atomicBoolean == null) {
+            return;
+        }
+        atomicBoolean.set(true);
+    }
+
     private void checkValidContract(ResolvedType contract) {
         AtomicBoolean accessed = accessedContracts.get(contract);
+
+        if (bindings.isValidContract(contract) && accessed == null) {
+            return;
+        }
+
         if (accessed == null) {
             throw new ServiceRegistryException("Contract " + contract.resolvedName()
                                                        + " is not provided by any service in the registry, so it cannot have "

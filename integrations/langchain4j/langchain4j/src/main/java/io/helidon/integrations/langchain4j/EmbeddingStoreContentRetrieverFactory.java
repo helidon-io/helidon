@@ -30,6 +30,8 @@ import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 
+import static io.helidon.integrations.langchain4j.EmbeddingStoreContentRetrieverConfigBlueprint.CONFIG_ROOT;
+
 @Service.Singleton
 class EmbeddingStoreContentRetrieverFactory implements Supplier<Optional<EmbeddingStoreContentRetriever>> {
     private static final TypeName STORE_TYPE = TypeName.builder()
@@ -43,7 +45,7 @@ class EmbeddingStoreContentRetrieverFactory implements Supplier<Optional<Embeddi
     EmbeddingStoreContentRetrieverFactory(ServiceRegistry registry,
                                           Config config) {
         var retrieverConfig =
-                EmbeddingStoreContentRetrieverConfig.create(config.get(EmbeddingStoreContentRetrieverConfigBlueprint.CONFIG_ROOT));
+                EmbeddingStoreContentRetrieverConfig.create(config.get(CONFIG_ROOT));
 
         if (retrieverConfig.enabled()) {
             this.contentRetriever = LazyValue.create(() -> Optional.of(buildContentRetriever(registry, retrieverConfig)));

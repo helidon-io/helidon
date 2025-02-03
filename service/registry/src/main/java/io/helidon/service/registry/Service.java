@@ -217,7 +217,7 @@ public final class Service {
      * qualified by the same qualifier.
      */
     @Target(ElementType.ANNOTATION_TYPE)
-    @Retention(RetentionPolicy.CLASS)
+    @Retention(RetentionPolicy.RUNTIME) // we need this for our CDI integration
     @Documented
     public @interface Qualifier {
     }

@@ -142,9 +142,9 @@ interface OpenAiEmbeddingModelConfigBlueprint {
     Map<String, String> customHeaders();
 
     /**
-     * Gets {@link io.helidon.integrations.langchain4j.cdi.BeanName} containing proxy CDI bean name.
+     * Gets name qualifier for a Proxy instance.
      *
-     * @return proxy CDI bean name or "discovery:auto" if the bean must be discovered automatically
+     * @return proxy bean name, or {@value io.helidon.service.registry.Service.Named#DEFAULT_NAME}
      */
     @Option.Configured
     Optional<String> proxy();
