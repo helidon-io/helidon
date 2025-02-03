@@ -15,6 +15,8 @@
  */
 package io.helidon.tracing.providers.opentelemetry;
 
+import java.util.Objects;
+
 import io.helidon.tracing.Wrapper;
 
 import io.opentelemetry.api.trace.SpanBuilder;
@@ -51,5 +53,18 @@ class WrappedTracer implements Tracer, Wrapper {
                                                    + otelTracer.getClass().getName()
                                                    + " and the wrapped Helidon tracer has type "
                                                    + helidonTracer.getClass().getName());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof WrappedTracer that)) {
+            return false;
+        }
+        return Objects.equals(helidonTracer, that.helidonTracer);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(helidonTracer);
     }
 }

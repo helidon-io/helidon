@@ -164,7 +164,7 @@ The JavaDoc for the types describes how to get and set baggage entries, get all 
 include::{rootdir}/includes/tracing/common-callbacks.adoc[tags=defs;detailed,leveloffset=+1]
 
 ==== Lifecycle Callbacks with OpenTelemetry Types
-To use lifecycle callbacks, applications should normally work with the Helidon `Tracer`, `Span.Builder`, `Span`, and `Scope` types which automatically call back to each registered `SpanListner`.
+To use lifecycle callbacks, applications should normally work with the Helidon `Tracer`, `Span.Builder`, `Span`, and `Scope` types which automatically call back to each registered `SpanListener`.
 
 In some cases application code might want to use a reference to an OpenTelemetry `Tracer` or `Span` _rather than_ a reference to the Helidon counterpart but still want to respond to lifecycle events as the OpenTelemetry object goes through its lifecycle.
 

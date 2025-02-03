@@ -15,6 +15,7 @@
  */
 package io.helidon.tracing.providers.opentelemetry;
 
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.tracing.Wrapper;
@@ -137,5 +138,19 @@ class WrappedSpanBuilder implements SpanBuilder, Wrapper {
                                                    + nativeSpanBuilder.getClass().getName()
                                                    + " and the wrapped Helidon span builder has type "
                                                    + helidonSpanBuilder.getClass().getName());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof WrappedSpanBuilder that)) {
+            return false;
+        }
+        return Objects.equals(helidonSpanBuilder, that.helidonSpanBuilder) && Objects.equals(nativeSpanBuilder,
+                                                                                             that.nativeSpanBuilder);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(helidonSpanBuilder, nativeSpanBuilder);
     }
 }

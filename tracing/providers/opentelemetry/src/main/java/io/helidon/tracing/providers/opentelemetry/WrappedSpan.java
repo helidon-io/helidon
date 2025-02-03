@@ -15,6 +15,7 @@
  */
 package io.helidon.tracing.providers.opentelemetry;
 
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.tracing.Wrapper;
@@ -134,5 +135,18 @@ class WrappedSpan implements io.opentelemetry.api.trace.Span, Wrapper {
                                                    + nativeSpan.getClass().getName()
                                                    + " and the wrapped Helidon span has type "
                                                    + helidonSpan.getClass().getName());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof WrappedSpan that)) {
+            return false;
+        }
+        return Objects.equals(helidonSpan, that.helidonSpan) && Objects.equals(nativeSpan, that.nativeSpan);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(helidonSpan, nativeSpan);
     }
 }

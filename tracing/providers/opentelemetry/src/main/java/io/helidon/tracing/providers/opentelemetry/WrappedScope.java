@@ -15,6 +15,8 @@
  */
 package io.helidon.tracing.providers.opentelemetry;
 
+import java.util.Objects;
+
 import io.helidon.tracing.Wrapper;
 
 import io.opentelemetry.context.Scope;
@@ -50,5 +52,18 @@ class WrappedScope implements io.opentelemetry.context.Scope, Wrapper {
                                                    + nativeScope.getClass().getName()
                                                    + " and the wrapped Helidon scope has type "
                                                    + helidonScope.getClass().getName());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof WrappedScope that)) {
+            return false;
+        }
+        return Objects.equals(helidonScope, that.helidonScope);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(helidonScope);
     }
 }
