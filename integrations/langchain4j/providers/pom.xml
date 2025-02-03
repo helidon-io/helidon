@@ -34,5 +34,6 @@
 
     <modules>
         <module>open-ai</module>
+        <module>oracle</module>
     </modules>
 </project>
