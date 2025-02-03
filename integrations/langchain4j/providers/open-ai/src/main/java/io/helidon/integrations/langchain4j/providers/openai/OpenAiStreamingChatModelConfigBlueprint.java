@@ -39,9 +39,9 @@ interface OpenAiStreamingChatModelConfigBlueprint {
     String CONFIG_ROOT = "langchain4j.open-ai.streaming-chat-model";
 
     /**
-     * If set to {@code false}, OpenAI moderation model will not be available even if configured.
+     * If set to {@code false} (default), OpenAI moderation model will not be available even if configured.
      *
-     * @return whether OpenAI model is enabled, defaults to {@code true}
+     * @return whether OpenAI model is enabled, defaults to {@code false}
      */
     @Option.Configured
     boolean enabled();

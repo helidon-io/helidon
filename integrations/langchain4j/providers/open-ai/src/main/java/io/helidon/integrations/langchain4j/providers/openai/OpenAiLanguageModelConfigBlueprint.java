@@ -38,9 +38,9 @@ interface OpenAiLanguageModelConfigBlueprint {
     String CONFIG_ROOT = "langchain4j.open-ai.language-model";
 
     /**
-     * If set to {@code false}, OpenAI language model will not be available even if configured.
+     * If set to {@code false} (default), OpenAI language model will not be available even if configured.
      *
-     * @return whether OpenAI model is enabled, defaults to {@code true}
+     * @return whether OpenAI model is enabled, defaults to {@code false}
      */
     @Option.Configured
     boolean enabled();
