@@ -20,7 +20,7 @@
 :description: Helidon WebServer Introduction
 :keywords: helidon, java, webserver, tls
 :feature-name: WebServer
-:rootdir: {docdir}/..
+:rootdir: {docdir}/../..
 :requested-uri-discovery-inc: {rootdir}/includes/server/requested-uri-discovery.adoc
 
 include::{rootdir}/includes/se.adoc[]
@@ -526,22 +526,22 @@ first.
 |<<Access Log, Access Log>>
 |1000
 
-|xref:tracing.adoc[Tracing]
+|xref:{rootdir}/se/tracing.adoc[Tracing]
 |900
 
-|xref:cors.adoc[CORS]
+|xref:{rootdir}/se/cors.adoc[CORS]
 |850
 
-|xref:security/introduction.adoc[Security]
+|xref:{rootdir}/se/security/introduction.adoc[Security]
 |800
 
 |Routing (all handlers and filters)
 |100
 
-|xref:openapi/openapi.adoc[OpenAPI]
+|xref:{rootdir}/se/openapi/openapi.adoc[OpenAPI]
 |90
 
-|xref:observability.adoc[Observability]
+|xref:{rootdir}/se/observability.adoc[Observability]
 |80
 |===
 
