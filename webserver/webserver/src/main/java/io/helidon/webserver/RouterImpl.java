@@ -63,6 +63,13 @@ class RouterImpl implements Router {
     }
 
     @Override
+    public void afterStart(WebServer webServer) {
+        for (Routing value : routings.values()) {
+            value.afterStart(webServer);
+        }
+    }
+
+    @Override
     public List<? extends Routing> routings() {
         return List.copyOf(routings.values());
     }

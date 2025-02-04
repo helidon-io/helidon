@@ -226,6 +226,8 @@ class LoomServer implements WebServer {
                 + uptime + " milliseconds since JVM startup. "
                 + "Java " + Runtime.version());
 
+        fireAfterStart();
+
         if ("!".equals(System.getProperty(EXIT_ON_STARTED_KEY))) {
             LOGGER.log(System.Logger.Level.INFO, String.format("Exiting, -D%s set.", EXIT_ON_STARTED_KEY));
             // we need to run the system exit on a different thread, to correctly finish whatever was happening on main
@@ -238,6 +240,10 @@ class LoomServer implements WebServer {
                         Contexts.runInContext(ctx, () -> System.exit(0));
                     });
         }
+    }
+
+    private void fireAfterStart() {
+        listeners.values().forEach(l -> l.router().afterStart(this));
     }
 
     private void registerShutdownHook() {
