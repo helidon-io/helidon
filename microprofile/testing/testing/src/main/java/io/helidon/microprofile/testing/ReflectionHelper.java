@@ -30,6 +30,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.helidon.common.UncheckedException;
+
 /**
  * Reflection helper.
  */
@@ -285,14 +287,8 @@ class ReflectionHelper {
             method.setAccessible(true);
             Object value = method.invoke(instance, args);
             return type.cast(value);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        } catch (InvocationTargetException e) {
-            Throwable target = e.getTargetException();
-            if (e.getTargetException() instanceof RuntimeException re) {
-                throw re;
-            }
-            throw new RuntimeException(target);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new UncheckedException(e);
         }
     }
 }
