@@ -246,21 +246,4 @@ public final class Functions {
          */
         T get() throws E;
     }
-
-    /**
-     * Unchecked exception.
-     *
-     * @see #unwrap(Throwable)
-     */
-    public static class UncheckedException extends RuntimeException {
-
-        /**
-         * Create a new unchecked exception.
-         *
-         * @param cause cause
-         */
-        public UncheckedException(Throwable cause) {
-            super(cause);
-        }
-    }
 }

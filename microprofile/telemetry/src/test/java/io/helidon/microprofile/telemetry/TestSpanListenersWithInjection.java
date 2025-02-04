@@ -28,8 +28,10 @@ import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Scope;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -41,21 +43,18 @@ import static org.hamcrest.Matchers.hasSize;
 @AddBean(TestSpanListenersWithInjection.MyBean.class)
 class TestSpanListenersWithInjection {
 
-    private static MyListener listener;
+    private static final MyListener LISTENER = new MyListener();
 
     @Inject
     private MyBean myBean;
 
-    @BeforeAll
-    static void setup() {
-        listener = new MyListener();
-        io.helidon.tracing.Tracer.global().register(listener);
-    }
-
     @BeforeEach
     void clearListener() {
-        listener.clear();
+        LISTENER.clear();
+    }
 
+    void onStartup(@Observes @Initialized(ApplicationScoped.class) Object event) {
+        io.helidon.tracing.Tracer.global().register(LISTENER);
     }
 
     @Test
@@ -108,13 +107,14 @@ class TestSpanListenersWithInjection {
                                      int expectedEnded,
                                      int expectedActivated,
                                      int expectedClosed) {
-        assertThat(message + ": Starting spans", listener.starting(), hasSize(expectedStarting));
-        assertThat(message + ": Started spans", listener.started(), hasSize(expectedStarted));
-        assertThat(message + ": Ended spans", listener.ended(), hasSize(expectedEnded));
-        assertThat(message + ": Activated scopes", listener.activated().keySet(), hasSize(expectedActivated));
-        assertThat(message + ": Closed scopes", listener.closed().keySet(), hasSize(expectedClosed));
+        assertThat(message + ": Starting spans", LISTENER.starting(), hasSize(expectedStarting));
+        assertThat(message + ": Started spans", LISTENER.started(), hasSize(expectedStarted));
+        assertThat(message + ": Ended spans", LISTENER.ended(), hasSize(expectedEnded));
+        assertThat(message + ": Activated scopes", LISTENER.activated().keySet(), hasSize(expectedActivated));
+        assertThat(message + ": Closed scopes", LISTENER.closed().keySet(), hasSize(expectedClosed));
     }
 
+    @ApplicationScoped
     static class MyBean {
 
         @Inject

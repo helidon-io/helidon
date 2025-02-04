@@ -31,7 +31,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 
-import io.helidon.common.Functions.UncheckedException;
+import io.helidon.common.UncheckedException;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.microprofile.testing.HelidonTestContainer;
@@ -268,13 +268,13 @@ public class HelidonTestNgListener extends HelidonTestNgListenerBase implements 
                     method.setAccessible(true);
                     return method.invoke(instance, args);
                 } catch (InvocationTargetException e) {
-                    if (e.getTargetException() instanceof RuntimeException) {
-                        throw (RuntimeException) e.getTargetException();
-                    }
-                    throw new UncheckedException(e.getTargetException());
+                    throw new UncheckedException(e);
                 }
             });
         } catch (UncheckedException e) {
+            if (e.getCause() instanceof InvocationTargetException te) {
+                throw te.getCause();
+            }
             throw e.getCause();
         }
     }
