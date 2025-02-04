@@ -16,11 +16,11 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Performance Limits
-:description: Helidon SE Performance Limits
-:feature-name: Performance Limits
+= Concurrency Limits
+:description: Helidon SE Concurrency Limits
+:feature-name: Concurrency Limits
 :microprofile-bundle: false
-:keywords: helidon, se, performance, limits
+:keywords: helidon, se, performance, concurrency, limits
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/se.adoc[]
@@ -38,7 +38,7 @@ it may be beneficial
 to limit the number of concurrent requests accepted by the Helidon webserver in
 order to improve the overall experience. When doing so, it should also be possible
 to establish rules for those requests that cannot be serviced immediately,
-as well as how grow or shrink the number of _permits_ available in the system.
+as well as how to grow or shrink the number of _permits_ available in the system.
 
 == Setting Concurrency Limits
 
@@ -71,7 +71,12 @@ will be queued, if possible, and any request that sits in the queue for more tha
 
 Instead of fixing the number of permits to a given value, the AIMD strategy
 allows the set of permits to grow arithmetically and shrink multiplicatively
-as needed. For example,
+as needed, based on the actual time that it takes to process requests. AIMD
+can dynamically adjust the number of available permits to ensure a certain
+_quality of service_, possibly for a subset of all the requests received.
+It is generally preferred to serve a subset of clients efficiently than
+all clients inefficiently, and this type of tradeoff can be defined using
+an AIMD strategy. For example,
 
 [source,yaml]
 ----
@@ -131,8 +136,8 @@ strategies see:
 == Metrics
 
 The Concurrency Limit module also has built-in support for metrics in order
-to monitor a certain strategy. These metrics are disabled
-by default, but can be enabled as follows:
+to monitor the chosen strategy. These metrics are disabled by default,
+but can be enabled as follows:
 
 [source,yaml]
 ----
@@ -150,7 +155,8 @@ server:
 The following tables describe the metrics that are available for each of the
 strategies described above. A metric tag `socketName=<name-of-socket>` is used to
 group metrics that correspond to a particular socket; for simplicity this metric tag
-is _omitted_ for the default socket.
+is _omitted_ for the default socket. All metrics provided by the Concurrency Limit
+module are in **vendor** scope.
 
 .Fixed
 |===

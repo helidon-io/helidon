@@ -331,6 +331,7 @@ backend:
                   - "webclient.adoc"
                   - "dbclient.adoc"
                   - "performance-tuning.adoc"
+                  - "concurrency-limits.adoc"
               - type: "MENU"
                 title: "Config"
                 dir: "config"
