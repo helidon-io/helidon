@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,10 +21,19 @@
 :pagename: testing
 :description: Helidon Testing with JUnit5
 :keywords: helidon, mp, test, testing, junit
-:feature-name: Testing with JUnit
+:feature-name: Helidon MicroProfile Testing JUnit5
 :rootdir: {docdir}/../..
 
 include::{rootdir}/includes/mp.adoc[]
+
+:mp-junit5-javadoc-url: {mp-junit5-javadoc-base-url}/io/helidon/microprofile/testing/junit5
+:mp-testing-javadoc-url: {mp-testing-javadoc-base-url}/io/helidon/microprofile/testing
+:mp-mocking-javadoc-url: {mp-mocking-javadoc-base-url}/io/helidon/microprofile/testing/mocking
+:mp-server-javadoc-url: {mp-server-javadoc-base-url}/io/helidon/microprofile/server
+:mp-config-javadoc-url: {mp-config-javadoc-base-url}/io/helidon/microprofile/config
+:jakarta-jaxrs-javadoc-url: {jakarta-jaxrs-base-url}/apidocs/jakarta/ws/rs
+:jakarta-cdi-javadoc-url: {jakarta-cdi-base-url}/apidocs/jakarta.cdi/jakarta/enterprise
+:microprofile-config-javadoc-url: {microprofile-config-base-url}/apidocs/org/eclipse/microprofile/config
 
 == Contents
 
@@ -39,7 +48,9 @@ include::{rootdir}/includes/mp.adoc[]
 
 == Overview
 
-Helidon provides built-in test support for CDI testing in JUnit5.
+Helidon provides a JUnit5 extension that integrates CDI to support testing with Helidon MP.
+
+The test class is added as a CDI bean to support injection and the CDI container is started lazily during test execution.
 
 include::{rootdir}/includes/dependencies.adoc[]
 [source,xml]
@@ -52,205 +63,54 @@ include::{rootdir}/includes/dependencies.adoc[]
 ----
 
 == Usage
-A test can be annotated with `io.helidon.microprofile.testing.junit5.HelidonTest` annotation to mark it as a
-CDI test. This annotation will start the CDI container before any test method is invoked, and stop it after
-the last method is invoked. This annotation also enables injection into the test class itself.
 
-=== Usage - per method CDI container
-A test can be annotated as follows:
+include::{rootdir}/mp/testing/testing-common.adoc[tag=usage]
 
-`@HelidonTest(resetPerTest = true)`
+=== Test Instance Lifecyle
 
-This will change the behavior as follows:
+The CDI scope used by the test instance follows the lifecyle defined by JUnit5. The default is `PER_CLASS` and is enforced
+ by link:{mp-junit5-javadoc-url}/HelidonTest.html[`@HelidonTest`].
 
-- A new CDI container is created for each test method invocation
-- annotations to add config, beans and extension can be added for each method in addition to the class
-- you cannot inject fields or constructor parameters of the test class itself (as a single instance is shared by more containers)
-- you can add `SeContainer` as a method parameter of any test method and you will get the current container
+I.e. By default, the test instance is re-used between test methods.
 
-=== Usage - configuration
-In addition to the `@AddConfig` and `@AddConfigBlock` annotations, you can also use
-`@Configuration` to configure additional classpath properties config sources using `configSources`, and to
-mark that a custom configuration is desired.
-If `@Configuration(useExisting=true)`, the existing (or default) MicroProfile configuration would be used. In this case
-it is important to set property `mp.initializer.allow=true` in order CDI container to start, when used with
-`@HelidonTest`.
-You can set up config in `@BeforeAll` method and register it with `ConfigProviderResolver` using MP Config APIs, and declare
-`@Configuration(useExisting=true)`.
-Note that this is not compatible with repeatable tests that use method sources that access CDI, as we must delay the CDI
-startup to the test class instantiation (which is too late, as the method sources are already invoked by this time).
+NOTE: The test instance is not re-used between CDI container, using a dedicated CDI container implies a new test instance
 
-*If you want to use method sources that use CDI with repeatable tests, please do not use `@Configuration(useExisting=true)`*
-
-=== Usage - added parameters and injection types
-The following types are available for injection (when a single CDI container is used per test class):
-
-- `WebTarget` - a JAX-RS client's target configured for the current hostname and port when `helidon-micorprofile-server` is on
-the classpath
-
-The following types are available as method parameters (in any type of Helidon tests):
-
-- `WebTarget` - a JAX-RS client's target configured for the current hostname and port when `helidon-micorprofile-server` is on
-the classpath
-- `SeContainer` - the current container instance
+[source,java]
+.Using per method lifecycle
+----
+include::{sourcedir}/mp/testing/TestingJunit5Snippets.java[tag=snippet_1, indent=0]
+----
 
 == API
 
-The annotations described in this section are inherited (for the non-repeatable ones), and additive (for repeatable).
-So if you declare `@DisableDiscovery` on abstract class, all implementations will have discovery disabled, unless you
-annotate the implementation class with `@DisableDiscovery(false)`.
-If you declare `@AddBean` on both abstract class and implementation class, both beans will be added.
-
-In addition to this simplification, the following annotations are supported:
-
-|===
-|Annotation | Usage
-
-|`@io.helidon.microprofile.testing.junit5.AddBean`
-|Used to add one or more beans to the container (if not part of a bean archive, or when discovery is disabled)
-
-|`@io.helidon.microprofile.testing.junit5.AddExtension`
-|Used to add one or more CDI extensions to the container (if not added through service loader, or when discovery is disabled)
-
-|`@io.helidon.microprofile.testing.junit5.AddConfig`
-|Used to add one or more configuration properties to MicroProfile config without the need of creating a `microprofile-config.properties` file
-
-|Used `@io.helidon.microprofile.testing.junit5.DisableDiscovery`
-|to disable automated discovery of beans and extensions
-
-|Used `@io.helidon.microprofile.testing.junit5.DisableDiscovery`
-|to disable automated discovery of beans and extensions
-
-|Used `@io.helidon.microprofile.testing.junit5.AddJaxRs`
-a|add JaxRs support to the test class. Only used with `@DisableDiscovery` annotation, otherwise an exception will be thrown. Automatically adds the following Beans and Extensions to the test class:
-
-* `ServerCdiExtension`
-* `JaxRsCdiExtension`
-* `CdiComponentProvider`
-* `org.glassfish.jersey.ext.cdi1x.internal.ProcessAllAnnotatedTypes`
-* `org.glassfish.jersey.weld.se.WeldRequestScope`
-|===
+include::{rootdir}/mp/testing/testing-common.adoc[tag=api]
 
 == Examples
 
-In the current example, Helidon container will be launched prior test. The _Bean Discovery_ will be disabled. _MyBean_ will be added to the test, so that it can be injected. _ConfigCdiExtension_ will be enabled for this test. And finally, a configuration property will be added using `@AddConfig` annotation.
-
-[source,java]
-.Code sample
-----
-include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_1, indent=0]
-----
-<1> Start the Helidon container.
-<2> Set disabled Bean Discovery for the current test class.
-<3> Add `MyBean` to current context.
-<4> Add a configuration CDI extension to the current test.
-<5> Add configuration properties.
-<6> Inject `MyBean` as it is available in the CDI context.
-<7> Run rests.
-
-To test `@RequestScoped` bean with JaxRs support:
-
-[source,java]
-.Test `RequestScoped` bean
-----
-include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_2, indent=0]
-----
-<1> Start the Helidon container.
-<2> Set disabled Bean discovery.
-<3> Add JaxRs support to the current test class.
-<4> Define a `RequestScoped` bean.
+include::{rootdir}/mp/testing/testing-common.adoc[tag=examples]
 
 == Mock Support
 
-This section describes how to mock objects using Helidon API and in a second phase, using pure CDI.
+include::{rootdir}/mp/testing/testing-common.adoc[tag=mock-support]
 
-=== Helidon Mock Support
+=== Using CDI Alternative
 
-Helidon has its own API to use mocking with test classes annotated with `@HelidonTest`.
-
-==== Maven Coordinates
-
-To enable Helidon Mock Support add the following dependency to your project’s pom.xml.
-[source,xml]
-----
-<dependency>
-    <groupId>io.helidon.microprofile.testing</groupId>
-    <artifactId>helidon-microprofile-testing-mocking</artifactId>
-    <scope>test</scope>
-</dependency>
-----
-
-==== API
-
-It consists of one annotation named `@MockBean`, designed to be used on fields and parameters. The implementation
-relies only on CDI and thus it works with either JUnit or TestNG. The annotation has a parameter `answers` used
-to set the default answer for the mocked beans.
-
-==== Example
+link:{jakarta-cdi-javadoc-url}/inject/Alternative.html[`@Alternative`] can be used to replace a CDI bean with an instrumented
+instance.
 
 [source,java]
-.Code sample
+.Mocking using CDI Alternative
 ----
-include::{sourcedir}/mp/testing/HelidonMockingSnippets.java[tag=snippet_1, indent=0]
+include::{sourcedir}/mp/testing/TestingJunit5Snippets.java[tag=snippet_2, indent=0]
 ----
-<1> `service` field annotated with `@MockBean` and `Answers.CALLS_REAL_METHODS` for default answers.
-<2> Test the mocked service with real method response.
-<3> Test the mocked service with modified behavior.
-
-=== Mocking objects with pure CDI
-
-CDI can be used to enable mocking, the following example shows how to mock a service and inject it in a JAX-RS resource.
-Let's consider a simple service `FooService` with a dummy method `FooService#getFoo` that return `foo` as a `String`.
-And a resource where the service is injected and expose an endpoint at `/foo` that get the `String` provided by the service.
-
-[source,java]
-.Code sample
-----
-include::{sourcedir}/mp/testing/CDIMockingSnippets.java[tag=snippet_1, indent=0]
-----
-<1> A simple `foo` Service.
-<2> Inject the service into the resource.
-
-This example uses Mockito to create mock instances before each test. The method mockFooService is a CDI producer method
-that adds the mock instance as an @Alternative in order to replace the FooService singleton.
-
-[source,java]
-.Code sample
-----
-include::{sourcedir}/mp/testing/CDIMockingSnippets.java[tag=snippet_2, indent=0]
-----
-<1> Set priority to 1 because of `@Alternative`.
-<2> Set `fooService` to a new mock before each tests.
-<3> This makes `FooResource` inject the mock instead of the default singleton.
-<4> Test that the mock is injected with modified behavior.
-<5> Test the real method behavior.
+<1> Create the mock instance in the test class
+<2> Create a CDI producer method annotated with `@Alternative`
+<3> Set priority to 1 (required by `@Alternative`)
+<4> Customize the behavior
 
 == Virtual Threads
-Helidon tests are able to detect Virtual Threads pinning. A situation when carrier thread is blocked
-in a way, that virtual thread scheduler can't use it for scheduling of other virtual threads.
-This can happen for example when blocking native code is invoked, or prior to the JDK 24 when
-blocking IO operation happens in a synchronized block.
-Pinning can in some cases negatively affect application performance.
 
-[source,java]
-.Enable pinning detection
-----
-include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_3, indent=0]
-----
-
-Pinning is considered as harmful when it takes longer than 20 milliseconds,
-that is also the default when detecting it within Helidon tests.
-
-Pinning threshold can be changed with:
-
-[source,java]
-.Configure pinning threshold
-----
-include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_4, indent=0]
-----
-<1> Change pinning threshold from default(20) to 50 milliseconds.
-
-When pinning is detected, test fails with stacktrace pointing to the line of code causing it.
+include::{rootdir}/mp/testing/testing-common.adoc[tag=virtual-threads]
 
 == Additional Information
 

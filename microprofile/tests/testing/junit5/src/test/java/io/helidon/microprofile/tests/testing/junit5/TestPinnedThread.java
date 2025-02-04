@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,11 +40,13 @@ import static org.junit.platform.testkit.engine.EventConditions.finishedWithFail
 import static org.junit.platform.testkit.engine.TestExecutionResultConditions.instanceOf;
 import static org.junit.platform.testkit.engine.TestExecutionResultConditions.message;
 
+@SuppressWarnings("ALL")
 class TestPinnedThread {
 
     @Test
     void engineTest() {
         Events events = EngineTestKit.engine("junit-jupiter")
+                .configurationParameter("TestPinnedThread", "true")
                 .selectors(
                         selectClass(PinningTestCase.class),
                         selectClass(PinningExtraThreadTestCase.class),
@@ -64,7 +66,7 @@ class TestPinnedThread {
                 );
     }
 
-    private Condition<org.junit.platform.testkit.engine.Event> failedWithPinningException(String expectedPinningMethodName) {
+    private Condition<Event> failedWithPinningException(String expectedPinningMethodName) {
         return finishedWithFailure(
                 instanceOf(PinningAssertionError.class),
                 message(m -> m.startsWith("Pinned virtual threads were detected"))
@@ -73,7 +75,7 @@ class TestPinnedThread {
                         s -> s
                                 .anyMatch(e -> e.getMethodName()
                                         .equals(expectedPinningMethodName))),
-                                  "Method with pinning is missing from stack strace.")
+                        "Method with pinning is missing from stack strace.")
         );
     }
 
@@ -81,6 +83,7 @@ class TestPinnedThread {
         return displayName(Arrays.stream(clazz.getName().split("\\.")).toList().getLast());
     }
 
+    @EnabledIfParameter(key = "TestPinnedThread", value = "true")
     @HelidonTest(pinningDetection = true)
     @AddBean(PinningTestCase.TestResource.class)
     static class PinningTestCase {
@@ -108,6 +111,7 @@ class TestPinnedThread {
         }
     }
 
+    @EnabledIfParameter(key = "TestPinnedThread", value = "true")
     @HelidonTest(pinningDetection = true)
     static class PinningExtraThreadTestCase {
 
@@ -125,6 +129,7 @@ class TestPinnedThread {
         }
     }
 
+    @EnabledIfParameter(key = "TestPinnedThread", value = "true")
     @HelidonTest(pinningDetection = false)
     static class PinningDisabledExtraThreadTestCase {
 
@@ -142,6 +147,7 @@ class TestPinnedThread {
         }
     }
 
+    @EnabledIfParameter(key = "TestPinnedThread", value = "true")
     @HelidonTest(pinningDetection = true)
     static class NoPinningTestCase {
 
@@ -168,6 +174,7 @@ class TestPinnedThread {
         }
     }
 
+    @EnabledIfParameter(key = "TestPinnedThread", value = "true")
     @HelidonTest(pinningDetection = true)
     static class NoPinningExtraThreadTestCase {
 

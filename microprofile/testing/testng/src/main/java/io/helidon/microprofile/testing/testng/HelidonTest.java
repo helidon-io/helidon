@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,30 +24,18 @@ import java.lang.annotation.Target;
 import static io.helidon.common.testing.virtualthreads.PinningRecorder.DEFAULT_THRESHOLD;
 
 /**
- * An annotation making this test class a CDI bean with support for injection.
- * <p>
- * There is no need to provide {@code beans.xml} (actually it is not recommended, as it would combine beans
- * from all tests), instead use {@link AddBean},
- * {@link AddExtension}, and {@link AddConfig}
- * annotations to control the shape of the container.
- * <p>
- * To disable automated bean and extension discovery, annotate the class with
- * {@link DisableDiscovery}.
+ * A shorthand to use {@link HelidonTestNgListener} with additional settings.
+ *
+ * @see HelidonTestNgListener
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 @Inherited
 public @interface HelidonTest {
     /**
-     * By default, CDI container is created once before the class is initialized and shut down
-     * after. All test methods run within the same container.
+     * Forces the CDI container to be initialized and shutdown for each test method.
      *
-     * If this is set to {@code true}, a container is created per test method invocation.
-     * This restricts the test in the following way:
-     * 1. No injection into fields
-     * 2. No injection into constructor
-     *
-     * @return whether to reset container per test method
+     * @return whether to reset per test method
      */
     boolean resetPerTest() default false;
 

@@ -101,6 +101,16 @@
             <artifactId>helidon-microprofile-testing-junit5</artifactId>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.testing</groupId>
+            <artifactId>helidon-microprofile-testing-testng</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 
     <build>

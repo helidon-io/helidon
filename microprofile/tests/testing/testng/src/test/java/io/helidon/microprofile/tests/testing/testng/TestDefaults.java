@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeTest;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -41,17 +41,17 @@ public class TestDefaults {
     @ConfigProperty(name = PROPERTY_NAME, defaultValue = DEFAULT_VALUE)
     private String shouldNotExist;
 
-    private static boolean beforeAllCalled;
-    private boolean beforeEachCalled;
+    private boolean beforeClassCalled;
+    private boolean beforeMethodCalled;
 
     @BeforeClass
-    static void initClass() {
-        beforeAllCalled = true;
+    void beforeClass() {
+        beforeClassCalled = true;
     }
 
-    @BeforeTest
-    void beforeEach() {
-        beforeEachCalled = true;
+    @BeforeMethod
+    void beforeMethod() {
+        beforeMethodCalled = true;
     }
 
     @Test
@@ -62,8 +62,7 @@ public class TestDefaults {
 
     @Test
     void testLifecycleMethodsCalled() {
-        // this is to validate we can still use the usual junit methods
-        assertThat("Before all should have been called", beforeAllCalled, is(true));
-        assertThat("Before each should have been called", beforeEachCalled, is(true));
+        assertThat(beforeClassCalled, is(true));
+        assertThat(beforeMethodCalled, is(true));
     }
 }

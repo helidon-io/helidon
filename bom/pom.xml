@@ -1105,6 +1105,11 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.microprofile.testing</groupId>
+                <artifactId>helidon-microprofile-testing</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.microprofile.testing</groupId>
                 <artifactId>helidon-microprofile-testing-junit5</artifactId>
                 <version>${helidon.version}</version>
             </dependency>

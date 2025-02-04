@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.tests.testing.testng;
+package io.helidon.microprofile.tests.testing.junit5;
 
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import io.helidon.microprofile.testing.testng.AddBean;
-import io.helidon.microprofile.testing.testng.AddConfig;
-import io.helidon.microprofile.testing.testng.AddExtension;
-import io.helidon.microprofile.testing.testng.HelidonTest;
+import io.helidon.microprofile.testing.junit5.AddBean;
+import io.helidon.microprofile.testing.junit5.AddConfig;
+import io.helidon.microprofile.testing.junit5.AddExtension;
+import io.helidon.microprofile.testing.junit5.DisableDiscovery;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Initialized;
@@ -34,21 +35,40 @@ import jakarta.enterprise.inject.spi.CDI;
 import jakarta.enterprise.inject.spi.Extension;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 
+@AddBean(TestResetPerTest.DummyBean.class)
 @HelidonTest(resetPerTest = true)
-public class TestPerMethod {
+class TestResetPerTest {
     private final static List<SeContainer> ALL_CONTAINERS = new LinkedList<>();
+
+    private final DummyBean dummyBean;
+
+    @Inject
+    TestResetPerTest(DummyBean dummyBean) {
+        this.dummyBean = dummyBean;
+    }
+
+    @Test
+    void testWithParameter(SeContainer container) {
+        ALL_CONTAINERS.add(container);
+    }
+
+    @Test
+    @DisableDiscovery
+    void testWithParameterNoDiscovery(SeContainer container) {
+        ALL_CONTAINERS.add(container);
+    }
 
     @Test
     @AddConfig(key = "key-1", value = "value-1")
     @AddBean(MyBean.class)
-    public void testWithAdditionalConfig() {
+    void testWithAdditionalConfig() {
         String configured = CDI.current()
                 .select(MyBean.class)
                 .get()
@@ -59,17 +79,17 @@ public class TestPerMethod {
 
     @Test
     @AddExtension(MyExtension.class)
-    public void testCustomExtension() {
-        assertThat("Extension should have been called, as it observes application scope", MyExtension.called, is(true));
+    void testCustomExtension() {
+        assertThat(MyExtension.called, is(true));
     }
 
-    @AfterClass
+    @AfterAll
     static void validateContainerInstances() {
         Set<Integer> used = new HashSet<>();
         try {
             for (SeContainer container : ALL_CONTAINERS) {
                 if (!used.add(System.identityHashCode(container))) {
-                    Assert.fail("Container instance used twice: " + container);
+                    fail("Container instance used twice: " + container);
                 }
             }
         } finally {
@@ -77,7 +97,12 @@ public class TestPerMethod {
         }
     }
 
-    public static class MyBean {
+    @ApplicationScoped
+    static class DummyBean {
+    }
+
+    @ApplicationScoped
+    static class MyBean {
         private final String configured;
 
         @Inject
@@ -93,7 +118,7 @@ public class TestPerMethod {
     public static class MyExtension implements Extension {
         private static volatile boolean called = false;
 
-        void observer(@Observes @Initialized(ApplicationScoped.class) final Object event) {
+        void observer(@Observes @Initialized(ApplicationScoped.class) Object event) {
             called = true;
         }
     }

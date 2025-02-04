@@ -16,9 +16,10 @@
 
 package io.helidon.testing.junit5;
 
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.util.List;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -30,7 +31,6 @@ import io.helidon.common.context.Contexts;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.ServiceRegistry;
-import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.testing.TestException;
 import io.helidon.testing.TestRegistry;
@@ -40,6 +40,7 @@ import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.DynamicTestInvocationContext;
 import org.junit.jupiter.api.extension.Extension;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.ExtensionContext.Store.CloseableResource;
 import org.junit.jupiter.api.extension.InvocationInterceptor;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
@@ -62,6 +63,8 @@ public class TestJunitExtension implements Extension,
                                            AfterAllCallback,
                                            ParameterResolver {
 
+    private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace.create(TestJunitExtension.class);
+
     static {
         LogConfig.initClass();
     }
@@ -73,21 +76,10 @@ public class TestJunitExtension implements Extension,
     }
 
     @Override
-    public void beforeAll(ExtensionContext context) {
-        Class<?> testClass = context.getRequiredTestClass();
-        Context helidonContext = Context.builder()
-                .id("test-" + testClass.getName() + "-" + System.identityHashCode(testClass))
-                .build();
-        // self-register, so this context is used even if the current context is some child of it
-        helidonContext.register(GlobalServiceRegistry.STATIC_CONTEXT_CLASSIFIER, helidonContext);
-
-        ExtensionContext.Store store = extensionStore(context);
-        store.put(Context.class, helidonContext);
-
-        run(context, () -> {
-            LogConfig.configureRuntime();
-            createRegistry(store, testClass);
-        });
+    public void beforeAll(ExtensionContext ctx) {
+        var store = store(ctx, ctx.getRequiredTestClass());
+        initStaticContext(store, ctx);
+        run(ctx, LogConfig::configureRuntime);
     }
 
     @Override
@@ -96,141 +88,180 @@ public class TestJunitExtension implements Extension,
     }
 
     @Override
-    public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
+    public boolean supportsParameter(ParameterContext pc, ExtensionContext ctx)
             throws ParameterResolutionException {
-        Class<?> paramType = parameterContext.getParameter().getType();
-        if (!GenericType.create(parameterContext.getParameter().getParameterizedType())
-                .isClass()) {
-            return false;
-        }
 
-        return registrySupportedType(extensionContext, paramType);
+        return supplyChecked(ctx, () -> {
+            var paramType = pc.getParameter().getType();
+            var genericParamType = GenericType.create(pc.getParameter().getParameterizedType());
+            if (!genericParamType.isClass()) {
+                return false;
+            }
+            return supportedType(GlobalServiceRegistry.registry(), paramType);
+        });
     }
 
     @Override
-    public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
+    public Object resolveParameter(ParameterContext pc, ExtensionContext ctx)
             throws ParameterResolutionException {
-        Class<?> paramType = parameterContext.getParameter().getType();
 
-        if (registrySupportedType(extensionContext, paramType)) {
-            // at this point in time the registry must be ready
-            return registry(extensionContext)
-                    .orElseThrow()
-                    .get(paramType);
-        }
-
-        throw new ParameterResolutionException("Failed to resolve parameter of type "
-                                                       + paramType.getName());
+        return supplyChecked(ctx, () -> {
+            var paramType = pc.getParameter().getType();
+            var registry = GlobalServiceRegistry.registry();
+            if (supportedType(registry, paramType)) {
+                return registry.get(paramType);
+            }
+            throw new ParameterResolutionException("Failed to resolve parameter of type "
+                                                   + paramType.getName());
+        });
     }
 
     @Override
     public <T> T interceptTestClassConstructor(Invocation<T> invocation,
-                                               ReflectiveInvocationContext<Constructor<T>> invocationContext,
-                                               ExtensionContext extensionContext) throws Throwable {
-        return invoke(extensionContext, invocation);
+                                               ReflectiveInvocationContext<Constructor<T>> ic,
+                                               ExtensionContext ctx) throws Throwable {
+        return invoke(ctx, invocation);
     }
 
     @Override
     public void interceptBeforeAllMethod(Invocation<Void> invocation,
-                                         ReflectiveInvocationContext<Method> invocationContext,
-                                         ExtensionContext extensionContext) throws Throwable {
-        invoke(extensionContext, invocation);
+                                         ReflectiveInvocationContext<Method> ic,
+                                         ExtensionContext ctx) throws Throwable {
+        invoke(ctx, invocation);
     }
 
     @Override
     public void interceptBeforeEachMethod(Invocation<Void> invocation,
-                                          ReflectiveInvocationContext<Method> invocationContext,
-                                          ExtensionContext extensionContext) throws Throwable {
-        invoke(extensionContext, invocation);
+                                          ReflectiveInvocationContext<Method> ic,
+                                          ExtensionContext ctx) throws Throwable {
+        invoke(ctx, invocation);
     }
 
     @Override
     public void interceptTestMethod(Invocation<Void> invocation,
-                                    ReflectiveInvocationContext<Method> invocationContext,
-                                    ExtensionContext extensionContext) throws Throwable {
-        invoke(extensionContext, invocation);
+                                    ReflectiveInvocationContext<Method> ic,
+                                    ExtensionContext ctx) throws Throwable {
+        invoke(ctx, invocation);
     }
 
     @Override
     public <T> T interceptTestFactoryMethod(Invocation<T> invocation,
-                                            ReflectiveInvocationContext<Method> invocationContext,
-                                            ExtensionContext extensionContext) throws Throwable {
-        return invoke(extensionContext, invocation);
+                                            ReflectiveInvocationContext<Method> ic,
+                                            ExtensionContext ctx) throws Throwable {
+        return invoke(ctx, invocation);
     }
 
     @Override
     public void interceptTestTemplateMethod(Invocation<Void> invocation,
-                                            ReflectiveInvocationContext<Method> invocationContext,
-                                            ExtensionContext extensionContext) throws Throwable {
-        invoke(extensionContext, invocation);
+                                            ReflectiveInvocationContext<Method> ic,
+                                            ExtensionContext ctx) throws Throwable {
+        invoke(ctx, invocation);
     }
 
     @Override
     public void interceptDynamicTest(Invocation<Void> invocation,
-                                     DynamicTestInvocationContext invocationContext,
-                                     ExtensionContext extensionContext) throws Throwable {
-        invoke(extensionContext, invocation);
+                                     DynamicTestInvocationContext ic,
+                                     ExtensionContext ctx) throws Throwable {
+        invoke(ctx, invocation);
     }
 
     @Override
     public void interceptAfterEachMethod(Invocation<Void> invocation,
-                                         ReflectiveInvocationContext<Method> invocationContext,
-                                         ExtensionContext extensionContext) throws Throwable {
-        invoke(extensionContext, invocation);
+                                         ReflectiveInvocationContext<Method> ic,
+                                         ExtensionContext ctx) throws Throwable {
+        invoke(ctx, invocation);
     }
 
     @Override
     public void interceptAfterAllMethod(Invocation<Void> invocation,
-                                        ReflectiveInvocationContext<Method> invocationContext,
-                                        ExtensionContext extensionContext) throws Throwable {
-        invoke(extensionContext, invocation);
+                                        ReflectiveInvocationContext<Method> ic,
+                                        ExtensionContext ctx) throws Throwable {
+        invoke(ctx, invocation);
     }
 
     /**
-     * Service registry associated with the provided extension contexts
-     * (uses {@link #extensionStore(org.junit.jupiter.api.extension.ExtensionContext)}).
-     *
-     * @param extensionContext extension context
-     * @return service registry
-     */
-    protected Optional<ServiceRegistry> registry(ExtensionContext extensionContext) {
-        return Optional.ofNullable(extensionStore(extensionContext)
-                                           .get(ServiceRegistry.class, ServiceRegistry.class));
-    }
-
-    /**
-     * Extension store used by this extension to store context, service registry etc.
-     *
-     * @param ctx extension context
-     * @return extension store
-     */
-    protected ExtensionContext.Store extensionStore(ExtensionContext ctx) {
-        Class<?> testClass = ctx.getRequiredTestClass();
-        return ctx.getStore(ExtensionContext.Namespace.create(testClass));
-    }
-
-    /**
-     * Context to be used for all actions this extension invokes, and to store the global instances.
+     * Initialize the static context to be used for all actions this extension invokes, and to store the global instances.
      * This extension creates a unit test context by default for each test class.
      *
-     * @param ctx     JUnit extension context
-     * @param context Helidon context to set
+     * @param ctx JUnit extension context
      */
-    protected void context(ExtensionContext ctx, Context context) {
-        // self-register, so this context is used even if the current context is some child of it
-        context.register(GlobalServiceRegistry.STATIC_CONTEXT_CLASSIFIER, context);
-        extensionStore(ctx)
-                .put(Context.class, context);
+    protected void initStaticContext(ExtensionContext ctx) {
+        initStaticContext(store(ctx, ctx.getRequiredTestClass()), ctx);
     }
 
     /**
-     * The current context (if already available) that the test actions will be executed in.
+     * Initialize the static context to be used for all actions this extension invokes, and to store the global instances.
+     * This extension creates a unit test context by default for each test class.
+     *
+     * @param store JUnit extension store
+     * @param ctx   JUnit extension context
+     */
+    protected void initStaticContext(ExtensionContext.Store store, ExtensionContext ctx) {
+        store.getOrComputeIfAbsent(Context.class, c -> {
+            var testClass = ctx.getRequiredTestClass();
+            var context = Context.builder()
+                    .id("test-" + testClass.getName() + "-" + System.identityHashCode(testClass))
+                    .build();
+
+            // self-register, so this context is used even if the current context is some child of it
+            context.register(GlobalServiceRegistry.STATIC_CONTEXT_CLASSIFIER, context);
+
+            // supply registry
+            context.supply(GlobalServiceRegistry.CONTEXT_QUALIFIER, ServiceRegistry.class, () -> {
+                var manager = ServiceRegistryManager.create();
+                var registry = manager.registry();
+                store.put(ServiceRegistryManager.class, (CloseableResource) manager::shutdown);
+                store.put(ServiceRegistry.class, registry);
+                return registry;
+            });
+            return context;
+        });
+    }
+
+    /**
+     * Get an object from the given store.
+     *
+     * @param store store
+     * @param key   key
+     * @param type  type
+     * @param <T>   object type
+     * @return optional
+     */
+    protected static <T> Optional<T> storeLookup(ExtensionContext.Store store, Object key, Class<T> type) {
+        return Optional.ofNullable(store.get(key, type));
+    }
+
+    /**
+     * The current "static" context (if already available) that the test actions will be executed in.
      *
      * @param ctx JUnit extension context
      * @return context used by this extension
      */
-    protected Optional<Context> context(ExtensionContext ctx) {
-        return Optional.ofNullable(extensionStore(ctx).get(Context.class, Context.class));
+    protected Optional<Context> staticContext(ExtensionContext ctx) {
+        return storeLookup(store(ctx, ctx.getRequiredTestClass()), Context.class, Context.class);
+    }
+
+    /**
+     * Get a JUnit extension store.
+     *
+     * @param ctx        JUnit extension context
+     * @param qualifiers qualifiers
+     * @return JUnit extension store
+     */
+    protected static ExtensionContext.Store store(ExtensionContext ctx, AnnotatedElement... qualifiers) {
+        ExtensionContext.Namespace ns;
+        if (qualifiers.length > 0) {
+            ns = NAMESPACE.append(Arrays.stream(qualifiers)
+                    .map(e -> switch (e) {
+                        case Class<?> c -> c.getName();
+                        case Method m -> m.getName();
+                        default -> throw new IllegalArgumentException("Unsupported element: " + e);
+                    })
+                    .toArray());
+        } else {
+            ns = NAMESPACE;
+        }
+        return ctx.getStore(ns);
     }
 
     /**
@@ -243,11 +274,11 @@ public class TestJunitExtension implements Extension,
      * @throws Throwable in case the call to callable threw an exception
      */
     protected <T> T supply(ExtensionContext ctx, Supplier<T> supplier) throws Throwable {
-        return Contexts.runInContext(context(ctx).orElseThrow(), supplier::get);
+        return Contexts.runInContext(staticContext(ctx).orElseThrow(), supplier::get);
     }
 
     /**
-     * Call a supplier that can throw {@link java.lang.Throwable} within context.
+     * Call a supplier that can throw {@link Throwable} within context.
      *
      * @param ctx      JUnit extension context
      * @param supplier supplier to invoke
@@ -261,7 +292,7 @@ public class TestJunitExtension implements Extension,
                                                        Functions.CheckedSupplier<T, E> supplier) throws E {
         AtomicReference<Throwable> thrown = new AtomicReference<>();
 
-        T response = Contexts.runInContext(context(ctx).orElseThrow(), () -> {
+        T response = Contexts.runInContext(staticContext(ctx).orElseThrow(), () -> {
             try {
                 return supplier.get();
             } catch (Throwable e) {
@@ -272,7 +303,7 @@ public class TestJunitExtension implements Extension,
         if (thrown.get() == null) {
             return response;
         }
-        Throwable throwable = thrown.get();
+        var throwable = thrown.get();
         if (throwable instanceof RuntimeException rte) {
             throw rte;
         }
@@ -289,7 +320,7 @@ public class TestJunitExtension implements Extension,
      * @param runnable runnable to run
      */
     protected void run(ExtensionContext ctx, Runnable runnable) {
-        Contexts.runInContext(context(ctx).orElseThrow(), runnable);
+        Contexts.runInContext(staticContext(ctx).orElseThrow(), runnable);
     }
 
     /**
@@ -304,7 +335,7 @@ public class TestJunitExtension implements Extension,
     protected <E extends Throwable> void runChecked(ExtensionContext ctx, Functions.CheckedRunnable<E> runnable) throws E {
         AtomicReference<Throwable> thrown = new AtomicReference<>();
 
-        Contexts.runInContext(context(ctx).orElseThrow(), () -> {
+        Contexts.runInContext(staticContext(ctx).orElseThrow(), () -> {
             try {
                 runnable.run();
             } catch (Throwable e) {
@@ -315,7 +346,7 @@ public class TestJunitExtension implements Extension,
         if (thrown.get() == null) {
             return;
         }
-        Throwable throwable = thrown.get();
+        var throwable = thrown.get();
         if (throwable instanceof RuntimeException rte) {
             throw rte;
         }
@@ -337,7 +368,7 @@ public class TestJunitExtension implements Extension,
     protected <T> T invoke(ExtensionContext ctx, Invocation<T> invocation) throws Throwable {
         AtomicReference<Throwable> thrown = new AtomicReference<>();
 
-        T response = Contexts.runInContext(context(ctx).orElseThrow(), () -> {
+        T response = Contexts.runInContext(staticContext(ctx).orElseThrow(), () -> {
             try {
                 return invocation.proceed();
             } catch (Throwable e) {
@@ -353,46 +384,25 @@ public class TestJunitExtension implements Extension,
 
     private void afterShutdownMethods(Class<?> requiredTestClass) {
         for (Method declaredMethod : requiredTestClass.getDeclaredMethods()) {
-            TestRegistry.AfterShutdown annotation = declaredMethod.getAnnotation(TestRegistry.AfterShutdown.class);
+            var annotation = declaredMethod.getAnnotation(TestRegistry.AfterShutdown.class);
             if (annotation != null) {
                 try {
                     declaredMethod.setAccessible(true);
                     declaredMethod.invoke(null);
                 } catch (Exception e) {
                     throw new TestException("Failed to invoke @TestRegistry.AfterShutdown annotated method "
-                                                    + declaredMethod.getName(), e);
+                                            + declaredMethod.getName(), e);
 
                 }
             }
         }
     }
 
-    private void createRegistry(ExtensionContext.Store store, Class<?> testClass) {
-        var registryConfig = ServiceRegistryConfig.builder();
-        var manager = ServiceRegistryManager.create(registryConfig.build());
-        var registry = manager.registry();
-        GlobalServiceRegistry.registry(registry);
-        store.put(ServiceRegistry.class, registry);
-        store.put(ServiceRegistryManager.class, new ClosableRegistryManager(manager));
-    }
-
-    private boolean registrySupportedType(ExtensionContext ctx, Class<?> paramType) {
+    private boolean supportedType(ServiceRegistry registry, Class<?> paramType) {
         if (ServiceRegistry.class.isAssignableFrom(paramType)) {
             return true;
         }
         // we do not want to get the instance here (yet)
-        return !registry(ctx)
-                .map(it -> it.allServices(paramType))
-                .map(List::isEmpty)
-                .orElse(true);
-    }
-
-    private record ClosableRegistryManager(ServiceRegistryManager manager)
-            implements ExtensionContext.Store.CloseableResource {
-
-        @Override
-        public void close() {
-            manager.shutdown();
-        }
+        return !registry.allServices(paramType).isEmpty();
     }
 }

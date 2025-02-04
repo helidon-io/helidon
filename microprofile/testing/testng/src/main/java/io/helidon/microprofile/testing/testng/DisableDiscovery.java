@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,30 +23,39 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Whether discovery is automated or disabled. If discovery is desired, do not annotate test
- * class with this annotation.
+ * Disables CDI discovery.
  * <p>
- * When discovery is enabled, the whole classpath is scanned for bean archives (jar files containing
- * {@code META-INF/beans.xml}) and all beans and extensions are added automatically.
+ * If discovery is desired, do not annotate test class with this annotation.
  * <p>
- * When discovery is disabled, CDI would only contain the CDI implementation itself and beans and extensions added
- * through annotations {@link AddBean} and
- * {@link AddExtension}
- *
- * If discovery is disabled on class level and desired on method level,
- * the value can be set to {@code false}.
+ * If used on a method, the container will be reset regardless of the test lifecycle.
+ * <p>
+ * When disabling discovery, you are responsible for adding the beans and extensions needed to activate the features you need.
+ * You can use the following annotations to do that:
+ * <ul>
+ *     <li>{@link AddBean} to add CDI beans</li>
+ *     <li>{@link AddExtension} to add CDI extensions</li>
+ *     <li>{@link AddJaxRs} a shorthand to add JAX-RS (Jersey)</li>
+ * </ul>
+ * <p>
+ * See also the following "core" CDI extensions:
+ * <ul>
+ *     <li>{@link io.helidon.microprofile.server.ServerCdiExtension ServerCdiExtension} optional if using {@link AddJaxRs}</li>
+ *     <li>{@link io.helidon.microprofile.server.JaxRsCdiExtension JaxRsCdiExtension} optional if using {@link AddJaxRs}</li>
+ *     <li>{@link io.helidon.microprofile.config.ConfigCdiExtension ConfigCdiExtension}</li>
+ * </ul>
  */
+@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
-@Inherited
+@Deprecated(since = "4.2.0")
 public @interface DisableDiscovery {
     /**
-     * By default if you annotate a class or a method, discovery gets disabled.
+     * By default, if you annotate a class or a method, discovery gets disabled.
      * If you want to override configuration on method to differ from class, you
      * can configure the value to {@code false}, effectively enabling discovery.
      *
      * @return whether to disable discovery ({@code true}), or enable it ({@code false}). If this
-     * annotation is not present, discovery is enabled
+     *         annotation is not present, discovery is enabled
      */
     boolean value() default true;
 }
