@@ -23,9 +23,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.helidon.Main;
 import io.helidon.common.Weighted;
 import io.helidon.common.Weights;
 import io.helidon.common.types.ResolvedType;
@@ -44,17 +48,23 @@ import io.helidon.service.registry.ServiceInfo;
 import io.helidon.service.registry.ServiceInstance;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryException;
+import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.service.registry.Services;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Dependent;
+import jakarta.enterprise.context.Destroyed;
 import jakarta.enterprise.context.NormalScope;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.enterprise.context.spi.CreationalContext;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
 import jakarta.enterprise.inject.spi.Annotated;
+import jakarta.enterprise.inject.spi.AnnotatedConstructor;
+import jakarta.enterprise.inject.spi.AnnotatedField;
+import jakarta.enterprise.inject.spi.AnnotatedMethod;
+import jakarta.enterprise.inject.spi.AnnotatedType;
 import jakarta.enterprise.inject.spi.Bean;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
@@ -63,11 +73,19 @@ import jakarta.enterprise.inject.spi.ProcessBean;
 import jakarta.enterprise.inject.spi.ProcessManagedBean;
 import jakarta.enterprise.inject.spi.ProcessProducer;
 import jakarta.enterprise.inject.spi.ProcessSyntheticBean;
+import jakarta.enterprise.inject.spi.configurator.AnnotatedConstructorConfigurator;
+import jakarta.enterprise.inject.spi.configurator.AnnotatedFieldConfigurator;
+import jakarta.enterprise.inject.spi.configurator.AnnotatedMethodConfigurator;
+import jakarta.enterprise.inject.spi.configurator.AnnotatedTypeConfigurator;
+import jakarta.enterprise.inject.spi.configurator.BeanConfigurator;
 import jakarta.inject.Named;
 import jakarta.inject.Scope;
 import jakarta.inject.Singleton;
 import jakarta.interceptor.Interceptor;
 import org.jboss.weld.literal.NamedLiteral;
+
+import static io.helidon.service.registry.Service.Named.DEFAULT_NAME;
+import static io.helidon.service.registry.Service.Named.WILDCARD_NAME;
 
 /**
  * {@link java.util.ServiceLoader} provider implementation of CDI extension to add service registry types as CDI beans.
@@ -86,19 +104,32 @@ public class ServiceRegistryExtension implements Extension {
     private boolean registryPending = true;
 
     @SuppressWarnings("unchecked")
-    void registerQualifiers(@Observes BeforeBeanDiscovery bbd) {
+    void registerTypes(@Observes BeforeBeanDiscovery bbd, BeanManager bm) {
         var registry = GlobalServiceRegistry.registry();
         List<ServiceInfo> allServices = registry.lookupServices(Lookup.EMPTY);
 
         Set<TypeName> addedQualifiers = new HashSet<>();
+        Set<TypeName> addedAnnotatedTypes = new HashSet<>();
 
         for (ServiceInfo service : allServices) {
+            // add all qualifiers
             for (Qualifier qualifier : service.qualifiers()) {
                 TypeName typeName = qualifier.typeName();
                 if (addedQualifiers.add(typeName)) {
                     bbd.addQualifier((Class<? extends Annotation>) TypeFactory.toClass(typeName));
                 }
             }
+
+            // and service types
+            // the service types cannot be added as annotated type this way, as our tests
+            // start failing - in some cases, a CDI bean is created for a Helidon registry service and
+            // fed back to us, which ends in expected disaster; this behavior must be investigated, and then
+            // the following code can (maybe) be used
+            //   var providedType = service.providedType();
+            //   if (addedAnnotatedTypes.add(providedType)) {
+            //     var annotatedType = bm.createAnnotatedType(TypeFactory.toClass(service.serviceType()));
+            //     bbd.addAnnotatedType(annotatedType, providedType.fqName());
+            //   }
         }
     }
 
@@ -137,8 +168,7 @@ public class ServiceRegistryExtension implements Extension {
         List<ServiceInfo> allServices = registry.lookupServices(Lookup.EMPTY);
         Set<UniqueBean> processedTypes = new HashSet<>();
 
-        // now we can add CDI beans to service registry (must be done after we add service registry to CDI, as
-        // otherwise we would have the CDI beans twice)
+        // now we can add CDI beans to service registry
         for (CdiBean cdiBean : collectedCdiBeans) {
             addCdiBean(bm, cdiBean);
         }
@@ -167,6 +197,16 @@ public class ServiceRegistryExtension implements Extension {
                 .createWith(context -> GlobalServiceRegistry.registry());
     }
 
+    /*
+    When the application scope is closed, we must re-create a new service registry, as otherwise we may
+    start CDI again with stale registry services
+     */
+    void resetRegistry(@Observes @Destroyed(ApplicationScoped.class) Object event) {
+        ServiceRegistryManager manager = ServiceRegistryManager.create();
+        GlobalServiceRegistry.registry(manager::registry);
+        Main.addShutdownHandler(manager::shutdown);
+    }
+
     private static io.helidon.common.types.Annotation mapNamed(io.helidon.common.types.Annotation annotation) {
         if (annotation.typeName().equals(CDI_NAMED_TYPE)) {
             return io.helidon.common.types.Annotation.builder()
@@ -192,102 +232,117 @@ public class ServiceRegistryExtension implements Extension {
         ).collect(Collectors.toUnmodifiableSet());
     }
 
-    private void addServiceInfo(AfterBeanDiscovery abd,
-                                BeanManager bm,
-                                ServiceRegistry registry,
-                                Set<UniqueBean> processedTypes,
-                                ServiceInfo service) {
-        Set<ResolvedType> contracts = service.contracts();
-        Set<ResolvedType> usedContracts = new HashSet<>();
-        // first collect all contracts that we should advertise for this bean
-        for (ResolvedType contract : contracts) {
-            if (!processedTypes.add(new UniqueBean(contract, service.qualifiers()))) {
-                // this contract is already advertised by a higher weighted service; CDI only supports one bean
-                continue;
-            }
+    // all the parameters are needed, private method
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    private void addNamedBean(BeanManager bm,
+                              AfterBeanDiscovery abd,
+                              AnnotatedType<?> annotatedType,
+                              TypeName serviceType,
+                              Class<?> beanClass,
+                              Set<Type> typeClosure,
+                              Class<? extends Annotation> cdiScope,
+                              String name,
+                              Supplier<Object> instanceSupplier) {
+        var configurator = addBean(bm, abd, serviceType, beanClass, typeClosure, cdiScope, "-" + name);
+        beanCreateWith(bm, annotatedType, beanClass, configurator, instanceSupplier);
+        configurator.addQualifier(new NamedLiteral(name));
+    }
 
-            if (invalidContract(contract)) {
-                // this is not a contract we can support
-                continue;
-            }
+    private BeanConfigurator<Object> addBean(BeanManager bm,
+                                             AfterBeanDiscovery abd,
+                                             TypeName serviceType,
+                                             Class<?> beanClass,
+                                             Set<Type> typeClosure,
+                                             Class<? extends Annotation> cdiScope,
+                                             String idSuffix) {
 
-            usedContracts.add(contract);
+        return abd.addBean()
+                .beanClass(beanClass)
+                .types(typeClosure)
+                .id("service-registry-" + serviceType.fqName() + idSuffix)
+                .scope(cdiScope);
+    }
+
+    /**
+     * Creates a bean from its instance.
+     *
+     * @param bm            CDI bean manager
+     * @param annotatedType CDI annotated type
+     * @param beanClass     the service provided type
+     * @param configurator  CDI bean configurator
+     * @param instance      service registry instance
+     */
+    private void beanCreateWith(BeanManager bm,
+                                AnnotatedType<?> annotatedType,
+                                Class<?> beanClass,
+                                BeanConfigurator<Object> configurator,
+                                Supplier<Object> instance) {
+        configurator.createWith(ctx -> {
+            return interceptInstance(bm, beanClass, annotatedType, ctx, instance.get());
+        });
+    }
+
+    private Object interceptInstance(BeanManager bm,
+                                     Class<?> beanClass,
+                                     AnnotatedType<?> annotatedType,
+                                     CreationalContext ctx,
+                                     Object instance) {
+        var factory = bm.createInterceptionFactory(ctx, beanClass);
+        if (annotatedType != null) {
+            updateFromAnnotatedType(annotatedType, factory.configure());
         }
+        return factory.createInterceptedInstance(instance);
+    }
 
-        // we also advertise the service implementation itself
-        usedContracts.add(ResolvedType.create(service.serviceType()));
-            /*
-            bean class: service implementation [MyService]
-            bean types: each contract has its own bean
-            id: contract fq name with our prefix
-            scope: "guessed" from registry scope
-             */
-        Class<?> beanClass = TypeFactory.toClass(service.serviceType());
-        for (ResolvedType usedContract : usedContracts) {
-            TypeName contractTypeName = usedContract.type();
-            Type contractType = TypeFactory.toType(contractTypeName);
-            abd.addBean()
-                    .beanClass(beanClass)
-                    .addType(contractType)
-                    .id("helidon-registry-" + service.serviceType().fqName())
-                    .scope(toCdiScope(service))
-                    .createWith(ctx -> {
-                        Object instance = registry.get(contractTypeName);
+    private Set<Type> toTypes(Set<ResolvedType> usedContracts) {
+        return usedContracts.stream()
+                .map(ResolvedType::type)
+                .map(TypeFactory::toType)
+                .collect(Collectors.toUnmodifiableSet());
+    }
 
-                        return bm.createInterceptionFactory((CreationalContext) ctx, TypeFactory.toClass(contractTypeName))
-                                .createInterceptedInstance(instance);
-                    });
-            Optional<Qualifier> named = namedQualifier(service.qualifiers());
-            if (named.isPresent()) {
-                // also add with a Jakarta named qualifier
-                String name = named.get().value().orElseThrow();
-                if (name.equals("*")) {
-                    // this is most likely a ServicesFactory
-                    Lookup lookup = Lookup.builder()
-                            .addContract(usedContract)
-                            .serviceType(service.serviceType())
-                            .build();
-                    List<ServiceInstance<Object>> instances = registry.lookupInstances(lookup);
-                    for (ServiceInstance<Object> instance : instances) {
-                        var bean = abd.addBean()
-                                .beanClass(beanClass)
-                                .addType(contractType)
-                                .id("helidon-registry-named-" + service.serviceType().fqName())
-                                .scope(toCdiScope(service))
-                                .createWith(ctx -> {
-                                    return bm.createInterceptionFactory((CreationalContext) ctx,
-                                                                        TypeFactory.toClass(contractTypeName))
-                                            .createInterceptedInstance(instance.get());
-                                });
-                        Optional<Qualifier> qualifier = namedQualifier(instance.qualifiers());
-                        if (qualifier.isPresent()) {
-                            // use the actual name
-                            bean.addQualifier(new NamedLiteral(qualifier.get().value().orElseThrow()));
-                        } else {
-                            // use the default name (for unnamed in Helidon Service Registry), as CDI
-                            // does not support injection of unnamed instances if more than one named/unnamed instances
-                            // exists
-                            bean.addQualifier(new NamedLiteral(Service.Named.DEFAULT_NAME));
-                        }
-                    }
-                } else {
-                    // * means that we provide a factory that has names resolved at runtime
-                    // we would have to get the actual named instances for the contract, which we do
-                    // not have right now implemented
-                    abd.addBean()
-                            .beanClass(beanClass)
-                            .addType(contractType)
-                            .id("helidon-registry-named-" + service.serviceType().fqName())
-                            .scope(toCdiScope(service))
-                            .addQualifier(new NamedLiteral(name))
-                            .createWith(ctx -> {
-                                Object instance = registry.get(contractTypeName);
+    private void updateFromAnnotatedType(AnnotatedType<?> type, AnnotatedTypeConfigurator builder) {
+        AnnotatedType beforeChanges = builder.getAnnotated();
 
-                                return bm.createInterceptionFactory((CreationalContext) ctx,
-                                                                    TypeFactory.toClass(contractTypeName))
-                                        .createInterceptedInstance(instance);
-                            });
-                }
+        // fix annotations on type itself
+        fixAnnotations(type, beforeChanges, builder::add);
+
+        for (AnnotatedMethod<?> method : type.getMethods()) {
+            Predicate<AnnotatedMethod<?>> p = it -> it.getJavaMember().equals(method.getJavaMember());
+            Optional<AnnotatedMethodConfigurator<?>> found = builder.filterMethods(p)
+                    .findFirst();
+
+            found.ifPresent(it -> fixAnnotations(method,
+                                                 it.getAnnotated(),
+                                                 it::add));
+        }
+        for (AnnotatedField<?> field : type.getFields()) {
+            Predicate<AnnotatedField<?>> p = it -> it.getJavaMember().equals(field.getJavaMember());
+            Optional<AnnotatedFieldConfigurator<?>> found = builder.filterFields(p)
+                    .findFirst();
+
+            found.ifPresent(it -> fixAnnotations(field,
+                                                 it.getAnnotated(),
+                                                 it::add));
+        }
+        for (AnnotatedConstructor<?> constructor : type.getConstructors()) {
+            Predicate<AnnotatedConstructor<?>> p = it -> it.getJavaMember().equals(constructor.getJavaMember());
+            Optional<AnnotatedConstructorConfigurator<?>> found = builder.filterConstructors(p)
+                    .findFirst();
+
+            found.ifPresent(it -> fixAnnotations(constructor,
+                                                 it.getAnnotated(),
+                                                 it::add));
+        }
+    }
+
+    private void fixAnnotations(Annotated desiredAnnotated,
+                                Annotated targetAnnotated,
+                                Consumer<Annotation> configurator) {
+        var targetAnnotations = targetAnnotated.getAnnotations();
+        for (Annotation annotation : desiredAnnotated.getAnnotations()) {
+            if (!targetAnnotations.contains(annotation)) {
+                configurator.accept(annotation);
             }
         }
     }
@@ -491,6 +546,112 @@ public class ServiceRegistryExtension implements Extension {
         }
         // ignore scope, use dependent - this will always use service registry to create an instance, for each injection point
         return Dependent.class;
+    }
+
+    private void addServiceInfo(AfterBeanDiscovery abd,
+                                BeanManager bm,
+                                ServiceRegistry registry,
+                                Set<UniqueBean> processedTypes,
+                                ServiceInfo service) {
+        Set<ResolvedType> contracts = service.contracts();
+        TypeName serviceType = service.serviceType();
+        Set<ResolvedType> usedContracts = new HashSet<>();
+        // first collect all contracts that we should advertise for this bean
+        for (ResolvedType contract : contracts) {
+            if (!processedTypes.add(new UniqueBean(contract, service.qualifiers()))) {
+                // this contract is already advertised by a higher weighted service; CDI only supports one bean
+                continue;
+            }
+
+            if (invalidContract(contract)) {
+                // this is not a contract we can support
+                continue;
+            }
+
+            usedContracts.add(contract);
+        }
+
+        TypeName serviceProvidedType = service.providedType();
+        // we also advertise the service provided type (factories are NOT advertised)
+        usedContracts.add(ResolvedType.create(serviceProvidedType));
+            /*
+            bean class: provided type (MyService, MyContract - never MyFactory)
+            id: provided type fq name with our prefix
+            scope: "guessed" from registry scope
+             */
+        Class<?> beanClass = TypeFactory.toClass(serviceProvidedType);
+        // annotated type of our provided type, to support interception
+        var annotatedType = abd.getAnnotatedType(beanClass, serviceProvidedType.fqName());
+
+        Optional<Qualifier> named = namedQualifier(service.qualifiers());
+        /*
+        Three options:
+        1. no name, just un-named instance
+        2. * name - services factory, need to list instances
+        3. other - just a named instance
+         */
+
+        var typeClosure = toTypes(usedContracts);
+        var cdiScope = toCdiScope(service);
+
+        if (named.isEmpty()) {
+            // unnamed
+            addBean(bm,
+                    abd,
+                    serviceType,
+                    beanClass,
+                    typeClosure,
+                    cdiScope,
+                    "")
+                    .createWith(ctx -> {
+                        Object instance = registry.get(serviceProvidedType);
+                        return interceptInstance(bm, beanClass, annotatedType, ctx, instance);
+                    });
+        } else {
+            if (WILDCARD_NAME.equals(named.get().value().orElse(WILDCARD_NAME))) {
+                // services factory (or other factory type)
+                // we are interested in all instances provided by this specific factory
+                Lookup lookup = Lookup.builder()
+                        .addContract(serviceProvidedType)
+                        .serviceType(serviceType)
+                        .build();
+                List<ServiceInstance<Object>> instances = registry.lookupInstances(lookup);
+                // add each named instance as its own bean
+                Set<String> names = new HashSet<>();
+                for (ServiceInstance<Object> instance : instances) {
+                    String name = namedQualifier(instance.qualifiers())
+                            .flatMap(Qualifier::stringValue)
+                            .orElse(DEFAULT_NAME);
+                    if (!names.add(name)) {
+                        // each name can only be added once
+                        continue;
+                    }
+                    addNamedBean(bm,
+                                 abd,
+                                 annotatedType,
+                                 serviceType,
+                                 beanClass,
+                                 typeClosure,
+                                 cdiScope,
+                                 name,
+                                 instance);
+                }
+            } else {
+                String name = named.get().stringValue().orElseThrow();
+                addNamedBean(bm,
+                             abd,
+                             annotatedType,
+                             serviceType,
+                             beanClass,
+                             typeClosure,
+                             cdiScope,
+                             name,
+                             () -> registry.get(Lookup.builder()
+                                                        .addQualifier(named.get())
+                                                        .addContract(serviceProvidedType)
+                                                        .build()));
+            }
+        }
     }
 
     private record CdiServiceId(Class<?> beanClass, int hash) { }

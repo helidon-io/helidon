@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,19 @@ public interface ServiceInfo extends Weighted {
      * @return service type
      */
     TypeName serviceType();
+
+    /**
+     * The type that implements {@link #contracts()}.
+     * If the described service is not a factory, this will be the {@link #serviceType()}.
+     * If the described service is a factory, this will be the type in its factory declaration, i.e. the type
+     * it supplies, or the type of the services factory.
+     *
+     * @return type this service provides; this may be an interface, or an implementation, the type will implement all
+     *         {@link #contracts()} of this service
+     */
+    default TypeName providedType() {
+        return serviceType();
+    }
 
     /**
      * Type of the service descriptor (usually generated).
