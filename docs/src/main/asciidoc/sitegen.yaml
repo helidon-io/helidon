@@ -441,12 +441,15 @@ backend:
                 sources:
                   - "engine.adoc"
                   - "rsoperators.adoc"
-              - type: "PAGE"
+              - type: "MENU"
                 title: "Webserver"
-                source: "webserver.adoc"
+                dir: "webserver"
                 glyph:
                   type: "icon"
                   value: "settings_ethernet"
+                sources:
+                  - "webserver.adoc"
+                  - "concurrency-limits.adoc"
               - type: "PAGE"
                 title: "Scheduling"
                 source: "scheduling.adoc"

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -139,7 +139,7 @@ The link:{helidon-github-examples-url}/quickstarts/helidon-quickstart-se[Helidon
  lets you change the greeting by sending a `PUT` request to the `/greet/greeting` resource.
 
 This example, based on the QuickStart greeting app, uses the low-level `CrossOriginConfig` API and
-the `CorsSupport` API to influence the xref:{rootdir}/se/webserver.adoc#routing[routing],
+the `CorsSupport` API to influence the xref:{rootdir}/se/webserver/webserver.adoc#routing[routing],
 thereby determining how that resource is shared. (If desired, you can use <<Configuration, configuration>> instead
 of the low-level API.)
 
@@ -251,7 +251,7 @@ For a complete example, see {helidon-github-examples-url}/cors[Helidon SE CORS E
 
 include::{rootdir}/includes/cors.adoc[tag=cors-and-requested-uri-intro]
 You can configure how the Helidon server handles these headers as described in the documentation for
-xref:{rootdir}/se/webserver.adoc#_requested_uri_discovery[requested URI discovery].
+xref:{rootdir}/se/webserver/webserver.adoc#_requested_uri_discovery[requested URI discovery].
 
 include::{rootdir}/includes/cors.adoc[tag=cors-and-requested-uri-wrapup]
 

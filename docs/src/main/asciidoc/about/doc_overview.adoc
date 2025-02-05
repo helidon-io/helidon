@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -112,7 +112,7 @@ xref:{rootdir}/mp/guides/overview.adoc[MP Guides]
 .Advanced SE Features
 [icon=hotel_class]
 --
-xref:{rootdir}/se/webserver.adoc[Helidon WebServer]
+xref:{rootdir}/se/webserver/webserver.adoc[Helidon WebServer]
 
 xref:{rootdir}/se/metrics/metrics.adoc[Helidon Metrics]
 

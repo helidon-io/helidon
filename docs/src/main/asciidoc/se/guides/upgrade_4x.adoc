@@ -103,7 +103,7 @@ If you want full control using the API, you still have that option.
 For more information see:
 
 * xref:../observability.adoc[Observability feature support]
-* xref:../webserver.adoc#_media_types_support[Media types support]
+* xref:../webserver/webserver.adoc#_media_types_support[Media types support]
 
 == Routing Configuration
 
@@ -176,7 +176,7 @@ It receives `HttpRules` object with routes description.
 
 WARNING: These changes make Helidon 4 incompatible with previous versions.
 
-Learn more about `HttpService` and `Routing` at xref:../webserver.adoc[Helidon SE WebServer]
+Learn more about `HttpService` and `Routing` at xref:../webserver/webserver.adoc[Helidon SE WebServer]
 
 === Other Significant Changes
 

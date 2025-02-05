@@ -27,7 +27,7 @@ Still, there might be cases where you wish to change configuration options from 
 
 For details on the following options please see:
 
-* xref:../../se/webserver.adoc#_configuration_options[WebServer Configuration]
+* xref:../../se/webserver/webserver.adoc#_configuration_options[WebServer Configuration]
 * xref:../../config/io_helidon_common_socket_SocketOptions.adoc[WebServer Socket Configuration]
 
 == Summary of Tuning Options
