@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,4 +30,13 @@ public interface Limit extends LimitAlgorithm, NamedService {
      * @return a copy of this limit
      */
     Limit copy();
+
+    /**
+     * Initialization method for this limit. This method can be used for any
+     * task, including metrics initialization.
+     *
+     * @param socketName socket name for this limit such as {@code "@default"}
+     */
+    default void init(String socketName) {
+    }
 }
