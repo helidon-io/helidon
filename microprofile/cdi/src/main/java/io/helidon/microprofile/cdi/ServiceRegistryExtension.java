@@ -104,12 +104,11 @@ public class ServiceRegistryExtension implements Extension {
     private boolean registryPending = true;
 
     @SuppressWarnings("unchecked")
-    void registerTypes(@Observes BeforeBeanDiscovery bbd, BeanManager bm) {
+    void registerTypes(@Observes BeforeBeanDiscovery bbd) {
         var registry = GlobalServiceRegistry.registry();
         List<ServiceInfo> allServices = registry.lookupServices(Lookup.EMPTY);
 
         Set<TypeName> addedQualifiers = new HashSet<>();
-        Set<TypeName> addedAnnotatedTypes = new HashSet<>();
 
         for (ServiceInfo service : allServices) {
             // add all qualifiers
@@ -243,13 +242,12 @@ public class ServiceRegistryExtension implements Extension {
                               Class<? extends Annotation> cdiScope,
                               String name,
                               Supplier<Object> instanceSupplier) {
-        var configurator = addBean(bm, abd, serviceType, beanClass, typeClosure, cdiScope, "-" + name);
+        var configurator = addBean(abd, serviceType, beanClass, typeClosure, cdiScope, "-" + name);
         beanCreateWith(bm, annotatedType, beanClass, configurator, instanceSupplier);
         configurator.addQualifier(new NamedLiteral(name));
     }
 
-    private BeanConfigurator<Object> addBean(BeanManager bm,
-                                             AfterBeanDiscovery abd,
+    private BeanConfigurator<Object> addBean(AfterBeanDiscovery abd,
                                              TypeName serviceType,
                                              Class<?> beanClass,
                                              Set<Type> typeClosure,
@@ -596,7 +594,7 @@ public class ServiceRegistryExtension implements Extension {
 
         if (named.isEmpty()) {
             // unnamed
-            addBean(bm,
+            addBean(
                     abd,
                     serviceType,
                     beanClass,
