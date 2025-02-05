@@ -85,12 +85,10 @@ class ChatModelConfigTest {
         assertThat(config.logRequests().get(), is(true));
         assertThat(config.logResponses().isPresent(), is(true));
         assertThat(config.logResponses().get(), is(true));
-        assertThat(config.tokenizer().isPresent(), is(true));
-        assertThat(config.tokenizer().get(), is("tokenizer1"));
+        assertThat(config.tokenizer().isPresent(), is(false));
         assertThat(config.customHeaders().size(), is(2));
         assertThat(config.customHeaders().get("header1"), is(equalTo("value1")));
         assertThat(config.customHeaders().get("header2"), is(equalTo("value2")));
-        assertThat(config.proxy().isPresent(), is(true));
-        assertThat(config.proxy().get(), is(equalTo("discover:auto")));
+        assertThat(config.proxy().isPresent(), is(false));
     }
 }

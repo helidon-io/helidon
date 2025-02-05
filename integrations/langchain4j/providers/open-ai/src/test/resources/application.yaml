@@ -40,10 +40,8 @@ langchain4j.open-ai:
     max-retries: 3
     log-requests: true
     log-responses: true
-    tokenizer: tokenizer1
     custom-headers.header1: value1
     custom-headers.header2: value2
-    proxy: discover:auto
     # StreamingChatModel
   streaming-chat-model:
     api-key: api-key
@@ -67,10 +65,8 @@ langchain4j.open-ai:
     timeout: PT10M
     log-requests: true
     log-responses: true
-    tokenizer: tokenizer1
     custom-headers.header1: value1
     custom-headers.header2: value2
-    proxy: discover:auto
   # LanguageModel
   language-model:
     api-key: api-key
@@ -82,10 +78,8 @@ langchain4j.open-ai:
     max-retries: 3
     log-requests: true
     log-responses: true
-    tokenizer: tokenizer1
     custom-headers.header1: value1
     custom-headers.header2: value2
-    proxy: discover:auto
   # EmbeddingModel
   embedding-model:
     api-key: api-key
@@ -98,10 +92,8 @@ langchain4j.open-ai:
     max-retries: 3
     log-requests: true
     log-responses: true
-    tokenizer: tokenizer1
     custom-headers.header1: value1
     custom-headers.header2: value2
-    proxy: discover:auto
   # ModerationModel
   moderation-model:
     api-key: api-key
@@ -117,7 +109,6 @@ langchain4j.open-ai:
     log-responses: true
     custom-headers.header1: value1
     custom-headers.header2: value2
-    proxy: discover:auto
   # ImageModel
   image-model:
     api-key: api-key
@@ -137,4 +128,3 @@ langchain4j.open-ai:
     persist-to: temp
     custom-headers.header1: value1
     custom-headers.header2: value2
-    proxy: discover:auto

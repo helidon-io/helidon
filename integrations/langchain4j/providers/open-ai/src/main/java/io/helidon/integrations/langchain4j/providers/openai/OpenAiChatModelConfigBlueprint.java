@@ -16,7 +16,6 @@
 
 package io.helidon.integrations.langchain4j.providers.openai;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,62 +23,24 @@ import java.util.Optional;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
+import dev.langchain4j.model.Tokenizer;
+
 /**
- * Configuration class for the OpenAI chat model, {@link dev.langchain4j.model.openai.OpenAiChatModel}.
- * This class provides methods for setting up and managing properties related to OpenAI chat API requests.
+ * Configuration for the OpenAI chat model, {@link dev.langchain4j.model.openai.OpenAiChatModel}.
+ * Provides methods for setting up and managing properties related to OpenAI chat API requests.
  *
  * @see dev.langchain4j.model.openai.OpenAiChatModel
  */
 @Prototype.Configured(OpenAiChatModelConfigBlueprint.CONFIG_ROOT)
 @Prototype.Blueprint
-interface OpenAiChatModelConfigBlueprint {
+interface OpenAiChatModelConfigBlueprint extends OpenAiCommonConfig {
     /**
      * Default configuration prefix.
      */
     String CONFIG_ROOT = "langchain4j.open-ai.chat-model";
 
     /**
-     * If set to {@code false} (default), OpenAI chat model will not be available even if configured.
-     *
-     * @return whether OpenAI model is enabled, defaults to {@code false}
-     */
-    @Option.Configured
-    boolean enabled();
-
-    /**
-     * Gets the base URL for the OpenAI API.
-     *
-     * @return the base URL
-     */
-    @Option.Configured
-    Optional<String> baseUrl();
-
-    /**
-     * Gets the API key used to authenticate requests to the OpenAI API.
-     *
-     * @return an {@link java.util.Optional} containing the API key
-     */
-    @Option.Configured
-    Optional<String> apiKey();
-
-    /**
-     * Gets the ID of the organization for API requests.
-     *
-     * @return an {@link java.util.Optional} containing the organization ID
-     */
-    @Option.Configured
-    Optional<String> organizationId();
-
-    /**
-     * Gets the model name to use (e.g., "gpt-3.5-turbo").
-     *
-     * @return an {@link java.util.Optional} containing the model name
-     */
-    @Option.Configured
-    Optional<String> modelName();
-
-    /**
-     * Gets the sampling temperature to use, between 0 and 2.
+     * The sampling temperature to use, between 0 and 2.
      * Higher values make the output more random, while lower values make it
      * more focused and deterministic.
      *
@@ -89,7 +50,7 @@ interface OpenAiChatModelConfigBlueprint {
     Optional<Double> temperature();
 
     /**
-     * Gets the nucleus sampling value, where the model considers the results
+     * The nucleus sampling value, where the model considers the results
      * of the tokens with top_p probability mass.
      *
      * @return an {@link java.util.Optional} containing the nucleus sampling value
@@ -98,7 +59,7 @@ interface OpenAiChatModelConfigBlueprint {
     Optional<Double> topP();
 
     /**
-     * Gets the list of sequences where the API will stop generating further
+     * The list of sequences where the API will stop generating further
      * tokens.
      *
      * @return the list of stop sequences
@@ -107,7 +68,7 @@ interface OpenAiChatModelConfigBlueprint {
     List<String> stop();
 
     /**
-     * Gets the maximum number of tokens to generate in the completion.
+     * The maximum number of tokens to generate in the completion.
      *
      * @return an {@link java.util.Optional} containing the maximum number of tokens
      */
@@ -115,7 +76,7 @@ interface OpenAiChatModelConfigBlueprint {
     Optional<Integer> maxTokens();
 
     /**
-     * Gets the maximum number of tokens allowed for the model's response.
+     * The maximum number of tokens allowed for the model's response.
      *
      * @return an {@link java.util.Optional} containing the maximum number of completion tokens
      */
@@ -123,7 +84,7 @@ interface OpenAiChatModelConfigBlueprint {
     Optional<Integer> maxCompletionTokens();
 
     /**
-     * Gets the presence penalty, between -2.0 and 2.0.
+     * The presence penalty, between -2.0 and 2.0.
      * Positive values penalize new tokens based on whether they appear in
      * the text so far, encouraging the model to use new words.
      *
@@ -133,7 +94,7 @@ interface OpenAiChatModelConfigBlueprint {
     Optional<Double> presencePenalty();
 
     /**
-     * Gets the frequency penalty, between -2.0 and 2.0.
+     * The frequency penalty, between -2.0 and 2.0.
      * Positive values penalize new tokens based on their existing frequency
      * in the text so far, decreasing the model's likelihood to repeat the
      * same line.
@@ -144,17 +105,18 @@ interface OpenAiChatModelConfigBlueprint {
     Optional<Double> frequencyPenalty();
 
     /**
-     * Gets logitBias. LogitBias adjusts the likelihood of specific tokens appearing in a model's response. A map of token IDs to
+     * LogitBias adjusts the likelihood of specific tokens appearing in a model's response. A map of token IDs to
      * bias values (-100 to 100). Positive values increase the chance of the token, while negative values reduce it, allowing
      * fine control over token preferences in the output.
      *
      * @return a logitBias map
      */
     @Option.Configured
+    @Option.Singular
     Map<String, Integer> logitBias();
 
     /**
-     * Gets the format in which the model should return the response.
+     * The format in which the model should return the response.
      *
      * @return an {@link java.util.Optional} containing the response format
      */
@@ -162,7 +124,7 @@ interface OpenAiChatModelConfigBlueprint {
     Optional<String> responseFormat();
 
     /**
-     * Gets whether to enforce a strict JSON schema for the model's output.
+     * Whether to enforce a strict JSON schema for the model's output.
      *
      * @return an {@link java.util.Optional} containing true if strict JSON schema is enforced, false otherwise
      */
@@ -170,7 +132,7 @@ interface OpenAiChatModelConfigBlueprint {
     Optional<Boolean> strictJsonSchema();
 
     /**
-     * Gets the seed for the random number generator used by the model.
+     * The seed for the random number generator used by the model.
      *
      * @return an {@link java.util.Optional} containing the seed
      */
@@ -178,7 +140,7 @@ interface OpenAiChatModelConfigBlueprint {
     Optional<Integer> seed();
 
     /**
-     * Gets the user ID associated with the API requests.
+     * The user ID associated with the API requests.
      *
      * @return an {@link java.util.Optional} containing the user ID
      */
@@ -186,7 +148,7 @@ interface OpenAiChatModelConfigBlueprint {
     Optional<String> user();
 
     /**
-     * Gets whether to enforce strict validation of tools used by the model.
+     * Whether to enforce strict validation of tools used by the model.
      *
      * @return an {@link java.util.Optional} containing true if strict tools are enforced, false otherwise
      */
@@ -194,7 +156,7 @@ interface OpenAiChatModelConfigBlueprint {
     Optional<Boolean> strictTools();
 
     /**
-     * Gets whether to allow parallel calls to tools.
+     * Whether to allow parallel calls to tools.
      *
      * @return an {@link java.util.Optional} containing true if parallel tool calls are allowed, false otherwise
      */
@@ -202,62 +164,9 @@ interface OpenAiChatModelConfigBlueprint {
     Optional<Boolean> parallelToolCalls();
 
     /**
-     * Gets the timeout setting for API requests.
+     * Tokenizer to use.
      *
-     * @return an {@link java.util.Optional} containing the timeout
+     * @return an {@link java.util.Optional} containing the tokenizer
      */
-    @Option.Configured
-    Optional<Duration> timeout();
-
-    /**
-     * Gets the maximum number of retries for failed API requests.
-     *
-     * @return an {@link java.util.Optional} containing the maximum number of retries
-     */
-    @Option.Configured
-    Optional<Integer> maxRetries();
-
-    /**
-     * Gets whether to log API requests.
-     *
-     * @return an {@link java.util.Optional} containing true if requests should be logged, false otherwise
-     */
-    @Option.Configured
-    Optional<Boolean> logRequests();
-
-    /**
-     * Gets whether to log API responses.
-     *
-     * @return an {@link java.util.Optional} containing true if responses should be logged, false otherwise
-     */
-    @Option.Configured
-    Optional<Boolean> logResponses();
-
-    /**
-     * Tokenizer name qualifier.
-     *
-     * @return an {@link java.util.Optional} containing the tokenizer CDI bean name or
-     * {@link io.helidon.service.registry.Service.Named#DEFAULT_NAME} if the bean must be
-     * discovered automatically; if configured, a tokenizer MUST be available
-     */
-    @Option.Configured
-    Optional<String> tokenizer();
-
-    /**
-     * Gets a map containing custom headers.
-     *
-     * @return custom headers map
-     */
-    @Option.Configured
-    @Option.Singular
-    Map<String, String> customHeaders();
-
-    /**
-     * Gets proxy CDI bean name.
-     *
-     * @return an {@link java.util.Optional} containing proxy CDI bean name or "discovery:auto" if the bean must be discovered
-     * automatically
-     */
-    @Option.Configured
-    Optional<String> proxy();
+    Optional<Tokenizer> tokenizer();
 }

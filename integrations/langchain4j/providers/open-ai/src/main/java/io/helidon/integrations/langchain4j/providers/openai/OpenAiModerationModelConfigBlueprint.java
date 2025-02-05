@@ -16,11 +16,6 @@
 
 package io.helidon.integrations.langchain4j.providers.openai;
 
-import java.time.Duration;
-import java.util.Map;
-import java.util.Optional;
-
-import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
 /**
@@ -31,97 +26,11 @@ import io.helidon.builder.api.Prototype;
  */
 @Prototype.Configured(OpenAiLanguageModelConfigBlueprint.CONFIG_ROOT)
 @Prototype.Blueprint
-interface OpenAiModerationModelConfigBlueprint {
+// we want to have an explicit type for configuration, even if it does not add methods
+@SuppressWarnings("checkstyle:InterfaceIsType")
+interface OpenAiModerationModelConfigBlueprint extends OpenAiCommonConfig {
     /**
      * Default configuration prefix.
      */
     String CONFIG_ROOT = "langchain4j.open-ai.moderation-model";
-
-    /**
-     * If set to {@code false} (default), OpenAI moderation model will not be available even if configured.
-     *
-     * @return whether OpenAI model is enabled, defaults to {@code false}
-     */
-    @Option.Configured
-    boolean enabled();
-
-    /**
-     * Gets the base URL for the OpenAI API.
-     *
-     * @return the base URL
-     */
-    @Option.Configured
-    Optional<String> baseUrl();
-
-    /**
-     * Gets the API key used to authenticate requests to the OpenAI API.
-     *
-     * @return the API key
-     */
-    @Option.Configured
-    Optional<String> apiKey();
-
-    /**
-     * Gets the ID of the organization for API requests.
-     *
-     * @return the organization ID
-     */
-    @Option.Configured
-    Optional<String> organizationId();
-
-    /**
-     * Gets the model name to use (e.g., "gpt-3.5-turbo").
-     *
-     * @return the model name
-     */
-    @Option.Configured
-    Optional<String> modelName();
-
-    /**
-     * Gets the timeout setting for API requests.
-     *
-     * @return the timeout
-     */
-    @Option.Configured
-    Optional<Duration> timeout();
-
-    /**
-     * Gets the maximum number of retries for failed API requests.
-     *
-     * @return the maximum number of retries
-     */
-    @Option.Configured
-    Optional<Integer> maxRetries();
-
-    /**
-     * Gets whether to log API requests.
-     *
-     * @return true if requests should be logged, false otherwise
-     */
-    @Option.Configured
-    Optional<Boolean> logRequests();
-
-    /**
-     * Gets whether to log API responses.
-     *
-     * @return true if responses should be logged, false otherwise
-     */
-    @Option.Configured
-    Optional<Boolean> logResponses();
-
-    /**
-     * Gets a map containing custom headers.
-     *
-     * @return custom headers map
-     */
-    @Option.Configured
-    Map<String, String> customHeaders();
-
-    /**
-     * Gets proxy CDI bean name.
-     *
-     * @return proxy CDI bean name or "discovery:auto" if the bean must be discovered automatically
-     */
-    @Option.Configured
-    Optional<String> proxy();
 }

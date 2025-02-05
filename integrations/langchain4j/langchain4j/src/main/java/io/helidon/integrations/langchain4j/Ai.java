@@ -27,6 +27,31 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * This interface contains a set of annotations for defining langChain4J declarative services.
  */
 public final class Ai {
+    /**
+     * Name that is used to qualify chat models.
+     */
+    public static final String CHAT_MODEL_NAME = "chat-model";
+    /**
+     * Name that is used to qualify chat stream chat models.
+     */
+    public static final String STREAMING_CHAT_MODEL_NAME = "streaming-chat-model";
+    /**
+     * Name that is used to qualify embedding models.
+     */
+    public static final String EMBEDDING_MODEL_NAME = "embedding-model";
+    /**
+     * Name that is used to qualify image models.
+     */
+    public static final String IMAGE_MODEL_NAME = "image-model";
+    /**
+     * Name that is used to qualify language models.
+     */
+    public static final String LANGUAGE_MODEL_NAME = "language-model";
+    /**
+     * Name that is used to qualify moderation models.
+     */
+    public static final String MODERATION_MODEL_NAME = "moderation-model";
+
     private Ai() {
     }
 

@@ -20,11 +20,14 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.common.config.Config;
-import io.helidon.integrations.langchain4j.RegistryHelper;
+import io.helidon.service.registry.Lookup;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistry;
+import io.helidon.service.registry.ServiceRegistryException;
 
 import dev.langchain4j.store.embedding.oracle.EmbeddingTable;
 import dev.langchain4j.store.embedding.oracle.OracleEmbeddingStore;
@@ -36,7 +39,8 @@ import dev.langchain4j.store.embedding.oracle.OracleEmbeddingStore;
  * @see OracleEmbeddingStoreConfig
  */
 @Service.Singleton
-@Service.Named("*")
+@Service.Named(Service.Named.WILDCARD_NAME)
+@Weight(Weighted.DEFAULT_WEIGHT - 10)
 class OracleEmbeddingStoreFactory implements Service.ServicesFactory<OracleEmbeddingStore> {
     private static final Qualifier ORACLE_QUALIFIER = Qualifier.createNamed("oracle");
 
@@ -68,6 +72,19 @@ class OracleEmbeddingStoreFactory implements Service.ServicesFactory<OracleEmbed
         return List.of();
     }
 
+    private static DataSource named(ServiceRegistry registry, String name) {
+        if (Service.Named.DEFAULT_NAME.equals(name)) {
+            return registry.get(DataSource.class);
+        }
+        return registry.<DataSource>first(Lookup.builder()
+                                                  .addContract(DataSource.class)
+                                                  .addQualifier(Qualifier.createNamed(name))
+                                                  .build())
+                .orElseThrow(() -> new ServiceRegistryException("Cannot find DataSource with name " + name
+                                                                        + " configured for "
+                                                                        + "OracleEmbeddingStoreFactory."));
+    }
+
     /**
      * Creates and returns an {@link dev.langchain4j.store.embedding.oracle.OracleEmbeddingStore} configured using the provided
      * configuration.
@@ -77,7 +94,7 @@ class OracleEmbeddingStoreFactory implements Service.ServicesFactory<OracleEmbed
      */
     private OracleEmbeddingStore buildStore(ServiceRegistry registry, OracleEmbeddingStoreConfig config) {
         var builder = OracleEmbeddingStore.builder();
-        config.dataSource().ifPresent(bn -> builder.dataSource(RegistryHelper.named(registry, bn, DataSource.class)));
+        config.dataSource().ifPresent(bn -> builder.dataSource(named(registry, bn)));
         config.embeddingTable().ifPresent(etc -> builder.embeddingTable(creatembeddingTable(etc)));
         config.exactSearch().ifPresent(builder::exactSearch);
         config.vectorIndexCreateOption().ifPresent(builder::vectorIndex);

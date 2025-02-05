@@ -18,57 +18,53 @@ package io.helidon.integrations.langchain4j.providers.openai;
 
 import java.net.Proxy;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Supplier;
 
+import io.helidon.common.Weight;
 import io.helidon.common.config.Config;
-import io.helidon.integrations.langchain4j.RegistryHelper;
 import io.helidon.service.registry.Service;
-import io.helidon.service.registry.ServiceRegistry;
 
 import dev.langchain4j.model.openai.OpenAiModerationModel;
 
 /**
- * Factory class for creating a configured {@link OpenAiModerationModel}.
- *
- * <p>This factory automatically registers a bean in the CDI registry if the configuration property
- * <i>langchain4j.open-ai.moderation-model.enabled</i> is set to <i>true</i>.</p>
+ * Factory for creating a configured {@link OpenAiModerationModel}.
  *
  * @see dev.langchain4j.model.openai.OpenAiModerationModel
  * @see OpenAiModerationModelConfig
+ * @see #create
  */
 @Service.Singleton
-@Service.Named("*")
-class OpenAiModerationModelFactory implements Service.ServicesFactory<OpenAiModerationModel> {
-    private final OpenAiModerationModel model;
-    private final boolean enabled;
+@Service.Named(Service.Named.WILDCARD_NAME)
+@Weight(OpenAi.WEIGHT)
+public class OpenAiModerationModelFactory implements Service.ServicesFactory<OpenAiModerationModel> {
+    private final Supplier<Optional<OpenAiModerationModel>> model;
 
-    OpenAiModerationModelFactory(ServiceRegistry registry, Config config) {
-        var modelConfig = OpenAiModerationModelConfig.create(config.get(OpenAiModerationModelConfigBlueprint.CONFIG_ROOT));
+    OpenAiModerationModelFactory(@Service.Named(OpenAi.MODERATION_MODEL) Supplier<Optional<Proxy>> openAiChatModelProxy,
+                                 @Service.Named(OpenAi.OPEN_AI) Supplier<Optional<Proxy>> openAiProxy,
+                                 Supplier<Optional<Proxy>> proxy,
+                                 Config config) {
+        var configBuilder = OpenAiModerationModelConfig.builder()
+                .config(config.get(OpenAiModerationModelConfigBlueprint.CONFIG_ROOT));
 
-        this.enabled = modelConfig.enabled();
-
-        if (enabled) {
-            this.model = buildModel(registry, modelConfig);
-        } else {
-            this.model = null;
-        }
-    }
-
-    @Override
-    public List<Service.QualifiedInstance<OpenAiModerationModel>> services() {
-        if (enabled) {
-            return List.of(Service.QualifiedInstance.create(model),
-                           Service.QualifiedInstance.create(model, OpenAi.OPEN_AI_QUALIFIER));
-        }
-        return List.of();
+        this.model = () -> buildModel(configBuilder,
+                                      openAiChatModelProxy,
+                                      openAiProxy,
+                                      proxy);
     }
 
     /**
-     * Creates and returns an {@link OpenAiModerationModel} configured using the provided configuration.
+     * Create the OpenAI model from its configuration.
      *
-     * @param config the properties used to configure the {@link OpenAiModerationModel}
-     * @return a configured instance of {@link OpenAiModerationModel}
+     * @param config configuration to use
+     * @return a new model instance
+     * @throws java.lang.IllegalStateException in case the configuration is not enabled
      */
-    private static OpenAiModerationModel buildModel(ServiceRegistry registry, OpenAiModerationModelConfig config) {
+    public static OpenAiModerationModel create(OpenAiModerationModelConfig config) {
+        if (!config.enabled()) {
+            throw new IllegalStateException("Cannot create a model when the configuration is disabled.");
+        }
+
         var builder = OpenAiModerationModel.builder();
         config.baseUrl().ifPresent(builder::baseUrl);
         config.apiKey().ifPresent(builder::apiKey);
@@ -78,10 +74,37 @@ class OpenAiModerationModelFactory implements Service.ServicesFactory<OpenAiMode
         config.maxRetries().ifPresent(builder::maxRetries);
         config.logRequests().ifPresent(builder::logRequests);
         config.logResponses().ifPresent(builder::logResponses);
-        config.proxy().ifPresent(p -> builder.proxy(RegistryHelper.named(registry, p, Proxy.class)));
+        config.proxy().ifPresent(builder::proxy);
         if (!config.customHeaders().isEmpty()) {
             builder.customHeaders(config.customHeaders());
         }
         return builder.build();
+    }
+
+    @Override
+    public List<Service.QualifiedInstance<OpenAiModerationModel>> services() {
+        var modelOptional = model.get();
+        if (modelOptional.isEmpty()) {
+            return List.of();
+        }
+
+        var theModel = modelOptional.get();
+        return List.of(Service.QualifiedInstance.create(theModel),
+                       Service.QualifiedInstance.create(theModel, OpenAi.OPEN_AI_QUALIFIER));
+    }
+
+    private static Optional<OpenAiModerationModel> buildModel(OpenAiModerationModelConfig.Builder configBuilder,
+                                                              Supplier<Optional<Proxy>> openAiModelProxy,
+                                                              Supplier<Optional<Proxy>> openAiProxy,
+                                                              Supplier<Optional<Proxy>> proxy) {
+        if (!configBuilder.enabled()) {
+            return Optional.empty();
+        }
+
+        openAiModelProxy.get()
+                .or(openAiProxy)
+                .or(proxy)
+                .ifPresent(configBuilder::proxy);
+        return Optional.of(create(configBuilder.build()));
     }
 }

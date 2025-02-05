@@ -18,61 +18,62 @@ package io.helidon.integrations.langchain4j.providers.openai;
 
 import java.net.Proxy;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Supplier;
 
+import io.helidon.common.Weight;
 import io.helidon.common.config.Config;
-import io.helidon.integrations.langchain4j.RegistryHelper;
 import io.helidon.service.registry.Service;
-import io.helidon.service.registry.ServiceRegistry;
 
 import dev.langchain4j.model.Tokenizer;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 
 /**
- * Factory class for creating a configured {@link OpenAiStreamingChatModel}.
- *
- * <p>This factory automatically registers a bean in the CDI registry if the configuration property
- * <i>langchain4j.open-ai.streaming-chat-model.enabled</i> is set to <i>true</i>.</p>
+ * Factory for creating a configured {@link OpenAiStreamingChatModel}.
  *
  * @see OpenAiStreamingChatModel
  * @see OpenAiStreamingChatModelConfig
+ * @see #create
  */
 @Service.Singleton
-@Service.Named("*")
-class OpenAiStreamingChatModelFactory implements Service.ServicesFactory<OpenAiStreamingChatModel> {
-    private final OpenAiStreamingChatModel model;
-    private final boolean enabled;
+@Service.Named(Service.Named.WILDCARD_NAME)
+@Weight(OpenAi.WEIGHT)
+public class OpenAiStreamingChatModelFactory implements Service.ServicesFactory<OpenAiStreamingChatModel> {
+    private final Supplier<Optional<OpenAiStreamingChatModel>> model;
 
     /**
      * Creates {@link dev.langchain4j.model.openai.OpenAiStreamingChatModel}.
      */
-    OpenAiStreamingChatModelFactory(ServiceRegistry registry, Config config) {
-        var modelConfig = OpenAiStreamingChatModelConfig.create(config.get(OpenAiStreamingChatModelConfigBlueprint.CONFIG_ROOT));
+    OpenAiStreamingChatModelFactory(@Service.Named(OpenAi.STREAM_CHAT_MODEL)
+                                    Supplier<Optional<Tokenizer>> openAiChatModelTokenizer,
+                                    @Service.Named(OpenAi.OPEN_AI) Supplier<Optional<Tokenizer>> openAiTokenizer,
+                                    Supplier<Optional<Tokenizer>> tokenizer,
+                                    @Service.Named(OpenAi.STREAM_CHAT_MODEL) Supplier<Optional<Proxy>> openAiChatModelProxy,
+                                    @Service.Named(OpenAi.OPEN_AI) Supplier<Optional<Proxy>> openAiProxy,
+                                    Supplier<Optional<Proxy>> proxy,
+                                    Config config) {
+        var configBuilder = OpenAiStreamingChatModelConfig.builder().config(config.get(OpenAiChatModelConfig.CONFIG_ROOT));
 
-        this.enabled = modelConfig.enabled();
-
-        if (enabled) {
-            this.model = buildModel(registry, modelConfig);
-        } else {
-            this.model = null;
-        }
-    }
-
-    @Override
-    public List<Service.QualifiedInstance<OpenAiStreamingChatModel>> services() {
-        if (enabled) {
-            return List.of(Service.QualifiedInstance.create(model),
-                           Service.QualifiedInstance.create(model, OpenAi.OPEN_AI_QUALIFIER));
-        }
-        return List.of();
+        this.model = () -> buildModel(configBuilder,
+                                      openAiChatModelTokenizer,
+                                      openAiTokenizer,
+                                      tokenizer,
+                                      openAiChatModelProxy,
+                                      openAiProxy,
+                                      proxy);
     }
 
     /**
-     * Creates and returns an {@link OpenAiStreamingChatModel} configured using the provided configuration.
+     * Create the OpenAI model from its configuration.
      *
-     * @param config the configuration bean
-     * @return a configured instance of {@link OpenAiStreamingChatModel}
+     * @param config configuration to use
+     * @return a new model instance
+     * @throws java.lang.IllegalStateException in case the configuration is not enabled
      */
-    private static OpenAiStreamingChatModel buildModel(ServiceRegistry registry, OpenAiStreamingChatModelConfig config) {
+    public static OpenAiStreamingChatModel create(OpenAiStreamingChatModelConfig config) {
+        if (!config.enabled()) {
+            throw new IllegalStateException("Cannot create a model when the configuration is disabled.");
+        }
         var builder = OpenAiStreamingChatModel.builder();
         config.baseUrl().ifPresent(builder::baseUrl);
         config.apiKey().ifPresent(builder::apiKey);
@@ -98,11 +99,44 @@ class OpenAiStreamingChatModelFactory implements Service.ServicesFactory<OpenAiS
         config.timeout().ifPresent(builder::timeout);
         config.logRequests().ifPresent(builder::logRequests);
         config.logResponses().ifPresent(builder::logResponses);
-        config.tokenizer().ifPresent(t -> builder.tokenizer(RegistryHelper.named(registry, t, Tokenizer.class)));
-        config.proxy().ifPresent(p -> builder.proxy(RegistryHelper.named(registry, p, Proxy.class)));
+        config.tokenizer().ifPresent(builder::tokenizer);
+        config.proxy().ifPresent(builder::proxy);
         if (!config.customHeaders().isEmpty()) {
             builder.customHeaders(config.customHeaders());
         }
         return builder.build();
+    }
+
+    @Override
+    public List<Service.QualifiedInstance<OpenAiStreamingChatModel>> services() {
+        var modelOptional = model.get();
+        if (modelOptional.isEmpty()) {
+            return List.of();
+        }
+
+        var theModel = modelOptional.get();
+        return List.of(Service.QualifiedInstance.create(theModel),
+                       Service.QualifiedInstance.create(theModel, OpenAi.OPEN_AI_QUALIFIER));
+    }
+
+    private static Optional<OpenAiStreamingChatModel> buildModel(OpenAiStreamingChatModelConfig.Builder configBuilder,
+                                                                 Supplier<Optional<Tokenizer>> openAiModelTokenizer,
+                                                                 Supplier<Optional<Tokenizer>> openAiTokenizer,
+                                                                 Supplier<Optional<Tokenizer>> tokenizer,
+                                                                 Supplier<Optional<Proxy>> openAiModelProxy,
+                                                                 Supplier<Optional<Proxy>> openAiProxy,
+                                                                 Supplier<Optional<Proxy>> proxy) {
+        if (!configBuilder.enabled()) {
+            return Optional.empty();
+        }
+        openAiModelTokenizer.get()
+                .or(openAiTokenizer)
+                .or(tokenizer)
+                .ifPresent(configBuilder::tokenizer);
+        openAiModelProxy.get()
+                .or(openAiProxy)
+                .or(proxy)
+                .ifPresent(configBuilder::proxy);
+        return Optional.of(create(configBuilder.build()));
     }
 }

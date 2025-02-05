@@ -20,10 +20,11 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.common.config.Config;
 import io.helidon.common.types.TypeName;
 import io.helidon.service.registry.Service;
-import io.helidon.service.registry.ServiceRegistry;
 
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
@@ -32,8 +33,14 @@ import dev.langchain4j.store.embedding.EmbeddingStore;
 
 import static io.helidon.integrations.langchain4j.EmbeddingStoreContentRetrieverConfigBlueprint.CONFIG_ROOT;
 
+/**
+ * Factory for embedding store content retrievers.
+ *
+ * @see #create(EmbeddingStoreContentRetrieverConfig)
+ */
 @Service.Singleton
-class EmbeddingStoreContentRetrieverFactory implements Supplier<Optional<EmbeddingStoreContentRetriever>> {
+@Weight(Weighted.DEFAULT_WEIGHT - 10)
+public class EmbeddingStoreContentRetrieverFactory implements Supplier<Optional<EmbeddingStoreContentRetriever>> {
     private static final TypeName STORE_TYPE = TypeName.builder()
             .type(EmbeddingStore.class)
             .addTypeArgument(TypeName.create(TextSegment.class))
@@ -42,36 +49,54 @@ class EmbeddingStoreContentRetrieverFactory implements Supplier<Optional<Embeddi
     private final LazyValue<Optional<EmbeddingStoreContentRetriever>> contentRetriever;
 
     @Service.Inject
-    EmbeddingStoreContentRetrieverFactory(ServiceRegistry registry,
+    EmbeddingStoreContentRetrieverFactory(Supplier<EmbeddingStore<TextSegment>> embeddingStore,
+                                          Supplier<Optional<EmbeddingModel>> embeddingModel,
                                           Config config) {
-        var retrieverConfig =
-                EmbeddingStoreContentRetrieverConfig.create(config.get(CONFIG_ROOT));
+        var configBuilder =
+                EmbeddingStoreContentRetrieverConfig.builder().config(config.get(CONFIG_ROOT));
 
-        if (retrieverConfig.enabled()) {
-            this.contentRetriever = LazyValue.create(() -> Optional.of(buildContentRetriever(registry, retrieverConfig)));
+        if (configBuilder.enabled()) {
+            this.contentRetriever = LazyValue.create(() -> {
+                if (!configBuilder.enabled()) {
+                    return Optional.empty();
+                }
+                configBuilder.embeddingStore(embeddingStore.get());
+                embeddingModel.get().ifPresent(configBuilder::embeddingModel);
+
+                return Optional.of(create(configBuilder.build()));
+            });
         } else {
             this.contentRetriever = LazyValue.create(Optional.empty());
         }
     }
 
-    @Override
-    public Optional<EmbeddingStoreContentRetriever> get() {
-        return contentRetriever.get();
-    }
+    /**
+     * Create an instance of embedding store content retriever from configuration.
+     *
+     * @param config configuration of the content retriever
+     * @return content retriever instance
+     * @throws java.lang.IllegalStateException in case the configuration is not enabled
+     */
+    public static EmbeddingStoreContentRetriever create(EmbeddingStoreContentRetrieverConfig config) {
+        if (!config.enabled()) {
+            throw new IllegalStateException("Cannot create a retriever when the configuration is disabled.");
+        }
 
-    private EmbeddingStoreContentRetriever buildContentRetriever(ServiceRegistry registry,
-                                                                 EmbeddingStoreContentRetrieverConfig config) {
+        // Langchain4j builder
         var builder = EmbeddingStoreContentRetriever.builder();
         config.embeddingModel()
-                .ifPresent(t -> builder.embeddingModel(RegistryHelper.named(registry, t, EmbeddingModel.class)));
-        builder.embeddingStore(RegistryHelper.named(registry,
-                                                    config.embeddingStore(),
-                                                    STORE_TYPE));
+                .ifPresent(builder::embeddingModel);
+        builder.embeddingStore(config.embeddingStore());
         config.displayName().ifPresent(builder::displayName);
         config.maxResults().ifPresent(builder::maxResults);
         config.minScore().ifPresent(builder::minScore);
 
         return builder.build();
+    }
+
+    @Override
+    public Optional<EmbeddingStoreContentRetriever> get() {
+        return contentRetriever.get();
     }
 
 }

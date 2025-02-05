@@ -20,7 +20,10 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.service.registry.Service;
+
+import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.model.embedding.EmbeddingModel;
+import dev.langchain4j.store.embedding.EmbeddingStore;
 
 /**
  * Configuration class for {@link EmbeddingStoreContentRetrieverConfigBlueprint}.
@@ -44,23 +47,19 @@ interface EmbeddingStoreContentRetrieverConfigBlueprint {
     boolean enabled();
 
     /**
-     * Gets the embedding store CDI bean name or "discovery:auto" if the bean must be discovered automatically.
+     * Embedding store to use in the content retriever.
      *
-     * @return an {@link java.util.Optional} containing the embedding store bean name or "discovery:auto" if the bean must be
-     *         discovered automatically
+     * @return an {@link java.util.Optional} containing the embedding store
      */
-    @Option.Configured
-    @Option.Default(Service.Named.DEFAULT_NAME)
-    String embeddingStore();
+    EmbeddingStore<TextSegment> embeddingStore();
 
     /**
-     * Gets the embedding model CDI bean name or "discovery:auto" if the bean must be discovered automatically.
+     * Explicit embedding model to use in the content retriever.
      *
      * @return an {@link java.util.Optional} containing the embedding model bean name or "discovery:auto" if the bean must be
      *         discovered automatically
      */
-    @Option.Configured
-    Optional<String> embeddingModel();
+    Optional<EmbeddingModel> embeddingModel();
 
     /**
      * Gets the display name.

@@ -16,12 +16,12 @@
 
 package io.helidon.integrations.langchain4j.providers.openai;
 
-import java.time.Duration;
-import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+
+import dev.langchain4j.model.Tokenizer;
 
 /**
  * Configuration for the OpenAI language model, {@link dev.langchain4j.model.openai.OpenAiLanguageModel}.
@@ -31,54 +31,14 @@ import io.helidon.builder.api.Prototype;
  */
 @Prototype.Configured(OpenAiLanguageModelConfigBlueprint.CONFIG_ROOT)
 @Prototype.Blueprint
-interface OpenAiLanguageModelConfigBlueprint {
+interface OpenAiLanguageModelConfigBlueprint extends OpenAiCommonConfig {
     /**
      * Default configuration prefix.
      */
     String CONFIG_ROOT = "langchain4j.open-ai.language-model";
 
     /**
-     * If set to {@code false} (default), OpenAI language model will not be available even if configured.
-     *
-     * @return whether OpenAI model is enabled, defaults to {@code false}
-     */
-    @Option.Configured
-    boolean enabled();
-
-    /**
-     * Gets the base URL for the OpenAI API.
-     *
-     * @return the base URL
-     */
-    @Option.Configured
-    Optional<String> baseUrl();
-
-    /**
-     * Gets the API key used to authenticate requests to the OpenAI API.
-     *
-     * @return the API key
-     */
-    @Option.Configured
-    Optional<String> apiKey();
-
-    /**
-     * Gets the ID of the organization for API requests.
-     *
-     * @return the organization ID
-     */
-    @Option.Configured
-    Optional<String> organizationId();
-
-    /**
-     * Gets the model name to use (e.g., "gpt-3.5-turbo").
-     *
-     * @return the model name
-     */
-    @Option.Configured
-    Optional<String> modelName();
-
-    /**
-     * Gets the sampling temperature to use, between 0 and 2.
+     * The sampling temperature to use, between 0 and 2.
      * Higher values make the output more random, while lower values make it
      * more focused and deterministic.
      *
@@ -88,58 +48,9 @@ interface OpenAiLanguageModelConfigBlueprint {
     Optional<Double> temperature();
 
     /**
-     * Gets the timeout setting for API requests.
+     * Tokenizer to use.
      *
-     * @return the timeout
+     * @return an {@link java.util.Optional} containing the tokenizer
      */
-    @Option.Configured
-    Optional<Duration> timeout();
-
-    /**
-     * Gets the maximum number of retries for failed API requests.
-     *
-     * @return the maximum number of retries
-     */
-    @Option.Configured
-    Optional<Integer> maxRetries();
-
-    /**
-     * Gets whether to log API requests.
-     *
-     * @return true if requests should be logged, false otherwise
-     */
-    @Option.Configured
-    Optional<Boolean> logRequests();
-
-    /**
-     * Gets whether to log API responses.
-     *
-     * @return true if responses should be logged, false otherwise
-     */
-    @Option.Configured
-    Optional<Boolean> logResponses();
-
-    /**
-     * Gets tokenizer CDI bean name.
-     *
-     * @return tokenizer CDI bean name or "discovery:auto" if the bean must be discovered automatically
-     */
-    @Option.Configured
-    Optional<String> tokenizer();
-
-    /**
-     * Gets a map containing custom headers.
-     *
-     * @return custom headers map
-     */
-    @Option.Configured
-    Map<String, String> customHeaders();
-
-    /**
-     * Gets proxy CDI bean name.
-     *
-     * @return proxy CDI bean name or "discovery:auto" if the bean must be discovered automatically
-     */
-    @Option.Configured
-    Optional<String> proxy();
+    Optional<Tokenizer> tokenizer();
 }

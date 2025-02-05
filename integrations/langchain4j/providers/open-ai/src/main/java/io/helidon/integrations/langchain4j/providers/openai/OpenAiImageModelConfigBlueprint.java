@@ -16,8 +16,7 @@
 
 package io.helidon.integrations.langchain4j.providers.openai;
 
-import java.time.Duration;
-import java.util.Map;
+import java.nio.file.Path;
 import java.util.Optional;
 
 import io.helidon.builder.api.Option;
@@ -31,54 +30,14 @@ import io.helidon.builder.api.Prototype;
  */
 @Prototype.Configured(OpenAiImageModelConfigBlueprint.CONFIG_ROOT)
 @Prototype.Blueprint
-interface OpenAiImageModelConfigBlueprint {
+interface OpenAiImageModelConfigBlueprint extends OpenAiCommonConfig {
     /**
      * Default configuration prefix.
      */
     String CONFIG_ROOT = "langchain4j.open-ai.image-model";
 
     /**
-     * If set to {@code false} (default), OpenAI image model will not be available even if configured.
-     *
-     * @return whether OpenAI model is enabled, defaults to {@code false}
-     */
-    @Option.Configured
-    boolean enabled();
-
-    /**
-     * Gets the base URL for the OpenAI API.
-     *
-     * @return the base URL
-     */
-    @Option.Configured
-    Optional<String> baseUrl();
-
-    /**
-     * Gets the API key used to authenticate requests to the OpenAI API.
-     *
-     * @return the API key
-     */
-    @Option.Configured
-    Optional<String> apiKey();
-
-    /**
-     * Gets the ID of the organization for API requests.
-     *
-     * @return the organization ID
-     */
-    @Option.Configured
-    Optional<String> organizationId();
-
-    /**
-     * Gets the model name to use (e.g., "gpt-3.5-turbo").
-     *
-     * @return the model name
-     */
-    @Option.Configured
-    Optional<String> modelName();
-
-    /**
-     * Gets the desired size of the generated images.
+     * The desired size of the generated images.
      *
      * @return the image size.
      */
@@ -86,7 +45,7 @@ interface OpenAiImageModelConfigBlueprint {
     Optional<String> size();
 
     /**
-     * Gets the quality of the generated images.
+     * The quality of the generated images.
      *
      * @return the image quality.
      */
@@ -94,7 +53,7 @@ interface OpenAiImageModelConfigBlueprint {
     Optional<String> quality();
 
     /**
-     * Gets the style of the generated images.
+     * The style of the generated images.
      *
      * @return the image style.
      */
@@ -102,7 +61,7 @@ interface OpenAiImageModelConfigBlueprint {
     Optional<String> style();
 
     /**
-     * Gets the unique identifier for the user making the request.
+     * The unique identifier for the user making the request.
      *
      * @return the user ID.
      */
@@ -110,7 +69,7 @@ interface OpenAiImageModelConfigBlueprint {
     Optional<String> user();
 
     /**
-     * Gets the format of the response.
+     * The format of the response.
      *
      * @return the response format.
      */
@@ -118,39 +77,7 @@ interface OpenAiImageModelConfigBlueprint {
     Optional<String> responseFormat();
 
     /**
-     * Gets the timeout setting for API requests.
-     *
-     * @return the timeout setting in {@link java.time.Duration#parse} format
-     */
-    @Option.Configured
-    Optional<Duration> timeout();
-
-    /**
-     * Gets the maximum number of retries for failed API requests.
-     *
-     * @return the maximum number of retries
-     */
-    @Option.Configured
-    Optional<Integer> maxRetries();
-
-    /**
-     * Gets whether to log API requests.
-     *
-     * @return true if requests should be logged, false otherwise
-     */
-    @Option.Configured
-    Optional<Boolean> logRequests();
-
-    /**
-     * Gets whether to log API responses.
-     *
-     * @return true if responses should be logged, false otherwise
-     */
-    @Option.Configured
-    Optional<Boolean> logResponses();
-
-    /**
-     * Gets the flag to indicate whether to persist the generated images.
+     * The flag to indicate whether to persist the generated images.
      *
      * @return the persist flag.
      */
@@ -158,26 +85,11 @@ interface OpenAiImageModelConfigBlueprint {
     Optional<Boolean> withPersisting();
 
     /**
-     * Gets the path or location where the generated images should be persisted.
+     * The path or location where the generated images should be persisted.
      *
      * @return the persist path.
      */
     @Option.Configured
-    Optional<String> persistTo();
+    Optional<Path> persistTo();
 
-    /**
-     * Gets a map containing custom headers.
-     *
-     * @return custom headers map
-     */
-    @Option.Configured
-    Map<String, String> customHeaders();
-
-    /**
-     * Gets proxy CDI bean name.
-     *
-     * @return proxy CDI bean name or "discovery:auto" if the bean must be discovered automatically
-     */
-    @Option.Configured
-    Optional<String> proxy();
 }
