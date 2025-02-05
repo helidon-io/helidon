@@ -16,6 +16,7 @@
 
 package io.helidon.common.types;
 
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -206,6 +207,13 @@ final class TypeNameSupport {
 
             builder.className(tv.getName())
                     .generic(true);
+            return;
+        }
+        if (reflectGenericType instanceof GenericArrayType ga) {
+            TypeName componentType = TypeName.create(ga.getGenericComponentType());
+
+            builder.from(componentType)
+                    .array(true);
             return;
         }
 
