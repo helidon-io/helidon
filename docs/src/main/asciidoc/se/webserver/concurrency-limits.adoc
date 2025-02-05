@@ -124,7 +124,11 @@ server:
 
 NOTE: Queues can be useful to accommodate short bursts of
 requests that would otherwise be rejected when the number of permits
-is exhausted. Neither of the two strategies shown above enables
+is exhausted. Queueing is disabled by default in both fixed and
+AIMD strategies, so `queue-length` must be set to a positive number
+to enable this feature.
+
+Neither of the two strategies shown above enables
 queues by default.
 
 For more information about configuring these Concurrency Limit
