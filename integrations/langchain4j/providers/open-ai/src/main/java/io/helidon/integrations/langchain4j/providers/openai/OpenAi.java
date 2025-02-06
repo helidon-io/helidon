@@ -22,12 +22,12 @@ import io.helidon.service.registry.Qualifier;
 
 final class OpenAi {
     static final String OPEN_AI = "open-ai";
-    static final String CHAT_MODEL = OPEN_AI + ":" + Ai.CHAT_MODEL_NAME;
-    static final String EMBEDDING_MODEL = OPEN_AI + ":" + Ai.EMBEDDING_MODEL_NAME;
-    static final String IMAGE_MODEL = OPEN_AI + ":" + Ai.IMAGE_MODEL_NAME;
-    static final String LANGUAGE_MODEL = OPEN_AI + ":" + Ai.LANGUAGE_MODEL_NAME;
-    static final String MODERATION_MODEL = OPEN_AI + ":" + Ai.MODERATION_MODEL_NAME;
-    static final String STREAM_CHAT_MODEL = OPEN_AI + ":" + Ai.STREAMING_CHAT_MODEL_NAME;
+    static final String CHAT_MODEL = OPEN_AI + "." + Ai.CHAT_MODEL_NAME;
+    static final String EMBEDDING_MODEL = OPEN_AI + "." + Ai.EMBEDDING_MODEL_NAME;
+    static final String IMAGE_MODEL = OPEN_AI + "." + Ai.IMAGE_MODEL_NAME;
+    static final String LANGUAGE_MODEL = OPEN_AI + "." + Ai.LANGUAGE_MODEL_NAME;
+    static final String MODERATION_MODEL = OPEN_AI + "." + Ai.MODERATION_MODEL_NAME;
+    static final String STREAM_CHAT_MODEL = OPEN_AI + "." + Ai.STREAMING_CHAT_MODEL_NAME;
 
     static final Qualifier OPEN_AI_QUALIFIER = Qualifier.createNamed(OPEN_AI);
     static final double WEIGHT = Weighted.DEFAULT_WEIGHT - 10;
