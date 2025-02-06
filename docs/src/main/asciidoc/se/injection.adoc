@@ -296,8 +296,12 @@ include::{sourcedir}/se/inject/FactoryExample.java[tag=snippet_3, indent=0]
 === io.helidon.service.registry.Service.InjectionPointFactory
 A factory that provides zero or more instances for each injection point.
 
+//TODO
+
 === io.helidon.service.registry.Service.QualifiedFactory
 A factory that provides zero or more instances based on a specific qualifier and contract.
+
+//TODO
 
 == Interceptors
 Interception allows intercepting calls to constructors or methods, and even fields when used as injection points.
@@ -361,7 +365,14 @@ include::{sourcedir}/se/inject/InterceptorDelegateExample.java[tag=snippet_3, in
 ----
 
 // === ExternalDelegate annotation
+// TODO Uncomment this, once this issue is fixed https://github.com/helidon-io/helidon/issues/9726
 // The `@Interception.ExternalDelegate` annotation functions similarly to `@Interception.Delegate`. However, the key difference is that `@Interception.ExternalDelegate` is designed for classes or interfaces that you don’t control. This means it allows you to apply the interception mechanism even to third-party classes or interfaces.
+//
+// [source,java]
+// .ExternalDelegate used for external class/interface
+// ----
+// include::{sourcedir}/se/inject/InterceptorDelegateExample.java[tag=snippet_4, indent=0]
+// ----
 
 == Events
 Events enable in-application communication between services by providing a mechanism to emit events and register consumers to handle them.

@@ -21,15 +21,11 @@ class InterceptorDelegateExample {
 
     @Service.Singleton
     @Service.NamedByType(Traced.class)
-    static class MyServiceInterceptor implements Interception.Interceptor {
-        static final List<String> INVOKED = new ArrayList<>();
+    class MyServiceInterceptor implements Interception.Interceptor {
 
         @Override
         public <V> V proceed(InterceptionContext ctx, Chain<V> chain, Object... args) throws Exception {
-            INVOKED.add("%s.%s: %s".formatted(
-                    ctx.serviceInfo().serviceType().declaredName(),
-                    ctx.elementInfo().elementName(),
-                    Arrays.asList(args)));
+            //Do something
             return chain.proceed(args);
         }
     }
@@ -37,7 +33,7 @@ class InterceptorDelegateExample {
 
     // tag::snippet_2[]
     @Service.Singleton
-    static class MyServiceProvider implements Supplier<MyService> {
+    class MyServiceProvider implements Supplier<MyService> {
         @Override
         public MyService get() {
             return new MyService();
@@ -48,7 +44,7 @@ class InterceptorDelegateExample {
     // tag::snippet_3[]
     @Service.Contract
     @Interception.Delegate
-    static class MyService {
+    class MyService {
 
         @Traced
         String sayHello(String name) {
@@ -57,5 +53,27 @@ class InterceptorDelegateExample {
 
     }
     // end::snippet_3[]
+
+
+
+    // tag::snippet_4[]
+    /**
+     * Assume this is the class we have no control over.
+     */
+    class SomeExternalClass {
+        String sayHello(String name) {
+            return "Hello %s!".formatted(name);
+        }
+    }
+
+    @Service.Singleton
+    @Interception.ExternalDelegate(SomeExternalClass.class)
+    class SomeExternalClassProvider implements Supplier<SomeExternalClass> {
+        @Override
+        public SomeExternalClass get() {
+            return new SomeExternalClass();
+        }
+    }
+    // end::snippet_4[]
 
 }
