@@ -25,7 +25,6 @@ import io.helidon.service.registry.Service;
 
 import com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider.ResourcePrincipalAuthenticationDetailsProviderBuilder;
 
-@Weight(Weighted.DEFAULT_WEIGHT)
 @Service.Provider
 class MockedAuthenticationMethodResourcePrincipal extends AuthenticationMethodResourcePrincipal {
 

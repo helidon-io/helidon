@@ -77,8 +77,8 @@ class OciConfigProvider implements Supplier<io.helidon.integrations.oci.OciConfi
             ociConfig = OciConfig.create(config.get(CONFIG_PREFIX));
         } else {
             ociConfig = OciConfig.create(config);
-            if (LOGGER.isLoggable(System.Logger.Level.WARNING)) {
-                LOGGER.log(System.Logger.Level.WARNING,
+            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                LOGGER.log(System.Logger.Level.TRACE,
                            String.format("OCI Configuration needs to be prefixed with \"%s\"", CONFIG_PREFIX));
             }
         }
