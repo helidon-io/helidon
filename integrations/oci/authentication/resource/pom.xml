@@ -107,6 +107,18 @@
                     </dependency>
                 </dependencies>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!--
+                        This will allow test to reach Resource Principal provider build
+                    -->
+                    <environmentVariables>
+                        <OCI_RESOURCE_PRINCIPAL_VERSION>2.2</OCI_RESOURCE_PRINCIPAL_VERSION>
+                    </environmentVariables>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
     <profiles>

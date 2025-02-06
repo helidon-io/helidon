@@ -38,13 +38,14 @@ The provider is looked up by using instances of `io.helidon.integrations.oci.spi
 
 The following out-of-the-box implementations exist:
 
-| Provider           | Weight | Description                                                   |
-|--------------------|--------|---------------------------------------------------------------|
-| Config             | 90     | Uses `OciConfig`                                              |
-| Session Token      | 85     | Uses `OciConfig` or config file, if it contains session token |
-| Config File        | 80     | Uses `~/.oci/config` file                                     |
-| Resource Principal | 70     | Resource principal (such as functions)                        |
-| Instance Principal | 60     | Principal of the compute instance                             | 
+| Provider              | Weight | Description                                                   |
+|-----------------------|--------|---------------------------------------------------------------|
+| Config                | 90     | Uses `OciConfig`                                              |
+| Session Token         | 85     | Uses `OciConfig` or config file, if it contains session token |
+| Config File           | 80     | Uses `~/.oci/config` file                                     |
+| Resource Principal    | 70     | Resource principal (such as functions)                        |
+| Instance Principal    | 60     | Principal of the compute instance                             |
+| OKE Workload Identity | 50     | Identity of the OKE Workload                                  |
 
 To create a custom instance of authentication details provider, just create a new service for service registry
 with default or higher weight that provides an instance of the `BasicAuthenticationDetailsProvider` 
