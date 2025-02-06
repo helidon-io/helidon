@@ -36,7 +36,6 @@ module io.helidon.integrations.langchain4j.providers.openai {
     requires transitive io.helidon.service.registry;
     requires transitive io.helidon.integrations.langchain4j;
     requires transitive io.helidon.common.config;
-    requires jdk.jfr;
 
     exports io.helidon.integrations.langchain4j.providers.openai;
 }

@@ -42,7 +42,7 @@ langchain4j.open-ai:
     log-responses: true
     custom-headers.header1: value1
     custom-headers.header2: value2
-    # StreamingChatModel
+  # StreamingChatModel
   streaming-chat-model:
     api-key: api-key
     model-name: model-name
@@ -50,7 +50,7 @@ langchain4j.open-ai:
     organization-id: organization-id
     temperature: 36.6
     top-p: 10
-    stop: stop1,stop2,stop3
+    stop: ["stop1", "stop2", "stop3"]
     max-tokens: 15
     max-completion-tokens: 20
     presence-penalty: 0.1

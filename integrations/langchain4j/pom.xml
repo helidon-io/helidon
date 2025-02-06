@@ -40,7 +40,7 @@
     </modules>
 
     <description>
-        Helidon Micrometer Integration
+        Helidon Langchain4j Integration
     </description>
 
 </project>

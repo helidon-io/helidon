@@ -71,7 +71,7 @@ public final class Ai {
      *   <li>{@code dev.langchain4j.rag.content.retriever.ContentRetriever} - Retrieves relevant content to support responses
      *   .</li>
      *   <li>{@code dev.langchain4j.rag.RetrievalAugmentor} - Enhances retrieval processes with additional context.</li>
-     *   <li>CDI bean methods annotated with {@code dev.langchain4j.agent.tool.Tool} -
+     *   <li>Service methods annotated with {@code dev.langchain4j.agent.tool.Tool} -
      *       Tool methods that further extend service capabilities.</li>
      * </ul>
      *
