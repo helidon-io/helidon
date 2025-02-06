@@ -68,7 +68,7 @@ To start using Helidon Inject, you need to create both:
 
 Let's begin by explaining what services are in Helidon Inject.
 
-=== What is a service
+== What is a service
 Services are:
 
 1. Java classes annotated with one of the `Service.Scope` annotations, such as
@@ -81,7 +81,7 @@ Services are:
 
 Now, let's talk about an injection points.
 
-=== Injection points
+== Injection points
 In Helidon, dependency injection can be done into the injection point in the following ways:
 
 1. Through a constructor annotated with `@Service.Inject` - each parameter is considered an injection point; this is the recommended way of injecting dependencies (as it can be unit tested easily, and fields can be declared private final)
@@ -90,10 +90,10 @@ In Helidon, dependency injection can be done into the injection point in the fol
 Injected services are picked by the highest weight and implementing the requested contract.
 Only services can have Injection points.
 
-=== Contract vs. service
+== Contract vs. service
 Contract and service can be the same thing, but also separate entities. For simplicity, you can imagine contract as what you’re injecting/searching service registry for and service is what is responsible for adding new instances to the service registry.
 
-=== Annotation processors
+== Annotation processors
 To make everything work, it is necessary to add the following annotation processors to
 the compilation process of your application.
 
@@ -125,13 +125,13 @@ For Maven:
 </build>
 ----
 
-==== Why are these annotation processors needed?
+=== Why are these annotation processors needed?
 Annotation processor `helidon-service-codegen` generates a service descriptor (`ServiceProvider__ServiceDescriptor`) for each discovered service.
 This descriptor is discovered at runtime and used to instantiate a service without the need to use reflection.
 
 Reflection is used only to get an instance of the service descriptor (by using its public `INSTANCE` singleton field).
 
-=== Basic injection example
+== Basic injection example
 
 Create a simple service class, which will be injected into another.
 
@@ -162,7 +162,7 @@ include::{sourcedir}/se/inject/BasicExample.java[tag=snippet_3, indent=0]
 If everything went as expected, no problems occurred Service registry gave us fully initialized
 and ready to use service.
 
-=== Service Lifecycle
+== Service Lifecycle
 
 The service registry manages the lifecycle of services. To ensure a method is invoked at a specific lifecycle phase, you can use the following annotations:
 
@@ -174,14 +174,14 @@ The lifecycle behavior depends on the bean scope:
 - `@Service.PerLookup` – Only the post-construct method is invoked since the instance is not managed after the injection.
 - *Other scopes* – The pre-destroy method is invoked when the scope is deactivated (e.g. for singletons this happens during registry or JVM shutdown).
 
-=== Qualifiers
+== Qualifiers
 In dependency injection, a qualifier is a way to tell the framework which dependency to use when there are multiple options available.
 
 Annotations are considered qualifier if they’re "meta-annotated" with `@Service.Qualifier`.
 
 Helidon Inject comes with one qualifier provided out-of-the-box - the `@Service.Named` (and `@Service.NamedByType` which does the same thing, but uses class instead of a `String` name)
 
-==== Named service injection
+=== Named service injection
 
 Services can be assigned names, allowing them to be specified by name during injection.
 This ensures that the correct service is injected. To achieve this, we use the @Service.Named annotation.
@@ -204,7 +204,7 @@ include::{sourcedir}/se/inject/QualifierExample.java[tag=snippet_2, indent=0]
 include::{sourcedir}/se/inject/QualifierExample.java[tag=snippet_3, indent=0]
 ----
 
-==== Named by the type
+=== Named by the type
 Alternatively, instead of using string-based names for services, a specific class can be used to "name" them. For this purpose, we use the @Service.NamedByType annotation.
 
 [source,java]
@@ -215,7 +215,7 @@ include::{sourcedir}/se/inject/QualifierExample.java[tag=snippet_4, indent=0]
 
 The way it is used on the injection point, it is the same as it was in case of the `@Service.Named`.
 
-==== Custom qualifiers
+=== Custom qualifiers
 To make custom qualifiers, it is necessary to "meta-annotated" it with `@Service.Qualifier`.
 
 [source,java]
@@ -239,7 +239,7 @@ Once the services are created and qualified, they can be injected in the same wa
 include::{sourcedir}/se/inject/Qualifier2Example.java[tag=snippet_3, indent=0]
 ----
 
-=== Factories
+== Factories
 Let's consider we have a contract named `MyContract`.
 
 The simple case is that we have a class that implements the contract, and that is a service, such as:
@@ -266,7 +266,7 @@ These challenges can be addressed by implementing one of the factory interfaces 
 - `io.helidon.service.registry.Service.InjectionPointFactory`
 - `io.helidon.service.registry.Service.QualifiedFactory`
 
-==== java.util.function.Supplier
+=== java.util.function.Supplier
 A factory that supplies a single instance (it can also return `Supplier<Optional<MyContract>>`)
 [source,java]
 .Supplier factory
@@ -274,7 +274,7 @@ A factory that supplies a single instance (it can also return `Supplier<Optional
 include::{sourcedir}/se/inject/FactoryExample.java[tag=snippet_1, indent=0]
 ----
 
-==== io.helidon.service.registry.Service.ServicesFactory
+=== io.helidon.service.registry.Service.ServicesFactory
 A factory that creates zero or more implementations of a given contract.
 
 [source,java]
@@ -293,13 +293,13 @@ Note: If one doesn’t want to list all the names provided by this factory, it i
 include::{sourcedir}/se/inject/FactoryExample.java[tag=snippet_3, indent=0]
 ----
 
-==== io.helidon.service.registry.Service.InjectionPointFactory
+=== io.helidon.service.registry.Service.InjectionPointFactory
 A factory that provides zero or more instances for each injection point.
 
-==== io.helidon.service.registry.Service.QualifiedFactory
+=== io.helidon.service.registry.Service.QualifiedFactory
 A factory that provides zero or more instances based on a specific qualifier and contract.
 
-=== Interceptors
+== Interceptors
 Interception allows intercepting calls to constructors or methods, and even fields when used as injection points.
 
 By default, interception is enabled only for elements annotated with `Interception.Intercepted`. However, annotation processor configurations can enable interception for any annotation or disable it entirely.
@@ -312,7 +312,7 @@ Interception wraps around the invocation, enabling it to:
 * Modify the response
 * Handle exceptions
 
-==== Intercepted annotation
+=== Intercepted annotation
 The `@Interception.Intercepted` annotation is a marker used to indicate that an annotation should trigger interception.
 
 [source,java]
@@ -321,7 +321,7 @@ The `@Interception.Intercepted` annotation is a marker used to indicate that an 
 include::{sourcedir}/se/inject/InterceptorExample.java[tag=snippet_1, indent=0]
 ----
 
-==== Interceptor interface
+=== Interceptor interface
 The `io.helidon.service.registry.Interception.Interceptor` interface defines an interceptor service that intercepts methods/constructors/fields annotated with the configured marker annotation. This supported marker annotation is specified using `@Service.NamedByType`. To properly handle the interception chain, the interceptor must always invoke the `proceed` method.
 
 [source,java]
@@ -333,7 +333,7 @@ include::{sourcedir}/se/inject/InterceptorExample.java[tag=snippet_2, indent=0]
 <1> Binds this Interceptor to process annotated with `@Traced`
 <2> Passing interceptor processing to another interceptor in the chain
 
-==== Delegate annotation
+=== Delegate annotation
 The `@Interception.Delegate` annotation enables interception for classes or interfaces that aren’t created through the service registry but are instead produced by a factory. To enable interception, this annotation must be present on the class that the factory produces. While it is not required on interfaces, it will still function correctly if applied there.
 
 Let's make the same `@Traced` annotation and Interceptor as in the previous examples
@@ -360,10 +360,10 @@ Method calls on an instance created this way can’t be intercepted. To enable i
 include::{sourcedir}/se/inject/InterceptorDelegateExample.java[tag=snippet_3, indent=0]
 ----
 
-// ==== ExternalDelegate annotation
+// === ExternalDelegate annotation
 // The `@Interception.ExternalDelegate` annotation functions similarly to `@Interception.Delegate`. However, the key difference is that `@Interception.ExternalDelegate` is designed for classes or interfaces that you don’t control. This means it allows you to apply the interception mechanism even to third-party classes or interfaces.
 
-=== Events
+== Events
 Events enable in-application communication between services by providing a mechanism to emit events and register consumers to handle them.
 
 A single event can be delivered to zero or more consumers.
@@ -376,7 +376,7 @@ Key Terminology:
 - *Event Observer* – A service that listens for events, with a method annotated using `io.helidon.service.registry.Event.Observer`.
 - *Qualified Event* – An event emitted with a qualifier, using an annotation marked with `Service.Qualifier`.
 
-==== Event Object
+=== Event Object
 To begin emitting events, the first step is to define the event type itself.
 
 [source,java]
@@ -385,10 +385,10 @@ To begin emitting events, the first step is to define the event type itself.
 include::{sourcedir}/se/inject/EventsExample.java[tag=snippet_1, indent=0]
 ----
 
-==== Event Emitter
+=== Event Emitter
 Event emitters are code generated by Helidon. So we don't make them ourselves.
 
-==== Event Producer
+=== Event Producer
 An event producer is a service which triggers the event by using the event emitter.
 
 To emit an event, inject the desired event emitter, construct the corresponding event object, and call the emit method on the emitter instance.
@@ -400,7 +400,7 @@ include::{sourcedir}/se/inject/EventsExample.java[tag=snippet_2, indent=0]
 ----
 The method returns only after all event observers have been notified. If any observer throws an exception, an `EventDispatchException` is thrown, with all caught exceptions added as suppressed. This ensures that all observers are invoked, even if an exception occurs.
 
-==== Event Observer
+=== Event Observer
 An event observer is a service which processes fired event.
 
 To create an event observer:
@@ -414,11 +414,11 @@ To create an event observer:
 include::{sourcedir}/se/inject/EventsExample.java[tag=snippet_3, indent=0]
 ----
 
-=== Qualified Events
+== Qualified Events
 
 A Qualified Event is only delivered to Event Observers that use the same qualifier.
 
-==== Qualified Event Producer
+=== Qualified Event Producer
 
 A qualified event can be produced with two options:
 
@@ -432,7 +432,7 @@ In this example below, we create event producer, which fires event only to obser
 include::{sourcedir}/se/inject/EventsExample.java[tag=snippet_6, indent=0]
 ----
 
-==== Qualified Event Observers
+=== Qualified Event Observers
 
 To consume a qualified event, observer method must be annotated with the correct qualifier(s).
 
@@ -442,14 +442,14 @@ To consume a qualified event, observer method must be annotated with the correct
 include::{sourcedir}/se/inject/EventsExample.java[tag=snippet_7, indent=0]
 ----
 
-=== Asynchronous Events
+== Asynchronous Events
 Events can be emitted asynchronously, and event observers can also operate asynchronously.
 
 An executor service for handling asynchronous events can be registered in the service registry by providing a service that implements the `java.util.concurrent.ExecutorService` contract and is named `io.helidon.service.registry.EventManager`.
 
 If no custom executor service is provided, the system defaults to a per-task executor using Virtual Threads, with thread names prefixed as `inject-event-manager-`.
 
-==== Asynchronous Event Producer
+=== Asynchronous Event Producer
 All asynchronous event producers must use the `Event.Emitter.emitAsync(..)` method instead of the synchronous `Event.Emitter.emit(..)`.
 
 The `emitAsync` method returns a `CompletionStage<MyEvent>` instance. When executed, it completes once all event observers have been submitted to the executor service. However, there is no guarantee that any event has been delivered—it may have been sent to anywhere from 0 to n observers (where n represents the number of synchronous observers).
@@ -460,7 +460,7 @@ The `emitAsync` method returns a `CompletionStage<MyEvent>` instance. When execu
 include::{sourcedir}/se/inject/EventsExample.java[tag=snippet_4, indent=0]
 ----
 
-==== Asynchronous Observer
+=== Asynchronous Observer
 Asynchronous observer methods are invoked from separate threads (through the executor service mentioned above), and their results are ignored by the Event Emitter; if there is an exception thrown from the observer method, it is logged with `WARNING` log level into logger named `io.helidon.service.registry.EventManager`.
 
 To declare an asynchronous observer use annotation `Event.AsyncObserver` instead of `Event.Observer`.
@@ -471,7 +471,7 @@ To declare an asynchronous observer use annotation `Event.AsyncObserver` instead
 include::{sourcedir}/se/inject/EventsExample.java[tag=snippet_5, indent=0]
 ----
 
-=== Programmatic Lookup
+== Programmatic Lookup
 
 There are two primary ways to access services from the service registry:
 
@@ -517,7 +517,7 @@ Lookup parameter options:
 - `TypeName` - the same, but using Helidon abstraction of type names (may have type arguments)
 - `Lookup` - a full search criteria for a registry lookup
 
-=== Startup
+== Startup
 
 Helidon provides a Maven plugin (`io.helidon.service:helidon-service-maven-plugin`, goal `create-application`) to generate
 build time bindings, that can be used to start the service registry without any classpath discovery and reflection.
