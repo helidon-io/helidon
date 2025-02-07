@@ -35,5 +35,6 @@
     <modules>
         <module>open-ai</module>
         <module>oracle</module>
+        <module>ollama</module>
     </modules>
 </project>
