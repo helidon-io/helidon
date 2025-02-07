@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -122,11 +122,11 @@ final class LookupSupport {
         public void decorate(Lookup.BuilderBase<?, ?> builder, Optional<Dependency> dependency) {
             if (dependency.isPresent()) {
                 Dependency value = dependency.get();
-                builder.qualifiers(value.qualifiers())
-                        .addContract(ResolvedType.create(value.contract()));
+                builder.qualifiers(value.qualifiers());
 
                 if (!GenericType.OBJECT.equals(value.contractType())) {
-                    builder.contractType(value.contractType());
+                    builder.contractType(value.contractType())
+                            .addContract(ResolvedType.create(value.contract()));
                 }
             } else {
                 builder.dependency().ifPresent(existing -> {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.microprofile.cdi;
 import java.util.Map;
 
 import io.helidon.config.mp.MpConfigSources;
+import io.helidon.logging.common.LogConfig;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.se.SeContainer;
@@ -39,6 +40,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * Unit test for {@link HelidonContainerInitializer}.
  */
 class HelidonContainerInitializerTest {
+    static {
+        LogConfig.initClass();
+    }
+
     private static ConfigProviderResolver configResolver;
     private static ClassLoader cl;
     private static org.eclipse.microprofile.config.Config defaultConfig;

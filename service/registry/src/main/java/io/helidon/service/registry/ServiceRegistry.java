@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -294,6 +294,19 @@ public interface ServiceRegistry {
      * @return a list of service descriptors that match the lookup criteria
      */
     List<ServiceInfo> lookupServices(Lookup lookup);
+
+    /**
+     * A lookup method that provides a list of qualified instances, rather than just a service instance.
+     * This is to align with the possible injection points in services.
+     * <p>
+     * The registry is optimized for look-ups based on service type and service contracts, all other
+     * lookups trigger a full registry scan.
+     *
+     * @param lookup lookup criteria to find matching services
+     * @param <T> type of the expected result, use {@link java.lang.Object} for results with more than one contract
+     * @return a list of qualified service instances that match the lookup criteria
+     */
+    <T> List<ServiceInstance<T>> lookupInstances(Lookup lookup);
 
     /**
      * Provides registry metrics information.

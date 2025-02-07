@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -298,8 +298,12 @@ class DescribedService {
         }
 
         for (Annotation annotation : serviceTypeInfo.annotations()) {
-            if (serviceTypeInfo.hasMetaAnnotation(annotation.typeName(),
-                                                  SERVICE_ANNOTATION_QUALIFIER)) {
+            if (annotation.hasMetaAnnotation(SERVICE_ANNOTATION_QUALIFIER)) {
+                qualifiers.add(annotation);
+            } else if (serviceTypeInfo.hasMetaAnnotation(annotation.typeName(),
+                                                         SERVICE_ANNOTATION_QUALIFIER)) {
+                // there are two ways to do this, which is not ideal, and in some cases we only have one filled
+                // issue on Github: 9719
                 qualifiers.add(annotation);
             }
         }

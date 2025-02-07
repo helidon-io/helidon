@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.helidon.common.types.ResolvedType;
+import io.helidon.common.types.TypeNames;
 import io.helidon.service.registry.ServiceSupplies.ServiceInstanceSupply;
 import io.helidon.service.registry.ServiceSupplies.ServiceInstanceSupplyList;
 import io.helidon.service.registry.ServiceSupplies.ServiceInstanceSupplyOptional;
@@ -41,6 +42,8 @@ import io.helidon.service.registry.ServiceSupplies.ServiceSupplyOptional;
  * A binding is a map of injection point to zero or more service descriptors that satisfy it.
  */
 class Bindings {
+    private static final ResolvedType OBJECT = ResolvedType.create(TypeNames.OBJECT);
+
     private final Map<ResolvedType, List<DependencyBinding>> bindingsByContract = new HashMap<>();
     private final Map<ServiceInfo, ServiceBindingPlan> bindingPlans = new IdentityHashMap<>();
     private final ReentrantLock lock = new ReentrantLock();
@@ -73,12 +76,8 @@ class Bindings {
     void forgetContract(ResolvedType type) {
         lock.lock();
         try {
-            List<DependencyBinding> toRemove = bindingsByContract.remove(type);
-            if (toRemove == null) {
-                // nobody injects this contract
-                return;
-            }
-            toRemove.forEach(DependencyBinding::clear);
+            forgetBindingForContract(type);
+            forgetBindingForContract(OBJECT);
         } finally {
             lock.unlock();
         }
@@ -90,6 +89,9 @@ class Bindings {
     - bind pre-built (compile time)
      */
     ServiceBindingPlan bindingPlan(ServiceInfo service) {
+        if (service.dependencies().isEmpty()) {
+            return new ServiceBindingPlan(registry, service);
+        }
         ServiceBindingPlan bindingPlan = bindingPlans.get(service);
         if (bindingPlan == null) {
             // this means we failed to bind services on registry startup, we should have complete knowledge of all
@@ -98,6 +100,20 @@ class Bindings {
                                                        + service.serviceType());
         }
         return bindingPlan;
+    }
+
+    boolean isValidContract(ResolvedType type) {
+        // we may have an Object injection point, in which case we support any type (theoretically)
+        return bindingsByContract.containsKey(type) || bindingsByContract.containsKey(OBJECT);
+    }
+
+    private void forgetBindingForContract(ResolvedType type) {
+        List<DependencyBinding> toRemove = bindingsByContract.get(type);
+        if (toRemove == null) {
+            // nobody injects this contract
+            return;
+        }
+        toRemove.forEach(DependencyBinding::clear);
     }
 
     static class ServiceBindingPlan {

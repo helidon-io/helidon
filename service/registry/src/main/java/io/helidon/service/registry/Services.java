@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,9 @@ import io.helidon.common.types.TypeName;
 
 /**
  * Static access to the service registry.
+ * <p>
+ * <b>Note: </b> Using any methods on this class makes the service registry throw away optimization created via
+ * the Helidon Service Registry Maven Plugin (code generated binding) for services that use the contracts configured.
  * <p>
  * There is always a single instance of a registry available within an application that can be access through
  * methods on this class.
@@ -114,6 +117,29 @@ public final class Services {
             csr.add(contract, weight, instance);
         }
     }
+
+    /**
+     * Add a custom service descriptor.
+     * <p>
+     * Note: it is recommended to use
+     * {@link io.helidon.service.registry.ServiceRegistryConfig.Builder#addServiceDescriptor(ServiceDescriptor)} as
+     * that service descriptor will be available when constructing the service registry.
+     * This method is only to be used when the service registry must be created prior to configuring the binding.
+     *
+     * @param descriptor descriptor to "late bind" to the service registry
+     * @throws io.helidon.service.registry.ServiceRegistryException in case the service contract was already used and cannot be
+     *                                                              re-bound
+     * @throws java.lang.NullPointerException                       if the parameter is null
+     */
+    public static void add(ServiceDescriptor<?> descriptor) {
+        Objects.requireNonNull(descriptor);
+
+        ServiceRegistry registry = GlobalServiceRegistry.registry();
+        if (registry instanceof CoreServiceRegistry csr) {
+            csr.add(descriptor);
+        }
+    }
+
 
     /**
      * Get the first instance of the contract, expecting the contract is available.

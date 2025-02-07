@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import io.helidon.logging.common.LogConfig;
 import io.helidon.service.registry.InterceptionException;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryManager;
+import io.helidon.service.registry.Services;
+import io.helidon.testing.junit5.Testing;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -41,8 +43,8 @@ Returning
 Modifying
 Repeating
  */
+@Testing.Test
 class DelegatingInterceptionTest {
-    private static ServiceRegistryManager registryManager;
     private static DelegatedContract service;
 
     static {
@@ -51,16 +53,7 @@ class DelegatingInterceptionTest {
 
     @BeforeAll
     static void init() {
-        registryManager = ServiceRegistryManager.create();
-        ServiceRegistry registry = registryManager.registry();
-        service = registry.get(DelegatedContract.class);
-    }
-
-    @AfterAll
-    static void shutdown() {
-        if (registryManager != null) {
-            registryManager.shutdown();
-        }
+        service = Services.get(DelegatedContract.class);
     }
 
     @BeforeEach

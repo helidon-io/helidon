@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -239,6 +239,7 @@ public class ServiceDescriptorCodegen {
 
         // the basic fields and methods
         serviceTypeMethod(classModel, service);
+        providedTypeMethod(classModel, service);
         descriptorTypeMethod(classModel, service);
         scopeMethod(classModel, service);
         contractsMethod(classModel, service, contracts, factoryContracts);
@@ -366,6 +367,7 @@ public class ServiceDescriptorCodegen {
         singletonInstanceField(classModel, service);
 
         serviceTypeMethod(classModel, service);
+        providedTypeMethod(classModel, service);
         descriptorTypeMethod(classModel, service);
         scopeMethod(classModel, service);
         contractsMethod(classModel, service, contracts, Set.of());
@@ -1423,6 +1425,30 @@ public class ServiceDescriptorCodegen {
                 .returnType(TypeNames.TYPE_NAME)
                 .name("serviceType")
                 .addContentLine("return SERVICE_TYPE;"));
+    }
+
+    private void providedTypeMethod(ClassModel.Builder classModel, DescribedService service) {
+        if (!service.isFactory() && service.superType().empty()) {
+            // default will work just fine
+            return;
+        }
+        TypeName providedType = service.isFactory()
+                ? service.providedDescriptor().typeName()
+                : service.serviceDescriptor().typeName();
+
+        classModel.addField(field -> field
+                .isStatic(true)
+                .isFinal(true)
+                .accessModifier(AccessModifier.PRIVATE)
+                .type(TypeNames.TYPE_NAME)
+                .name("PROVIDED_TYPE")
+                .addContentCreate(providedType));
+
+        // TypeName providedType()
+        classModel.addMethod(method -> method.addAnnotation(Annotations.OVERRIDE)
+                .returnType(TypeNames.TYPE_NAME)
+                .name("providedType")
+                .addContentLine("return PROVIDED_TYPE;"));
     }
 
     private void descriptorTypeMethod(ClassModel.Builder classModel, DescribedService service) {

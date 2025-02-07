@@ -98,7 +98,7 @@ import org.jboss.weld.util.reflection.Reflections;
  *
  * Helidon changes are under the copyright of:
  *
- * Copyright (c) 2020. 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -237,7 +237,7 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
         if (typeInfo.getSuperClass() == Object.class) {
             // for classes that do not have an enclosing class, we want the super interface to be first
             if (proxiedBeanType.getEnclosingClass() == null) {
-                if (typeInfo.getSuperInterface() == null) {
+                if (typeInfo.getSuperInterface() == null || bean == null) {
                     // abstract decorators fall into this category, let's use the type name
                     return proxiedBeanType.getName() + PROXY_SUFFIX;
                 }

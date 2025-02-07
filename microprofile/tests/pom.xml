@@ -46,6 +46,7 @@
         <module>testing</module>
         <module>config</module>
         <module>telemetry</module>
+        <module>service-registry</module>
     </modules>
 
     <profiles>
