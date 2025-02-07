@@ -42,14 +42,9 @@ class InterceptorExample {
     @Service.Singleton
     @Service.NamedByType(Traced.class) //<1>
     static class MyServiceInterceptor implements Interception.Interceptor {
-        static final List<String> INVOKED = new ArrayList<>();
-
         @Override
         public <V> V proceed(InterceptionContext ctx, Chain<V> chain, Object... args) throws Exception {
-            INVOKED.add("%s.%s: %s".formatted(
-                    ctx.serviceInfo().serviceType().declaredName(),
-                    ctx.elementInfo().elementName(),
-                    Arrays.asList(args)));
+            //Do something
             return chain.proceed(args); //<2>
         }
     }

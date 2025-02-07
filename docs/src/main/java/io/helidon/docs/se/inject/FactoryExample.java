@@ -16,8 +16,11 @@
 package io.helidon.docs.se.inject;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 
+import io.helidon.common.GenericType;
+import io.helidon.service.registry.Lookup;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.Service;
 
@@ -51,12 +54,48 @@ class FactoryExample {
 
     // tag::snippet_3[]
     @Service.Singleton
-    @Service.Named("test")
-    class MyQualifiedServiceFactory implements Service.ServicesFactory<MyService> {
+    @Service.Named("name")
+    class MyServiceFactoryWithQualifier implements Service.ServicesFactory<MyService> {
         @Override
         public List<Service.QualifiedInstance<MyService>> services() {
-            return List.of(Service.QualifiedInstance.create(new MyService(), Qualifier.createNamed("test")));
+            return List.of(Service.QualifiedInstance.create(new MyService(), Qualifier.createNamed("name")));
         }
     }
     // end::snippet_3[]
+
+    // tag::snippet_4[]
+    @Service.Singleton
+    class QualifiedFactory implements Service.QualifiedFactory<MyService, Service.Named> {
+
+        @Override
+        public Optional<Service.QualifiedInstance<MyService>> first(Qualifier qualifier,
+                                                                    Lookup lookup,
+                                                                    GenericType<MyService> genericType) {
+            return Optional.of(Service.QualifiedInstance.create(new MyService()));
+        }
+    }
+    // end::snippet_4[]
+
+    // tag::snippet_5[]
+    @Service.Singleton
+    class InjectionPointFactory implements Service.InjectionPointFactory<MyService> {
+
+        @Override
+        public Optional<Service.QualifiedInstance<MyService>> first(Lookup lookup) {
+            return Optional.of(Service.QualifiedInstance.create(new MyService()));
+        }
+    }
+    // end::snippet_5[]
+
+    // tag::snippet_6[]
+    @Service.Singleton
+    @Service.Named("name")
+    class InjectionPointFactoryWithQualifier implements Service.InjectionPointFactory<MyService> {
+
+        @Override
+        public Optional<Service.QualifiedInstance<MyService>> first(Lookup lookup) {
+            return Optional.of(Service.QualifiedInstance.create(new MyService(), Qualifier.createNamed("name")));
+        }
+    }
+    // end::snippet_6[]
 }

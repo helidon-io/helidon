@@ -283,25 +283,49 @@ A factory that creates zero or more implementations of a given contract.
 include::{sourcedir}/se/inject/FactoryExample.java[tag=snippet_2, indent=0]
 ----
 
-If the created services need to be qualified, the relevant qualifier information must also be included in the factory annotations.
+If the created services need to be qualified, any relevant qualifier information must also be included in the factory annotations.
 
-Note: If one doesn’t want to list all the names provided by this factory, it is possible use `*` to cover all the possible names.
+Note: If one doesn’t want to list all the name qualifiers provided by this factory, it is possible use `*` to cover all the possible names.
 
 [source,java]
-.Qualified ServicesFactory example
 ----
 include::{sourcedir}/se/inject/FactoryExample.java[tag=snippet_3, indent=0]
 ----
 
-=== io.helidon.service.registry.Service.InjectionPointFactory
-A factory that provides zero or more instances for each injection point.
-
-//TODO
-
 === io.helidon.service.registry.Service.QualifiedFactory
-A factory that provides zero or more instances based on a specific qualifier and contract.
+Qualified factory is strictly bound to a specific qualifier type.
+It will get executed only for injection points,
+which are annotated with this selected qualifier and are intended for a selected contract.
+It will be ignored for any other injection points.
 
-//TODO
+It receives a Lookup object as a parameter, which contains all necessary information about the injection point.
+This allows the factory to create instances dynamically based on the injection point information.
+
+[source,java]
+----
+include::{sourcedir}/se/inject/FactoryExample.java[tag=snippet_4, indent=0]
+----
+
+=== io.helidon.service.registry.Service.InjectionPointFactory
+This type of factory is very similar to `QualifiedFactory`,
+but with one key difference—it is executed for each injection point and is not bound to a specific qualifier/s (unless specified).
+
+It receives a Lookup object as a parameter, which contains all necessary information about the injection point.
+This allows the factory to create instances dynamically based on the injection point information.
+
+[source,java]
+----
+include::{sourcedir}/se/inject/FactoryExample.java[tag=snippet_5, indent=0]
+----
+
+It is possible to restrict this factory to specific qualifiers by specifying them at the class level of the factory.
+
+This ensures that the factory is executed only for injection points that match the intended contract and qualifier.
+
+[source,java]
+----
+include::{sourcedir}/se/inject/FactoryExample.java[tag=snippet_6, indent=0]
+----
 
 == Interceptors
 Interception allows intercepting calls to constructors or methods, and even fields when used as injection points.
@@ -338,7 +362,12 @@ include::{sourcedir}/se/inject/InterceptorExample.java[tag=snippet_2, indent=0]
 <2> Passing interceptor processing to another interceptor in the chain
 
 === Delegate annotation
-The `@Interception.Delegate` annotation enables interception for classes or interfaces that aren’t created through the service registry but are instead produced by a factory. To enable interception, this annotation must be present on the class that the factory produces. While it is not required on interfaces, it will still function correctly if applied there.
+The `@Interception.Delegate` annotation enables interception for classes
+that aren’t created through the service registry
+but are instead produced by a factory (More about factories can be found here -
+<<Factories, Factory chapter>>).
+To enable interception, this annotation must be present on the class that the factory produces.
+While it is not required on interfaces, it will still function correctly if applied there.
 
 Let's make the same `@Traced` annotation and Interceptor as in the previous examples
 
@@ -356,7 +385,13 @@ Now, let's create the factory of the service instance.
 include::{sourcedir}/se/inject/InterceptorDelegateExample.java[tag=snippet_2, indent=0]
 ----
 
-Method calls on an instance created this way can’t be intercepted. To enable interception in such cases, we use the `@Interception.Delegate` annotation. However, keep in mind that usage of this annotation doesn’t add the ability to intercept constructor calls. Additionally, if a class is annotated with `@Interception.Delegate`, it must have a non-private default constructor.
+Method calls on an instance created this way can’t be intercepted. To enable interception in such cases, we use the `@Interception.Delegate` annotation. However, keep in mind that usage of this annotation doesn’t add the ability to intercept constructor calls.
+
+If you need to enable interception for classes using delegation, you should:
+
+- The class must have accessible no-arg constructor (at least package local)
+- The constructor should have no side effects, as the instance will act only as a wrapper for the delegate
+- All invoked methods must be accessible (at least package local)
 
 [source,java]
 .Delegate used on the class
@@ -366,10 +401,10 @@ include::{sourcedir}/se/inject/InterceptorDelegateExample.java[tag=snippet_3, in
 
 // === ExternalDelegate annotation
 // TODO Uncomment this, once this issue is fixed https://github.com/helidon-io/helidon/issues/9726
-// The `@Interception.ExternalDelegate` annotation functions similarly to `@Interception.Delegate`. However, the key difference is that `@Interception.ExternalDelegate` is designed for classes or interfaces that you don’t control. This means it allows you to apply the interception mechanism even to third-party classes or interfaces.
+// The `@Interception.ExternalDelegate` annotation functions similarly to `@Interception.Delegate`. However, the key difference is that `@Interception.ExternalDelegate` is designed for classes that you don’t control. This means it allows you to apply the interception mechanism even to third-party classes.
 //
 // [source,java]
-// .ExternalDelegate used for external class/interface
+// .ExternalDelegate used for external class
 // ----
 // include::{sourcedir}/se/inject/InterceptorDelegateExample.java[tag=snippet_4, indent=0]
 // ----
