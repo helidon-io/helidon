@@ -1056,6 +1056,15 @@
             <dependency>
                 <groupId>io.helidon.integrations.langchain4j.providers</groupId>
                 <artifactId>helidon-integrations-langchain4j-providers-cohere</artifactId>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.langchain4j.providers</groupId>
+                <artifactId>helidon-integrations-langchain4j-providers-ollama</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.langchain4j.providers</groupId>
+                <artifactId>helidon-integrations-langchain4j-providers-oracle</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 

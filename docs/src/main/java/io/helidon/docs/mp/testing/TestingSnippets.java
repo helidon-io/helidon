@@ -15,8 +15,12 @@
  */
 package io.helidon.docs.mp.testing;
 
+import java.util.Map;
+
+import io.helidon.config.mp.MpConfigSources;
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.testing.AddConfigBlock;
+import io.helidon.microprofile.testing.AddConfigSource;
 import io.helidon.microprofile.testing.Configuration;
 import io.helidon.microprofile.testing.Socket;
 import io.helidon.microprofile.testing.AddBean;
@@ -34,6 +38,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.mockito.Answers;
 import org.mockito.Mockito;
 
@@ -90,6 +95,18 @@ class TestingSnippets {
     class Snippet3 {
 
         // tag::snippet_3[]
+        @DisableDiscovery
+        @AddJaxRs // <1>
+        @AddBean(MyResource.class) // <2>
+        @HelidonTest
+        class MyTest {
+        }
+        // end::snippet_3[]
+    }
+
+    class Snippet4 {
+
+        // tag::snippet_4[]
         @HelidonTest(resetPerTest = true)
         class MyTest {
 
@@ -101,12 +118,12 @@ class TestingSnippets {
             void testTwo() { // <2>
             }
         }
-        // end::snippet_3[]
+        // end::snippet_4[]
     }
 
-    class Snippet4 {
+    class Snippet5 {
 
-        // tag::snippet_4[]
+        // tag::snippet_5[]
         @HelidonTest
         class MyTest {
 
@@ -119,18 +136,6 @@ class TestingSnippets {
             @AddBean(MyBean.class)
             void testTwo() { // <2>
             }
-        }
-        // end::snippet_4[]
-    }
-
-    class Snippet5 {
-
-        // tag::snippet_5[]
-        @DisableDiscovery
-        @AddJaxRs // <1>
-        @AddBean(MyResource.class) // <2>
-        @HelidonTest
-        class MyTest {
         }
         // end::snippet_5[]
     }
@@ -185,12 +190,15 @@ class TestingSnippets {
     class Snippet10 {
 
         // tag::snippet_10[]
-        @Configuration(configSources = {
-                "my-test1.yaml",
-                "my-test2.yaml"
-        })
         @HelidonTest
         class MyTest {
+
+            @AddConfigSource
+            static ConfigSource config() {
+                return MpConfigSources.create(Map.of(
+                        "foo", "bar",
+                        "bob", "alice"));
+            }
         }
         // end::snippet_10[]
     }
@@ -198,10 +206,10 @@ class TestingSnippets {
     class Snippet11 {
 
         // tag::snippet_11[]
-        @AddConfigBlock(value = """
-                config_ordinal=120
-                foo=bar
-                """)
+        @Configuration(configSources = {
+                "my-test1.yaml",
+                "my-test2.yaml"
+        })
         @HelidonTest
         class MyTest {
         }
@@ -211,12 +219,12 @@ class TestingSnippets {
     class Snippet12 {
 
         // tag::snippet_12[]
+        @AddConfigBlock(value = """
+                config_ordinal=120
+                foo=bar
+                """)
         @HelidonTest
         class MyTest {
-
-            @Inject
-            @Socket("admin")
-            WebTarget target;
         }
         // end::snippet_12[]
     }
@@ -239,9 +247,9 @@ class TestingSnippets {
         @HelidonTest
         class MyTest {
 
-            @Test
-            void testOne(WebTarget target) {
-            }
+            @Inject
+            @Socket("admin")
+            WebTarget target;
         }
         // end::snippet_14[]
     }

@@ -160,6 +160,9 @@ The "synthetic" configuration can be expressed using the following annotations:
 |link:{mp-testing-javadoc-url}/AddConfigBlock.html[`@AddConfigBlock`]
 |Formatted text block
 
+|link:{mp-testing-javadoc-url}/AddConfigSource.html[`@AddConfigSource`]
+|Programmatic config source
+
 |link:{mp-testing-javadoc-url}/Configuration.html[`@Configuration`]
 | Classpath resources using
 
@@ -184,9 +187,15 @@ include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_9, indent=0]
 ----
 
 [source,java]
-.Add classpath resources
+.Add config programmatically
 ----
 include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_10, indent=0]
+----
+
+[source,java]
+.Add classpath resources
+----
+include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_11, indent=0]
 ----
 
 ==== Configuration Ordering
@@ -200,7 +209,7 @@ of `1000`
 [source,java]
 .Add a properties text block with ordinal
 ----
-include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_11, indent=0]
+include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_12, indent=0]
 ----
 
 === Injectable Types
@@ -228,24 +237,16 @@ Here are all the built-in types that can be injected:
 
 NOTE: Types that reflect the current server require link:{mp-server-javadoc-url}/ServerCdiExtension.html[`ServerCdiExtension`]
 
-NOTE: All the injectable types are also available as method parameters.
-
 [source,java]
 .Inject a JAX-RS client for the default socket
 ----
-include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_12, indent=0]
+include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_13, indent=0]
 ----
 
 Use link:{mp-testing-javadoc-url}/Socket.html[`@Socket`] to specify the socket for the clients and URIs.
 
 [source,java]
 .Inject a JAX-RS client for the admin socket
-----
-include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_13, indent=0]
-----
-
-[source,java]
-.Using a method parameter
 ----
 include::{sourcedir}/mp/testing/TestingSnippets.java[tag=snippet_14, indent=0]
 ----
@@ -277,6 +278,9 @@ Here is a brief overview of the MicroProfile testing annotations:
 
 |link:{mp-testing-javadoc-url}/AddConfigBlock.html[`@AddConfigBlock`]
 |Define a formatted text block in the "synthetic" configuration
+
+|link:{mp-testing-javadoc-url}/AddConfigSource.html[`@AddConfigSource`]
+|Add a programmatic config source to the "synthetic" configuration
 
 |link:{mp-testing-javadoc-url}/Configuration.html[`@Configuration`]
 | Switch between "synthetic" and "existing" ; Add classpath resources to the "synthetic" configuration
