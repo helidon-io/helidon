@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package io.helidon.http;
 
 import java.time.Duration;
+import java.time.Instant;
 
 import org.junit.jupiter.api.Test;
 
@@ -29,17 +30,18 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 public class SetCookieTest {
 
+    private static final String TEMPLATE = "some-cookie=some-cookie-value; "
+            + "Expires=Thu, 22 Oct 2015 07:28:00 GMT; "
+            + "Max-Age=2592000; "
+            + "Domain=domain.value; "
+            + "Path=/; "
+            + "Secure; "
+            + "HttpOnly; "
+            + "SameSite=Lax";
+
     @Test
     public void testSetCookiesFromString() {
-        String template = "some-cookie=some-cookie-value; "
-                + "Expires=Thu, 22 Oct 2015 07:28:00 GMT; "
-                + "Max-Age=2592000; "
-                + "Domain=domain.value; "
-                + "Path=/; "
-                + "Secure; "
-                + "HttpOnly; "
-                + "SameSite=Lax";
-        SetCookie setCookie = SetCookie.parse(template);
+        SetCookie setCookie = SetCookie.parse(TEMPLATE);
 
         assertThat(setCookie.name(), is("some-cookie"));
         assertThat(setCookie.value(), is("some-cookie-value"));
@@ -51,7 +53,7 @@ public class SetCookieTest {
         assertThat(setCookie.httpOnly(), is(true));
         assertThat(setCookie.sameSite(), optionalValue(is(SetCookie.SameSite.LAX)));
 
-        assertThat("Generate same cookie value", setCookie.toString(), is(template));
+        assertThat("Generate same cookie value", setCookie.toString(), is(TEMPLATE));
     }
 
     @Test
@@ -63,4 +65,45 @@ public class SetCookieTest {
         assertThat(ex.getMessage(), is("Unexpected Set-Cookie part: Invalid"));
     }
 
+    @Test
+    public void testEmptyValue() {
+        SetCookie setCookie = SetCookie.parse("some-cookie=");
+        assertThat(setCookie.value(), is(""));
+    }
+
+    @Test
+    public void testEquals() {
+        SetCookie setCookie1 = SetCookie.parse(TEMPLATE);
+        SetCookie setCookie2 = SetCookie.builder("some-cookie", "").build();
+        SetCookie setCookie3 = SetCookie.builder("some-cookie", "")
+                .path("/")
+                .domain("domain.value")
+                .expires(Instant.now())     // ignored in equals
+                .build();
+
+        assertThat("They match name, path and domain",
+                   setCookie1.equals(setCookie3), is(true));
+        assertThat("They match name, path and domain",
+                   setCookie1.hashCode(), is(setCookie3.hashCode()));
+        assertThat("They do not match path or domain",
+                   setCookie1.equals(setCookie2), is(false));
+    }
+
+    @Test
+    public void testCookieBuilder() {
+        SetCookie setCookie1 = SetCookie.parse(TEMPLATE);
+        SetCookie setCookie2 = SetCookie.builder(setCookie1).build();       // from setCookie1
+
+        assertThat(setCookie1.equals(setCookie2), is(true));
+        assertThat(setCookie1.hashCode(), is(setCookie2.hashCode()));
+        assertThat(setCookie2.name(), is("some-cookie"));
+        assertThat(setCookie2.value(), is("some-cookie-value"));
+        assertThat(setCookie2.expires(), optionalValue(is(DateTime.parse("Thu, 22 Oct 2015 07:28:00 GMT"))));
+        assertThat(setCookie2.maxAge(), optionalValue(is(Duration.ofSeconds(2592000))));
+        assertThat(setCookie2.domain(), optionalValue(is("domain.value")));
+        assertThat(setCookie2.path(), optionalValue(is("/")));
+        assertThat(setCookie2.secure(), is(true));
+        assertThat(setCookie2.httpOnly(), is(true));
+        assertThat(setCookie2.sameSite(), optionalValue(is(SetCookie.SameSite.LAX)));
+    }
 }

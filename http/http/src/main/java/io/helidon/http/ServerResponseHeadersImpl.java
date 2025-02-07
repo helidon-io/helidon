@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.http;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.function.Predicate;
 
 import io.helidon.common.LazyValue;
 
@@ -40,12 +41,24 @@ class ServerResponseHeadersImpl extends HeadersImpl<ServerResponseHeaders> imple
     }
 
     @Override
+    public ServerResponseHeaders clearCookie(SetCookie cookie) {
+        clearCookie(cookie, cookie::equals);
+        return this;
+    }
+
+    @Override
     public ServerResponseHeaders clearCookie(String name) {
-        SetCookie expiredCookie = SetCookie.builder(name, "deleted")
-                .path("/")
+        clearCookie(SetCookie.builder(name, "").build(), c -> c.name().equals(name));
+        return this;
+    }
+
+    private void clearCookie(SetCookie cookie, Predicate<SetCookie> predicate) {
+        // expiredCookie same as cookie but with different expiration
+        SetCookie expiredCookie = SetCookie.builder(cookie)
                 .expires(START_OF_YEAR_1970.get())
                 .build();
 
+        // update or add new header?
         if (contains(HeaderNames.SET_COOKIE)) {
             remove(HeaderNames.SET_COOKIE, it -> {
                 List<String> currentValues = it.allValues();
@@ -53,8 +66,9 @@ class ServerResponseHeadersImpl extends HeadersImpl<ServerResponseHeaders> imple
                 boolean found = false;
                 for (int i = 0; i < currentValues.size(); i++) {
                     String currentValue = currentValues.get(i);
-                    if (SetCookie.parse(currentValue).name().equals(name)) {
-                        newValues[i] = expiredCookie.text();
+                    SetCookie currentCookie = SetCookie.parse(currentValue);
+                    if (predicate.test(currentCookie)) {
+                        newValues[i] = expiredCookie.text();            // replace with expired
                         found = true;
                     } else {
                         newValues[i] = currentValue;
@@ -63,15 +77,13 @@ class ServerResponseHeadersImpl extends HeadersImpl<ServerResponseHeaders> imple
                 if (!found) {
                     String[] values = new String[newValues.length + 1];
                     System.arraycopy(newValues, 0, values, 0, newValues.length);
-                    values[values.length - 1] = expiredCookie.text();
+                    values[values.length - 1] = expiredCookie.text();   // replace with expired
                     newValues = values;
                 }
-
                 set(HeaderValues.create(HeaderNames.SET_COOKIE, newValues));
             });
         } else {
             addCookie(expiredCookie);
         }
-        return this;
     }
 }

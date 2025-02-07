@@ -36,6 +36,7 @@
     <modules>
         <module>encoding</module>
         <module>media</module>
+        <module>cookie</module>
     </modules>
 
     <properties>
