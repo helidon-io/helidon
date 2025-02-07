@@ -51,6 +51,10 @@ public final class Ai {
      * Name that is used to qualify moderation models.
      */
     public static final String MODERATION_MODEL_NAME = "moderation-model";
+    /**
+     * Name that is used to qualify scoring models.
+     */
+    public static final String SCORING_MODEL_NAME = "scoring-model";
 
     private Ai() {
     }

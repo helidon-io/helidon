@@ -138,10 +138,6 @@ public class OpenAiChatModelFactory implements Service.ServicesFactory<OpenAiCha
                 .or(proxy)
                 .ifPresent(configBuilder::proxy);
 
-        openAiModelProxy.get()
-                .or(openAiProxy)
-                .or(proxy)
-                .ifPresent(configBuilder::proxy);
         return Optional.of(create(configBuilder.build()));
     }
 }
