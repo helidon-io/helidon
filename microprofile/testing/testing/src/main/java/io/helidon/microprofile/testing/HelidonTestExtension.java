@@ -89,6 +89,7 @@ public abstract class HelidonTestExtension implements Extension {
             AddConfig.class,
             AddConfigs.class,
             AddConfigBlock.class,
+            AddConfigSource.class,
             AfterStop.class,
             Configuration.class);
 
@@ -193,7 +194,9 @@ public abstract class HelidonTestExtension implements Extension {
      * @param method     method
      */
     protected void processStaticMethodAnnotation(Annotation annotation, Method method) {
-        if (annotation instanceof AfterStop) {
+        if (annotation instanceof AddConfigSource) {
+            processAddConfigSource(method);
+        } else if (annotation instanceof AfterStop) {
             processAfterStop(method);
         } else {
             throw new IllegalStateException(String.format(
@@ -246,6 +249,15 @@ public abstract class HelidonTestExtension implements Extension {
      */
     protected final void processAddConfigBlock(AddConfigBlock... annotations) {
         testConfig.synthetic().update(annotations);
+    }
+
+    /**
+     * Process a {@link AddConfigSource} method.
+     *
+     * @param method method
+     */
+    protected final void processAddConfigSource(Method method) {
+        testConfig.synthetic().update(method);
     }
 
     /**

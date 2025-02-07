@@ -28,6 +28,7 @@ import io.helidon.microprofile.testing.ReflectionHelper.Annotated;
 
 import static io.helidon.common.testing.virtualthreads.PinningRecorder.DEFAULT_THRESHOLD;
 import static io.helidon.microprofile.testing.ReflectionHelper.annotated;
+import static io.helidon.microprofile.testing.ReflectionHelper.filterAnnotated;
 import static io.helidon.microprofile.testing.ReflectionHelper.filterAnnotations;
 
 /**
@@ -48,6 +49,7 @@ public abstract class HelidonTestDescriptorBase<T extends AnnotatedElement> impl
     private final LazyValue<Boolean> disableDiscovery = LazyValue.create(this::lookupDisableDiscovery);
     private final LazyValue<List<AddConfig>> addConfigs = LazyValue.create(this::lookupAddConfigs);
     private final LazyValue<List<AddConfigBlock>> addConfigBlocks = LazyValue.create(this::lookupAddConfigBlocks);
+    private final LazyValue<List<Method>> addConfigSources = LazyValue.create(this::lookupAddConfigSources);
     private final LazyValue<Optional<Configuration>> configuration = LazyValue.create(this::lookupConfiguration);
 
     /**
@@ -117,6 +119,15 @@ public abstract class HelidonTestDescriptorBase<T extends AnnotatedElement> impl
     @Override
     public List<AddConfigBlock> addConfigBlocks() {
         return addConfigBlocks.get();
+    }
+
+    /**
+     * Get the discovered {@link AddConfigSource} methods.
+     *
+     * @return annotations
+     */
+    public List<Method> addConfigSources() {
+        return addConfigSources.get();
     }
 
     /**
@@ -229,5 +240,12 @@ public abstract class HelidonTestDescriptorBase<T extends AnnotatedElement> impl
     @Override
     public <A extends Annotation> Stream<A> annotations(Class<A> aType) {
         return filterAnnotations(annotated, aType);
+    }
+
+    private List<Method> lookupAddConfigSources() {
+        return filterAnnotated(annotated, AddConfigSource.class)
+                .map(Annotated::element)
+                .map(Method.class::cast)
+                .toList();
     }
 }

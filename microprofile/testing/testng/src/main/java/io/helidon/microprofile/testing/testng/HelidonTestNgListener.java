@@ -86,6 +86,7 @@ import static java.util.stream.Collectors.joining;
  *     <li>{@link io.helidon.microprofile.testing.Configuration} global setting for MicroProfile configuration</li>
  *     <li>{@link io.helidon.microprofile.testing.AddConfig} declarative key/value pair configuration</li>
  *     <li>{@link io.helidon.microprofile.testing.AddConfigBlock} declarative fragment configuration</li>
+ *     <li>{@link io.helidon.microprofile.testing.AddConfigSource} programmatic configuration</li>
  * </ul>
  * <p>
  * See also {@link io.helidon.microprofile.testing.Socket}, a CDI qualifier to inject JAX-RS client or URI.

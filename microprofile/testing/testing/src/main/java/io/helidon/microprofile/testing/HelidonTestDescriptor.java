@@ -17,6 +17,7 @@ package io.helidon.microprofile.testing;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -116,6 +117,13 @@ public interface HelidonTestDescriptor<T extends AnnotatedElement> {
      * @return annotations
      */
     List<AddConfigBlock> addConfigBlocks();
+
+    /**
+     * Get the discovered {@link AddConfigSource} methods.
+     *
+     * @return annotations
+     */
+    List<Method> addConfigSources();
 
     /**
      * Test if the given extension is configured.

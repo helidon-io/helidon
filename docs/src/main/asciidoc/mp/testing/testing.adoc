@@ -66,6 +66,14 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 include::{rootdir}/mp/testing/testing-common.adoc[tag=usage]
 
+NOTE: All the injectable types are also available as method parameters.
+
+[source,java]
+.Using a method parameter
+----
+include::{sourcedir}/mp/testing/TestingJunit5Snippets.java[tag=snippet_1, indent=0]
+----
+
 === Test Instance Lifecyle
 
 The CDI scope used by the test instance follows the lifecyle defined by JUnit5. The default is `PER_CLASS` and is enforced
@@ -78,7 +86,7 @@ NOTE: The test instance is not re-used between CDI container, using a dedicated 
 [source,java]
 .Using per method lifecycle
 ----
-include::{sourcedir}/mp/testing/TestingJunit5Snippets.java[tag=snippet_1, indent=0]
+include::{sourcedir}/mp/testing/TestingJunit5Snippets.java[tag=snippet_2, indent=0]
 ----
 
 == API
@@ -101,7 +109,7 @@ instance.
 [source,java]
 .Mocking using CDI Alternative
 ----
-include::{sourcedir}/mp/testing/TestingJunit5Snippets.java[tag=snippet_2, indent=0]
+include::{sourcedir}/mp/testing/TestingJunit5Snippets.java[tag=snippet_3, indent=0]
 ----
 <1> Create the mock instance in the test class
 <2> Create a CDI producer method annotated with `@Alternative`
