@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,10 @@ class AdHocConfigBuilder {
     }
 
     AdHocConfigBuilder putAll(Config configToPut) {
-        configuration.putAll(configToPut.detach().asMap().orElse(Map.of()));
+        for (var e : configToPut.detach().asMap().orElse(Map.of()).entrySet()) {
+            String value = e.getValue();
+            configuration.put(e.getKey(), value.isEmpty() ? "${EMPTY}" : value);
+        }
         return this;
     }
 
