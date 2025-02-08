@@ -25,6 +25,20 @@ import java.lang.annotation.Target;
 /**
  * Add a configuration fragment to the {@link Configuration#useExisting() synthetic test configuration}.
  * <p>
+ * Example:
+ * <pre>
+ *  &#64;AddConfigBlock(type = "yaml", value = """
+ *      foo1:
+ *        bar: "value1"
+ *  """)
+ *  &#64;AddConfigBlock(type = "properties", value = """
+ *       foo2=value2
+ *       foo3=value3
+ *  """)
+ *  class MyTest {
+ *  }
+ * </pre>
+ * <p>
  * This annotation can be repeated.
  * <p>
  * If used on a method, the container will be reset regardless of the test lifecycle.
@@ -40,7 +54,7 @@ import java.lang.annotation.Target;
 @Deprecated(since = "4.2.0")
 public @interface AddConfigBlock {
     /**
-     * Specifies the configuration format.
+     * Specifies the configuration format. Possible values are: 'yaml' and `properties`.
      * <p>
      * The default format is 'properties'
      *
