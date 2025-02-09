@@ -110,8 +110,8 @@ $ mvn verify  -Pspotbugs
 **Documentation**
 
 ```bash
-# At the root of the project
-$ mvn site
+# in the docs directory
+$ mvn package -Pjavadoc
 ```
 
 **Build Scripts**
