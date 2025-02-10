@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,14 +86,12 @@ public interface Header extends Value<String> {
                 String value = values.get(0);
                 if (value.contains(", ")) {
                     return List.of(value.split(", "));
-                } else {
-                    return List.of(value);
                 }
+                return List.of(value);
             }
             return values;
-        } else {
-            return allValues();
         }
+        return allValues();
     }
 
     /**
@@ -160,17 +158,17 @@ public interface Header extends Value<String> {
     private static void validateValue(String name, String value) throws IllegalArgumentException {
         char[] vChars = value.toCharArray();
         int vLength = vChars.length;
-        for (int i = 0; i < vLength; i++) {
-            char vChar = vChars[i];
-            if (i == 0) {
-                if (vChar < '!' || vChar == '\u007f') {
-                    throw new IllegalArgumentException("First character of the header value is invalid"
-                                                               + " for header '" + name + "'");
-                }
-            } else {
+        if (vLength >= 1) {
+            char vChar = vChars[0];
+            if (vChar < '!' || vChar == '\u007f') {
+                throw new IllegalArgumentException("First character of the header value is invalid"
+                        + " for header '" + name + "'");
+            }
+            for (int i = 1; i < vLength; i++) {
+                vChar = vChars[i];
                 if (vChar < ' ' && vChar != '\t' || vChar == '\u007f') {
                     throw new IllegalArgumentException("Character at position " + (i + 1) + " of the header value is invalid"
-                                                               + " for header '" + name + "'");
+                            + " for header '" + name + "'");
                 }
             }
         }
