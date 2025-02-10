@@ -19,6 +19,7 @@ package io.helidon.common.concurrency.limits;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -28,6 +29,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
@@ -206,6 +208,21 @@ public class FixedLimitTest {
         for (int i = 0; i < 5000; i++) {
             limit.invoke(() -> {
             });
+        }
+    }
+
+    @Test
+    public void testSemaphoreReleasedWithToken() {
+        Limit limit = FixedLimit.builder()
+                .permits(5)
+                .queueLength(10)
+                .queueTimeout(Duration.ofMillis(100))
+                .build();
+
+        for (int i = 0; i < 5000; i++) {
+            Optional<LimitAlgorithm.Token> token = limit.tryAcquire();
+            assertThat(token, not(Optional.empty()));
+            token.get().success();
         }
     }
 }

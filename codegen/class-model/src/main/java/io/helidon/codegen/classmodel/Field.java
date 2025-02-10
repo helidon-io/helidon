@@ -97,10 +97,6 @@ public final class Field extends AnnotatedComponent {
         defaultValue.addImports(imports);
     }
 
-    boolean isStatic() {
-        return isStatic;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -130,8 +126,31 @@ public final class Field extends AnnotatedComponent {
         return accessModifier().modifierName() + " " + type().fqTypeName() + " " + name();
     }
 
-    boolean isFinal() {
+    /**
+     * Is this field final.
+     *
+     * @return whether this is a final field
+     */
+    public boolean isFinal() {
         return isFinal;
+    }
+
+    /**
+     * Is this field static.
+     *
+     * @return whether this is a static field
+     */
+    public boolean isStatic() {
+        return isStatic;
+    }
+
+    /**
+     * Is this field volatile.
+     *
+     * @return whether this is a volatile field
+     */
+    public boolean isVolatile() {
+        return isVolatile;
     }
 
     /**

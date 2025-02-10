@@ -49,5 +49,13 @@
         "name": "<init>"
       }
     ]
+  },
+  {
+    "name": "org.eclipse.persistence.internal.jpa.jpql.HermesParser",
+    "methods": [
+      {
+        "name": "<init>"
+      }
+    ]
   }
 ]

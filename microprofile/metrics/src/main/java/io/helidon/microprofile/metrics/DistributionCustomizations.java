@@ -62,7 +62,7 @@ class DistributionCustomizations {
     private static final Duration DEFAULT_TIMER_MIN = Duration.ofMillis(5);
     private static final Duration DEFAULT_TIMER_MAX = Duration.ofSeconds(10);
 
-    private static DistributionCustomizations instance;
+    private static DistributionCustomizations instance = new DistributionCustomizations();
     private final List<Percentiles> percentileCustomizations;
     private final List<SummaryBuckets> summaryBucketCustomizations;
     private final List<TimerBuckets> timerBucketCustomizations;
@@ -80,6 +80,13 @@ class DistributionCustomizations {
                                                      "mp.metrics.distribution.percentiles-histogram.enabled",
                                                      expression -> new SingleValuedCustomization<>(expression,
                                                                                                    Boolean::parseBoolean));
+    }
+
+    private DistributionCustomizations() {
+        percentileCustomizations = List.of();
+        summaryBucketCustomizations = List.of();
+        timerBucketCustomizations = List.of();
+        summaryBucketDefaultCustomizations = List.of();
     }
 
     static void init(Config mpConfig) {

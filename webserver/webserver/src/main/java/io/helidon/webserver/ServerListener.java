@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -130,6 +130,7 @@ class ServerListener implements ListenerContext {
                     .permits(listenerConfig.maxConcurrentRequests())
                     .build();
         }
+        this.requestLimit.init(socketName);
 
         this.connectionProviders = ConnectionProviders.create(selectors);
         this.socketName = socketName;
@@ -210,6 +211,10 @@ class ServerListener implements ListenerContext {
 
     int port() {
         return connectedPort;
+    }
+
+    Router router() {
+        return router;
     }
 
     InetSocketAddress configuredAddress() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import org.testng.annotations.Test;
     some.key1=some.value1
     some.key2=some.value2
 """)
-class TestAddConfigBlockProperties {
+public class TestAddConfigBlockProperties {
 
     @Inject
     @ConfigProperty(name = "some.key1")

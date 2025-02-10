@@ -49,6 +49,16 @@ public final class ElementInfoPredicates {
     }
 
     /**
+     * Predicate for constructor element kind.
+     *
+     * @param element typed element info to test
+     * @return whether the element represents a constructor
+     */
+    public static boolean isConstructor(TypedElementInfo element) {
+        return ElementKind.CONSTRUCTOR == element.kind();
+    }
+
+    /**
      * Predicate for field element kind.
      *
      * @param element typed element info to test
@@ -66,6 +76,16 @@ public final class ElementInfoPredicates {
      */
     public static boolean isStatic(TypedElementInfo element) {
         return element.elementModifiers().contains(Modifier.STATIC);
+    }
+
+    /**
+     * Predicate for abstract modifier.
+     *
+     * @param element typed element info to test
+     * @return whether the element has abstract modifier
+     */
+    public static boolean isAbstract(TypedElementInfo element) {
+        return element.elementModifiers().contains(Modifier.ABSTRACT);
     }
 
     /**

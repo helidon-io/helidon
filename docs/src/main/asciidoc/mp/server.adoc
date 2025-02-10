@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -204,32 +204,42 @@ Helidon MP can expose multiple ports, with the following limitations:
 - Other ports (in this example we configure one "admin" port) can be assigned endpoints that are exposed by Helidon components,
 currently supported by MP Health and MP Metrics
 
-For this example, we will use a `YAML` file:
+You can set the configuration in either  `application.yaml` or `META-INF/microprofile-config.properties`:
 
 - The port `7011` is the default port and will serve your application
 - The port `8011` is named "admin" (this is an arbitrary name)
-- MP Metrics are configured to use the "admin" port through the `routing` configuration (reference is by name)
-- MP Health is configured the same way to reference the "admin" port
+- Observability endpoints, such as metrics and health, use the "admin" port through the `features.observe.sockets` setting.
 
 [source,yaml]
-.application.yaml - Server configuration
+.Server configuration using `application.yaml`
 ----
 server:
   port: 7011
-  host: "some.host"
+  host: "localhost"
   sockets:
     admin:
       port: 8011
-      bind-address: "some.host"
+      bind-address: "localhost"
+  features:
+    observe:
+      sockets: "admin"
 
-metrics:
-  routing: "admin"
 
-health:
-  routing: "admin"
 ----
 
-=== Configuring A WebServer Route [[
+[source,properties]
+.Server configuration using `META-INF/microprofile-config.properties`
+----
+server.port=7011
+server.host=localhost
+server.sockets.0.name=admin
+server.sockets.0.port=8011
+server.sockets.0.bind-address=localhost
+server.features.observe.sockets=admin
+
+----
+
+=== Configuring A WebServer Route
 
 Helidon MP Server will pick up CDI beans that implement the `io.helidon.webserver.HttpService`
 interface and configure them with the underlying WebServer.
@@ -323,24 +333,57 @@ io.helidon.examples.AdminService:
 .META-INF/microprofile-config.properties - File system static content
 ----
 # Location of content on file system
-server.static.path.location=/var/www/html
-# default is index.html
-server.static.path.welcome=resource.html
-# static content path - default is "/"
-# server.static.path.context=/static-file
+server.features.static-content.path.0.location=/var/www/html
+# default is index.html (only in Helidon MicroProfile)
+server.features.static-content.path.0.welcome=resource.html
+# static content context on webserver - default is "/"
+# server.features.static-content.path.0.context=/static-file
 ----
 
 [source,properties]
 .META-INF/microprofile-config.properties - Classpath static content
 ----
 # src/main/resources/WEB in your source tree
-server.static.classpath.location=/WEB
+server.features.static-content.classpath.0.location=/WEB
 # default is index.html
-server.static.classpath.welcome=resource.html
+server.features.static-content.classpath.0.welcome=resource.html
 # static content path - default is "/"
-# server.static.classpath.context=/static-cp
+# server.features.static-content.classpath.0.context=/static-cp
 ----
 
+It is usually easier to configure list-based options using `application.yaml` instead, such as:
+[source,yaml]
+.application.yaml - Static content
+----
+server:
+  features:
+    static-content:
+      welcome: "welcome.html"
+      classpath:
+        - context: "/static"
+          location: "/WEB"
+      path:
+        - context: "/static-file"
+          location: "./static-content"
+----
+
+See xref:{rootdir}/config/io_helidon_webserver_staticcontent_StaticContentFeature.adoc[Static Content Feature Configuration Reference] for details. The only difference is that we set welcome file to `index.html` by default.
+
+=== Re-direct root using `server.base-path`
+
+To redirect requests for the root path (`/`) to another path you can use the `server.base-path` property:
+
+[source,yaml]
+----
+server:
+  base-path: /static/index.html
+----
+
+For any HTTP request for `/` this will return a 301 with the `Location:` header set to the value of `server.base-path`.
+This is often used with Static Content Support to serve a specific `index.html`  when `/` is requested.
+
+Note that this feature is not for setting a context root for applications. To configure alternate context roots see
+see xref:jaxrs/jaxrs-applications.adoc#_setting_application_path[Setting Application Path].
 
 === Example configuration of routing
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
+import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.config.Config;
 
 import static java.lang.System.Logger.Level.ERROR;
@@ -48,15 +48,25 @@ import static java.lang.System.Logger.Level.ERROR;
  * @see #builder()
  */
 public final class FaultTolerance {
+
+    /**
+     * Config key to enable metrics in Fault Tolerance. This flag can be overridden by
+     * each FT command builder. See for example {@link BulkheadConfigBlueprint#enableMetrics()}.
+     * All metrics are disabled by default.
+     */
+    public static final String FT_METRICS_DEFAULT_ENABLED = "ft.metrics.default-enabled";
+
     private static final System.Logger LOGGER = System.getLogger(FaultTolerance.class.getName());
 
     private static final AtomicReference<LazyValue<ExecutorService>> EXECUTOR = new AtomicReference<>();
     private static final AtomicReference<Config> CONFIG = new AtomicReference<>(Config.empty());
 
     static {
-        EXECUTOR.set(LazyValue.create(() -> Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
-                                                          .name("helidon-ft-", 0)
-                                                          .factory())));
+        EXECUTOR.set(LazyValue.create(() -> ThreadPoolSupplier.builder()
+                .threadNamePrefix("helidon-ft-")
+                .virtualThreads(true)
+                .build()
+                .get()));
     }
 
     private FaultTolerance() {

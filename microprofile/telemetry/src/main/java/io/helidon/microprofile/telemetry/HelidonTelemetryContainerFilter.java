@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.context.Contexts;
 import io.helidon.config.mp.MpConfig;
+import io.helidon.microprofile.telemetry.spi.HelidonTelemetryContainerFilterHelper;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
@@ -32,6 +33,7 @@ import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.baggage.BaggageEntryMetadata;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
+import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -63,6 +65,8 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
 
     private static final String SPAN_NAME_FULL_URL = "telemetry.span.full.url";
 
+    private static final String HELPER_START_SPAN_PROPERTY = HelidonTelemetryContainerFilterHelper.class + ".startSpan";
+
     @Deprecated(forRemoval = true, since = "4.1")
     static final String SPAN_NAME_INCLUDES_METHOD = "telemetry.span.name-includes-method";
 
@@ -81,12 +85,15 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
      */
     private final boolean restSpanNameIncludesMethod;
 
+    private final List<HelidonTelemetryContainerFilterHelper> helpers;
+
     @jakarta.ws.rs.core.Context
     private ResourceInfo resourceInfo;
 
     @Inject
     HelidonTelemetryContainerFilter(io.helidon.tracing.Tracer helidonTracer,
-                                    org.eclipse.microprofile.config.Config mpConfig) {
+                                    org.eclipse.microprofile.config.Config mpConfig,
+                                    Instance<HelidonTelemetryContainerFilterHelper> helpersInstance) {
         this.helidonTracer = helidonTracer;
         isAgentPresent = HelidonOpenTelemetry.AgentDetector.isAgentPresent(MpConfig.toHelidonConfig(mpConfig));
 
@@ -99,19 +106,31 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
             LOGGER.log(System.Logger.Level.WARNING,
                        String.format("""
                                Current OpenTelemetry semantic conventions include the HTTP method as part of REST span
-                               names. Your configuration does not set mp.%s to true, so your service uses the legacy span name
+                               names. Your configuration does not set %s to true, so your service uses the legacy span name
                                format which excludes the HTTP method. This feature is deprecated and marked for removal in a
-                               future major release of Helidon. Consider adding a setting of mp.%1$s to 'true' in your
+                               future major release of Helidon. Consider adding a setting of %1$s to 'true' in your
                                configuration to migrate to the current conventions.""",
                                SPAN_NAME_INCLUDES_METHOD));
         }
         // end of code to remove in 5.x.
+
+        helpers = helpersInstance.stream().toList();
     }
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
 
         if (isAgentPresent) {
+            return;
+        }
+
+        boolean startSpan = helpers.stream().allMatch(h -> h.shouldStartSpan(requestContext));
+        requestContext.setProperty(HELPER_START_SPAN_PROPERTY, startSpan);
+        if (!startSpan) {
+            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                LOGGER.log(System.Logger.Level.TRACE,
+                           "Container filter helper(s) voted to not start a span for " + requestContext);
+            }
             return;
         }
 
@@ -151,6 +170,11 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
             return;
         }
 
+        Boolean startSpanObj = (Boolean) request.getProperty(HELPER_START_SPAN_PROPERTY);
+        if (startSpanObj != null && !startSpanObj) {
+            return;
+        }
+
         if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
             LOGGER.log(System.Logger.Level.TRACE, "Closing Span in a Container Request");
         }
@@ -178,6 +202,10 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
             request.removeProperty(SPAN_SCOPE);
         }
     }
+
+//    private static List<HelidonTelemetryContainerFilterHelper> helpers() {
+//        return HelidonServiceLoader.create(ServiceLoader.load(HelidonTelemetryContainerFilterHelper.class)).asList();
+//    }
 
     private String spanName(ContainerRequestContext requestContext, String route) {
         // @Deprecated(forRemoval = true) In 5.x remove the option of excluding the HTTP method from the REST span name.

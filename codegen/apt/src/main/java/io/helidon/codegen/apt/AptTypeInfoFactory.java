@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.AnnotationValue;
@@ -183,6 +184,7 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
                 .map(Modifier::toString)
                 .collect(Collectors.toSet());
         Set<TypeName> thrownChecked = Set.of();
+        List<TypeName> typeParameters = new ArrayList<>();
 
         if (v instanceof ExecutableElement ee) {
             typeMirror = Objects.requireNonNull(ee.getReturnType());
@@ -209,6 +211,17 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
                     .filter(it -> isCheckedException(ctx, it))
                     .flatMap(it -> AptTypeFactory.createTypeName(it).stream())
                     .collect(Collectors.toSet());
+
+            var elementTypeParameters = ee.getTypeParameters();
+            if (!elementTypeParameters.isEmpty()) {
+                // we need to keep the formal order and number of type parameters; if we cannot create it, just use error
+                elementTypeParameters.stream()
+                        .map(AptTypeFactory::createTypeName)
+                        .flatMap(it -> it.isPresent()
+                                ? it.stream()
+                                : Stream.of(TypeName.createFromGenericDeclaration("error")))
+                        .forEach(typeParameters::add);
+            }
         } else if (v instanceof VariableElement ve) {
             typeMirror = Objects.requireNonNull(ve.asType());
         }
@@ -254,8 +267,15 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
                 .accessModifier(accessModifier(modifierNames))
                 .throwsChecked(thrownChecked)
                 .parameterArguments(params)
+                .typeParameters(typeParameters)
                 .originatingElement(v);
-        AptTypeFactory.createTypeName(v.getEnclosingElement()).ifPresent(builder::enclosingType);
+
+        // To be failure-tolerant, as the ECJ may not provide an enclosing element for a VariableElement.
+        Element enclosingElement = v.getEnclosingElement();
+        if (enclosingElement != null) {
+            AptTypeFactory.createTypeName(enclosingElement).ifPresent(builder::enclosingType);
+        }
+
         Optional.ofNullable(defaultValue).ifPresent(builder::defaultValue);
 
         return mapElement(ctx, builder.build());
@@ -430,6 +450,7 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
                 // this is probably forward referencing a generated type, ignore
                 return Optional.empty();
             }
+            TypeName declaredTypeName = declaredTypeName(ctx, genericTypeName);
             List<Annotation> annotations = createAnnotations(ctx,
                                                              foundType,
                                                              elementUtils);
@@ -451,10 +472,13 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
                                                            annotationsOnTypeOrElements,
                                                            it));
 
+
             Set<String> modifiers = toModifierNames(typeElement.getModifiers());
             TypeInfo.Builder builder = TypeInfo.builder()
                     .originatingElement(typeElement)
                     .typeName(typeName)
+                    .rawType(genericTypeName)
+                    .declaredType(declaredTypeName)
                     .kind(kind(typeElement.getKind()))
                     .annotations(annotations)
                     .inheritedAnnotations(inheritedAnnotations)
@@ -545,6 +569,12 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
         } catch (Exception e) {
             throw new IllegalStateException("Failed to process: " + typeElement, e);
         }
+    }
+
+    private static TypeName declaredTypeName(AptContext ctx, TypeName typeName) {
+        TypeElement typeElement = ctx.aptEnv().getElementUtils().getTypeElement(typeName.fqName());
+        // we know this type exists, we do not have to check for null
+        return AptTypeFactory.createTypeName(typeElement.asType()).orElseThrow();
     }
 
     private static void collectEnclosedElements(Predicate<TypedElementInfo> elementPredicate,
@@ -681,7 +711,8 @@ public final class AptTypeInfoFactory extends TypeInfoFactoryBase {
         moduleName.set(null);
 
         ModuleElement module = ctx.aptEnv().getElementUtils().getModuleOf(type);
-        if (!module.isUnnamed()) {
+
+        if (module != null && !module.isUnnamed()) {
             String name = module.getQualifiedName().toString();
             if (hasValue(name)) {
                 moduleName.set(name);

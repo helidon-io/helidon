@@ -15,13 +15,19 @@
  */
 package io.helidon.microprofile.telemetry;
 
+import io.helidon.tracing.Tracer;
+
 import io.opentelemetry.instrumentation.annotations.WithSpan;
+import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
 import jakarta.enterprise.inject.spi.Extension;
 import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
 import jakarta.enterprise.inject.spi.WithAnnotations;
 import jakarta.enterprise.inject.spi.configurator.AnnotatedMethodConfigurator;
+import jakarta.interceptor.Interceptor;
 
 /**
  * CDI extension for Microprofile Telemetry implementation.
@@ -29,6 +35,12 @@ import jakarta.enterprise.inject.spi.configurator.AnnotatedMethodConfigurator;
 public class TelemetryCdiExtension implements Extension {
 
     private static final System.Logger LOGGER = System.getLogger(TelemetryCdiExtension.class.getName());
+
+    /**
+     * For service loading.
+     */
+    public TelemetryCdiExtension() {
+    }
 
     /**
      * Add {@code HelidonWithSpan} annotation with interceptor.
@@ -61,5 +73,14 @@ public class TelemetryCdiExtension implements Extension {
                 method.add(HelidonWithSpan.Literal.INSTANCE);
             }
         }
+    }
+
+    void finish(@Observes @Priority(Interceptor.Priority.LIBRARY_BEFORE) @Initialized(ApplicationScoped.class) Object startup,
+                Tracer tracer) {
+        // Forcing CDI to get us a tracer and then invoking one of the bean's methods triggers the producer to do its
+        // initialization, including setting the global tracer as part of start up.
+        tracer.enabled();
+        LOGGER.log(System.Logger.Level.TRACE,
+                   () -> "Global tracer set to " + tracer.unwrap(io.opentelemetry.api.trace.Tracer.class));
     }
 }

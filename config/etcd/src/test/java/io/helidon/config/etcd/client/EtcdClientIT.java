@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,22 +18,17 @@ package io.helidon.config.etcd.client;
 
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
-import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Flow;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
 
 import io.helidon.config.etcd.internal.client.EtcdClient;
 import io.helidon.config.etcd.internal.client.EtcdClientException;
-import io.helidon.config.etcd.internal.client.v2.EtcdV2Client;
 import io.helidon.config.etcd.internal.client.v3.EtcdV3Client;
 
 import org.hamcrest.core.Is;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -47,34 +42,26 @@ public class EtcdClientIT {
 
     private static final URI uri = URI.create("http://localhost:2379");
 
-    private static Stream<Class<? extends EtcdClient>> clients() {
-        return List.of(EtcdV2Client.class, EtcdV3Client.class).stream();
-    }
-
-    @ParameterizedTest
-    @MethodSource("clients")
-    public <T extends EtcdClient> void testPutGet(Class<T> clientClass) throws EtcdClientException {
-        runTest(clientClass, etcdClient -> {
+    @Test
+    public void testPutGet() {
+        runTest(etcdClient -> {
             etcdClient.put("key", "value");
             String result = etcdClient.get("key");
             assertThat(result, is("value"));
-            
         });
     }
-    
-    @ParameterizedTest
-    @MethodSource("clients")
-    public <T extends EtcdClient> void testGetNonExistingKey(Class<T> clientClass) throws EtcdClientException {
-        runTest(clientClass, etcdClient -> {
+
+    @Test
+    public void testGetNonExistingKey()  {
+        runTest(etcdClient -> {
             String result = etcdClient.get("non-existing-key");
             assertThat(result, nullValue());
         });
     }
 
-    @ParameterizedTest
-    @MethodSource("clients")
-    public <T extends EtcdClient> void testWatchNewKey(Class<T> clientClass) throws EtcdClientException, ExecutionException, InterruptedException {
-        runTest(clientClass, etcdClient -> {
+    @Test
+    public void testWatchNewKey() {
+        runTest(etcdClient -> {
             final String key = "key#" + new Random().nextLong();
             final String finalValue = "new value";
 
@@ -115,10 +102,9 @@ public class EtcdClientIT {
         });
     }
 
-    @ParameterizedTest
-    @MethodSource("clients")
-    public <T extends EtcdClient> void testWatchValueChanges(Class<T> clientClass) throws EtcdClientException, ExecutionException, InterruptedException {
-        runTest(clientClass, etcdClient -> {
+    @Test
+    public void testWatchValueChanges() {
+        runTest(etcdClient -> {
             final String key = "key";
 
             etcdClient.put(key, "any value to change (just to be sure there is not already set to the final value");
@@ -166,14 +152,14 @@ public class EtcdClientIT {
      */
     @FunctionalInterface
     private interface EtcdClientConsumer {
-        public void accept(EtcdClient t) throws EtcdClientException, InterruptedException;
+        void accept(EtcdClient t) throws EtcdClientException, InterruptedException;
     }
     
-    private <T extends EtcdClient> void runTest(
-            Class<T> clientClass,
-            EtcdClientConsumer test) throws EtcdClientException {
+    private <T extends EtcdClient> void runTest(EtcdClientConsumer test) {
         try {
-            try (EtcdClient etcdClient = clientClass.getDeclaredConstructor(URI.class).newInstance(uri)) {
+            URI[] uris = new URI[] {uri};
+            try (EtcdClient etcdClient = EtcdV3Client.class.getDeclaredConstructor(URI[].class)
+                    .newInstance(new Object[] {uris})) {
                 test.accept(etcdClient);
             } catch (EtcdClientException ex) {
                 fail(ex);

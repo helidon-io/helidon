@@ -17,6 +17,8 @@ package io.helidon.docs.mp;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 import io.helidon.microprofile.cdi.ExecuteOn;
 import jakarta.enterprise.inject.Produces;
@@ -69,4 +71,15 @@ class ExecuteOnSnippets {
         }
     }
     // end::snippet_3[]
+
+    // tag::snippet_4[]
+    public class MyVirtualBeanAsync {
+
+        @ExecuteOn(ThreadType.VIRTUAL)
+        CompletionStage<String> someTask() {
+            // run task on virtual thread without blocking caller
+            return CompletableFuture.completedFuture("DONE");
+        }
+    }
+    // end::snippet_4[]
 }

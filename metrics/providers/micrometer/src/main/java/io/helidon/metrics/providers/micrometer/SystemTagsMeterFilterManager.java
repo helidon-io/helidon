@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,9 +71,8 @@ class SystemTagsMeterFilterManager implements Consumer<SystemTagsManager> {
 
         try {
             micrometerSystemTags.clear();
-            systemTagsManager.displayTags()
-                    .forEach(tag -> micrometerSystemTags.add(Tag.of(tag.key(),
-                                                                    tag.value())));
+            systemTagsManager.displayTagPairs()
+                    .forEach((name, value) -> micrometerSystemTags.add(Tag.of(name, value)));
             return this;
         } finally {
             lock.unlock();

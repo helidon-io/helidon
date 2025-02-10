@@ -72,9 +72,9 @@ Add the following plugin declaration to your pom.xml:
                 <jmxFlag>-Djava.awt.headless=true</jmxFlag>
                 <jmxFlag>-XX:+UnlockExperimentalVMOptions</jmxFlag>
                 <jmxFlag>-XX:+UseCGroupMemoryLimitForHeap</jmxFlag>
-                <jmxFlag>-XX:InitialRAMFraction=2</jmxFlag>
-                <jmxFlag>-XX:MinRAMFraction=2</jmxFlag>
-                <jmxFlag>-XX:MaxRAMFraction=2</jmxFlag>
+                <jmxFlag>-XX:InitialRAMPercentage=50</jmxFlag>
+                <jmxFlag>-XX:MinRAMPercentage=50</jmxFlag>
+                <jmxFlag>-XX:MaxRAMPercentage=50</jmxFlag>
                 <jmxFlag>-XX:+UseG1GC</jmxFlag>
             </jvmFlags>
             <mainClass>${mainClass}</mainClass>

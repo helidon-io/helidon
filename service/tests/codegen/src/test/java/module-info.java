@@ -23,6 +23,7 @@ module io.helidon.service.tests.codegen.test {
 
     requires hamcrest.all;
     requires org.junit.jupiter.api;
+    requires io.helidon.service.metadata;
 
     opens io.helidon.service.tests.codegen to org.junit.platform.commons;
 }

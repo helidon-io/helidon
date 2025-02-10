@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ import io.helidon.webserver.observe.ObserveFeature;
 import io.helidon.webserver.observe.ObserveFeatureConfig;
 import io.helidon.webserver.observe.spi.Observer;
 import io.helidon.webserver.spi.ServerFeature;
-import io.helidon.webserver.staticcontent.StaticContentService;
+import io.helidon.webserver.staticcontent.StaticContentConfig;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -383,8 +383,10 @@ public class ServerCdiExtension implements Extension {
         if (!routingsWithKPIMetrics.contains(routing)) {
             routingsWithKPIMetrics.add(routing);
             routing.any(KeyPerformanceIndicatorSupport.DeferrableRequestContext.CONTEXT_SETTING_HANDLER);
-            LOGGER.log(Level.TRACE, () -> String.format("Adding deferrable request KPI metrics context for routing with name '%s'"
-                                                                + "", namedRouting.orElse("<unnamed>")));
+            if (LOGGER.isLoggable(Level.TRACE)) {
+                LOGGER.log(Level.TRACE, String.format("Adding deferrable request KPI metrics context for routing with name '%s'",
+                                                      namedRouting.orElse("<unnamed>")));
+            }
         }
     }
 
@@ -557,40 +559,64 @@ public class ServerCdiExtension implements Extension {
     }
 
     private void registerStaticContent() {
-        Config config = (Config) ConfigProvider.getConfig();
-        config = config.get("server.static");
+        Config rootConfig = (Config) ConfigProvider.getConfig();
+        Config config = rootConfig.get("server.static");
+
+        if (config.exists()) {
+            LOGGER.log(Level.WARNING, "Configuration of static content through \"server.static\" is now deprecated."
+                    + " Please use \"server.features.static-content\", with sub-keys \"path\" and/or \"classpath\""
+                    + " containing a list of handlers. At least \"context\" and \"location\" should be provided for each handler."
+                    + " Location for classpath is the resource location with static content, for path it is the"
+                    + " location on file system with the root of static content. For advanced configuration such as"
+                    + " in-memory caching, temporary storage setup etc. kindly see our config reference for "
+                    + "\"StaticContentFeature\" in documentation.");
+        }
 
         config.get("classpath")
                 .ifExists(this::registerClasspathStaticContent);
 
         config.get("path")
                 .ifExists(this::registerPathStaticContent);
+
+        Config featureConfig = rootConfig.get("server.features.static-content");
+        if (featureConfig.exists()) {
+            var builder = StaticContentConfig.builder()
+                            .config(featureConfig);
+            if (builder.welcome().isEmpty()) {
+                builder.welcome("index.html");
+            }
+            addFeature(builder.build());
+        }
     }
 
+    @SuppressWarnings("removal")
     private void registerPathStaticContent(Config config) {
         Config context = config.get("context");
-        StaticContentService.FileSystemBuilder pBuilder = StaticContentService.builder(config.get("location")
+        io.helidon.webserver.staticcontent.StaticContentService.FileSystemBuilder pBuilder =
+                io.helidon.webserver.staticcontent.StaticContentService.builder(config.get("location")
                                                                                                .as(Path.class)
                                                                                                .get());
         pBuilder.welcomeFileName(config.get("welcome")
                                          .asString()
                                          .orElse("index.html"));
 
-        StaticContentService staticContent = pBuilder.build();
+        var staticContent = pBuilder.build();
 
         if (context.exists()) {
             routingBuilder.register(context.asString().get(), staticContent);
         } else {
-            Supplier<StaticContentService> ms = () -> staticContent;
+            Supplier<io.helidon.webserver.staticcontent.StaticContentService> ms = () -> staticContent;
             routingBuilder.register(ms);
         }
         STARTUP_LOGGER.log(Level.TRACE, "Static path");
     }
 
+    @SuppressWarnings("removal")
     private void registerClasspathStaticContent(Config config) {
         Config context = config.get("context");
 
-        StaticContentService.ClassPathBuilder cpBuilder = StaticContentService.builder(config.get("location").asString().get());
+        io.helidon.webserver.staticcontent.StaticContentService.ClassPathBuilder cpBuilder =
+                io.helidon.webserver.staticcontent.StaticContentService.builder(config.get("location").asString().get());
         cpBuilder.welcomeFileName(config.get("welcome")
                                           .asString()
                                           .orElse("index.html"));
@@ -604,7 +630,7 @@ public class ServerCdiExtension implements Extension {
                 .flatMap(List::stream)
                 .forEach(cpBuilder::addCacheInMemory);
 
-        StaticContentService staticContent = cpBuilder.build();
+        var staticContent = cpBuilder.build();
 
         if (context.exists()) {
             routingBuilder.register(context.asString().get(), staticContent);

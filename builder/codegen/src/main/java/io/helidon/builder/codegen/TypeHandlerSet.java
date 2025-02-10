@@ -18,9 +18,12 @@ package io.helidon.builder.codegen;
 
 import java.util.Optional;
 
+import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
 
+import static io.helidon.builder.codegen.Types.LINKED_HASH_SET;
+import static io.helidon.builder.codegen.Types.SERVICES;
 import static io.helidon.common.types.TypeNames.SET;
 
 class TypeHandlerSet extends TypeHandlerCollection {
@@ -37,5 +40,39 @@ class TypeHandlerSet extends TypeHandlerCollection {
               SET,
               "collect(java.util.stream.Collectors.toSet())",
               Optional.of(".map(java.util.Set::copyOf)"));
+    }
+
+    @Override
+    void updateBuilderFromServices(ContentBuilder<?> content, String builder) {
+        /*
+        builder.option(new LinkedHashSet(Services.all(Type.class)));
+         */
+        content.addContent(builder)
+                .addContent(".")
+                .addContent(setterName())
+                .addContent("(new ")
+                .addContent(LINKED_HASH_SET)
+                .addContent("(")
+                .addContent(SERVICES)
+                .addContent(".all(")
+                .addContent(actualType())
+                .addContentLine(".class)));");
+    }
+
+    @Override
+    void updateBuilderFromRegistry(ContentBuilder<?> content, String builder, String registry) {
+        /*
+        builder.option(new LinkedHashSet(registry.all(Type.class)));
+         */
+        content.addContent(builder)
+                .addContent(".")
+                .addContent(setterName())
+                .addContent("(new ")
+                .addContent(LINKED_HASH_SET)
+                .addContent("(")
+                .addContent(registry)
+                .addContent(".all(")
+                .addContent(actualType())
+                .addContentLine(".class)));");
     }
 }

@@ -37,13 +37,13 @@ import io.helidon.common.concurrency.limits.LimitAlgorithm;
 import io.helidon.common.mapper.MapperException;
 import io.helidon.common.task.InterruptableTask;
 import io.helidon.common.tls.TlsUtils;
+import io.helidon.common.uri.UriValidator;
 import io.helidon.http.BadRequestException;
 import io.helidon.http.DateTime;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.DirectHandler.EventType;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
-import io.helidon.http.HostValidator;
 import io.helidon.http.HtmlEncoder;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.InternalServerException;
@@ -66,6 +66,7 @@ import io.helidon.webserver.spi.ServerConnection;
 import static io.helidon.http.HeaderNames.X_FORWARDED_FOR;
 import static io.helidon.http.HeaderNames.X_FORWARDED_PORT;
 import static io.helidon.http.HeaderNames.X_HELIDON_CN;
+import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.TRACE;
 import static java.lang.System.Logger.Level.WARNING;
 
@@ -159,6 +160,10 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                 currentEntitySize = 0;
                 currentEntitySizeRead = 0;
 
+                if (http1Config.validatePrologue()) {
+                    validatePrologue(prologue);
+                }
+
                 WritableHeaders<?> headers = http1headers.readHeaders(prologue);
                 if (http1Config.validateRequestHeaders()) {
                     validateHostHeader(prologue, headers, http1Config.validateRequestHostHeader());
@@ -180,8 +185,8 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                     }
                 }
 
-                if (canUpgrade) {
-                    if (headers.contains(HeaderNames.UPGRADE)) {
+                if (canUpgrade && headers.contains(HeaderNames.UPGRADE)) {
+                    if (!upgradeHasEntity(headers)) {
                         Http1Upgrader upgrader = upgradeProviderMap.get(headers.get(HeaderNames.UPGRADE).get());
                         if (upgrader != null) {
                             ServerConnection upgradeConnection = upgrader.upgrade(ctx, prologue, headers);
@@ -196,6 +201,8 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                 return;
                             }
                         }
+                    } else {
+                        ctx.log(LOGGER, DEBUG, "Protocol upgrade for a request with a payload ignored");
                     }
                 }
 
@@ -283,6 +290,19 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         currentEntitySizeRead = 0;
     }
 
+    /**
+     * Only accept protocol upgrades if no entity is present. Otherwise, a successful
+     * upgrade may result in the request entity interpreted as part of the new protocol
+     * data, resulting in a failure.
+     *
+     * @param headers the HTTP headers in the prologue
+     * @return whether to accept or reject the upgrade
+     */
+    static boolean upgradeHasEntity(WritableHeaders<?> headers) {
+        return headers.contains(HeaderNames.CONTENT_LENGTH) && !headers.contains(HeaderValues.CONTENT_LENGTH_ZERO)
+                || headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+    }
+
     static void validateHostHeader(HttpPrologue prologue, WritableHeaders<?> headers, boolean fullValidation) {
         if (fullValidation) {
             try {
@@ -299,6 +319,26 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
             }
         } else {
             simpleHostHeaderValidation(prologue, headers);
+        }
+    }
+
+    private void validatePrologue(HttpPrologue prologue) {
+        try {
+            // scheme is not validated, as it is fixed and validated by the prologue reader
+            UriValidator.validateQuery(prologue.query().rawValue());
+            if (prologue.fragment().hasValue()) {
+                UriValidator.validateFragment(prologue.fragment().rawValue());
+            }
+        } catch (IllegalArgumentException e) {
+            throw RequestException.builder()
+                    .type(EventType.BAD_REQUEST)
+                    .status(Status.BAD_REQUEST_400)
+                    .request(DirectTransportRequest.create(prologue, ServerRequestHeaders.create()))
+                    .setKeepAlive(false)
+                    .message(e.getMessage())
+                    .safeMessage(true)
+                    .cause(e)
+                    .build();
         }
     }
 
@@ -368,17 +408,17 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         int endLiteral = host.lastIndexOf(']');
         if (startLiteral == 0 && endLiteral == host.length() - 1) {
             // this is most likely an IPv6 address without a port
-            HostValidator.validateIpLiteral(host);
+            UriValidator.validateIpLiteral(host);
             return;
         }
         if (startLiteral == 0 && endLiteral == -1) {
-            HostValidator.validateIpLiteral(host);
+            UriValidator.validateIpLiteral(host);
             return;
         }
         int colon = host.lastIndexOf(':');
         if (colon == -1) {
             // only host
-            HostValidator.validateNonIpLiteral(host);
+            UriValidator.validateNonIpLiteral(host);
             return;
         }
 
@@ -398,11 +438,11 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         // can be
         // IP-literal [..::]
         if (startLiteral == 0 && endLiteral == hostString.length() - 1) {
-            HostValidator.validateIpLiteral(hostString);
+            UriValidator.validateIpLiteral(hostString);
             return;
         }
 
-        HostValidator.validateNonIpLiteral(hostString);
+        UriValidator.validateNonIpLiteral(hostString);
     }
 
     private BufferData readEntityFromPipeline(HttpPrologue prologue, WritableHeaders<?> headers) {

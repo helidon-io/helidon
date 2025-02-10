@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,20 +19,16 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.StreamSupport;
 
-import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.metrics.spi.MetricsProgrammaticConfig;
 
@@ -49,28 +45,30 @@ import io.helidon.metrics.spi.MetricsProgrammaticConfig;
  */
 class SystemTagsManagerImpl implements SystemTagsManager {
 
-    private static final LazyValue<Collection<MetricsProgrammaticConfig>> METRICS_CONFIG_OVERRIDES =
-            LazyValue.create(() ->
-                                     HelidonServiceLoader.create(ServiceLoader.load(MetricsProgrammaticConfig.class))
-                                             .asList());
-
     private static SystemTagsManagerImpl instance = new SystemTagsManagerImpl();
 
     private static final Collection<Consumer<SystemTagsManager>> ON_CHANGE_SUBSCRIBERS = new ArrayList<>();
 
-    private final List<Tag> systemTags; // global tags plus the app tag, if any specified
-    private final Set<String> systemTagNames = new HashSet<>(); // tag names for global tags and app
+    private final Map<String, String> systemTagPairs = new TreeMap<>();
     private final Set<String> systemAndScopeTagNames = new HashSet<>(); // tag names for globa tags, app, and scope
+
+    /*
+    Defer invoking Tag.create because that could create a infinite recursive loop; Tag.create invokes
+    MetricsFactory.getInstance().tagCreate and MetricsFactory.getInstance could trigger another attempt to instantiate this
+    SystemTagsManagerImpl.
+     */
+    private final LazyValue<List<Tag>> systemTags = LazyValue.create(() ->
+             systemTagPairs.entrySet().stream()
+                     .map(entry -> Tag.create(entry.getKey(), entry.getValue()))
+                     .toList()); // global tags plus the app
+    // tag, if any specified
     private String scopeTagName;
     private String defaultScopeValue;
 
     private SystemTagsManagerImpl(MetricsConfig metricsConfig) {
 
-        metricsConfig.tags().forEach(tag -> systemTagNames.add(tag.key()));
-        systemAndScopeTagNames.addAll(systemTagNames);
-        metricsConfig.scoping().tagName().ifPresent(systemAndScopeTagNames::add);
-
-        List<Tag> result = new ArrayList<>(metricsConfig.tags());
+        metricsConfig.tags().forEach(tag ->
+                                             systemTagPairs.put(tag.key(), tag.value()));
 
         // Add a tag for the app name if there is an appName setting in config AND we have a setting
         // from somewhere for the tag name to use for recording the app name.
@@ -79,14 +77,15 @@ class SystemTagsManagerImpl implements SystemTagsManager {
                 .filter(Predicate.not(String::isBlank))
                 .ifPresent(tagNameToUse ->
                                    metricsConfig.appName()
-                                           .ifPresent(appNameToUse -> result.add(Tag.create(tagNameToUse, appNameToUse)))
+                                           .ifPresent(appNameToUse ->
+                                                              systemTagPairs.put(tagNameToUse, appNameToUse))
                 );
 
-        systemTags = List.copyOf(result);
-
-        // Set the scope tag, if appropriate.
-        metricsConfig.scoping().tagName()
-                .ifPresent(tagNameToUse -> scopeTagName = tagNameToUse);
+        systemAndScopeTagNames.addAll(systemTagPairs.keySet());
+        metricsConfig.scoping().tagName().ifPresent(scopeTagNameToUse -> {
+            systemAndScopeTagNames.add(scopeTagNameToUse);
+            scopeTagName = scopeTagNameToUse;
+        });
         defaultScopeValue = metricsConfig.scoping().defaultValue().orElse(null);
     }
 
@@ -96,7 +95,6 @@ class SystemTagsManagerImpl implements SystemTagsManager {
 
     // for testing
     private SystemTagsManagerImpl() {
-        systemTags = List.of();
         scopeTagName = "scope";
     }
 
@@ -116,28 +114,12 @@ class SystemTagsManagerImpl implements SystemTagsManager {
 
     static SystemTagsManagerImpl instance(MetricsConfig metricsConfig) {
         instance = createWithoutSaving(metricsConfig);
-        ON_CHANGE_SUBSCRIBERS.forEach(sub -> sub.accept(instance()));
+        ON_CHANGE_SUBSCRIBERS.forEach(sub -> sub.accept(instance));
         return instance;
     }
 
     static SystemTagsManagerImpl createWithoutSaving(MetricsConfig metricsConfig) {
         return new SystemTagsManagerImpl(metricsConfig);
-    }
-
-    /**
-     * Returns an {@link java.lang.Iterable} of the implied type representing the provided scope <em>if</em> scope tagging
-     * is active: the scope tag name is non-null and non-blank.
-     *
-     * @param scopeTagName scope tag name
-     * @param scope        scope value
-     * @param factory      factory method to accept the scope tag and the scope and return an instance of the implied type
-     * @param <T>          type to which the scope tag and scope are converted
-     * @return iterable of the scope if the scope tag name is non-null and non-blank; an empty iterable otherwise
-     */
-    static <T> Iterable<T> scopeIterable(String scopeTagName, String scope, BiFunction<String, String, T> factory) {
-        return scopeTagName != null && !scopeTagName.isBlank() && scope != null
-                ? List.of(factory.apply(scopeTagName, scope))
-                : List.of();
     }
 
     @Override
@@ -151,7 +133,7 @@ class SystemTagsManagerImpl implements SystemTagsManager {
 
     @Override
     public Iterable<Tag> withoutSystemTags(Iterable<Tag> tags) {
-        return without(tags, systemTagNames);
+        return without(tags, systemTagPairs.keySet());
     }
 
     @Override
@@ -207,7 +189,12 @@ class SystemTagsManagerImpl implements SystemTagsManager {
 
     @Override
     public Iterable<Tag> displayTags() {
-        return List.copyOf(systemTags);
+        return Collections.unmodifiableCollection(systemTags.get());
+    }
+
+    @Override
+    public Map<String, String> displayTagPairs() {
+        return Collections.unmodifiableMap(systemTagPairs);
     }
 
     @Override
@@ -250,61 +237,6 @@ class SystemTagsManagerImpl implements SystemTagsManager {
                 .findAny()
                 .map(Tag::value)
                 : Optional.empty();
-    }
-
-    static class MultiIterable<T> implements Iterable<T> {
-
-        private final Iterable<T>[] iterables;
-
-        private MultiIterable(Iterable<T>... iterables) {
-            if (iterables.length == 0) {
-                throw new IllegalArgumentException("Must provide at least one Iterable");
-            }
-            this.iterables = iterables;
-        }
-
-        @Override
-        public Iterator<T> iterator() {
-            return new Iterator<T>() {
-
-                private int nextIndex = 0;
-                private Iterator<T> current = nextIterator();
-
-                @Override
-                public boolean hasNext() {
-                    if (current.hasNext()) {
-                        return true;
-                    }
-
-                    current = nextIterator();
-                    return current.hasNext();
-                }
-
-                @Override
-                public T next() {
-                    return current.next();
-                }
-
-                private Iterator<T> nextIterator() {
-                    while (nextIndex < iterables.length) {
-                        Iterator<T> candidateNextIterator = iterables[nextIndex].iterator();
-                        if (candidateNextIterator.hasNext()) {
-                            nextIndex++;
-                            return candidateNextIterator;
-                        }
-                        nextIndex++;
-                    }
-                    return Collections.emptyIterator();
-                }
-            };
-        }
-
-        @Override
-        public void forEach(Consumer<? super T> action) {
-            for (Iterable<T> it : iterables) {
-                it.forEach(action);
-            }
-        }
     }
 
 }

@@ -190,6 +190,11 @@ final class UriQueryImpl implements UriQuery {
         return "?" + rawValue();
     }
 
+    UriQuery validate() {
+        UriValidator.validateQuery(query);
+        return this;
+    }
+
     private void ensureDecoded() {
         if (decodedQueryParams == null) {
             Map<String, List<String>> newQueryParams = new HashMap<>();

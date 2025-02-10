@@ -74,7 +74,7 @@ class OciCertificatesTlsManagerTest {
         assertThat("sanity",
                    caCertDownloadCountBaseline0,
                    equalTo(0));
-        assertThat("santiy",
+        assertThat("sanity",
                    pkDownloadCountBaseLine0,
                    equalTo(0));
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,28 +14,18 @@
  * limitations under the License.
  */
 
-import io.helidon.microprofile.testing.testng.HelidonTestNgListener;
-
 /**
  * TestNG extension module to run CDI tests.
  */
 module io.helidon.microprofile.testing.testng {
 
-    requires io.helidon.config.mp;
-    requires io.helidon.config.yaml.mp;
-    requires io.helidon.microprofile.cdi;
-    requires jakarta.cdi;
-    requires jakarta.inject;
-    requires jakarta.ws.rs;
-    requires microprofile.config.api;
-    requires org.testng;
+    requires io.helidon.microprofile.testing;
 
-    requires static io.helidon.microprofile.server;
-    requires static jersey.cdi1x;
-    requires static jersey.weld2.se;
+    requires org.testng;
+    requires com.google.guice;
+    requires io.helidon.service.registry;
 
     exports io.helidon.microprofile.testing.testng;
 
-    provides org.testng.ITestNGListener with HelidonTestNgListener;
-
+    provides org.testng.ITestNGListener with io.helidon.microprofile.testing.testng.HelidonTestNgListener;
 }

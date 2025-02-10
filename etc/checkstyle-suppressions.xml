@@ -47,6 +47,10 @@ record here.
     <suppress files="security/jwt/src/main/java/io/helidon/security/jwt/Jwt\.java"
             checks="FileLength"/>
 
+    <!-- This file is generating source file, and uses a lot of lines to append code -->
+    <suppress files="service/codegen/src/main/java/io/helidon/service/codegen/ServiceDescriptorCodegen\.java"
+            checks="FileLength"/>
+
     <!--
     - Module exclusions
     -->

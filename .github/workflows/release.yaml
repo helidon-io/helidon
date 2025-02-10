@@ -22,7 +22,7 @@ on:
 env:
   JAVA_VERSION: '21'
   JAVA_DISTRO: 'oracle'
-  MAVEN_ARGS: |
+  MVN_ARGS: |
     -B -e
     -Dmaven.wagon.httpconnectionManager.ttlSeconds=60
     -Dmaven.wagon.http.retryHandler.count=3
@@ -80,7 +80,7 @@ jobs:
           artifact-name: io-helidon-artifacts-part-${{ matrix.moduleSet }}
           artifact-path: staging
           run: |
-            mvn ${MAVEN_ARGS} \
+            mvn ${MVN_ARGS} \
               -DreactorRule=default \
               -DmoduleSet=${{ matrix.moduleSet }} \
               -Dcache.loadSuffixes=javadoc,docs \
@@ -128,7 +128,7 @@ jobs:
       - uses: ./.github/actions/common
         with:
           run: |
-            mvn ${MAVEN_ARGS} -N \
+            mvn ${MVN_ARGS} -N \
               -Possrh-staging \
               -Dartifact=io.helidon:helidon-all:${{ needs.create-tag.outputs.version }}:pom \
               dependency:get

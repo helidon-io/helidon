@@ -388,7 +388,7 @@ call it.
     </dependency>
 </dependencies>
 ----
-Make the following changes to the `GreetService` class.
+Make the following changes to the `GreetFeature` class.
 
 1. Add a `WebClient` field.
 +

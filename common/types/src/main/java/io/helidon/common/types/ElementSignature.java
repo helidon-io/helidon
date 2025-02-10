@@ -46,6 +46,39 @@ public sealed interface ElementSignature permits ElementSignatures.FieldSignatur
                                                  ElementSignatures.ParameterSignature,
                                                  ElementSignatures.NoSignature {
     /**
+     * A field signature.
+     *
+     * @param type type of the field
+     * @param name name of the field
+     * @return a new field signature
+     */
+    static ElementSignature createField(TypeName type, String name) {
+        return ElementSignatures.createField(type, name);
+    }
+
+    /**
+     * A constructor signature.
+     *
+     * @param parameters list of types of parameters
+     * @return a new constructor signature
+     */
+    static ElementSignature createConstructor(List<TypeName> parameters) {
+        return ElementSignatures.createConstructor(parameters);
+    }
+
+    /**
+     * A method signature.
+     *
+     * @param returnType return type of the method
+     * @param name name of the method
+     * @param parameters parameter types of the method
+     * @return a new method signature
+     */
+    static ElementSignature createMethod(TypeName returnType, String name, List<TypeName> parameters) {
+        return ElementSignatures.createMethod(returnType, name, parameters);
+    }
+
+    /**
      * Type of the element. Resolves as follows:
      * <ul>
      *     <li>Field: type of the field</li>

@@ -56,7 +56,7 @@ public class HelidonReflectionFeature implements Feature {
 
     private static final String AT_ENTITY = "jakarta.persistence.Entity";
     private static final String AT_MAPPED_SUPERCLASS = "jakarta.persistence.MappedSuperclass";
-    private static final String REGISTRY_DESCRIPTOR = "io.helidon.service.registry.GeneratedService$Descriptor";
+    private static final String REGISTRY_DESCRIPTOR = "io.helidon.service.registry.ServiceDescriptor";
 
     private final NativeTrace tracer = new NativeTrace();
     private NativeUtil util;

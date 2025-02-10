@@ -40,7 +40,6 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.http.Method.GET;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -90,7 +89,7 @@ class HttpProxyTest {
         try {
             ProxySelector.setDefault(ProxySelector.of(new InetSocketAddress(PROXY_HOST, proxyPort)));
             Proxy proxy = Proxy.builder().build();
-            assertEquals(ProxyType.SYSTEM, proxy.type());
+            assertThat(proxy.type(), is(ProxyType.SYSTEM));
             successVerify(proxy, clientHttp1);
         } finally {
             ProxySelector.setDefault(original);
@@ -103,7 +102,7 @@ class HttpProxyTest {
         try {
             ProxySelector.setDefault(ProxySelector.of(new InetSocketAddress(PROXY_HOST, proxyPort)));
             Proxy proxy = Proxy.builder().build();
-            assertEquals(ProxyType.SYSTEM, proxy.type());
+            assertThat(proxy.type(), is(ProxyType.SYSTEM));
             successVerify(proxy, clientHttp2);
         } finally {
             ProxySelector.setDefault(original);

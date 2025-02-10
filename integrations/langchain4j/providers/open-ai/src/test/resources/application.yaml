@@ -1,0 +1,130 @@
+#
+# Copyright (c) 2025 Oracle and/or its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+langchain4j.open-ai:
+  # ChatModel
+  chat-model:
+    api-key: api-key
+    model-name: model-name
+    base-url: base-url
+    organization-id: organization-id
+    temperature: 36.6
+    top-p: 10
+    stop: stop1,stop2,stop3
+    max-tokens: 15
+    max-completion-tokens: 20
+    presence-penalty: 0.1
+    frequency-penalty: 0.2
+    logit-bias.key1: 1
+    logit-bias.key2: 2
+    response-format: response-format
+    strict-json-schema: false
+    seed: 100
+    user: user
+    strict-tools: false
+    parallel-tool-calls: false
+    timeout: PT10M
+    max-retries: 3
+    log-requests: true
+    log-responses: true
+    custom-headers.header1: value1
+    custom-headers.header2: value2
+  # StreamingChatModel
+  streaming-chat-model:
+    api-key: api-key
+    model-name: model-name
+    base-url: base-url
+    organization-id: organization-id
+    temperature: 36.6
+    top-p: 10
+    stop: ["stop1", "stop2", "stop3"]
+    max-tokens: 15
+    max-completion-tokens: 20
+    presence-penalty: 0.1
+    frequency-penalty: 0.2
+    logit-bias.key1: 1
+    logit-bias.key2: 2
+    response-format: response-format
+    seed: 100
+    user: user
+    strict-tools: false
+    parallel-tool-calls: false
+    timeout: PT10M
+    log-requests: true
+    log-responses: true
+    custom-headers.header1: value1
+    custom-headers.header2: value2
+  # LanguageModel
+  language-model:
+    api-key: api-key
+    model-name: model-name
+    base-url: base-url
+    organization-id: organization-id
+    temperature: 36.6
+    timeout: PT10M
+    max-retries: 3
+    log-requests: true
+    log-responses: true
+    custom-headers.header1: value1
+    custom-headers.header2: value2
+  # EmbeddingModel
+  embedding-model:
+    api-key: api-key
+    model-name: model-name
+    base-url: base-url
+    organization-id: organization-id
+    dimensions: 100
+    user: user
+    timeout: PT10M
+    max-retries: 3
+    log-requests: true
+    log-responses: true
+    custom-headers.header1: value1
+    custom-headers.header2: value2
+  # ModerationModel
+  moderation-model:
+    api-key: api-key
+    model-name: model-name
+    base-url: base-url
+    organization-id: organization-id
+    timeout: PT10M
+    max-retries: 3
+    proxy.type: HTTP
+    proxy.host: localhost
+    proxy.port: 8888
+    log-requests: true
+    log-responses: true
+    custom-headers.header1: value1
+    custom-headers.header2: value2
+  # ImageModel
+  image-model:
+    api-key: api-key
+    model-name: model-name
+    base-url: base-url
+    organization-id: organization-id
+    size: size
+    quality: quality
+    style: style
+    user: user
+    response-format: response-format
+    timeout: PT10M
+    max-retries: 3
+    log-requests: true
+    log-responses: true
+    with-persisting: true
+    persist-to: temp
+    custom-headers.header1: value1
+    custom-headers.header2: value2

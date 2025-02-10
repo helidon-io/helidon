@@ -22,24 +22,58 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenValidator;
 import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.codegen.classmodel.Field;
 import io.helidon.codegen.classmodel.InnerClass;
 import io.helidon.codegen.classmodel.Javadoc;
 import io.helidon.codegen.classmodel.Method;
+import io.helidon.common.Size;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.builder.codegen.Types.OPTION_DEFAULT;
+import static io.helidon.builder.codegen.Types.SERVICES;
+import static io.helidon.common.types.TypeNames.BOXED_BOOLEAN;
+import static io.helidon.common.types.TypeNames.BOXED_BYTE;
+import static io.helidon.common.types.TypeNames.BOXED_CHAR;
+import static io.helidon.common.types.TypeNames.BOXED_DOUBLE;
+import static io.helidon.common.types.TypeNames.BOXED_FLOAT;
+import static io.helidon.common.types.TypeNames.BOXED_INT;
+import static io.helidon.common.types.TypeNames.BOXED_LONG;
+import static io.helidon.common.types.TypeNames.BOXED_SHORT;
+import static io.helidon.common.types.TypeNames.BOXED_VOID;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_BOOLEAN;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_BYTE;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_CHAR;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_DOUBLE;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_FLOAT;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_INT;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_LONG;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_SHORT;
+import static io.helidon.common.types.TypeNames.PRIMITIVE_VOID;
 
 class TypeHandler {
+    private static final Map<TypeName, TypeName> BOXED_TO_PRIMITIVE = Map.of(
+            BOXED_BOOLEAN, PRIMITIVE_BOOLEAN,
+            BOXED_BYTE, PRIMITIVE_BYTE,
+            BOXED_SHORT, PRIMITIVE_SHORT,
+            BOXED_INT, PRIMITIVE_INT,
+            BOXED_LONG, PRIMITIVE_LONG,
+            BOXED_CHAR, PRIMITIVE_CHAR,
+            BOXED_FLOAT, PRIMITIVE_FLOAT,
+            BOXED_DOUBLE, PRIMITIVE_DOUBLE,
+            BOXED_VOID, PRIMITIVE_VOID
+    );
+
     private final TypeName enclosingType;
     private final TypedElementInfo annotatedMethod;
     private final String name;
@@ -74,14 +108,18 @@ class TypeHandler {
         if (TypeNames.SUPPLIER.equals(returnType)) {
             return new TypeHandlerSupplier(blueprintType, annotatedMethod, name, getterName, setterName, returnType);
         }
+
         if (TypeNames.SET.equals(returnType)) {
+            checkTypeArgsSizeAndTypes(annotatedMethod, returnType, TypeNames.SET, 1);
             return new TypeHandlerSet(blueprintType, annotatedMethod, name, getterName, setterName, returnType);
         }
 
         if (TypeNames.LIST.equals(returnType)) {
+            checkTypeArgsSizeAndTypes(annotatedMethod, returnType, TypeNames.LIST, 1);
             return new TypeHandlerList(blueprintType, annotatedMethod, name, getterName, setterName, returnType);
         }
         if (TypeNames.MAP.equals(returnType)) {
+            checkTypeArgsSizeAndTypes(annotatedMethod, returnType, TypeNames.MAP, 2);
             return new TypeHandlerMap(blueprintType, annotatedMethod, name, getterName, setterName, returnType, sameGeneric);
         }
 
@@ -95,6 +133,12 @@ class TypeHandler {
     static TypeName toWildcard(TypeName typeName) {
         if (typeName.wildcard()) {
             return typeName;
+        }
+        if (typeName.generic()) {
+            return TypeName.builder()
+                    .className(typeName.className())
+                    .wildcard(true)
+                    .build();
         }
         return TypeName.builder(typeName).wildcard(true).build();
     }
@@ -119,6 +163,34 @@ class TypeHandler {
     @Override
     public String toString() {
         return declaredType.fqName() + " " + name;
+    }
+
+    void updateBuilderFromServices(ContentBuilder<?> content, String builder) {
+        /*
+        Services.first(Type.class).ifPresent(builder::option);
+         */
+        content.addContent(SERVICES)
+                .addContent(".first(")
+                .addContent(actualType())
+                .addContent(".class).ifPresent(")
+                .addContent(builder)
+                .addContent("::")
+                .addContent(setterName())
+                .addContentLine(");");
+    }
+
+    void updateBuilderFromRegistry(ContentBuilder<?> content, String builder, String registry) {
+        /*
+        registry.first(Type.class).ifPresent(builder::option);
+         */
+        content.addContent(registry)
+                .addContent(".first(")
+                .addContent(actualType())
+                .addContent(".class).ifPresent(")
+                .addContent(builder)
+                .addContent("::")
+                .addContent(setterName())
+                .addContentLine(");");
     }
 
     TypeName builderGetterType(boolean required, boolean hasDefault) {
@@ -178,8 +250,14 @@ class TypeHandler {
                     .addContent(defaultValue)
                     .addContent("\"");
         }
+        if (TypeNames.SIZE.equals(typeName)) {
+            CodegenValidator.validateSize(enclosingType, annotatedMethod, OPTION_DEFAULT, "value", defaultValue);
+            return content -> content.addContent(Size.class)
+                    .addContent(".parse(\"")
+                    .addContent(defaultValue)
+                    .addContent("\")");
+        }
         if (TypeNames.DURATION.equals(typeName)) {
-
             CodegenValidator.validateDuration(enclosingType, annotatedMethod, OPTION_DEFAULT, "value", defaultValue);
             return content -> content.addContent(Duration.class)
                     .addContent(".parse(\"")
@@ -522,6 +600,30 @@ class TypeHandler {
 
         builder.addContentLine("return self();");
         classBuilder.addMethod(builder);
+    }
+
+    protected TypeName toPrimitive(TypeName typeName) {
+        return Optional.ofNullable(BOXED_TO_PRIMITIVE.get(typeName))
+                .orElse(typeName);
+    }
+
+    private static void checkTypeArgsSizeAndTypes(TypedElementInfo annotatedMethod,
+                                                  TypeName returnType,
+                                                  TypeName collectionType,
+                                                  int expectedTypeArgs) {
+        List<TypeName> typeNames = returnType.typeArguments();
+        if (typeNames.size() != expectedTypeArgs) {
+            throw new CodegenException("Property of type " + collectionType.fqName() + " must have " + expectedTypeArgs
+                                               + " type arguments defined",
+                                       annotatedMethod.originatingElementValue());
+        }
+        for (TypeName typeName : typeNames) {
+            if (typeName.wildcard()) {
+                throw new CodegenException("Property of type " + returnType.resolvedName() + " is not supported for builder,"
+                                                   + " as wildcards cannot be handled correctly in setters",
+                                           annotatedMethod.originatingElementValue());
+            }
+        }
     }
 
     private <T> T singleDefault(List<T> defaultValues) {

@@ -19,8 +19,12 @@ package io.helidon.codegen.apt;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -33,10 +37,14 @@ import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.IntersectionType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
+import javax.lang.model.type.WildcardType;
 
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
 
 import static io.helidon.common.types.TypeName.createFromGenericDeclaration;
 
@@ -70,6 +78,10 @@ public final class AptTypeFactory {
      *                                            none or error)
      */
     public static Optional<TypeName> createTypeName(TypeMirror typeMirror) {
+        return createTypeName(new HashSet<>(), typeMirror);
+    }
+
+    private static Optional<TypeName> createTypeName(Set<TypeMirror> inProgress, TypeMirror typeMirror) {
         TypeKind kind = typeMirror.getKind();
         if (kind.isPrimitive()) {
             Class<?> type = switch (kind) {
@@ -92,9 +104,35 @@ public final class AptTypeFactory {
             return Optional.of(TypeName.create(void.class));
         }
         case TYPEVAR -> {
-            return Optional.of(createFromGenericDeclaration(typeMirror.toString()));
+            if (!inProgress.add(typeMirror)) {
+                return Optional.empty(); // prevent infinite loop
+            }
+
+            try {
+                var builder = TypeName.builder(createFromGenericDeclaration(typeMirror.toString()));
+
+                var typeVar = ((TypeVariable) typeMirror);
+                handleBounds(inProgress, typeVar.getUpperBound(), builder::addUpperBound);
+                handleBounds(inProgress, typeVar.getLowerBound(), builder::addLowerBound);
+
+                return Optional.of(builder.build());
+            } finally {
+                inProgress.remove(typeMirror);
+            }
         }
-        case WILDCARD, ERROR -> {
+        case WILDCARD -> {
+            WildcardType vt = ((WildcardType) typeMirror);
+            var builder = TypeName.builder()
+                    .generic(true)
+                    .wildcard(true)
+                    .className("?");
+
+            handleBounds(inProgress, vt.getExtendsBound(), builder::addUpperBound);
+            handleBounds(inProgress, vt.getSuperBound(), builder::addLowerBound);
+
+            return Optional.of(builder.build());
+        }
+        case ERROR -> {
             return Optional.of(TypeName.create(typeMirror.toString()));
         }
         // this is most likely a type that is code generated as part of this round, best effort
@@ -107,7 +145,7 @@ public final class AptTypeFactory {
         }
 
         if (typeMirror instanceof ArrayType arrayType) {
-            return Optional.of(TypeName.builder(createTypeName(arrayType.getComponentType()).orElseThrow())
+            return Optional.of(TypeName.builder(createTypeName(inProgress, arrayType.getComponentType()).orElseThrow())
                                        .array(true)
                                        .build());
         }
@@ -115,19 +153,45 @@ public final class AptTypeFactory {
         if (typeMirror instanceof DeclaredType declaredType) {
             List<TypeName> typeParams = declaredType.getTypeArguments()
                     .stream()
-                    .map(AptTypeFactory::createTypeName)
+                    .map(it -> createTypeName(inProgress, it))
                     .flatMap(Optional::stream)
                     .collect(Collectors.toList());
 
-            TypeName result = createTypeName(declaredType.asElement()).orElse(null);
+            TypeName result = createTypeName(inProgress, declaredType.asElement()).orElse(null);
             if (typeParams.isEmpty() || result == null) {
                 return Optional.ofNullable(result);
             }
 
+            if (!inProgress.add(typeMirror)) {
+                return Optional.empty(); // prevent infinite loop
+            }
             return Optional.of(TypeName.builder(result).typeArguments(typeParams).build());
         }
 
         throw new IllegalStateException("Unknown type mirror: " + typeMirror);
+    }
+
+    private static void handleBounds(Set<TypeMirror> processed, TypeMirror boundMirror, Consumer<TypeName> boundHandler) {
+        if (boundMirror == null) {
+            return;
+        }
+        if (boundMirror.getKind() != TypeKind.NULL) {
+            if (boundMirror.getKind() == TypeKind.INTERSECTION) {
+                IntersectionType it = (IntersectionType) boundMirror;
+                it.getBounds()
+                        .stream()
+                        .filter(Predicate.not(processed::equals))
+                        .map(typeMirror -> createTypeName(processed, typeMirror))
+                        .flatMap(Optional::stream)
+                        .filter(Predicate.not(TypeNames.OBJECT::equals))
+                        .forEach(boundHandler);
+
+            } else {
+                createTypeName(processed, boundMirror)
+                        .filter(Predicate.not(TypeNames.OBJECT::equals))
+                        .ifPresent(boundHandler);
+            }
+        }
     }
 
     /**
@@ -139,7 +203,7 @@ public final class AptTypeFactory {
      * @return type for the provided values
      */
     public static Optional<TypeName> createTypeName(TypeElement element, TypeMirror mirror) {
-        Optional<TypeName> result = AptTypeFactory.createTypeName(mirror);
+        Optional<TypeName> result = createTypeName(new HashSet<>(), mirror);
         if (result.isEmpty()) {
             return result;
         }
@@ -167,12 +231,21 @@ public final class AptTypeFactory {
      * @return the associated type name instance
      */
     public static Optional<TypeName> createTypeName(Element type) {
+        return createTypeName(new HashSet<>(), type);
+    }
+
+    private static Optional<TypeName> createTypeName(Set<TypeMirror> processed, Element type) {
         if (type instanceof VariableElement) {
-            return createTypeName(type.asType());
+            return createTypeName(processed, type.asType());
         }
 
-        if (type instanceof ExecutableElement) {
-            return createTypeName(((ExecutableElement) type).getReturnType());
+        if (type instanceof ExecutableElement ee) {
+            return createTypeName(processed, ee.getReturnType());
+        }
+
+        if (type.getKind() == ElementKind.TYPE_PARAMETER) {
+            TypeMirror mirror = type.asType();
+            return createTypeName(processed, mirror);
         }
 
         List<String> classNames = new ArrayList<>();

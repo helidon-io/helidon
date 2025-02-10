@@ -23,6 +23,12 @@ import org.glassfish.jersey.internal.spi.AutoDiscoverable;
 public class TelemetryAutoDiscoverable implements AutoDiscoverable {
 
     /**
+     * For service loading.
+     */
+    public TelemetryAutoDiscoverable() {
+    }
+
+    /**
      * Used to register {@code HelidonTelemetryContainerFilter} and {@code HelidonTelemetryClientFilter}
      * filters.
      *

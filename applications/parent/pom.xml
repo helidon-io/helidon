@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -41,8 +41,8 @@
         <version.plugin.dependency>3.6.0</version.plugin.dependency>
         <version.plugin.exec>3.1.0</version.plugin.exec>
         <version.plugin.failsafe>3.1.2</version.plugin.failsafe>
-        <version.plugin.helidon>4.0.14</version.plugin.helidon>
-        <version.plugin.helidon-cli>4.0.14</version.plugin.helidon-cli>
+        <version.plugin.helidon>4.0.15</version.plugin.helidon>
+        <version.plugin.helidon-cli>4.0.15</version.plugin.helidon-cli>
         <version.plugin.jar>3.3.0</version.plugin.jar>
         <version.plugin.nativeimage>0.10.2</version.plugin.nativeimage>
         <version.plugin.os>1.5.0.Final</version.plugin.os>
@@ -211,6 +211,11 @@
                             </configuration>
                         </execution>
                     </executions>
+                </plugin>
+                <plugin>
+                    <groupId>io.helidon.service</groupId>
+                    <artifactId>helidon-service-project</artifactId>
+                    <version>${helidon.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>

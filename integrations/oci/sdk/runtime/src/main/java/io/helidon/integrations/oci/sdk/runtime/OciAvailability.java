@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package io.helidon.integrations.oci.sdk.runtime;
 
-import io.helidon.inject.api.Contract;
+import io.helidon.service.registry.Service;
 
 /**
  * Provides a convenient contract for checking whether the current runtime environment is running on/inside an OCI compute node.
@@ -24,7 +24,7 @@ import io.helidon.inject.api.Contract;
  * @see OciExtension
  * @deprecated replaced with {@code helidon-integrations-oci} module
  */
-@Contract
+@Service.Contract
 @Deprecated(forRemoval = true, since = "4.1.0")
 public interface OciAvailability {
 

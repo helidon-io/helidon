@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -93,7 +92,6 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
     private static final AtomicBoolean IN_RUNTIME = new AtomicBoolean();
     private static final String EXIT_ON_STARTED_KEY = "exit.on.started";
     private static final boolean EXIT_ON_STARTED = "!".equals(System.getProperty(EXIT_ON_STARTED_KEY));
-    private static final Context ROOT_CONTEXT;
     // whether the current shutdown was invoked by the shutdown hook
     private static final AtomicBoolean FROM_SHUTDOWN_HOOK = new AtomicBoolean();
     // Default Weld container id. TCKs assumes this value.
@@ -102,26 +100,25 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
     static {
         HelidonFeatures.flavor(HelidonFlavor.MP);
 
-        Context.Builder contextBuilder = Context.builder()
-                .id("helidon-cdi");
-
-        Contexts.context()
-                .ifPresent(contextBuilder::parent);
-
-        ROOT_CONTEXT = contextBuilder.build();
-
         CDI.setCDIProvider(new HelidonCdiProvider());
     }
 
     private static volatile HelidonShutdownHandler shutdownHandler;
     private final WeldBootstrap bootstrap;
     private final String id;
+    private final Context rootContext;
 
     private HelidonCdi cdi;
 
     HelidonContainerImpl() {
         this.bootstrap = new WeldBootstrap();
         this.id = STATIC_INSTANCE;
+        this.rootContext = Context.builder()
+                .id("helidon-cdi")
+                .update(it ->
+                                Contexts.context()
+                                        .ifPresent(it::parent))
+                .build();
     }
 
     /**
@@ -140,7 +137,7 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
     void initInContext() {
         long time = System.nanoTime();
 
-        Contexts.runInContext(ROOT_CONTEXT, this::init);
+        Contexts.runInContext(rootContext, this::init);
 
         time = System.nanoTime() - time;
         long t = TimeUnit.MILLISECONDS.convert(time, TimeUnit.NANOSECONDS);
@@ -177,11 +174,8 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
 
         setProperties(new HashMap<>(properties));
 
-        ServiceLoader.load(Extension.class).findFirst().ifPresent(it -> {
-            // adding an empty extension to start even with just extensions on classpath
-            // Weld would fail (as it sets the extensions after checking if they are empty)
-            addExtension(new Extension() { });
-        });
+        // this is required for correct startup
+        addExtension(new Extension() {});
 
         Deployment deployment = createDeployment(resourceLoader, bootstrap);
         // we need to configure custom proxy services to
@@ -255,7 +249,7 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
         SerializationConfig.configureRuntime();
         LogConfig.configureRuntime();
         try {
-            Contexts.runInContext(ROOT_CONTEXT, this::doStart);
+            Contexts.runInContext(rootContext, this::doStart);
         } catch (Exception e) {
             try {
                 // we must clean up
@@ -274,7 +268,7 @@ final class HelidonContainerImpl extends Weld implements HelidonContainer {
 
     @Override
     public Context context() {
-        return ROOT_CONTEXT;
+        return rootContext;
     }
 
     @Override

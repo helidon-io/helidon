@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ ifndef::flavor-lc[:flavor-lc: se]
 :description: Helidon metrics
 :keywords: helidon, metrics
 :writing-code-content: code which explicitly invokes the metrics API to register {metrics}, retrieve previously-registered {metrics}, and update {metric} values.
+ifdef::se-flavor[:prom-output-scope-prefix: ]
+ifdef::mp-flavor[:prom-output-scope-prefix: mp_]
 
 * a unified way for
 ifdef::mp-flavor[MicroProfile]
@@ -73,8 +75,58 @@ Later sections of this document describe how to do
 ifdef::mp-flavor[each of these.]
 ifdef::se-flavor[this.]
 
+// tag::meter-types-summary[]
+=== {metric_uc} Types
+
+Helidon supports meters
+ifdef::se-flavor[inspired by link:{micrometer-url}[Micrometer]]
+ifdef::mp-flavor[described by the link:{microprofile-metrics-spec-url}[MicroProfile Metrics] spec]
+and summarized in the following table:
+
+.Types of {metrics_uc}
+[cols="3,8,2"]
+|====
+| {metric_uc} Type | Description |
+ifdef::se-flavor[Micrometer reference]
+ifdef::mp-flavor[Related MicroProfile annotation]
+
+|
+ifdef::se-flavor[link:{metrics-javadoc-base-url}/io/helidon/metrics/api/Counter.html[`Counter`]]
+ifdef::mp-flavor[link:{microprofile-metrics-javadoc-metric-url}/Counter.html[`Counter`]]
+| Monotonically-increasing `long` value. |
+ifdef::se-flavor[link:{micrometer-api-url}/counters.html[Counters]]
+ifdef::mp-flavor[link:{microprofile-metrics-javadoc-annotation-url}/Counted.html[`@Counted`]]
+
+|
+ifdef::se-flavor[link:{metrics-javadoc-base-url}/io/helidon/metrics/api/DistributionSummary.html[`DistributionSummary`]]
+ifdef::mp-flavor[link:{microprofile-metrics-javadoc-metric-url}/Histogram.html[`Histogram`]]
+
+| Summary of samples each with a `long` value. Reports aggregate information over all samples (count, total, mean, max) as well as the distribution of sample values using percentiles and bucket counts. |
+ifdef::se-flavor[link:{micrometer-api-url}/distribution-summaries.html[Distribution summaries]]
+ifdef::mp-flavor[(none)]
+
+|
+ifdef::se-flavor[link:{metrics-javadoc-base-url}/io/helidon/metrics/api/Timer.html[`Timer`]]
+ifdef::mp-flavor[link:{microprofile-metrics-javadoc-metric-url}/Timer.html[`Timer`]]
+| Accumulation of short-duration (typically under a minute) intervals. Typically updated using a Java  link:{jdk-javadoc-url}/java.base/java/time/Duration.html[`Duration`] or by recording the time taken by a method invocation or lambda. Reports the count, total time, max, and mean; provides a
+ifdef::se-flavor[distribution summary]
+ifdef::mp-flavor[histogram]
+of the samples. |
+ifdef::se-flavor[link:{micrometer-api-url}/timers.html[Timers]]
+ifdef::mp-flavor[link:{microprofile-metrics-javadoc-annotation-url}/Timed.html[`@Timed`]]
+
+|
+ifdef::se-flavor[link:{metrics-javadoc-base-url}/io/helidon/metrics/api/Gauge.html[`Gauge<? extends Number>`]]
+ifdef::mp-flavor[link:{microprofile-metrics-javadoc-metric-url}/Gauge.html[`Gauge<? extends Number>`]]
+| View of a value that is assignment-compatible with a subtype of Java link:{jdk-javadoc-url}/java.base/java.lang.Number.html[`Number`]. The underlying value is updated by code elsewhere in the system, not by invoking methods on the gauge itself. |
+ifdef::se-flavor[link:{micrometer-api-url}/gauges.html[Gauges]]
+ifdef::mp-flavor[link:{microprofile-metrics-javadoc-annotation-url}/Gauge.html[`@Gauge`]]
+|====
+
+// end::meter-types-summary[]
+
 === Categorizing Types of {Metrics_uc}
-Helidon distinguishes among _scopes_, or types, of
+Helidon distinguishes among _scopes_, or categories, of
 ifdef::se-flavor[{metrics}.]
 ifdef::mp-flavor[{metrics} as described in the link:{microprofile-metrics-spec-url}[MP metrics specification].]
 
@@ -82,7 +134,7 @@ Helidon includes {metrics} in the built-in scopes described below.
 Applications often register their own {metrics} in the `application` scope but can create their own scopes and register {metrics} within them.
 
 .Built-in {metric} scopes
-[%autowidth]
+[cols="2,8"]
 |====
 | Built-in Scope | Typical Usage
 
@@ -134,12 +186,13 @@ Further, clients can narrow down to a specific metric name by adding the name as
 curl -s -H 'Accept: text/plain' -X GET http://localhost:8080{metrics-endpoint}
 ----
 
-[source,text]
+[source,text,subs="attributes+"]
 ----
-# TYPE base:classloader_total_loaded_class_count counter
-# HELP base:classloader_total_loaded_class_count Displays the total number of classes that have been loaded since the Java virtual machine has started execution.
-base:classloader_total_loaded_class_count 3157
+# HELP classloader_loadedClasses_count Displays the number of classes that are currently loaded in the Java virtual machine.
+# TYPE classloader_loadedClasses_count gauge
+classloader_loadedClasses_count{{prom-output-scope-prefix}scope="base",} 5297.0
 ----
+See the summary of the <<OpenMetrics and Prometheus Format, OpenMetrics and Prometheus Format>> for more information.
 
 [source,bash,subs="attributes+"]
 .Example Reporting: JSON format
@@ -160,6 +213,59 @@ curl -s -H 'Accept: application/json' -X GET http://localhost:8080{metrics-endpo
 
 In addition to your application {metrics}, the reports contain other
 {metrics} of interest such as system and VM information.
+
+==== OpenMetrics and Prometheus Format
+The link:{openmetrics-format-doc-url}[OpenMetrics format] and the link:{prometheus-exposition-format-doc-url}[Prometheus exposition format] are very similar in most important respects but are not identical. This brief summary treats them as the same.
+
+The OpenMetrics/Prometheus format represents each {metric} using three lines of output as summarized in the following table.
+
+.OpenMetrics/Prometheus format
+[cols="1,6,6"]
+|====
+| Line prefix | Purpose | Format
+
+| `# TYPE` | Displays the scope, name, and type of the {metric} | `TYPE <scope>:<output-name> <{metric}-type>`
+| `# HELP` | Displays the scope, name, and description of the {metric} | `HELP <scope>:<output-name> <registered description>`
+| (none) | Displays the scope, {metric} ID, and current value of the {metric} | `<scope>:<output-name> <current value>`
+|====
+The OpenMetrics/Prometheus output converts {metric} IDs in these ways:
+
+* Names in camel case are converted to "snake case" and dots are converted to underscores.
+* Names include any units specified for the {metric}.
+* For percentiles, the ID includes a tag identifying which percentile the line of output describes.
+
+As the earlier example output showed, for a {metric} with multiple values, such as a timer or a
+ifdef::se-flavor[distribution summary,]
+ifdef::mp-flavor[histogram,]
+(with, among others, `max`, `mean`, and `count`), the OpenMetrics/Prometheus output reports a "metric family" which includes a separate family member {metric} for each of the multiple values. The name for each member in the family is derived from the registered name for the {metric} plus a suffix indicating which one of the {metric}'s multiple values the line refers to.
+
+The following table summarizes the naming for each {metric} type.
+
+.OpenMetrics/Prometheus {metric_uc} Naming
+|====
+| {metric_uc} Type | Example registered name | {metric_uc} family member | Name Suffix | Example displayed name
+
+.1+| `Counter` | `requests.count` | count | `_total`  | `requests_count_total`
+
+.4+|
+ifdef::se-flavor[`DistributionSummary`]
+ifdef::mp-flavor[`Histogram`]
+.4+| `nameLengths`
+| count | `_count` | `nameLengths_count`
+| sum | `_sum` | `nameLengths_sum`
+| max | `_max` | `nameLengths_max`
+| percentile | none | `nameLengths{{prom-output-scope-prefix}scope="base",quantile="0.5",}`
+
+.1+| `Gauge` | `classloader.loadedClasses.count` | value | none | `classloader_loadedClasses_count`
+
+.4+| `Timer` ^1^
+.4+| `vthreads.recentPinned`
+| count | `_count` | `vthreads_recentPinned_seconds_count`
+| sum | `_sum` | `vthreads_recentPinned_seconds_sum`
+| max | `_max` | `vthreads_recentPinned_seconds_max`
+| percentile | none | `vthreads_recentPinned_seconds{{prom-output-scope-prefix}scope="base",quantile="0.5",}`
+|====
+^1^ The OpenMetrics/Prometheus output format reports a timer as a `summary` with units of `seconds`.
 
 // end::usage-retrieving[]
 
@@ -223,3 +329,9 @@ ifdef::se-flavor[]
 endif::[]
 
 // end::example-apps[]
+
+// tag::format-refcs-no-heading[]
+link:{openmetrics-format-doc-url}[OpenMetrics format]
+
+link:{prometheus-exposition-format-doc-url}[Prometheus exposition format]
+// end::format-refcs-no-heading[]

@@ -35,10 +35,12 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.Generated;
 import io.helidon.common.config.Config;
+import io.helidon.common.config.ConfigBuilderSupport;
 import io.helidon.common.types.TypeName;
-import io.helidon.service.registry.GeneratedService;
 import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.service.registry.RegistryBuilderSupport;
 import io.helidon.service.registry.ServiceRegistry;
+import io.helidon.service.registry.Services;
 
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.collection.IsEmptyCollection;
@@ -90,7 +92,6 @@ public class TypesTest {
         checkField(toCheck, checked, fields, "URI", URI.class);
         checkField(toCheck, checked, fields, "SERVICE_REGISTRY", ServiceRegistry.class);
         checkField(toCheck, checked, fields, "GLOBAL_SERVICE_REGISTRY", GlobalServiceRegistry.class);
-        checkField(toCheck, checked, fields, "GENERATED_SERVICE", GeneratedService.class);
         checkField(toCheck, checked, fields, "BUILDER_DESCRIPTION", Description.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_BLUEPRINT", Prototype.Blueprint.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_IMPLEMENT", Prototype.Implement.class);
@@ -100,7 +101,6 @@ public class TypesTest {
         checkField(toCheck, checked, fields, "PROTOTYPE_CONFIGURED", Prototype.Configured.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_PROVIDES", Prototype.Provides.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_BUILDER", Prototype.Builder.class);
-        checkField(toCheck, checked, fields, "PROTOTYPE_CONFIGURED_BUILDER", Prototype.ConfiguredBuilder.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_CUSTOM_METHODS", Prototype.CustomMethods.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_FACTORY_METHOD", Prototype.FactoryMethod.class);
         checkField(toCheck, checked, fields, "PROTOTYPE_BUILDER_METHOD", Prototype.BuilderMethod.class);
@@ -132,6 +132,14 @@ public class TypesTest {
         checkField(toCheck, checked, fields, "OPTION_DEPRECATED", Option.Deprecated.class);
         checkField(toCheck, checked, fields, "OPTION_TYPE", Option.Type.class);
         checkField(toCheck, checked, fields, "OPTION_DECORATOR", Option.Decorator.class);
+        checkField(toCheck, checked, fields, "OPTION_REGISTRY_SERVICE", Option.RegistryService.class);
+
+        checkField(toCheck, checked, fields, "SERVICES", Services.class);
+
+        checkField(toCheck, checked, fields, "CONFIG_BUILDER_SUPPORT", ConfigBuilderSupport.class);
+        checkField(toCheck, checked, fields, "CONFIG_CONFIGURED_BUILDER", ConfigBuilderSupport.ConfiguredBuilder.class);
+
+        checkField(toCheck, checked, fields, "REGISTRY_BUILDER_SUPPORT", RegistryBuilderSupport.class);
 
         assertThat(toCheck, IsEmptyCollection.empty());
     }

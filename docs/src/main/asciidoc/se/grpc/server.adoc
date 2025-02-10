@@ -82,7 +82,7 @@ to do is register your services:
 include::{sourcedir}/se/grpc/ServerSnippets.java[tag=snippet_1, indent=0]
 ----
 
-<1> Register `GreetService` instance.
+<1> Register `GreetFeature` instance.
 <2> Register `EchoService` instance.
 <3> Register `MathService` instance.
 <4> Register a custom unary gRPC route

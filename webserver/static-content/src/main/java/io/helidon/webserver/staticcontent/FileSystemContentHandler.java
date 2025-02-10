@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package io.helidon.webserver.staticcontent;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.System.Logger.Level;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -40,11 +40,21 @@ class FileSystemContentHandler extends FileBasedContentHandler {
     private final Path root;
     private final Set<String> cacheInMemory;
 
-    FileSystemContentHandler(StaticContentService.FileSystemBuilder builder) {
-        super(builder);
+    FileSystemContentHandler(FileSystemHandlerConfig config) {
+        super(config);
 
-        this.root = builder.root().toAbsolutePath().normalize();
-        this.cacheInMemory = new HashSet<>(builder.cacheInMemory());
+        this.root = config.location().toAbsolutePath().normalize();
+        this.cacheInMemory = config.cachedFiles();
+    }
+
+    @SuppressWarnings("removal")
+    static StaticContentService create(FileSystemHandlerConfig config) {
+        Path location = config.location();
+        if (Files.isDirectory(location)) {
+            return new FileSystemContentHandler(config);
+        } else {
+            return new SingleFileContentHandler(config);
+        }
     }
 
     @Override
@@ -79,7 +89,7 @@ class FileSystemContentHandler extends FileBasedContentHandler {
 
         String rawPath = req.prologue().uriPath().rawPath();
 
-        String relativePath = root.relativize(path).toString().replace("\\", "/");
+        String relativePath = root.relativize(path).toString().replace(File.separator, "/");
         String requestedResource;
         if (mapped) {
             requestedResource = relativePath;
@@ -175,7 +185,7 @@ class FileSystemContentHandler extends FileBasedContentHandler {
 
         if (Files.isDirectory(path)) {
             try (var paths = Files.newDirectoryStream(path)) {
-                    paths.forEach(child -> {
+                paths.forEach(child -> {
                     if (!Files.isDirectory(child)) {
                         // we need to use forward slash even on Windows
                         String childResource = root.relativize(child).toString().replace('\\', '/');

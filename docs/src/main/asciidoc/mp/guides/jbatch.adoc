@@ -40,7 +40,7 @@ For this example, add the IBM JBatch implementation and the `derby` embedded DB 
 ----
 <dependencies>
     <dependency>
-        <groupId>com.imb.jbatch</groupId>
+        <groupId>com.ibm.jbatch</groupId>
         <artifactId>com.ibm.jbatch.container</artifactId>
     </dependency>
     <dependency>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ public class UriFragment {
      * @return a new instance
      */
     public static UriFragment create(String rawFragment) {
+        Objects.requireNonNull(rawFragment);
         return new UriFragment(rawFragment);
     }
 
@@ -104,6 +105,9 @@ public class UriFragment {
      * @return encoded fragment
      */
     public String rawValue() {
+        if (rawFragment == null) {
+            throw new IllegalStateException("UriFragment does not have a value, guard with hasValue()");
+        }
         return rawFragment;
     }
 
@@ -114,7 +118,7 @@ public class UriFragment {
      */
     public String value() {
         if (decodedFragment == null) {
-            decodedFragment = UriEncoding.decodeUri(rawFragment);
+            decodedFragment = UriEncoding.decodeUri(rawValue());
         }
         return decodedFragment;
     }

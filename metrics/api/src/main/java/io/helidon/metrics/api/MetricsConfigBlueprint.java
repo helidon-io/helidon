@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.api;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -199,6 +200,24 @@ interface MetricsConfigBlueprint {
     boolean restRequestEnabled();
 
     /**
+     * Whether Helidon should expose meters related to virtual threads.
+     *
+     * @return true to include meters related to virtual threads
+     */
+    @Option.Configured("virtual-threads.enabled")
+    @Option.DefaultBoolean(false)
+    boolean virtualThreadsEnabled();
+
+    /**
+     * Threshold for sampling pinned virtual threads to include in the pinned threads meter.
+     *
+     * @return threshold used to filter virtual thread pinning events
+     */
+    @Option.Configured("virtual-threads.pinned.threshold")
+    @Option.Default("PT0.020S")
+    Duration virtualThreadsPinnedThreshold();
+
+    /**
      * Metrics configuration node.
      *
      * @return metrics configuration
@@ -218,6 +237,18 @@ interface MetricsConfigBlueprint {
     @Option.Configured
     @Option.Default("COUNTER")
     GcTimeType gcTimeType();
+
+    /**
+     * Output format for built-in meter names.
+     * <p>
+     *     {@link BuiltInMeterNameFormat#SNAKE} selects "snake_case" which does not conform to the MicroProfile
+     *     Metrics specification.
+     *
+     * @return the output format for built-in meter names
+     */
+    @Option.Configured
+    @Option.Default(BuiltInMeterNameFormat.DEFAULT)
+    BuiltInMeterNameFormat builtInMeterNameFormat();
 
     /**
      * Reports whether the specified scope is enabled, according to any scope configuration that

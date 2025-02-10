@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,10 @@ import java.util.stream.Stream;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
+import io.helidon.common.Weighted;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.ScopingConfig;
+import io.helidon.metrics.api.SeMetricsProgrammaticConfig;
 
 /**
  * Programmatic (rather than user-configurable) settings that govern certain metrics behavior.
@@ -128,8 +130,8 @@ public interface MetricsProgrammaticConfig {
                                          HelidonServiceLoader.builder(
                                                          ServiceLoader.load(
                                                                  MetricsProgrammaticConfig.class))
-                                                 .addService(new MetricsProgrammaticConfig() {},
-                                                             Double.MIN_VALUE)
+                                                 .addService(new SeMetricsProgrammaticConfig(),
+                                                             Weighted.DEFAULT_WEIGHT - 50)
                                                  .build()
                                                  .asList()
                                                  .get(0));

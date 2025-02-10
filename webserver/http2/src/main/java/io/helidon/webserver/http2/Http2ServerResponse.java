@@ -30,7 +30,9 @@ import io.helidon.http.HeaderValues;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.ServerResponseTrailers;
 import io.helidon.http.Status;
+import io.helidon.http.http2.Http2Exception;
 import io.helidon.http.http2.Http2Headers;
+import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.http.ServerResponseBase;
@@ -75,11 +77,17 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
 
     @Override
     public void send(byte[] entityBytes) {
+        send(entityBytes, 0, entityBytes.length);
+    }
+
+
+    @Override
+    public void send(byte[] entityBytes, int position, int length) {
         try {
             if (outputStreamFilter != null) {
                 // in this case we must honor user's request to filter the stream
                 try (OutputStream os = outputStream()) {
-                    os.write(entityBytes);
+                    os.write(entityBytes, position, length);
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
                 }
@@ -96,14 +104,21 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             isSent = true;
 
             // handle content encoding
-            byte[] bytes = entityBytes(entityBytes);
+            int actualLength = length;
+            int actualPosition = position;
+            byte[] actualBytes = entityBytes(entityBytes, position, length);
+            if (entityBytes != actualBytes) {       // encoding happened, new byte array
+                actualPosition = 0;
+                actualLength = actualBytes.length;
+            }
 
             headers.setIfAbsent(HeaderValues.create(HeaderNames.CONTENT_LENGTH,
                                                     true,
                                                     false,
-                                                    String.valueOf(bytes.length)));
-            headers.setIfAbsent(HeaderValues.create(HeaderNames.DATE, true, false, DateTime.rfc1123String()));
-
+                                                    String.valueOf(actualLength)));
+            headers.setIfAbsent(HeaderValues.create(HeaderNames.DATE, true,
+                                                    false,
+                                                    DateTime.rfc1123String()));
             Http2Headers http2Headers = Http2Headers.create(headers);
             http2Headers.status(status());
             headers.remove(Http2Headers.STATUS_NAME, it -> ctx.log(LOGGER,
@@ -111,16 +126,21 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                                                                    "Status must be configured on response, "
                                                                            + "do not set HTTP/2 pseudo headers"));
 
-            boolean sendTrailers = request.headers().contains(HeaderValues.TE_TRAILERS) || headers.contains(HeaderNames.TRAILER);
+            boolean sendTrailers = request.headers().contains(HeaderValues.TE_TRAILERS)
+                    || headers.contains(HeaderNames.TRAILER);
 
             http2Headers.validateResponse();
-            bytesWritten += stream.writeHeadersWithData(http2Headers, bytes.length, BufferData.create(bytes), !sendTrailers);
+            bytesWritten += stream.writeHeadersWithData(http2Headers, actualLength,
+                                                        BufferData.create(actualBytes, actualPosition, actualLength),
+                                                        !sendTrailers);
 
             if (sendTrailers) {
                 bytesWritten += stream.writeTrailers(Http2Headers.create(trailers));
             }
 
             afterSend();
+        } catch (Http2Exception e) {
+            throw new CloseConnectionException("Failed writing entity", e);
         } catch (UncheckedIOException e) {
             throw new ServerConnectionException("Failed writing entity", e);
         }

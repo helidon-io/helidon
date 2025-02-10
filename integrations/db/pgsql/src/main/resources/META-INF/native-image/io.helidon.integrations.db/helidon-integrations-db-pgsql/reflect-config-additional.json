@@ -1,0 +1,11 @@
+[
+  {
+    "name": "org.postgresql.Driver"
+  },
+  {
+    "name": "org.postgresql.PGProperty"
+  },
+  {
+    "name": "org.postgresql.ds.common.BaseDataSource"
+  }
+]

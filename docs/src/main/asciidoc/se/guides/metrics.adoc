@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ include::{rootdir}/includes/se.adoc[]
 :meter_uc: Meter
 :meters_uc: Meters
 :metrics-endpoint: /observe/metrics
+:prom-output-scope-prefix:
 
 include::{rootdir}/includes/guides/metrics.adoc[tag=intro]
 include::{rootdir}/includes/guides/metrics.adoc[tag=create-sample-project]
@@ -63,11 +64,7 @@ You do not need to change any of the generated source code.
 
 include::{rootdir}/includes/guides/metrics.adoc[tag=build-and-run-intro]
 
-[source,text]
-.Text response:
-----
 include::{rootdir}/includes/guides/metrics.adoc[tag=metrics-prometheus-output]
-----
 
 You can get the same data in JSON format.
 
@@ -137,6 +134,8 @@ include::{rootdir}/../java/io/helidon/docs/se/guides/MetricsSnippets.java[tag=sn
 <5> Update the metrics observer's builder using the just-prepared KPI metrics config.
 <6> Add the metrics observer to the `ObserveFeature`.
 <7> Add the `ObserveFeature` to the `WebServer`.
+
+include::{rootdir}/includes/guides/metrics.adoc[tag=virtualThreadsMetrics]
 
 // end of Controlling Metrics section
 

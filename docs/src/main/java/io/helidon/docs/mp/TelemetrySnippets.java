@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,10 @@
  */
 package io.helidon.docs.mp;
 
+import io.helidon.microprofile.telemetry.CallbackEnabled;
+import io.helidon.microprofile.telemetry.spi.HelidonTelemetryClientFilterHelper;
+import io.helidon.microprofile.telemetry.spi.HelidonTelemetryContainerFilterHelper;
+
 import io.opentelemetry.api.baggage.Baggage;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
@@ -28,7 +32,9 @@ import jakarta.json.JsonObject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.client.ClientRequestContext;
 import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.server.Uri;
@@ -223,6 +229,47 @@ class TelemetrySnippets {
             return "Secondary"; // <2>
         }
         // end::snippet_10[]
+    }
+
+    class FilterHelperSnippets_11_to_12 {
+
+        // tag::snippet_11[]
+        @ApplicationScoped
+        public class CustomRestRequestFilterHelper implements HelidonTelemetryContainerFilterHelper {
+
+            @Override
+            public boolean shouldStartSpan(ContainerRequestContext containerRequestContext) {
+
+                // Allows automatic spans for incoming requests for the default greeting but not for
+                // personalized greetings or the PUT request to update the greeting message.
+                return containerRequestContext.getUriInfo().getPath().endsWith("greet");
+            }
+        }
+        // end::snippet_11[]
+
+        // tag::snippet_12[]
+        @ApplicationScoped
+        public class CustomRestClientRequestFilterHelper implements HelidonTelemetryClientFilterHelper {
+
+            @Override
+            public boolean shouldStartSpan(ClientRequestContext clientRequestContext) {
+
+                // Allows automatic spans for outgoing requests for the default greeting but not for
+                // personalized greetings or the PUT request to update the greeting message.
+                return clientRequestContext.getUri().getPath().endsWith("greet");
+            }
+        }
+        // end::snippet_12[]
+    }
+
+    class Snippet_13 {
+
+        // tag::snippet_13[]
+        @Inject
+        @CallbackEnabled
+        private Tracer otelTracer;
+
+        // end::snippet_13[]
     }
 
 }

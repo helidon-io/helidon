@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -100,8 +101,7 @@ public final class AptProcessor extends AbstractProcessor {
         // we want everything to execute in the classloader of this type, so service loaders
         // use the classpath of the annotation processor, and not some "random" classloader, such as a maven one
         try {
-            doProcess(annotations, roundEnv);
-            return true;
+            return doProcess(annotations, roundEnv);
         } catch (CodegenException e) {
             Object originatingElement = e.originatingElement()
                     .orElse(null);
@@ -120,12 +120,12 @@ public final class AptProcessor extends AbstractProcessor {
         }
     }
 
-    private void doProcess(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+    private boolean doProcess(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         ctx.logger().log(TRACE, "Process annotations: " + annotations + ", processing over: " + roundEnv.processingOver());
 
         if (roundEnv.processingOver()) {
             codegen.processingOver();
-            return;
+            return annotations.isEmpty();
         }
 
         Set<UsedAnnotation> usedAnnotations = usedAnnotations(annotations);
@@ -133,34 +133,39 @@ public final class AptProcessor extends AbstractProcessor {
         if (usedAnnotations.isEmpty()) {
             // no annotations, no types, still call the codegen, maybe it has something to do
             codegen.process(List.of());
-            return;
+            return annotations.isEmpty();
         }
 
         List<TypeInfo> allTypes = discoverTypes(usedAnnotations, roundEnv);
         codegen.process(allTypes);
+
+        return usedAnnotations.stream()
+                .map(UsedAnnotation::annotationElement)
+                .collect(Collectors.toSet())
+                .equals(annotations);
     }
 
     private Set<UsedAnnotation> usedAnnotations(Set<? extends TypeElement> annotations) {
-        var exactTypes = codegen.supportedAnnotations()
-                .stream()
-                .map(TypeName::fqName)
-                .collect(Collectors.toSet());
-        var prefixes = codegen.supportedAnnotationPackagePrefixes();
+        var typePredicate = typePredicate(codegen.supportedAnnotations(), codegen.supportedAnnotationPackagePrefixes());
+        var metaPredicate = typePredicate(codegen.supportedMetaAnnotations(), Set.of());
 
         Set<UsedAnnotation> result = new HashSet<>();
 
         for (TypeElement annotation : annotations) {
             TypeName typeName = TypeName.create(annotation.getQualifiedName().toString());
 
+            Set<TypeName> supportedAnnotations = new HashSet<>();
+            // first check direct support (through exact type or prefix)
+            if (typePredicate.test(typeName)) {
+                supportedAnnotations.add(typeName);
+            }
             /*
             find meta annotations that are supported:
             - annotation that annotates the current annotation
             */
-            Set<TypeName> supportedAnnotations = new HashSet<>();
-            if (supportedAnnotation(exactTypes, prefixes, typeName)) {
-                supportedAnnotations.add(typeName);
-            }
-            addSupportedAnnotations(exactTypes, prefixes, supportedAnnotations, typeName);
+            addSupportedAnnotations(metaPredicate, supportedAnnotations, typeName);
+
+            // and add all the annotations
             if (!supportedAnnotations.isEmpty()) {
                 result.add(new UsedAnnotation(typeName, annotation, supportedAnnotations));
             }
@@ -169,21 +174,23 @@ public final class AptProcessor extends AbstractProcessor {
         return result;
     }
 
-    private boolean supportedAnnotation(Set<String> exactTypes, Set<String> prefixes, TypeName annotationType) {
-        if (exactTypes.contains(annotationType.fqName())) {
-            return true;
-        }
-        String packagePrefix = annotationType.packageName() + ".";
-        for (String prefix : prefixes) {
-            if (packagePrefix.startsWith(prefix)) {
+    private Predicate<TypeName> typePredicate(Set<TypeName> typeNames, Set<String> prefixes) {
+        return typeName -> {
+            if (typeNames.contains(typeName)) {
                 return true;
             }
-        }
-        return false;
+
+            String packagePrefix = typeName.packageName() + ".";
+            for (String prefix : prefixes) {
+                if (packagePrefix.startsWith(prefix)) {
+                    return true;
+                }
+            }
+            return false;
+        };
     }
 
-    private void addSupportedAnnotations(Set<String> exactTypes,
-                                         Set<String> prefixes,
+    private void addSupportedAnnotations(Predicate<TypeName> typeNamePredicate,
                                          Set<TypeName> supportedAnnotations,
                                          TypeName annotationType) {
         Optional<TypeInfo> foundInfo = AptTypeInfoFactory.create(ctx, annotationType);
@@ -192,9 +199,9 @@ public final class AptProcessor extends AbstractProcessor {
             List<Annotation> annotations = annotationInfo.annotations();
             for (Annotation annotation : annotations) {
                 TypeName typeName = annotation.typeName();
-                if (supportedAnnotation(exactTypes, prefixes, typeName)) {
+                if (typeNamePredicate.test(typeName)) {
                     if (supportedAnnotations.add(typeName)) {
-                        addSupportedAnnotations(exactTypes, prefixes, supportedAnnotations, typeName);
+                        addSupportedAnnotations(typeNamePredicate, supportedAnnotations, typeName);
                     }
                 }
             }

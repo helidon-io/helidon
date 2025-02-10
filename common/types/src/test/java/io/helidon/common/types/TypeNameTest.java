@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,6 +60,26 @@ class TypeNameTest {
         assertThat(name.className(), is(type.getSimpleName()));
         assertThat(name.name(), is(type.getTypeName()));
         assertThat(name.classNameWithEnclosingNames(), is("TestType.NestedType.DoubleNestedType"));
+    }
+
+    @Test
+    void testGenericInnerType() {
+        String resolved =
+                "io.helidon.service.registry.Service.ScopeHandler<io.helidon.examples.inject.CustomScopeExample.MyScope>";
+
+        TypeName typeName = TypeName.builder()
+                .packageName("io.helidon.service.registry")
+                .className("ScopeHandler")
+                .addEnclosingName("Service")
+                .addTypeArgument(TypeName.create("io.helidon.examples.inject.CustomScopeExample.MyScope"))
+                .build();
+
+        assertThat(typeName.resolvedName(), is(resolved));
+        assertThat(typeName.fqName(), is("io.helidon.service.registry.Service.ScopeHandler"));
+
+        ResolvedType rt = ResolvedType.create(typeName);
+        assertThat(rt.type().resolvedName(), is(resolved));
+        assertThat(rt.type().fqName(), is("io.helidon.service.registry.Service.ScopeHandler"));
     }
 
     @Test

@@ -19,6 +19,7 @@ package io.helidon.codegen;
 import java.net.URI;
 import java.time.Duration;
 
+import io.helidon.common.Size;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
 
@@ -82,6 +83,37 @@ public final class CodegenValidator {
                                                + "\"" + value + "\" cannot be parsed. Duration expects an"
                                                + " expression such as 'PT1S' (1 second), 'PT0.1S' (tenth of a second)."
                                                + " Please check javadoc of " + Duration.class.getName() + " class.",
+                                       e,
+                                       element.originatingElementValue());
+        }
+    }
+
+    /**
+     * Validate a {@link io.helidon.common.Size} annotation on a method, field, or constructor.
+     *
+     * @param enclosingType  type that owns the element
+     * @param element        annotated element
+     * @param annotationType type of annotation
+     * @param property       property of annotation
+     * @param value          actual value read from the annotation property
+     * @return the value
+     * @throws io.helidon.codegen.CodegenException with correct source element describing the problem
+     */
+    public static String validateSize(TypeName enclosingType,
+                                      TypedElementInfo element,
+                                      TypeName annotationType,
+                                      String property,
+                                      String value) {
+        try {
+            Size.parse(value);
+            return value;
+        } catch (Exception e) {
+            throw new CodegenException("Size expression of annotation " + annotationType.fqName() + "."
+                                               + property + "(): "
+                                               + "\"" + value + "\" cannot be parsed. Size expects an"
+                                               + " expression such as '120 KB' (120 * 1024 * 1024), "
+                                               + "'120 kB' (120 * 1000 * 1000), or '120 KiB' (same as KB)"
+                                               + " Please check javadoc of " + Size.class.getName() + " class.",
                                        e,
                                        element.originatingElementValue());
         }

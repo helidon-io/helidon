@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2016, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2016, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@
         Changing these version requires approval for a new third party dependency!
         -->
         <version.lib.arquillian>1.7.0.Final</version.lib.arquillian>
-        <version.lib.asm>9.7</version.lib.asm>
+        <version.lib.asm>9.7.1</version.lib.asm>
         <version.lib.checkstyle>10.12.5</version.lib.checkstyle>
         <version.lib.commons-io>2.14.0</version.lib.commons-io>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
@@ -99,6 +99,13 @@
         <version.lib.wiremock>2.26.3</version.lib.wiremock>
         <version.lib.commons-lang3>3.10</version.lib.commons-lang3>
         <version.lib.classgraph>4.8.165</version.lib.classgraph>
+        <version.lib.plexus.classworlds>2.7.0</version.lib.plexus.classworlds>
+        <version.lib.plexus.utils>3.3.0</version.lib.plexus.utils>
+        <version.lib.maven.plugin.annotations>3.9.0</version.lib.maven.plugin.annotations>
+        <version.lib.maven.plugin.api>3.9.3</version.lib.maven.plugin.api>
+        <version.lib.maven.plugin.project>2.2.1</version.lib.maven.plugin.project>
+        <version.lib.apiguardian.api>1.1.2</version.lib.apiguardian.api>
+        <version.lib.groovy>2.4.16</version.lib.groovy>
         <!--
         !Version statement! - end
         -->
@@ -117,9 +124,10 @@
         <version.plugin.exec>3.1.0</version.plugin.exec>
         <version.plugin.failsafe>3.1.2</version.plugin.failsafe>
         <version.plugin.glassfish-copyright>2.3</version.plugin.glassfish-copyright>
-        <version.plugin.helidon-build-tools>4.0.14</version.plugin.helidon-build-tools>
+        <version.plugin.helidon-build-tools>4.0.15</version.plugin.helidon-build-tools>
         <version.plugin.hibernate-enhance>${version.lib.hibernate}</version.plugin.hibernate-enhance>
         <version.plugin.install>3.1.2</version.plugin.install>
+        <version.plugin.invoker>3.2.2</version.plugin.invoker>
         <version.plugin.jacoco>0.8.5</version.plugin.jacoco>
         <version.plugin.jandex>3.1.2</version.plugin.jandex>
         <version.plugin.jar>3.3.0</version.plugin.jar>
@@ -127,6 +135,7 @@
         <version.plugin.jaxb>2.5.0</version.plugin.jaxb>
         <version.plugin.license>1.16</version.plugin.license>
         <version.plugin.os>1.5.0.Final</version.plugin.os>
+        <version.plugin.plugin>3.9.0</version.plugin.plugin>
         <version.plugin.project-info-reports>3.0.0</version.plugin.project-info-reports>
         <version.plugin.protobuf>0.6.1</version.plugin.protobuf>
         <version.plugin.resources>3.3.1</version.plugin.resources>
@@ -135,7 +144,7 @@
         <version.plugin.source>3.0.1</version.plugin.source>
         <version.plugin.spotbugs>4.7.3.5</version.plugin.spotbugs>
         <version.plugin.findsecbugs>1.12.0</version.plugin.findsecbugs>
-        <version.plugin.dependency-check>10.0.4</version.plugin.dependency-check>
+        <version.plugin.dependency-check>11.1.0</version.plugin.dependency-check>
         <version.plugin.surefire>3.1.0</version.plugin.surefire>
         <version.plugin.toolchains>1.1</version.plugin.toolchains>
         <version.plugin.version-plugin>2.3</version.plugin.version-plugin>
@@ -209,7 +218,6 @@
         <module>health</module>
         <module>helidon</module>
         <module>http</module>
-        <module>inject</module>
         <module>integrations</module>
         <module>jersey</module>
         <module>licensing</module>
@@ -229,6 +237,7 @@
         <module>codegen</module>
         <module>service</module>
         <module>metadata</module>
+        <module>testing</module>
     </modules>
 
     <build>
@@ -703,7 +712,7 @@
                     <groupId>org.hibernate.orm.tooling</groupId>
                     <artifactId>hibernate-enhance-maven-plugin</artifactId>
                     <version>${version.plugin.hibernate-enhance}</version>
-                    <!-- Force upgrade for Java 22 support. Should remove after Hibernate upgrade -->
+                    <!-- Force upgrade for latest Java support -->
                     <dependencies>
                         <dependency>
                             <groupId>net.bytebuddy</groupId>
@@ -853,6 +862,39 @@
                     <artifactId>maven-antrun-plugin</artifactId>
                     <version>${version.plugin.ant}</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-invoker-plugin</artifactId>
+                    <version>${version.plugin.invoker}</version>
+                    <configuration>
+                        <addTestClassPath>true</addTestClassPath>
+                        <settingsFile>src/it/settings.xml</settingsFile>
+                        <mergeUserSettings>true</mergeUserSettings>
+                        <localRepositoryPath>${project.build.directory}/it-repo</localRepositoryPath>
+                        <!--suppress MavenModelInspection -->
+                        <ignoreFailures>${maven.test.failure.ignore}</ignoreFailures>
+                        <showErrors>true</showErrors>
+                        <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
+                        <skipInvocation>${skipTests}</skipInvocation>
+                        <!--suppress UnresolvedMavenProperty, MavenModelInspection -->
+                        <skipInstallation>${skipTests}</skipInstallation>
+                        <pomIncludes>
+                            <pomInclude>projects/*/pom.xml</pomInclude>
+                        </pomIncludes>
+                        <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
+                        <goals>
+                            <goal>clean</goal>
+                            <goal>install</goal>
+                        </goals>
+                    </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.codehaus.groovy</groupId>
+                            <artifactId>groovy</artifactId>
+                            <version>${version.lib.groovy}</version>
+                        </dependency>
+                    </dependencies>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
@@ -943,6 +985,15 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-plugin-plugin</artifactId>
+                <version>${version.plugin.plugin}</version>
+                <configuration>
+                    <requiredMavenVersion>[3.6.1,)</requiredMavenVersion>
+                    <requiredJavaVersion>[${version.java}.0,)</requiredJavaVersion>
+                </configuration>
             </plugin>
         </plugins>
     </build>
@@ -1313,6 +1364,43 @@
                 <groupId>jakarta.inject</groupId>
                 <artifactId>jakarta.inject-tck</artifactId>
                 <version>${version.lib.jakarta.inject}</version>
+            </dependency>
+            <!-- Maven plugin -->
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-artifact</artifactId>
+                <version>${version.lib.maven.plugin.api}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-model</artifactId>
+                <version>${version.lib.maven.plugin.api}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-plugin-api</artifactId>
+                <version>${version.lib.maven.plugin.api}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven.plugin-tools</groupId>
+                <artifactId>maven-plugin-annotations</artifactId>
+                <version>${version.lib.maven.plugin.annotations}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-project</artifactId>
+                <version>${version.lib.maven.plugin.project}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <!-- dependency convergence -->
+                <groupId>org.apiguardian</groupId>
+                <artifactId>apiguardian-api</artifactId>
+                <version>${version.lib.apiguardian.api}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

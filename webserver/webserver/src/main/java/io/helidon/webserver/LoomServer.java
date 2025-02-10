@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import io.helidon.common.SerializationConfig;
 import io.helidon.common.Version;
 import io.helidon.common.Weights;
 import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.features.HelidonFeatures;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.common.tls.Tls;
@@ -68,6 +69,7 @@ class LoomServer implements WebServer {
         this.context = serverConfig.serverContext()
                 .orElseGet(() -> Context.builder()
                         .id("web-" + WEBSERVER_COUNTER.getAndIncrement())
+                        .update(it -> Contexts.context().ifPresent(it::parent))
                         .build());
         this.serverConfig = serverConfig;
         this.executorService = ExecutorsFactory.newLoomServerVirtualThreadPerTaskExecutor();
@@ -224,10 +226,24 @@ class LoomServer implements WebServer {
                 + uptime + " milliseconds since JVM startup. "
                 + "Java " + Runtime.version());
 
+        fireAfterStart();
+
         if ("!".equals(System.getProperty(EXIT_ON_STARTED_KEY))) {
             LOGGER.log(System.Logger.Level.INFO, String.format("Exiting, -D%s set.", EXIT_ON_STARTED_KEY));
-            System.exit(0);
+            // we need to run the system exit on a different thread, to correctly finish whatever was happening on main
+            // all shutdown hooks run on that thread
+            var ctx = Contexts.context().orElseGet(Contexts::globalContext);
+            Thread.ofPlatform()
+                    .daemon(false)
+                    .name("Helidon system exit thread")
+                    .start(() -> {
+                        Contexts.runInContext(ctx, () -> System.exit(0));
+                    });
         }
+    }
+
+    private void fireAfterStart() {
+        listeners.values().forEach(l -> l.router().afterStart(this));
     }
 
     private void registerShutdownHook() {
@@ -250,8 +266,10 @@ class LoomServer implements WebServer {
 
         for (ServerListener listener : listeners.values()) {
             futures.add(new ListenerFuture(listener, executorService.submit(() -> {
-                Thread.currentThread().setName(taskName + " " + listener);
-                task.accept(listener);
+                Contexts.runInContext(context, () -> {
+                    Thread.currentThread().setName(taskName + " " + listener);
+                    task.accept(listener);
+                });
             })));
         }
         for (ListenerFuture listenerFuture : futures) {

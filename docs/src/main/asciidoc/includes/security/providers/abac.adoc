@@ -206,5 +206,5 @@ server:
       endpoints:
         - path: "/somePath"
           config:
-            abac.policy-validator.statement: "${env.time.year >= 2017}"
+            abac.policy-validator.statement: "\\${env.time.year >= 2017}"
 ----

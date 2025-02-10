@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2025 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -234,12 +234,15 @@ backend:
                 sources:
                   - "engine.adoc"
                   - "rsoperators.adoc"
-              - type: "PAGE"
+              - type: "MENU"
                 title: "REST Client"
-                source: "restclient.adoc"
+                dir: "restclient"
                 glyph:
                   type: "icon"
                   value: "airplay"
+                sources:
+                  - "restclient.adoc"
+                  - "restclientmetrics.adoc"
               - type: "PAGE"
                 title: "Scheduling"
                 source: "scheduling.adoc"
@@ -328,6 +331,12 @@ backend:
                   - "webclient.adoc"
                   - "dbclient.adoc"
                   - "performance-tuning.adoc"
+              - type: "PAGE"
+                title: "Builder"
+                source: "builder.adoc"
+                glyph:
+                  type: "icon"
+                  value: "handyman"
               - type: "MENU"
                 title: "Config"
                 dir: "config"
@@ -432,12 +441,15 @@ backend:
                 sources:
                   - "engine.adoc"
                   - "rsoperators.adoc"
-              - type: "PAGE"
+              - type: "MENU"
                 title: "Webserver"
-                source: "webserver.adoc"
+                dir: "webserver"
                 glyph:
                   type: "icon"
                   value: "settings_ethernet"
+                sources:
+                  - "webserver.adoc"
+                  - "concurrency-limits.adoc"
               - type: "PAGE"
                 title: "Scheduling"
                 source: "scheduling.adoc"

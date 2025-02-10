@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@
         <version.lib.animal-sniffer>1.18</version.lib.animal-sniffer>
         <version.lib.annotation-api>1.3.5</version.lib.annotation-api>
         <version.lib.brave-opentracing>1.0.0</version.lib.brave-opentracing>
-        <version.lib.bytebuddy>1.14.18</version.lib.bytebuddy>
+        <version.lib.bytebuddy>1.15.10</version.lib.bytebuddy>
         <version.lib.commons-codec>1.16.0</version.lib.commons-codec>
         <version.lib.commons-logging>1.2</version.lib.commons-logging>
         <version.lib.cron-utils>9.2.1</version.lib.cron-utils>
@@ -68,7 +68,7 @@
         <version.lib.hibernate-validator>7.0.5.Final</version.lib.hibernate-validator>
         <version.lib.hikaricp>5.0.1</version.lib.hikaricp>
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
-        <version.lib.jackson>2.15.2</version.lib.jackson>
+        <version.lib.jackson>2.18.1</version.lib.jackson>
         <version.lib.jakarta.activation-api>2.1.3</version.lib.jakarta.activation-api>
         <version.lib.jakarta.annotation-api>2.1.1</version.lib.jakarta.annotation-api>
         <version.lib.jakarta.cdi-api>4.0.1</version.lib.jakarta.cdi-api>
@@ -92,12 +92,16 @@
         <version.lib.jboss.classfilewriter>1.3.0.Final</version.lib.jboss.classfilewriter>
         <version.lib.jboss.logging>3.5.3.Final</version.lib.jboss.logging>
         <version.lib.jaxb-runtime>4.0.3</version.lib.jaxb-runtime>
-        <version.lib.jersey>3.1.8</version.lib.jersey>
+        <version.lib.jersey>3.1.10</version.lib.jersey>
         <version.lib.jgit>6.7.0.202309050840-r</version.lib.jgit>
         <version.lib.junit>5.9.3</version.lib.junit>
-        <version.lib.kafka>3.6.2</version.lib.kafka>
+        <version.lib.junit-platform-testkit>1.11.3</version.lib.junit-platform-testkit>
+        <version.lib.kafka>3.8.1</version.lib.kafka>
+        <!-- Kotlin: dependency convergence requirement, we never use this directly -->
+        <version.lib.kotlin>1.9.10</version.lib.kotlin>
+        <version.lib.langchain4j>0.35.0</version.lib.langchain4j>
+        <version.lib.langchain4j.oracle>0.1.0</version.lib.langchain4j.oracle>
         <version.lib.log4j>2.21.1</version.lib.log4j>
-        <version.lib.logback>1.4.14</version.lib.logback>
         <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
         <version.lib.maven-wagon>2.10</version.lib.maven-wagon>
         <version.lib.micrometer>1.13.4</version.lib.micrometer>
@@ -112,7 +116,7 @@
         <version.lib.microprofile-graphql>2.0</version.lib.microprofile-graphql>
         <version.lib.microprofile-health>4.0.1</version.lib.microprofile-health>
         <version.lib.microprofile-jwt>2.1</version.lib.microprofile-jwt>
-        <version.lib.microprofile-metrics-api>5.1.1</version.lib.microprofile-metrics-api>
+        <version.lib.microprofile-metrics-api>5.1.2</version.lib.microprofile-metrics-api>
         <version.lib.microprofile-openapi-api>3.1.1</version.lib.microprofile-openapi-api>
         <version.lib.microprofile-reactive-messaging-api>3.0</version.lib.microprofile-reactive-messaging-api>
         <version.lib.microprofile-reactive-streams-operators-api>3.0</version.lib.microprofile-reactive-streams-operators-api>
@@ -127,14 +131,14 @@
         <version.lib.mysql-connector-j>8.2.0</version.lib.mysql-connector-j>
         <version.lib.narayana>7.0.0.Final</version.lib.narayana>
         <version.lib.neo4j>5.12.0</version.lib.neo4j>
-        <version.lib.netty>4.1.108.Final</version.lib.netty>
-        <version.lib.oci>3.50.0</version.lib.oci>
-        <version.lib.ojdbc.family>21</version.lib.ojdbc.family>
+        <version.lib.netty>4.1.115.Final</version.lib.netty>
+        <version.lib.oci>3.56.0</version.lib.oci>
+        <version.lib.ojdbc.family>23</version.lib.ojdbc.family>
         <!--
             UCP versions 21.10.0.0 and up throw NPEs. There is a test to catch them.
             Until this bug is fixed do not upgrade past version 21.9.0.0.
         -->
-        <version.lib.ojdbc>${version.lib.ojdbc.family}.15.0.0</version.lib.ojdbc>
+        <version.lib.ojdbc>${version.lib.ojdbc.family}.6.0.24.10</version.lib.ojdbc>
         <version.lib.ojdbc8>${version.lib.ojdbc}</version.lib.ojdbc8>
         <!-- Force upgrade okio for CVE-2023-3635. When okhttp 4.12.0 is available we can remove this -->
         <version.lib.okio>3.4.0</version.lib.okio>
@@ -327,6 +331,12 @@
                 <groupId>org.glassfish.jaxb</groupId>
                 <artifactId>jaxb-runtime</artifactId>
                 <version>${version.lib.jaxb-runtime}</version>
+            </dependency>
+            <dependency>
+                <!-- contains the API as well -->
+                <groupId>org.glassfish</groupId>
+                <artifactId>jakarta.el</artifactId>
+                <version>${version.lib.el-impl}</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.ws.rs</groupId>
@@ -751,21 +761,6 @@
                 <version>${version.lib.jandex}</version>
             </dependency>
             <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-api</artifactId>
-                <version>${version.lib.slf4j}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-jdk-platform-logging</artifactId>
-                <version>${version.lib.slf4j}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-jdk14</artifactId>
-                <version>${version.lib.slf4j}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.smallrye</groupId>
                 <artifactId>smallrye-open-api-core</artifactId>
                 <version>${version.lib.smallrye-openapi}</version>
@@ -972,6 +967,53 @@
                 <artifactId>kafka-clients</artifactId>
                 <version>${version.lib.kafka}</version>
             </dependency>
+            <!-- Langchain4j integration -->
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j-cohere</artifactId>
+                <version>${version.lib.langchain4j}</version>
+            </dependency>
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j-ollama</artifactId>
+                <version>${version.lib.langchain4j}</version>
+            </dependency>
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j-open-ai</artifactId>
+                <version>${version.lib.langchain4j}</version>
+            </dependency>
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j-oracle</artifactId>
+                <version>${version.lib.langchain4j}</version>
+            </dependency>
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j</artifactId>
+                <version>${version.lib.langchain4j}</version>
+            </dependency>
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j-core</artifactId>
+                <version>${version.lib.langchain4j}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-stdlib</artifactId>
+                <version>${version.lib.kotlin}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-stdlib-common</artifactId>
+                <version>${version.lib.kotlin}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-stdlib-jdk8</artifactId>
+                <version>${version.lib.kotlin}</version>
+            </dependency>
+            <!-- Jersey -->
             <dependency>
                 <groupId>org.glassfish.jersey.media</groupId>
                 <artifactId>jersey-media-json-binding</artifactId>
@@ -1082,27 +1124,6 @@
             <!-- END OF Section 1: direct third party dependencies -->
 
             <!-- Section 2: third party dependencies used by examples -->
-            <dependency>
-                <!-- contains the API as well -->
-                <groupId>org.glassfish</groupId>
-                <artifactId>jakarta.el</artifactId>
-                <version>${version.lib.el-impl}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>jul-to-slf4j</artifactId>
-                <version>${version.lib.slf4j}</version>
-            </dependency>
-            <dependency>
-                <groupId>ch.qos.logback</groupId>
-                <artifactId>logback-classic</artifactId>
-                <version>${version.lib.logback}</version>
-            </dependency>
-            <dependency>
-                <groupId>ch.qos.logback</groupId>
-                <artifactId>logback-core</artifactId>
-                <version>${version.lib.logback}</version>
-            </dependency>
             <dependency>
                 <groupId>org.apache.activemq</groupId>
                 <artifactId>activemq-client</artifactId>
@@ -1262,6 +1283,11 @@
                 <version>${version.lib.hamcrest}</version>
             </dependency>
             <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-testkit</artifactId>
+                <version>${version.lib.junit-platform-testkit}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.testcontainers</groupId>
                 <artifactId>junit-jupiter</artifactId>
                 <version>${version.lib.testcontainers}</version>
@@ -1419,6 +1445,13 @@
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-bom</artifactId>
                 <version>${version.lib.log4j}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-bom</artifactId>
+                <version>${version.lib.slf4j}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

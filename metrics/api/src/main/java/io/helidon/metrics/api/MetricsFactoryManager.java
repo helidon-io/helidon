@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
+import io.helidon.common.Weighted;
 import io.helidon.common.config.Config;
 import io.helidon.common.config.GlobalConfig;
 import io.helidon.metrics.spi.MetersProvider;
@@ -66,13 +67,17 @@ class MetricsFactoryManager {
     /**
      * Config overrides that can change the {@link io.helidon.metrics.api.MetricsConfig} that is read from config sources
      * if there are specific requirements in a given runtime (e.g., MP) for certain settings. For example, the tag name used
-     * for recording scope, the app name, etc.
+     * for recording scope, the app name, etc. We apply all overriding config implementations, so reverse the list after the
+     * Helidon service loader computes it so we apply lower-weight implementations first so higher-weight ones can override.
      */
     private static final LazyValue<Collection<MetricsProgrammaticConfig>> METRICS_CONFIG_OVERRIDES =
             io.helidon.common.LazyValue.create(() ->
-                                                       HelidonServiceLoader
-                                                               .create(ServiceLoader.load(MetricsProgrammaticConfig.class))
-                                                               .asList());
+                       HelidonServiceLoader.builder(ServiceLoader.load(MetricsProgrammaticConfig.class))
+                               .addService(new SeMetricsProgrammaticConfig(),
+                                           Weighted.DEFAULT_WEIGHT - 50)
+                               .build()
+                               .asList()
+                               .reversed());
     private static final ReentrantLock LOCK = new ReentrantLock();
     /**
      * Providers of meter builders (such as the built-in "base" meters for system performance information). All providers are

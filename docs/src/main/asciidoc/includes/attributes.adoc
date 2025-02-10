@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -215,17 +215,23 @@ endif::[]
 :metrics-serviceapi-javadoc-base-url: {javadoc-base-url}/io.helidon.metrics.serviceapi
 :micrometer-javadoc-base-url: {javadoc-base-url}/io.helidon.integrations.micrometer
 :prometheus-javadoc-base-url: {javadoc-base-url}/io.helidon.metrics.prometheus
+:mp-config-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.config
 :mp-cors-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.cors
+:mp-restclient-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.restclient
 :mp-server-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.server
 :mp-tyrus-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.tyrus
-:mp-restclient-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.restclient
+:mp-testing-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.testing
+:mp-junit5-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.testing.junit5
+:mp-mocking-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.testing.mocking
 :openapi-javadoc-base-url: {javadoc-base-url}/io.helidon.openapi
 :openapi-ui-javadoc-base-url: {javadoc-base-url}/io.helidon.integrations.openapi.ui
 :reactive-base-url: {javadoc-base-url}/io.helidon.common.reactive
 :scheduling-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.scheduling
 :security-integration-jersey-base-url: {javadoc-base-url}/io.helidon.security.integration.jersey
 :security-integration-webserver-base-url: {javadoc-base-url}/io.helidon.webserver.security
+:telemetry-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.telemetry
 :tracing-javadoc-base-url: {javadoc-base-url}/io.helidon.tracing
+:tracing-otel-provider-javadoc-base-url: {javadoc-base-url}/io.helidon.tracing.providers.opentelemetry
 
 :webclient-javadoc-base-url: {javadoc-base-url}/io.helidon.webclient
 :webserver-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver
@@ -276,7 +282,7 @@ endif::[]
 :oracle-ucp-javadoc-base-url: https://docs.oracle.com/en/database/oracle/oracle-database/{version-lib-oracle-ucp}/jjuar
 
 :micrometer-url: https://micrometer.io
-:micrometer-api-url: https://docs.micrometer.io/micrometer/reference/concepts.html
+:micrometer-api-url: https://docs.micrometer.io/micrometer/reference/concepts
 :micrometer-javadoc-base-url: https://javadoc.io/doc/io.micrometer
 :micrometer-javadoc-registry-prometheus-base-url: {micrometer-javadoc-base-url}/micrometer-registry-prometheus/{version-lib-micrometer}/io/micrometer/prometheus
 
@@ -288,6 +294,10 @@ endif::[]
 :openapi-generator-tool-docs-url: {openapi-generator-tool-base-url}/blob/{openapi-generator-site-version}/docs
 :openapi-generator-tool-generators-docs-url: {openapi-generator-tool-docs-url}/generators
 :openapi-generator-tool-site-url: https://openapi-generator.tech
+
+// Exposition formats for metrics
+:prometheus-exposition-format-doc-url: https://github.com/prometheus/docs/blob/main/content/docs/instrumenting/exposition_formats.md
+:openmetrics-format-doc-url: https://github.com/prometheus/OpenMetrics/blob/main/specification/OpenMetrics.md
 
 // GraalVM
 :graalvm-jdk-version: 21
