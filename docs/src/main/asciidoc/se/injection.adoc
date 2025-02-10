@@ -75,7 +75,6 @@ Services are:
 - `@Service.Singleton` - up to one instance exists in the service registry
 - `@Service.PerLookup` - an instance is created each time a lookup is done (injecting into an injection point is considered a lookup as well)
 - `@Service.PerRequest` - up to one instance exists in the service registry per request (what is a request is not defined in the injection framework itself, but it matches concepts such as HTTP request/response interaction, or consuming of a messaging message)
-- `@Service.PerInstance` - a service that has instances created for each named instance of the service it is driven by
 2. Any class with `@Service.Inject` annotation that doesn’t have a scope annotation. In such a case, the scope of the service will be set as `@Service.PerLookup`.
 3. Any `core` service defined for Helidon Service Registry (using annotation `@Service.Provider`), the scope is `@Service.PerLookup` if the service implements a `Supplier`, and `@Singleton` otherwise; all dependencies are considered injection points
 
@@ -90,8 +89,52 @@ In Helidon, dependency injection can be done into the injection point in the fol
 Injected services are picked by the highest weight and implementing the requested contract.
 Only services can have Injection points.
 
+=== Injected dependency types
+
+Injected dependency types can be as follows:
+
+- `Contract` - simply get an instance of another service
+- `Optional<Contract>` - get an instance of another service, the other service may not be available.
+If not available an empty optional is supplied
+- `List<Contract>` - get instances of all services that are available
+- `Supplier<Contract>`, `Supplier<Optional<Contract>>`, `Supplier<List<Contract>>` - equivalent methods but the value is resolved
+when `Supplier.get()` is called, to allow more control
+
+Equivalent behavior can be achieved programmatically through `io.helidon.service.registry.ServiceRegistry` instance. This can be
+obtained from a `ServiceRegistryManager`.
+
 == Contract vs. service
 Contract and service can be the same thing, but also separate entities. For simplicity, you can imagine contract as what you’re injecting/searching service registry for and service is what is responsible for adding new instances to the service registry.
+
+=== Contract
+Contract can be concrete class or just an interface.
+
+[source,java]
+.Contract example
+----
+var registry = ServiceRegistryManager.create().registry();
+var serviceInstance = registry.get(MyContract.class); //<1>
+----
+
+<1> `MyContract.class` is a contract. It is the type we are searching service registry for
+
+=== Service
+This can be either a concrete class,
+which implements the contract (or is also a contract) OR it can be a factory/producer,
+which creates a new instances to be registered into the service registry.
+
+[source,java]
+.Service example
+----
+@Service.Singleton
+class MyService {
+
+    public String greet(String name) {
+        return "Hello %s!".formatted(name);
+    }
+
+}
+----
 
 == Annotation processors
 To make everything work, it is necessary to add the following annotation processors to
@@ -159,7 +202,7 @@ to print out `Hello Tomas!`. To find out more about this approach, please take a
 include::{sourcedir}/se/inject/BasicExample.java[tag=snippet_3, indent=0]
 ----
 
-If everything went as expected, no problems occurred Service registry gave us fully initialized
+If everything went as expected, no problems occurred and Service registry gave us fully initialized
 and ready to use service.
 
 == Service Lifecycle
