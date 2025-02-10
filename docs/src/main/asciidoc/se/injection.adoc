@@ -89,9 +89,9 @@ In Helidon, dependency injection can be done into the injection point in the fol
 Injected services are picked by the highest weight and implementing the requested contract.
 Only services can have Injection points.
 
-=== Injected dependency types
+=== Injected dependency formats
 
-Injected dependency types can be as follows:
+Injected dependency formats can be as follows:
 
 - `Contract` - simply get an instance of another service
 - `Optional<Contract>` - get an instance of another service, the other service may not be available.
