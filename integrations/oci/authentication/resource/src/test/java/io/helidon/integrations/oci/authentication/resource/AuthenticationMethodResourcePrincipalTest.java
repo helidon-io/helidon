@@ -22,6 +22,7 @@ import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryManager;
 
 import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider.ResourcePrincipalAuthenticationDetailsProviderBuilder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -65,8 +66,10 @@ public class AuthenticationMethodResourcePrincipalTest {
                                   () -> registry.get(BasicAuthenticationDetailsProvider.class));
         assertThat(thrown.getMessage(),
                    containsString("Resource principals authentication can only be used in certain OCI services"));
+
+        var builder = registry.get(ResourcePrincipalAuthenticationDetailsProviderBuilder.class);
         // The following validation indicates that the resource principal provider has been configured properly
-        assertThat(MockedAuthenticationMethodResourcePrincipal.getBuilder().getFederationEndpoint(), is(FEDERATION_ENDPOINT));
-        assertThat(MockedAuthenticationMethodResourcePrincipal.getBuilder().getTenancyId(), is(TENANT_ID));
+        assertThat(builder.getFederationEndpoint(), is(FEDERATION_ENDPOINT));
+        assertThat(builder.getTenancyId(), is(TENANT_ID));
     }
 }

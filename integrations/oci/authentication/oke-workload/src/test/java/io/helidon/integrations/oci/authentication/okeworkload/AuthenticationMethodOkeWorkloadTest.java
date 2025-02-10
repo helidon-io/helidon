@@ -22,6 +22,7 @@ import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryManager;
 
 import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.okeworkloadidentity.OkeWorkloadIdentityAuthenticationDetailsProvider.OkeWorkloadIdentityAuthenticationDetailsProviderBuilder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -62,10 +63,12 @@ public class AuthenticationMethodOkeWorkloadTest {
 
         // This error indicates that the oke-workload-identity provider has been instantiated
         var thrown = assertThrows(IllegalArgumentException.class,
-                                                          () -> registry.get(BasicAuthenticationDetailsProvider.class));
+                                  () -> registry.get(BasicAuthenticationDetailsProvider.class));
         assertThat(thrown.getMessage(), containsString("Invalid Kubernetes ca certification"));
+
+        var builder = registry.get(OkeWorkloadIdentityAuthenticationDetailsProviderBuilder.class);
         // The following validation indicates that the oke-workload-identity provider has been configured properly
-        assertThat(MockedAuthenticationMethodOkeWorkload.getBuilder().getFederationEndpoint(), is(FEDERATION_ENDPOINT));
-        assertThat(MockedAuthenticationMethodOkeWorkload.getBuilder().getTenancyId(), is(TENANT_ID));
+        assertThat(builder.getFederationEndpoint(), is(FEDERATION_ENDPOINT));
+        assertThat(builder.getTenancyId(), is(TENANT_ID));
     }
 }
