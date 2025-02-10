@@ -28,6 +28,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.webclient.http1 {
 
     requires io.helidon.builder.api; // @Builder - interfaces are a runtime dependency
+    requires io.helidon.common.concurrency.limits;
 
     requires static io.helidon.common.features.api;
 
@@ -40,6 +41,7 @@ module io.helidon.webclient.http1 {
     provides io.helidon.webclient.spi.ProtocolConfigProvider
             with io.helidon.webclient.http1.Http1ProtocolConfigProvider;
 
+    uses io.helidon.common.concurrency.limits.spi.LimitProvider;
     uses io.helidon.webclient.spi.SourceHandlerProvider;
 
 }

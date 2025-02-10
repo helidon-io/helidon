@@ -192,10 +192,12 @@ public class TcpClientConnection implements ClientConnection {
         if (closed) {
             return;
         }
-        try {
-            this.socket.close();
-        } catch (IOException e) {
-            LOGGER.log(TRACE, "Failed to close a client socket", e);
+        if (this.socket != null) {
+            try {
+                this.socket.close();
+            } catch (IOException e) {
+                LOGGER.log(TRACE, "Failed to close a client socket", e);
+            }
         }
         this.closed = true;
         closeConsumer.accept(this);
