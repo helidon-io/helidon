@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -196,6 +196,42 @@ class TestPrometheusFormatting {
                                                       "other-scope",
                                                       "3.0"))),
                          containsString(scopeExpr("t3_1_seconds_count",
+                                                  "this_scope",
+                                                  "app",
+                                                  "1.0")),
+                         endsWith(OPENMETRICS_EOF)));
+    }
+
+    @Test
+    void testMeterNameWithColon() {
+        Counter withColon = meterRegistry.getOrCreate(Counter.builder("c:withColon"));
+        withColon.increment();
+
+        Counter withoutColon = meterRegistry.getOrCreate(Counter.builder("cWithoutColon"));
+        withoutColon.increment(2L);
+
+        Counter withQuestionMark = meterRegistry.getOrCreate(Counter.builder("c?withQuestionMark"));
+        withQuestionMark.increment();
+
+        MicrometerPrometheusFormatter formatter = MicrometerPrometheusFormatter.builder(meterRegistry)
+                .resultMediaType(MediaTypes.APPLICATION_OPENMETRICS_TEXT)
+                .scopeTagName(SCOPE_TAG_NAME)
+                .scopeSelection(Set.of("app"))
+                .build();
+
+        Optional<Object> outputOpt = formatter.format();
+
+        assertThat("Formatted output",
+                   checkAndCast(outputOpt),
+                   allOf(containsString(scopeExpr("c:withColon_total",
+                                                  "this_scope",
+                                                  "app",
+                                                  "1.0")),
+                         containsString(scopeExpr("cWithoutColon_total",
+                                                  "this_scope",
+                                                  "app",
+                                                  "2.0")),
+                         containsString(scopeExpr("c_withQuestionMark_total",
                                                   "this_scope",
                                                   "app",
                                                   "1.0")),
