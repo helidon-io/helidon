@@ -1,0 +1,75 @@
+/*
+ * Copyright (c) 2025 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.helidon.integrations.oci.authentication.resource;
+
+import java.util.Properties;
+
+import io.helidon.service.registry.ServiceRegistry;
+import io.helidon.service.registry.ServiceRegistryManager;
+
+import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider.ResourcePrincipalAuthenticationDetailsProviderBuilder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+public class AuthenticationMethodResourcePrincipalTest {
+    private static ServiceRegistryManager registryManager;
+    private static ServiceRegistry registry;
+
+    void setUp(Properties p) {
+        p.put("helidon.oci.authentication-method", "resource-principal");
+        System.setProperties(p);
+
+        registryManager = ServiceRegistryManager.create();
+        registry = registryManager.registry();
+    }
+
+    @AfterEach
+    void cleanUp() {
+        registry = null;
+        if (registryManager != null) {
+            registryManager.shutdown();
+        }
+    }
+
+    @Test
+    public void testResourcePrincipalConfigurationAndInstantiation() {
+        final String FEDERATION_ENDPOINT = "https://auth.us-myregion-1.oraclecloud.com";
+        final String TENANT_ID = "ocid1.tenancy.oc1..mytenancyid";
+
+        Properties p = System.getProperties();
+        p.put("helidon.oci.federation-endpoint", FEDERATION_ENDPOINT);
+        p.put("helidon.oci.tenant-id", TENANT_ID);
+        setUp(p);
+
+        // This error indicates that the resource principal provider has been instantiated
+        var thrown = assertThrows(IllegalArgumentException.class,
+                                  () -> registry.get(BasicAuthenticationDetailsProvider.class));
+        assertThat(thrown.getMessage(),
+                   containsString("Resource principals authentication can only be used in certain OCI services"));
+
+        var builder = registry.get(ResourcePrincipalAuthenticationDetailsProviderBuilder.class);
+        // The following validation indicates that the resource principal provider has been configured properly
+        assertThat(builder.getFederationEndpoint(), is(FEDERATION_ENDPOINT));
+        assertThat(builder.getTenancyId(), is(TENANT_ID));
+    }
+}
