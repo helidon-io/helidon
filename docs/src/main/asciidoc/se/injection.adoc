@@ -100,23 +100,10 @@ If not available an empty optional is supplied
 - `Supplier<Contract>`, `Supplier<Optional<Contract>>`, `Supplier<List<Contract>>` - equivalent methods but the value is resolved
 when `Supplier.get()` is called, to allow more control
 
-Equivalent behavior can be achieved programmatically through `io.helidon.service.registry.ServiceRegistry` instance. This can be
-obtained from a `ServiceRegistryManager`.
+Equivalent behavior can be achieved programmatically through `io.helidon.service.registry.ServiceRegistry` instance. This can be obtained from a `ServiceRegistryManager`. See <<Programmatic Lookup, Programmatic Lookup>> chapter.
 
 == Contract vs. service
 Contract and service can be the same thing, but also separate entities. For simplicity, you can imagine contract as what you’re injecting/searching service registry for and service is what is responsible for adding new instances to the service registry.
-
-=== Contract
-Contract can be concrete class or just an interface.
-
-[source,java]
-.Contract example
-----
-var registry = ServiceRegistryManager.create().registry();
-var serviceInstance = registry.get(MyContract.class); //<1>
-----
-
-<1> `MyContract.class` is a contract. It is the type we are searching service registry for
 
 === Service
 This can be either a concrete class,
@@ -135,6 +122,35 @@ class MyService {
 
 }
 ----
+
+=== Contract
+Contract can be concrete class or just an interface.
+
+[source,java]
+.Contract usage example with programmatic lookup
+----
+var registry = ServiceRegistryManager.create().registry();
+var serviceInstance = registry.get(MyContract.class); //<1>
+----
+
+<1> `MyContract.class` is a contract. It is the type we are searching service registry for
+
+[source,java]
+.Contract usage example with injection
+----
+@Service.Singleton
+class SomeOtherService {
+    private MyContract myContract;
+
+    @Service.Inject
+    SomeOtherService(MyContract myContract) { //<1>
+        this.myContract = myContract;
+    }
+
+}
+----
+
+<1> `MyContract` is here used as a type we are injecting
 
 == Annotation processors
 To make everything work, it is necessary to add the following annotation processors to
