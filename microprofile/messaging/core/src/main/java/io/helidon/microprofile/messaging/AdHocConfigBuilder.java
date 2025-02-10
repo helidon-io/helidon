@@ -45,7 +45,7 @@ class AdHocConfigBuilder {
     }
 
     AdHocConfigBuilder putAll(Config configToPut) {
-        for (var e : configToPut.detach().asMap().orElse(Map.of()).entrySet()) {
+        for (var e : configToPut.detach().asMap().orElseGet(Map::of).entrySet()) {
             String value = e.getValue();
             configuration.put(e.getKey(), value.isEmpty() ? "${EMPTY}" : value);
         }
