@@ -394,7 +394,7 @@ public interface ClientRequest<T extends ClientRequest<T>> {
      * on a per-request basis.
      *
      * @param sendExpectContinue value to override behavior for a single request
-     * @return whether Expect 100-Continue header should be sent on streamed transfers
+     * @return updated client request
      */
     T sendExpectContinue(boolean sendExpectContinue);
 
