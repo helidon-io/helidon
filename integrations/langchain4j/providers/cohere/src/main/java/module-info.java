@@ -27,7 +27,7 @@ import io.helidon.common.features.api.Preview;
          path = {"Langchain4j", "Cohere"}
 )
 @Preview
-module io.helidon.integrations.langchain4j.providers.ollama {
+module io.helidon.integrations.langchain4j.providers.cohere {
     requires static io.helidon.common.features.api;
 
     requires langchain4j.cohere;
