@@ -15,3 +15,4 @@
 
 # don't let GIT perform end of line mapping on these files
 enum-test*.txt -text
+Object*._java_ -text
