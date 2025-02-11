@@ -19,7 +19,7 @@ concurrency:
 jobs:
   deploy:
     timeout-minutes: 60
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     environment: release
     steps:
       - uses: actions/checkout@v4

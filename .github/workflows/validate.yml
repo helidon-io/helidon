@@ -23,7 +23,7 @@ concurrency:
 jobs:
   copyright:
     timeout-minutes: 10
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -38,7 +38,7 @@ jobs:
         run: etc/scripts/copyright.sh
   checkstyle:
     timeout-minutes: 10
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK ${{ env.JAVA_VERSION }}
@@ -51,7 +51,7 @@ jobs:
         run: etc/scripts/checkstyle.sh
   spotbugs:
     timeout-minutes: 45
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK ${{ env.JAVA_VERSION }}
@@ -66,7 +66,7 @@ jobs:
     timeout-minutes: 60
     strategy:
       matrix:
-        os: [ ubuntu-20.04 ]
+        os: [ ubuntu-22.04 ]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -88,7 +88,7 @@ jobs:
             **/target/it/**/*.log
   docs:
     timeout-minutes: 10
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK ${{ env.JAVA_VERSION }}
@@ -110,7 +110,7 @@ jobs:
     timeout-minutes: 60
     strategy:
       matrix:
-        os: [ ubuntu-20.04 ]
+        os: [ ubuntu-22.04 ]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -126,7 +126,7 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        os: [ ubuntu-20.04, macos-latest ]
+        os: [ ubuntu-22.04, macos-latest ]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -152,7 +152,7 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        os: [ ubuntu-20.04 ]
+        os: [ ubuntu-22.04 ]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -168,7 +168,7 @@ jobs:
     timeout-minutes: 60
     strategy:
       matrix:
-        os: [ ubuntu-20.04, macos-13 ]
+        os: [ ubuntu-22.04, macos-13 ]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
