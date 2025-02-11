@@ -84,11 +84,15 @@ public class SetCookie {
      * @return new instance
      */
     public static SetCookie parse(String setCookie) {
+        Objects.requireNonNull(setCookie);
         String[] cookieParts = setCookie.split(PARAM_SEPARATOR);
         String nameAndValue = cookieParts[0];
         int equalsIndex = nameAndValue.indexOf('=');
-        String name = nameAndValue.substring(0, equalsIndex);
-        String value = nameAndValue.substring(equalsIndex + 1);
+        String name = (equalsIndex == -1) ? nameAndValue : nameAndValue.substring(0, equalsIndex);
+        if (name.isEmpty()) {
+            throw new IllegalArgumentException("Cookie name cannot be empty");
+        }
+        String value = (equalsIndex == -1) ? "" : nameAndValue.substring(equalsIndex + 1);
         Builder builder = builder(name, value);
 
         for (int i = 1; i < cookieParts.length; i++) {

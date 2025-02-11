@@ -40,7 +40,7 @@ public class SetCookieTest {
             + "SameSite=Lax";
 
     @Test
-    public void testSetCookiesFromString() {
+    void testSetCookiesFromString() {
         SetCookie setCookie = SetCookie.parse(TEMPLATE);
 
         assertThat(setCookie.name(), is("some-cookie"));
@@ -57,7 +57,7 @@ public class SetCookieTest {
     }
 
     @Test
-    public void testSetCookiesInvalidValue() {
+    void testSetCookiesInvalidValue() {
         String template = "some-cookie=some-cookie-value; "
                 + "Invalid=value";
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
@@ -66,13 +66,7 @@ public class SetCookieTest {
     }
 
     @Test
-    public void testEmptyValue() {
-        SetCookie setCookie = SetCookie.parse("some-cookie=");
-        assertThat(setCookie.value(), is(""));
-    }
-
-    @Test
-    public void testEquals() {
+    void testEquals() {
         SetCookie setCookie1 = SetCookie.parse(TEMPLATE);
         SetCookie setCookie2 = SetCookie.builder("some-cookie", "").build();
         SetCookie setCookie3 = SetCookie.builder("some-cookie", "")
@@ -90,7 +84,7 @@ public class SetCookieTest {
     }
 
     @Test
-    public void testCookieBuilder() {
+    void testCookieBuilder() {
         SetCookie setCookie1 = SetCookie.parse(TEMPLATE);
         SetCookie setCookie2 = SetCookie.builder(setCookie1).build();       // from setCookie1
 
@@ -105,5 +99,18 @@ public class SetCookieTest {
         assertThat(setCookie2.secure(), is(true));
         assertThat(setCookie2.httpOnly(), is(true));
         assertThat(setCookie2.sameSite(), optionalValue(is(SetCookie.SameSite.LAX)));
+    }
+
+    @Test
+    void testParse() {
+        assertThrows(NullPointerException.class,() -> SetCookie.parse(null));
+        assertThrows(IllegalArgumentException.class,() -> SetCookie.parse(""));
+        SetCookie setCookie1 = SetCookie.parse("some-cookie");
+        assertThat(setCookie1.name(), is("some-cookie"));
+        assertThat(setCookie1.value(), is(""));
+        SetCookie setCookie2 = SetCookie.parse("some-cookie=");
+        assertThat(setCookie2.name(), is("some-cookie"));
+        assertThat(setCookie2.value(), is(""));
+        assertThat(setCookie1.equals(setCookie2), is(true));
     }
 }

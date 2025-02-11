@@ -68,7 +68,7 @@ class ServerResponseHeadersImpl extends HeadersImpl<ServerResponseHeaders> imple
                     String currentValue = currentValues.get(i);
                     SetCookie currentCookie = SetCookie.parse(currentValue);
                     if (predicate.test(currentCookie)) {
-                        newValues[i] = expiredCookie.text();            // replace with expired
+                        newValues[i] = expiredCookie.text();            // replaces with expired cookie
                         found = true;
                     } else {
                         newValues[i] = currentValue;
@@ -77,7 +77,7 @@ class ServerResponseHeadersImpl extends HeadersImpl<ServerResponseHeaders> imple
                 if (!found) {
                     String[] values = new String[newValues.length + 1];
                     System.arraycopy(newValues, 0, values, 0, newValues.length);
-                    values[values.length - 1] = expiredCookie.text();   // replace with expired
+                    values[values.length - 1] = expiredCookie.text();   // adds expired cookie
                     newValues = values;
                 }
                 set(HeaderValues.create(HeaderNames.SET_COOKIE, newValues));
