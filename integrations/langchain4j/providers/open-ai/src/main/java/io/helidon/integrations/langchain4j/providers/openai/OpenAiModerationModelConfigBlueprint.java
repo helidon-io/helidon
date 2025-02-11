@@ -16,6 +16,9 @@
 
 package io.helidon.integrations.langchain4j.providers.openai;
 
+import java.util.Optional;
+
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
 /**
@@ -26,11 +29,17 @@ import io.helidon.builder.api.Prototype;
  */
 @Prototype.Configured(OpenAiLanguageModelConfigBlueprint.CONFIG_ROOT)
 @Prototype.Blueprint
-// we want to have an explicit type for configuration, even if it does not add methods
-@SuppressWarnings("checkstyle:InterfaceIsType")
 interface OpenAiModerationModelConfigBlueprint extends OpenAiCommonConfig {
     /**
      * Default configuration prefix.
      */
     String CONFIG_ROOT = "langchain4j.open-ai.moderation-model";
+
+    /**
+     * The maximum number of retries for failed API requests.
+     *
+     * @return an {@link java.util.Optional} containing the maximum number of retries
+     */
+    @Option.Configured
+    Optional<Integer> maxRetries();
 }

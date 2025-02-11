@@ -37,6 +37,14 @@ interface OpenAiImageModelConfigBlueprint extends OpenAiCommonConfig {
     String CONFIG_ROOT = "langchain4j.open-ai.image-model";
 
     /**
+     * The maximum number of retries for failed API requests.
+     *
+     * @return an {@link java.util.Optional} containing the maximum number of retries
+     */
+    @Option.Configured
+    Optional<Integer> maxRetries();
+
+    /**
      * The desired size of the generated images.
      *
      * @return the image size.

@@ -82,14 +82,6 @@ interface OpenAiCommonConfig {
     Optional<Duration> timeout();
 
     /**
-     * The maximum number of retries for failed API requests.
-     *
-     * @return an {@link java.util.Optional} containing the maximum number of retries
-     */
-    @Option.Configured
-    Optional<Integer> maxRetries();
-
-    /**
      * Proxy to use.
      *
      * @return an {@link java.util.Optional} containing HTTP proxy to use
