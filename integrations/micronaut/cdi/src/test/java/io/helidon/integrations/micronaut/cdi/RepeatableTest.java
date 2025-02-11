@@ -16,7 +16,8 @@
 
 package io.helidon.integrations.micronaut.cdi;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
@@ -35,13 +36,13 @@ class RepeatableTest {
     void testCdiInvocationCounter() {
         repeatableCdiBean.get();
         // Verify it is not invoked more than 1 time
-        assertEquals(1, CounterCdiInterceptor.counter.get());
+        assertThat(CounterCdiInterceptor.counter.get(), is(1));
     }
 
     @Test
     void testMicronautInvocationCounter() {
         repeatableMicronautBean.get();
         // Verify it is not invoked more than 1 time
-        assertEquals(1, CounterMicronautInterceptor.counter.get());
+        assertThat(CounterCdiInterceptor.counter.get(), is(1));
     }
 }
