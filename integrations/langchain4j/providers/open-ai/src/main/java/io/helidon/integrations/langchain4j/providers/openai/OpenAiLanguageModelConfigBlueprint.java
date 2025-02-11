@@ -38,6 +38,14 @@ interface OpenAiLanguageModelConfigBlueprint extends OpenAiCommonConfig {
     String CONFIG_ROOT = "langchain4j.open-ai.language-model";
 
     /**
+     * The maximum number of retries for failed API requests.
+     *
+     * @return an {@link java.util.Optional} containing the maximum number of retries
+     */
+    @Option.Configured
+    Optional<Integer> maxRetries();
+
+    /**
      * The sampling temperature to use, between 0 and 2.
      * Higher values make the output more random, while lower values make it
      * more focused and deterministic.
