@@ -38,7 +38,7 @@ concurrency:
 
 jobs:
   get-version:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     environment: release
     outputs:
       version: ${{ steps.get-version.outputs.version }}
@@ -57,7 +57,7 @@ jobs:
     strategy:
       matrix:
         moduleSet: [ core, integrations, others ]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 30
     environment: release
     steps:

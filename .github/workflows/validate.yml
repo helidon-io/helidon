@@ -46,7 +46,7 @@ concurrency:
 jobs:
   copyright:
     timeout-minutes: 5
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -57,7 +57,7 @@ jobs:
           run: etc/scripts/copyright.sh
   checkstyle:
     timeout-minutes: 5
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -67,7 +67,7 @@ jobs:
           run: etc/scripts/checkstyle.sh
   shellcheck:
     timeout-minutes: 5
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -78,7 +78,7 @@ jobs:
           run: etc/scripts/shellcheck.sh
   build:
     timeout-minutes: 15
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -99,10 +99,10 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        os: [ ubuntu-20.04, windows-2022 ]
+        os: [ ubuntu-22.04, windows-2022 ]
         moduleSet: [ core, it, jpa, jpa-oracle, dbclient, dbclient-oracle, others ]
         include:
-          - { os: ubuntu-20.04, platform: linux }
+          - { os: ubuntu-22.04, platform: linux }
           - { os: windows-2022, platform: windows }
     runs-on: ${{ matrix.os }}
     name: tests/${{ matrix.moduleSet }}-${{matrix.platform}}
@@ -126,7 +126,7 @@ jobs:
     strategy:
       matrix:
         moduleSet: [ cdi, rest, others ]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: tests/tck-${{ matrix.moduleSet }}
     steps:
       - uses: actions/checkout@v4
@@ -147,7 +147,7 @@ jobs:
     strategy:
       matrix:
         moduleSet: [ core, integrations, others ]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: spotbugs/${{ matrix.moduleSet }}
     steps:
       - uses: actions/checkout@v4
@@ -170,7 +170,7 @@ jobs:
     strategy:
       matrix:
         moduleSet: [ core, integrations, others ]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -194,7 +194,7 @@ jobs:
   docs:
     needs: build
     timeout-minutes: 15
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -217,9 +217,9 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        os: [ ubuntu-20.04, macos-14 ]
+        os: [ ubuntu-22.04, macos-14 ]
         include:
-          - { os: ubuntu-20.04, platform: linux }
+          - { os: ubuntu-22.04, platform: linux }
           - { os: macos-14, platform: macos }
     runs-on: ${{ matrix.os }}
     name: quickstarts/${{ matrix.platform }}
@@ -240,9 +240,9 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        os: [ ubuntu-20.04, macos-14 ]
+        os: [ ubuntu-22.04, macos-14 ]
         include:
-          - { os: ubuntu-20.04, platform: linux }
+          - { os: ubuntu-22.04, platform: linux }
           - { os: macos-14, platform: macos }
     runs-on: ${{ matrix.os }}
     name: examples/${{ matrix.platform }}
@@ -270,7 +270,7 @@ jobs:
           - { group: r4, start: 75, end: 100 }
           - { group: r5, start: 101, end: -1 }
           - { packaging: jar }
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: archetypes/${{ matrix.group }}-${{ matrix.packaging }}
     steps:
       - uses: actions/checkout@v4
@@ -292,7 +292,7 @@ jobs:
   legacy-archetypes:
     needs: build
     timeout-minutes: 30
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: archetypes/legacy
     steps:
       - uses: actions/checkout@v4
@@ -312,10 +312,10 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        os: [ ubuntu-20.04, macos-14, windows-2022 ]
+        os: [ ubuntu-22.04, macos-14, windows-2022 ]
         packaging: [ jar, jlink ]
         include:
-          - { os: ubuntu-20.04, platform: linux }
+          - { os: ubuntu-22.04, platform: linux }
           - { os: macos-14, platform: macos }
           - { os: windows-2022, platform: windows }
     runs-on: ${{ matrix.os }}
@@ -339,10 +339,10 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        os: [ ubuntu-20.04, macos-14, windows-2022 ]
+        os: [ ubuntu-22.04, macos-14, windows-2022 ]
         module: [ mp-1, mp-2, mp-3, se-1, inject ]
         include:
-          - { os: ubuntu-20.04, platform: linux }
+          - { os: ubuntu-22.04, platform: linux }
           - { os: macos-14, platform: macos }
           - { os: windows-2022, platform: windows }
     runs-on: ${{ matrix.os }}
@@ -365,7 +365,7 @@ jobs:
               -am \
               verify
   test-results:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs: [ _tests, archetypes, legacy-archetypes, _tck, packaging, _native-image ]
     name: tests/results
     steps:
@@ -374,7 +374,7 @@ jobs:
           name: test-results
           pattern: "tests-*"
   gate:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs: [ copyright, checkstyle, shellcheck, docs, javadoc, _spotbugs, test-results ]
     steps:
       - shell: bash
