@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -172,13 +172,21 @@ interface LookupBlueprint {
                     || this.contracts().contains(ResolvedType.create(serviceInfo.serviceType()))
                     || serviceInfo.factoryContracts().containsAll(this.contracts());
         }
-        return matches
+        matches = matches
                 && matchesProviderTypes(factoryTypes(), serviceInfo.factoryType())
                 && matchesAbstract(includeAbstract(), serviceInfo.isAbstract())
                 && (this.scopes().isEmpty() || this.scopes().contains(serviceInfo.scope()))
-                && Qualifiers.matchesQualifiers(serviceInfo.qualifiers(), this.qualifiers())
                 && matchesWeight(serviceInfo, this)
                 && matchesOptionals(serviceInfo.runLevel(), this.runLevel());
+
+        if (serviceInfo.factoryType() == FactoryType.SERVICES) {
+            // if the service info is a services factory, it may have qualifiers defined at runtime,
+            // resolve based on instances (i.e. later)
+            return matches;
+        }
+
+        return matches
+                && Qualifiers.matchesQualifiers(serviceInfo.qualifiers(), this.qualifiers());
     }
 
     /**

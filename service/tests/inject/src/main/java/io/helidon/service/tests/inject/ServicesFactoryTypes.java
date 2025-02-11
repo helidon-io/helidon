@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,78 +16,90 @@
 
 package io.helidon.service.tests.inject;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.util.List;
-import java.util.stream.Collectors;
 
+import io.helidon.common.types.Annotation;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.Service;
-import io.helidon.service.registry.ServiceInstance;
 
 final class ServicesFactoryTypes {
     private ServicesFactoryTypes() {
     }
 
-    interface NamedConfig {
-        String name();
+    @Target({ElementType.TYPE, ElementType.PARAMETER})
+    @Retention(RetentionPolicy.CLASS)
+    @Service.Qualifier
+    @interface FirstQualifier {
+        Qualifier QUALIFIER = Qualifier.create(Annotation.create(FirstQualifier.class));
     }
 
-    interface TargetType {
-        NamedConfig config();
+    @Target({ElementType.TYPE, ElementType.PARAMETER})
+    @Retention(RetentionPolicy.CLASS)
+    @Service.Qualifier
+    @interface SecondQualifier {
+        Qualifier QUALIFIER = Qualifier.create(Annotation.create(SecondQualifier.class));
     }
 
-    @Service.Singleton
-    static class ConfigFactory implements Service.ServicesFactory<NamedConfig> {
-        private final List<NamedConfig> configs;
-
-        @Service.Inject
-        ConfigFactory() {
-            configs = List.of(new NamedConfigImpl("first"),
-                              new NamedConfigImpl("second"),
-                              new NamedConfigImpl("third"));
-        }
-
-        ConfigFactory(List<NamedConfig> configs) {
-            this.configs = configs;
-        }
-
-        @Override
-        public List<Service.QualifiedInstance<NamedConfig>> services() {
-            return configs.stream()
-                    .map(it -> Service.QualifiedInstance.create(it, Qualifier.createNamed(it.name())))
-                    .collect(Collectors.toUnmodifiableList());
-        }
+    interface QualifiedContract {
+        String description();
     }
 
     @Service.Singleton
-    @Service.PerInstance(NamedConfig.class)
-    static class TargetTypeProvider implements TargetType {
-        private final NamedConfig config;
-
-        @Service.Inject
-        TargetTypeProvider(@Service.InstanceName String name,
-                           NamedConfig config,
-                           List<ServiceInstance<CharSequence>> emptyList) {
-            this.config = config;
-            if (!name.equals(config.name())) {
-                throw new IllegalStateException("Got name: " + name + " but config is named: " + config.name());
-            }
-        }
+    static class ContractFactory implements Service.ServicesFactory<QualifiedContract> {
 
         @Override
-        public NamedConfig config() {
-            return config;
+        public List<Service.QualifiedInstance<QualifiedContract>> services() {
+            return List.of(
+                    Service.QualifiedInstance.create(new QualifiedImpl("first"), FirstQualifier.QUALIFIER),
+                    Service.QualifiedInstance.create(new QualifiedImpl("second"), SecondQualifier.QUALIFIER),
+                    Service.QualifiedInstance.create(new QualifiedImpl("both"),
+                                                     FirstQualifier.QUALIFIER,
+                                                     SecondQualifier.QUALIFIER)
+            );
         }
     }
 
-    static class NamedConfigImpl implements NamedConfig {
+    @Service.Singleton
+    static class QualifiedReceiver {
+        private final QualifiedContract first;
+        private final QualifiedContract second;
+        private final QualifiedContract third;
+
+        @Service.Inject
+        QualifiedReceiver(@FirstQualifier QualifiedContract first,
+                          @SecondQualifier QualifiedContract second,
+                          @FirstQualifier @SecondQualifier QualifiedContract third) {
+            this.first = first;
+            this.second = second;
+            this.third = third;
+        }
+
+        QualifiedContract first() {
+            return first;
+        }
+
+        QualifiedContract second() {
+            return second;
+        }
+
+        QualifiedContract third() {
+            return third;
+        }
+    }
+
+    static class QualifiedImpl implements QualifiedContract {
         private final String name;
 
-        NamedConfigImpl(String name) {
+        QualifiedImpl(String name) {
             this.name = name;
         }
 
         @Override
-        public String name() {
+        public String description() {
             return name;
         }
     }

@@ -112,6 +112,29 @@ final class LookupSupport {
             builder.serviceType(TypeName.create(contract));
         }
 
+        /**
+         * Only lookup services with the provided named qualifier.
+         *
+         * @param builder  builder instance
+         * @param name the name qualifier (use {@link io.helidon.service.registry.Service.Named#WILDCARD_NAME} to find all
+         */
+        @Prototype.BuilderMethod
+        static void named(Lookup.BuilderBase<?, ?> builder, String name) {
+            builder.addQualifier(Qualifier.createNamed(name));
+        }
+
+        /**
+         * Only lookup services with the provided named qualifier, where name is the fully qualified name of the class.
+         *
+         * @param builder  builder instance
+         * @param clazz fully qualified name of the class is the name qualifier to use
+         * @see #named(String)
+         */
+        @Prototype.BuilderMethod
+        static void named(Lookup.BuilderBase<?, ?> builder, Class<?> clazz) {
+            builder.addQualifier(Qualifier.createNamed(clazz));
+        }
+
         private static Lookup createEmpty() {
             return Lookup.builder().build();
         }
@@ -133,7 +156,8 @@ final class LookupSupport {
                     // clear if contained only IP stuff
                     boolean shouldClear = builder.qualifiers().equals(existing.qualifiers());
 
-                    if (!(builder.contracts().contains(ResolvedType.create(existing.contract()))
+                    if (!(
+                            builder.contracts().contains(ResolvedType.create(existing.contract()))
                                     && builder.contracts().size() == 1)) {
                         shouldClear = false;
                     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,10 +40,10 @@ public class ServicesFactoryProvidedInstancesTest {
     @BeforeAll
     public static void initRegistry() {
         var injectConfig = ServiceRegistryConfig.builder()
-                .addServiceDescriptor(ServicesFactoryTypes_TargetTypeProvider__ServiceDescriptor.INSTANCE)
-                .addServiceDescriptor(ServicesFactoryTypes_ConfigFactory__ServiceDescriptor.INSTANCE)
-                .putServiceInstance(ServicesFactoryTypes_ConfigFactory__ServiceDescriptor.INSTANCE,
-                                    new ServicesFactoryTypes.ConfigFactory(List.of(new ServicesFactoryTypes.NamedConfigImpl(
+                .addServiceDescriptor(NamedServicesFactoryTypes_TargetTypeProvider__ServiceDescriptor.INSTANCE)
+                .addServiceDescriptor(NamedServicesFactoryTypes_ConfigFactory__ServiceDescriptor.INSTANCE)
+                .putServiceInstance(NamedServicesFactoryTypes_ConfigFactory__ServiceDescriptor.INSTANCE,
+                                    new NamedServicesFactoryTypes.ConfigFactory(List.of(new NamedServicesFactoryTypes.NamedConfigImpl(
                                             "custom"))))
                 .discoverServices(false)
                 .discoverServicesFromServiceLoader(false)
@@ -61,16 +61,16 @@ public class ServicesFactoryProvidedInstancesTest {
 
     @Test
     void testServicesFactory() {
-        List<ServicesFactoryTypes.TargetType> targetTypes =
+        List<NamedServicesFactoryTypes.TargetType> targetTypes =
                 registry.all(Lookup.builder()
                                      .addQualifier(Qualifier.WILDCARD_NAMED)
-                                     .addContract(ServicesFactoryTypes.TargetType.class)
+                                     .addContract(NamedServicesFactoryTypes.TargetType.class)
                                      .build());
 
         assertThat(targetTypes, hasSize(1));
         var names = targetTypes.stream()
-                .map(ServicesFactoryTypes.TargetType::config)
-                .map(ServicesFactoryTypes.NamedConfig::name)
+                .map(NamedServicesFactoryTypes.TargetType::config)
+                .map(NamedServicesFactoryTypes.NamedConfig::name)
                 .collect(Collectors.toUnmodifiableSet());
 
         assertThat(names, hasItems("custom"));
