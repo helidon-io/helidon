@@ -83,6 +83,13 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
    <packageUrl regex="true">^pkg:maven/org\.graalvm\.sdk/graal\-sdk@.*$</packageUrl>
    <vulnerabilityName>CVE-2023-22006</vulnerabilityName>
 </suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: graal-sdk-21.3.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/org\.graalvm\.sdk/graal-sdk@.*$</packageUrl>
+   <vulnerabilityName>CVE-2024-21085</vulnerabilityName>
+</suppress>
 
 <!--
     This is a FP. We have upgrade jgit to a fixed version, but it is still getting flagged.
