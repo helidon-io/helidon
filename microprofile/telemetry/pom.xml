@@ -157,7 +157,7 @@
                             <excludes>
                                 <exclude>**/AgentDetectorTest.java</exclude>
                                 <exclude>**/TestSpanListenersWithInjection.java</exclude>
-                                <exclude>**/TestGlobalTracerAssignment.java</exclude>
+                                <exclude>**/TestFilterSpanNesting.java</exclude>
                             </excludes>
                         </configuration>
                     </execution>
@@ -188,16 +188,13 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <!--
-                        This test sets the global tracer to a no-op tracer which would interfere with other tests.
-                        -->
-                        <id>test-global-tracer-assignment</id>
+                        <id>filter-span-nesting-test</id>
                         <goals>
                             <goal>test</goal>
                         </goals>
                         <configuration>
                             <includes>
-                                <include>**/TestGlobalTracerAssignment.java</include>
+                                <include>**/TestFilterSpanNesting.java</include>
                             </includes>
                         </configuration>
                     </execution>
