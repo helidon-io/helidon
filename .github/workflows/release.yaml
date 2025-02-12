@@ -35,7 +35,7 @@ concurrency:
 
 jobs:
   create-tag:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     environment: release
     outputs:
       version: ${{ steps.create-tag.outputs.version }}
@@ -57,7 +57,7 @@ jobs:
     strategy:
       matrix:
         moduleSet: [ core, integrations, others ]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 30
     environment: release
     steps:
@@ -118,7 +118,7 @@ jobs:
   resolve-all:
     needs: [ create-tag, deploy ]
     timeout-minutes: 30
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: resolve-all
     steps:
       - uses: actions/checkout@v4
@@ -144,7 +144,7 @@ jobs:
           - quickstart-mp
           - database-se
           - database-mp
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: smoketest/${{ matrix.archetype }}
     steps:
       - uses: actions/checkout@v4
