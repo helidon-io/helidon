@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,33 +16,12 @@
 
 package io.helidon.integrations.micronaut.cdi;
 
-import jakarta.enterprise.context.ApplicationScoped;
-
-@ApplicationScoped
 @MicronautBeanDef
-public class TestBothBean implements TestBean {
+public class RepeatableMicronautBean {
 
-    @Override
-    public String name() {
-        return "BothBean";
+    @CounterMicronautIntercepted
+    public String get() {
+        return "whatever";
     }
 
-    @CdiIntercepted
-    @Override
-    public String cdiAnnotated() {
-        return TestBean.super.cdiAnnotated();
-    }
-
-    @MicroIntercepted
-    @Override
-    public String µAnnotated() {
-        return TestBean.super.µAnnotated();
-    }
-
-    @CdiIntercepted
-    @MicroIntercepted
-    @Override
-    public String bothAnnotated() {
-        return TestBean.super.bothAnnotated();
-    }
 }

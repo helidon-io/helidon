@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,32 +16,20 @@
 
 package io.helidon.integrations.micronaut.cdi;
 
-import jakarta.enterprise.context.ApplicationScoped;
+import java.util.concurrent.atomic.AtomicInteger;
 
-@ApplicationScoped
-public class TestCdiBean implements TestBean {
+import io.micronaut.aop.MethodInterceptor;
+import io.micronaut.aop.MethodInvocationContext;
+import jakarta.inject.Singleton;
 
-    @CdiIntercepted
-    @Override
-    public String cdiAnnotated() {
-        return TestBean.super.cdiAnnotated();
-    }
+@Singleton
+public class CounterMicronautInterceptor implements MethodInterceptor<Object, Object> {
 
-    @MicroIntercepted
-    @Override
-    public String µAnnotated() {
-        return TestBean.super.µAnnotated();
-    }
-
-    @CdiIntercepted
-    @MicroIntercepted
-    @Override
-    public String bothAnnotated() {
-        return TestBean.super.bothAnnotated();
-    }
+    static final AtomicInteger counter = new AtomicInteger(0);
 
     @Override
-    public String name() {
-        return "CdiBean";
+    public Object intercept(MethodInvocationContext<Object, Object> context) {
+        counter.incrementAndGet();
+        return context.proceed();
     }
 }

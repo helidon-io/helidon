@@ -46,7 +46,6 @@
         <dependency>
             <groupId>jakarta.validation</groupId>
             <artifactId>jakarta.validation-api</artifactId>
-            <version>2.0.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -62,6 +61,11 @@
         <dependency>
             <groupId>io.micronaut</groupId>
             <artifactId>micronaut-runtime</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.micronaut.validation</groupId>
+            <artifactId>micronaut-validation</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -155,8 +159,13 @@
                                 </path>
                                 <path>
                                     <groupId>io.micronaut</groupId>
-                                    <artifactId>micronaut-validation</artifactId>
+                                    <artifactId>micronaut-core-processor</artifactId>
                                     <version>${version.lib.micronaut}</version>
+                                </path>
+                                <path>
+                                    <groupId>io.micronaut.validation</groupId>
+                                    <artifactId>micronaut-validation-processor</artifactId>
+                                    <version>${version.lib.micronaut.validation}</version>
                                 </path>
                                 <path>
                                     <groupId>io.micronaut.data</groupId>
