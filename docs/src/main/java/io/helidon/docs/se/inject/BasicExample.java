@@ -24,7 +24,7 @@ class BasicExample {
     @Service.Singleton
     class Greeter {
 
-        public String greet(String name) {
+        String greet(String name) {
             return "Hello %s!".formatted(name);
         }
 

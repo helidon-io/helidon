@@ -31,10 +31,11 @@ include::{rootdir}/includes/se.adoc[]
 - <<Overview, Overview>>
 - <<Maven Coordinates, Maven Coordinates>>
 - <<Usage, Usage>>
-- <<What is a service, What is a service>>
+- <<Basic terms, Basic terms>>
+- <<How are services defined, How are services defined?>>
 - <<Injection points, Injection points>>
-- <<Contract vs. service, Contract vs. service>>
-- <<Annotation processors, Annotation processors>>
+- <<Scopes, Scopes>>
+- <<Build time, Build time>>
 - <<Basic injection example, Basic injection example>>
 - <<Service Lifecycle, Service Lifecycle>>
 - <<Qualifiers, Qualifiers>>
@@ -64,19 +65,75 @@ include::{rootdir}/includes/dependencies.adoc[]
 To start using Helidon Inject, you need to create both:
 
 - A service that will be injected.
-- An injection point, where the service will be injected.
+- An injection point, where the service instance will be injected.
 
-Let's begin by explaining what services are in Helidon Inject.
+Let's begin by explaining some basic terms.
 
-== What is a service
-Services are:
+== Basic terms
 
-1. Java classes annotated with one of the `Service.Scope` annotations, such as
-- `@Service.Singleton` - up to one instance exists in the service registry
-- `@Service.PerLookup` - an instance is created each time a lookup is done (injecting into an injection point is considered a lookup as well)
-- `@Service.PerRequest` - up to one instance exists in the service registry per request (what is a request is not defined in the injection framework itself, but it matches concepts such as HTTP request/response interaction, or consuming of a messaging message)
-2. Any class with `@Service.Inject` annotation that doesn’t have a scope annotation. In such a case, the scope of the service will be set as `@Service.PerLookup`.
-3. Any `core` service defined for Helidon Service Registry (using annotation `@Service.Provider`), the scope is `@Service.PerLookup` if the service implements a `Supplier`, and `@Singleton` otherwise; all dependencies are considered injection points
+=== Declarative style of programming
+In a declarative approach, you use annotations on classes, constructors, and constructor arguments to express your intent.
+
+For example, instead of manually managing dependencies,
+you declare that a class should be injectable using annotations like `@Service.Singleton`
+(More about that later).
+
+=== Service registry
+A service registry is a tool that enables declarative programming by supporting inversion of control (IoC).
+
+It manages the lifecycle of services, handles dependency injection,
+and ensures that the correct instances are provided where needed and without requiring manual instantiation.
+
+=== Inversion of control
+Instead of manually creating an instance of a certain type, you can delegate its creation to the service registry.
+
+This allows the registry to handle the entire instantiation process and provide the instance when needed,
+ensuring proper lifecycle management and dependency resolution.
+
+=== Contract
+A contract is a type that defines what the service registry should provide.
+It represents an API that will be used.
+
+For simplicity, a contract can be thought of as an interface,
+but it can also be an abstract class or even a concrete class.
+
+[source,java]
+.Contract example
+----
+interface GreetingContract {
+
+    String greet(String name);
+
+}
+----
+
+=== Service
+This can be either a concrete class, which implements the contract
+(or is contract itself if it was a concrete class),
+or it can be a factory/producer (more about <<Factories, Factories>>),
+which creates a new instances to be registered into the service registry.
+
+[source,java]
+.Service example
+----
+@Service.Singleton
+class MyGreetingService implements GreetingContract {
+
+    public String greet(String name) {
+        return "Hello %s!".formatted(name);
+    }
+
+}
+----
+
+=== Contract vs. service
+Contract and service can be the same thing, but also separate entities.
+
+== How are services defined
+Services are defined by:
+
+1. Java classes annotated with one of the `Service.Scope` annotations (see <<Scopes, Scopes>>)
+2. Any class with `@Service.Inject` annotation even when it doesn’t have a scope annotation. In such a case, the scope of the service will be set as `@Service.PerLookup`.
 
 Now, let's talk about an injection points.
 
@@ -91,74 +148,33 @@ Only services can have Injection points.
 
 === Injected dependency formats
 
-Injected dependency formats can be as follows:
+Dependencies can be injected in different formats, depending on the required behavior:
 
-- `Contract` - simply get an instance of another service
-- `Optional<Contract>` - get an instance of another service, the other service may not be available.
-If not available an empty optional is supplied
-- `List<Contract>` - get instances of all services that are available
-- `Supplier<Contract>`, `Supplier<Optional<Contract>>`, `Supplier<List<Contract>>` - equivalent methods but the value is resolved
-when `Supplier.get()` is called, to allow more control
+- `Contract` - Retrieves an instance of another service.
+- `Optional<Contract>` - Retrieves an instance, but if the service is unavailable, an empty optional is provided.
+- `List<Contract>` - Retrieves all available instances of a given service.
+- `Supplier<Contract>`, `Supplier<Optional<Contract>>`, `Supplier<List<Contract>>` - Similar to the above, but the value is only resolved when get() is called, allowing lazy evaluation for more control.
 
-Equivalent behavior can be achieved programmatically through `io.helidon.service.registry.ServiceRegistry` instance. This can be obtained from a `ServiceRegistryManager`. See <<Programmatic Lookup, Programmatic Lookup>> chapter.
+The same behavior can be achieved programmatically using the `io.helidon.service.registry.ServiceRegistry` instance.
+To obtain a `ServiceRegistry`, you can retrieve it from a `ServiceRegistryManager`,
+allowing manual lookup and management of services. See <<Programmatic Lookup, Programmatic Lookup>> chapter.
 
-== Contract vs. service
-Contract and service can be the same thing, but also separate entities. For simplicity, you can imagine contract as what you’re injecting/searching service registry for and service is what is responsible for adding new instances to the service registry.
+== Scopes
+Helidon Inject provides three built-in scopes:
 
-=== Service
-This can be either a concrete class,
-which implements the contract (or is also a contract) OR it can be a factory/producer,
-which creates a new instances to be registered into the service registry.
+- `@Service.Singleton` – A single instance exists in the service registry for the application's lifetime.
+- `@Service.PerLookup` – A new instance is created each time a lookup occurs (including when injected into an injection point).
+- `@Service.PerRequest` – A single instance per request exists in the service registry. The definition of a "request" is not enforced by the injection framework but aligns with concepts like an HTTP request-response cycle or message consumption in a messaging system.
 
-[source,java]
-.Service example
-----
-@Service.Singleton
-class MyService {
+== Build time
+To ensure everything functions correctly,
+you need to add the following annotation processors to your application's compilation process.
 
-    public String greet(String name) {
-        return "Hello %s!".formatted(name);
-    }
-
-}
-----
-
-=== Contract
-Contract can be concrete class or just an interface.
-
-[source,java]
-.Contract usage example with programmatic lookup
-----
-var registry = ServiceRegistryManager.create().registry();
-var serviceInstance = registry.get(MyContract.class); //<1>
-----
-
-<1> `MyContract.class` is a contract. It is the type we are searching service registry for
-
-[source,java]
-.Contract usage example with injection
-----
-@Service.Singleton
-class SomeOtherService {
-    private MyContract myContract;
-
-    @Service.Inject
-    SomeOtherService(MyContract myContract) { //<1>
-        this.myContract = myContract;
-    }
-
-}
-----
-
-<1> `MyContract` is here used as a type we are injecting
-
-== Annotation processors
-To make everything work, it is necessary to add the following annotation processors to
-the compilation process of your application.
+These processors generate the necessary metadata and wiring for dependency injection and service registration in Helidon Inject.
 
 For Maven:
 [source,xml]
-.Example annotation processor configuration in the Maven
+.Example annotation processor configuration in Maven
 ----
 <build>
     <plugins>
@@ -186,13 +202,11 @@ For Maven:
 
 === Why are these annotation processors needed?
 Annotation processor `helidon-service-codegen` generates a service descriptor (`ServiceProvider__ServiceDescriptor`) for each discovered service.
-This descriptor is discovered at runtime and used to instantiate a service without the need to use reflection.
-
-Reflection is used only to get an instance of the service descriptor (by using its public `INSTANCE` singleton field).
+This descriptor is discovered at runtime and is used to instantiate the service without relying on reflection, improving performance and reducing overhead during service creation.
 
 == Basic injection example
 
-Create a simple service class, which will be injected into another.
+To demonstrate how Helidon Inject works, let's create a simple working example where one service is injected into another.
 
 [source,java]
 .Creating simple Greeter service.
@@ -200,8 +214,8 @@ Create a simple service class, which will be injected into another.
 include::{sourcedir}/se/inject/BasicExample.java[tag=snippet_1, indent=0]
 ----
 
-Once the Greeter service is created, an injection point for such a service is needed now.
-Let's create another service, which injects Greeter service as its constructor parameter.
+Once the Greeter service is created, an injection point for this service is now required.
+Let's create another service that injects the Greeter service as its constructor parameter.
 
 [source,java]
 .Create simple injection point
@@ -211,7 +225,7 @@ include::{sourcedir}/se/inject/BasicExample.java[tag=snippet_2, indent=0]
 
 Now it just needs to be tested. The easiest way is to make a main method. The following piece of code
 initializes Service registry. After that we search for our `GreetingInjectionService` and execute it
-to print out `Hello Tomas!`. To find out more about this approach, please take a look into the <<Programmatic Lookup, Programmatic Lookup>> chapter.
+to print out `Hello David!`. To find out more about this manual approach, please take a look into the <<Programmatic Lookup, Programmatic Lookup>> chapter.
 [source,java]
 .Lookup our created service and execute it manually
 ----
@@ -225,13 +239,10 @@ and ready to use service.
 
 The service registry manages the lifecycle of services. To ensure a method is invoked at a specific lifecycle phase, you can use the following annotations:
 
-- `@Service.PostConstruct` – Invokes the annotated method after the instance has been created and fully injected.
-- `@Service.PreDestroy` – Invokes the annotated method when the service is no longer in use by the registry.
-
-The lifecycle behavior depends on the bean scope:
-
-- `@Service.PerLookup` – Only the post-construct method is invoked since the instance is not managed after the injection.
-- *Other scopes* – The pre-destroy method is invoked when the scope is deactivated (e.g. for singletons this happens during registry or JVM shutdown).
+* `@Service.PostConstruct` – Invokes the annotated method after the instance has been created and fully injected.
+* `@Service.PreDestroy` – Invokes the annotated method when the service is no longer in use by the registry. (Such as if the intended scope ends)
+** `@Service.PerLookup` – PreDestroy annotated method is not invoked, since it is not managed by the service registry after the injection.
+** *Other scopes* – The pre-destroy method is invoked when the scope is deactivated (e.g. for singletons this happens during registry or JVM shutdown).
 
 == Qualifiers
 In dependency injection, a qualifier is a way to tell the framework which dependency to use when there are multiple options available.
@@ -274,18 +285,25 @@ include::{sourcedir}/se/inject/QualifierExample.java[tag=snippet_4, indent=0]
 
 The way it is used on the injection point, it is the same as it was in case of the `@Service.Named`.
 
+[source,java]
+.Named by type injection point
+----
+include::{sourcedir}/se/inject/QualifierExample.java[tag=snippet_5, indent=0]
+----
+
 === Custom qualifiers
 To make custom qualifiers, it is necessary to "meta-annotated" it with `@Service.Qualifier`.
 
 [source,java]
-.Custom qualifier creation
+.Create Blue and Green custom qualifiers
 ----
 include::{sourcedir}/se/inject/Qualifier2Example.java[tag=snippet_1, indent=0]
 ----
-The `@HexCode` annotation serves as our new qualifier. It can now be used to qualify services in the same way as `@Service.Named`.
+The `@Blue` and `@Green` annotations serve as our new qualifiers.
+It can now be used to qualify services in the same way as `@Service.Named`.
 
 [source,java]
-.Custom qualifier HexCode usage
+.Custom qualifier Blue and Green usage
 ----
 include::{sourcedir}/se/inject/Qualifier2Example.java[tag=snippet_2, indent=0]
 ----

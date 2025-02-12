@@ -20,12 +20,12 @@ import io.helidon.service.registry.Service;
 class Qualifier2Example {
 
     // tag::snippet_1[]
-    /**
-     * Custom Helidon Inject qualifier.
-     */
     @Service.Qualifier
-    public @interface HexCode {
-        String value();
+    public @interface Blue {
+    }
+
+    @Service.Qualifier
+    public @interface Green {
     }
     // end::snippet_1[]
 
@@ -34,7 +34,7 @@ class Qualifier2Example {
         String name();
     }
 
-    @HexCode("0000FF")
+    @Blue
     @Service.Singleton
     static class BlueColor implements Color {
 
@@ -44,7 +44,7 @@ class Qualifier2Example {
         }
     }
 
-    @HexCode("008000")
+    @Green
     @Service.Singleton
     static class GreenColor implements Color {
 
@@ -57,11 +57,11 @@ class Qualifier2Example {
 
     // tag::snippet_3[]
     @Service.Singleton
-    record BlueCircle(@HexCode("0000FF") Color color) {
+    record BlueCircle(@Blue Color color) {
     }
 
     @Service.Singleton
-    record GreenCircle(@HexCode("008000") Color color) {
+    record GreenCircle(@Green Color color) {
     }
     // end::snippet_3[]
 

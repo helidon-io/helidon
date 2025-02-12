@@ -59,7 +59,7 @@ class QualifierExample {
     // end::snippet_3[]
 
     // tag::snippet_4[]
-    @Service.NamedByType(GreenNamedByType.class)
+    @Service.NamedByType(Green.class)
     @Service.Singleton
     public class GreenNamedByType implements Color {
 
@@ -69,5 +69,13 @@ class QualifierExample {
         }
     }
     // end::snippet_4[]
+
+    // tag::snippet_5[]
+    @Service.Singleton
+    record GreenCircleType(@Service.NamedByType(Green.class) Color color) {
+    }
+    // end::snippet_5[]
+
+
 
 }
