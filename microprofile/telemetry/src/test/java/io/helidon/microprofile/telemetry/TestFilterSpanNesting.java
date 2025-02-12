@@ -16,16 +16,13 @@
 package io.helidon.microprofile.telemetry;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.microprofile.testing.junit5.AddBean;
 import io.helidon.microprofile.testing.junit5.AddConfig;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
-import io.helidon.tracing.HeaderConsumer;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
@@ -52,13 +49,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
 @HelidonTest
 @AddBean(TestSpanExporter.class)
 @AddBean(TestFilterSpanNesting.TestBean.class)
+@AddBean(TestFilterSpanNesting.IngressSpanSetter.class)
 @AddConfig(key = "otel.sdk.disabled", value = "false")
 @AddConfig(key = "otel.traces.exporter", value = "in-memory")
 class TestFilterSpanNesting {
@@ -87,41 +84,28 @@ class TestFilterSpanNesting {
         var requestBuilder = webTarget.path("/parentSpanCheck")
                 .request(MediaType.TEXT_PLAIN);
 
-        // Create a span so we can use its span context as a parent.
-        Span spanForHeaders = staticTracer.spanBuilder("spanForHeaders").build();
-
-        Response response;
-
-        // Now, create another span to be the "real" current one when our filter is executed. This represents, for example,
-        // an ingress span different from the span conveyed by incoming headers.
-        Span pseudoIngressSpan = staticTracer.spanBuilder("ingressSpan")
-                .parent(spanForHeaders.context())
-                .build();
-
-        try (Scope ignored = pseudoIngressSpan.activate()) {
-            response = requestBuilder.get();
-        }
+        // Our client filter will automatically establish a span for the outgoing Jakarta REST client request.
+        Response response = requestBuilder.get();
 
         assertThat("Response status", response.getStatus(), is(200));
 
         // Check structure of nested spans.
-        List<SpanData> spanData = testSpanExporter.spanData(2);
-        Optional<SpanData> httpGetSpanData = spanData.stream()
-                // Use startsWith because starting in 5.x the name will also include the path.
-                .filter(sd -> sd.getName().startsWith("HTTP GET"))
+        List<SpanData> spanData = testSpanExporter.spanData(3);
+        Optional<SpanData> ingressSpanData = spanData.stream()
+                .filter(sd -> sd.getName().equals("ingressSpan"))
                 .findFirst();
-        assertThat("HTTP GET span data", httpGetSpanData, OptionalMatcher.optionalPresent());
+        assertThat("ingress span data", ingressSpanData, OptionalMatcher.optionalPresent());
 
         Optional<SpanData> spanFromJakartaFilter = spanData.stream()
                 .filter(sd -> sd.getName().equals("/parentSpanCheck"))
                 .findFirst();
         assertThat("/parentSpanCheck span data", spanFromJakartaFilter, OptionalMatcher.optionalPresent());
 
-        // Make sure the parent for the span created by the filter is the current span we set in our test filter,
+        // Make sure the parent for the span created by the container filter is the current span we set in our test filter,
         // not the span inspired by the incoming headers.
         assertThat("/parentSpanCheck parent span ID",
                    spanFromJakartaFilter.get().getParentSpanContext().getSpanId(),
-                   equalTo(httpGetSpanData.get().getSpanContext().getSpanId()));
+                   equalTo(ingressSpanData.get().getSpanContext().getSpanId()));
 
     }
 
@@ -134,6 +118,39 @@ class TestFilterSpanNesting {
         public String parentSpanCheck(Request request) {
             // The HelidonTelemetryContainerFilter should have been run to establish a new current span. Create a new child.
             return "Hello World!";
+        }
+    }
+
+    /**
+     * Filter to kind-of play the role of upstream ingress code which sets a current span before our normal filter
+     * HelidonTelemetryContainerFilter runs.
+     */
+    @Provider
+    @Priority(Priorities.HEADER_DECORATOR)
+    static class IngressSpanSetter implements ContainerRequestFilter, ContainerResponseFilter {
+
+        private Span pseudoIngressSpan;
+        private Scope pseudoIngressScope;
+
+        @Override
+        public void filter(ContainerRequestContext requestContext) throws IOException {
+            // Create a span that's a child of the span represented in the headers and make it current.
+            // Then the HelidonTelemetryContainerFilter will find this one as current and the span *it* adds should be a child
+            // of this new pseudo-ingress span which we'll check in the test code.
+
+            Optional<SpanContext> helidonSpanContext =
+                    staticTracer.extract(new RequestContextHeaderProvider(requestContext.getHeaders()));
+
+            pseudoIngressSpan = staticTracer.spanBuilder("ingressSpan")
+                    .update(spanBuilder -> helidonSpanContext.ifPresent(spanBuilder::parent))
+                    .build();
+            pseudoIngressScope = pseudoIngressSpan.activate();
+        }
+
+        @Override
+        public void filter(ContainerRequestContext requestContext, ContainerResponseContext responseContext) throws IOException {
+            pseudoIngressScope.close();
+            pseudoIngressSpan.end();
         }
     }
 }
