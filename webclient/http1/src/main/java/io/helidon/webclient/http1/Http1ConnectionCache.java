@@ -188,24 +188,24 @@ class Http1ConnectionCache extends ClientConnectionCache {
                 if (connectionQueue.offer(conn, QUEUE_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)) {
                     conn.helidonSocket().idle(); // mark it as idle to stay blocked at read for closed conn detection
                     if (LOGGER.isLoggable(DEBUG)) {
-                        LOGGER.log(DEBUG, "[%s] client connection returned %s",
-                                   conn.channelId(),
-                                   Thread.currentThread().getName());
+                        LOGGER.log(DEBUG, String.format("[%s] client connection returned %s",
+                                                        conn.channelId(),
+                                                        Thread.currentThread().getName()));
                     }
                     return true;
                 } else {
                     if (LOGGER.isLoggable(DEBUG)) {
-                        LOGGER.log(DEBUG, "[%s] Unable to return client connection because queue is full %s",
-                                   conn.channelId(),
-                                   Thread.currentThread().getName());
+                        LOGGER.log(DEBUG, String.format("[%s] Unable to return client connection because queue is full %s",
+                                                        conn.channelId(),
+                                                        Thread.currentThread().getName()));
                     }
                 }
             } catch (InterruptedException e) {
                 if (LOGGER.isLoggable(DEBUG)) {
-                    LOGGER.log(DEBUG, "[%s] Unable to return client connection due to '%s' %s",
-                               conn.channelId(),
-                               e.getMessage(),
-                               Thread.currentThread().getName());
+                    LOGGER.log(DEBUG, String.format("[%s] Unable to return client connection due to '%s' %s",
+                                                    conn.channelId(),
+                                                    e.getMessage(),
+                                                    Thread.currentThread().getName()));
                 }
             }
         }
