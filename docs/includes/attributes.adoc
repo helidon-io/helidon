@@ -23,8 +23,8 @@ ifndef::attributes-included[]
 // functional attributes
 :imagesdir: {rootdir}/images
 
-:helidon-version: 3.2.12-SNAPSHOT
-:helidon-version-is-release: false
+:helidon-version: 3.2.12
+:helidon-version-is-release: true
 
 ifeval::["{helidon-version-is-release}" != "true"]
 :helidon-github-tree-url: https://github.com/helidon-io/helidon/tree/helidon-3.x
