@@ -164,11 +164,12 @@ class KeyPerformanceIndicatorMetricsImpls {
             super(kpiMeterRegistry, meterNamePrefix, builtInMeterNameFormat);
             this.longRunningRequestThresdholdMs = longRunningRequestThreshold.toMillis();
 
-            inflightRequests = kpiMeterRegistry.getOrCreate(Gauge.builder(meterNamePrefix
-                                                                                  + meterName(INFLIGHT_REQUESTS_NAME),
-                                                                          inflightRequestsCount,
-                                                                          AtomicInteger::get)
-                                                                    .scope(KPI_METERS_SCOPE));
+            inflightRequests = kpiMeterRegistry.getOrCreate(
+                    Gauge.builder(meterNamePrefix + meterName(INFLIGHT_REQUESTS_NAME),
+                                  inflightRequestsCount,
+                                  AtomicInteger::get)
+                            .scope(KPI_METERS_SCOPE)
+                            .description("Measures the number of requests currently being processed"));
 
             longRunningRequests = kpiMeterRegistry.getOrCreate(
                     Counter.builder(meterNamePrefix + LONG_RUNNING_REQUESTS_NAME)
