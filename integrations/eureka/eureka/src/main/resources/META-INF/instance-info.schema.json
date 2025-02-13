@@ -1,0 +1,170 @@
+{
+    "$id" : "https://github.com/helidon-io/helidon/integrations/eureka/eureka/instance-info.schema.json",
+    "$schema" : "https://json-schema.org/draft/2020-12/schema",
+    "title" : "InstanceInfo",
+    "description" : "A caller-supplied InstanceInfo object's JSON representation",
+    "type" : "object",
+    "required" : [ "instance" ],
+    "properties" : {
+        "instance" : {
+            "type" : "object",
+            "required" : [ "app", "countryId", "dataCenterInfo", "hostName", "instanceId", "ipAddr", "metadata", "overriddenStatus", "port", "securePort", "status"],    
+            "properties" : {
+                "app" : {
+                    "type" : "string",
+                    "pattern" : "^\\S+$"
+                },
+                "appGroupName" : {
+                    "type" : "string"
+                },
+                "asgName" : {
+                    "type" : "string"
+                },
+                "countryId" : {
+                    "const" : 1
+                },
+                "dataCenterInfo" : {
+                    "$ref" : "#/$defs/dataCenterInfo"
+                },
+                "healthCheckUrl" : {
+                    "type" : "string",
+                    "format" : "uri"
+                },
+                "homePageUrl" : {
+                    "type" : "string",
+                    "format" : "uri"
+                },
+                "hostName" : {
+                    "type" : "string",
+                    "format" : "hostname",
+                    "pattern" : "^\\S+$"
+                },
+                "instanceId" : {
+                    "type" : "string",
+                    "pattern" : "^\\S+$"
+                },
+                "ipAddr" : {
+                    "type" : "string",
+                    "format" : "ipv4",
+                    "pattern" : "^\\S+$",
+                    "$comment" : "There is no way in JSON Schema to have multiple formats; ipv6 should also be OK"
+                },
+                "lastDirtyTimestamp" : {
+                    "type" : "number",
+                    "$comment" : "e.g. System.currentTimeMillis() in Java"
+                },
+                "lastUpdatedTimestamp" : {
+                    "type" : "number",
+                    "$comment" : "e.g. System.currentTimeMillis() in Java"
+                },
+                "leaseInfo" : {
+                    "$ref" : "#/$defs/leaseInfo"
+                },
+                "metadata" : {
+                    "type" : "object",
+                    "$comment" : "Keys and values are strings only"
+                },
+                "overriddenstatus" : {
+                    "$ref" : "#/$defs/status",
+                    "default" : "UNKNOWN"
+                },
+                "overriddenStatus" : {
+                    "$ref" : "#/$defs/status",
+                    "default" : "UNKNOWN"
+                },
+                "port" : {
+                    "$ref" : "#/$defs/port"
+                },
+                "secureHealthCheckUrl" : {
+                    "type" : "string",
+                    "format" : "uri"
+                },
+                "securePort" : {
+                    "$ref" : "#/$defs/port"
+                },
+                "secureVipAddress" : {
+                    "type" : "string"
+                },
+                "sid" : {
+                    "const" : "na"
+                },
+                "status" : {
+                    "$ref" : "#/$defs/status",
+                    "default" : "STARTING",
+                    "$comment" : "Can be set to UP as a default"
+                },
+                "statusPageUrl" : {
+                    "type" : "string",
+                    "format" : "uri"
+                },
+                "vipAddress" : {
+                    "type" : "string"
+                },
+            },
+        },
+    },
+    "$defs" : {
+        "dataCenterInfo" : {
+            "type" : "object",
+            "required" : [ "name", "@class" ],
+            "if" : {
+                "properties" : {
+                    "name" : { "const" : "Amazon" }
+                }
+            },
+            "then" : {
+                "required" : [ "metadata" ],
+                "properties" : {
+                    "@class" : { "const" : "com.netflix.appinfo.AmazonInfo" }
+                }
+            },
+            "else" : {
+                "properties" : {
+                    "@class" : { "const" : "com.netflix.appinfo.MyDataCenterInfo" }
+                }
+            },
+            "properties" : {
+                "name" : {
+                    "enum" : [ "Amazon", "MyOwn" ],
+                    "default" : "MyOwn",
+                },
+                "@class" : {
+                    "enum" : [ "com.netflix.appinfo.AmazonInfo", "com.netflix.appinfo.MyDataCenterInfo" ],
+                    "default" : "com.netflix.appinfo.MyDataCenterInfo",
+                },
+                "metadata" : {
+                    "type" : "object"
+                }
+            }
+        },
+        "leaseInfo" : {
+            "type" : "object",
+            "properties" : {
+                "renewalIntervalInSecs" : {
+                    "type" : "number",
+                    "minimum" : 0
+                },
+                "durationInSecs" : {
+                    "type" : "number",
+                    "minimum" : 0
+                }
+            }
+        },
+        "port" : {
+            "type" : "object",
+            "required" : [ "$", "@enabled" ],
+            "properties" : {
+                "$" : {
+                    "type" : "number",
+                    "minimum" : 0
+                },
+                "@enabled" : {
+                    "type" : "boolean"
+                }
+            }
+        },
+        "status" : {
+            "enum" : [ "UP", "DOWN", "STARTING", "OUT_OF_SERVICE", "UNKNOWN" ]
+        }
+    }
+}
