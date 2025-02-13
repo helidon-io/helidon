@@ -81,7 +81,7 @@ interface CohereCommonConfig {
     Optional<Duration> timeout();
 
     /**
-     * The model name to use (e.g., "gpt-3.5-turbo").
+     * The model name to use.
      *
      * @return the model name
      */
