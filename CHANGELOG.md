@@ -9,6 +9,20 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [3.2.12]
+
+This is a bugfix release of Helidon and is recommended for all users of Helidon 3.  Helidon 3 requires Java 17 or newer.
+
+### CHANGES
+
+- Dependencies: Upgrade ASM to 9.7.1 and Byte Buddy to 1.15.10 for Java 24 support [9572](https://github.com/helidon-io/helidon/pull/9572)
+- Dependencies: Upgrade Netty to 4.1.118.Final [9772](https://github.com/helidon-io/helidon/pull/9772)
+- Cleanup: Remove duplicated methods from CustomScalars [9541](https://github.com/helidon-io/helidon/pull/9541)
+- Cleanup: Remove unused method ConfigMapperManager.mapper [9668](https://github.com/helidon-io/helidon/pull/9668)
+- Cleanup: Remove unused code from ConfigAsciidocGenerator [9667](https://github.com/helidon-io/helidon/pull/9667)
+- Cleanup: Remove unused code from ClasspathSourceHelper [9666](https://github.com/helidon-io/helidon/pull/9666)
+- Docs: Fix typo @Provided -> @Provider in jaxrs-applications.adoc [9633](https://github.com/helidon-io/helidon/pull/9633)
+
 ## [3.2.11]
 
 This is a bugfix release of Helidon and is recommended for all users of Helidon 3.  Helidon 3 requires Java 17 or newer.
@@ -964,6 +978,7 @@ Notable changes:
 - Examples: Update bare-mp archetype to use microprofile-core [3795](https://github.com/oracle/helidon/pull/3795)
 
 
+[3.2.12]: https://github.com/helidon-io/helidon/compare/3.2.11...3.2.12
 [3.2.11]: https://github.com/helidon-io/helidon/compare/3.2.10...3.2.11
 [3.2.10]: https://github.com/helidon-io/helidon/compare/3.2.9...3.2.10
 [3.2.9]: https://github.com/helidon-io/helidon/compare/3.2.8...3.2.9
