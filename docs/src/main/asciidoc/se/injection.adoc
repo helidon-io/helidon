@@ -71,6 +71,16 @@ Let's begin by explaining some basic terms.
 
 == Basic terms
 
+=== Dependency Injection
+Injection is a way to automatically provide instances of dependencies without having to create them manually.
+Instead of a class creating an object itself,
+something else (like a <<Service registry,service registry>>) hands it over when needed.
+This makes code cleaner, easier to manage, and more flexible.
+
+For example, if a Car needs an Engine, instead of the Car making an Engine itself, it just asks for one,
+and the system provides it.
+This is called Dependency Injection (DI).
+
 === Declarative style of programming
 In a declarative approach, you use annotations on classes, constructors, and constructor arguments to express your intent.
 
@@ -135,6 +145,9 @@ Services are defined by:
 1. Java classes annotated with one of the `Service.Scope` annotations (see <<Scopes, Scopes>>)
 2. Any class with `@Service.Inject` annotation even when it doesn’t have a scope annotation. In such a case, the scope of the service will be set as `@Service.PerLookup`.
 
+Keep in mind that if you create any service instance directly, it will not get its injection points resolved!
+This works only when using service registry.
+
 Now, let's talk about an injection points.
 
 == Injection points
@@ -167,7 +180,7 @@ Helidon Inject provides three built-in scopes:
 - `@Service.PerRequest` – A single instance per request exists in the service registry. The definition of a "request" is not enforced by the injection framework but aligns with concepts like an HTTP request-response cycle or message consumption in a messaging system.
 
 == Build time
-To ensure everything functions correctly,
+To ensure everything works correctly,
 you need to add the following annotation processors to your application's compilation process.
 
 These processors generate the necessary metadata and wiring for dependency injection and service registration in Helidon Inject.
@@ -232,7 +245,10 @@ to print out `Hello David!`. To find out more about this manual approach, please
 include::{sourcedir}/se/inject/BasicExample.java[tag=snippet_3, indent=0]
 ----
 
-If everything went as expected, no problems occurred and Service registry gave us fully initialized
+The last step is ensuring that everything necessary for your application to compile correctly with injection is included.
+See <<Build time,Build time>>.
+
+If everything went as expected, no problems occurred and a Service registry gave us fully initialized
 and ready to use service.
 
 == Service Lifecycle
@@ -443,8 +459,6 @@ The `@Interception.Delegate` annotation enables interception for classes
 that aren’t created through the service registry
 but are instead produced by a factory (More about factories can be found here -
 <<Factories, Factory chapter>>).
-To enable interception, this annotation must be present on the class that the factory produces.
-While it is not required on interfaces, it will still function correctly if applied there.
 
 Let's make the same `@Traced` annotation and Interceptor as in the previous examples
 
@@ -463,12 +477,16 @@ include::{sourcedir}/se/inject/InterceptorDelegateExample.java[tag=snippet_2, in
 ----
 
 Method calls on an instance created this way can’t be intercepted. To enable interception in such cases, we use the `@Interception.Delegate` annotation. However, keep in mind that usage of this annotation doesn’t add the ability to intercept constructor calls.
+To enable interception, this annotation must be present on the class that the factory produces.
+While it is not required on interfaces, it will still work correctly if applied there.
 
-If you need to enable interception for classes using delegation, you should:
+If you need to enable interception for classes using delegation, you should make sure about the following:
 
 - The class must have accessible no-arg constructor (at least package local)
 - The constructor should have no side effects, as the instance will act only as a wrapper for the delegate
 - All invoked methods must be accessible (at least package local)
+
+Therefore using `@Interception.Delegate` on the classes can be considered as acknowledgement of the rules above.
 
 [source,java]
 .Delegate used on the class
