@@ -140,8 +140,7 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
 
         //Start new span for container request.
         String route = route(requestContext);
-        Optional<SpanContext> extractedSpanContext =
-                helidonTracer.extract(new RequestContextHeaderProvider(requestContext.getHeaders()));
+        Optional<SpanContext> parentSpanContext = parentSpanContext(requestContext);
         Span helidonSpan = helidonTracer.spanBuilder(spanName(requestContext, route))
                 .kind(Span.Kind.SERVER)
                 .tag(HTTP_METHOD, requestContext.getMethod())
@@ -150,7 +149,7 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
                 .tag(HTTP_ROUTE, route)
                 .tag(SemanticAttributes.NET_HOST_NAME.getKey(), requestContext.getUriInfo().getBaseUri().getHost())
                 .tag(SemanticAttributes.NET_HOST_PORT.getKey(), requestContext.getUriInfo().getBaseUri().getPort())
-                .update(builder -> extractedSpanContext.ifPresent(builder::parent))
+                .update(builder -> parentSpanContext.ifPresent(builder::parent))
                 .start();
 
         Scope helidonScope = helidonSpan.activate();
@@ -203,9 +202,11 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
         }
     }
 
-//    private static List<HelidonTelemetryContainerFilterHelper> helpers() {
-//        return HelidonServiceLoader.create(ServiceLoader.load(HelidonTelemetryContainerFilterHelper.class)).asList();
-//    }
+    private Optional<SpanContext> parentSpanContext(ContainerRequestContext requestContext) {
+        // Prefer the current span if there is one.
+        return Span.current().map(Span::context)
+                .or(() -> helidonTracer.extract(new RequestContextHeaderProvider(requestContext.getHeaders())));
+    }
 
     private String spanName(ContainerRequestContext requestContext, String route) {
         // @Deprecated(forRemoval = true) In 5.x remove the option of excluding the HTTP method from the REST span name.
