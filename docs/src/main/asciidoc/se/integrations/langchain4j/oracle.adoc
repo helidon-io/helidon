@@ -1,0 +1,107 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2025 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= LangChain4J Oracle Provider
+:description: LangChain4J Oracle
+:keywords: helidon, AI, LangChain4J, LC4J, Oracle
+:feature-name: LangChain4J Integration
+:rootdir: {docdir}/../../..
+
+include::{rootdir}/includes/se.adoc[]
+
+== Contents
+
+* <<Overview, Overview>>
+* <<Maven Coordinates, Maven Coordinates>>
+* <<Components, Components>>
+** <<OracleEmbeddingModel, OracleEmbeddingModel>>
+*** <<OracleEmbeddingTable, OracleEmbeddingTable>>
+* <<Additional Information, Additional Information>>
+
+== Overview
+
+This module adds support for the Oracle embedding store.
+
+== Maven Coordinates
+
+In addition to the xref:langchain4j.adoc#maven-coordinates[Helidon integration with LangChain4J core dependencies], you must add the following:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.integrations.langchain4j.providers</groupId>
+    <artifactId>helidon-integrations-langchain4j-providers-oracle</artifactId>
+</dependency>
+----
+
+== Components
+
+=== OracleEmbeddingModel
+
+To automatically create and add `OracleEmbeddingModel` to the service registry add the following lines to `application.yaml`:
+
+[source,yaml]
+----
+langchain4j:
+  oracle:
+    embedding-store:
+      enabled: true
+      embedding-table:
+        name: "embeddings"
+----
+
+If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+
+Full list of configuration properties:
+
+[cols="3,3a,5a"]
+
+|===
+|Key |Type |Description
+
+|`data-source` |string |The name of Helidon service containing a data source for connecting to the Oracle embedding store. If not present the default unnamed service is used.
+|`embedding-table` |<<OracleEmbeddingTable, OracleEmbeddingTable>> |Root configuration key for `OracleEmbeddingTable` configuration. Contains properties of the embedding table associated with the Oracle embedding store.
+|`enabled` |boolean |If set to `true`, Oracle embedding store will be enabled.
+|`exact-search` |boolean |Specifies whether exact matching is used in searches.
+|`vector-index-create-option` |string |The vector index creation option, which defines behavior when creating the vector index. Options are `CREATE_NONE` (default), `CREATE_IF_NOT_EXISTS`, `CREATE_OR_REPLACE`.
+
+|===
+
+
+==== OracleEmbeddingTable
+
+Full list of configuration properties:
+
+[cols="3,3a,5a"]
+
+|===
+|Key |Type |Description
+
+|`create-option` |string |Defines the behavior when creating the embedding table. Options are: `CREATE_NONE` (default), `CREATE_IF_NOT_EXISTS`, `CREATE_OR_REPLACE`.
+|`embedding-column` |string |Name of the embedding column in the embedding table. Default is "embedding".
+|`id-column` |string |Name of the ID column in the embedding table. Default is "id".
+|`metadata-column` |string |Name of the metadata column in the embedding table. default is "metadata".
+|`name` |string |Required. Name of the embedding table.
+|`text-column` |string |Name of the text column in the embedding table. Default is "text".
+
+|===
+
+== Additional Information
+
+* xref:langchain4j.adoc[LangChain4J Integration]
+* https://docs.langchain4j.dev/integrations/embedding-stores/oracle[langChain4J Oracle Embedding Store Documentation]
