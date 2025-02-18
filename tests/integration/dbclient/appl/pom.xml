@@ -31,13 +31,13 @@
     <parent>
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-se</artifactId>
-        <version>3.2.12-SNAPSHOT</version>
+        <version>3.2.13-SNAPSHOT</version>
         <relativePath>../../../../applications/se/pom.xml</relativePath>
     </parent>
 
     <groupId>io.helidon.tests.integration.dbclient</groupId>
     <artifactId>helidon-tests-integration-dbclient-appl</artifactId>
-    <version>3.2.12-SNAPSHOT</version>
+    <version>3.2.13-SNAPSHOT</version>
     <name>Integration Tests: DB Client Application</name>
 
     <properties>
