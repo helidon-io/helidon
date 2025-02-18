@@ -91,7 +91,23 @@ final class Javadoc {
             if (includeReturn) {
                 javadoc = javadoc.substring(0, index) + capitalize(javadoc.substring(index + count).trim());
             } else {
-                javadoc = javadoc.substring(0, index);
+                // need to find the next @ not preceded by {
+                int endIndex = javadoc.length();
+                int nextIndex = index;
+                while(true) {
+                    int nextAt = javadoc.indexOf('@', nextIndex);
+                    if (nextAt == -1 || nextAt == 0 || nextAt == javadoc.length() - 1) {
+                        break;
+                    }
+
+                    if (javadoc.charAt(nextAt - 1) == '{') {
+                        nextIndex = nextAt + 1;
+                        continue;
+                    }
+                    endIndex = nextAt;
+                    break;
+                }
+                javadoc = javadoc.substring(0, index) + javadoc.substring(endIndex);
             }
         }
 

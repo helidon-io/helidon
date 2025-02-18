@@ -27,7 +27,7 @@
         <version>4.2.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-config-tests-config-metadata-builder-api</artifactId>
-    <name>Helidon Config Tests Config Meta-Data Meta API</name>
+    <name>Helidon Config Tests Config Meta-Data Builder API</name>
 
     <dependencies>
         <dependency>
