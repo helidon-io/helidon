@@ -34,7 +34,6 @@
     <properties>
         <java.util.logging.config.file>src/test/java/logging.properties</java.util.logging.config.file>
         <runTestAgainstEurekaServer>false</runTestAgainstEurekaServer>
-        <surefire.useModulePath>false</surefire.useModulePath>
     </properties>
 
     <dependencies>
