@@ -27,6 +27,7 @@ import io.helidon.http.Status;
 import io.helidon.service.registry.Services;
 import io.helidon.webclient.api.HttpClient;
 import io.helidon.webclient.api.HttpClientResponse;
+import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientConfig;
 import io.helidon.webclient.http1.Http1ClientRequest;
 import io.helidon.webserver.WebServer;
@@ -40,7 +41,6 @@ import jakarta.json.JsonString;
 import static io.helidon.common.media.type.MediaTypes.APPLICATION_JSON;
 import static io.helidon.http.HeaderNames.ACCEPT_ENCODING;
 import static io.helidon.http.Status.Family.SUCCESSFUL;
-import static io.helidon.http.Status.NOT_FOUND_404;
 import static jakarta.json.Json.createBuilderFactory;
 import static jakarta.json.Json.createValue;
 import static jakarta.json.JsonValue.EMPTY_JSON_OBJECT;
@@ -334,7 +334,7 @@ public final class EurekaRegistrationFeature implements HttpFeature {
 
     private volatile Thread renewer;
 
-    private volatile HttpClient<? extends Http1ClientRequest> client;
+    private volatile Http1Client client;
 
 
     /*
@@ -354,7 +354,7 @@ public final class EurekaRegistrationFeature implements HttpFeature {
 
 
     /*
-     * Instance methods.
+     * Public instance methods.
      */
 
 
@@ -414,68 +414,27 @@ public final class EurekaRegistrationFeature implements HttpFeature {
             }
             return;
         }
-        builder.baseUri()
-            .ifPresentOrElse(x -> {
-                    Config eurekaInstanceConfig = eurekaConfig.get("instance");
-                    if (!eurekaConfig.isObject()) {
-                        if (LOGGER.isLoggable(WARNING)) {
-                            LOGGER.log(WARNING,
-                                       "No top-level object node named \"eureka.instance\" in global configuration;"
-                                       + " no attempt at registration will occur");
-                        }
-                        return;
-                    }
-                    JsonObject instanceInfo = json(eurekaInstanceConfig, actualPort, tls);
-                    this.instanceInfo = instanceInfo; // volatile write
-                    this.client = builder.build(); // volatile write
-
-                    // Kick off a renewal loop.
-                    if (LOGGER.isLoggable(DEBUG)) {
-                      LOGGER.log(DEBUG,
-                                 "Beginning renewal loop");
-                    }
-                    long sleepTimeInMilliSeconds = instanceInfo.getJsonObject("instance") // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-client/src/main/java/com/netflix/appinfo/InstanceInfo.java#L55
-                      .getJsonObject("leaseInfo")
-                      .getInt("renewalIntervalInSecs") * 1000L;
-                    this.renewer = Thread.ofVirtual() // volatile write
-                      .name("Eureka lease renewer")
-                      .uncaughtExceptionHandler((t, e) -> {
-                          if (LOGGER.isLoggable(ERROR)) {
-                            LOGGER.log(ERROR, e.getMessage(), e);
-                          }
-                          this.stop = true; // volatile write
-                        })
-                      .start(() -> {
-                          // Simplest possible heartbeat loop; nothing more complicated is needed.
-                          // Sleep first; we just finished registration so there needs to be a time gap before
-                          // renewal.
-                          // try {
-                          // sleep(sleepTimeInMilliSeconds);
-                          // } catch (InterruptedException e) {
-                          // }
-                          while (!this.stop) { // volatile read
-                            JsonObject newInstanceInfo = this.renew();
-                            if (newInstanceInfo != this.instanceInfo) { // volatile read
-                              // The server gave us something new for some reason; use it.
-                              this.instanceInfo = newInstanceInfo; // volatile write
-                            }
-                            try {
-                              sleep(sleepTimeInMilliSeconds);
-                            } catch (InterruptedException e) {
-                            }
-                          }
-                        });
-                    // Mark our status as up if it wasn't already
-                    this.up(instanceInfo, true);
-                },
-                () -> {
-                    if (LOGGER.isLoggable(WARNING)) {
-                        LOGGER.log(WARNING,
-                                   "No Eureka Server URL found in configuration node named"
-                                   + " \"eureka.client.registration.base-uri\""
-                                   + " in global configuration; no attempt at registration will occur");
-                    }
-                });
+        if (builder.baseUri().isPresent()) {
+            Config eurekaInstanceConfig = eurekaConfig.get("instance");
+            if (!eurekaConfig.isObject()) {
+                if (LOGGER.isLoggable(WARNING)) {
+                    LOGGER.log(WARNING,
+                               "No top-level object node named \"eureka.instance\" in global configuration;"
+                               + " no attempt at registration will occur");
+                }
+                return;
+            }
+            var instanceInfo = json(eurekaInstanceConfig, actualPort, tls);
+            var client = builder.build();
+            this.instanceInfo = instanceInfo; // volatile write
+            this.client = client; // volatile write
+            this.createAndStartRenewalLoop(instanceInfo, client);
+        } else if (LOGGER.isLoggable(WARNING)) {
+            LOGGER.log(WARNING,
+                       "No Eureka Server URL found in configuration node named"
+                       + " \"eureka.client.registration.base-uri\""
+                       + " in global configuration; no attempt at registration will occur");
+        }
     }
 
     /**
@@ -533,6 +492,45 @@ public final class EurekaRegistrationFeature implements HttpFeature {
         }
     }
 
+    /**
+     * Marks this microservice as being {@code UP} for purposes of Eureka registration and for no other purpose.
+     *
+     * @return {@code true} if the status change was successfully recorded for eventual registration or renewal; {@code
+     * false} if no action was taken
+     */
+    public boolean markUp() {
+        return this.up(this.instanceInfo, true); // volatile read
+    }
+
+    /**
+     * Marks this microservice as being {@code DOWN} for purposes of Eureka registration and for no other purpose.
+     *
+     * @return {@code true} if the status change was successfully recorded for eventual registration or renewal; {@code
+     * false} if no action was taken
+     */
+    public boolean markDown() {
+        return this.up(this.instanceInfo, false); // volatile read
+    }
+
+    /**
+     * Implements the {@link HttpFeature#setup(HttpRouting.Builder)} method by deliberately doing nothing.
+     *
+     * @param routingBuilder an {@link HttpRouting.Builder}; ignored
+     *
+     * @deprecated End users should not call this method.
+     */
+    @Deprecated // End users should not call this method
+    @Override // HttpFeature
+    public void setup(HttpRouting.Builder routingBuilder) {
+        // Nothing to do.
+    }
+
+
+    /*
+     * Private instance methods.
+     */
+
+
     // (Called only by the afterStop method.)
     private boolean cancel(HttpClient<? extends Http1ClientRequest> client) {
         if (!this.stop) { // volatile read
@@ -570,7 +568,47 @@ public final class EurekaRegistrationFeature implements HttpFeature {
         }
     }
 
-    // PUT {baseUri}/v2/apps/{appName}/{id}?status={status}&lastDirtyTimestamp={lastDirtyTimestamp}
+    private void createAndStartRenewalLoop(JsonObject instanceInfo, HttpClient<? extends Http1ClientRequest> client) {
+        if (LOGGER.isLoggable(DEBUG)) {
+            LOGGER.log(DEBUG,
+                       "Creating and starting Eureka lease renewal loop");
+        }
+        long sleepTimeInMilliSeconds = instanceInfo.getJsonObject("instance") // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-client/src/main/java/com/netflix/appinfo/InstanceInfo.java#L55
+            .getJsonObject("leaseInfo")
+            .getInt("renewalIntervalInSecs") * 1000L;
+        this.renewer = Thread.ofVirtual() // volatile write
+            .name("Eureka lease renewer")
+            .uncaughtExceptionHandler((t, e) -> {
+                    if (LOGGER.isLoggable(ERROR)) {
+                        LOGGER.log(ERROR, e.getMessage(), e);
+                    }
+                    this.stop = true; // volatile write
+                })
+            .start(() -> {
+                    // Simplest possible heartbeat loop; nothing more complicated is needed.
+                    // Sleep first; we just finished registration so there needs to be a time gap before
+                    // renewal.
+                    // try {
+                    // sleep(sleepTimeInMilliSeconds);
+                    // } catch (InterruptedException e) {
+                    // }
+                    while (!this.stop) { // volatile read
+                        JsonObject newInstanceInfo = this.renew();
+                        if (newInstanceInfo != this.instanceInfo) { // volatile read
+                            // The server gave us something new for some reason; use it.
+                            this.instanceInfo = newInstanceInfo; // volatile write
+                        }
+                        try {
+                            sleep(sleepTimeInMilliSeconds);
+                        } catch (InterruptedException e) {
+                        }
+                    }
+                });
+        // Mark our status as up if it wasn't already
+        this.up(instanceInfo, true);
+    }
+
+        // PUT {baseUri}/v2/apps/{appName}/{id}?status={status}&lastDirtyTimestamp={lastDirtyTimestamp}
     //
     // (...&overriddenstatus={someOverriddenStatus} is recognized by the Eureka server, but never sent by Eureka's
     // registration client.)
@@ -588,106 +626,6 @@ public final class EurekaRegistrationFeature implements HttpFeature {
             request.queryParam("lastDirtyTimestamp", lastDirtyTimestamp.toString()); // yes, String-typed value
         }
         return request.request();
-    }
-
-    /**
-     * Marks this microservice as being {@code UP} for purposes of Eureka registration and for no other purpose.
-     *
-     * @return {@code true} if the status change was successfully recorded for eventual registration or renewal; {@code
-     * false} if no action was taken
-     */
-    public boolean markUp() {
-        return this.up(this.instanceInfo, true); // volatile read
-    }
-
-    /**
-     * Marks this microservice as being {@code DOWN} for purposes of Eureka registration and for no other purpose.
-     *
-     * @return {@code true} if the status change was successfully recorded for eventual registration or renewal; {@code
-     * false} if no action was taken
-     */
-    public boolean markDown() {
-        return this.up(this.instanceInfo, false); // volatile read
-    }
-
-    /**
-     * Calls the {@link #heartbeat(String, String, String, Long)} method and handles its response appropriately.
-     *
-     * <p>This method is normally invoked in a loop every 30 seconds or so.</p>
-     *
-     * @return the {@link JsonObject} representing the service registration details, possibly amended to contain a
-     * different status and/or other attributes depending on what the server supplied; never {@code null}
-     *
-     * @see #heartbeat(String, String, String, Long)
-     */
-    private JsonObject renew() {
-        JsonObject instanceInfo = this.instanceInfo;
-        // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-client/src/main/java/com/netflix/appinfo/InstanceInfo.java#L55
-        JsonObject instance = instanceInfo.getJsonObject("instance");
-        try (var response =
-             this.heartbeat(instance.getString("app"),
-                            instance.getString("instanceId"),
-                            instance.getString("status"),
-                            Long.valueOf(instance.getJsonNumber("lastDirtyTimestamp").longValueExact()))) {
-            switch (response.status()) {
-            case Status s when s.family().equals(SUCCESSFUL):
-                if (LOGGER.isLoggable(DEBUG)) {
-                    LOGGER.log(DEBUG,
-                               "Successfully renewed lease");
-                }
-                // See
-                // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-core/src/main/java/com/netflix/eureka/resources/InstanceResource.java;
-                // there is often no entity returned, presumably to indicate no changes.
-                if (response.entity().hasEntity()) {
-                    instanceInfo = response.entity().as(JsonObject.class);
-                    assert instanceInfo != null : "Eureka Server contract violation; instanceInfo == null";
-                    if (LOGGER.isLoggable(DEBUG)) {
-                        LOGGER.log(DEBUG,
-                                   "New registration details received: " + instanceInfo);
-                    }
-                }
-                break;
-            case Status s when s.code() == 404:
-                // (Can't test for equality with Status.NOT_FOUND_404 equality because the reason is not set by the
-                // server.)
-                // Eureka's native machinery re-registers here.
-                if (LOGGER.isLoggable(DEBUG)) {
-                    LOGGER.log(DEBUG,
-                               "Lease not found; reregistering");
-                }
-                instanceInfo = json(instanceInfo, System.currentTimeMillis());
-                boolean registrationResult = this.register(instanceInfo);
-                if (!registrationResult && LOGGER.isLoggable(DEBUG)) {
-                    LOGGER.log(DEBUG,
-                               "Reregistration failed");
-                }
-                break;
-            default:
-                if (LOGGER.isLoggable(WARNING)) {
-                    LOGGER.log(WARNING,
-                               "Heartbeat HTTP status: " + response.status());
-                    if (response.entity().hasEntity()) {
-                        LOGGER.log(WARNING,
-                                   response.entity().as(JsonObject.class).getString("error"));
-                    }
-                }
-                break;
-            }
-        }
-        return instanceInfo;
-    }
-
-    /**
-     * Implements the {@link HttpFeature#setup(HttpRouting.Builder)} method by deliberately doing nothing.
-     *
-     * @param routingBuilder an {@link HttpRouting.Builder}; ignored
-     *
-     * @deprecated End users should not call this method.
-     */
-    @Deprecated // End users should not call this method
-    @Override // HttpFeature
-    public void setup(HttpRouting.Builder routingBuilder) {
-        // Nothing to do.
     }
 
     private void statusChange() {
@@ -736,6 +674,73 @@ public final class EurekaRegistrationFeature implements HttpFeature {
         }
     }
 
+    /**
+     * Calls the {@link #heartbeat(String, String, String, Long)} method and handles its response appropriately.
+     *
+     * <p>This method is normally invoked in a loop every 30 seconds or so.</p>
+     *
+     * @return the {@link JsonObject} representing the service registration details, possibly amended to contain a
+     * different status and/or other attributes depending on what the server supplied; never {@code null}
+     *
+     * @see #heartbeat(String, String, String, Long)
+     */
+    private JsonObject renew() {
+        JsonObject instanceInfo = this.instanceInfo;
+        // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-client/src/main/java/com/netflix/appinfo/InstanceInfo.java#L55
+        JsonObject instance = instanceInfo.getJsonObject("instance");
+        try (var response =
+             this.heartbeat(instance.getString("app"),
+                            instance.getString("instanceId"),
+                            instance.getString("status"),
+                            instance.getJsonNumber("lastDirtyTimestamp").longValueExact())) {
+            switch (response.status()) {
+            case Status s when s.family().equals(SUCCESSFUL):
+                if (LOGGER.isLoggable(DEBUG)) {
+                    LOGGER.log(DEBUG,
+                               "Successfully renewed lease");
+                }
+                // See
+                // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-core/src/main/java/com/netflix/eureka/resources/InstanceResource.java;
+                // there is often no entity returned, presumably to indicate no changes.
+                if (response.entity().hasEntity()) {
+                    instanceInfo = response.entity().as(JsonObject.class);
+                    assert instanceInfo != null : "Eureka Server contract violation; instanceInfo == null";
+                    if (LOGGER.isLoggable(DEBUG)) {
+                        LOGGER.log(DEBUG,
+                                   "New registration details received: " + instanceInfo);
+                    }
+                }
+                break;
+            case Status s when s.code() == 404:
+                // (Can't test for equality with Status.NOT_FOUND_404 equality because the reason is not set by the
+                // server.)
+                // Eureka's native machinery re-registers here.
+                if (LOGGER.isLoggable(DEBUG)) {
+                    LOGGER.log(DEBUG,
+                               "Lease not found; reregistering");
+                }
+                instanceInfo = json(instanceInfo, System.currentTimeMillis());
+                boolean registrationResult = this.register(instanceInfo);
+                if (!registrationResult && LOGGER.isLoggable(DEBUG)) {
+                    LOGGER.log(DEBUG,
+                               "Reregistration failed");
+                }
+                break;
+            default:
+                if (LOGGER.isLoggable(WARNING)) {
+                    LOGGER.log(WARNING,
+                               "Heartbeat HTTP status: " + response.status());
+                    if (response.entity().hasEntity()) {
+                        LOGGER.log(WARNING,
+                                   response.entity().as(JsonObject.class).getString("error"));
+                    }
+                }
+                break;
+            }
+            return instanceInfo;
+        }
+    }
+
     private boolean up(JsonObject oldInstanceInfo, boolean up) {
         if (oldInstanceInfo == null) {
             return false;
@@ -751,39 +756,9 @@ public final class EurekaRegistrationFeature implements HttpFeature {
 
 
     /*
-     * Static methods.
+     * Package-private static methods.
      */
 
-
-    private static String hostName(Config c) {
-        // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-client/src/main/java/com/netflix/appinfo/AbstractInstanceConfig.java#L216-L226
-        return c.get("hostName").asString()
-            .orElseGet(() -> localhost().map(InetAddress::getHostName).orElse(""));
-    }
-
-    private static String instanceId(Config c, int actualPort) {
-        return c.get("instanceId").asString()
-            .orElseGet(() -> {
-                    // "Native" Eureka and Spring Cloud Eureka have different defaults.
-                    //
-                    // See
-                    // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-client/src/main/java/com/netflix/appinfo/providers/EurekaConfigBasedInstanceInfoProvider.java#L60-L69;
-                    // default is simply hostName
-                    //
-                    // See
-                    // https://cloud.spring.io/spring-cloud-netflix/multi/multi__service_discovery_eureka_clients.html#_changing_the_eureka_instance_id
-                    //
-                    // Our default will split the difference and use host and port.
-                    return c.get("dataCenterInfo.metadata.instance-id").asString()
-                        .orElseGet(() -> hostName(c) + ":" + actualPort);
-                });
-    }
-
-    private static String ipAddress(Config c) {
-        // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-client/src/main/java/com/netflix/appinfo/AbstractInstanceConfig.java#L216-L226
-        return c.get("ipAddr").asString()
-            .orElseGet(() -> localhost().map(InetAddress::getHostAddress).orElse(""));
-    }
 
     /**
      * Returns a {@link JsonObject} representing service instance registration details suitable for sending to a Eureka
@@ -946,6 +921,42 @@ public final class EurekaRegistrationFeature implements HttpFeature {
             .build();
     }
 
+
+    /*
+     * Private static methods.
+     */
+
+
+    private static String hostName(Config c) {
+        // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-client/src/main/java/com/netflix/appinfo/AbstractInstanceConfig.java#L216-L226
+        return c.get("hostName").asString()
+            .orElseGet(() -> localhost().map(InetAddress::getHostName).orElse(""));
+    }
+
+    private static String instanceId(Config c, int actualPort) {
+        return c.get("instanceId").asString()
+            .orElseGet(() -> {
+                    // "Native" Eureka and Spring Cloud Eureka have different defaults.
+                    //
+                    // See
+                    // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-client/src/main/java/com/netflix/appinfo/providers/EurekaConfigBasedInstanceInfoProvider.java#L60-L69;
+                    // default is simply hostName
+                    //
+                    // See
+                    // https://cloud.spring.io/spring-cloud-netflix/multi/multi__service_discovery_eureka_clients.html#_changing_the_eureka_instance_id
+                    //
+                    // Our default will split the difference and use host and port.
+                    return c.get("dataCenterInfo.metadata.instance-id").asString()
+                        .orElseGet(() -> hostName(c) + ":" + actualPort);
+                });
+    }
+
+    private static String ipAddress(Config c) {
+        // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-client/src/main/java/com/netflix/appinfo/AbstractInstanceConfig.java#L216-L226
+        return c.get("ipAddr").asString()
+            .orElseGet(() -> localhost().map(InetAddress::getHostAddress).orElse(""));
+    }
+
     private static JsonObject json(JsonObject json, long lastDirtyTimestamp) {
         // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-client/src/main/java/com/netflix/appinfo/InstanceInfo.java#L55
         JsonObject instance = json.getJsonObject("instance");
@@ -954,7 +965,7 @@ public final class EurekaRegistrationFeature implements HttpFeature {
         }
         var b = JBF.createObjectBuilder();
         instance.forEach((k, v) -> {
-                b.add(k, k.equals("lastDirtyTimestamp") ? createValue(Long.valueOf(lastDirtyTimestamp)) : v);
+                b.add(k, k.equals("lastDirtyTimestamp") ? createValue(lastDirtyTimestamp) : v);
             });
         return JBF.createObjectBuilder().add("instance", b).build();
     }

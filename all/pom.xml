@@ -624,6 +624,9 @@
             <artifactId>helidon-integrations-db-pgsql</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.integrations.eureka</groupId>
+            <artifactId>helidon-integrations-eureka</artifactId>
+        <dependency>
             <groupId>io.helidon.integrations.cdi</groupId>
             <artifactId>helidon-integrations-cdi-configurable</artifactId>
         </dependency>

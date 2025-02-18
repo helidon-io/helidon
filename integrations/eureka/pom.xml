@@ -32,7 +32,7 @@
     <description>Eureka-related integrations</description>
 
     <properties>
-        <helidon.services.skip>true</helidon.services.skip>
+        <javadoc.fail-on-warnings>true</javadoc.fail-on-warnings>
     </properties>
 
     <modules>
