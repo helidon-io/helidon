@@ -626,6 +626,7 @@
         <dependency>
             <groupId>io.helidon.integrations.eureka</groupId>
             <artifactId>helidon-integrations-eureka</artifactId>
+        </dependency>
         <dependency>
             <groupId>io.helidon.integrations.cdi</groupId>
             <artifactId>helidon-integrations-cdi-configurable</artifactId>
