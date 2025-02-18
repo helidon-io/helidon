@@ -22,14 +22,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
 import io.helidon.http.Status;
 import io.helidon.service.registry.Services;
-import io.helidon.webclient.api.HttpClient;
-import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientConfig;
-import io.helidon.webclient.http1.Http1ClientRequest;
+import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpFeature;
 import io.helidon.webserver.http.HttpRouting;
@@ -532,7 +530,7 @@ public final class EurekaRegistrationFeature implements HttpFeature {
 
 
     // (Called only by the afterStop method.)
-    private boolean cancel(HttpClient<? extends Http1ClientRequest> client) {
+    private boolean cancel(Http1Client client) {
         if (!this.stop) { // volatile read
             // Programming error internal to this class. Truly an illegal state.
             throw new IllegalStateException();
@@ -550,7 +548,7 @@ public final class EurekaRegistrationFeature implements HttpFeature {
     }
 
     // DELETE {baseUri}/v2/apps/{appName}/{id}
-    private boolean cancel(HttpClient<? extends Http1ClientRequest> client, String appName, String id) {
+    private boolean cancel(Http1Client client, String appName, String id) {
         try (var response = client
              .delete("/v2/apps/" + Objects.requireNonNull(appName, "appName") + "/" + Objects.requireNonNull(id, "id"))
              .request()) {
@@ -568,7 +566,7 @@ public final class EurekaRegistrationFeature implements HttpFeature {
         }
     }
 
-    private void createAndStartRenewalLoop(JsonObject instanceInfo, HttpClient<? extends Http1ClientRequest> client) {
+    private void createAndStartRenewalLoop(JsonObject instanceInfo, Http1Client client) {
         if (LOGGER.isLoggable(DEBUG)) {
             LOGGER.log(DEBUG,
                        "Creating and starting Eureka lease renewal loop");
@@ -612,10 +610,10 @@ public final class EurekaRegistrationFeature implements HttpFeature {
     //
     // (...&overriddenstatus={someOverriddenStatus} is recognized by the Eureka server, but never sent by Eureka's
     // registration client.)
-    private HttpClientResponse heartbeat(String appName,
-                                         String id,
-                                         String status,
-                                         Long lastDirtyTimestamp) {
+    private Http1ClientResponse heartbeat(String appName,
+                                          String id,
+                                          String status,
+                                          Long lastDirtyTimestamp) {
         var request = this.client // volatile read
             .put("/v2/apps/" + Objects.requireNonNull(appName, "appName") + "/" + Objects.requireNonNull(id, "id"))
             .accept(APPLICATION_JSON);

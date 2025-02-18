@@ -34,6 +34,7 @@
     <properties>
         <java.util.logging.config.file>src/test/java/logging.properties</java.util.logging.config.file>
         <runTestAgainstEurekaServer>false</runTestAgainstEurekaServer>
+        <surefire.useModulePath>false</surefire.useModulePath>
     </properties>
 
     <dependencies>
@@ -44,13 +45,23 @@
         </dependency>
 
         <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-media-type</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>io.helidon.http</groupId>
             <artifactId>helidon-http</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>io.helidon.http.encoding</groupId>
-            <artifactId>helidon-http-encoding-gzip</artifactId>
+            <groupId>io.helidon.http.media</groupId>
+            <artifactId>helidon-http-media</artifactId>
         </dependency>
 
         <dependency>
@@ -60,7 +71,12 @@
 
         <dependency>
             <groupId>io.helidon.webclient</groupId>
-            <artifactId>helidon-webclient</artifactId>
+            <artifactId>helidon-webclient-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient-http1</artifactId>
         </dependency>
 
         <dependency>
@@ -74,6 +90,12 @@
         </dependency>
 
         <!-- Runtime-scoped dependencies. -->
+
+        <dependency>
+            <groupId>io.helidon.http.encoding</groupId>
+            <artifactId>helidon-http-encoding-gzip</artifactId>
+            <scope>runtime</scope>
+        </dependency>
 
         <dependency>
             <groupId>io.helidon.http.media</groupId>

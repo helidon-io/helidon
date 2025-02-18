@@ -24,9 +24,9 @@ module io.helidon.integrations.eureka {
 
     requires transitive io.helidon.common.config;
     requires io.helidon.http;
-    requires io.helidon.http.encoding.gzip;
+    // requires io.helidon.http.encoding.gzip;
     requires transitive io.helidon.service.registry;
-    requires transitive io.helidon.webclient;
+    requires io.helidon.webclient.http1;
     requires transitive io.helidon.webserver;
     requires transitive jakarta.json;
 
