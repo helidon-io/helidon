@@ -36,7 +36,7 @@ interface CohereScoringModelConfigBlueprint extends CohereCommonConfig {
     String CONFIG_ROOT = "langchain4j.cohere.scoring-model";
 
     /**
-     * T maximum number of retries for failed API requests.
+     * The maximum number of retries for failed API requests.
      *
      * @return an {@link java.util.Optional} containing the maximum number of retries
      */
