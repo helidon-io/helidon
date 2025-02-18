@@ -41,7 +41,7 @@ class InterceptorExample {
     // tag::snippet_2[]
     @Service.Singleton
     @Service.NamedByType(Traced.class) //<1>
-    static class MyServiceInterceptor implements Interception.Interceptor {
+    class MyServiceInterceptor implements Interception.Interceptor {
         @Override
         public <V> V proceed(InterceptionContext ctx, Chain<V> chain, Object... args) throws Exception {
             //Do something
@@ -49,26 +49,5 @@ class InterceptorExample {
         }
     }
     // end::snippet_2[]
-
-    // tag::snippet_3[]
-    @Service.Singleton
-    static class MyServiceProvider implements Supplier<MyService> {
-        @Override
-        public MyService get() {
-            return new MyService();
-        }
-    }
-
-    @Service.Contract
-    @Interception.Delegate
-    static class MyService {
-
-        @Traced
-        String sayHello(String name) {
-            return "Hello %s!".formatted(name);
-        }
-
-    }
-    // end::snippet_3[]
 
 }

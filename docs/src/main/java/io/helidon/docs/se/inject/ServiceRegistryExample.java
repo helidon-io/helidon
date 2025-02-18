@@ -28,4 +28,15 @@ class ServiceRegistryExample {
         // end::snippet_1[]
     }
 
+    public void programmatic2() {
+        // tag::snippet_2[]
+        // create an instance of a registry manager - can be configured and shut down
+        var registryManager = ServiceRegistryManager.create();
+        // Your desired logic with ServiceRegistry
+
+        // Once ServiceRegistryManager is no longer needed, it needs to be closed
+        registryManager.shutdown();
+        // end::snippet_2[]
+    }
+
 }

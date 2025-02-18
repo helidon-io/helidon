@@ -50,9 +50,12 @@ class BasicExample {
 
     // tag::snippet_3[]
     public static void main(String[] args) {
-        var registry = ServiceRegistryManager.create().registry();
+        var serviceRegistryManager = ServiceRegistryManager.create();
+        var registry = serviceRegistryManager.registry();
         var greetings = registry.get(GreetingInjectionService.class);
-        greetings.printGreeting("Tomas");
+        greetings.printGreeting("David");
+
+        serviceRegistryManager.shutdown(); //Once not needed, it should be shut down
     }
     // end::snippet_3[]
 

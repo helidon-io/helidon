@@ -368,21 +368,11 @@ include::{sourcedir}/se/inject/FactoryExample.java[tag=snippet_1, indent=0]
 ----
 
 === io.helidon.service.registry.Service.ServicesFactory
-A factory that creates zero or more implementations of a given contract.
+The ServicesFactory should be used only for its intended purpose — creating zero OR n instances at runtime, each assigned different qualifiers. This allows for dynamic and flexible service creation while ensuring proper differentiation between instances based on their qualifiers.
 
 [source,java]
-.ServicesFactory example
 ----
 include::{sourcedir}/se/inject/FactoryExample.java[tag=snippet_2, indent=0]
-----
-
-If the created services need to be qualified, any relevant qualifier information must also be included in the factory annotations.
-
-Note: If one doesn’t want to list all the name qualifiers provided by this factory, it is possible use `*` to cover all the possible names.
-
-[source,java]
-----
-include::{sourcedir}/se/inject/FactoryExample.java[tag=snippet_3, indent=0]
 ----
 
 === io.helidon.service.registry.Service.QualifiedFactory
@@ -396,7 +386,7 @@ This allows the factory to create instances dynamically based on the injection p
 
 [source,java]
 ----
-include::{sourcedir}/se/inject/FactoryExample.java[tag=snippet_4, indent=0]
+include::{sourcedir}/se/inject/FactoryExample.java[tag=snippet_3, indent=0]
 ----
 
 === io.helidon.service.registry.Service.InjectionPointFactory
@@ -408,7 +398,7 @@ This allows the factory to create instances dynamically based on the injection p
 
 [source,java]
 ----
-include::{sourcedir}/se/inject/FactoryExample.java[tag=snippet_5, indent=0]
+include::{sourcedir}/se/inject/FactoryExample.java[tag=snippet_4, indent=0]
 ----
 
 It is possible to restrict this factory to specific qualifiers by specifying them at the class level of the factory.
@@ -417,7 +407,7 @@ This ensures that the factory is executed only for injection points that match t
 
 [source,java]
 ----
-include::{sourcedir}/se/inject/FactoryExample.java[tag=snippet_6, indent=0]
+include::{sourcedir}/se/inject/FactoryExample.java[tag=snippet_5, indent=0]
 ----
 
 == Interceptors
@@ -629,6 +619,12 @@ To create a registry instance:
 [source,java]
 ----
 include::{sourcedir}/se/inject/ServiceRegistryExample.java[tag=snippet_1, indent=0]
+----
+
+Keep in mind, that ServiceRegistryManager needs to be shut down, once it is not needed
+[source,java]
+----
+include::{sourcedir}/se/inject/ServiceRegistryExample.java[tag=snippet_2, indent=0]
 ----
 
 Note that all instances are created lazily, meaning the service registry does nothing by default.
