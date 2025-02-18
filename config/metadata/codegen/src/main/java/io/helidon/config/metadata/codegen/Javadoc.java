@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,11 @@ final class Javadoc {
     private Javadoc() {
     }
 
+    // for existing usages
+    static String parse(String javadoc) {
+        return parse(javadoc, true);
+    }
+
     /**
      * Parses a Javadoc comment (provided as a string) into text that can be used for display/docs of the configuration option.
      * <p>
@@ -55,7 +60,7 @@ final class Javadoc {
      * @param docComment "raw" javadoc from the source code
      * @return description of the option
      */
-    static String parse(String docComment) {
+    static String parse(String docComment, boolean includeReturn) {
         if (docComment == null) {
             return "";
         }
@@ -83,7 +88,11 @@ final class Javadoc {
             index = javadoc.indexOf("@return");
         }
         if (index > -1) {
-            javadoc = javadoc.substring(0, index) + capitalize(javadoc.substring(index + count).trim());
+            if (includeReturn) {
+                javadoc = javadoc.substring(0, index) + capitalize(javadoc.substring(index + count).trim());
+            } else {
+                javadoc = javadoc.substring(0, index);
+            }
         }
 
         return javadoc.trim();

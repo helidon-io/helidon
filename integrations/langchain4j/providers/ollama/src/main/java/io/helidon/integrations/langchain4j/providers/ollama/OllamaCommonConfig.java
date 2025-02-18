@@ -81,7 +81,7 @@ interface OllamaCommonConfig {
     Optional<Integer> maxRetries();
 
     /**
-     * Gets the name of the Ollama model to use. This parameter determines which pre-trained model will process the input
+     * T name of the Ollama model to use. This parameter determines which pre-trained model will process the input
      * prompt and produce the output.
      *
      * <p>Examples of valid model names:

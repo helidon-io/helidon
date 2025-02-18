@@ -35,7 +35,8 @@ interface CohereEmbeddingModelConfigBlueprint extends CohereCommonConfig {
     String CONFIG_ROOT = "langchain4j.cohere.embedding-model";
 
     /**
-     * Gets the input type.
+     * The input type, such as {@code search_document}, {@code search_query}, {@code classification}, {@code clustering},
+     *  or {@code image}.
      *
      * @return an {@link java.util.Optional} containing the input type
      */
@@ -43,7 +44,7 @@ interface CohereEmbeddingModelConfigBlueprint extends CohereCommonConfig {
     Optional<String> inputType();
 
     /**
-     * Gets the maximum number of segments per batch.
+     * The maximum number of segments per batch.
      *
      * @return an {@link java.util.Optional} containing the maximum number of segments per batch
      */
