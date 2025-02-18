@@ -82,18 +82,13 @@ class ServiceExtension implements RegistryCodegenExtension {
     private void generateInterceptionExternalDelegates(RegistryRoundContext roundContext, TypeInfo typeInfo) {
         Annotation annotation = typeInfo.annotation(INTERCEPTION_EXTERNAL_DELEGATE);
         List<TypeName> typeNames = annotation.typeValues().orElseGet(List::of);
-        boolean supportClasses = annotation.booleanValue("classDelegates").orElse(false);
 
         for (TypeName typeName : typeNames) {
             TypeInfo delegateType = ctx.typeInfo(typeName)
                     .orElseThrow(() -> new CodegenException("Cannot resolve type " + typeName.fqName() + " for "
                                                                     + " external interception delegates",
                                                             typeInfo.originatingElementValue()));
-            if (!supportClasses && typeInfo.kind() != ElementKind.INTERFACE) {
-                throw new CodegenException("Attempting to create external delegate interception for non interface type: "
-                                                   + typeName.fqName(),
-                                           typeInfo.originatingElementValue());
-            }
+
             interceptionSupport.generateDelegateInterception(roundContext,
                                                              delegateType,
                                                              delegateType.typeName(),
