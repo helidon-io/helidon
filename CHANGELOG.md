@@ -9,6 +9,16 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 
 For Helidon 3.x releases please see [Helidon 3.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-3.x/CHANGELOG.md)
 
+## [2.6.11]
+
+This is a bugfix release of Helidon. It is recommended for all users of Helidon 2. Helidon 2 requires a minimum Java 11.
+
+### CHANGES
+
+- OpenAPI: Fix error in OpenAPI handling of default values' types [9693](https://github.com/helidon-io/helidon/pull/9693)
+- Dependencies: Upgrade Netty to 4.1.118.Final [9771](https://github.com/helidon-io/helidon/pull/9771)
+- Docs: Fix typo @Provided -> @Provider in 05_jaxrs-applications.adoc [9634](https://github.com/helidon-io/helidon/pull/9634)
+
 ## [2.6.10]
 
 This is a bugfix release of Helidon. It is recommended for all users of Helidon 2. Helidon 2 requires a minimum Java 11.
@@ -2283,6 +2293,7 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
+[2.6.11]: https://github.com/oracle/helidon/compare/2.6.10...2.6.11
 [2.6.10]: https://github.com/oracle/helidon/compare/2.6.9...2.6.10
 [2.6.9]: https://github.com/oracle/helidon/compare/2.6.8...2.6.9
 [2.6.8]: https://github.com/oracle/helidon/compare/2.6.7...2.6.8
