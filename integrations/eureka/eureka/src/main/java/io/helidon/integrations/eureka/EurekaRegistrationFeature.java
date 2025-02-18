@@ -429,46 +429,44 @@ public final class EurekaRegistrationFeature implements HttpFeature {
                     this.instanceInfo = instanceInfo; // volatile write
                     this.client = builder.build(); // volatile write
 
-                    // Register, then kick off a renewal loop.
-                    if (this.register(instanceInfo)) {
-                        long sleepTimeInMilliSeconds = instanceInfo.getJsonObject("instance") // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-client/src/main/java/com/netflix/appinfo/InstanceInfo.java#L55
-                            .getJsonObject("leaseInfo")
-                            .getInt("renewalIntervalInSecs") * 1000L;
-                        this.renewer = Thread.ofVirtual() // volatile write
-                            .name("Eureka lease renewer")
-                            .uncaughtExceptionHandler((t, e) -> {
-                                    if (LOGGER.isLoggable(ERROR)) {
-                                        LOGGER.log(ERROR, e);
-                                    }
-                                    this.stop = true; // volatile write
-                                })
-                            .start(() -> {
-                                    // Simplest possible heartbeat loop; nothing more complicated is needed.
-                                    // Sleep first; we just finished registration so there needs to be a time gap before
-                                    // renewal.
-                                    try {
-                                        sleep(sleepTimeInMilliSeconds);
-                                    } catch (InterruptedException e) {
-                                    }
-                                    while (!this.stop) { // volatile read
-                                        JsonObject newInstanceInfo = this.renew();
-                                        if (newInstanceInfo != this.instanceInfo) { // volatile read
-                                            // The server gave us something new for some reason; use it.
-                                            this.instanceInfo = newInstanceInfo; // volatile write
-                                        }
-                                        try {
-                                            sleep(sleepTimeInMilliSeconds);
-                                        } catch (InterruptedException e) {
-                                        }
-                                    }
-                                });
-                        // Mark our status as up if it wasn't already
-                        this.up(instanceInfo, true);
-                    } else if (LOGGER.isLoggable(WARNING)) {
-                        LOGGER.log(WARNING,
-                                   "Registration failed;"
-                                   + " no further attempt at registration will occur");
+                    // Kick off a renewal loop.
+                    if (LOGGER.isLoggable(DEBUG)) {
+                      LOGGER.log(DEBUG,
+                                 "Beginning renewal loop");
                     }
+                    long sleepTimeInMilliSeconds = instanceInfo.getJsonObject("instance") // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-client/src/main/java/com/netflix/appinfo/InstanceInfo.java#L55
+                      .getJsonObject("leaseInfo")
+                      .getInt("renewalIntervalInSecs") * 1000L;
+                    this.renewer = Thread.ofVirtual() // volatile write
+                      .name("Eureka lease renewer")
+                      .uncaughtExceptionHandler((t, e) -> {
+                          if (LOGGER.isLoggable(ERROR)) {
+                            LOGGER.log(ERROR, e.getMessage(), e);
+                          }
+                          this.stop = true; // volatile write
+                        })
+                      .start(() -> {
+                          // Simplest possible heartbeat loop; nothing more complicated is needed.
+                          // Sleep first; we just finished registration so there needs to be a time gap before
+                          // renewal.
+                          // try {
+                          // sleep(sleepTimeInMilliSeconds);
+                          // } catch (InterruptedException e) {
+                          // }
+                          while (!this.stop) { // volatile read
+                            JsonObject newInstanceInfo = this.renew();
+                            if (newInstanceInfo != this.instanceInfo) { // volatile read
+                              // The server gave us something new for some reason; use it.
+                              this.instanceInfo = newInstanceInfo; // volatile write
+                            }
+                            try {
+                              sleep(sleepTimeInMilliSeconds);
+                            } catch (InterruptedException e) {
+                            }
+                          }
+                        });
+                    // Mark our status as up if it wasn't already
+                    this.up(instanceInfo, true);
                 },
                 () -> {
                     if (LOGGER.isLoggable(WARNING)) {
@@ -556,17 +554,17 @@ public final class EurekaRegistrationFeature implements HttpFeature {
     // DELETE {baseUri}/v2/apps/{appName}/{id}
     private boolean cancel(HttpClient<? extends Http1ClientRequest> client, String appName, String id) {
         try (var response = client
-             .delete("/v2/apps/" + appName.toString() + "/" + id.toString()) // trigger NPEs if needed
+             .delete("/v2/apps/" + Objects.requireNonNull(appName, "appName") + "/" + Objects.requireNonNull(id, "id"))
              .request()) {
             if (response.status().family() == SUCCESSFUL) {
                 if (LOGGER.isLoggable(DEBUG)) {
                     LOGGER.log(DEBUG,
-                               "DELETE /v2/apps/" + appName.toString() + "/" + id.toString() + ": " + response.status());
+                               "DELETE /v2/apps/" + appName + "/" + id + ": " + response.status());
                 }
                 return true;
             } else if (LOGGER.isLoggable(WARNING)) {
                 LOGGER.log(WARNING,
-                           "DELETE /v2/apps/" + appName.toString() + "/" + id.toString() + ": " + response.status());
+                           "DELETE /v2/apps/" + appName + "/" + id + ": " + response.status());
             }
             return false;
         }
@@ -581,13 +579,13 @@ public final class EurekaRegistrationFeature implements HttpFeature {
                                          String status,
                                          Long lastDirtyTimestamp) {
         var request = this.client // volatile read
-            .put("/v2/apps/" + appName.toString() + "/" + id.toString()) // trigger NPEs if necessary
+            .put("/v2/apps/" + Objects.requireNonNull(appName, "appName") + "/" + Objects.requireNonNull(id, "id"))
             .accept(APPLICATION_JSON);
         if (status != null) {
             request.queryParam("status", status);
         }
         if (lastDirtyTimestamp != null) {
-            request.queryParam("lastDirtyTimestamp", lastDirtyTimestamp.toString());
+            request.queryParam("lastDirtyTimestamp", lastDirtyTimestamp.toString()); // yes, String-typed value
         }
         return request.request();
     }
@@ -632,7 +630,7 @@ public final class EurekaRegistrationFeature implements HttpFeature {
                             instance.getString("status"),
                             Long.valueOf(instance.getJsonNumber("lastDirtyTimestamp").longValueExact()))) {
             switch (response.status()) {
-            case Status s when s.family() == SUCCESSFUL:
+            case Status s when s.family().equals(SUCCESSFUL):
                 if (LOGGER.isLoggable(DEBUG)) {
                     LOGGER.log(DEBUG,
                                "Successfully renewed lease");
@@ -649,7 +647,9 @@ public final class EurekaRegistrationFeature implements HttpFeature {
                     }
                 }
                 break;
-            case Status s when s == NOT_FOUND_404:
+            case Status s when s.code() == 404:
+                // (Can't test for equality with Status.NOT_FOUND_404 equality because the reason is not set by the
+                // server.)
                 // Eureka's native machinery re-registers here.
                 if (LOGGER.isLoggable(DEBUG)) {
                     LOGGER.log(DEBUG,
@@ -913,7 +913,7 @@ public final class EurekaRegistrationFeature implements HttpFeature {
         // https://github.com/Netflix/eureka/blob/v2.0.4/eureka-client/src/main/java/com/netflix/appinfo/InstanceInfo.java#L138
         instance.add("overriddenStatus", "UNKNOWN");
 
-        Long ts = Long.valueOf(System.currentTimeMillis());
+        long ts = System.currentTimeMillis();
         instance.add("lastUpdatedTimestamp", ts);
         instance.add("lastDirtyTimestamp", ts);
 
@@ -953,12 +953,10 @@ public final class EurekaRegistrationFeature implements HttpFeature {
             return json;
         }
         var b = JBF.createObjectBuilder();
-        var b0 = JBF.createObjectBuilder();
         instance.forEach((k, v) -> {
-                b0.add(k, k.equals("lastDirtyTimestamp") ? createValue(Long.valueOf(lastDirtyTimestamp).toString()) : v);
+                b.add(k, k.equals("lastDirtyTimestamp") ? createValue(Long.valueOf(lastDirtyTimestamp)) : v);
             });
-        b.add("instance", b0);
-        return b.build();
+        return JBF.createObjectBuilder().add("instance", b).build();
     }
 
     private static JsonObject json(JsonObject json, JsonString status) {
