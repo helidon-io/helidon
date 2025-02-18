@@ -21,12 +21,12 @@
     <parent>
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-se</artifactId>
-        <version>3.2.12-SNAPSHOT</version>
+        <version>3.2.13-SNAPSHOT</version>
         <relativePath>../../../applications/se/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.tests.integration</groupId>
     <artifactId>helidon-tests-integration-tracer-baggage</artifactId>
-    <version>3.2.12-SNAPSHOT</version>
+    <version>3.2.13-SNAPSHOT</version>
 
     <dependencies>
         <dependency>
