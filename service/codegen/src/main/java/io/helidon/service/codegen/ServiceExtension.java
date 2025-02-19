@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import java.util.stream.Collectors;
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenOptions;
 import io.helidon.common.types.Annotation;
-import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
@@ -82,18 +81,13 @@ class ServiceExtension implements RegistryCodegenExtension {
     private void generateInterceptionExternalDelegates(RegistryRoundContext roundContext, TypeInfo typeInfo) {
         Annotation annotation = typeInfo.annotation(INTERCEPTION_EXTERNAL_DELEGATE);
         List<TypeName> typeNames = annotation.typeValues().orElseGet(List::of);
-        boolean supportClasses = annotation.booleanValue("classDelegates").orElse(false);
 
         for (TypeName typeName : typeNames) {
             TypeInfo delegateType = ctx.typeInfo(typeName)
                     .orElseThrow(() -> new CodegenException("Cannot resolve type " + typeName.fqName() + " for "
                                                                     + " external interception delegates",
                                                             typeInfo.originatingElementValue()));
-            if (!supportClasses && typeInfo.kind() != ElementKind.INTERFACE) {
-                throw new CodegenException("Attempting to create external delegate interception for non interface type: "
-                                                   + typeName.fqName(),
-                                           typeInfo.originatingElementValue());
-            }
+
             interceptionSupport.generateDelegateInterception(roundContext,
                                                              delegateType,
                                                              delegateType.typeName(),
