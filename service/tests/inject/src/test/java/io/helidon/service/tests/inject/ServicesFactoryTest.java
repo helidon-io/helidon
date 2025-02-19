@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.hasItems;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 
@@ -40,8 +41,8 @@ public class ServicesFactoryTest {
     @BeforeAll
     public static void initRegistry() {
         var injectConfig = ServiceRegistryConfig.builder()
-                .addServiceDescriptor(ServicesFactoryTypes_TargetTypeProvider__ServiceDescriptor.INSTANCE)
-                .addServiceDescriptor(ServicesFactoryTypes_ConfigFactory__ServiceDescriptor.INSTANCE)
+                .addServiceDescriptor(ServicesFactoryTypes_ContractFactory__ServiceDescriptor.INSTANCE)
+                .addServiceDescriptor(ServicesFactoryTypes_QualifiedReceiver__ServiceDescriptor.INSTANCE)
                 .discoverServices(false)
                 .discoverServicesFromServiceLoader(false)
                 .build();
@@ -57,19 +58,61 @@ public class ServicesFactoryTest {
     }
 
     @Test
+    void testInjected() {
+        var injected = registry.get(ServicesFactoryTypes.QualifiedReceiver.class);
+
+        assertThat(injected.first().description(), is("first"));
+        assertThat(injected.second().description(), is("second"));
+        assertThat(injected.third().description(), is("both"));
+    }
+
+    @Test
     void testServicesFactory() {
-        List<ServicesFactoryTypes.TargetType> targetTypes =
+        List<ServicesFactoryTypes.QualifiedContract> targetTypes =
                 registry.all(Lookup.builder()
                                      .addQualifier(Qualifier.WILDCARD_NAMED)
-                                     .addContract(ServicesFactoryTypes.TargetType.class)
+                                     .addContract(ServicesFactoryTypes.QualifiedContract.class)
                                      .build());
 
         assertThat(targetTypes, hasSize(3));
         var names = targetTypes.stream()
-                .map(ServicesFactoryTypes.TargetType::config)
-                .map(ServicesFactoryTypes.NamedConfig::name)
+                .map(ServicesFactoryTypes.QualifiedContract::description)
                 .collect(Collectors.toUnmodifiableSet());
 
-        assertThat(names, hasItems("first", "second", "third"));
+        assertThat(names, hasItems("first", "second", "both"));
+    }
+
+    @Test
+    void testServicesFactoryFirst() {
+        ServicesFactoryTypes.QualifiedContract instance =
+                registry.get(Lookup.builder()
+                                     .addQualifier(ServicesFactoryTypes.FirstQualifier.QUALIFIER)
+                                     .addContract(ServicesFactoryTypes.QualifiedContract.class)
+                                     .build());
+
+        assertThat(instance.description(), is("first"));
+    }
+
+    @Test
+    void testServicesFactorySecond() {
+        ServicesFactoryTypes.QualifiedContract instance =
+                registry.get(Lookup.builder()
+                                     .addQualifier(ServicesFactoryTypes.SecondQualifier.QUALIFIER)
+                                     .addContract(ServicesFactoryTypes.QualifiedContract.class)
+                                     .build());
+
+        assertThat(instance.description(), is("second"));
+    }
+
+    @Test
+    void testServicesFactoryThird() {
+        ServicesFactoryTypes.QualifiedContract instance =
+                registry.get(Lookup.builder()
+                                     .addQualifier(ServicesFactoryTypes.FirstQualifier.QUALIFIER)
+                                     .addQualifier(ServicesFactoryTypes.SecondQualifier.QUALIFIER)
+                                     .addContract(ServicesFactoryTypes.QualifiedContract.class)
+                                     .build());
+
+        assertThat(instance.description(), is("both"));
     }
 }
