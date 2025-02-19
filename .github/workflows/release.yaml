@@ -19,7 +19,7 @@ concurrency:
 jobs:
   copyright:
     timeout-minutes: 10
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
         with:
@@ -34,7 +34,7 @@ jobs:
         run: etc/scripts/copyright.sh
   release:
     timeout-minutes: 60
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     environment: release
     steps:
       - uses: actions/checkout@v3
