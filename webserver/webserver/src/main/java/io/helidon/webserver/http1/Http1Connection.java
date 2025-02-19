@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,6 +56,7 @@ import io.helidon.http.encoding.ContentDecoder;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ErrorHandling;
 import io.helidon.webserver.ProxyProtocolData;
 import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.http.DirectTransportRequest;
@@ -644,6 +645,30 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     }
 
     private void handleRequestException(RequestException e) {
+        // gather error handling properties
+        ErrorHandling errorHandling = ctx.listenerContext()
+                .config()
+                .errorHandling()
+                .orElse(null);
+        boolean includeEntity = false;
+        boolean logAllMessages = false;
+        if (errorHandling != null) {
+            includeEntity = errorHandling.includeEntity();
+            logAllMessages = errorHandling.logAllMessages();
+        }
+
+        // log message in DEBUG mode
+        if (LOGGER.isLoggable(DEBUG) && (e.safeMessage() || logAllMessages)) {
+            LOGGER.log(DEBUG, e);
+        }
+
+        // create message to return based on settings
+        String message = null;
+        if (includeEntity) {
+            message = e.safeMessage() ? e.getMessage() : "Bad request, see server log for more information";
+        }
+
+        // handle exception condition using direct handlers
         DirectHandler handler = ctx.listenerContext()
                 .directHandlers()
                 .handler(e.eventType());
@@ -651,22 +676,22 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                                                   e.eventType(),
                                                                   e.status(),
                                                                   e.responseHeaders(),
-                                                                  e,
-                                                                  LOGGER);
+                                                                  message);
 
+        // write response
         BufferData buffer = BufferData.growing(128);
         ServerResponseHeaders headers = response.headers();
 
         // we are escaping the connection loop, the connection will be closed
         headers.set(HeaderValues.CONNECTION_CLOSE);
 
-        byte[] message = response.entity().orElse(BufferData.EMPTY_BYTES);
-        headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, String.valueOf(message.length)));
+        byte[] entity = response.entity().orElse(BufferData.EMPTY_BYTES);
+        headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, String.valueOf(entity.length)));
 
         Http1ServerResponse.nonEntityBytes(headers, response.status(), buffer, response.keepAlive(),
                                            http1Config.validateResponseHeaders());
-        if (message.length != 0) {
-            buffer.write(message);
+        if (entity.length != 0) {
+            buffer.write(entity);
         }
 
         sendListener.status(ctx, response.status());

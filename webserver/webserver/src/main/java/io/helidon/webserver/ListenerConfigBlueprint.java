@@ -400,4 +400,10 @@ interface ListenerConfigBlueprint {
         }
     }
 
+    /**
+     * Configuration for this listener's error handling.
+     *
+     * @return optional error handling
+     */
+    Optional<ErrorHandling> errorHandling();
 }

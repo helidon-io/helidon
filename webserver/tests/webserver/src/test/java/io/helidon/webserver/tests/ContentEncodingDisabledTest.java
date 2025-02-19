@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
+import io.helidon.webserver.ErrorHandling;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http1.Http1Config;
 import io.helidon.webserver.http1.Http1ConnectionSelector;
@@ -50,6 +51,10 @@ class ContentEncodingDisabledTest extends ContentEncodingDisabledAbstract {
     }
 
     @SetUpServer
+    static void setupServer(WebServerConfig.Builder builder) {
+
+    }
+    @SetUpServer
     static void server(WebServerConfig.Builder server) {
         ServerConnectionSelector http1 = Http1ConnectionSelector.builder()
                 // Headers validation is enabled by default
@@ -58,6 +63,9 @@ class ContentEncodingDisabledTest extends ContentEncodingDisabledAbstract {
         server.addConnectionSelector(http1)
                 // Content encoding needs to be completely disabled
                 .contentEncoding(emptyEncodingContext());
+        server.errorHandling(ErrorHandling.builder()
+                                     .includeEntity(true)          // enable error message entities
+                                     .build());
     }
 
     @Test
