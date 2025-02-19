@@ -405,5 +405,6 @@ interface ListenerConfigBlueprint {
      *
      * @return optional error handling
      */
+    @Option.Configured
     Optional<ErrorHandling> errorHandling();
 }
