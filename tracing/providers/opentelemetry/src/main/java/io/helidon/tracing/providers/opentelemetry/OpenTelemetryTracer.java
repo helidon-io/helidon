@@ -25,16 +25,13 @@ import java.util.StringJoiner;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
-import io.helidon.common.config.Config;
 import io.helidon.tracing.HeaderConsumer;
 import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.SpanListener;
 import io.helidon.tracing.Tracer;
-import io.helidon.tracing.TracerBuilder;
 
-import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.propagation.TextMapGetter;
@@ -64,8 +61,8 @@ class OpenTelemetryTracer implements Tracer {
         this.tags = tags;
     }
 
-    static Builder builder() {
-        return new Builder();
+    static OpenTelemetryTracerBuilder builder() {
+        return new OpenTelemetryTracerBuilder();
     }
 
     @Override
@@ -116,95 +113,6 @@ class OpenTelemetryTracer implements Tracer {
 
     List<SpanListener> spanListeners() {
         return Collections.unmodifiableList(spanListeners);
-    }
-
-    static class Builder implements TracerBuilder<Builder> {
-        private OpenTelemetry ot;
-        private String serviceName = "helidon-service";
-        private boolean registerGlobal;
-
-        @Override
-        public Tracer build() {
-            if (ot == null) {
-                ot = GlobalOpenTelemetry.get();
-            }
-            io.opentelemetry.api.trace.Tracer tracer = ot.getTracer(serviceName);
-            Tracer result = new OpenTelemetryTracer(ot, tracer, Map.of());
-            if (registerGlobal) {
-                Tracer.global(result);
-            }
-            return result;
-        }
-
-        Builder openTelemetry(OpenTelemetry ot) {
-            this.ot = ot;
-            return this;
-        }
-
-        @Override
-        public Builder serviceName(String name) {
-            this.serviceName = name;
-            return this;
-        }
-
-        @Override
-        public Builder collectorProtocol(String protocol) {
-            return this;
-        }
-
-        @Override
-        public Builder collectorPort(int port) {
-            return this;
-        }
-
-        @Override
-        public Builder collectorHost(String host) {
-            return this;
-        }
-
-        @Override
-        public Builder collectorPath(String path) {
-            return this;
-        }
-
-        @Override
-        public Builder addTracerTag(String key, String value) {
-            return this;
-        }
-
-        @Override
-        public Builder addTracerTag(String key, Number value) {
-            return this;
-        }
-
-        @Override
-        public Builder addTracerTag(String key, boolean value) {
-            return this;
-        }
-
-        @Override
-        public Builder config(Config config) {
-            return this;
-        }
-
-        @Override
-        public Builder enabled(boolean enabled) {
-            return this;
-        }
-
-        @Override
-        public Builder registerGlobal(boolean global) {
-            this.registerGlobal = global;
-            return this;
-        }
-
-        @Override
-        public <B> B unwrap(Class<B> builderClass) {
-            if (builderClass.isAssignableFrom(getClass())) {
-                return builderClass.cast(this);
-            }
-            throw new IllegalArgumentException("Cannot unwrap " + builderClass + " from Opentelmetry tracer builder.");
-        }
     }
 
     private static class Getter implements TextMapGetter<HeaderProvider> {
