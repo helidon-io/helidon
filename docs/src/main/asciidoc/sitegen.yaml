@@ -156,6 +156,7 @@ backend:
                   type: "icon"
                   value: "filter_drama"
                 sources:
+                  - "langchain4j.adoc"
                   - "oci.adoc"
                   - "hcv.adoc"
                   - "neo4j.adoc"
@@ -400,6 +401,7 @@ backend:
                   type: "icon"
                   value: "filter_drama"
                 sources:
+                  - "langchain4j/langchain4j.adoc"
                   - "oci.adoc"
                   - "hcv.adoc"
                   - "neo4j.adoc"
