@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,11 @@ module io.helidon.grpc.server {
     requires transitive io.helidon.health;
     requires io.helidon.tracing;
 
-    requires transitive grpc.services;
-    requires transitive grpc.core;
+    requires transitive io.grpc;
+    requires transitive io.grpc.util;
+    requires transitive io.grpc.inprocess;
+    requires transitive io.grpc.internal;
+    requires transitive io.grpc.services;
     requires transitive microprofile.health.api;
     requires transitive io.opentracing.api;
     requires transitive opentracing.grpc;
