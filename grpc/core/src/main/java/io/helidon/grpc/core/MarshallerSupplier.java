@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@ package io.helidon.grpc.core;
 
 import javax.inject.Named;
 
-import com.google.protobuf.MessageLite;
+import com.google.protobuf.Message;
 import io.grpc.MethodDescriptor;
-import io.grpc.protobuf.lite.ProtoLiteUtils;
+import io.grpc.protobuf.ProtoUtils;
 
 /**
  * A supplier of {@link MethodDescriptor.Marshaller} instances for specific
@@ -69,7 +69,7 @@ public interface MarshallerSupplier {
 
         @Override
         public <T> MethodDescriptor.Marshaller<T> get(Class<T> clazz) {
-            if (MessageLite.class.isAssignableFrom(clazz)) {
+            if (Message.class.isAssignableFrom(clazz)) {
                 return proto.get(clazz);
             }
             return JavaMarshaller.instance();
@@ -89,9 +89,9 @@ public interface MarshallerSupplier {
         public <T> MethodDescriptor.Marshaller<T> get(Class<T> clazz) {
             try {
                 java.lang.reflect.Method getDefaultInstance = clazz.getDeclaredMethod("getDefaultInstance");
-                MessageLite instance = (MessageLite) getDefaultInstance.invoke(clazz);
+                Message instance = (Message) getDefaultInstance.invoke(clazz);
 
-                return (MethodDescriptor.Marshaller<T>) ProtoLiteUtils.marshaller(instance);
+                return (MethodDescriptor.Marshaller<T>) ProtoUtils.marshaller(instance);
             } catch (Exception e) {
                 String msg = String.format(
                         "Attempting to use class %s, which is not a valid Protocol buffer message, with a default marshaller",

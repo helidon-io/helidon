@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,10 @@ import io.helidon.grpc.server.GrpcServerConfiguration;
 
 import io.grpc.EquivalentAddressGroup;
 import io.grpc.NameResolver;
+import io.grpc.NameResolverProvider;
+import io.grpc.NameResolverRegistry;
 import io.grpc.StatusRuntimeException;
+
 import io.netty.handler.codec.DecoderException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -208,12 +211,11 @@ public class GrpcChannelsProviderIT {
 
     @Test
     public void shouldUseTarget() throws Exception {
-        FakeNameResolverFactory factory = new FakeNameResolverFactory(portNoSsl);
+        NameResolverRegistry.getDefaultRegistry().register(new FakeNameResolverProvider("foo", portNoSsl));
         String channelKey = "ChannelKey";
         GrpcChannelDescriptor.Builder builder = GrpcChannelDescriptor
                 .builder()
-                .target("foo://bar.com")
-                .nameResolverFactory(factory);
+                .target("foo://bar.com");
 
         GrpcChannelsProvider provider = GrpcChannelsProvider.builder()
                 .channel(channelKey, builder.build())
@@ -300,6 +302,40 @@ public class GrpcChannelsProviderIT {
 
         public NameResolver.Args getArgs() {
             return args;
+        }
+    }
+
+    private static class FakeNameResolverProvider extends NameResolverProvider {
+        private final String scheme;
+        private final int port;
+        private URI targetUri;
+        private NameResolver.Args args;
+
+        public FakeNameResolverProvider(String scheme, int port) {
+            this.scheme = scheme;
+            this.port = port;
+        }
+
+        @Override
+        protected boolean isAvailable() {
+            return true;
+        }
+
+        @Override
+        protected int priority() {
+            return 0;
+        }
+
+        @Override
+        public NameResolver newNameResolver(URI targetUri, NameResolver.Args args) {
+            this.targetUri = targetUri;
+            this.args = args;
+            return new FakeNameResolver(port);
+        }
+
+        @Override
+        public String getDefaultScheme() {
+            return scheme;
         }
     }
 

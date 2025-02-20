@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2017, 2023 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2017, 2025 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -53,8 +53,12 @@
         </dependency>
         <!-- etcd v3 -->
         <dependency>
-            <groupId>io.helidon.grpc</groupId>
-            <artifactId>io.grpc</artifactId>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-core</artifactId>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
