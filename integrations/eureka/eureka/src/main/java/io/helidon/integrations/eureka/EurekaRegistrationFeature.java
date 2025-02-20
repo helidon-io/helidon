@@ -562,12 +562,6 @@ public final class EurekaRegistrationFeature implements HttpFeature {
                 })
             .start(() -> {
                     // Simplest possible heartbeat loop; nothing more complicated is needed.
-                    // Sleep first; we just finished registration so there needs to be a time gap before
-                    // renewal.
-                    // try {
-                    // sleep(sleepTimeInMilliSeconds);
-                    // } catch (InterruptedException e) {
-                    // }
                     while (!this.stop) { // volatile read
                         JsonObject newInstanceInfo = this.renew();
                         if (newInstanceInfo != this.instanceInfo) { // volatile read
@@ -584,7 +578,7 @@ public final class EurekaRegistrationFeature implements HttpFeature {
         this.up(instanceInfo, true);
     }
 
-        // PUT {baseUri}/v2/apps/{appName}/{id}?status={status}&lastDirtyTimestamp={lastDirtyTimestamp}
+    // PUT {baseUri}/v2/apps/{appName}/{id}?status={status}&lastDirtyTimestamp={lastDirtyTimestamp}
     //
     // (...&overriddenstatus={someOverriddenStatus} is recognized by the Eureka server, but never sent by Eureka's
     // registration client.)
