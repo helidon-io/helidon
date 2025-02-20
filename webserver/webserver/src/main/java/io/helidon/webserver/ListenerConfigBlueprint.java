@@ -403,8 +403,9 @@ interface ListenerConfigBlueprint {
     /**
      * Configuration for this listener's error handling.
      *
-     * @return optional error handling
+     * @return error handling
      */
     @Option.Configured
-    Optional<ErrorHandling> errorHandling();
+    @Option.DefaultMethod("create")
+    ErrorHandling errorHandling();
 }

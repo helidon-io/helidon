@@ -648,23 +648,16 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         // gather error handling properties
         ErrorHandling errorHandling = ctx.listenerContext()
                 .config()
-                .errorHandling()
-                .orElse(null);
-        boolean includeEntity = false;
-        boolean logAllMessages = false;
-        if (errorHandling != null) {
-            includeEntity = errorHandling.includeEntity();
-            logAllMessages = errorHandling.logAllMessages();
-        }
+                .errorHandling();
 
         // log message in DEBUG mode
-        if (LOGGER.isLoggable(DEBUG) && (e.safeMessage() || logAllMessages)) {
+        if (LOGGER.isLoggable(DEBUG) && (e.safeMessage() || errorHandling.logAllMessages())) {
             LOGGER.log(DEBUG, e);
         }
 
         // create message to return based on settings
         String message = null;
-        if (includeEntity) {
+        if (errorHandling.includeEntity()) {
             message = e.safeMessage() ? e.getMessage() : "Bad request, see server log for more information";
         }
 
