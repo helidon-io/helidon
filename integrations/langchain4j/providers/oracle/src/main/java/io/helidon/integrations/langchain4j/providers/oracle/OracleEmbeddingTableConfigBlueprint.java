@@ -37,7 +37,7 @@ interface OracleEmbeddingTableConfigBlueprint {
     String CONFIG_ROOT = "langchain4j.oracle.embedding-store.embedding-table";
 
     /**
-     * Gets the create option, which defines the behavior when creating the embedding table.
+     * The create option, which defines the behavior when creating the embedding table.
      *
      * @return an {@link java.util.Optional} containing the create option if set; otherwise, an empty {@link java.util.Optional}
      */
@@ -45,7 +45,7 @@ interface OracleEmbeddingTableConfigBlueprint {
     Optional<CreateOption> createOption();
 
     /**
-     * Gets the name of the embedding table.
+     * The name of the embedding table.
      *
      * @return an {@link java.util.Optional} containing the table name if set; otherwise, an empty {@link java.util.Optional}
      */
@@ -53,7 +53,7 @@ interface OracleEmbeddingTableConfigBlueprint {
     Optional<String> name();
 
     /**
-     * Gets the name of the ID column in the embedding table.
+     * The name of the ID column in the embedding table.
      *
      * @return an {@link java.util.Optional} containing the ID column name if set; otherwise, an empty {@link java.util.Optional}
      */
@@ -61,7 +61,7 @@ interface OracleEmbeddingTableConfigBlueprint {
     Optional<String> idColumn();
 
     /**
-     * Gets the name of the embedding column in the embedding table.
+     * The name of the embedding column in the embedding table.
      *
      * @return an {@link java.util.Optional} containing the embedding column name if set; otherwise, an empty {@link java.util.Optional}
      */
@@ -69,7 +69,7 @@ interface OracleEmbeddingTableConfigBlueprint {
     Optional<String> embeddingColumn();
 
     /**
-     * Gets the name of the text column in the embedding table.
+     * The name of the text column in the embedding table.
      *
      * @return an {@link java.util.Optional} containing the text column name if set; otherwise, an empty {@link java.util.Optional}
      */
@@ -77,7 +77,7 @@ interface OracleEmbeddingTableConfigBlueprint {
     Optional<String> textColumn();
 
     /**
-     * Gets the name of the metadata column in the embedding table.
+     * The name of the metadata column in the embedding table.
      *
      * @return an {@link java.util.Optional} containing the metadata column name if set; otherwise, an empty {@link java.util.Optional}
      */

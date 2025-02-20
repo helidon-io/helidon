@@ -46,7 +46,7 @@ interface OracleEmbeddingStoreConfigBlueprint {
     boolean enabled();
 
     /**
-     * Gets the data source name used for connecting to the Oracle embedding store.
+     * The data source name used for connecting to the Oracle embedding store.
      *
      * @return an {@link java.util.Optional} containing the datasource name qualifier
      */
@@ -55,7 +55,7 @@ interface OracleEmbeddingStoreConfigBlueprint {
     Optional<String> dataSource();
 
     /**
-     * Gets the properties of the embedding table associated with the Oracle embedding store.
+     * Properties of the embedding table associated with the Oracle embedding store.
      *
      * @return an {@link java.util.Optional} containing the {@link OracleEmbeddingTableConfig} representing table properties
      */
@@ -63,18 +63,27 @@ interface OracleEmbeddingStoreConfigBlueprint {
     Optional<OracleEmbeddingTableConfig> embeddingTable();
 
     /**
-     * Gets the exact search option, which specifies whether exact matching is used in searches.
+     * The exact search option, which specifies whether exact matching is used in searches.
      *
-     * @return an {@link java.util.Optional} containing the exact search option if set; otherwise, an empty {@link java.util.Optional}
+     * @return an {@link java.util.Optional} containing the exact search option if set; otherwise, an empty
+     *         {@link java.util.Optional}
      */
     @Option.Configured
     Optional<Boolean> exactSearch();
 
     /**
-     * Gets the vector index creation option, which defines behavior when creating the vector index.
+     * The vector index creation option, which defines behavior when creating the vector index.
      *
-     * @return an {@link java.util.Optional} containing the vector index creation option if set; otherwise, an empty {@link java.util.Optional}
+     * @return an {@link java.util.Optional} containing the vector index creation option if set; otherwise, an empty
+     *         {@link java.util.Optional}
      */
     @Option.Configured
+    @Option.AllowedValues({
+            @Option.AllowedValue(value = "CREATE_NONE", description = "No attempt is made to create the schema object."),
+            @Option.AllowedValue(value = "CREATE_IF_NOT_EXISTS", description = "An existing schema object is reused, otherwise "
+                    + "it is created."),
+            @Option.AllowedValue(value = "CREATE_OR_REPLACE", description = "An existing schema object is dropped and replaced "
+                    + "with a new one.")
+    })
     Optional<CreateOption> vectorIndexCreateOption();
 }

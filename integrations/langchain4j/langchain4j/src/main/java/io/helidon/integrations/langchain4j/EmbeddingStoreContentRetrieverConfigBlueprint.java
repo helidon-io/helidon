@@ -62,7 +62,7 @@ interface EmbeddingStoreContentRetrieverConfigBlueprint {
     Optional<EmbeddingModel> embeddingModel();
 
     /**
-     * Gets the display name.
+     * The display name.
      *
      * @return an {@link java.util.Optional} containing the display name if set, otherwise an empty {@link java.util.Optional}
      */
@@ -70,7 +70,7 @@ interface EmbeddingStoreContentRetrieverConfigBlueprint {
     Optional<String> displayName();
 
     /**
-     * Gets the maximum number of results.
+     * The maximum number of results.
      *
      * @return an {@link java.util.Optional} containing the maximum results if set, otherwise an empty {@link java.util.Optional}
      */
@@ -78,7 +78,7 @@ interface EmbeddingStoreContentRetrieverConfigBlueprint {
     Optional<Integer> maxResults();
 
     /**
-     * Gets the minimum score threshold.
+     * The minimum score threshold.
      *
      * @return an {@link java.util.Optional} containing the minimum score if set, otherwise an empty {@link java.util.Optional}
      */
