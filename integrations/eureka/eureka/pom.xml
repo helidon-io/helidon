@@ -49,11 +49,6 @@
         </dependency>
 
         <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>io.helidon.http</groupId>
             <artifactId>helidon-http</artifactId>
         </dependency>
@@ -132,6 +127,10 @@
                     <execution>
                         <id>check-dependencies</id>
                         <phase>verify</phase>
+                        <configuration>
+                            <ignoredNonTestScopedDependencies>io.helidon.config:helidon-config::</ignoredNonTestScopedDependencies>
+                            <ignoredUsedUndeclaredDependencies>io.helidon.config:helidon-config::</ignoredUsedUndeclaredDependencies>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

@@ -22,13 +22,11 @@
  */
 module io.helidon.integrations.eureka {
 
-    requires transitive io.helidon.common.config;
-    requires io.helidon.http;
-    // requires io.helidon.http.encoding.gzip;
-    requires transitive io.helidon.service.registry;
+    requires io.helidon.common.config;
+    requires io.helidon.service.registry;
     requires io.helidon.webclient.http1;
-    requires transitive io.helidon.webserver;
-    requires transitive jakarta.json;
+    requires io.helidon.webserver;
+    requires jakarta.json;
 
     provides io.helidon.webserver.http.HttpFeature with io.helidon.integrations.eureka.EurekaRegistrationFeature;
 

@@ -18,7 +18,7 @@ package io.helidon.integrations.eureka;
 import java.net.UnknownHostException;
 import java.util.logging.Logger;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.config.ConfigSources;
 
 import jakarta.json.JsonNumber;

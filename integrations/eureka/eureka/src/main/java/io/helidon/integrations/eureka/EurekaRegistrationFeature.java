@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.http.Status;
 import io.helidon.service.registry.Services;
 import io.helidon.webclient.http1.Http1Client;
@@ -244,9 +244,7 @@ import static java.lang.Thread.sleep;
  *
  *       <td>{@code true}</td>
  *
- *       <td>If this value is set to {@code false}, then a call must be made out of band, normally by a health check
- *       mechanism, to the {@link #markUp()} method to report to Eureka that the service instance is able to respond to
- *       requests.</td>
+ *       <td></td>
  *
  *     </tr>
  *
@@ -488,26 +486,6 @@ public final class EurekaRegistrationFeature implements HttpFeature {
                 LOGGER.log(ERROR, e);
             }
         }
-    }
-
-    /**
-     * Marks this microservice as being {@code UP} for purposes of Eureka registration and for no other purpose.
-     *
-     * @return {@code true} if the status change was successfully recorded for eventual registration or renewal; {@code
-     * false} if no action was taken
-     */
-    public boolean markUp() {
-        return this.up(this.instanceInfo, true); // volatile read
-    }
-
-    /**
-     * Marks this microservice as being {@code DOWN} for purposes of Eureka registration and for no other purpose.
-     *
-     * @return {@code true} if the status change was successfully recorded for eventual registration or renewal; {@code
-     * false} if no action was taken
-     */
-    public boolean markDown() {
-        return this.up(this.instanceInfo, false); // volatile read
     }
 
     /**
