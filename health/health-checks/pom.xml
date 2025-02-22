@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.health</groupId>
         <artifactId>helidon-health-project</artifactId>
-        <version>1.4.15-SNAPSHOT</version>
+        <version>1.4.15</version>
     </parent>
 
     <artifactId>helidon-health-checks</artifactId>
