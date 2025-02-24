@@ -77,20 +77,6 @@ kubectl delete -f app.yaml
                     </model>
                 </output>
             </boolean>
-            <boolean id="v8o"
-                     name="Verrazzano Support"
-                     description="Add Verrazzano manifests to your project"
-                     default="false"
-                     optional="true">
-                <output>
-                    <templates engine="mustache" transformations="mustache">
-                        <directory>files</directory>
-                        <includes>
-                            <include>v8o.yaml.mustache</include>
-                        </includes>
-                    </templates>
-                </output>
-            </boolean>
             <boolean id="jpms"
                      name="Module support (JPMS)"
                      description="Add a module-info to your project"
