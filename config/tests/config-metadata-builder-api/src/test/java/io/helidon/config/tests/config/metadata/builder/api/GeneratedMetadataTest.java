@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -182,7 +182,6 @@ class GeneratedMetadataTest {
                 "MyTarget.ignored()", // {@link MyTarget#ignored()}
                 "MyTarget.ignored()", // {@linkplain MyTarget#ignored()}
                 "CONSTANT", // {@value #CONSTANT}
-                "Some value", // @return some value
                 "See MyTarget.message()" // @see MyTarget#message()
         ));
     }

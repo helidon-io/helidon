@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -128,7 +128,7 @@ public class JsonpSupport implements MediaSupport {
     public <T> ReaderResponse<T> reader(GenericType<T> type, Headers requestHeaders) {
         if (isSupportedType(type)) {
             if (requestHeaders.contentType()
-                    .map(it -> it.test(MediaTypes.APPLICATION_JSON))
+                    .map(this::isMediaTypeSupported)
                     .orElse(true)) {
                 return new ReaderResponse<>(SupportLevel.SUPPORTED, this::reader);
             }
@@ -159,7 +159,7 @@ public class JsonpSupport implements MediaSupport {
                 return new ReaderResponse<>(SupportLevel.SUPPORTED, this::reader);
             }
             for (HttpMediaType acceptedType : acceptedTypes) {
-                if (acceptedType.test(MediaTypes.APPLICATION_JSON)) {
+                if (isMediaTypeSupported(acceptedType)) {
                     return new ReaderResponse<>(SupportLevel.SUPPORTED, this::reader);
                 }
             }
@@ -180,6 +180,11 @@ public class JsonpSupport implements MediaSupport {
 
     boolean isSupportedType(GenericType<?> type) {
         return JsonStructure.class.isAssignableFrom(type.rawType());
+    }
+
+    boolean isMediaTypeSupported(HttpMediaType mediaType) {
+        return mediaType.test(MediaTypes.APPLICATION_JSON)
+                || mediaType.test(MediaTypes.APPLICATION_JSON_PATCH_JSON);
     }
 
     <T> EntityReader<T> reader() {

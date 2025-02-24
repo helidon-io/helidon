@@ -24,7 +24,7 @@ import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 import io.helidon.service.registry.Dependency;
 import io.helidon.service.registry.DependencyContext;
-import io.helidon.service.registry.GeneratedService;
+import io.helidon.service.registry.InterceptionMetadata;
 import io.helidon.service.registry.ServiceDescriptor;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryConfig;
@@ -84,7 +84,7 @@ public class CyclicDependencyTest {
                 .build();
 
         @Override
-        public Object instantiate(DependencyContext ctx) {
+        public Object instantiate(DependencyContext ctx, InterceptionMetadata im) {
             return new Service1(ctx.dependency(DEP));
         }
 
@@ -123,7 +123,7 @@ public class CyclicDependencyTest {
                 .build();
 
         @Override
-        public Object instantiate(DependencyContext ctx) {
+        public Object instantiate(DependencyContext ctx, InterceptionMetadata im) {
             return new Service2(ctx.dependency(DEP));
         }
 

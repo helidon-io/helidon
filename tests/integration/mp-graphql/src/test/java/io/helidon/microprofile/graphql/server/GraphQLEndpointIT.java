@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,9 @@ import io.helidon.microprofile.testing.junit5.AddBean;
 import io.helidon.microprofile.testing.junit5.AddExtension;
 import io.helidon.microprofile.testing.junit5.DisableDiscovery;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
+import io.helidon.microprofile.testing.junit5.Socket;
 
+import jakarta.inject.Inject;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
@@ -39,7 +41,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.graphql.server.GraphQlConstants.GRAPHQL_SCHEMA_URI;
-import static io.helidon.graphql.server.GraphQlConstants.GRAPHQL_WEB_CONTEXT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -60,17 +61,21 @@ public class GraphQLEndpointIT
 
     @BeforeAll
     public static void setup() throws IOException {
-        _startupTest(Person.class);
+        setupIndex(Person.class);
+    }
+
+    @Inject
+    public GraphQLEndpointIT(@Socket("@default") String uri) {
+        super(uri);
     }
 
     @Test
     public void basicEndpointTests() {
         // test /graphql endpoint
-        WebTarget webTarget = getGraphQLWebTarget().path(GRAPHQL);
         Map<String, Object> mapRequest = generateJsonRequest(QUERY_INTROSPECT, null, null);
 
         // test POST
-        Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE)
+        Response response = target().request(MediaType.APPLICATION_JSON_TYPE)
                 .post(Entity.json(JsonUtils.convertMapToJson(mapRequest)));
         assertThat(response, is(notNullValue()));
         assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
@@ -80,12 +85,11 @@ public class GraphQLEndpointIT
         assertThat(graphQLResults.size(), CoreMatchers.is(1));
 
         // test GET
-        webTarget = getGraphQLWebTarget().path(GRAPHQL)
+        response = target()
                 .queryParam(QUERY, encode((String) mapRequest.get(QUERY)))
                 .queryParam(OPERATION, encode((String) mapRequest.get(OPERATION)))
-                .queryParam(VARIABLES, encode((String) mapRequest.get(VARIABLES)));
-
-        response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).get();
+                .queryParam(VARIABLES, encode((String) mapRequest.get(VARIABLES)))
+                .request(MediaType.APPLICATION_JSON_TYPE).get();
         assertThat(response, is(notNullValue()));
         assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));
         graphQLResults = getJsonResponse(response);
@@ -95,7 +99,7 @@ public class GraphQLEndpointIT
 
     @Test
     public void testGetSchema() {
-        WebTarget webTarget = getGraphQLWebTarget().path(GRAPHQL_WEB_CONTEXT).path(GRAPHQL_SCHEMA_URI);
+        WebTarget webTarget = target().path(GRAPHQL_SCHEMA_URI);
         Response response = webTarget.request(MediaType.TEXT_PLAIN).get();
         assertThat(response, is(notNullValue()));
         assertThat(response.getStatus(), is(Response.Status.OK.getStatusCode()));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.helidon.webserver;
 
-import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -40,6 +39,8 @@ import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.features.HelidonFeatures;
 import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.common.resumable.Resumable;
+import io.helidon.common.resumable.ResumableSupport;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
@@ -47,7 +48,7 @@ import io.helidon.spi.HelidonShutdownHandler;
 import io.helidon.webserver.http.DirectHandlers;
 import io.helidon.webserver.spi.ServerFeature;
 
-class LoomServer implements WebServer {
+class LoomServer implements WebServer, Resumable {
     private static final System.Logger LOGGER = System.getLogger(LoomServer.class.getName());
     private static final String EXIT_ON_STARTED_KEY = "exit.on.started";
     private static final AtomicInteger WEBSERVER_COUNTER = new AtomicInteger(1);
@@ -69,6 +70,7 @@ class LoomServer implements WebServer {
         this.context = serverConfig.serverContext()
                 .orElseGet(() -> Context.builder()
                         .id("web-" + WEBSERVER_COUNTER.getAndIncrement())
+                        .update(it -> Contexts.context().ifPresent(it::parent))
                         .build());
         this.serverConfig = serverConfig;
         this.executorService = ExecutorsFactory.newLoomServerVirtualThreadPerTaskExecutor();
@@ -101,6 +103,7 @@ class LoomServer implements WebServer {
         });
 
         listeners = Map.copyOf(listenerMap);
+        ResumableSupport.get().register(this);
     }
 
     @Override
@@ -116,7 +119,7 @@ class LoomServer implements WebServer {
         try {
             lifecycleLock.lockInterruptibly();
         } catch (InterruptedException e) {
-            throw new RuntimeException("Interrupted", e);
+            throw new IllegalStateException("Webserver start was interrupted");
         }
         try {
             if (running.compareAndSet(false, true)) {
@@ -139,7 +142,7 @@ class LoomServer implements WebServer {
         try {
             lifecycleLock.lockInterruptibly();
         } catch (InterruptedException e) {
-            throw new RuntimeException("Interrupted", e);
+            throw new IllegalStateException("Webserver stop was interrupted", e);
         }
         try {
             if (running.get()) {
@@ -218,12 +221,15 @@ class LoomServer implements WebServer {
             registerShutdownHook();
         }
         now = System.currentTimeMillis() - now;
-        long uptime = ManagementFactory.getRuntimeMXBean().getUptime();
+        // JVM uptime or since restore
+        long uptime = ResumableSupport.get().uptime();
 
         LOGGER.log(System.Logger.Level.INFO, "Started all channels in "
                 + now + " milliseconds. "
                 + uptime + " milliseconds since JVM startup. "
                 + "Java " + Runtime.version());
+
+        fireAfterStart();
 
         if ("!".equals(System.getProperty(EXIT_ON_STARTED_KEY))) {
             LOGGER.log(System.Logger.Level.INFO, String.format("Exiting, -D%s set.", EXIT_ON_STARTED_KEY));
@@ -237,6 +243,10 @@ class LoomServer implements WebServer {
                         Contexts.runInContext(ctx, () -> System.exit(0));
                     });
         }
+    }
+
+    private void fireAfterStart() {
+        listeners.values().forEach(l -> l.router().afterStart(this));
     }
 
     private void registerShutdownHook() {
@@ -259,8 +269,10 @@ class LoomServer implements WebServer {
 
         for (ServerListener listener : listeners.values()) {
             futures.add(new ListenerFuture(listener, executorService.submit(() -> {
-                Thread.currentThread().setName(taskName + " " + listener);
-                task.accept(listener);
+                Contexts.runInContext(context, () -> {
+                    Thread.currentThread().setName(taskName + " " + listener);
+                    task.accept(listener);
+                });
             })));
         }
         for (ListenerFuture listenerFuture : futures) {
@@ -278,6 +290,48 @@ class LoomServer implements WebServer {
         }
         this.startFutures = futures;
         return result;
+    }
+
+    @Override
+    public void suspend() {
+        try {
+            lifecycleLock.lockInterruptibly();
+        } catch (InterruptedException e) {
+            throw new IllegalStateException("Interrupted during snapshot checkpoint.", e);
+        }
+        try {
+            if (running.get()) {
+                for (ServerListener listener : listeners.values()) {
+                    listener.suspend();
+                }
+            }
+        } finally {
+            lifecycleLock.unlock();
+        }
+    }
+
+    @Override
+    public void resume() {
+        long now = System.currentTimeMillis();
+        try {
+            lifecycleLock.lockInterruptibly();
+        } catch (InterruptedException e) {
+            throw new IllegalStateException("Interrupted during snapshot restore.", e);
+        }
+        try {
+            if (running.get()) {
+                for (ServerListener listener : listeners.values()) {
+                    listener.resume();
+                }
+            }
+        } finally {
+            lifecycleLock.unlock();
+        }
+        now = System.currentTimeMillis() - now;
+        LOGGER.log(System.Logger.Level.INFO, "Restored all channels in "
+                + now + " milliseconds. "
+                + ResumableSupport.get().uptimeSinceResume() + " milliseconds since JVM snapshot restore. "
+                + "Java " + Runtime.version());
     }
 
     private record ListenerFuture(ServerListener listener, Future<?> future) {

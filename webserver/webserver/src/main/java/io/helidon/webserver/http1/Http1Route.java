@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.PathMatcher;
 import io.helidon.http.PathMatchers;
+import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.Handler;
 import io.helidon.webserver.http.HttpRoute;
 
@@ -74,6 +75,11 @@ public class Http1Route implements HttpRoute {
     @Override
     public void beforeStart() {
         handler.beforeStart();
+    }
+
+    @Override
+    public void afterStart(WebServer webServer) {
+        handler.afterStart(webServer);
     }
 
     @Override

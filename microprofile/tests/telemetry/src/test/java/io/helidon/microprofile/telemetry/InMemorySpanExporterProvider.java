@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.microprofile.telemetry;
 
 import io.opentelemetry.sdk.autoconfigure.spi.ConfigProperties;
@@ -21,6 +20,7 @@ import io.opentelemetry.sdk.autoconfigure.spi.traces.ConfigurableSpanExporterPro
 import io.opentelemetry.sdk.trace.export.SpanExporter;
 import jakarta.enterprise.inject.spi.CDI;
 
+@SuppressWarnings("NullableProblems")
 public class InMemorySpanExporterProvider implements ConfigurableSpanExporterProvider {
     @Override
     public SpanExporter createExporter(final ConfigProperties config) {

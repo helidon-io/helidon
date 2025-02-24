@@ -4,12 +4,12 @@ There are two different approaches for [OCI SDK](https://docs.oracle.com/en-us/i
 * **Helidon MP** (using _CDI_). For this refer to the [cdi](./cdi) module.
 * **Helidon SE** (not using _CDI_). For this refer to the information below.
 
-## Helidon Injection Framework and OCI SDK Integration
-This section only applies for **Helidon SE** type applications. If you are using **Helidon MP** then this section does not apply to you, and you should instead refer to the [cdi](./cdi) module. If you are using **Helidon SE** then continue reading below. Please familiarize yourself with the basics of the [Helidon Injection Framework](../../../inject) and terminology before continuing further.
+## Helidon Service Registry and OCI SDK Integration
+This section only applies for **Helidon SE** type applications. If you are using **Helidon MP** then this section does not apply to you, and you should instead refer to the [cdi](./cdi) module. If you are using **Helidon SE** then continue reading below. Please familiarize yourself with the basics of the [Helidon Service Registry](../../../service) and terminology before continuing further.
 
-The **Helidon Injection Framework** offers two modules for integrating with the **OCI SDK API** - the _processor_ module and the _runtime_ module.
+The **Helidon Service Registry** offers two modules for integrating with the **OCI SDK API** - the _codegen_ module and the _runtime_ module.
 
-1. The [processor](./processor) module is required to be on your compiler / annotation processor [APT] classpath. It is not needed at runtime, however. When used on the compiler / APT classpath, it will observe cases where your application uses the _@Inject_ annotation on API services from the **OCI SDK**.  When it finds such cases, it generates source code defining an _Activator_ representing the API service you are injecting. These generated _Activator_ will then be used by the **Helidon Injection Framework** at runtime.
+1. The [codegen](./codegen) module is required to be on your annotation processor [APT] classpath. It is not needed at runtime, however. When used on the APT classpath, it will observe cases where your application uses the _@Service.Inject_ annotation on API services from the **OCI SDK**.  When it finds such cases, it generates service source code representing the API service you are injecting. These generated _Services_ will then be used by the **Helidon Service Registry** at runtime.
 
 2. The [runtime](./runtime) module is required to be on your runtime classpath, but is not needed at compile time. This module supplies the default implementation for OCI's authentication providers, as well as other OCI extensibility classes (see the [javadoc](./runtime/src/main/java/io/helidon/integrations/oci/sdk/runtime/package-info.java) for details).
 
@@ -32,14 +32,18 @@ In your pom.xml, add this plugin to be run as part of the compilation phase:
     <groupId>org.apache.maven.plugins</groupId>
     <artifactId>maven-compiler-plugin</artifactId>
     <configuration>
-        <forceJavacCompilerUse>true</forceJavacCompilerUse>
-            <annotationProcessorPaths>
-                <path>
-                    <groupId>io.helidon.integrations.oci.sdk</groupId>
-                    <artifactId>helidon-integrations-oci-sdk-processor</artifactId>
-                    <version>${helidon.version}</version>
-                </path>
-            </annotationProcessorPaths>
+        <annotationProcessorPaths>
+            <path>
+                <groupId>io.helidon.codegen</groupId>
+                <artifactId>helidon-codegen-apt</artifactId>
+                <version>${helidon.version}</version>
+            </path>
+            <path>
+                <groupId>io.helidon.integrations.oci.sdk</groupId>
+                <artifactId>helidon-integrations-oci-sdk-codegen</artifactId>
+                <version>${helidon.version}</version>
+            </path>
+        </annotationProcessorPaths>
     </configuration>
 </plugin>
 ```

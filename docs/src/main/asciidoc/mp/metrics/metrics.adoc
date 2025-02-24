@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -86,17 +86,16 @@ The MicroProfile Metrics specification describes several metric types you can cr
 | Annotation | Usage
 
 | link:{microprofile-metrics-javadoc-annotation-url}/Counted.html[`@Counted`]
-| Monotonically increasing count of events.
+| Automatically registers a monotonically-increasing `Counter` and increments it with each invocation of the annotated constructor or method. ^1^
 
 | link:{microprofile-metrics-javadoc-annotation-url}/Gauge.html[`@Gauge`]
-| Access to a value managed by other code in the service.
+| Automatically registers a `Gauge` whose value is provided by the annotated method. Code elsewhere in the system updates the underlying value.
 
 | link:{microprofile-metrics-javadoc-annotation-url}/Timed.html[`@Timed`]
-| Frequency of invocations and the distribution of how long the invocations take.
+| Automatically registers a `Timer` and updates it with each invocation of the annotated constructor or method. ^1^
 
 |====
-
-Place annotations on constructors or methods to measure those specific executables. If you annotate the class instead, Helidon applies that annotation to all constructors and methods which the class declares.
+^1^ Place annotations on constructors or methods to measure those specific executables. If you annotate the class instead, Helidon applies that annotation to all constructors and methods which the class declares.
 
 ==== Metric-referencing Annotations
 To get a reference to a specific metric, use a metric-referencing annotation in any bean, including your REST resource classes.
@@ -405,3 +404,5 @@ include::{rootdir}/includes/guides/metrics.adoc[tag=k8s-and-prometheus-integrati
 link:{microprofile-metrics-spec-url}[MicroProfile Metrics specification]
 
 link:{microprofile-metrics-javadoc-url}/org/eclipse/microprofile/metrics/package-summary.html[MicroProfile Metrics API]
+
+include::{rootdir}/includes/metrics/metrics-shared.adoc[tag=format-refcs-no-heading]

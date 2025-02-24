@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,14 @@ import static java.lang.System.Logger.Level.ERROR;
  * @see #builder()
  */
 public final class FaultTolerance {
+
+    /**
+     * Config key to enable metrics in Fault Tolerance. This flag can be overridden by
+     * each FT command builder. See for example {@link BulkheadConfigBlueprint#enableMetrics()}.
+     * All metrics are disabled by default.
+     */
+    public static final String FT_METRICS_DEFAULT_ENABLED = "ft.metrics.default-enabled";
+
     private static final System.Logger LOGGER = System.getLogger(FaultTolerance.class.getName());
 
     private static final AtomicReference<LazyValue<ExecutorService>> EXECUTOR = new AtomicReference<>();

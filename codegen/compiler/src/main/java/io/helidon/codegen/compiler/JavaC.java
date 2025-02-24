@@ -44,6 +44,7 @@ class JavaC {
     private final List<String> commandLineArgs;
     private final String source;
     private final String target;
+    private final String release;
     private final Path outputDirectory;
     private final CodegenLogger logger;
 
@@ -54,6 +55,7 @@ class JavaC {
         this.commandLineArgs = options.commandLineArguments();
         this.source = options.source();
         this.target = options.target();
+        this.release = options.release().orElse(null);
         this.outputDirectory = options.outputDirectory();
         this.logger = options.logger();
     }
@@ -123,14 +125,20 @@ class JavaC {
             optionList.add("--source-path");
             optionList.add(toSourcepath());
         }
-        if (source != null) {
-            optionList.add("--source");
-            optionList.add(source);
+        if (release == null) {
+            if (source != null) {
+                optionList.add("--source");
+                optionList.add(source);
+            }
+            if (target != null) {
+                optionList.add("--target");
+                optionList.add(target);
+            }
+        } else {
+            optionList.add("--release");
+            optionList.add(release);
         }
-        if (target != null) {
-            optionList.add("--target");
-            optionList.add(target);
-        }
+
         optionList.addAll(commandLineArgs);
         if (outputDirectory != null) {
             optionList.add("-d");

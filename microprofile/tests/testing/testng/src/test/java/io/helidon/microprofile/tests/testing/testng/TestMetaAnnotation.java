@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,9 +34,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.testng.annotations.Test;
 
 @TestMetaAnnotation.MetaAnnotation
-// @HelidonTest is still mandatory in the test and it has no effect in the MetaAnnotation
-@HelidonTest
-class TestMetaAnnotation {
+public class TestMetaAnnotation {
 
     @Inject
     MyBean bean;
@@ -78,8 +76,9 @@ class TestMetaAnnotation {
         """)
     @AddConfig(key = "second-key", value = "test-custom-config-second-value")
     @Configuration(configSources = {"testConfigSources.properties", "testConfigSources.yaml"})
+    @HelidonTest
     @Retention(RetentionPolicy.RUNTIME)
-    static @interface MetaAnnotation {
+    @interface MetaAnnotation {
     }
 
     static class MyBean {

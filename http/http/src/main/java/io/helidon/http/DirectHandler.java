@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,15 +85,11 @@ public interface DirectHandler {
                                      Throwable thrown,
                                      System.Logger logger) {
         if (thrown instanceof RequestException re) {
-            if (re.safeMessage()) {
-                return handle(request, eventType, defaultStatus, responseHeaders, thrown.getMessage());
-            } else {
-                if (logger != null) {
-                    logger.log(Level.DEBUG, thrown);
-                }
-                return handle(request, eventType, defaultStatus, responseHeaders,
-                        "Bad request, see server log for more information");
+            if (logger != null) {
+                logger.log(Level.DEBUG, thrown);
             }
+            return handle(request, eventType, defaultStatus, responseHeaders,
+                          re.safeMessage() ? thrown.getMessage() : "Bad request, see server log for more information");
         }
         return handle(request, eventType, defaultStatus, responseHeaders, thrown.getMessage());
     }
@@ -188,7 +184,11 @@ public interface DirectHandler {
         /**
          * Other type, please specify expected status code.
          */
-        OTHER(Status.INTERNAL_SERVER_ERROR_500, true);
+        OTHER(Status.INTERNAL_SERVER_ERROR_500, true),
+        /**
+         * HTTP version not supported.
+         */
+        HTTP_VERSION_NOT_SUPPORTED(Status.HTTP_VERSION_NOT_SUPPORTED_505, false);
 
         private final Status defaultStatus;
         private final boolean keepAlive;
@@ -210,7 +210,7 @@ public interface DirectHandler {
         /**
          * Whether keep alive should be maintained for this event type.
          *
-         * @return whether to keep connectino alive
+         * @return whether to keep connection alive
          */
         public boolean keepAlive() {
             return keepAlive;

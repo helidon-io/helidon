@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,4 +112,12 @@ public interface FullClientRequest<T extends ClientRequest<T>> extends ClientReq
      * @return whether to skip encoding
      */
     boolean skipUriEncoding();
+
+    /**
+     * Whether Expect 100-Continue header is sent to verify server availability before sending
+     * an entity. Overrides the setting from {@link HttpClientConfig#sendExpectContinue()}.
+     *
+     * @return Expect 100-Continue value if set
+     */
+    Optional<Boolean> sendExpectContinue();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ abstract class OracleTestContainer {
     static final GenericContainer<?> CONTAINER = new GenericContainer<>(IMAGE)
             .withEnv("ORACLE_PWD", "oracle123")
             .withExposedPorts(1521)
+            .withStartupAttempts(3)
             .waitingFor(Wait.forHealthcheck()
                     .withStartupTimeout(Duration.ofMinutes(5)));
 

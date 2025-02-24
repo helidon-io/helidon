@@ -1,0 +1,386 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2025 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= LangChain4J OpenAI Provider
+:description: LangChain4J OpenAI
+:keywords: helidon, AI, LangChain4J, LC4J, OpenAI
+:feature-name: LangChain4J OpenAI
+:rootdir: {docdir}/../../..
+
+include::{rootdir}/includes/se.adoc[]
+
+== Contents
+
+* <<Overview, Overview>>
+* <<Maven Coordinates, Maven Coordinates>>
+* <<Components, Components>>
+** <<OpenAiChatModel, OpenAiChatModel>>
+** <<OpenAiEmbeddingModel, OpenAiEmbeddingModel>>
+** <<OpenAiImageModel, OpenAiImageModel>>
+** <<OpenAiLanguageModel, OpenAiLanguageModel>>
+** <<OpenAiModerationModel, OpenAiModerationModel>>
+** <<OpenAiStreamingChatModel, OpenAiStreamingChatModel>>
+* <<Additional Information, Additional Information>>
+
+== Overview
+
+This module adds support for selected Open AI models.
+
+== Maven Coordinates
+
+In addition to the xref:langchain4j.adoc#maven-coordinates[Helidon integration with LangChain4J core dependencies], you must add the following:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.integrations.langchain4j.providers</groupId>
+    <artifactId>helidon-integrations-langchain4j-providers-open-ai</artifactId>
+</dependency>
+----
+
+== Components
+
+=== OpenAiChatModel
+
+To automatically create and add `OpenAiChatModel` to the service registry add the following lines to `application.yaml`:
+
+[source,yaml]
+----
+langchain4j:
+  open-ai:
+    chat-model:
+      enabled: true
+      api-key: "demo"
+----
+
+If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+
+Full list of configuration properties:
+
+[cols="3,3a,5a"]
+
+|===
+|Key |Type |Description
+
+|`api-key` |string |Required. The API key used to authenticate requests to the OpenAI API.
+|`base-url` |string |The base URL for the OpenAI API. If not present, the default value supplied from LangChain4J is used.
+|`custom-headers` |Map&lt;string, string&gt; |A map containing custom headers.
+|`enabled` |boolean |If set to `false` (default), OpenAI model will not be available even if configured.
+|`frequency-penalty` |double |The frequency penalty, between -2.0 and 2.0. Positive values penalize new tokens based on their existing frequency in the text so far, decreasing the model's likelihood to repeat the same line.
+|`log-requests` |boolean |Whether to log API requests.
+|`log-responses` |boolean |Whether to log API responses.
+|`logit-bias` |Map&lt;string, int&gt; |LogitBias adjusts the likelihood of specific tokens appearing in a model's response. A map of token IDs to bias values (-100 to 100). Positive values increase the chance of the token, while negative values reduce it, allowing fine control over token preferences in the output.
+|`max-completion-tokens` |int |The maximum number of tokens allowed for the model's response.
+|`max-retries` |integer |The maximum number of retries for failed API requests.
+|`max-tokens` |int |The maximum number of tokens to generate in the completion.
+|`model-name` |string |The model name to use (e.g., "gpt-3.5-turbo").
+|`organization-id` |string |The ID of the organization for API requests.
+|`parallel-tool-calls` |boolean |Whether to allow parallel calls to tools.
+|`presence-penalty` |double |The presence penalty, between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far, encouraging the model to use new words.
+|`response-format` |string |The format in which the model should return the response.
+|`seed` |int |The seed for the random number generator used by the model.
+|`stop` |string[] |The list of sequences where the API will stop generating further tokens.
+|`strict-json-schema` |boolean |Whether to enforce a strict JSON schema for the model's output.
+|`strict-tools` |boolean |Whether to enforce strict validation of tools used by the model.
+|`temperature` |double |The sampling temperature to use, between 0 and 2. Higher values make the output more random, while lower values make it more focused and deterministic.
+|`timeout` |duration |The timeout setting for API requests. See https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-[here] for the format.
+|`top-p` |double |The nucleus sampling value, where the model considers the results of the tokens with top_p probability mass.
+|`user` |string |The user ID associated with the API requests.
+
+|===
+
+==== Proxy
+
+The framework attempts to resolve a proxy using the following strategy:
+
+1. *Check for a named service*: Look in the service registry for a service of type `java.net.Proxy` with the name `open-ai.chat-model`.
+2. *Fallback to another named service*: If the first service is not found, search for a `java.net.Proxy` service with the name `open-ai`.
+3. *No proxy*: If neither service is found, the framework will not use a proxy.
+
+==== Tokenizer
+
+The framework attempts to resolve a tokenizer using the following strategy:
+
+1. *Check for a named service*: Look in the service registry for a service of type `dev.langchain4j.model.Tokenizer` with the name `open-ai.chat-model`.
+2. *Fallback to another named service*: If the first service is not found, search for a `dev.langchain4j.model.Tokenizer` service with the name `open-ai`.
+3. *Default Tokenizer*: If neither service is found, the framework will use the default tokenizer provided by LangChain4J.
+
+=== OpenAiEmbeddingModel
+
+To automatically create and add `OpenAiEmbeddingModel` to the service registry add the following lines to `application.yaml`:
+
+[source,yaml]
+----
+langchain4j:
+  open-ai:
+    embedding-model:
+      enabled: true
+----
+
+If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+
+Full list of configuration properties:
+
+[cols="3,3a,5a"]
+
+|===
+|Key |Type |Description
+
+|`api-key` |string |Required. The API key used to authenticate requests to the OpenAI API.
+|`base-url` |string |The base URL for the OpenAI API. If not present, the default value supplied from LangChain4J is used.
+|`custom-headers` |Map&lt;string, string&gt; |A map containing custom headers.
+|`dimensions` |int |The dimensionality of the embeddings generated by the model.
+|`enabled` |boolean |If set to false (default), OpenAI model will not be available even if configured.
+|`log-requests` |boolean |Whether to log API requests.
+|`log-responses` |boolean |Whether to log API responses.
+|`max-retries` |integer |The maximum number of retries for failed API requests.
+|`model-name` |string |The model name to use.
+|`organization-id` |string |The ID of the organization for API requests.
+|`timeout` |duration |The timeout setting for API requests. See https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-[here] for the format.
+|`user` |string |The user ID associated with the API requests.
+
+|===
+
+==== Proxy
+
+The framework attempts to resolve a proxy using the following strategy:
+
+1. *Check for a named service*: Look in the service registry for a service of type `java.net.Proxy` with the name `open-ai.embedding-model`.
+2. *Fallback to another named service*: If the first service is not found, search for a `java.net.Proxy` service with the name `open-ai`.
+3. *No proxy*: If neither service is found, the framework will not use a proxy.
+
+==== Tokenizer
+
+The framework attempts to resolve a tokenizer using the following strategy:
+
+1. *Check for a named service*: Look in the service registry for a service of type `dev.langchain4j.model.Tokenizer` with the name `open-ai.embedding-model`.
+2. *Fallback to another named service*: If the first service is not found, search for a `dev.langchain4j.model.Tokenizer` service with the name `open-ai`.
+3. *Default Tokenizer*: If neither service is found, the framework will use the default tokenizer provided by LangChain4J.
+
+=== OpenAiImageModel
+
+To automatically create and add `OpenAiImageModel` to the service registry add the following lines to `application.yaml`:
+
+[source,yaml]
+----
+langchain4j:
+  open-ai:
+    image-model:
+      enabled: true
+----
+
+If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+
+Full list of configuration properties:
+
+[cols="3,3a,5a"]
+
+|===
+|Key |Type |Description
+
+|`api-key` |string |Required. The API key used to authenticate requests to the OpenAI API.
+|`base-url` |string |The base URL for the OpenAI API. If not present, the default value supplied from LangChain4J is used.
+|`custom-headers` |Map&lt;string, string&gt; |A map containing custom headers.
+|`enabled` |boolean |If set to false (default), OpenAI model will not be available even if configured.
+|`log-requests` |boolean |Whether to log API requests.
+|`log-responses` |boolean |Whether to log API responses.
+|`max-retries` |integer |The maximum number of retries for failed API requests.
+|`model-name` |string |The model name to use.
+|`organization-id` |string |The ID of the organization for API requests.
+|`persist-to` |Path |The path or location where the generated images should be persisted.
+|`quality` |string |The quality of the generated images.
+|`response-format` |string |The format of the response.
+|`size` |string |The desired size of the generated images.
+|`style` |string |The style of the generated images.
+|`timeout` |duration |The timeout setting for API requests. See https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-[here] for the format.
+|`user` |string |The unique identifier for the user making the request.
+|`with-persisting` |boolean |The flag to indicate whether to persist the generated images.
+
+|===
+
+==== Proxy
+
+The framework attempts to resolve a proxy using the following strategy:
+
+1. *Check for a named service*: Look in the service registry for a service of type `java.net.Proxy` with the name `open-ai.image-model`.
+2. *Fallback to another named service*: If the first service is not found, search for a `java.net.Proxy` service with the name `open-ai`.
+3. *No proxy*: If neither service is found, the framework will not use a proxy.
+
+=== OpenAiLanguageModel
+
+To automatically create and add `OpenAiLanguageModel` to the service registry add the following lines to `application.yaml`:
+
+[source,yaml]
+----
+langchain4j:
+  open-ai:
+    language-model:
+      enabled: true
+----
+
+If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+
+Full list of configuration properties:
+
+[cols="3,3a,5a"]
+
+|===
+|Key |Type |Description
+
+|`api-key` |string |Required. The API key used to authenticate requests to the OpenAI API.
+|`base-url` |string |The base URL for the OpenAI API. If not present, the default value supplied from LangChain4J is used.
+|`custom-headers` |Map&lt;string, string&gt; |A map containing custom headers.
+|`enabled` |boolean |If set to false (default), OpenAI model will not be available even if configured.
+|`log-requests` |boolean |Whether to log API requests.
+|`log-responses` |boolean |Whether to log API responses.
+|`max-retries` |integer |The maximum number of retries for failed API requests.
+|`model-name` |string |The model name to use.
+|`organization-id` |string |The ID of the organization for API requests.
+|`temperature` |double |The sampling temperature to use, between 0 and 2. Higher values make the output more random, while lower values make it more focused and deterministic.
+|`timeout` |duration |The timeout setting for API requests. See https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-[here] for the format.
+
+|===
+
+==== Proxy
+
+The framework attempts to resolve a proxy using the following strategy:
+
+1. *Check for a named service*: Look in the service registry for a service of type `java.net.Proxy` with the name `open-ai.language-model`.
+2. *Fallback to another named service*: If the first service is not found, search for a `java.net.Proxy` service with the name `open-ai`.
+3. *No proxy*: If neither service is found, the framework will not use a proxy.
+
+==== Tokenizer
+
+The framework attempts to resolve a tokenizer using the following strategy:
+
+1. *Check for a named service*: Look in the service registry for a service of type `dev.langchain4j.model.Tokenizer` with the name `open-ai.language-model`.
+2. *Fallback to another named service*: If the first service is not found, search for a `dev.langchain4j.model.Tokenizer` service with the name `open-ai`.
+3. *Default Tokenizer*: If neither service is found, the framework will use the default tokenizer provided by LangChain4J.
+
+=== OpenAiModerationModel
+
+To automatically create and add `OpenAiModerationModel` to the service registry add the following lines to `application.yaml`:
+
+[source,yaml]
+----
+langchain4j:
+  open-ai:
+    moderation-model:
+      enabled: true
+----
+
+If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+
+Full list of configuration properties:
+
+[cols="3,3a,5a"]
+
+|===
+|Key |Type |Description
+
+|`api-key` |string |Required. The API key used to authenticate requests to the OpenAI API.
+|`base-url` |string |The base URL for the OpenAI API. If not present, the default value supplied from LangChain4J is used.
+|`custom-headers` |Map&lt;string, string&gt; |A map containing custom headers.
+|`enabled` |boolean |If set to false (default), OpenAI model will not be available even if configured.
+|`log-requests` |boolean |Whether to log API requests.
+|`log-responses` |boolean |Whether to log API responses.
+|`max-retries` |integer |The maximum number of retries for failed API requests.
+|`model-name` |string |The model name to use.
+|`organization-id` |string |The ID of the organization for API requests.
+|`timeout` |duration |The timeout setting for API requests. See https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-[here] for the format.
+
+|===
+
+==== Proxy
+
+The framework attempts to resolve a proxy using the following strategy:
+
+1. *Check for a named service*: Look in the service registry for a service of type `java.net.Proxy` with the name `open-ai.moderation-model`.
+2. *Fallback to another named service*: If the first service is not found, search for a `java.net.Proxy` service with the name `open-ai`.
+3. *No proxy*: If neither service is found, the framework will not use a proxy.
+
+=== OpenAiStreamingChatModel
+
+To automatically create and add `OpenAiStreamingChatModel` to the service registry add the following lines to `application.yaml`:
+
+[source,yaml]
+----
+langchain4j:
+  open-ai:
+    streaming-chat-model:
+      enabled: true
+      api-key: "demo"
+----
+
+If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+
+Full list of configuration properties:
+
+[cols="3,3a,5a"]
+
+|===
+|Key |Type |Description
+
+|`api-key` |string |Required. The API key used to authenticate requests to the OpenAI API.
+|`base-url` |string |The base URL for the OpenAI API. If not present, the default value supplied from LangChain4J is used.
+|`custom-headers` |Map&lt;string, string&gt; |A map containing custom headers.
+|`enabled` |boolean |If set to `false` (default), OpenAI model will not be available even if configured.
+|`frequency-penalty` |double |The frequency penalty, between -2.0 and 2.0. Positive values penalize new tokens based on their existing frequency in the text so far, decreasing the model's likelihood to repeat the same line.
+|`log-requests` |boolean |Whether to log API requests.
+|`log-responses` |boolean |Whether to log API responses.
+|`logit-bias` |Map&lt;string, int&gt; |LogitBias adjusts the likelihood of specific tokens appearing in a model's response. A map of token IDs to bias values (-100 to 100). Positive values increase the chance of the token, while negative values reduce it, allowing fine control over token preferences in the output.
+|`max-completion-tokens` |int |The maximum number of tokens allowed for the model's response.
+|`max-tokens` |int |The maximum number of tokens to generate in the completion.
+|`model-name` |string |The model name to use (e.g., "gpt-3.5-turbo").
+|`organization-id` |string |The ID of the organization for API requests.
+|`parallel-tool-calls` |boolean |Whether to allow parallel calls to tools.
+|`presence-penalty` |double |The presence penalty, between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far, encouraging the model to use new words.
+|`response-format` |string |The format in which the model should return the response.
+|`seed` |int |The seed for the random number generator used by the model.
+|`stop` |string[] |The list of sequences where the API will stop generating further tokens.
+|`strict-tools` |boolean |Whether to enforce strict validation of tools used by the model.
+|`temperature` |double |The sampling temperature to use, between 0 and 2. Higher values make the output more random, while lower values make it more focused and deterministic.
+|`timeout` |duration |The timeout setting for API requests. See https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-[here] for the format.
+|`top-p` |double |The nucleus sampling value, where the model considers the results of the tokens with top_p probability mass.
+|`user` |string |The user ID associated with the API requests.
+
+|===
+
+
+==== Proxy
+
+The framework attempts to resolve a proxy using the following strategy:
+
+1. *Check for a named service*: Look in the service registry for a service of type `java.net.Proxy` with the name `open-ai.streaming-chat-model`.
+2. *Fallback to another named service*: If the first service is not found, search for a `java.net.Proxy` service with the name `open-ai`.
+3. *No proxy*: If neither service is found, the framework will not use a proxy.
+
+==== Tokenizer
+
+The framework attempts to resolve a tokenizer using the following strategy:
+
+1. *Check for a named service*: Look in the service registry for a service of type `dev.langchain4j.model.Tokenizer` with the name `open-ai.streaming-chat-model`.
+2. *Fallback to another named service*: If the first service is not found, search for a `dev.langchain4j.model.Tokenizer` service with the name `open-ai`.
+3. *Default Tokenizer*: If neither service is found, the framework will use the default tokenizer provided by LangChain4J.
+
+== Additional Information
+
+* xref:langchain4j.adoc[LangChain4J Integration]
+* https://docs.langchain4j.dev/integrations/language-models/open-ai[LangChain4J OpenAI Documentation]
+* https://platform.openai.com/docs/introduction[OpenAI API Documentation]
+* https://platform.openai.com/docs/api-reference[OpenAI API Reference]

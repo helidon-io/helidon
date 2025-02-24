@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,34 @@
 package io.helidon.microprofile.testing.testng;
 
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
  * A repeatable container for {@link AddExtension}.
- * No need to use this annotation, just repeat {@link AddExtension} annotation
- * on test class.
+ * <p>
+ * This annotation is optional, you can instead repeat {@link AddExtension}.
+ * <p>
+ * E.g.
+ * <pre>
+ * &#64;AddExtension(FooExtension.class)
+ * &#64;AddExtension(BarExtension.class)
+ * class MyTest {
+ * }
+ * </pre>
+ * @deprecated Use {@link io.helidon.microprofile.testing.AddExtensions} instead
  */
+@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
+@Deprecated(since = "4.2.0")
 public @interface AddExtensions {
     /**
-     * Extensions to be added.
-     * @return extensions
+     * Get the contained annotations.
+     *
+     * @return annotations
      */
     AddExtension[] value();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,32 @@
 package io.helidon.microprofile.testing.testng;
 
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import io.helidon.microprofile.server.JaxRsCdiExtension;
+import io.helidon.microprofile.server.ServerCdiExtension;
+
+import org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider;
+import org.glassfish.jersey.ext.cdi1x.internal.ProcessAllAnnotatedTypes;
+import org.glassfish.jersey.weld.se.WeldRequestScope;
+
 /**
- * Add JaxRS support for Request-scoped beans.
+ * Add JAX-RS (Jersey) support.
+ * <p>
+ * If used on a method, the container will be reset regardless of the test lifecycle.
+ * @deprecated Use {@link io.helidon.microprofile.testing.AddJaxRs} instead
  */
+@Inherited
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.TYPE})
+@Target({ElementType.TYPE, ElementType.METHOD})
+@AddExtension(ProcessAllAnnotatedTypes.class)
+@AddExtension(ServerCdiExtension.class)
+@AddExtension(JaxRsCdiExtension.class)
+@AddExtension(CdiComponentProvider.class)
+@AddBean(WeldRequestScope.class)
+@Deprecated(since = "4.2.0")
 public @interface AddJaxRs {
 }

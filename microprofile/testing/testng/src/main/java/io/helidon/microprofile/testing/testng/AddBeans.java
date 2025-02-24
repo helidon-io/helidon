@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,34 @@
 package io.helidon.microprofile.testing.testng;
 
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
  * A repeatable container for {@link AddBean}.
- * No need to use this annotation, just repeat {@link AddBean} annotation
- * on test class.
+ * <p>
+ * This annotation is optional, you can instead repeat {@link AddBean}.
+ * <p>
+ * E.g.
+ * <pre>
+ * &#64;AddBean(FooBean.class)
+ * &#64;AddBean(BarBean.class)
+ * class MyTest {
+ * }
+ * </pre>
+ * @deprecated Use {@link io.helidon.microprofile.testing.AddBeans} instead
  */
+@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
+@Deprecated(since = "4.2.0")
 public @interface AddBeans {
     /**
-     * Beans to be added.
-     * @return add bean annotations
+     * Get the contained annotations.
+     *
+     * @return annotations
      */
     AddBean[] value();
 }

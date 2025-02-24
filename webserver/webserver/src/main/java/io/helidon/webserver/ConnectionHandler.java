@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import java.util.function.Supplier;
 import javax.net.ssl.SSLSocket;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.concurrency.limits.Limit;
@@ -55,6 +56,7 @@ import static java.lang.System.Logger.Level.WARNING;
  */
 class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     private static final System.Logger LOGGER = System.getLogger(ConnectionHandler.class.getName());
+    private static final String HTTP_1_0 = "HTTP/1.0\r";
 
     private final ListenerContext listenerContext;
     // we must safely release the semaphore whenever this connection is finished, so other connections can be created!
@@ -163,6 +165,10 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
             }
 
             if (connection == null) {
+                if (isHttp10Connection(reader)) {
+                    // cannot easily return 505, so log better message instead
+                    throw new CloseConnectionException("HTTP 1.0 is not supported, consider using HTTP 1.1");
+                }
                 throw new CloseConnectionException("No suitable connection provider");
             }
             activeConnections.put(socketsId, connection);
@@ -331,6 +337,17 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
         } catch (Throwable e) {
             helidonSocket.log(LOGGER, TRACE, "Failed to close socket on connection close", e);
         }
+    }
+
+    static boolean isHttp10Connection(DataReader reader) {
+        try {
+            reader.ensureAvailable();
+        } catch (DataReader.InsufficientDataAvailableException e) {
+            throw new CloseConnectionException("No data available", e);
+        }
+        BufferData request = reader.getBuffer(reader.available());
+        int lf = request.indexOf(Bytes.LF_BYTE);
+        return lf != -1 && request.readString(lf).endsWith(HTTP_1_0);
     }
 
     private static class MapExceptionDataSupplier implements Supplier<byte[]> {

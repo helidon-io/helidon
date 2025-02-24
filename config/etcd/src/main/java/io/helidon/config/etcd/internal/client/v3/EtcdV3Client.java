@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
 import java.util.concurrent.SubmissionPublisher;
-import java.util.concurrent.TimeUnit;
 
+import io.helidon.common.tls.Tls;
 import io.helidon.config.etcd.internal.client.EtcdClient;
 import io.helidon.config.etcd.internal.client.EtcdClientException;
 import io.helidon.config.etcd.internal.client.proto.KVGrpc;
@@ -34,10 +34,9 @@ import io.helidon.config.etcd.internal.client.proto.WatchCreateRequest;
 import io.helidon.config.etcd.internal.client.proto.WatchGrpc;
 import io.helidon.config.etcd.internal.client.proto.WatchRequest;
 import io.helidon.config.etcd.internal.client.proto.WatchResponse;
+import io.helidon.webclient.grpc.GrpcClient;
 
 import com.google.protobuf.ByteString;
-import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 
@@ -45,12 +44,10 @@ import io.grpc.stub.StreamObserver;
  * Etcd API v3 client.
  */
 public class EtcdV3Client implements EtcdClient {
-
-    private static final System.Logger LOGGER = System.getLogger(EtcdV3Client.class.getName());
+    private static final Tls DISABLE_TLS = Tls.builder().enabled(false).build();
 
     private final Map<String, SubmissionPublisher<Long>> publishers = new ConcurrentHashMap<>();
 
-    private final ManagedChannel channel;
     private final KVGrpc.KVBlockingStub kvStub;
     private final WatchGrpc.WatchStub watchStub;
 
@@ -64,11 +61,12 @@ public class EtcdV3Client implements EtcdClient {
             throw new IllegalArgumentException("EtcdV3Client only supports a single URI");
         }
         URI uri = uris[0];
-        ManagedChannelBuilder mcb = ManagedChannelBuilder.forAddress(uri.getHost(), uri.getPort());
-        this.channel = mcb.usePlaintext().build();
-
-        kvStub = KVGrpc.newBlockingStub(channel);
-        watchStub = WatchGrpc.newStub(channel);
+        GrpcClient grpcClient = GrpcClient.builder()
+                .baseUri(uri)
+                .tls(DISABLE_TLS)       // must explicitly disable it
+                .build();
+        kvStub = KVGrpc.newBlockingStub(grpcClient.channel());
+        watchStub = WatchGrpc.newStub(grpcClient.channel());
     }
 
     @Override
@@ -140,16 +138,7 @@ public class EtcdV3Client implements EtcdClient {
     }
 
     @Override
-    public void close() throws EtcdClientException {
+    public void close() {
         publishers.values().forEach(SubmissionPublisher::close);
-        if (!channel.isShutdown() && !channel.isTerminated()) {
-            try {
-                channel.awaitTermination(1, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                LOGGER.log(System.Logger.Level.INFO, "Error closing gRPC channel, reason: " + e.getLocalizedMessage(), e);
-            } finally {
-                channel.shutdown();
-            }
-        }
     }
 }

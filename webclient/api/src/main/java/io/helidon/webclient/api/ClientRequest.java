@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -387,6 +387,16 @@ public interface ClientRequest<T extends ClientRequest<T>> {
      * @see HttpClientConfig#readContinueTimeout()
      */
     T readContinueTimeout(Duration readContinueTimeout);
+
+    /**
+     * Whether Expect 100-Continue header is sent to verify server availability before sending an entity.
+     * Can be used to override the setting inherited from {@link HttpClientConfig#sendExpectContinue()}
+     * on a per-request basis.
+     *
+     * @param sendExpectContinue value to override behavior for a single request
+     * @return updated client request
+     */
+    T sendExpectContinue(boolean sendExpectContinue);
 
     /**
      * Handle output stream.

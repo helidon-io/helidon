@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -25,21 +25,21 @@
         <artifactId>helidon-tests-integration-project</artifactId>
         <version>4.2.0-SNAPSHOT</version>
     </parent>
-
     <packaging>pom</packaging>
-
     <groupId>io.helidon.tests.integration.jpa</groupId>
     <artifactId>helidon-tests-integration-jpa-project</artifactId>
-    <name>Helidon Tests Integration JPA</name>
+    <name>Helidon Tests Integration JPA Project</name>
 
     <description>
         A set of tests that validate JPA API implementation
     </description>
 
     <modules>
-        <module>model</module>
-        <module>simple</module>
-        <module>appl</module>
+        <module>common</module>
+        <module>parent</module>
+        <module>oracle</module>
+        <module>mysql</module>
+        <module>pgsql</module>
+        <module>h2</module>
     </modules>
-
 </project>

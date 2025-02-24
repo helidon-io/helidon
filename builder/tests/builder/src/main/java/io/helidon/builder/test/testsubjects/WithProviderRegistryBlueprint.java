@@ -18,9 +18,11 @@ package io.helidon.builder.test.testsubjects;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.mapper.Mappers;
 
 @Prototype.Blueprint
 @Prototype.Configured
@@ -68,4 +70,16 @@ interface WithProviderRegistryBlueprint {
     @Option.Configured
     @Option.Provider(value = ProviderNoImpls.class, discoverServices = false)
     List<ProviderNoImpls.SomeService> listNoImplNotDiscover();
+
+    @Option.RegistryService
+    Optional<Mappers> mappers();
+
+    @Option.RegistryService
+    Mappers mappersExplicit();
+
+    @Option.RegistryService
+    List<Mappers> mappersList();
+
+    @Option.RegistryService
+    Set<Mappers> mappersSet();
 }

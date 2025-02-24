@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -202,7 +202,20 @@ include::{sourcedir}/mp/TelemetrySnippets.java[tag=snippet_6, indent=0]
 <2> Use the injected baggage.
 <3> Use `Baggage.current()` to access the current baggage.
 
-include::{rootdir}/includes/tracing/common-callbacks.adoc[tags=defs;detailed,leveloffset=+1]
+
+include::{rootdir}/includes/tracing/common-callbacks.adoc[tags=defs;intro,leveloffset=+1]
+
+See the xref:{docdir}/../se/tracing.adoc#Tracing-callbacks[Helidon SE documentation on span lifecycle support] for more detail on the Helidon SE API which supports this feature. You can use those features from a Helidon MP application as well, in particular receiving notification of life cycle changes of _OpenTelemetry_ spans.
+
+Helidon MP applications which inject an OpenTelemetry `Tracer` or `Span` can easily request such notification by adding the Helidon link:{telemetry-javadoc-base-url}/io/helidon/microprofile/telemetry/CallbackEnabled.html[`@CallbackEnabled`] annotation to injection points as shown in the following example.
+
+[source,java]
+.Using `@CallbackEnabled`
+----
+include::{sourcedir}/mp/TelemetrySnippets.java[tag=snippet_13, indent=0]
+----
+
+Note that although the injected object implements the corresponding OpenTelemetry interface it _is not_ the native OpenTelemetry object. Be sure to read and understand the Helidon SE documentation at the earlier link regarding the behavior of callback-enabled objects.
 
 === Controlling Automatic Span Creation
 By default, Helidon MP Telemetry creates a new child span for each incoming REST request and for each outgoing REST client request. You can selectively control if Helidon creates these automatic spans on a request-by-request basis by adding a very small amount of code to your project.

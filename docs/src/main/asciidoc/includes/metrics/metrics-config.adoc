@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -86,6 +86,7 @@ Metrics configuration is quite extensive and powerful and, therefore, a bit comp
 The rest of this section illustrates some of the most common scenarios:
 
 * <<config-disable,Disable metrics entirely.>>
+* <<config-virtual-threads,Choose whether to report virtual threads {metrics}>>.
 * <<config-kpi,Choose whether to collect extended key performance indicator metrics.>>
 ifdef::mp-flavor[]
 * <<config-rest-request,Control `REST.request` metrics collection.>>
@@ -113,7 +114,10 @@ server:
           enabled: false
 ----
 endif::[]
-Helidon does not update metrics, and the `{metrics-endpoint}` endpoints respond with `404`..
+Helidon does not update metrics, and the `{metrics-endpoint}` endpoints respond with `404`.
+
+[#config-virtual-threads]
+include::{rootdir}/includes/guides/metrics.adoc[tag=virtualThreadsMetricsConfig]
 
 [#config-kpi]
 ==== Collecting Basic and Extended Key Performance Indicator (KPI) {metrics_uc}

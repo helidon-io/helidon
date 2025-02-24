@@ -1,0 +1,84 @@
+#
+# Copyright (c) 2025 Oracle and/or its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+langchain4j.ollama:
+  # ChatModel
+  chat-model:
+    model-name: model-name
+    base-url: base-url
+    temperature: 36.6
+    top-k: 5
+    top-p: 10
+    repeat-penalty: 0.1
+    seed: 100
+    num-predict: 10
+    stop: ["stop1", "stop2", "stop3"]
+    format: format
+    timeout: PT10M
+    max-retries: 3
+    log-requests: true
+    log-responses: true
+    custom-headers:
+      header1: value1
+      header2: value2
+  # StreamingChatModel
+  streaming-chat-model:
+    model-name: model-name
+    base-url: base-url
+    temperature: 36.6
+    top-k: 5
+    top-p: 10
+    repeat-penalty: 0.1
+    seed: 100
+    num-predict: 10
+    stop: ["stop1", "stop2", "stop3"]
+    format: format
+    timeout: PT10M
+    log-requests: true
+    log-responses: true
+    custom-headers:
+      header1: value1
+      header2: value2
+  # LanguageModel
+  language-model:
+    model-name: model-name
+    base-url: base-url
+    temperature: 36.6
+    top-k: 5
+    top-p: 10
+    repeat-penalty: 0.1
+    seed: 100
+    num-predict: 10
+    stop: ["stop1", "stop2", "stop3"]
+    format: format
+    timeout: PT10M
+    max-retries: 3
+    log-requests: true
+    log-responses: true
+    custom-headers:
+      header1: value1
+      header2: value2
+  # EmbeddingModel
+  embedding-model:
+    model-name: model-name
+    base-url: base-url
+    timeout: PT10M
+    max-retries: 3
+    log-requests: true
+    log-responses: true
+    custom-headers:
+      header1: value1
+      header2: value2

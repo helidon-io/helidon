@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package io.helidon.integrations.jta.cdi;
 import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import io.helidon.common.resumable.ResumableSupport;
 
 import com.arjuna.ats.jta.common.JTAEnvironmentBean;
 import com.arjuna.common.internal.util.propertyservice.BeanPopulator;
@@ -54,9 +56,17 @@ import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
  */
 public final class NarayanaExtension implements Extension {
 
-    /*
-     * Static fields.
-     */
+    private static final String ARJUNA_PID_IMPL_PROP = "CoreEnvironmentBean.processImplementationClassName";
+
+    static {
+        if (System.getProperty(ARJUNA_PID_IMPL_PROP) == null) {
+            // Since Helidon requires Java 21 and newer,
+            // we can safely assume that ProcessHandle is available.
+            // Default is com.arjuna.ats.internal.arjuna.utils.SocketProcessId.
+            System.setProperty(ARJUNA_PID_IMPL_PROP, "io.helidon.integrations.jta.narayana.ProcessId");
+        }
+        ResumableSupport.get().register(new NarayanaResumableResource());
+    }
 
     /**
      * The {@link Logger} for use by all instances of {@link
@@ -95,12 +105,6 @@ public final class NarayanaExtension implements Extension {
     public NarayanaExtension() {
         super();
     }
-
-
-    /*
-     * Instance methods.
-     */
-
 
     /**
      * Adds a synthetic bean that creates a {@link Transaction} in

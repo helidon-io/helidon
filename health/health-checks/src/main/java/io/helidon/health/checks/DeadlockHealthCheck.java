@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.health.checks;
 import java.lang.System.Logger.Level;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
+import java.util.Arrays;
 
 import io.helidon.common.NativeImageHelper;
 import io.helidon.health.HealthCheck;
@@ -95,17 +96,22 @@ public class DeadlockHealthCheck implements HealthCheck {
                     .build();
         }
 
-        boolean noDeadLock = false;
+        HealthCheckResponse.Builder builder = HealthCheckResponse.builder();
+
         try {
             // Thanks to https://stackoverflow.com/questions/1102359/programmatic-deadlock-detection-in-java#1102410
-            noDeadLock = (threadBean.findDeadlockedThreads() == null);
+            long[] deadlockedThreads = threadBean.findDeadlockedThreads();
+            if (deadlockedThreads != null) {
+                builder.status(Status.DOWN);
+                LOGGER.log(Level.TRACE, "Health check observed deadlocked threads: " + Arrays.toString(deadlockedThreads));
+            }
         } catch (Throwable e) {
-            // ThreadBean does not work - probably in native image
-            LOGGER.log(Level.TRACE, "Failed to find deadlocks in ThreadMXBean, ignoring this healthcheck", e);
+            // ThreadBean does not work - probably in native image. Report ERROR, not DOWN, because we do not know that
+            // there are deadlocks which DOWN should imply; we simply cannot find out.
+            LOGGER.log(Level.TRACE, "Error invoking ThreadMXBean to find deadlocks; cannot complete this healthcheck", e);
+            builder.status(Status.ERROR);
         }
-        return HealthCheckResponse.builder()
-                .status(noDeadLock ? Status.UP : Status.DOWN)
-                .build();
+        return builder.build();
     }
 }
 

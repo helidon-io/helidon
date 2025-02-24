@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ import java.lang.annotation.Target;
 
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import static io.helidon.common.testing.virtualthreads.PinningRecorder.DEFAULT_THRESHOLD;
+
 /**
  * Test of server that opens a socket (for integration tests).
  * Can be used together with:
@@ -37,4 +39,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @ExtendWith(HelidonServerJunitExtension.class)
 @Inherited
 public @interface ServerTest {
+    /**
+     * Time threshold for carrier thread blocking to be considered as pinning.
+     *
+     * @return threshold in milliseconds, {@code 20} is default
+     */
+    long pinningThreshold() default DEFAULT_THRESHOLD;
+
+    /**
+     * Whether to turn on pinning detection during test.
+     *
+     * @return true for turning detection on, {@code false} is default
+     */
+    boolean pinningDetection() default false;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,8 +29,8 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.reactive.BufferedEmittingPublisher;
 import io.helidon.common.reactive.Multi;
-import io.helidon.microprofile.testing.junit5.AddBean;
-import io.helidon.microprofile.testing.junit5.AddConfig;
+import io.helidon.microprofile.testing.AddBean;
+import io.helidon.microprofile.testing.AddConfigBlock;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -58,10 +58,15 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 @HelidonTest
 @AddBean(Processor2ConnectorTest.TestConnector.class)
-@AddConfig(key = "mp.messaging.incoming.from-connector-imp.connector", value = "test-connector")
-@AddConfig(key = "mp.messaging.outgoing.to-connector-imp.connector", value = "test-connector")
-@AddConfig(key = "mp.messaging.incoming.from-connector-rs.connector", value = "test-connector")
-@AddConfig(key = "mp.messaging.outgoing.to-connector-rs.connector", value = "test-connector")
+@AddConfigBlock(value = """
+        mp.messaging:
+            incoming:
+                from-connector-imp.connector: test-connector
+                from-connector-rs.connector: test-connector
+            outgoing:
+                to-connector-imp.connector: test-connector
+                to-connector-rs.connector: test-connector
+        """, type = "yaml")
 public class Processor2ConnectorTest {
 
     static final Duration TIME_OUT = Duration.ofSeconds(5);

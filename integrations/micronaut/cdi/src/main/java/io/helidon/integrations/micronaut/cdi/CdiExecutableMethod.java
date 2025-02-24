@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package io.helidon.integrations.micronaut.cdi;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Documented;
-import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 import java.lang.reflect.Array;
@@ -208,11 +207,6 @@ final class CdiExecutableMethod extends AbstractExecutableMethod {
                                            Map<Class<? extends Annotation>, Annotation> stereotypeMap,
                                            Map<String, Set<String>> annotationsByStereotype) {
         for (var entry : declaredAnnotations.entrySet()) {
-            if (stereotypeMap.containsKey(Repeatable.class)) {
-                // I need to ignore this (used only when there is just one repetition)
-                // this gets processed as part of the Repeatable container
-                continue;
-            }
             String annotName = entry.getKey().getName();
             miAnnotations.put(annotName, annotationValues(entry.getValue()));
             Set<Annotation> stereotypes = getStereotypes(entry.getValue());

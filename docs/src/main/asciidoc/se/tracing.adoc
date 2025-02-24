@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -162,6 +162,38 @@ Your code can create a `SpanContext` from other sources as well. The `SpanContex
 The JavaDoc for the types describes how to get and set baggage entries, get all the baggage keys, and check whether a baggage key exists in the baggage.
 
 include::{rootdir}/includes/tracing/common-callbacks.adoc[tags=defs;detailed,leveloffset=+1]
+
+==== Lifecycle Callbacks with OpenTelemetry Types
+To use lifecycle callbacks, applications should normally work with the Helidon `Tracer`, `Span.Builder`, `Span`, and `Scope` types which automatically call back to each registered `SpanListener`.
+
+In some cases application code might want to use a reference to an OpenTelemetry `Tracer` or `Span` _rather than_ a reference to the Helidon counterpart but still want to respond to lifecycle events as the OpenTelemetry object goes through its lifecycle.
+
+The link:{tracing-otel-provider-javadoc-base-url}/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html[`HelidonOpenTelemetry`] type provides several methods which enable callbacks for OpenTelemetry objects, as summarized in the following table.
+
+.Enabling OpenTelemetry Objects for `SpanListener` Support
+|====
+| `HelidonOpenTelemetry` method | Return value
+
+| link:{tracing-otel-provider-javadoc-base-url}/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.helidon.tracing.Tracer)[`Tracer callbackEnabledFrom(helidonTracer)`] | Callback-enabled OpenTelemetry `Tracer` corresponding to the specified Helidon `Tracer`.
+| link:{tracing-otel-provider-javadoc-base-url}/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.opentelemetry.api.trace.Tracer)[ `Tracer callbackEnabledFrom(otelTracer)`] | Callback-enabled OpenTelemetry `Tracer` for the specified OpenTelemetry `Tracer`.
+| link:{tracing-otel-provider-javadoc-base-url}/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.helidon.tracing.Span)[ `Span callbackEnabledFrom(helidonSpan)`] | Callback-enabled OpenTelemetry `Span` corresponding to the specified Helidon `Span`.
+| link:{tracing-otel-provider-javadoc-base-url}/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.opentelemetry.api.trace.Span)[ `Span callbackEnabledFrom(otelSpan)`] | Callback-enabled OpenTelemetry `Span` for the specified OpenTelemetry `Span`.
+|====
+
+An OpenTelemetry object returned from a method on a callback-enabled object is itself callback-enabled automatically. Specifically:
+
+* `SpanBuilder` returned from `Tracer#spanBuilder(String)`.
+* `Span` returned from `SpanBuilder#startSpan`.
+* `Scope` returned from `Span#makeCurrent`.
+
+Each callback-enabled object is a new instance of a _Helidon_ object which implements both the indicated OpenTelemetry interface and the Helidon link:{tracing-javadoc-base-url}/io/helidon/tracing/Wrapper.html[`Wrapper`] interface. These Helidon objects _do not_ themselves implement other OpenTelemetry interfaces. To do type checks and casts on callback-enabled objects, invoke the `unwrap(Class<?>)` on a callback-enabled object as shown in the following example.
+
+[source,java]
+----
+include::{sourcedir}/se/TracingSnippets.java[tag=snippet_6, indent=0]
+----
+
+Remember that operations on the `nativeOtelSpan` variable _do not_ notify span listeners of lifecycle changes.
 
 == Helidon Spans
 

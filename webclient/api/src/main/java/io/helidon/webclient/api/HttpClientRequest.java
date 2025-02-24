@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,22 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
                       List<LoomClient.ProtocolSpi> tcpProtocols,
                       List<String> tcpProtocolIds,
                       LruCache<LoomClient.EndpointKey, HttpClientSpi> clientSpiCache) {
-        super(clientConfig, webClient.cookieManager(), "any", method, clientUri, clientConfig.properties());
+        this(webClient, clientConfig, method, clientUri, protocolsToClients, protocols, tcpProtocols,
+             tcpProtocolIds, null, clientSpiCache);
+    }
+
+    HttpClientRequest(WebClient webClient,
+                      WebClientConfig clientConfig,
+                      Method method,
+                      ClientUri clientUri,
+                      Map<String, LoomClient.ProtocolSpi> protocolsToClients,
+                      List<LoomClient.ProtocolSpi> protocols,
+                      List<LoomClient.ProtocolSpi> tcpProtocols,
+                      List<String> tcpProtocolIds,
+                      Boolean send100Continue,
+                      LruCache<LoomClient.EndpointKey, HttpClientSpi> clientSpiCache) {
+        super(clientConfig, webClient.cookieManager(), "any", method, clientUri,
+              send100Continue, clientConfig.properties());
         this.webClient = webClient;
         this.clients = protocolsToClients;
         this.protocols = protocols;

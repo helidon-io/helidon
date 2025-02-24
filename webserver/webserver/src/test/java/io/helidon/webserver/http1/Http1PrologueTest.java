@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +27,11 @@ import io.helidon.http.Status;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class Http1PrologueTest {
     @Test
@@ -54,5 +56,20 @@ class Http1PrologueTest {
 
         assertThat(e.status(), is(Status.REQUEST_URI_TOO_LONG_414));
         assertThat(e.eventType(), is(DirectHandler.EventType.BAD_REQUEST));
+    }
+
+    @Test
+    void testHttp10Error() {
+        DataReader reader = new DataReader(() -> "GET / HTTP/1.0\r\n".getBytes(StandardCharsets.US_ASCII));
+        Http1Prologue p = new Http1Prologue(reader, 100, false);
+
+        try {
+            p.readPrologue();
+            fail();     // exception not thrown
+        } catch (RequestException e) {
+            assertThat(e.status(), is(Status.HTTP_VERSION_NOT_SUPPORTED_505));
+            assertThat(e.safeMessage(), is(true));
+            assertThat(e.getMessage(), containsString("HTTP 1.0 is not supported"));
+        }
     }
 }

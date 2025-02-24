@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import io.helidon.http.RequestException;
 import io.helidon.http.Status;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ServerLifecycle;
+import io.helidon.webserver.WebServer;
 
 final class HttpRoutingImpl implements HttpRouting {
     private static final System.Logger LOGGER = System.getLogger(HttpRoutingImpl.class.getName());
@@ -78,6 +79,13 @@ final class HttpRoutingImpl implements HttpRouting {
         filters.beforeStart();
         rootRoute.beforeStart();
         features.forEach(ServerLifecycle::beforeStart);
+    }
+
+    @Override
+    public void afterStart(WebServer webServer) {
+        filters.afterStart(webServer);
+        rootRoute.afterStart(webServer);
+        features.forEach(f -> f.afterStart(webServer));
     }
 
     @Override

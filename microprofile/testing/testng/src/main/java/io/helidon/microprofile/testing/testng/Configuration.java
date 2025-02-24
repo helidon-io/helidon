@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,36 +23,55 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Additional configuration of config itself.
+ * General setting for the test configuration.
+ * <p>
+ * If used on a method, the container will be reset regardless of the test lifecycle.
+ *
+ * @see AddConfig
+ * @see AddConfigs
+ * @see AddConfigBlock
+ * @deprecated Use {@link io.helidon.microprofile.testing.Configuration} instead
  */
+@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
-@Inherited
+@Deprecated(since = "4.2.0")
 public @interface Configuration {
     /**
-     * If set to {@code true}, the existing (or default) MicroProfile configuration would be used.
-     * By default uses a configuration constructed using all {@link AddConfig}
-     * annotations and {@link #configSources()}.
-     * When set to false and a {@link org.testng.annotations.BeforeClass} method registers a custom configuration
-     * with {@link org.eclipse.microprofile.config.spi.ConfigProviderResolver}, the result is undefined, though
-     * tests have shown that the registered config may be used (as BeforeAll ordering is undefined by
-     * JUnit, it may be called after our extension)
+     * If set to {@code false}, the synthetic test configuration is used.
+     * <p>
+     * The synthetic test configuration is expressed with the following:
+     * <ul>
+     *     <li>{@link #configSources()}</li>
+     *     <li>{@link #profile()}</li>
+     *     <li>{@link AddConfig}</li>
+     *     <li>{@link AddConfigs}</li>
+     *     <li>{@link AddConfigBlock}</li>
+     * </ul>
+     * <p>
+     * If set to {@code true}, only the existing (or default) MicroProfile configuration is used
+     * and the annotations listed previously are ignored.
+     * <p>
+     * You can use {@link org.eclipse.microprofile.config.spi.ConfigProviderResolver ConfigProviderResolver} to define
+     * the configuration programmatically before the CDI container starts.
      *
-     * @return whether to use existing (or default) configuration, or customized one
+     * @return whether to use existing (or default) configuration
      */
     boolean useExisting() default false;
 
     /**
-     * Class path properties config sources to add to configuration of this test class or method.
+     * Class-path resources to add as config sources to the synthetic test configuration.
      *
-     * @return config sources to add
+     * @return config sources
      */
     String[] configSources() default {};
 
     /**
      * Configuration profile.
+     * <p>
+     * The default profile is 'test'
      *
-     * @return String with default value "test".
+     * @return profile
      */
     String profile() default "test";
 }

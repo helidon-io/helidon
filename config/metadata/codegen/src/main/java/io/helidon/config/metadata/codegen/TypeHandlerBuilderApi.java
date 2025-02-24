@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -234,4 +234,9 @@ class TypeHandlerBuilderApi extends TypeHandlerBase implements TypeHandler {
         configuredType.addProperty(property);
     }
 
+    // for blueprints, we only want the description, not the return information (as it duplicates information)
+    @Override
+    String javadoc(String docComment) {
+        return Javadoc.parse(docComment, false);
+    }
 }

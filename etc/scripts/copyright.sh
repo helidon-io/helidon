@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2025 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ readonly RESULT_FILE
 die() { echo "${1}" ; exit 1 ;}
 
 # shellcheck disable=SC2086
-mvn ${MAVEN_ARGS} \
+mvn ${MVN_ARGS} \
     -N -f ${WS_DIR}/pom.xml \
     -Dhelidon.enforcer.output.file="${RESULT_FILE}" \
     -Dhelidon.enforcer.rules=copyright \

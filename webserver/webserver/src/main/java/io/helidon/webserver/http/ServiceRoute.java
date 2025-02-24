@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import io.helidon.http.Method;
 import io.helidon.http.PathMatcher;
 import io.helidon.http.PathMatchers;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.WebServer;
 
 class ServiceRoute extends HttpRouteBase implements HttpRoute {
     private final HttpService theService;
@@ -45,6 +46,12 @@ class ServiceRoute extends HttpRouteBase implements HttpRoute {
     public void beforeStart() {
         theService.beforeStart();
         this.routes.forEach(HttpRouteBase::beforeStart);
+    }
+
+    @Override
+    public void afterStart(WebServer webServer) {
+        theService.afterStart(webServer);
+        this.routes.forEach(r -> r.afterStart(webServer));
     }
 
     @Override

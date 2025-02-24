@@ -486,7 +486,7 @@ for more detail.
 
 === Tokens
 A token reference is a key token starting with `$`, optionally enclosed between
- `{` and `}`, i.e. `$ref`, `pass:[${ref}]`. Even a key composed of more than one token
+ `{` and `}`, i.e. `$ref` or `${ref}`. Even a key composed of more than one token
  can be referenced in another key, i.e. `${env.ref}`.
 
 As an example use case, you can use token references to declare the default values (see

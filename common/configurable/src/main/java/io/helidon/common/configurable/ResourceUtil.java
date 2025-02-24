@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,24 +18,17 @@ package io.helidon.common.configurable;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Base64;
 import java.util.Objects;
-import java.util.Optional;
-
-import io.helidon.common.config.Config;
 
 /**
  * Utilities to move private static methods from interface,
  * as javadoc fails when using source 8.
  */
 final class ResourceUtil {
-    private static final int DEFAULT_PROXY_PORT = 80;
 
     private ResourceUtil() {
     }
@@ -111,44 +104,5 @@ final class ResourceUtil {
         } catch (IOException e) {
             throw new ResourceException("Failed to open stream to uri: " + uri, e);
         }
-    }
-
-    static Optional<Resource> fromConfigPath(Config config) {
-        return config.asString()
-                .map(Paths::get)
-                .map(Resource::create);
-    }
-
-    static Optional<Resource> fromConfigB64Content(Config config) {
-        return config.asString()
-                .map(Base64.getDecoder()::decode)
-                .map(content -> Resource.create(config.key() + ".content", content));
-    }
-
-    static Optional<Resource> fromConfigContent(Config config) {
-        return config.asString()
-                .map(content -> Resource.create(config.key() + ".content-plain", content));
-    }
-
-    static Optional<Resource> fromConfigUrl(Config config) {
-        return config.as(URI.class)
-                .map(uri -> config.get("proxy-host").asString()
-                        .map(proxyHost -> {
-                            if (config.get("use-proxy").asBoolean().orElse(true)) {
-                                Proxy proxy = new Proxy(Proxy.Type.HTTP,
-                                                        new InetSocketAddress(proxyHost,
-                                                                              config.get("proxy-port").asInt().orElse(
-                                                                                      DEFAULT_PROXY_PORT)));
-                                return Resource.create(uri, proxy);
-                            } else {
-                                return Resource.create(uri);
-                            }
-                        })
-                        .orElseGet(() -> Resource.create(uri)));
-    }
-
-    static Optional<Resource> fromConfigResourcePath(Config config) {
-        return config.asString()
-                .map(Resource::create);
     }
 }

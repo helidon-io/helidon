@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,9 @@ import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import io.helidon.common.Weight;
-import io.helidon.inject.api.ServiceInfoBasics;
+import io.helidon.service.registry.Service;
 
 import com.oracle.bmc.Region;
-import jakarta.inject.Singleton;
 
 import static com.oracle.bmc.auth.AbstractFederationClientAuthenticationDetailsProviderBuilder.METADATA_SERVICE_BASE_URL;
 
@@ -34,8 +32,7 @@ import static com.oracle.bmc.auth.AbstractFederationClientAuthenticationDetailsP
  * This (overridable) implementation will check the {@link OciConfig} for {@code IMDS} availability. And if it is found to be
  * available, will also perform a secondary check on {@link Region#getRegionFromImds()} to ensure it returns a non-null value.
  */
-@Singleton
-@Weight(ServiceInfoBasics.DEFAULT_INJECT_WEIGHT)
+@Service.Singleton
 class OciAvailabilityDefault implements OciAvailability {
     private static final String OPC_PATH = getOpcPath(METADATA_SERVICE_BASE_URL);
 

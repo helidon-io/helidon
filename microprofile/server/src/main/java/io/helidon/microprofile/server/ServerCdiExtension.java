@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package io.helidon.microprofile.server;
 
 import java.lang.System.Logger.Level;
-import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
@@ -36,6 +35,7 @@ import java.util.function.Supplier;
 import io.helidon.common.Builder;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.common.resumable.ResumableSupport;
 import io.helidon.config.Config;
 import io.helidon.config.mp.Prioritized;
 import io.helidon.http.HeaderNames;
@@ -470,7 +470,8 @@ public class ServerCdiExtension implements Extension {
 
         this.port = webserver.port();
 
-        long initializationElapsedTime = ManagementFactory.getRuntimeMXBean().getUptime();
+        ResumableSupport.get().checkpointResumeOnStartup();
+        long initializationElapsedTime = ResumableSupport.get().uptime();
 
         String protocol = "http" + (webserver.hasTls() ? "s" : "");
         String host = "0.0.0.0".equals(listenHost) ? "localhost" : listenHost;

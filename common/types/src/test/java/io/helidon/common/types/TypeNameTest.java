@@ -65,21 +65,21 @@ class TypeNameTest {
     @Test
     void testGenericInnerType() {
         String resolved =
-                "io.helidon.service.inject.api.Injection.ScopeHandler<io.helidon.examples.inject.CustomScopeExample.MyScope>";
+                "io.helidon.service.registry.Service.ScopeHandler<io.helidon.examples.inject.CustomScopeExample.MyScope>";
 
         TypeName typeName = TypeName.builder()
-                .packageName("io.helidon.service.inject.api")
+                .packageName("io.helidon.service.registry")
                 .className("ScopeHandler")
-                .addEnclosingName("Injection")
+                .addEnclosingName("Service")
                 .addTypeArgument(TypeName.create("io.helidon.examples.inject.CustomScopeExample.MyScope"))
                 .build();
 
         assertThat(typeName.resolvedName(), is(resolved));
-        assertThat(typeName.fqName(), is("io.helidon.service.inject.api.Injection.ScopeHandler"));
+        assertThat(typeName.fqName(), is("io.helidon.service.registry.Service.ScopeHandler"));
 
         ResolvedType rt = ResolvedType.create(typeName);
         assertThat(rt.type().resolvedName(), is(resolved));
-        assertThat(rt.type().fqName(), is("io.helidon.service.inject.api.Injection.ScopeHandler"));
+        assertThat(rt.type().fqName(), is("io.helidon.service.registry.Service.ScopeHandler"));
     }
 
     @Test

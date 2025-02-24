@@ -30,6 +30,7 @@ jaxb.index
 /MANIFEST.MF
 /README
 /CONTRIBUTING.md
+.crt
 .pem
 .p8
 .pkcs8.pem

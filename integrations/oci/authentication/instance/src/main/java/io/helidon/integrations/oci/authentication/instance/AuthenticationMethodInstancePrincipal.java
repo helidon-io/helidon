@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.integrations.oci.authentication.instance;
 
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
@@ -42,7 +43,7 @@ class AuthenticationMethodInstancePrincipal implements OciAuthenticationMethod {
     private final LazyValue<Optional<BasicAuthenticationDetailsProvider>> provider;
 
     AuthenticationMethodInstancePrincipal(OciConfig config,
-                                          InstancePrincipalsAuthenticationDetailsProviderBuilder builder) {
+                                          Supplier<Optional<InstancePrincipalsAuthenticationDetailsProviderBuilder>> builder) {
         provider = createProvider(config, builder);
     }
 
@@ -58,10 +59,11 @@ class AuthenticationMethodInstancePrincipal implements OciAuthenticationMethod {
 
     private static LazyValue<Optional<BasicAuthenticationDetailsProvider>>
     createProvider(OciConfig config,
-                   InstancePrincipalsAuthenticationDetailsProviderBuilder builder) {
+                   Supplier<Optional<InstancePrincipalsAuthenticationDetailsProviderBuilder>> builder) {
         return LazyValue.create(() -> {
             if (HelidonOci.imdsAvailable(config)) {
-                return Optional.of(builder.build());
+                return builder.get()
+                        .map(InstancePrincipalsAuthenticationDetailsProviderBuilder::build);
             }
             if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
                 LOGGER.log(System.Logger.Level.TRACE, "OCI Metadata service is not available, "

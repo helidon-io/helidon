@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,8 +39,8 @@ class InstancePrincipalBuilderProvider implements Supplier<InstancePrincipalsAut
 
     @Override
     public InstancePrincipalsAuthenticationDetailsProviderBuilder get() {
-        var builder = InstancePrincipalsAuthenticationDetailsProvider.builder()
-                .timeoutForEachRetry((int) config.authenticationTimeout().toMillis());
+        var builder = getBuilder();
+        builder.timeoutForEachRetry((int) config.authenticationTimeout().toMillis());
 
         config.imdsDetectRetries()
                 .ifPresent(builder::detectEndpointRetries);
@@ -50,8 +50,14 @@ class InstancePrincipalBuilderProvider implements Supplier<InstancePrincipalsAut
         config.imdsBaseUri()
                 .map(URI::toString)
                 .ifPresent(builder::metadataBaseUrl);
+        config.tenantId()
+                .ifPresent(builder::tenancyId);
 
         return builder;
+    }
+
+    InstancePrincipalsAuthenticationDetailsProviderBuilder getBuilder() {
+        return InstancePrincipalsAuthenticationDetailsProvider.builder();
     }
 
 }

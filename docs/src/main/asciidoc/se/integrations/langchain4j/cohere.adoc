@@ -1,0 +1,125 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2025 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= LangChain4J Cohere Provider
+:description: LangChain4J Cohere
+:keywords: helidon, AI, LangChain4J, LC4J, Cohere
+:feature-name: LangChain4J Integration
+:rootdir: {docdir}/../../..
+
+include::{rootdir}/includes/se.adoc[]
+
+== Contents
+
+* <<Overview, Overview>>
+* <<Maven Coordinates, Maven Coordinates>>
+* <<Components, Components>>
+** <<CohereEmbeddingModel, CohereEmbeddingModel>>
+** <<CohereScoringModel, CohereScoringModel>>
+* <<Additional Information, Additional Information>>
+
+== Overview
+
+This module adds support for selected Cohere models.
+
+== Maven Coordinates
+
+In addition to the xref:langchain4j.adoc#maven-coordinates[Helidon integration with LangChain4J core dependencies], you must add the following:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.integrations.langchain4j.providers</groupId>
+    <artifactId>helidon-integrations-langchain4j-providers-cohere</artifactId>
+</dependency>
+----
+
+== Components
+
+=== CohereEmbeddingModel
+
+To automatically create and add `CohereEmbeddingModel` to the service registry add the following lines to `application.yaml`:
+
+[source,yaml]
+----
+langchain4j:
+  cohere:
+    embedding-model:
+      enabled: true
+----
+
+If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+
+Full list of configuration properties:
+
+[cols="3,3a,5a"]
+
+|===
+|Key |Type |Description
+
+|`api-key` |string |Required. The API key used to authenticate requests to the Cohere API.
+|`base-url` |string |The base URL for the model API. If not present, the default value supplied from LangChain4J is used.
+|`custom-headers` |Map&lt;string, string&gt; |A map containing custom headers.
+|`enabled` |boolean |If set to false (default), this component will not be available even if configured.
+|`input-type` |string |Input type.
+|`log-requests` |boolean |Whether to log API requests.
+|`log-responses` |boolean |Whether to log API responses.
+|`max-segments-per-batch` |int |Maximum number of segments per batch.
+|`model-name` |string |The model name to use.
+|`timeout` |duration |The timeout setting for API requests. See https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-[here] for the format.
+
+|===
+
+
+=== CohereScoringModel
+
+To automatically create and add `CohereScoringModel` to the service registry add the following lines to `application.yaml`:
+
+[source,yaml]
+----
+langchain4j:
+  cohere:
+    scoring-model:
+      enabled: true
+----
+
+If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+
+Full list of configuration properties:
+
+[cols="3,3a,5a"]
+
+|===
+|Key |Type |Description
+
+|`api-key` |string |Required. The API key used to authenticate requests to the Cohere API.
+|`base-url` |string |The base URL for the model API. If not present, the default value supplied from LangChain4J is used.
+|`custom-headers` |Map&lt;string, string&gt; |A map containing custom headers.
+|`enabled` |boolean |If set to false (default), this component will not be available even if configured.
+|`log-requests` |boolean |Whether to log API requests.
+|`log-responses` |boolean |Whether to log API responses.
+|`max-retries` |int |The maximum number of retries for failed API requests.
+|`model-name` |string |The model name to use.
+|`timeout` |duration |The timeout setting for API requests. See https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-[here] for the format.
+
+|===
+
+== Additional Information
+
+* xref:langchain4j.adoc[LangChain4J Integration]
+* https://docs.langchain4j.dev/integrations/embedding-models/cohere[LangChain4J Cohere Documentation]

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -169,5 +169,47 @@ class Upgrade4xSnippets {
         // tag::snippet_8[]
         Config config = Config.global();
         // end::snippet_8[]
+    }
+
+    /* Helidon 3 code
+    static Single<WebServer> startServer() {
+        Config config = Config.create();
+
+        WebServer server = WebServer.builder(createRouting(config))
+                .config(config.get("server"))
+                .addMediaSupport(JsonpSupport.create())
+                .build();
+
+        // tag::snippet_9[]
+        Single<WebServer> webserver = server.start();
+
+        webserver.thenAccept(ws -> {
+                    System.out.println("WEB server is up! http://localhost:" + ws.port() + "/greet");
+                    ws.whenShutdown().thenRun(() -> System.out.println("Helidon WebServer has stopped"));
+                })
+                .exceptionallyAccept(t -> {
+                    System.err.println("Startup failed: " + t.getMessage());
+                    t.printStackTrace(System.err);
+                });
+        // end::snippet_9[]
+        return webserver;
+    }
+     */
+
+    // tag::snippet_10[]
+    static class MyService implements HttpService {
+        @Override
+        public void beforeStart() {
+            System.out.println("MyService: Helidon WebServer is starting!");
+        }
+
+        @Override
+        public void afterStop() {
+            System.out.println("MyService: Helidon WebServer has stopped.");
+        }
+        // end::snippet_10[]
+        @Override
+        public void routing(HttpRules rules) {
+        }
     }
 }

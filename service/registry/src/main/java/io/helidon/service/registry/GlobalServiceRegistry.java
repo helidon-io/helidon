@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,46 @@
 
 package io.helidon.service.registry;
 
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.Optional;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
 
-import io.helidon.common.config.GlobalConfig;
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 
 /**
- * A global singleton manager for a service registry.
+ * Represents an application wide service registry.
  * <p>
- * Note that when using this registry, testing is a bit more complicated, as the registry is shared
- * statically.
+ * The registry instance is shared through {@link io.helidon.common.context.Context}, using the current context
+ * to obtain a context with classifier {@link #STATIC_CONTEXT_CLASSIFIER}. If such a context is found, the
+ * registry instance is obtained/stored there. If the context does not exist, the
+ * {@link io.helidon.common.context.Contexts#globalContext()} is used to store the value.
+ * <p>
+ * The first option is designed for testing, to make sure the global registry is only "global" for a single test class.
+ * The second option is the default for application runtime, where we intend to share the registry as a proper, static
+ * singleton instance.
+ * <p>
+ * Helidon testing libraries support this approach and correctly configure appropriate context for each execution.
  */
 public final class GlobalServiceRegistry {
-    private static final AtomicReference<ServiceRegistry> INSTANCE = new AtomicReference<>();
+    /**
+     * Classifier used to register a context that is to serve as the context that holds the
+     * global registry instance.
+     * <p>
+     * This is to allow testing in parallel, where we need the global registry instance restricted to a single test.
+     * <p>
+     * In normal application runtime we use {@link io.helidon.common.context.Contexts#globalContext()}.
+     */
+    public static final Object STATIC_CONTEXT_CLASSIFIER = new Object();
+
+    /**
+     * Classifier used to register the global service registry.
+     *
+     * @see #STATIC_CONTEXT_CLASSIFIER
+     */
+    public static final Object CONTEXT_QUALIFIER = new Object();
+
     private static final ReadWriteLock RW_LOCK = new ReentrantReadWriteLock();
 
     private GlobalServiceRegistry() {
@@ -42,7 +67,7 @@ public final class GlobalServiceRegistry {
      * @return {@code true} if a registry instance was already created
      */
     public static boolean configured() {
-        return INSTANCE.get() != null;
+        return current().isPresent();
     }
 
     /**
@@ -51,25 +76,20 @@ public final class GlobalServiceRegistry {
      * @return global service registry
      */
     public static ServiceRegistry registry() {
-        try {
-            RW_LOCK.readLock().lock();
-            ServiceRegistry currentInstance = INSTANCE.get();
-            if (currentInstance != null) {
-                return currentInstance;
-            }
-        } finally {
-            RW_LOCK.readLock().unlock();
+        var current = current();
+        if (current.isPresent()) {
+            return current.get();
         }
+
+        RW_LOCK.writeLock().lock();
         try {
-            RW_LOCK.writeLock().lock();
-            ServiceRegistryConfig config;
-            if (GlobalConfig.configured()) {
-                config = ServiceRegistryConfig.create(GlobalConfig.config().get("registry"));
-            } else {
-                config = ServiceRegistryConfig.create();
+            current = current();
+            if (current.isPresent()) {
+                return current.get();
             }
+            ServiceRegistryConfig config = ServiceRegistryConfig.create();
             ServiceRegistry newInstance = ServiceRegistryManager.create(config).registry();
-            INSTANCE.set(newInstance);
+            registry(newInstance);
             return newInstance;
         } finally {
             RW_LOCK.writeLock().unlock();
@@ -84,19 +104,22 @@ public final class GlobalServiceRegistry {
      * @return global service registry
      */
     public static ServiceRegistry registry(Supplier<ServiceRegistry> registrySupplier) {
-        try {
-            RW_LOCK.readLock().lock();
-            ServiceRegistry currentInstance = INSTANCE.get();
-            if (currentInstance != null) {
-                return currentInstance;
-            }
-        } finally {
-            RW_LOCK.readLock().unlock();
+        var current = current();
+        if (current.isPresent()) {
+            return current.get();
         }
+
+        RW_LOCK.writeLock().lock();
         try {
-            RW_LOCK.writeLock().lock();
+            current = current();
+            if (current.isPresent()) {
+                return current.get();
+            }
             ServiceRegistry newInstance = registrySupplier.get();
-            INSTANCE.set(newInstance);
+            if (newInstance == null) {
+                throw new ServiceRegistryException("Global registry supplier cannot return null.");
+            }
+            registry(newInstance);
             return newInstance;
         } finally {
             RW_LOCK.writeLock().unlock();
@@ -112,7 +135,31 @@ public final class GlobalServiceRegistry {
      * @return the same instance
      */
     public static ServiceRegistry registry(ServiceRegistry newGlobalRegistry) {
-        INSTANCE.set(newGlobalRegistry);
+        RW_LOCK.writeLock().lock();
+        try {
+            context().register(CONTEXT_QUALIFIER, newGlobalRegistry);
+        } finally {
+            RW_LOCK.writeLock().unlock();
+        }
         return newGlobalRegistry;
+    }
+
+    private static Context context() {
+        Context globalContext = Contexts.globalContext();
+
+        // this is the context we expect to get (and set global instances)
+        return Contexts.context()
+                .orElse(globalContext)
+                .get(STATIC_CONTEXT_CLASSIFIER, Context.class)
+                .orElse(globalContext);
+    }
+
+    private static Optional<ServiceRegistry> current() {
+        RW_LOCK.readLock().lock();
+        try {
+            return context().get(CONTEXT_QUALIFIER, ServiceRegistry.class);
+        } finally {
+            RW_LOCK.readLock().unlock();
+        }
     }
 }

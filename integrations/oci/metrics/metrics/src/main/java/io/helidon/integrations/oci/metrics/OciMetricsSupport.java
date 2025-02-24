@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -175,8 +177,12 @@ public class OciMetricsSupport implements HttpService {
     }
 
     private void startExecutor() {
+        Context ctx = Contexts.context().orElseGet(Contexts::globalContext);
         scheduledExecutorService = Executors.newScheduledThreadPool(1);
-        scheduledExecutorService.scheduleAtFixedRate(this::pushMetrics, initialDelay, delay, schedulingTimeUnit);
+        scheduledExecutorService.scheduleAtFixedRate(() -> Contexts.runInContext(ctx, this::pushMetrics),
+                                                     initialDelay,
+                                                     delay,
+                                                     schedulingTimeUnit);
     }
 
     private void pushMetrics() {

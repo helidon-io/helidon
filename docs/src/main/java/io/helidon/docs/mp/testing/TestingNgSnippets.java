@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,80 +15,78 @@
  */
 package io.helidon.docs.mp.testing;
 
-import io.helidon.microprofile.config.ConfigCdiExtension;
-import io.helidon.microprofile.testing.testng.AddBean;
-import io.helidon.microprofile.testing.testng.AddConfig;
-import io.helidon.microprofile.testing.testng.AddExtension;
-import io.helidon.microprofile.testing.testng.AddJaxRs;
-import io.helidon.microprofile.testing.testng.DisableDiscovery;
 import io.helidon.microprofile.testing.testng.HelidonTest;
 
-import jakarta.enterprise.context.RequestScoped;
+import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Alternative;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.Test;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+import org.mockito.Answers;
+import org.mockito.Mockito;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
 
 @SuppressWarnings("ALL")
 class TestingNgSnippets {
 
-    // stub
-    static class MyBean {
-        String greeting() {
-            return "";
-        }
-    }
+    class Snippet1 {
 
-    // tag::snippet_1[]
-    @HelidonTest // <1>
-    @DisableDiscovery // <2>
-    @AddBean(MyBean.class) // <3>
-    @AddExtension(ConfigCdiExtension.class) // <4>
-    @AddConfig(key = "app.greeting", value = "TestHello") // <5>
-    class TestExample {
-        @Inject
-        private MyBean myBean; // <6>
+        // tag::snippet_1[]
+        @HelidonTest
+        @Priority(1) // <3>
+        class MyTest {
 
-        @Test
-        void testGreeting() { // <7>
-            assertThat(myBean, notNullValue());
-            assertThat(myBean.greeting(), is("TestHello"));
-        }
-    }
-    // end::snippet_1[]
+            @Inject
+            WebTarget target;
 
-    // tag::snippet_2[]
-    @HelidonTest // <1>
-    @DisableDiscovery // <2>
-    @AddJaxRs // <3>
-    @AddBean(TestReqScopeDisabledDiscovery.MyResource.class)
-    public class TestReqScopeDisabledDiscovery {
+            MyService myService;
 
-        @Inject
-        private WebTarget target;
+            @BeforeMethod
+            void initMock() {
+                myService = Mockito.mock(MyService.class, Answers.CALLS_REAL_METHODS); // <1>
+            }
 
-        @Test
-        void testGet() {
-            String greeting = target.path("/greeting")
-                    .request().get(String.class);
-            assertThat(greeting, is("Hallo!"));
-        }
+            @Produces
+            @Alternative // <2>
+            MyService mockService() {
+                return myService;
+            }
 
-        @Path("/greeting")
-        @RequestScoped // <4>
-        public static class MyResource {
-            @GET
-            public Response get() {
-                return Response.ok("Hallo!").build();
+            @Test
+            void testService() {
+                Mockito.when(myService.test()).thenReturn("Mocked"); // <4>
+                Response response = target.path("/test").request().get();
+                assertThat(response, is("Mocked"));
             }
         }
-    }
-    // end::snippet_2[]
 
+        @Path("/test")
+        class MyResource {
+
+            @Inject
+            MyService myService;
+
+            @GET
+            String test() {
+                return myService.test();
+            }
+        }
+
+        @ApplicationScoped
+        class MyService {
+
+            String test() {
+                return "Not Mocked";
+            }
+        }
+        // end::snippet_1[]
+    }
 }

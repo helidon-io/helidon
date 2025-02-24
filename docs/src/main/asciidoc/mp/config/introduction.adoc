@@ -1,7 +1,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -239,7 +239,7 @@ See xref:#Config-Profiles[Config Profiles] for more information.
 ====
 [CARD]
 .MP Config Guide
-[xref={rootdir}/mp/guides/config.adoc]
+[link=../guides/config.adoc]
 --
 Step-by-step guide about using {spec-name} in your Helidon MP application.
 --

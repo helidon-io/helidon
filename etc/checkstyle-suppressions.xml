@@ -48,7 +48,7 @@ record here.
             checks="FileLength"/>
 
     <!-- This file is generating source file, and uses a lot of lines to append code -->
-    <suppress files="service/inject/codegen/src/main/java/io/helidon/service/inject/codegen/InjectionExtension\.java"
+    <suppress files="service/codegen/src/main/java/io/helidon/service/codegen/ServiceDescriptorCodegen\.java"
             checks="FileLength"/>
 
     <!--

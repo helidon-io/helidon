@@ -19,6 +19,7 @@ package io.helidon.builder.codegen;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -129,7 +130,8 @@ record CustomMethods(List<CustomMethod> factoryMethods,
                            customMethod.returnType(),
                            generatedArgs,
                            // todo the javadoc may differ (such as when we have an additional parameter for instance methods)
-                           customMethod.javadoc()),
+                           customMethod.javadoc(),
+                           customMethod.typeParameters()),
                 annotations,
                 codeGenerator);
     }
@@ -178,7 +180,8 @@ record CustomMethods(List<CustomMethod> factoryMethods,
                            customMethod.name(),
                            typeInformation.prototypeBuilder(),
                            generatedArgs,
-                           customMethod.javadoc()),
+                           customMethod.javadoc(),
+                           customMethod.typeParameters),
                 annotations,
                 codeGenerator);
     }
@@ -227,7 +230,8 @@ record CustomMethods(List<CustomMethod> factoryMethods,
                                               customMethod.name(),
                                               customMethod.returnType(),
                                               customMethod.arguments(),
-                                              customMethod.javadoc()),
+                                              customMethod.javadoc(),
+                                              customMethod.typeParameters()),
                                    annotations,
                                    codeGenerator);
     }
@@ -314,7 +318,26 @@ record CustomMethods(List<CustomMethod> factoryMethods,
                             .filter(Predicate.not(String::isBlank)) // we do not care about blank values
                             .toList();
 
-                    Method customMethod = new Method(customMethodsType.typeName(), methodName, returnType, arguments, javadoc);
+                    List<TypeName> typeNames = it.typeParameters();
+                    List<TypeName> typeParametersToUse = new ArrayList<>();
+                    if (!typeNames.isEmpty()) {
+                        // look for type parameters that differ in name from the ones defined by the blueprint
+                        Set<String> usedNames = typeInformation.blueprintType().declaredType()
+                                .typeArguments()
+                                .stream()
+                                .map(TypeName::className)
+                                .collect(Collectors.toSet());
+                        typeNames.stream()
+                                .filter(methodTypeParam -> !usedNames.contains(methodTypeParam.className()))
+                                .forEach(typeParametersToUse::add);
+                    }
+
+                    Method customMethod = new Method(customMethodsType.typeName(),
+                                                     methodName,
+                                                     returnType,
+                                                     arguments,
+                                                     javadoc,
+                                                     typeParametersToUse);
 
                     return new CustomMethod(customMethod,
                                             methodProcessor.process(errors,
@@ -343,7 +366,8 @@ record CustomMethods(List<CustomMethod> factoryMethods,
                   String name,
                   TypeName returnType,
                   List<Argument> arguments,
-                  List<String> javadoc) {
+                  List<String> javadoc,
+                  List<TypeName> typeParameters) {
 
     }
 

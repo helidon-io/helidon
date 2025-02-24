@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
 /**
- * Measures a value that can increase or decrease and is updated by external logic, not by explicit invocations
+ * Exposes as a meter a value that can increase or decrease and is updated by external logic, not by explicit invocations
  * of methods on this type.
  *
  * @param <N> subtype of {@link Number} which a specific gauge reports

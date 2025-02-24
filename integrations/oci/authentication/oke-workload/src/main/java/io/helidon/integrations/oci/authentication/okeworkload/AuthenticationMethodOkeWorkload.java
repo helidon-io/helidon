@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,22 +21,22 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.integrations.oci.OciConfig;
 import io.helidon.integrations.oci.spi.OciAuthenticationMethod;
 import io.helidon.service.registry.Service;
 
 import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
-import com.oracle.bmc.auth.okeworkloadidentity.OkeWorkloadIdentityAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.okeworkloadidentity.OkeWorkloadIdentityAuthenticationDetailsProvider.OkeWorkloadIdentityAuthenticationDetailsProviderBuilder;
 
 /**
- * Instance principal authentication method, uses the
- * {@link com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider}.
+ * OKE workload identity authentication method, uses the
+ * {@link com.oracle.bmc.auth.okeworkloadidentity.OkeWorkloadIdentityAuthenticationDetailsProvider}.
  */
-@Weight(Weighted.DEFAULT_WEIGHT - 40)
+@Weight(Weighted.DEFAULT_WEIGHT - 50)
 @Service.Provider
 class AuthenticationMethodOkeWorkload implements OciAuthenticationMethod {
     private static final System.Logger LOGGER = System.getLogger(AuthenticationMethodOkeWorkload.class.getName());
@@ -53,8 +53,8 @@ class AuthenticationMethodOkeWorkload implements OciAuthenticationMethod {
 
     private final LazyValue<Optional<BasicAuthenticationDetailsProvider>> provider;
 
-    AuthenticationMethodOkeWorkload(OciConfig config) {
-        provider = createProvider(config);
+    AuthenticationMethodOkeWorkload(Supplier<Optional<OkeWorkloadIdentityAuthenticationDetailsProviderBuilder>> builder) {
+        provider = createProvider(builder);
     }
 
     @Override
@@ -67,11 +67,12 @@ class AuthenticationMethodOkeWorkload implements OciAuthenticationMethod {
         return provider.get();
     }
 
-    private static LazyValue<Optional<BasicAuthenticationDetailsProvider>> createProvider(OciConfig config) {
+    private static LazyValue<Optional<BasicAuthenticationDetailsProvider>> createProvider(
+            Supplier<Optional<OkeWorkloadIdentityAuthenticationDetailsProviderBuilder>> builder) {
         return LazyValue.create(() -> {
             if (available()) {
-                return Optional.of(OkeWorkloadIdentityAuthenticationDetailsProvider.builder()
-                                           .build());
+                return builder.get()
+                        .map(OkeWorkloadIdentityAuthenticationDetailsProviderBuilder::build);
 
             }
             return Optional.empty();

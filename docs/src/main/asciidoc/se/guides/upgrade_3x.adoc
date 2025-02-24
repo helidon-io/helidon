@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ Please follow the instructions in xref:{rootdir}/about/prerequisites.adoc[Prereq
 Handling routes based on the protocol version is now possible by registering specific routes
 on routing builder.
 
-For further information check xref:../webserver.adoc[WebServer Documentation]
+For further information check xref:../webserver/webserver.adoc[WebServer Documentation]
 
 == Http/2 Support
 
@@ -82,7 +82,7 @@ server:
   max-upgrade-content-length: 16384
 ----
 
-For further information check xref:../webserver.adoc[WebServer Documentation]
+For further information check xref:../webserver/webserver.adoc[WebServer Documentation]
 
 == WebSocket
 

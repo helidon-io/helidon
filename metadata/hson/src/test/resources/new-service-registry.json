@@ -8,7 +8,7 @@
                 "descriptor": "io.helidon.metrics.CountedInterceptor__ServiceDescriptor",
                 "contracts": [
                     "io.helidon.metrics.CountedInterceptor",
-                    "io.helidon.service.inject.api.Interception.Interceptor"
+                    "io.helidon.service.registry.Interception.Interceptor"
                 ]
             }
         ]

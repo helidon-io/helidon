@@ -43,9 +43,19 @@
     </properties>
 
     <modules>
-        <module>registry</module>
         <module>codegen</module>
+        <module>config</module>
+        <module>registry</module>
         <module>inject</module>
+        <module>lookup</module>
+        <module>service-lifecycle</module>
+        <module>scopes</module>
+        <module>interception</module>
+        <module>qualified-providers</module>
+        <module>stacking</module>
+        <module>toolbox</module>
+        <module>events</module>
+        <module>maven-plugin</module>
     </modules>
 
 </project>

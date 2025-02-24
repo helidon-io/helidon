@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import io.helidon.codegen.spi.CodegenProvider;
 import io.helidon.service.codegen.RegistryCodegenContext;
 
 /**
- * A {@link java.util.ServiceLoader} provider interface for extensions of code generators for Helidon Inject.
+ * A {@link java.util.ServiceLoader} provider interface for extensions of code generators for Helidon Service Registry.
  * The difference between this extension and a general {@link io.helidon.codegen.spi.CodegenExtensionProvider} is that
  * this provider has access to {@link io.helidon.service.codegen.RegistryCodegenContext}.
  */

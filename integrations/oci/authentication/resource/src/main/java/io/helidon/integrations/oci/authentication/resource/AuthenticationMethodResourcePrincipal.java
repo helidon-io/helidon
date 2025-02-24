@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.integrations.oci.authentication.resource;
 
 import java.lang.System.Logger.Level;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
@@ -42,7 +43,7 @@ class AuthenticationMethodResourcePrincipal implements OciAuthenticationMethod {
 
     private final LazyValue<Optional<BasicAuthenticationDetailsProvider>> provider;
 
-    AuthenticationMethodResourcePrincipal(ResourcePrincipalAuthenticationDetailsProviderBuilder builder) {
+    AuthenticationMethodResourcePrincipal(Supplier<Optional<ResourcePrincipalAuthenticationDetailsProviderBuilder>> builder) {
         provider = createProvider(builder);
     }
 
@@ -57,7 +58,7 @@ class AuthenticationMethodResourcePrincipal implements OciAuthenticationMethod {
     }
 
     private static LazyValue<Optional<BasicAuthenticationDetailsProvider>>
-    createProvider(ResourcePrincipalAuthenticationDetailsProviderBuilder builder) {
+    createProvider(Supplier<Optional<ResourcePrincipalAuthenticationDetailsProviderBuilder>> builder) {
 
         return LazyValue.create(() -> {
             // https://github.com/oracle/oci-java-sdk/blob/v2.19.0/bmc-common/src/main/java/com/oracle/bmc/auth/ResourcePrincipalAuthenticationDetailsProvider.java#L246-L251
@@ -68,7 +69,8 @@ class AuthenticationMethodResourcePrincipal implements OciAuthenticationMethod {
                 }
                 return Optional.empty();
             }
-            return Optional.of(builder.build());
+            return builder.get()
+                    .map(ResourcePrincipalAuthenticationDetailsProviderBuilder::build);
         });
     }
 }

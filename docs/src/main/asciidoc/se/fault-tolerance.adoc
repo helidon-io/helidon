@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -258,6 +258,74 @@ and bulkhead is the last one (the first to be executed once a value is returned)
 
 NOTE: This is the ordering used by the MicroProfile Fault Tolerance implementation
 in Helidon when a method is decorated with multiple annotations.
+
+== Metrics
+
+The Helidon Fault Tolerance module has support for some basic metrics to monitor
+certain application conditions. Metrics are disabled by default, but can be enabled
+via config by setting the property `ft.metrics.enabled=true` and by including an actual
+metrics implementation in your classpath. For more information about metrics implementations
+see xref:{rootdir}/se/metrics/metrics.adoc[Helidon Metrics].
+
+The following tables list all the metrics created by the Fault Tolerance module.
+Note that these metrics are generated per command instance, and that each instance _must_
+be identified by a unique name --assigned either programmatically by
+the application developer or automatically by the API.
+
+[cols="1,2,3"]
+.Bulkheads
+|===
+^|Name ^|Tags ^|Description
+|ft.bulkhead.calls.total | name="<bulkhead-name>" | Counter for all calls entering a bulkhead
+|ft.bulkhead.waitingDuration | name="<bulkhead-name>" | Distribution summary of waiting times to enter a bulkhead
+|ft.bulkhead.executionsRunning | name="<bulkhead-name>" | Gauge whose value is the number of executions running in a bulkhead
+|ft.bulkhead.executionsWaiting | name="<bulkhead-name>" | Gauge whose value is the number of executions waiting in a bulkhead
+|===
+
+[cols="1,2,3"]
+.Circuit Breakers
+|===
+^|Name ^|Tags ^|Description
+|ft.circuitbreaker.calls.total | name="<breaker-name>" | Counter for all calls entering a circuit breaker
+|ft.circuitbreaker.opened.total | name="<breaker-name>" | Counter for the number of times a circuit breaker has moved from
+closed to open state
+|===
+
+[cols="1,2,3"]
+.Retries
+|===
+^|Name ^|Tags ^|Description
+|ft.retry.calls.total | name="<retry-name>" | Counter for all calls entering a retry
+|ft.retry.retries.total | name="<retry-name>" | Counter for all retried calls, excluding the initial call
+|===
+
+[cols="1,2,3"]
+.Timeouts
+|===
+^|Name ^|Tags ^|Description
+|ft.timeout.calls.total | name="<timeout-name>" | Counter for all calls entering a timeout
+|ft.timeout.executionDuration | name="<timeout-name>" | Distribution summary of all execution durations in a timeout
+|===
+
+=== Enabling Metrics Programmatically
+
+Metrics can be enabled programmatically either globally or, if disabled globally, individually for
+each command instance. To enable metrics globally, call `FaultTolerance.config(Config)` passing
+a Config instance that sets `ft.metrics.default-enabled=true`. This must be done on application startup,
+before any command instances are created.
+
+If metrics are not enabled globally, they can be enabled programmatically on each command instance
+using the `enableMetrics(boolean)` method on its corresponding builder. For example, the
+following snippet shows how to create a `Retry` instance of name `my-retry` with metrics
+support enabled.
+
+[source,java]
+----
+include::{sourcedir}/se/FaultToleranceSnippets.java[tag=snippet_8, indent=0]
+----
+
+NOTE: The global config setting always takes precedence: that is, if metrics are enabled
+globally, they *cannot* be disabled individually by calling `enableMetrics(false)`.
 
 == Examples
 

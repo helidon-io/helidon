@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -354,7 +354,10 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
         }
 
         private void sendPrologueAndHeader() {
-            boolean expects100Continue = clientConfig.sendExpectContinue() && !noData;
+            // setting for expect 100 header, can be overridden for each request
+            boolean expects100Continue = !noData;
+            Boolean override100Continue = originalRequest.sendExpectContinue().orElse(null);
+            expects100Continue &= (override100Continue != null) ? override100Continue : clientConfig.sendExpectContinue();
             if (expects100Continue) {
                 headers.add(HeaderValues.EXPECT_100);
             }

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2024 Oracle and/or its affiliates.
+    Copyright (c) 2024, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -67,6 +67,11 @@
             <artifactId>slf4j-jdk14</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.oracle.oci.sdk</groupId>
+            <artifactId>oci-java-sdk-common-httpclient-jersey3</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -110,6 +115,18 @@
                         <version>${helidon.version}</version>
                     </dependency>
                 </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!--
+                        This will allow AuthenticationMethodOkeWorkload.available() to work during testing
+                    -->
+                    <environmentVariables>
+                        <OCI_KUBERNETES_SERVICE_ACCOUNT_CERT_PATH>${project.build.testResources[0].directory}/dummy-ca.crt</OCI_KUBERNETES_SERVICE_ACCOUNT_CERT_PATH>
+                    </environmentVariables>
+                </configuration>
             </plugin>
         </plugins>
     </build>

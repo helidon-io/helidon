@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,6 @@ import static io.helidon.webserver.tests.websocket.WsAction.Operation.RCV;
 import static io.helidon.webserver.tests.websocket.WsAction.OperationType.BINARY;
 import static io.helidon.webserver.tests.websocket.WsAction.OperationType.TEXT;
 import static java.nio.charset.StandardCharsets.UTF_8;
-
-;
 
 /**
  * A websocket client that is driven by a conversation instance.

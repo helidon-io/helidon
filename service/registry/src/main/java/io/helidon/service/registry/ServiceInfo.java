@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.service.registry;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.common.Weighted;
@@ -33,6 +34,19 @@ public interface ServiceInfo extends Weighted {
      * @return service type
      */
     TypeName serviceType();
+
+    /**
+     * The type that implements {@link #contracts()}.
+     * If the described service is not a factory, this will be the {@link #serviceType()}.
+     * If the described service is a factory, this will be the type in its factory declaration, i.e. the type
+     * it supplies, or the type of the services factory.
+     *
+     * @return type this service provides; this may be an interface, or an implementation, the type will implement all
+     *         {@link #contracts()} of this service
+     */
+    default TypeName providedType() {
+        return serviceType();
+    }
 
     /**
      * Type of the service descriptor (usually generated).
@@ -62,12 +76,11 @@ public interface ServiceInfo extends Weighted {
 
     /**
      * List of dependencies required by this service.
-     * Each dependency is a point of injection of a dependency into
-     * a constructor.
+     * These may be injection points as constructor parameters, fields, or setter methods.
      *
      * @return required dependencies
      */
-    default List<? extends Dependency> dependencies() {
+    default List<Dependency> dependencies() {
         return List.of();
     }
 
@@ -79,5 +92,40 @@ public interface ServiceInfo extends Weighted {
      */
     default boolean isAbstract() {
         return false;
+    }
+
+    /**
+     * Service qualifiers.
+     *
+     * @return qualifiers
+     */
+    default Set<Qualifier> qualifiers() {
+        return Set.of();
+    }
+
+    /**
+     * Run level of this service.
+     *
+     * @return run level
+     */
+    default Optional<Double> runLevel() {
+        return Optional.empty();
+    }
+
+    /**
+     * Scope of this service.
+     *
+     * @return scope of the service
+     */
+    TypeName scope();
+
+    /**
+     * What factory type is the described service.
+     * Inject services can be any of the types in the {@link FactoryType enum}.
+     *
+     * @return factory type
+     */
+    default FactoryType factoryType() {
+        return FactoryType.SERVICE;
     }
 }

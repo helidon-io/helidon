@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ module io.helidon.common.concurrency.limits {
     requires io.helidon.builder.api;
     requires io.helidon.common;
     requires io.helidon.common.config;
+    requires io.helidon.metrics.api;
 
     exports io.helidon.common.concurrency.limits;
     exports io.helidon.common.concurrency.limits.spi;

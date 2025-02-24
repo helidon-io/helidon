@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -39,9 +39,6 @@ include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites]
 === WebClient Features [[WebClient-features]]
 
 Helidon's WebClient is used to perform HTTP REST requests to target endpoints and handle their responses.
-
-*Note*: WebClient is still experimental and not intended for production use. APIs and features are not yet fully tested
-and are subject to change.
 
 WebClient provides the following features:
 

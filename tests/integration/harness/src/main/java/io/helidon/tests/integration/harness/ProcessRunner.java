@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
@@ -467,7 +468,19 @@ public abstract class ProcessRunner {
         @Override
         protected List<String> command(List<String> opts, List<String> args) {
             Objects.requireNonNull(finalName, "finalName is null");
-            return new CommandBuilder("target/" + finalName + "-jri/bin/start" + (IS_WINDOWS ? ".ps1" : ""))
+            if (IS_WINDOWS) {
+                return new CommandBuilder("powershell")
+                        .append("-File")
+                        .append("target/" + finalName + "-jri/bin/start.ps1")
+                        .append("--jvm", opts.stream()
+                                .map(option -> String.format("'%s'", option))
+                                .collect(Collectors.joining(" ")))
+                        .append(args.stream()
+                                .map(argument -> String.format("'%s'", argument))
+                                .collect(Collectors.joining(" ")))
+                        .command();
+            }
+            return new CommandBuilder("target/" + finalName + "-jri/bin/start")
                     .append("--jvm", String.join(" ", opts))
                     .append(args)
                     .command();

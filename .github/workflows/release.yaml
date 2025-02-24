@@ -22,7 +22,7 @@ on:
 env:
   JAVA_VERSION: '21'
   JAVA_DISTRO: 'oracle'
-  MAVEN_ARGS: |
+  MVN_ARGS: |
     -B -e
     -Dmaven.wagon.httpconnectionManager.ttlSeconds=60
     -Dmaven.wagon.http.retryHandler.count=3
@@ -35,7 +35,7 @@ concurrency:
 
 jobs:
   create-tag:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     environment: release
     outputs:
       version: ${{ steps.create-tag.outputs.version }}
@@ -57,7 +57,7 @@ jobs:
     strategy:
       matrix:
         moduleSet: [ core, integrations, others ]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 30
     environment: release
     steps:
@@ -80,7 +80,7 @@ jobs:
           artifact-name: io-helidon-artifacts-part-${{ matrix.moduleSet }}
           artifact-path: staging
           run: |
-            mvn ${MAVEN_ARGS} \
+            mvn ${MVN_ARGS} \
               -DreactorRule=default \
               -DmoduleSet=${{ matrix.moduleSet }} \
               -Dcache.loadSuffixes=javadoc,docs \
@@ -118,7 +118,7 @@ jobs:
   resolve-all:
     needs: [ create-tag, deploy ]
     timeout-minutes: 30
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: resolve-all
     steps:
       - uses: actions/checkout@v4
@@ -128,7 +128,7 @@ jobs:
       - uses: ./.github/actions/common
         with:
           run: |
-            mvn ${MAVEN_ARGS} -N \
+            mvn ${MVN_ARGS} -N \
               -Possrh-staging \
               -Dartifact=io.helidon:helidon-all:${{ needs.create-tag.outputs.version }}:pom \
               dependency:get
@@ -144,7 +144,7 @@ jobs:
           - quickstart-mp
           - database-se
           - database-mp
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     name: smoketest/${{ matrix.archetype }}
     steps:
       - uses: actions/checkout@v4

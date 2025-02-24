@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package io.helidon.microprofile.testing.junit5;
 
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -24,15 +25,22 @@ import java.lang.annotation.Target;
 import jakarta.enterprise.inject.spi.Extension;
 
 /**
- * Add a CDI extension to the test container.
+ * Add a CDI extension to the container.
+ * <p>
  * This annotation can be repeated.
+ * <p>
+ * If used on a method, the container will be reset regardless of the test lifecycle.
+ * @deprecated Use {@link io.helidon.microprofile.testing.AddExtension} instead
  */
+@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Repeatable(AddExtensions.class)
+@Deprecated(since = "4.2.0")
 public @interface AddExtension {
     /**
      * Class of the extension to add. The class must be public.
+     *
      * @return extension class.
      */
     Class<? extends Extension> value();

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,7 +23,15 @@
 
 include::{rootdir}/includes/mp.adoc[]
 
-== Jakarta REST Applications
+== Content
+
+- <<Overview, Overview>>
+- <<Discovery of REST Beans, Discovery of REST Beans>>
+- <<Setting Application Path, Setting Application Path>>
+- <<Access to Application Instances, Access to Application Instances>>
+- <<Injection Managers in Helidon, Injection Managers in Helidon>>
+
+== Overview
 
 The Jakarta REST specification (formerly JAX-RS) defines the notion of an `Application`
 subclass whose methods return resource and provider classes, singletons and properties. This is the
@@ -63,7 +71,7 @@ If one or more `Application` subclasses are found, call the `getClasses` and `ge
 in each subclass using the collections in steps (2) and (3) only as defaults, i.e. if these methods
 both return empty sets.
 
-NOTE: Helidon treats `@Path` and `@Provided` as bean-defining annotations but, as stated above,
+NOTE: Helidon treats `@Path` and `@Provider` as bean-defining annotations but, as stated above,
 `Application` subclasses may require additional annotations depending on the discovery mode
 
 == Setting Application Path

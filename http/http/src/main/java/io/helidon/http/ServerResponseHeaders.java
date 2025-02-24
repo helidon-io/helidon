@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,11 +106,23 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
 
     /**
      * Clears a cookie by adding a {@code Set-Cookie} header with an expiration date in the past.
+     * It is recommended to use {@link #clearCookie(SetCookie)} instead for better handling
+     * of Path and Domain.
      *
      * @param name name of the cookie.
      * @return this instance
      */
     ServerResponseHeaders clearCookie(String name);
+
+    /**
+     * Clears a cookie by adding a {@code Set-Cookie} header with an expiration date in the past.
+     *
+     * @param setCookie the cookie.
+     * @return this instance
+     */
+    default ServerResponseHeaders clearCookie(SetCookie setCookie) {
+        return clearCookie(setCookie.name());
+    }
 
     /**
      * Sets the value of {@link HeaderNames#LAST_MODIFIED} header.

@@ -14,5 +14,4 @@
 # limitations under the License.
 #
 
-io.helidon.common.mapper.ServiceLoaderMapper1
-io.helidon.common.mapper.ServiceLoaderMapper2
+io.helidon.common.mapper.ServiceLoaderMapper

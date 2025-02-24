@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,8 @@ import io.helidon.service.registry.Service;
 @Weight(Weighted.DEFAULT_WEIGHT - 10)
 class OciConfigProvider implements Supplier<io.helidon.integrations.oci.OciConfig> {
     private static final ReentrantReadWriteLock LOCK = new ReentrantReadWriteLock();
+    private static final String CONFIG_PREFIX = "helidon.oci";
+    private static final System.Logger LOGGER = System.getLogger(AuthenticationMethodConfig.class.getName());
     private static volatile OciConfig ociConfig;
 
     OciConfigProvider() {
@@ -71,7 +73,14 @@ class OciConfigProvider implements Supplier<io.helidon.integrations.oci.OciConfi
                 ConfigSources.systemProperties(),
                 ConfigSources.file("oci-config.yaml").optional(true),
                 ConfigSources.classpath("oci-config.yaml").optional(true));
-
-        ociConfig = OciConfig.create(config);
+        if (config.get(CONFIG_PREFIX).exists()) {
+            ociConfig = OciConfig.create(config.get(CONFIG_PREFIX));
+        } else {
+            ociConfig = OciConfig.create(config);
+            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                LOGGER.log(System.Logger.Level.TRACE,
+                           String.format("OCI Configuration needs to be prefixed with \"%s\"", CONFIG_PREFIX));
+            }
+        }
     }
 }

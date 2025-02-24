@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.docs.mp;
 
+import io.helidon.microprofile.telemetry.CallbackEnabled;
 import io.helidon.microprofile.telemetry.spi.HelidonTelemetryClientFilterHelper;
 import io.helidon.microprofile.telemetry.spi.HelidonTelemetryContainerFilterHelper;
 
@@ -259,6 +260,16 @@ class TelemetrySnippets {
             }
         }
         // end::snippet_12[]
+    }
+
+    class Snippet_13 {
+
+        // tag::snippet_13[]
+        @Inject
+        @CallbackEnabled
+        private Tracer otelTracer;
+
+        // end::snippet_13[]
     }
 
 }

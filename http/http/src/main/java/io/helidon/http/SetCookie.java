@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,17 +68,31 @@ public class SetCookie {
     }
 
     /**
+     * Creates a new fluent API builder using another cookie.
+     *
+     * @param setCookie the other cookie
+     * @return a new fluent API builder
+     */
+    public static Builder builder(SetCookie setCookie) {
+        return new Builder(setCookie);
+    }
+
+    /**
      * Parses new instance of {@link SetCookie} from the String representation.
      *
      * @param setCookie string representation
      * @return new instance
      */
     public static SetCookie parse(String setCookie) {
+        Objects.requireNonNull(setCookie);
         String[] cookieParts = setCookie.split(PARAM_SEPARATOR);
         String nameAndValue = cookieParts[0];
         int equalsIndex = nameAndValue.indexOf('=');
-        String name = nameAndValue.substring(0, equalsIndex);
-        String value = nameAndValue.length() == equalsIndex ? null : nameAndValue.substring(equalsIndex + 1);
+        String name = (equalsIndex == -1) ? nameAndValue : nameAndValue.substring(0, equalsIndex);
+        if (name.isEmpty()) {
+            throw new IllegalArgumentException("Cookie name cannot be empty");
+        }
+        String value = (equalsIndex == -1) ? "" : nameAndValue.substring(equalsIndex + 1);
         Builder builder = builder(name, value);
 
         for (int i = 1; i < cookieParts.length; i++) {
@@ -88,7 +102,7 @@ public class SetCookie {
             String partValue;
             if (equalsIndex > -1) {
                 partName = cookiePart.substring(0, equalsIndex);
-                partValue = cookiePart.length() == equalsIndex ? null : cookiePart.substring(equalsIndex + 1);
+                partValue = cookiePart.substring(equalsIndex + 1);
             } else {
                 partName = cookiePart;
                 partValue = null;
@@ -277,6 +291,24 @@ public class SetCookie {
         return result.toString();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof SetCookie setCookie)) {
+            return false;
+        }
+        return Objects.equals(name, setCookie.name)
+                && Objects.equals(domain, setCookie.domain)
+                && Objects.equals(path, setCookie.path);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, domain, path);
+    }
+
     private static void hasNoValue(String partName, String partValue) {
         if (partValue != null) {
             throw new IllegalArgumentException("Set-Cookie parameter " + partName + " has to have no value!");
@@ -347,6 +379,19 @@ public class SetCookie {
             //todo validate accepted characters
             this.name = name;
             this.value = value;
+        }
+
+        private Builder(SetCookie other) {
+            Objects.requireNonNull(other);
+            this.name = other.name;
+            this.value = other.value;
+            this.expires = other.expires;
+            this.maxAge = other.maxAge;
+            this.domain = other.domain;
+            this.path = other.path;
+            this.secure = other.secure;
+            this.httpOnly = other.httpOnly;
+            this.sameSite = other.sameSite;
         }
 
         @Override

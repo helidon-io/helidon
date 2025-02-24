@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,10 @@ public final class MediaTypes {
      * {@code application/json} media type.
      */
     public static final MediaType APPLICATION_JSON = MediaTypeEnum.APPLICATION_JSON;
+    /**
+     * {@code application/json-patch+json} media type.
+     */
+    public static final MediaType APPLICATION_JSON_PATCH_JSON = MediaTypeEnum.APPLICATION_JSON_PATCH_JSON;
     /**
      * {@code application/stream+json} media type.
      */

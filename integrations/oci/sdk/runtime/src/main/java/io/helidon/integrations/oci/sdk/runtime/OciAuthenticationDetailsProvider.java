@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.integrations.oci.sdk.runtime;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
@@ -27,12 +28,10 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import io.helidon.common.Weight;
 import io.helidon.common.types.Annotation;
-import io.helidon.inject.api.ContextualServiceQuery;
-import io.helidon.inject.api.InjectionPointInfo;
-import io.helidon.inject.api.InjectionPointProvider;
-import io.helidon.inject.api.ServiceInfoBasics;
+import io.helidon.service.registry.Dependency;
+import io.helidon.service.registry.Lookup;
+import io.helidon.service.registry.Service;
 
 import com.oracle.bmc.ConfigFileReader;
 import com.oracle.bmc.Region;
@@ -43,8 +42,6 @@ import com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.SimplePrivateKeySupplier;
 import com.oracle.bmc.auth.StringPrivateKeySupplier;
-import jakarta.inject.Named;
-import jakarta.inject.Singleton;
 
 import static io.helidon.common.types.Annotations.findFirst;
 
@@ -55,9 +52,8 @@ import static io.helidon.common.types.Annotations.findFirst;
  * @see OciConfigBlueprint
  * @see OciConfig
  */
-@Singleton
-@Weight(ServiceInfoBasics.DEFAULT_INJECT_WEIGHT)
-class OciAuthenticationDetailsProvider implements InjectionPointProvider<AbstractAuthenticationDetailsProvider> {
+@Service.Singleton
+class OciAuthenticationDetailsProvider implements Service.InjectionPointFactory<AbstractAuthenticationDetailsProvider> {
     static final System.Logger LOGGER = System.getLogger(OciAuthenticationDetailsProvider.class.getName());
 
     static final String KEY_AUTH_STRATEGY = "auth-strategy";
@@ -81,17 +77,19 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
     }
 
     @Override
-    public Optional<AbstractAuthenticationDetailsProvider> first(ContextualServiceQuery query) {
+    public Optional<Service.QualifiedInstance<AbstractAuthenticationDetailsProvider>> first(Lookup lookup) {
         OciConfig ociConfig = OciExtension.ociConfig();
 
-        String requestedNamedProfile = toNamedProfile(query.injectionPointInfo().orElse(null));
+        String requestedNamedProfile = toNamedProfile(lookup.dependency().orElse(null));
 
         // if the injection point names a profile for auth strategy then use it
         if (requestedNamedProfile != null && !requestedNamedProfile.isBlank()) {
             ociConfig = OciConfig.builder(ociConfig).configProfile(requestedNamedProfile).build();
         }
 
-        return Optional.of(select(ociConfig, true).authStrategy().select(ociConfig));
+        return Optional.of(Service.QualifiedInstance.create(select(ociConfig, true)
+                                                                    .authStrategy()
+                                                                    .select(ociConfig)));
     }
 
     /**
@@ -125,8 +123,8 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
                                                  + OciConfig.CONFIG_KEY);
     }
 
-    static String toNamedProfile(InjectionPointInfo.Builder ipiBuilder) {
-        Optional<? extends Annotation> named = findFirst(Named.class, ipiBuilder.qualifiers());
+    static String toNamedProfile(Dependency.Builder ipiBuilder) {
+        Optional<? extends Annotation> named = findFirst(Service.Named.class, ipiBuilder.qualifiers());
         if (named.isEmpty()) {
             return null;
         }
@@ -139,12 +137,12 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
         return nameProfile.trim();
     }
 
-    static String toNamedProfile(InjectionPointInfo ipi) {
+    static String toNamedProfile(Dependency ipi) {
         if (ipi == null) {
             return null;
         }
 
-        Optional<? extends Annotation> named = findFirst(Named.class, ipi.qualifiers());
+        Optional<? extends Annotation> named = findFirst(Service.Named.class, ipi.qualifiers());
         if (named.isEmpty()) {
             return null;
         }
@@ -162,7 +160,14 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
     }
 
     static String userHomePrivateKeyPath(OciConfig ociConfig) {
-        return Paths.get(System.getProperty("user.home"), ".oci", ociConfig.authKeyFile()).toString();
+        return normalizePath(Paths.get(System.getProperty("user.home"), ".oci", ociConfig.authKeyFile()).toString());
+    }
+
+    private static String normalizePath(String value) {
+        if (value == null) {
+            return null;
+        }
+        return value.replace(File.separator, "/");
     }
 
 

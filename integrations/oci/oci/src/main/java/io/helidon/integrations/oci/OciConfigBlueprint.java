@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,8 +72,9 @@ interface OciConfigBlueprint {
      *     <li>{@code instance-principal} - use identity of the OCI instance the service is running on, uses
      *     {@link com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider}, and is available in a
      *     separate module {@code helidon-integrations-oci-authentication-resource}</li>
-     *     <li>{@code workload} - use workload identity of the OCI Kubernetes workload, available in a
-     *     separate module {@code helidon-integrations-oci-authentication-workload}</li>
+     *     <li>{@code oke-workload-identity} - use identity of the OCI Kubernetes workload, uses
+     *     {@code com.oracle.bmc.auth.okeworkloadidentity.OkeWorkloadIdentityAuthenticationDetailsProvider}, and is available in a
+     *     separate module {@code helidon-integrations-oci-authentication-oke-workload}</li>
      * </ul>
      *
      * @return the authentication method to apply
@@ -161,7 +162,16 @@ interface OciConfigBlueprint {
      *
      * @return custom federation endpoint URI
      */
+    @Option.Configured
     Optional<URI> federationEndpoint();
+
+    /**
+     * OCI tenant id for Instance Principal, Resource Principal or OKE Workload.
+     *
+     * @return the OCI tenant id
+     */
+    @Option.Configured
+    Optional<String> tenantId();
 
     /**
      * Get the config used to update the builder.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,18 +23,53 @@ import java.lang.annotation.Target;
 import jakarta.inject.Qualifier;
 
 /**
- * Named socket Qualifier for {@code WebTarget}.
+ * CDI qualifier to inject a JAX-RS client or URI for a named socket.
+ * <p>
+ * The supported types are:
+ * <ul>
+ *     <li>{@link jakarta.ws.rs.client.WebTarget WebTarget} a JAXRS client target</li>
+ *     <li>{@link java.net.URI URI} a URI</li>
+ *     <li>{@link String} a raw URI</li>
+ * </ul>
+ * <p>
+ * This annotation can be used on constructor parameters, or class fields.
+ * Test method parameter injection may be supported depending on the test framework integration.
+ * <p>
+ * Also note that the default socket name is {@code "@default"}.
+ * <p>
+ * E.g. constructor injection:
+ * <pre>
+ * class MyTest {
+ *     private final WebTarget target;
+ *
+ *     &#64;Inject
+ *     MyTest(&#64;Socket("@default") URI uri) {
+ *         target = ClientBuilder.newClient().target(uri);
+ *     }
+ * }
+ * </pre>
+ * <p>
+ * E.g. field injection:
+ * <pre>
+ * class MyTest {
+ *
+ *     &#64;Inject // optional
+ *     &#64;Socket("@default")
+ *     private WebTarget target;
+ * }
+ * </pre>
+ * @deprecated Use {@link io.helidon.microprofile.testing.Socket} instead
  */
 @Qualifier
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD, ElementType.PARAMETER})
+@Deprecated(since = "4.2.0")
 public @interface Socket {
 
     /**
      * Name of the socket.
      *
-     * @return String with the name of the Socket
+     * @return socket name
      */
     String value();
-
 }

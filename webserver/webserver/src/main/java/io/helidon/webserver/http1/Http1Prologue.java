@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,17 @@ public final class Http1Prologue {
             | (long) '.' << 48
             | (long) '1' << 56;
     /*
+    The string HTTP/1.0: we don't support 1.0, but we detect it
+    */
+    private static final long HTTP_1_0_LONG = 'H'
+            | 'T' << 8
+            | 'T' << 16
+            | 'P' << 24
+            | (long) '/' << 32
+            | (long) '1' << 40
+            | (long) '.' << 48
+            | (long) '0' << 56;
+    /*
     GET string as int
      */
     private static final int GET_INT = 'G'
@@ -63,6 +74,7 @@ public final class Http1Prologue {
             | 'S' << 16
             | 'T' << 24;
     private static final String HTTP_1_1 = "HTTP/1.1";
+    private static final String HTTP_1_0 = "HTTP/1.0";
 
     private final DataReader reader;
     private final int maxLength;
@@ -206,6 +218,15 @@ public final class Http1Prologue {
         // we always use the same constant
         //noinspection StringEquality
         if (protocol != HTTP_1_1) {
+            //noinspection StringEquality
+            if (protocol == HTTP_1_0) {        // be friendly rejecting 1.0
+                throw RequestException.builder()
+                        .type(DirectHandler.EventType.HTTP_VERSION_NOT_SUPPORTED)
+                        .request(DirectTransportRequest.create(HTTP_1_0, method.text(), path))
+                        .message("HTTP 1.0 is not supported, consider using HTTP 1.1")
+                        .safeMessage(true)
+                        .build();
+            }
             throw badRequest("Invalid protocol and/or version", method.text(), path, protocol, "");
         }
 
@@ -232,6 +253,8 @@ public final class Http1Prologue {
             long word = Bytes.toWord(bytes, index);
             if (word == HTTP_1_1_LONG) {
                 return HTTP_1_1;
+            } else if (word == HTTP_1_0_LONG) {
+                return HTTP_1_0;
             }
         }
 

@@ -88,7 +88,7 @@ public final class ExistingInstanceDescriptor<T> implements ServiceDescriptor<T>
     }
 
     @Override
-    public Object instantiate(DependencyContext ctx) {
+    public Object instantiate(DependencyContext ctx, InterceptionMetadata metadata) {
         return instance;
     }
 
