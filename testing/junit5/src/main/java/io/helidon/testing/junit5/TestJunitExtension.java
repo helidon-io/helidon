@@ -204,10 +204,10 @@ public class TestJunitExtension implements Extension,
                     .build();
 
             // self-register, so this context is used even if the current context is some child of it
-            context.register(GlobalServiceRegistry.STATIC_CONTEXT_CLASSIFIER, context);
+            context.register("helidon-registry-static-context", context);
 
             // supply registry
-            context.supply(GlobalServiceRegistry.CONTEXT_QUALIFIER, ServiceRegistry.class, () -> {
+            context.supply("helidon-registry", ServiceRegistry.class, () -> {
                 var manager = ServiceRegistryManager.create();
                 var registry = manager.registry();
                 store.put(ServiceRegistryManager.class, (CloseableResource) manager::shutdown);

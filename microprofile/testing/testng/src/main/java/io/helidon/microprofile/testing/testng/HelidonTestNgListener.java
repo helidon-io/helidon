@@ -40,7 +40,6 @@ import io.helidon.microprofile.testing.HelidonTestInfo.ClassInfo;
 import io.helidon.microprofile.testing.HelidonTestInfo.MethodInfo;
 import io.helidon.microprofile.testing.HelidonTestScope;
 import io.helidon.microprofile.testing.Proxies;
-import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryManager;
 
@@ -302,10 +301,10 @@ public class HelidonTestNgListener extends HelidonTestNgListenerBase implements 
                 .build();
 
         // self-register, so this context is used even if the current context is some child of it
-        context.register(GlobalServiceRegistry.STATIC_CONTEXT_CLASSIFIER, context);
+        context.register("helidon-registry-static-context", context);
 
         // supply registry
-        context.supply(GlobalServiceRegistry.CONTEXT_QUALIFIER, ServiceRegistry.class,
+        context.supply("helidon-registry", ServiceRegistry.class,
                 () -> ServiceRegistryManager.create().registry());
 
         return context;

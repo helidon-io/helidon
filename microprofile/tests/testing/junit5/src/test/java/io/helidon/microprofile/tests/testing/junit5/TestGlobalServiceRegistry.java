@@ -69,7 +69,7 @@ class TestGlobalServiceRegistry {
         assertThat(INSTANCES.size(), is(1));
         assertThat(INSTANCES.iterator().next(),
                 is(not(System.identityHashCode(Contexts.globalContext()
-                        .get(GlobalServiceRegistry.CONTEXT_QUALIFIER, ServiceRegistry.class)
+                        .get("helidon-registry", ServiceRegistry.class)
                         .orElse(null)))));
     }
 
