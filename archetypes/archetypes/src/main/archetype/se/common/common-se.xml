@@ -23,7 +23,12 @@
     <source src="/common/sources.xml"/>
     <output>
         <model>
-            <value key="mainClass">${package}.Main</value>
+            <list key="pom-properties">
+                <map>
+                    <value key="key">mainClass</value>
+                    <value key="value">${package}.Main</value>
+                </map>
+            </list>
             <value key="parent-artifactId">helidon-se</value>
             <list key="dependencies">
                 <map order="999">

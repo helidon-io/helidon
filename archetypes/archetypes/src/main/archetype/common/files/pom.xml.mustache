@@ -15,14 +15,59 @@
     <artifactId>{{artifactId}}</artifactId>
     <version>{{project-version}}</version>
 
-{{#mainClass}}
+{{#pom-properties}}
+{{#first}}
     <properties>
-        <mainClass>{{mainClass}}</mainClass>
+{{/first}}
+        <{{key}}>{{value}}</{{key}}>
+{{#last}}
     </properties>
-{{/mainClass}}
 
+{{/last}}
+{{/pom-properties}}
+{{#dependencies-management}}
+{{#first}}
+    <dependencyManagement>
+        <dependencies>
+{{/first}}
+            <dependency>
+                <groupId>{{groupId}}</groupId>
+                <artifactId>{{artifactId}}</artifactId>
+{{#version}}
+                <version>{{.}}</version>
+{{/version}}
+{{#scope}}
+                <scope>{{.}}</scope>
+{{/scope}}
+{{#type}}
+                <type>{{.}}</type>
+{{/type}}
+{{#optional}}
+                <optional>{{.}}</optional>
+{{/optional}}
+{{#exclusions}}
+{{#first}}
+                <exclusions>
+{{/first}}
+                    <exclusion>
+                        <groupId>{{groupId}}</groupId>
+                        <artifactId>{{artifactId}}</artifactId>
+                    </exclusion>
+{{#last}}
+                </exclusions>
+{{/last}}
+{{/exclusions}}
+            </dependency>
+{{#last}}
+        </dependencies>
+    </dependencyManagement>
+
+{{/last}}
+{{/dependencies-management}}
+{{#dependencies}}
+{{#first}}
     <dependencies>
-        {{#dependencies}}
+{{/first}}
         <dependency>
             <groupId>{{groupId}}</groupId>
             <artifactId>{{artifactId}}</artifactId>
@@ -39,9 +84,11 @@
             <optional>{{.}}</optional>
 {{/optional}}
         </dependency>
-        {{/dependencies}}
+{{#last}}
     </dependencies>
 
+{{/last}}
+{{/dependencies}}
     <build>
         <plugins>
             <plugin>

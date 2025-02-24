@@ -21,6 +21,18 @@
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
 
     <output>
+        <templates engine="mustache" transformations="mustache,packaged" if="${extra} contains 'webclient'">
+            <directory>files</directory>
+            <includes>
+                <include>src/*/java/**/WebClientMain.java.mustache</include>
+            </includes>
+        </templates>
+        <templates engine="mustache" transformations="mustache,packaged" if="${extra} contains 'fault-tolerance'">
+            <directory>files</directory>
+            <includes>
+                <include>src/*/java/**/FtService.java.mustache</include>
+            </includes>
+        </templates>
         <model>
             <list key="dependencies">
                 <map if="${extra} contains 'fault-tolerance'">
@@ -44,7 +56,9 @@
                         (req, res, ex) -> res.status(Status.REQUEST_TIMEOUT_408).send("timeout"))
                 .error(Throwable.class,
                         (req, res, ex) -> res.status(Status.INTERNAL_SERVER_ERROR_500)
-                                .send(ex.getClass().getName() + ": " + ex.getMessage()))]]></value>
+                                .send(ex.getClass().getName() + ": " + ex.getMessage()))
+]]>
+                </value>
             </list>
             <list key="Abstract-tests" if="${extra} contains 'fault-tolerance'">
                 <value><![CDATA[

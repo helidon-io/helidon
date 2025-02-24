@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,14 +23,8 @@
     <step name="Extra" optional="true">
         <inputs>
             <list id="extra" name="Select Additional Components" optional="true">
-                <option value="webclient" name="WebClient" description="Nima HTTP client" if="${flavor} == 'se'">
+                <option value="webclient" name="WebClient" description="HTTP client" if="${flavor} == 'se'">
                     <output>
-                        <templates engine="mustache" transformations="mustache,packaged">
-                            <directory>files</directory>
-                            <includes>
-                                <include>src/*/java/**/WebClientMain.java.mustache</include>
-                            </includes>
-                        </templates>
                         <model>
                             <list key="dependencies">
                                 <map>
@@ -83,14 +77,6 @@ java -cp "target/classes:target/libs/*" {{package}}.WebClientMain PORT
                 </option>
                 <option value="fault-tolerance" name="Fault Tolerance" description="System for building resilient applications">
                     <output>
-                        <templates engine="mustache" transformations="mustache,packaged">
-                            <directory>files</directory>
-                            <includes>
-                                <include if="${flavor} == 'mp'">src/*/java/**/FtResource.java.mustache</include>
-                                <include if="${flavor} == 'mp'">src/*/java/**/FtResourceTest.java.mustache</include>
-                                <include if="${flavor} == 'se'">src/*/java/**/FtService.java.mustache</include>
-                            </includes>
-                        </templates>
                         <model>
                             <list key="dependencies" if="${flavor} == 'mp'">
                                 <map>
@@ -102,8 +88,7 @@ java -cp "target/classes:target/libs/*" {{package}}.WebClientMain PORT
                                 <value if="${flavor} == 'mp'">io.helidon.microprofile.faulttolerance</value>
                             </list>
                             <list key="maven-plugins" if="${flavor} == 'mp'">
-                                <value><![CDATA[
-            <plugin>
+                                <value><![CDATA[            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
@@ -111,20 +96,14 @@ java -cp "target/classes:target/libs/*" {{package}}.WebClientMain PORT
                         <sun.net.http.allowRestrictedHeaders>true</sun.net.http.allowRestrictedHeaders>
                     </systemPropertyVariables>
                 </configuration>
-            </plugin>
-]]></value>
+            </plugin>]]>
+                                </value>
                             </list>
                         </model>
                     </output>
                 </option>
                 <option value="cors" name="CORS" description="Cross-Origin Resource Sharing utilities">
                     <output>
-                        <templates engine="mustache" transformations="mustache,packaged">
-                            <directory>files</directory>
-                            <includes>
-                                <include>src/*/java/**/TestCORS.java.mustache</include>
-                            </includes>
-                        </templates>
                         <model>
                             <list key="dependencies">
                                 <map if="${flavor} == 'mp'">
@@ -160,8 +139,7 @@ java -cp "target/classes:target/libs/*" {{package}}.WebClientMain PORT
                                 <value if="${flavor} == 'mp'">io.helidon.microprofile.cors.CorsCdiExtension</value>
                             </list>
                             <list key="SimpleGreetService-methods" if="${flavor} == 'mp'">
-                                <value><![CDATA[
-    @PUT
+                                <value><![CDATA[    @PUT
     public Response getCustomMessage(String greeting) {
         String msg = String.format("%s %s!", greeting, "World");
         return Response.ok(msg).build();
@@ -174,7 +152,9 @@ java -cp "target/classes:target/libs/*" {{package}}.WebClientMain PORT
     @CrossOrigin(value = {"http://foo.com", "http://there.com"},
             allowMethods = {HttpMethod.PUT})
     public void optionsForGetCustomMessage() {
-    }]]></value>
+    }
+]]>
+                                </value>
                             </list>
                             <list key="readme-sections" if="${flavor} == 'mp'">
                                 <value><![CDATA[
@@ -271,11 +251,13 @@ restrictive-cors:
 #    - path-pattern: /greeting
 #      allow-origins: ["http://foo.com", "http://there.com", "http://other.com"]
 #      allow-methods: ["PUT", "DELETE"]
-]]></value>
+]]>
+                                </value>
                             </list>
                             <list key="Main-routing-builder" if="${flavor} == 'se'">
                                 <value><![CDATA[        .register("/cors-greet", corsSupportForGreeting(), new GreetService())
-]]></value>
+]]>
+                                </value>
                             </list>
                             <list key="main-class-content" if="${flavor} == 'se'">
                                 <value><![CDATA[
@@ -300,7 +282,8 @@ restrictive-cors:
 
         return corsBuilder.build();
     }
-]]></value>
+]]>
+                                </value>
                             </list>
                             <list key="MainTest-java-imports" if="${flavor} == 'se'">
                                 <value>java.util.Optional</value>
@@ -336,7 +319,8 @@ restrictive-cors:
             assertThat(allowOrigin.get(), is("*"));
         }
     }
-]]></value>
+]]>
+                                </value>
                             </list>
                             <list key="readme-sections" if="${flavor} == 'se'">
                                 <value><![CDATA[
@@ -361,7 +345,17 @@ content-length: 27
 
 Hello World
 ```
-]]></value>
+]]>
+                                </value>
+                            </list>
+                        </model>
+                    </output>
+                </option>
+                <option value="coherence" name="Coherence" description="Cache data with coherence">
+                    <output>
+                        <model>
+                            <list key="readme-exercise-the-application">
+                                <value file="files/README.coherence.exercise.app.md"/>
                             </list>
                         </model>
                     </output>
@@ -373,6 +367,7 @@ Hello World
                 <value key="webclient" if="${extra} contains 'webclient'">true</value>
                 <value key="fault-tolerance" if="${extra} contains 'fault-tolerance'">true</value>
                 <value key="cors" if="${extra} contains 'cors'">true</value>
+                <value key="coherence" if="${extra} contains 'coherence'">true</value>
             </model>
         </output>
     </step>

@@ -28,12 +28,14 @@
     <source src="/common/media-sources.xml"/>
     <exec src="/common/security.xml"/>
     <exec src="database-input.xml"/>
-    <source src="/common/extra.xml"/>
+    <exec src="/common/extra.xml"/>
+    <source src="extra-output.xml"/>
     <source src="/common/observability.xml"/>
     <exec src="/common/packaging.xml"/>
     <source src="observability.xml"/>
     <exec src="database-outputs.xml" if="${db}"/>
     <source src="security-outputs.xml" if="${security}"/>
+    <exec src="coherence-output.xml" if="${extra} contains 'coherence'"/>
     <output>
         <templates engine="mustache" transformations="mustache" if="${application-yaml}">
             <directory>files</directory>
@@ -43,7 +45,12 @@
         </templates>
         <model>
             <value key="helidon-test">true</value>
-            <value key="mainClass" if="${jpms}">${package}.Main</value>
+            <list key="pom-properties" if="${jpms}">
+                <map order="1">
+                    <value key="key">mainClass</value>
+                    <value key="value">${package}.Main</value>
+                </map>
+            </list>
             <list key="microprofile-config-entries">
                 <value file="files/microprofile-config.properties"/>
             </list>
