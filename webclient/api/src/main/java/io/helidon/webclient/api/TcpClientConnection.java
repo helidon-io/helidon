@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,6 +65,7 @@ public class TcpClientConnection implements ClientConnection {
     private DataReader reader;
     private DataWriter writer;
     private boolean closed;
+    private boolean allowExpectContinue = true;
 
     private TcpClientConnection(WebClient webClient,
                                 ConnectionKey connectionKey,
@@ -233,6 +234,16 @@ public class TcpClientConnection implements ClientConnection {
 
     public boolean isConnected() {
         return socket != null && socket.isConnected() && helidonSocket().isConnected();
+    }
+
+    @Override
+    public boolean allowExpectContinue() {
+        return allowExpectContinue;
+    }
+
+    @Override
+    public void allowExpectContinue(boolean allowExpectContinue) {
+        this.allowExpectContinue = allowExpectContinue;
     }
 
     Socket socket() {
