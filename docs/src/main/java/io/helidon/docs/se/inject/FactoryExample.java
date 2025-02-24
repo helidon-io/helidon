@@ -56,34 +56,41 @@ class FactoryExample {
 
     // tag::snippet_3[]
     @Service.Qualifier
-    public @interface Color {
+    @interface SystemProperty {
         String value();
     }
 
     @Service.Singleton
-    class QualifiedFactory implements Service.QualifiedFactory<MyService, Color> {
+    class SystemProperties {
+
+        private final String httpHost;
+        private final String httpPort;
+
+        SystemProperties(@SystemProperty("http.host") String httpHost,
+                         @SystemProperty("http.port") String httpPort) {
+            this.httpHost = httpHost;
+            this.httpPort = httpPort;
+        }
+
+    }
+
+    @Service.Singleton
+    class SystemPropertyFactory implements Service.QualifiedFactory<String, SystemProperty> {
 
         @Override
-        public Optional<Service.QualifiedInstance<MyService>> first(Qualifier qualifier,
+        public Optional<Service.QualifiedInstance<String>> first(Qualifier qualifier,
                                                                     Lookup lookup,
-                                                                    GenericType<MyService> genericType) {
-            return Optional.of(Service.QualifiedInstance.create(new MyService(), qualifier));
+                                                                    GenericType<String> genericType) {
+            String propertyValue = qualifier.stringValue()
+                    .map(System::getProperty)
+                    .orElse("");
+            return Optional.of(Service.QualifiedInstance.create(propertyValue, qualifier));
         }
+
     }
     // end::snippet_3[]
 
     // tag::snippet_4[]
-    @Service.Singleton
-    class InjectionPointFactory implements Service.InjectionPointFactory<MyService> {
-
-        @Override
-        public Optional<Service.QualifiedInstance<MyService>> first(Lookup lookup) {
-            return Optional.of(Service.QualifiedInstance.create(new MyService()));
-        }
-    }
-    // end::snippet_4[]
-
-    // tag::snippet_5[]
     @Service.Singleton
     @Service.Named("name")
     class InjectionPointFactoryWithQualifier implements Service.InjectionPointFactory<MyService> {
@@ -93,5 +100,5 @@ class FactoryExample {
             return Optional.of(Service.QualifiedInstance.create(new MyService(), Qualifier.createNamed("name")));
         }
     }
-    // end::snippet_5[]
+    // end::snippet_4[]
 }
