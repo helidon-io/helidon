@@ -400,4 +400,12 @@ interface ListenerConfigBlueprint {
         }
     }
 
+    /**
+     * Configuration for this listener's error handling.
+     *
+     * @return error handling
+     */
+    @Option.Configured
+    @Option.DefaultMethod("create")
+    ErrorHandling errorHandling();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,13 @@ import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.http1.Http1Client;
+import io.helidon.webserver.ErrorHandling;
+import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http1.Http1Route;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
 
@@ -40,6 +43,13 @@ class BadHostTest {
 
     BadHostTest(Http1Client client) {
         this.client = client;
+    }
+
+    @SetUpServer
+    static void setupServer(WebServerConfig.Builder builder) {
+        builder.errorHandling(ErrorHandling.builder()
+                                      .includeEntity(true)          // enable error message entities
+                                      .build());
     }
 
     @SetUpRoute

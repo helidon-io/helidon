@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.microprofile.tests.server;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
+import io.helidon.microprofile.testing.AddConfig;
 import io.helidon.microprofile.testing.junit5.AddBean;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 import io.helidon.webclient.api.WebClient;
@@ -37,6 +38,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @HelidonTest
 @AddBean(BadHostHeaderTest.TestResource.class)
+@AddConfig(key = "server.error-handling.include-entity", value = "true")
 public class BadHostHeaderTest {
     private static final Header BAD_HOST_HEADER = HeaderValues.create("Host", "localhost:808a");
 

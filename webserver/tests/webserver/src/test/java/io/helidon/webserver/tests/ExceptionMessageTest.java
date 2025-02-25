@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,10 @@ import java.util.Collections;
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
+import io.helidon.webserver.ErrorHandling;
+import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
 
@@ -41,6 +44,13 @@ class ExceptionMessageTest {
 
     ExceptionMessageTest(SocketHttpClient socketClient) {
         this.socketClient = socketClient;
+    }
+
+    @SetUpServer
+    static void setupServer(WebServerConfig.Builder builder) {
+        builder.errorHandling(ErrorHandling.builder()
+                                      .includeEntity(true)          // enable error message entities
+                                      .build());
     }
 
     @Test

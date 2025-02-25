@@ -22,13 +22,10 @@ import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.webclient.http1.Http1Client;
-import io.helidon.webserver.ErrorHandling;
-import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http1.Http1Route;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
-import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
 
@@ -38,25 +35,18 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- * Verifies that 400 bad request is returned when a bad prologue is sent. Enables
- * entities in {@link io.helidon.webserver.ErrorHandling} to get details about
- * the errors in entities.
+ * Verifies that 400 bad request is returned when a bad prologue is sent. Response
+ * entities must be empty given that {@link io.helidon.webserver.ErrorHandling#includeEntity()}
+ * is {@code false} by default.
  */
 @ServerTest
-class BadPrologueTest {
+class BadPrologueNoEntityTest {
     private final Http1Client client;
     private final SocketHttpClient socketClient;
 
-    BadPrologueTest(Http1Client client, SocketHttpClient socketClient) {
+    BadPrologueNoEntityTest(Http1Client client, SocketHttpClient socketClient) {
         this.client = client;
         this.socketClient = socketClient;
-    }
-
-    @SetUpServer
-    static void setupServer(WebServerConfig.Builder builder) {
-        builder.errorHandling(ErrorHandling.builder()
-                                      .includeEntity(true)          // enable error message entities
-                                      .build());
     }
 
     @SetUpRoute
@@ -91,9 +81,9 @@ class BadPrologueTest {
 
         assertThat(response, containsString("400 Bad Request"));
         // beginning of message to the first double quote
-        assertThat(response, containsString("Query contains invalid char: "));
+        assertThat(response, not(containsString("Query contains invalid char: ")));
         // end of message from double quote, index of bad char, and bad char
-        assertThat(response, containsString(", index: 2, char: 0x3c"));
+        assertThat(response, not(containsString(", index: 2, char: 0x3c")));
         assertThat(response, not(containsString(">")));
     }
 
@@ -106,9 +96,9 @@ class BadPrologueTest {
 
         assertThat(response, containsString("400 Bad Request"));
         // beginning of message to the first double quote
-        assertThat(response, containsString("Query contains invalid char: "));
+        assertThat(response, not(containsString("Query contains invalid char: ")));
         // end of message from double quote, index of bad char, and bad char
-        assertThat(response, containsString(", index: 10, char: 0x7b"));
+        assertThat(response, not(containsString(", index: 10, char: 0x7b")));
     }
 
     @Test
@@ -120,7 +110,7 @@ class BadPrologueTest {
 
         assertThat(response, containsString("400 Bad Request"));
         // for path we are on the safe side, and never return it back (even HTML encoded)
-        assertThat(response, containsString("Bad request, see server log for more information"));
+        assertThat(response, not(containsString("Bad request, see server log for more information")));
     }
 
     @Test
@@ -132,9 +122,9 @@ class BadPrologueTest {
 
         assertThat(response, containsString("400 Bad Request"));
         // beginning of message to the first double quote
-        assertThat(response, containsString("Fragment contains invalid char: "));
+        assertThat(response, not(containsString("Fragment contains invalid char: ")));
         // end of message from double quote, index of bad char, and bad char
-        assertThat(response, containsString(", index: 16, char: 0x3e"));
+        assertThat(response, not(containsString(", index: 16, char: 0x3e")));
         assertThat(response, not(containsString(">")));
     }
 }
