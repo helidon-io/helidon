@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -261,6 +261,7 @@ class FollowRedirectTest {
         // the webclient just starts sending entity (that is the reason for the timeout, for servers that may not send continue)
         ClientResponseTyped<String> http1ClientResponse = webClient.put()
                 .path("/wait")
+                .keepAlive(false)
                 .readContinueTimeout(Duration.ofMillis(200))
                 .header(REDIRECT_TO_OTHER_NAME, redirectToOtherPort)
                 .outputStream(it -> {

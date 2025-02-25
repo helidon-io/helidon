@@ -355,9 +355,10 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
 
         private void sendPrologueAndHeader() {
             // setting for expect 100 header, can be overridden for each request
-            boolean expects100Continue = !noData;
-            Boolean override100Continue = originalRequest.sendExpectContinue().orElse(null);
-            expects100Continue &= (override100Continue != null) ? override100Continue : clientConfig.sendExpectContinue();
+            boolean expects100Continue = connection.allowExpectContinue()
+                    && !noData
+                    && originalRequest.sendExpectContinue().orElse(clientConfig.sendExpectContinue());
+
             if (expects100Continue) {
                 headers.add(HeaderValues.EXPECT_100);
             }
@@ -400,6 +401,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                     // we assume this is a timeout exception, if the socket got closed, next read will throw appropriate exception
                     // we treat this as receiving 100-Continue
                     responseStatus = null;
+                    connection.allowExpectContinue(false);
                 } finally {
                     connection.readTimeout(originalRequest.readTimeout());
                 }
