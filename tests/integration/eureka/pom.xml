@@ -102,33 +102,6 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>3.4.3</version>
-                <executions>
-                    <execution>
-                        <id>Start Spring Eureka Server for integration tests</id>
-                        <phase>pre-integration-test</phase>
-                        <goals>
-                            <goal>start</goal>
-                        </goals>
-                        <configuration>
-                            <classesDirectory>${project.build.testOutputDirectory}</classesDirectory>
-                            <mainClass>io.helidon.tests.integration.eureka.EurekaServerApplication</mainClass>
-                            <useTestClasspath>true</useTestClasspath>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>Stop Spring Eureka Server for integration tests</id>
-                        <phase>post-integration-test</phase>
-                        <goals>
-                            <goal>stop</goal>
-                        </goals>
-                    </execution>
-
-                </executions>
-            </plugin>
-            <plugin>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
                     <classesDirectory>${project.build.outputDirectory}</classesDirectory>
@@ -159,5 +132,47 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>start-spring-eureka-server</id>
+            <activation>
+                <property>
+                    <name>skipTests</name>
+                    <value>!true</value>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.springframework.boot</groupId>
+                        <artifactId>spring-boot-maven-plugin</artifactId>
+                        <version>3.4.3</version>
+                        <executions>
+                            <execution>
+                                <id>Start Spring Eureka Server for integration tests</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>start</goal>
+                                </goals>
+                                <configuration>
+                                    <classesDirectory>${project.build.testOutputDirectory}</classesDirectory>
+                                    <mainClass>io.helidon.tests.integration.eureka.EurekaServerApplication</mainClass>
+                                    <useTestClasspath>true</useTestClasspath>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>Stop Spring Eureka Server for integration tests</id>
+                                <phase>post-integration-test</phase>
+                                <goals>
+                                    <goal>stop</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>
