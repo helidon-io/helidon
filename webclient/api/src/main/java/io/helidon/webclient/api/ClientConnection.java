@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,4 +61,21 @@ public interface ClientConnection extends ReleasableResource {
      * @param readTimeout connection read timeout
      */
     void readTimeout(Duration readTimeout);
+
+    /**
+     * Check whether this connection is allowed to send 100-Continue.
+     *
+     * @return whether 100-Continue is allowed
+     */
+    default boolean allowExpectContinue() {
+        return true;
+    }
+
+    /**
+     * Set whether this connection allows 100-Continue to be sent.
+     *
+     * @param allowExpectContinue whether to allow 100-Continue
+     */
+    default void allowExpectContinue(boolean allowExpectContinue) {
+    }
 }
