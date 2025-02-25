@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2025 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<archetype-script xmlns="https://helidon.io/archetype/2.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
+
+    <output>
+        <templates transformations="mustache,packaged" engine="mustache">
+            <directory>files</directory>
+            <includes>
+                <include>src/main/java/__pkg__/CoherenceService.java.mustache</include>
+                <include>src/main/java/__pkg__/Person.java.mustache</include>
+                <include>src/test/java/__pkg__/CoherenceResourceTest.java.mustache</include>
+            </includes>
+        </templates>
+        <files>
+            <directory>files</directory>
+            <includes>
+                <include>src/main/resources/coherence-cache-config.xml</include>
+            </includes>
+        </files>
+        <model>
+            <list key="pom-properties">
+                <map>
+                    <value key="key">version.lib.coherence</value>
+                    <value key="value">24.03.1</value>
+                </map>
+            </list>
+            <list key="dependencies-management">
+                <map>
+                    <value key="groupId">com.oracle.coherence.ce</value>
+                    <value key="artifactId">coherence-bom</value>
+                    <!-- Using template to skip variable resolution -->
+                    <value key="version" template="mustache">${version.lib.coherence}</value>
+                    <value key="type">pom</value>
+                    <value key="scope">import</value>
+                </map>
+            </list>
+            <list key="dependencies">
+                <map>
+                    <value key="groupId">com.oracle.coherence.ce</value>
+                    <value key="artifactId">coherence</value>
+                </map>
+            </list>
+            <list key="Main-other-imports">
+                <value>com.tangosol.net.Coherence</value>
+            </list>
+            <list key="Main-main">
+                <value><![CDATA[
+        try {
+            Coherence coherence = Coherence.clusterMember();
+            coherence.startAndWait();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+]]>
+                </value>
+            </list>
+            <list key="Main-routing-builder">
+                <value><![CDATA[.register("/creditscore", new CoherenceService())
+]]>
+                </value>
+            </list>
+            <list key="module-requires" if="${jpms}">
+                <value>com.oracle.coherence</value>
+            </list>
+        </model>
+    </output>
+</archetype-script>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -24,13 +24,14 @@
     <source src="/common/media-sources.xml"/>
     <exec src="/common/security.xml"/>
     <source src="database-inputs.xml"/>
-    <source src="/common/extra.xml"/>
-    <source src="extra.xml"/>
+    <exec src="/common/extra.xml"/>
+    <source src="extra-output.xml"/>
     <source src="/common/observability.xml"/>
     <source src="observability.xml"/>
     <exec src="/common/packaging.xml"/>
     <exec src="database-output.xml" if="${db}"/>
     <source src="security-outputs.xml" if="${security}"/>
+    <exec src="coherence-output.xml" if="${extra} contains 'coherence'"/>
 
     <output>
         <file source="files/src/main/resources/WEB/index.html" target="src/main/resources/WEB/index.html" if="${media} contains 'multipart'"/>

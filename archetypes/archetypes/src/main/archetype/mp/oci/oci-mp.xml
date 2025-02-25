@@ -138,7 +138,12 @@ ocimetrics:
             <value key="artifactId">${artifactId}-server</value>
             <value key="parent-groupId">${groupId}</value>
             <value key="parent-version">${version}</value>
-            <value key="mainClass">io.helidon.microprofile.cdi.Main</value>
+            <list key="pom-properties">
+                <map>
+                    <value key="key">mainClass</value>
+                    <value key="value">io.helidon.microprofile.cdi.Main</value>
+                </map>
+            </list>
             <list key="dependencies">
                 <map>
                     <value key="groupId">io.helidon.microprofile.bundles</value>

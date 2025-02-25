@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cache-config
+        xmlns="http://xmlns.oracle.com/coherence/coherence-cache-config"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://xmlns.oracle.com/coherence/coherence-cache-config">
+    <caching-scheme-mapping>
+        <cache-mapping>
+            <cache-name>*</cache-name>
+            <scheme-name>dist-scheme</scheme-name>
+        </cache-mapping>
+    </caching-scheme-mapping>
+
+    <caching-schemes>
+        <distributed-scheme>
+            <scheme-name>dist-scheme</scheme-name>
+            <service-name>DistributedCache</service-name>
+        </distributed-scheme>
+    </caching-schemes>
+</cache-config>
