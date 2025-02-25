@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.microprofile.tests.tck</groupId>
         <artifactId>helidon-microprofile-tests-tck-project</artifactId>
-        <version>4.1.7-SNAPSHOT</version>
+        <version>4.1.7</version>
     </parent>
     <artifactId>tck-graphql</artifactId>
     <name>Helidon Microprofile Tests TCK GraphQL</name>
