@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import io.helidon.config.Config;
 import io.helidon.http.HttpException;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
+import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.encoding.gzip.GzipEncoding;
 import io.helidon.http.media.jsonp.JsonpSupport;
 import io.helidon.webserver.ProxyProtocolData;
@@ -43,6 +44,10 @@ import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http1.Http1Route;
 import io.helidon.webserver.http2.Http2Route;
 import io.helidon.webserver.staticcontent.StaticContentFeature;
+import io.helidon.webserver.http.DirectHandlers;
+import io.helidon.webserver.http.HttpRouting;
+import io.helidon.http.DirectHandler;
+import io.helidon.http.DirectHandler.EventType;
 
 // tag::snippet_14[]
 import jakarta.json.Json;
@@ -390,5 +395,33 @@ class WebServerSnippets {
             System.out.println("Server started at: http://localhost:" + webServer.port()); // <4>
         }
         // end::snippet_35[]
+    }
+
+    class Snippet36 {
+        // tag::snippet_36[]
+        public static void main(String[] args) {
+            WebServer server = WebServer.builder()
+                    .directHandlers(DirectHandlers.builder()
+                            .addHandler(EventType.BAD_REQUEST, new MyDirectHandler())
+                            .build())
+                    .build()
+                    .start();
+        }
+
+        static class MyDirectHandler implements DirectHandler {
+
+            @Override
+            public TransportResponse handle(TransportRequest transportRequest,
+                                            EventType eventType,
+                                            Status status,
+                                            ServerResponseHeaders serverResponseHeaders,
+                                            String s) {
+                return DirectHandler.TransportResponse.builder()
+                        .status(Status.BAD_REQUEST_400)
+                        .entity("Bad request, see server log")
+                        .build();
+            }
+        }
+        // end::snippet_36[]
     }
 }

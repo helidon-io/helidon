@@ -496,6 +496,59 @@ include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_21, indent=0]
 * Otherwise, the exceptions are translated to an Internal Server Error HTTP
 error code `500`.
 
+=== Direct Error Handling
+There are a number of scenarios where errors can be detected before the request
+routing phase is initiated, some of these include: error validating requests (e.g.
+a bad URI), CORS rejections, invalid payloads, unsupported HTTP versions, etc.
+For all these type of events, Helidon provides the so-called _direct handlers_. The complete
+list of events that are handled in this way is defined by the enum
+link:{javadoc-base-url}/io.helidon.http/io/helidon/http/DirectHandler.EventType.html[EventType].
+
+Direct handlers can be configured independently for each port exposed by the Webserver;
+similar to other config, if configured directly on the Webserver they will only apply to the default port. For more information see
+link:{webserver-javadoc-base-url}/ListenerConfig.BuilderBase.html#directHandlers(io.helidon.webserver.http.DirectHandlers)[directHandlers] method in `ListenerConfig`.
+
+The following example shows how to register a custom handler for a request that
+is deemed invalid before the routing phase stars. The custom handler in
+this example simply returns a status code of 400 and a message that references
+the server log.
+[source,java]
+.Register a direct handler for bad requests in the Webserver
+----
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_36, indent=0]
+----
+
+==== Default Direct Error Handler
+Helidon includes a _default_ direct handler that offers basic support for all these events
+out of the box. This default handler supports a couple of config properties that control
+logging and error reporting: these are  `includeEntity` and `logAllMessages`. The former
+controls how data reflection from the request is handled, while the latter controls
+logging of potentially sensitive information. Both of these flags are set
+to `false` by default to prevent any data leak either in the response or in the
+server log.
+
+The default direct handler's settings in the Webserver can be controlled via
+config:
+
+[source,yaml]
+.Configuring error handling on default port
+----
+server:
+  error-handling:
+    include-entity: true
+    log-all-messages: true
+----
+
+With these settings, the default error handler--on the default Webserver port--will
+log all messages and may include reflected user data in error response entities.
+
+Note: Even though some request data can be reflected back in responses when
+`include-entity` is set to `true`, Helidon will always ensure that it is
+properly encoded to prevent common HTML attacks.
+
+Any other port defined in your application may include an `error-handling`
+section to configure the default handler behavior on that port.
+
 === Configuration Options
 
 include::{rootdir}/config/io_helidon_common_tls_Tls.adoc[leveloffset=+2,tag=config]
