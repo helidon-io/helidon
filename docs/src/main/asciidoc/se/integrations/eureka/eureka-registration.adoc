@@ -1,0 +1,122 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2025 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Eureka Server Service Instance Registration
+:description: Helidon Eureka Server Service Instance Registration Integration
+:keywords: helidon, Eureka, service instance registration
+:feature-name: Eureka Server Service Instance Registration Integration
+:rootdir: {docdir}/../../..
+
+include::{rootdir}/includes/se.adoc[]
+
+== Contents
+
+- <<Overview, Overview>>
+- <<Usage, Usage>>
+    - <<Installation, Installation>>
+    - <<Configuration, Configuration>>
+- <<Logging, Logging>>
+
+== Overview
+
+Helidon's Eureka Server Service Instance Registration Integration provides a
+link:{webserver-javadoc-base-url}/io/helidon/webserver/spi/ServerFeature.html[`ServerFeature`] that offers support for
+automatically and unobtrusively attempting to register a running Helidon microservice with an available Netflix Eureka
+Server of at least version {version-lib-eureka} in the microservice's runtime environment.
+
+== Usage
+
+=== Installation
+
+include::{rootdir}/includes/dependencies.adoc[]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.integrations.eureka</groupId>
+    <artifactId>helidon-integrations-eureka</artifactId>
+    <scope>runtime</scope><!--1-->
+</dependency>
+----
+<1> Most users do not need to interact programmatically with this feature; the scope is therefore usually `runtime`,
+    indicating that the feature will be avialable on the runtime classpath.
+
+This feature is fundamentally a
+link:{webserver-javadoc-base-url}/io/helidon/webserver/spi/ServerFeature.html[`ServerFeature`], and is automatically
+installed by its
+link:{integration-eureka-javadoc-base-url}/io/helidon/integrations/eureka/EurekaRegistrationServerFeatureProvider[associated
+`ServerFeatureProvider`] when the provider is found in configuration (see below).
+
+=== Configuration
+
+You need to specify at an absolute minimum the URI to the available Netflix Eureka Server of at least version
+{version-lib-eureka} in the microservice's runtime environment:
+
+.`application.yaml`
+[source,yaml]
+----
+server:
+  features:
+    eureka: # <1>
+      client: # <2>
+        base-uri: "http://localhost:8761/eureka" # <3> <4>
+----
+<1> The feature's configuration is a child of the `server.features.eureka` node, which lists available `ServerFeature`
+    implementations. This feature is one such implementation.
+<2> Information about the HTTP client the feature uses to communicate with Eureka is a child of this node.
+<3> The `base-uri` needs to identify an available Netflix Eureka Server of at least version
+    {version-lib-eureka}. Netflix Eureka Server is commonly made available on port `8761`.
+<4> Configuration under the `client` node is wholly defined by the
+    link:{webclient-javadoc-base-url}/io/helidon/webclient/api/HttpClientConfig.html[`HttpClientConfig`] interface.
+
+All other configuration values can be (and ordinarily are) defaulted, but some are best set explicitly:
+
+.`application.yaml`
+[source,yaml]
+----
+server:
+  features:
+    eureka:
+      instance: # <1>
+        name: "My Application" # <2>
+        hostName: example.com <3>
+----
+<1> The feature's configuration pertaining to the registration itself is a child of the
+    `server.features.eureka.instance` node. Configuration is designed to be familiar to current users of other Netflix
+    Eureka libraries. See the xref:{rootdir}/config/io_helidon_integrations_eureka_InstanceInfoConfig.adoc[Helidon
+    Config Reference] for a full description of what configuration is allowed.
+<2> The `name` describes the microservice application, not any given instance of it. Its default value is `unknown`,
+    following Netflix Eureka client convention, so it is best to set it explicitly here instead.
+<3> The `hostName` node identifies the host. It defaults to the current host, which may or may not be suitable in your
+    environment. Most of the time you can simply omit this node and use the defaulted value.
+
+Please consult the xref:{rootdir}/config/io_helidon_integrations_eureka_EurekaRegistrationConfig.adoc[Helidon Config
+Reference] for a full description of the permitted configuration.
+
+== Logging
+
+This feature is deliberately designed to be _unobtrusive_. Unobtrusive means that if everything is working properly
+Eureka Server service instance registration will simply happen, quietly, behind the scenes, automatically. If something
+goes wrong, service instance registration will not interrupt the running microservice. Therefore, the information this
+feature logs can be important.
+
+Like all other Helidon components, this feature uses Java logging. Its loggers begin with the
+`io.helidon.integrations.eureka` prefix, and log debug, warning and error-level information.
+
+Information about how this feature is communicating with the Eureka Server is logged by loggers under the
+`io.helidon.webclient` prefix.

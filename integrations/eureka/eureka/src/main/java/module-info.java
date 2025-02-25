@@ -14,20 +14,42 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.common.features.api.Preview;
+
+import static io.helidon.common.features.api.HelidonFlavor.MP;
+import static io.helidon.common.features.api.HelidonFlavor.SE;
+
 /**
- * Provides packages related to <dfn>service registration</dfn> in <a
- * href="https://github.com/Netflix/eureka/tree/v2.0.4">Eureka servers</a>.
+ * Provides packages related to automatic and unobtrusive <dfn>service instance registration</dfn> in <a
+ * href="https://github.com/Netflix/eureka/tree/v2.0.3">Netflix Eureka servers of version 2.0.3 or later</a>.
  *
- * @see io.helidon.integrations.eureka.EurekaRegistrationFeature
+ * <p>Most users will never need to programmatically interact with any of the classes in any of the packages belonging
+ * to this module.</p>
+ *
+ * @see io.helidon.integrations.eureka.EurekaRegistrationServerFeatureProvider#create(io.helidon.common.config.Config, String)
  */
+@Feature(value = "EurekaRegistration",
+         description = "Eureka Server Service Instance Registration Integration",
+         in = { SE, MP },
+         path = { "WebServer", "EurekaRegistration" }
+)
+@Preview
 module io.helidon.integrations.eureka {
 
+    requires transitive io.helidon.builder.api;
     requires io.helidon.common.config;
     requires io.helidon.service.registry;
-    requires io.helidon.webclient.http1;
-    requires io.helidon.webserver;
-    requires jakarta.json;
+    requires transitive io.helidon.webclient.http1;
+    requires transitive io.helidon.webserver;
+    requires transitive jakarta.json;
 
-    provides io.helidon.webserver.http.HttpFeature with io.helidon.integrations.eureka.EurekaRegistrationFeature;
+    requires static io.helidon.common.features.api;
+
+    exports io.helidon.integrations.eureka;
+
+    provides io.helidon.webserver.spi.ServerFeatureProvider
+        with io.helidon.integrations.eureka.EurekaRegistrationServerFeatureProvider;
 
 }

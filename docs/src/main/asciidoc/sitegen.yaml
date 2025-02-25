@@ -401,6 +401,7 @@ backend:
                   type: "icon"
                   value: "filter_drama"
                 sources:
+                  - "eureka/eureka-registration.adoc"
                   - "langchain4j/langchain4j.adoc"
                   - "oci.adoc"
                   - "hcv.adoc"

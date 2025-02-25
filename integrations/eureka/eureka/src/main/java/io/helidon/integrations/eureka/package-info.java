@@ -15,9 +15,11 @@
  */
 
 /**
- * Provides classes and interfaces related to <dfn>service registration</dfn> in <a
- * href="https://github.com/Netflix/eureka/tree/v2.0.4">Eureka servers</a>.
+ * Provides classes and interfaces related to automatic and unobtrusive <dfn>service instance registration</dfn> in <a
+ * href="https://github.com/Netflix/eureka/tree/v2.0.3">Netflix Eureka servers of version 2.0.3 or later</a>.
  *
- * @see io.helidon.integrations.eureka.EurekaRegistrationFeature
+ * <p>Most users will never need to programmatically interact with any of the classes in this package.</p>
+ *
+ * @see io.helidon.integrations.eureka.EurekaRegistrationServerFeatureProvider#create(io.helidon.common.Config, String)
  */
 package io.helidon.integrations.eureka;

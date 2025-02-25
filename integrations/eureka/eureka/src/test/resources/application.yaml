@@ -13,8 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-handlers = java.util.logging.ConsoleHandler
-java.util.logging.ConsoleHandler.level = FINER
-io.helidon.integrations.eureka.level = INFO
-io.helidon.webclient.level = INFO
-io.helidon.webserver.level = INFO
+server:
+  features:
+    eureka:
+      enabled: true
+      client:
+        base-uri: "http://localhost:8761/eureka"
+      instance:
+        name: "My Application"
