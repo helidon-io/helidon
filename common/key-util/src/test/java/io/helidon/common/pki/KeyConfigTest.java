@@ -201,4 +201,25 @@ class KeyConfigTest {
         assertThat(conf.publicCert(), is(Optional.empty()));
         assertThat("Cert chain must be empty", conf.certChain(), is(List.of()));
     }
+
+
+    @Test
+    void testTrustStoreCreationWithoutPrivateKey() {
+        Keys keystoreWithPrivateKey = Keys.create(config.get("unit-6-1"));
+
+        Keys trustStore = Keys.builder()
+                .keystore(keystore -> keystore
+                        .trustStore(true)
+                        .keystore(Resource.create("keystore/keystore.p12"))
+                        .passphrase("password".toCharArray())
+                )
+                .build();
+
+       assertThat(trustStore.privateKey(), is(Optional.empty()));
+       assertThat(trustStore.publicKey(), is(Optional.empty()));
+       assertThat(trustStore.certChain().size(), is(0)); //trustStore shouldn't contain private key and its certChain
+       assertThat(trustStore.publicCert(), is(Optional.empty()));
+       assertThat(trustStore.certs().size(), is(1));
+    }
+
 }
