@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.common.concurrency</groupId>
         <artifactId>helidon-common-concurrency-project</artifactId>
-        <version>4.1.7-SNAPSHOT</version>
+        <version>4.1.8-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 

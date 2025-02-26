@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.tests.integration.jpa</groupId>
         <artifactId>helidon-tests-integration-jpa-project</artifactId>
-        <version>4.1.7-SNAPSHOT</version>
+        <version>4.1.8-SNAPSHOT</version>
     </parent>
 
     <groupId>io.helidon.tests.integration.jpa</groupId>

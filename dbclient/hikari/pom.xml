@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.dbclient</groupId>
         <artifactId>helidon-dbclient-project</artifactId>
-        <version>4.1.7-SNAPSHOT</version>
+        <version>4.1.8-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-dbclient-hikari</artifactId>
     <name>Helidon Database Client Hikari Connection Pool</name>

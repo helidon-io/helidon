@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.integrations.common</groupId>
         <artifactId>helidon-integrations-common-project</artifactId>
-        <version>4.1.7-SNAPSHOT</version>
+        <version>4.1.8-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-integrations-common-rest</artifactId>
