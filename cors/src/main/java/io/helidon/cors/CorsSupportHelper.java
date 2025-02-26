@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,6 @@ import static java.lang.Character.isDigit;
  */
 public class CorsSupportHelper<Q, R> {
 
-    static final int SUCCESS_RANGE = 300;
     static final String ORIGIN_DENIED = "CORS origin is denied";
     static final String ORIGIN_NOT_IN_ALLOWED_LIST = "CORS origin is not in allowed list";
     static final String METHOD_NOT_IN_ALLOWED_LIST = "CORS method is not in allowed list";
@@ -239,8 +238,10 @@ public class CorsSupportHelper<Q, R> {
 
             CorsSupportHelper<Q, R>  result = new CorsSupportHelper<>(this);
 
-            LOGGER.log(System.Logger.Level.INFO,
-                    () -> String.format("CorsSupportHelper configured as: %s", result.toString()));
+            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                LOGGER.log(System.Logger.Level.DEBUG,
+                           () -> String.format("CorsSupportHelper configured as: %s", result));
+            }
 
             return result;
         }
