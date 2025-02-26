@@ -79,12 +79,11 @@ class FactoryExample {
 
         @Override
         public Optional<Service.QualifiedInstance<String>> first(Qualifier qualifier,
-                                                                    Lookup lookup,
-                                                                    GenericType<String> genericType) {
-            String propertyValue = qualifier.stringValue()
+                                                                 Lookup lookup,
+                                                                 GenericType<String> genericType) {
+            return qualifier.stringValue()
                     .map(System::getProperty)
-                    .orElse("");
-            return Optional.of(Service.QualifiedInstance.create(propertyValue, qualifier));
+                    .map(propertyValue -> Service.QualifiedInstance.create(propertyValue, qualifier));
         }
 
     }
@@ -92,12 +91,27 @@ class FactoryExample {
 
     // tag::snippet_4[]
     @Service.Singleton
-    @Service.Named("name")
-    class InjectionPointFactoryWithQualifier implements Service.InjectionPointFactory<MyService> {
+    class TestClass {
+
+        private final System.Logger logger;
+
+        TestClass(System.Logger logger) {
+            this.logger = logger;
+        }
+
+    }
+
+    @Service.Singleton
+    class LoggerFactory implements Service.InjectionPointFactory<System.Logger> {
+        private static final System.Logger DEFAULT_LOGGER = System.getLogger(LoggerFactory.class.getName());
 
         @Override
-        public Optional<Service.QualifiedInstance<MyService>> first(Lookup lookup) {
-            return Optional.of(Service.QualifiedInstance.create(new MyService(), Qualifier.createNamed("name")));
+        public Optional<Service.QualifiedInstance<System.Logger>> first(Lookup lookup) {
+            System.Logger logger = lookup.dependency()
+                    .map(dep -> System.getLogger(dep.service().fqName()))
+                    .orElse(DEFAULT_LOGGER);
+
+            return Optional.of(Service.QualifiedInstance.create(logger));
         }
     }
     // end::snippet_4[]

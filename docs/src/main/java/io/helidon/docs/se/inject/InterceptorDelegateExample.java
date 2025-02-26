@@ -69,18 +69,19 @@ class InterceptorDelegateExample {
     }
     // end::snippet_3[]
 
-
-
     // tag::snippet_4[]
     /**
      * Assume this is the class we have no control over.
      */
     class SomeExternalClass {
+        @Traced
         String sayHello(String name) {
             return "Hello %s!".formatted(name);
         }
     }
+    // end::snippet_4[]
 
+    // tag::snippet_5[]
     @Service.Singleton
     @Interception.ExternalDelegate(SomeExternalClass.class)
     class SomeExternalClassProvider implements Supplier<SomeExternalClass> {
@@ -89,6 +90,6 @@ class InterceptorDelegateExample {
             return new SomeExternalClass();
         }
     }
-    // end::snippet_4[]
+    // end::snippet_5[]
 
 }

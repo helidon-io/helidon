@@ -17,6 +17,7 @@ package io.helidon.docs.se.inject;
 
 import java.util.concurrent.CompletionStage;
 
+import io.helidon.docs.se.inject.Qualifier2Example.Blue;
 import io.helidon.service.registry.Event;
 import io.helidon.service.registry.Service;
 
@@ -78,7 +79,7 @@ class EventsExample {
 
     // tag::snippet_6[]
     @Service.Singleton
-    record MyIdProducer(@Service.Named("id") Event.Emitter<String> emitter) {
+    record MyBlueProducer(@Blue Event.Emitter<String> emitter) {
 
         void emit(String msg) {
             emitter.emit(msg);
@@ -88,10 +89,10 @@ class EventsExample {
 
     // tag::snippet_7[]
     @Service.Singleton
-    class MyIdObserver {
+    class MyBlueObserver {
 
         @Event.Observer
-        @Service.Named("id")
+        @Blue
         void event(MyEvent event) {
             //Do something with the event
         }
