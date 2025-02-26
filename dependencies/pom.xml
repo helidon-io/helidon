@@ -158,7 +158,7 @@
         <version.lib.reactivestreams>1.0.4</version.lib.reactivestreams>
         <version.lib.slf4j>2.0.16</version.lib.slf4j>
         <version.lib.smallrye-openapi>3.3.4</version.lib.smallrye-openapi>
-        <version.lib.snakeyaml>2.2</version.lib.snakeyaml>
+        <version.lib.snakeyaml>2.4</version.lib.snakeyaml>
         <version.lib.testcontainers>1.19.3</version.lib.testcontainers>
         <version.lib.typesafe-config>1.4.2</version.lib.typesafe-config>
         <version.lib.tyrus>2.1.5</version.lib.tyrus>
