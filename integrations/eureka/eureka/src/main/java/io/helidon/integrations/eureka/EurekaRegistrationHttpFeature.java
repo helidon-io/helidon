@@ -333,7 +333,16 @@ final class EurekaRegistrationHttpFeature implements HttpFeature {
                         try {
                             sleep(sleepTimeInMilliSeconds);
                         } catch (InterruptedException e) {
+                            if (LOGGER.isLoggable(DEBUG)) {
+                                LOGGER.log(DEBUG,
+                                           "Eureka lease renewal loop interrupted",
+                                           e);
+                            }
                         }
+                    }
+                    if (LOGGER.isLoggable(DEBUG)) {
+                        LOGGER.log(DEBUG,
+                                   "Eureka lease renewal loop stopped");
                     }
                 });
         // Mark our status as up if it wasn't already

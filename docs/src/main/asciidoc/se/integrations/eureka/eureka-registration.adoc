@@ -54,7 +54,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 </dependency>
 ----
 <1> Most users do not need to interact programmatically with this feature; the scope is therefore usually `runtime`,
-    indicating that the feature will be avialable on the runtime classpath.
+    indicating that the feature will be available on the runtime classpath.
 
 This feature is fundamentally a
 link:{webserver-javadoc-base-url}/io/helidon/webserver/spi/ServerFeature.html[`ServerFeature`], and is automatically
