@@ -11,6 +11,29 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [4.1.7]
+
+This release contains important bugfixes and is recommended for all users of Helidon 4.
+
+A minimum of Java 21 is required to use Helidon 4.
+
+### CHANGES
+
+- Health: fix status from deadlock health check if invoking the MBean fails [9764](https://github.com/helidon-io/helidon/pull/9764)
+- Health: Restore setting of no-cache header in health HTTP responses; add test [9756](https://github.com/helidon-io/helidon/pull/9756)
+- Security: Use helidon.oci prefix for OCI Config and allow some oci auth types to accept federation-endpoint and tenancy-id [9765](https://github.com/helidon-io/helidon/pull/9765)
+- WebClient: Adds support for per-request send100Continue flag [9835](https://github.com/helidon-io/helidon/pull/9835)
+- WebClient: Connection cache 100 continue [9837](https://github.com/helidon-io/helidon/pull/9837)
+- Metrics: Allow colon in Prometheus meter name; add test [9763](https://github.com/helidon-io/helidon/pull/9763)
+- Dependencies: Upgrade OCI SDK to 3.57.1 [9798](https://github.com/helidon-io/helidon/pull/9798)
+- Dependencies: Upgrade Yasson to 3.0.4 [9786](https://github.com/helidon-io/helidon/pull/9786)
+- Dependencies: Upgrade Netty to 4.1.118.Final [9774](https://github.com/helidon-io/helidon/pull/9774)
+- Docs: Fix MP OIDC guide configuration [9755](https://github.com/helidon-io/helidon/pull/9755)
+- Build: Use actions/cache v4.2.0 [9757](https://github.com/helidon-io/helidon/pull/9757)
+- Build: upgrade ubuntu workflow image to 22.04, upgrade dependency check plugin [9816](https://github.com/helidon-io/helidon/pull/9816)
+- Tests: Avoid cross-test config contamination in `microprofile/telemetry` tests [9758](https://github.com/helidon-io/helidon/pull/9758)
+- Tests: Segregate tests that use special global tracer  [9799](https://github.com/helidon-io/helidon/pull/9799)
+
 ## [4.1.6]
 
 This release contains important bugfixes and is recommended for all users of Helidon 4.
@@ -1540,6 +1563,7 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/oracle/helidon/pull/4737)
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
+[4.1.7]: https://github.com/oracle/helidon/compare/4.1.6...4.1.7
 [4.1.6]: https://github.com/oracle/helidon/compare/4.1.5...4.1.6
 [4.1.5]: https://github.com/oracle/helidon/compare/4.1.4...4.1.5
 [4.1.4]: https://github.com/oracle/helidon/compare/4.1.3...4.1.4

@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.codegen</groupId>
         <artifactId>helidon-codegen-project</artifactId>
-        <version>4.1.7-SNAPSHOT</version>
+        <version>4.1.8-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-codegen-apt</artifactId>
