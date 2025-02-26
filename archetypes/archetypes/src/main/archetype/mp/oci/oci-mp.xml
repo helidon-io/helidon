@@ -44,7 +44,6 @@ This will mount `~/.oci` as a volume in the running docker container.
         <boolean path="docker.native-image">false</boolean>
         <boolean path="docker.jlink-image">false</boolean>
         <boolean path="k8s">true</boolean>
-        <boolean path="v8o">false</boolean>
         <boolean path="jpms">false</boolean>
     </presets>
     <call method="pre-processed-models"/>
