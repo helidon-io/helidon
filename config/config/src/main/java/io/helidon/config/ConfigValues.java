@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.helidon.common.GenericType;
+import io.helidon.config.spi.ConfigMapper;
 
 /**
  * Factory for config values.
@@ -146,7 +147,7 @@ public final class ConfigValues {
 
     static <T> ConfigValue<T> create(Config config,
                                      Class<T> type,
-                                     ConfigMapperManager mapperManager) {
+                                     ConfigMapper mapperManager) {
 
         return new GenericConfigValueImpl<>(config,
                                             () -> Optional.ofNullable(mapperManager.map(config, type)),
@@ -155,7 +156,7 @@ public final class ConfigValues {
 
     static <T> ConfigValue<T> create(Config config,
                                      GenericType<T> genericType,
-                                     ConfigMapperManager mapperManager) {
+                                     ConfigMapper mapperManager) {
         return new GenericConfigValueImpl<>(config,
                                             () -> Optional.ofNullable(mapperManager.map(config, genericType)),
                                             aConfig -> aConfig.as(genericType));
@@ -190,7 +191,7 @@ public final class ConfigValues {
     }
 
     static ConfigValue<Map<String, String>> createMap(Config config,
-                                                             ConfigMapperManager mapperManager) {
+                                                      ConfigMapper mapperManager) {
 
         Supplier<Optional<Map<String, String>>> valueSupplier = () -> {
             Map<?, ?> map = mapperManager.map(config, Map.class);
