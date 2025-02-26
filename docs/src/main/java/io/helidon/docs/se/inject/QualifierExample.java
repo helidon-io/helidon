@@ -76,6 +76,12 @@ class QualifierExample {
     }
     // end::snippet_5[]
 
+    // tag::snippet_6[]
+    @Service.Singleton
+    record GreenCircleStringType(@Service.Named("my.test.Green") Color color) {
+    }
+    // end::snippet_6[]
+
 
 
 }

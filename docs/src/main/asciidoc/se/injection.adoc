@@ -261,7 +261,7 @@ include::{sourcedir}/se/inject/BasicExample.java[tag=snippet_2, indent=0]
 
 Now it just needs to be tested. The easiest way is to make a main method. The following piece of code
 initializes Service registry. After that we search for our `GreetingInjectionService` and execute it
-to print out `Hello David!`. To find out more about this manual approach, please take a look into the <<Programmatic Lookup, Programmatic Lookup>> chapter.
+to print out `Hello David!`. To find out more about this manual approach, please take a look into the <<Programmatic Lookup,Programmatic Lookup>> chapter.
 [source,java]
 .Lookup our created service and execute it manually
 ----
@@ -324,7 +324,8 @@ include::{sourcedir}/se/inject/QualifierExample.java[tag=snippet_3, indent=0]
 ----
 
 === Named by the type
-Alternatively, instead of using string-based names for services, a specific class can be used to "name" them. For this purpose, we use the @Service.NamedByType annotation.
+Alternatively, instead of using string-based names for services, a specific class can be used to "name" them. For this purpose, we use the
+link:{service-registry-base-url}/io/helidon/service/registry/Service.NamedByType.html[`@Service.NamedByType`] annotation.
 
 [source,java]
 .Named by type usage example
@@ -339,6 +340,21 @@ link:{service-registry-base-url}/io/helidon/service/registry/Service.Named.html[
 .Named by type injection point
 ----
 include::{sourcedir}/se/inject/QualifierExample.java[tag=snippet_5, indent=0]
+----
+
+link:{service-registry-base-url}/io/helidon/service/registry/Service.Named.html[`@Service.Named`]
+and link:{service-registry-base-url}/io/helidon/service/registry/Service.NamedByType.html[`@Service.NamedByType`]
+are even interchangeable.
+So it is possible to use
+link:{service-registry-base-url}/io/helidon/service/registry/Service.Named.html[`@Service.Named`]
+annotation with fully qualified class name of a class we used before.
+Let's assume for this example, that our previously used class `Green` was in the `my.test` package.
+Now we can specify it as any other `String` name.
+
+[source,java]
+.Named injection point
+----
+include::{sourcedir}/se/inject/QualifierExample.java[tag=snippet_6, indent=0]
 ----
 
 === Custom qualifiers
@@ -386,6 +402,7 @@ However, this approach only works if the contract is an interface and we’re im
 
 - The instance needs to be provided by an external source.
 - The contract is not an interface.
+- The contract is a sealed interface.
 - The instance may not always be created (e.g., it is optional).
 
 These challenges can be addressed by implementing one of the factory interfaces supported by the Helidon Service Registry:
@@ -405,7 +422,7 @@ include::{sourcedir}/se/inject/FactoryExample.java[tag=snippet_1, indent=0]
 
 === ServicesFactory
 The link:{service-registry-base-url}/io/helidon/service/registry/Service.ServicesFactory.html[`ServicesFactory`]
-should be used only for its intended purpose — creating zero OR n instances at runtime, each assigned different qualifiers.
+should be used only for its intended purpose — creating zero to n instances at runtime, each assigned different qualifiers.
 This allows for dynamic and flexible service creation
 while ensuring proper differentiation between instances based on their qualifiers.
 
@@ -420,6 +437,9 @@ is strictly bound to a specific qualifier type.
 It will get executed only for injection points
 that are annotated with this selected qualifier and are intended for a selected contract.
 It will be ignored for any other injection points.
+
+However, there is one special case.
+If selected contract is `java.lang.Object`, the factory will be used for any contract, as long as the qualifier matches.
 
 It receives:
 
@@ -534,7 +554,8 @@ While it is not required on interfaces, it will still work correctly if applied 
 
 If you need to enable interception for classes using delegation, you should make sure about the following:
 
-- The class must have accessible no-arg constructor (at least package local) and mustn’t be final
+- The class must have accessible no-arg constructor (at least package local)
+- The class must must be extensible (not final)
 - The constructor should have no side effects, as the instance will act only as a wrapper for the delegate
 - All invoked methods must be accessible (at least package local) and non-final
 

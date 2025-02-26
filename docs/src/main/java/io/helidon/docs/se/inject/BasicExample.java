@@ -17,6 +17,7 @@ package io.helidon.docs.se.inject;
 
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistryManager;
+import io.helidon.service.registry.Services;
 
 class BasicExample {
 
@@ -50,12 +51,8 @@ class BasicExample {
 
     // tag::snippet_3[]
     public static void main(String[] args) {
-        var serviceRegistryManager = ServiceRegistryManager.create();
-        var registry = serviceRegistryManager.registry();
-        var greetings = registry.get(GreetingInjectionService.class);
+        var greetings = Services.get(GreetingInjectionService.class);
         greetings.printGreeting("David");
-
-        serviceRegistryManager.shutdown(); //Once not needed, it should be shut down
     }
     // end::snippet_3[]
 
