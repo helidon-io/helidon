@@ -25,36 +25,9 @@ import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 
 /**
- * Represents an application wide service registry.
- * <p>
- * The registry instance is shared through {@link io.helidon.common.context.Context}, using the current context
- * to obtain a context with classifier {@link #STATIC_CONTEXT_CLASSIFIER}. If such a context is found, the
- * registry instance is obtained/stored there. If the context does not exist, the
- * {@link io.helidon.common.context.Contexts#globalContext()} is used to store the value.
- * <p>
- * The first option is designed for testing, to make sure the global registry is only "global" for a single test class.
- * The second option is the default for application runtime, where we intend to share the registry as a proper, static
- * singleton instance.
- * <p>
- * Helidon testing libraries support this approach and correctly configure appropriate context for each execution.
+ * Application wide service registry backed by {@link io.helidon.common.context.Context}.
  */
 public final class GlobalServiceRegistry {
-    /**
-     * Classifier used to register a context that is to serve as the context that holds the
-     * global registry instance.
-     * <p>
-     * This is to allow testing in parallel, where we need the global registry instance restricted to a single test.
-     * <p>
-     * In normal application runtime we use {@link io.helidon.common.context.Contexts#globalContext()}.
-     */
-    public static final Object STATIC_CONTEXT_CLASSIFIER = new Object();
-
-    /**
-     * Classifier used to register the global service registry.
-     *
-     * @see #STATIC_CONTEXT_CLASSIFIER
-     */
-    public static final Object CONTEXT_QUALIFIER = new Object();
 
     private static final ReadWriteLock RW_LOCK = new ReentrantReadWriteLock();
 
@@ -137,7 +110,7 @@ public final class GlobalServiceRegistry {
     public static ServiceRegistry registry(ServiceRegistry newGlobalRegistry) {
         RW_LOCK.writeLock().lock();
         try {
-            context().register(CONTEXT_QUALIFIER, newGlobalRegistry);
+            context().register("helidon-registry", newGlobalRegistry);
         } finally {
             RW_LOCK.writeLock().unlock();
         }
@@ -150,14 +123,14 @@ public final class GlobalServiceRegistry {
         // this is the context we expect to get (and set global instances)
         return Contexts.context()
                 .orElse(globalContext)
-                .get(STATIC_CONTEXT_CLASSIFIER, Context.class)
+                .get("helidon-registry-static-context", Context.class)
                 .orElse(globalContext);
     }
 
     private static Optional<ServiceRegistry> current() {
         RW_LOCK.readLock().lock();
         try {
-            return context().get(CONTEXT_QUALIFIER, ServiceRegistry.class);
+            return context().get("helidon-registry", ServiceRegistry.class);
         } finally {
             RW_LOCK.readLock().unlock();
         }
