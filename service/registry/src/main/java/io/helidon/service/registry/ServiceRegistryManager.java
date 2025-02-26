@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -152,6 +152,7 @@ public final class ServiceRegistryManager {
     public static ServiceRegistryManager start(Binding binding) {
         ServiceRegistryConfig config = ServiceRegistryConfig.builder()
                 .discoverServices(false)
+                .discoverServicesFromServiceLoader(false)
                 .update(binding::configure)
                 .build();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.io.File;
 import java.nio.file.Path;
 
 import io.helidon.codegen.CodegenScope;
+import io.helidon.service.codegen.ServiceBindingCodegenProvider;
 
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -52,7 +53,7 @@ public class CreateApplicationMojo extends CreateApplicationAbstractMojo {
      * Name of the generated binding class.
      */
     @Parameter(property = "helidon.service.registry.binding.class.name",
-               defaultValue = BINDING_CLASS_NAME)
+               defaultValue = ServiceBindingCodegenProvider.BINDING_CLASS_NAME)
     private String bindingClassName;
 
     /**
