@@ -376,17 +376,16 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 headers.remove(HeaderNames.CONTENT_LENGTH);
             }
 
+            // write prologue and headers in single buffer to avoid multiple TLS records,
+            // which in turn can result in a delay when TCP_NO_DELAY is false
+            BufferData buffer = BufferData.growing(512);
+            buffer.write(prologue);
             if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
                 ctx.log(LOGGER, System.Logger.Level.TRACE, "send prologue: %n%s", prologue.debugDataHex());
-            }
-            writer.writeNow(prologue);
-
-            BufferData headerBuffer = BufferData.growing(128);
-            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
                 ctx.log(LOGGER, System.Logger.Level.TRACE, "send headers:%n%s", headers);
             }
-            writeHeaders(headers, headerBuffer, protocolConfig.validateRequestHeaders());
-            writer.writeNow(headerBuffer);
+            writeHeaders(headers, buffer, protocolConfig.validateRequestHeaders());
+            writer.writeNow(buffer);
 
             whenSent.complete(request);
 
