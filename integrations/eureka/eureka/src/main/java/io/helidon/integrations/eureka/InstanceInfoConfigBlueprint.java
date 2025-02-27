@@ -146,7 +146,7 @@ interface InstanceInfoConfigBlueprint {
      * @see LeaseInfoConfig
      */
     @Option.Configured("lease")
-    @Option.DefaultCode("@LeaseInfoConfig@.create()")
+    @Option.DefaultMethod("create")
     LeaseInfoConfig leaseInfo();
 
     /**
@@ -173,7 +173,7 @@ interface InstanceInfoConfigBlueprint {
      * @return {@link PortInfoConfig}
      */
     @Option.Configured("port")
-    @Option.DefaultCode("@PortInfoConfig@.create()")
+    @Option.DefaultMethod("create")
     PortInfoConfig portInfo();
 
     /**
@@ -199,7 +199,7 @@ interface InstanceInfoConfigBlueprint {
      * @return {@link PortInfoConfig}
      */
     @Option.Configured("securePort")
-    @Option.DefaultCode("@PortInfoConfig@.create()")
+    @Option.DefaultMethod("create")
     PortInfoConfig securePortInfo();
 
     /**

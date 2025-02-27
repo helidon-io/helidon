@@ -19,6 +19,7 @@ import java.util.function.Supplier;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Weighted;
 import io.helidon.webclient.http1.Http1ClientConfig;
 import io.helidon.webserver.spi.ServerFeatureProvider;
 
@@ -74,7 +75,7 @@ interface EurekaRegistrationConfigBlueprint extends Prototype.Factory<EurekaRegi
      * @see InstanceInfoConfig
      */
     @Option.Configured("instance")
-    @Option.DefaultCode("@InstanceInfoConfig@.create()")
+    @Option.DefaultMethod(value = "create")
     InstanceInfoConfig instanceInfo();
 
     /**
@@ -106,12 +107,12 @@ interface EurekaRegistrationConfigBlueprint extends Prototype.Factory<EurekaRegi
     String name();
 
     /**
-     * The (zero or positive) {@linkplain io.helidon.common.Weighted weight} of this instance.
+     * The (zero or positive) {@linkplain Weighted weight} of this instance.
      *
      * @return the (zero or positive) weight of this instance
      */
     @Option.Configured
-    @Option.DefaultDouble(100D)
+    @Option.DefaultDouble(Weighted.DEFAULT_WEIGHT)
     double weight();
 
 }
