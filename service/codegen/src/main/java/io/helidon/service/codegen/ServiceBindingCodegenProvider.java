@@ -137,6 +137,7 @@ public class ServiceBindingCodegenProvider implements CodegenExtensionProvider {
                             .addParameter(builder -> builder
                                     .name("builder")
                                     .type(ServiceCodegenTypes.SERVICE_CONFIG_BUILDER))
+                            .addContentLine("warnEmpty();")
                             .addContentLine("builder.discoverServices(true);")
                             .addContentLine("builder.discoverServicesFromServiceLoader(true);")
                     );

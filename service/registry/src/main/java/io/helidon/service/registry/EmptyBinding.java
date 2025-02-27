@@ -23,6 +23,8 @@ package io.helidon.service.registry;
  * the {@code helidon-service-maven-plugin}.
  */
 public class EmptyBinding implements Binding {
+    private static final System.Logger LOGGER = System.getLogger(EmptyBinding.class.getName());
+
     private final String name;
 
     /**
@@ -46,12 +48,20 @@ public class EmptyBinding implements Binding {
 
     @Override
     public void configure(ServiceRegistryConfig.Builder builder) {
-        builder.discoverServices(true);
-        builder.discoverServicesFromServiceLoader(true);
     }
 
     @Override
     public String toString() {
         return getClass().getName() + "{name=\"" + name + "\"}";
+    }
+
+    /**
+     * Warns that an empty binding was generated and not overridden by the Service Maven Plugin.
+     * The message references {@link Service.GenerateBinding}.
+     */
+    protected void warnEmpty() {
+        LOGGER.log(System.Logger.Level.WARNING, "You have a class annotated with "
+                + Service.GenerateBinding.class.getName() + " and this empty binding was generated for it. "
+                + "Consider adding a build step to generate discovered binding. Binding name: " + name);
     }
 }
