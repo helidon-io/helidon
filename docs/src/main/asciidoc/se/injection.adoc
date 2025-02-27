@@ -1,0 +1,899 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2025 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Overview
+
+:description: Dependency Injection in Helidon SE
+:keywords: helidon, se, injection
+:h1Prefix: SE
+:feature-name: Injection
+:rootdir: {docdir}/..
+
+include::{rootdir}/includes/se.adoc[]
+
+== Contents
+
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
+- <<Basic terms, Basic terms>>
+- <<How are services defined, How are services defined?>>
+- <<Injection points, Injection points>>
+- <<Scopes, Scopes>>
+- <<Build time, Build time>>
+- <<Basic injection example, Basic injection example>>
+- <<Service Lifecycle, Service Lifecycle>>
+- <<Qualifiers, Qualifiers>>
+- <<Factories, Factories>>
+- <<Interceptors, Interceptors>>
+- <<Events, Events>>
+- <<Programmatic Lookup, Programmatic Lookup>>
+- <<Startup, Startup>>
+
+== Overview
+
+Injection is the basic building stone for inversion of control. Dependency injection provides a mechanism to get
+an instance of a service at runtime, from the service registry, rather than constructing service instances through
+a constructor or a factory method.
+
+include::{rootdir}/includes/dependencies.adoc[]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.service</groupId>
+    <artifactId>helidon-service-registry</artifactId>
+</dependency>
+----
+
+== Usage
+To start using Helidon Inject, you need to create both:
+
+- A service that will be injected.
+- An injection point, where the service instance will be injected.
+
+Let's begin by explaining some basic terms.
+
+== Basic terms
+
+=== Dependency Injection
+Injection is a way to automatically provide instances of dependencies without having to create them manually.
+Instead of a class creating an object itself,
+something else (like a <<Service registry,service registry>>) hands it over when needed.
+This makes code cleaner, easier to manage, and more flexible.
+
+For example, if a Car needs an Engine, instead of the Car making an Engine itself, it just asks for one,
+and the system provides it.
+This is called Dependency Injection (DI).
+
+=== Declarative style of programming
+In a declarative approach, you use annotations on classes, constructors, and constructor arguments to express your intent.
+
+For example, instead of manually managing dependencies,
+you declare that a class should be injectable using annotations like
+link:{service-registry-base-url}/io/helidon/service/registry/Service.Singleton.html[`@Service.Singleton`]
+(More about that later).
+
+=== Service registry
+A service registry is a tool that enables declarative programming by supporting inversion of control (IoC).
+
+It manages the lifecycle of services, handles dependency injection,
+and ensures that the correct instances are provided where needed and without requiring manual instantiation.
+
+=== Inversion of control
+Instead of manually creating an instance of a certain type, you can delegate its creation to the service registry.
+
+This allows the registry to handle the entire instantiation process and provide the instance when needed,
+ensuring proper lifecycle management and dependency resolution.
+
+=== Contract
+A contract is a type that defines what the service registry should provide.
+It represents an API that will be used.
+
+For simplicity, a contract can be thought of as an interface,
+but it can also be an abstract class or even a concrete class.
+
+[source,java]
+.Contract example
+----
+interface GreetingContract {
+
+    String greet(String name);
+
+}
+----
+
+=== Service
+This can be either a concrete class, which implements the contract
+(or is contract itself if it was a concrete class),
+or it can be a factory/producer (more about <<Factories, Factories>>),
+which creates a new instances to be registered into the service registry.
+
+[source,java]
+.Service example
+----
+@Service.Singleton
+class MyGreetingService implements GreetingContract {
+
+    @Override
+    public String greet(String name) {
+        return "Hello %s!".formatted(name);
+    }
+
+}
+----
+
+=== Contract vs. service
+Contract and service can be the same thing, but also separate entities.
+It all depends on the design of your application and which approach you choose.
+
+== How are services defined
+Services are defined by:
+
+1. Java classes annotated with one of the
+link:{service-registry-base-url}/io/helidon/service/registry/Service.Scope.html[`@Service.Scope`]
+annotations (see <<Scopes, Scopes>>)
+2. Any class with
+link:{service-registry-base-url}/io/helidon/service/registry/Service.Inject.html[`@Service.Inject`]
+annotation even when it doesn’t have a scope annotation. In such a case, the scope of the service will be set as
+link:{service-registry-base-url}/io/helidon/service/registry/Service.PerLookup.html[`@Service.PerLookup`].
+
+Keep in mind that if you create any service instance directly, it will not get its injection points resolved!
+This works only when using service registry.
+
+Now, let's talk about an injection points.
+
+== Injection points
+In Helidon, dependency injection can be done into the injection point in the following ways:
+
+1. Through a constructor annotated with
+link:{service-registry-base-url}/io/helidon/service/registry/Service.Inject.html[`@Service.Inject`]  -
+each parameter is considered an injection point; this is the recommended way of injecting dependencies (as it can be unit tested easily, and fields can be declared private final)
+2. Through field(s) annotated with
+link:{service-registry-base-url}/io/helidon/service/registry/Service.Inject.html[`@Service.Inject`] -
+each field is considered an injection point; this is not recommended, as the fields must be accessible (at least package local), and can’t be declared as final
+
+Injection points are satisfied by services that match the required contract and qualifiers.
+If more than one service satisfies an injection point, the service with the highest weight is chosen (see
+link:{common-javadoc-base-url}/io/helidon/common/Weight.html[`@Weight`],
+link:{common-javadoc-base-url}/io/helidon/common/Weighted.html[`Weighted`]).
+If two services have the same weight, the order is undefined.
+If the injection point accepts a `java.util.List` of contracts,
+all available services are used to satisfy the injection point ordered by weight.
+
+It is also important to note, that only services can have injection points.
+
+=== Injected dependency formats
+
+Dependencies can be injected in different formats, depending on the required behavior:
+
+- `Contract` - Retrieves an instance of another service.
+- `Optional<Contract>` - Retrieves an instance, but if there is no service providing the contract, an empty optional is provided.
+- `List<Contract>` - Retrieves all available instances of a given service.
+- `Supplier<Contract>`, `Supplier<Optional<Contract>>`, `Supplier<List<Contract>>` - Similar to the above,
+but the value is only resolved when get() is called,
+allowing lazy evaluation to resolve cyclic dependencies and
+a "storm" of initializations when a service is looked up from the registry.
+When suppliers aren’t used, all instances MUST be created when the service instance is created (during construction).
+
+== Scopes
+There are three built-in scopes:
+
+- link:{service-registry-base-url}/io/helidon/service/registry/Service.Singleton.html[`@Service.Singleton`] –
+A single instance exists in the service registry for the registry lifetime.
+- link:{service-registry-base-url}/io/helidon/service/registry/Service.PerLookup.html[`@Service.PerLookup`] –
+A new instance is created each time a lookup occurs (including when injected into an injection point).
+- link:{service-registry-base-url}/io/helidon/service/registry/Service.PerRequest.html[`@Service.PerRequest`] –
+A single instance per request exists in the service registry.
+The definition of a "request" is not enforced by the injection framework
+but aligns with concepts like an HTTP request-response cycle or message consumption in a messaging system.
+
+== Build time
+Helidon injection is compile/build time based injection.
+This provides a significant performance boost since it eliminates the need for reflection or
+dynamic proxying at runtime, resulting in faster startup.
+Additionally, it integrates well with Native Image, making it an efficient choice for high-performance applications.
+
+Because of that it needs to generate all the needed classes at compile time, so it minimizes the need
+of runtime processing.
+To ensure everything works correctly,
+you need to add the following annotation processors to your application's compilation process.
+
+These processors generate the necessary metadata and wiring for dependency injection and service registration.
+
+[source,xml]
+.Example annotation processor configuration in Maven
+----
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+                <annotationProcessorPaths>
+                    <path>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-apt</artifactId>
+                        <version>${helidon.version}</version>
+                    </path>
+                    <path>
+                        <groupId>io.helidon.service</groupId>
+                        <artifactId>helidon-service-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </path>
+                </annotationProcessorPaths>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+----
+
+=== Why are these annotation processors needed?
+Annotation processor `helidon-service-codegen` generates a service descriptor (`ServiceProvider__ServiceDescriptor`) for each discovered service.
+This descriptor is discovered at runtime and is used to instantiate the service without relying on reflection, improving performance and reducing overhead during service creation.
+
+== Basic injection example
+
+To demonstrate how injection works, let's create a simple working example where one service is injected into another.
+
+[source,java]
+.Creating simple Greeter service.
+----
+include::{sourcedir}/se/inject/BasicExample.java[tag=snippet_1, indent=0]
+----
+
+Once the Greeter service is created, an injection point for this service is now required.
+Let's create another service that injects the Greeter service as its constructor parameter.
+
+[source,java]
+.Create simple injection point
+----
+include::{sourcedir}/se/inject/BasicExample.java[tag=snippet_2, indent=0]
+----
+
+Now it just needs to be tested. The easiest way is to make a main method. The following piece of code
+initializes Service registry. After that we search for our `GreetingInjectionService` and execute it
+to print out `Hello David!`. To find out more about this manual approach, please take a look into the <<Programmatic Lookup,Programmatic Lookup>> chapter.
+[source,java]
+.Lookup our created service and execute it manually
+----
+include::{sourcedir}/se/inject/BasicExample.java[tag=snippet_3, indent=0]
+----
+
+The last step is ensuring that everything necessary for your application to compile correctly with injection is included.
+See <<Build time,Build time>>.
+
+If everything went as expected, no problems occurred and a Service registry gave us fully initialized
+and ready to use service.
+
+== Service Lifecycle
+
+The service registry manages the lifecycle of services. To ensure a method is invoked at a specific lifecycle phase, you can use the following annotations:
+
+* link:{service-registry-base-url}/io/helidon/service/registry/Service.PostConstruct.html[`@Service.PostConstruct`]
+– Invokes the annotated method after the instance has been created and fully injected.
+* link:{service-registry-base-url}/io/helidon/service/registry/Service.PreDestroy.html[`@Service.PreDestroy`]
+– Invokes the annotated method when the service is no longer in use by the registry. (Such as if the intended scope ends)
+** link:{service-registry-base-url}/io/helidon/service/registry/Service.PerLookup.html[`@Service.PerLookup`]
+– PreDestroy annotated method is not invoked, since it is not managed by the service registry after the injection.
+** *Other scopes* – The pre-destroy method is invoked when the scope is deactivated (e.g. for singletons this happens during registry or JVM shutdown).
+
+== Qualifiers
+In dependency injection, a qualifier is a way to tell the framework which dependency to use when there are multiple options available.
+
+Annotations are considered qualifier if they’re "meta-annotated" with
+link:{service-registry-base-url}/io/helidon/service/registry/Service.Qualifier.html[`@Service.Qualifier`].
+
+Helidon Inject provides two built-in qualifier:
+
+- link:{service-registry-base-url}/io/helidon/service/registry/Service.Named.html[`@Service.Named`] –
+Uses a `String` name to qualify a service.
+- link:{service-registry-base-url}/io/helidon/service/registry/Service.NamedByType.html[`@Service.NamedByType`] –
+Works the same way as `@Service.Named` but uses a class type instead.
+The name that would be used is the fully qualified name of the type.
+
+Both
+link:{service-registry-base-url}/io/helidon/service/registry/Service.Named.html[`@Service.Named`]
+and
+link:{service-registry-base-url}/io/helidon/service/registry/Service.NamedByType.html[`@Service.NamedByType`]
+are interchangeable, so one can combine them.
+To see an example of this see <<Named by the type>> chapter.
+
+=== Named service injection
+
+Services can be assigned names, allowing them to be specified by name during injection.
+This ensures that the correct service is injected. To achieve this, we use the
+link:{service-registry-base-url}/io/helidon/service/registry/Service.Named.html[`@Service.Named`] annotation.
+
+[source,java]
+.Create named services
+----
+include::{sourcedir}/se/inject/QualifierExample.java[tag=snippet_1, indent=0]
+----
+
+These named services can now be injected at specific injection points using their assigned names
+[source,java]
+.Create BlueCircle with Blue color injected
+----
+include::{sourcedir}/se/inject/QualifierExample.java[tag=snippet_2, indent=0]
+----
+[source,java]
+.Create GreenCircle with Green color injected
+----
+include::{sourcedir}/se/inject/QualifierExample.java[tag=snippet_3, indent=0]
+----
+
+=== Named by the type
+Alternatively, instead of using string-based names for services, a specific class can be used to "name" them. For this purpose, we use the
+link:{service-registry-base-url}/io/helidon/service/registry/Service.NamedByType.html[`@Service.NamedByType`] annotation.
+
+[source,java]
+.Named by type usage example
+----
+include::{sourcedir}/se/inject/QualifierExample.java[tag=snippet_4, indent=0]
+----
+
+The way it is used on the injection point, it is the same as it was in case of the
+link:{service-registry-base-url}/io/helidon/service/registry/Service.Named.html[`@Service.Named`].
+
+[source,java]
+.Named by type injection point
+----
+include::{sourcedir}/se/inject/QualifierExample.java[tag=snippet_5, indent=0]
+----
+
+link:{service-registry-base-url}/io/helidon/service/registry/Service.Named.html[`@Service.Named`]
+and link:{service-registry-base-url}/io/helidon/service/registry/Service.NamedByType.html[`@Service.NamedByType`]
+are even interchangeable.
+So it is possible to use
+link:{service-registry-base-url}/io/helidon/service/registry/Service.Named.html[`@Service.Named`]
+annotation with fully qualified class name of a class we used before.
+Let's assume for this example, that our previously used class `Green` was in the `my.test` package.
+Now we can specify it as any other `String` name.
+
+[source,java]
+.Named injection point
+----
+include::{sourcedir}/se/inject/QualifierExample.java[tag=snippet_6, indent=0]
+----
+
+=== Custom qualifiers
+To make custom qualifiers, it is necessary to "meta-annotated" it with
+link:{service-registry-base-url}/io/helidon/service/registry/Service.Qualifier.html[`@Service.Qualifier`].
+
+[source,java]
+.Create Blue and Green custom qualifiers
+----
+include::{sourcedir}/se/inject/Qualifier2Example.java[tag=snippet_1, indent=0]
+----
+The `@Blue` and `@Green` annotations serve as our new qualifiers.
+It can now be used to qualify services in the same way as
+link:{service-registry-base-url}/io/helidon/service/registry/Service.Named.html[`@Service.Named`].
+
+[source,java]
+.Custom qualifier Blue and Green usage
+----
+include::{sourcedir}/se/inject/Qualifier2Example.java[tag=snippet_2, indent=0]
+----
+
+Once the services are created and qualified, they can be injected in the same way as before using the following approach
+
+[source,java]
+.Custom qualifier usage on injection point
+----
+include::{sourcedir}/se/inject/Qualifier2Example.java[tag=snippet_3, indent=0]
+----
+
+== Factories
+Let's consider we have a contract named `MyContract`.
+
+The simple case is that we have a class that implements the contract, and that is a service, such as:
+
+[source,java]
+----
+@Service.Singleton
+class MyImpl implements MyContract {
+}
+----
+
+This means that the service instance itself serves as the implementation of the contract. When this service is injected into a dependency injection point, we receive an instance of MyImpl.
+
+However, this approach only works if the contract is an interface and we’re implementing it fully. In some cases, this may not be enough, such as when:
+
+- The instance needs to be provided by an external source.
+- The contract is not an interface.
+- The contract is a sealed interface.
+- The instance may not always be created (e.g., it is optional).
+
+These challenges can be addressed by implementing one of the factory interfaces supported by the Helidon Service Registry:
+
+- <<Supplier,Supplier>>
+- <<ServicesFactory,ServicesFactory>>
+- <<InjectionPointFactory,InjectionPointFactory>>
+- <<QualifiedFactory,QualifiedFactory>>
+
+=== Supplier
+A factory that supplies a single instance (it can also return `Optional<MyContract>`)
+[source,java]
+.Supplier factory
+----
+include::{sourcedir}/se/inject/FactoryExample.java[tag=snippet_1, indent=0]
+----
+
+=== ServicesFactory
+The link:{service-registry-base-url}/io/helidon/service/registry/Service.ServicesFactory.html[`ServicesFactory`]
+should be used to create zero to n instances at runtime, each assigned different qualifiers if needed.
+This allows for dynamic and flexible service creation
+while ensuring proper differentiation between instances based on their qualifiers.
+
+[source,java]
+----
+include::{sourcedir}/se/inject/FactoryExample.java[tag=snippet_2, indent=0]
+----
+
+=== QualifiedFactory
+link:{service-registry-base-url}/io/helidon/service/registry/Service.QualifiedFactory.html[`QualifiedFactory`]
+is strictly bound to a specific qualifier type.
+It will get executed only for injection points
+that are annotated with this selected qualifier and are intended for a selected contract.
+It will be ignored for any other injection points.
+
+However, there is one special case.
+If the selected contract is `java.lang.Object`, the factory will be used for any contract, as long as the qualifier matches.
+
+It receives:
+
+- link:{service-registry-base-url}/io/helidon/service/registry/Qualifier.html[`Qualifier`] -
+metadata of the qualifier that is on the annotated injection point, with each annotation property available
+- link:{service-registry-base-url}/io/helidon/service/registry/Lookup.html[`Lookup`] - information about injection request
+- link:{common-javadoc-base-url}/io/helidon/common/GenericType.html[`GenericType`] - injection point type
+
+This allows the factory to create instances dynamically based on the injection point information.
+
+[source,java]
+----
+include::{sourcedir}/se/inject/FactoryExample.java[tag=snippet_3, indent=0]
+----
+
+=== InjectionPointFactory
+link:{service-registry-base-url}/io/helidon/service/registry/Service.InjectionPointFactory.html[`InjectionPointFactory`]
+is very similar to
+link:{service-registry-base-url}/io/helidon/service/registry/Service.QualifiedFactory.html[`QualifiedFactory`],
+but with one key difference—it is executed for each injection point and is not bound to a specific qualifier/s (unless specified).
+
+It receives a Lookup object as a parameter, which contains all necessary information about the injection point.
+This allows the factory to create instances dynamically based on the injection point information.
+If the factory type `T` is `java.lang.Object`, the factory can handle ANY contract -
+such as when injecting configuration properties, which may be of any type (boolean, int, String etc.)
+
+It is possible to restrict this factory to specific qualifiers by specifying them at the class level of the factory.
+
+This ensures that the factory is executed only for injection points that match the intended contract and qualifier.
+
+[source,java]
+----
+include::{sourcedir}/se/inject/FactoryExample.java[tag=snippet_4, indent=0]
+----
+
+== Interceptors
+Interception allows adding behavior to constructors, methods,
+and injected fields without the need to explicitly code the required functionality in place.
+
+By default, interception is enabled only for elements annotated with
+link:{service-registry-base-url}/io/helidon/service/registry/Interception.Intercepted.html[`Interception.Intercepted`].
+However, annotation processor configurations can enable interception for any annotation or disable it entirely.
+
+Interception wraps around the invocation, enabling it to:
+
+* Execute logic before the actual invocation
+* Modify invocation parameters
+* Execute logic after the actual invocation
+* Modify the response
+* Handle exceptions
+
+=== Intercepted annotation
+The link:{service-registry-base-url}/io/helidon/service/registry/Interception.Intercepted.html[`Interception.Intercepted`]
+annotation is a marker used to indicate that an annotation should trigger interception.
+
+[source,java]
+.Custom annotation for interception
+----
+include::{sourcedir}/se/inject/InterceptorExample.java[tag=snippet_1, indent=0]
+----
+
+=== Interceptor interface
+The link:{service-registry-base-url}/io/helidon/service/registry/Interception.Interceptor.html[`Interception.Interceptor`]
+interface defines an interceptor service that intercepts methods/constructors/fields annotated with the configured marker annotation.
+The interceptor service must be named by the fully qualified name of the
+link:{service-registry-base-url}/io/helidon/service/registry/Interception.Intercepted.html[`Interception.Intercepted`]
+annotation (either via
+link:{service-registry-base-url}/io/helidon/service/registry/Service.Named.html[`@Service.Named`] or
+link:{service-registry-base-url}/io/helidon/service/registry/Service.NamedByType.html[`@Service.NamedByType`]).
+
+To properly handle the interception chain, the interceptor must always invoke the `proceed` method
+if the invocation should continue normally.
+However, it is also possible to return a custom value directly from the interceptor and
+effectively bypass the original method execution.
+
+[source,java]
+.Sample Interceptor interface implementation
+----
+include::{sourcedir}/se/inject/InterceptorExample.java[tag=snippet_2, indent=0]
+----
+
+<1> Binds this Interceptor to process elements annotated with `@Traced`
+<2> Passing interceptor processing to another interceptor in the chain
+
+=== Delegate annotation
+The link:{service-registry-base-url}/io/helidon/service/registry/Interception.Delegate.html[`@Interception.Delegate`]
+annotation enables interception for classes that aren’t created through the service registry
+but are instead produced by a factory (More about factories can be found here - <<Factories, Factory chapter>>).
+
+Let's make the same `@Traced` annotation and Interceptor as in the previous examples
+
+[source,java]
+.Custom annotation and interceptor
+----
+include::{sourcedir}/se/inject/InterceptorDelegateExample.java[tag=snippet_1, indent=0]
+----
+
+Now, let's create the factory of the service instance.
+
+[source,java]
+.Instance producer
+----
+include::{sourcedir}/se/inject/InterceptorDelegateExample.java[tag=snippet_2, indent=0]
+----
+
+Method calls on an instance created this way can’t be intercepted. To enable interception in such cases, we use the
+link:{service-registry-base-url}/io/helidon/service/registry/Interception.Delegate.html[`@Interception.Delegate`] annotation.
+However, keep in mind that usage of this annotation doesn’t add the ability to intercept constructor calls.
+To enable interception, this annotation must be present on the class that the factory produces.
+While it is not required on interfaces, it will still work correctly if applied there.
+
+If you need to enable interception for classes using delegation, you should make sure about the following:
+
+- The class must have accessible no-arg constructor (at least package local)
+- The class must be extensible (not final)
+- The constructor should have no side effects, as the instance will act only as a wrapper for the delegate
+- All invoked methods must be accessible (at least package local) and non-final
+
+
+[source,java]
+.Delegate used on the class
+----
+include::{sourcedir}/se/inject/InterceptorDelegateExample.java[tag=snippet_3, indent=0]
+----
+
+=== ExternalDelegate annotation
+The link:{service-registry-base-url}/io/helidon/service/registry/Interception.ExternalDelegate.html[`@Interception.ExternalDelegate`]
+annotation works similarly to
+link:{service-registry-base-url}/io/helidon/service/registry/Interception.Delegate.html[`@Interception.Delegate`].
+However, the key difference is that
+link:{service-registry-base-url}/io/helidon/service/registry/Interception.ExternalDelegate.html[`@Interception.ExternalDelegate`]
+is designed for classes that you don’t have control over.
+This means it allows you to apply the interception mechanism even to third-party classes.
+
+It is not required to apply this annotation on the interfaces, however, it needs to be present for classes.
+
+Let's make the same `@Traced` annotation and Interceptor as in the previous examples
+
+[source,java]
+----
+include::{sourcedir}/se/inject/InterceptorDelegateExample.java[tag=snippet_1, indent=0]
+----
+
+In this example, we can’t change the class we’re intercepting in any way.
+Let's assume we have this external class, and we need to add an interception mechanism to it.
+
+[source,java]
+----
+include::{sourcedir}/se/inject/InterceptorDelegateExample.java[tag=snippet_4, indent=0]
+----
+
+Now we need to apply the
+link:{service-registry-base-url}/io/helidon/service/registry/Interception.ExternalDelegate.html[`@Interception.ExternalDelegate`]
+annotation on the factory class. Once this is done, interception will work as expected
+
+[source,java]
+.ExternalDelegate annotation used on the factory
+----
+include::{sourcedir}/se/inject/InterceptorDelegateExample.java[tag=snippet_5, indent=0]
+----
+
+== Events
+Events enable in-application communication between services by providing a mechanism to emit events and register consumers to handle them.
+
+A single event can be delivered to zero or more consumers.
+
+Key Terminology:
+
+- *<<Event Object,Event Object>>* – Any object that is sent as an event.
+- *<<Event Emitter,Event Emitter>>* – Helidon generated service responsible for emitting events into the event system.
+- *<<Event Producer,Event Producer>>* – A service that triggers an event by calling an emitter.
+- *<<Event Observer,Event Observer>>* – A service that listens for events, with a method annotated using
+link:{service-registry-base-url}/io/helidon/service/registry/Event.Observer.html[`@Event.Observer`].
+- *<<Qualified Events,Qualified Events>>* – An event emitted with a qualifier, using an annotation marked with
+link:{service-registry-base-url}/io/helidon/service/registry/Service.Qualifier.html[`@Service.Qualifier`].
+
+=== Event Object
+To begin emitting events, the first step is to define the event type itself.
+
+[source,java]
+.Create a desired event type
+----
+include::{sourcedir}/se/inject/EventsExample.java[tag=snippet_1, indent=0]
+----
+
+=== Event Emitter
+Event emitters are code generated by Helidon when an injection point is discovered that expects it.
+
+All the emitters are generated as implementations of the
+link:{service-registry-base-url}/io/helidon/service/registry/Event.Emitter.html[`Event.Emitter`] interface.
+
+=== Event Producer
+An event producer is a service that triggers the event by using the event emitter.
+
+To emit an event, inject the desired
+link:{service-registry-base-url}/io/helidon/service/registry/Event.Emitter.html[`Event.Emitter`]
+Event.Emitter instance, construct the corresponding event object, and call the emit method on the emitter instance.
+
+[source,java]
+.Event producer example
+----
+include::{sourcedir}/se/inject/EventsExample.java[tag=snippet_2, indent=0]
+----
+The method returns only after all event observers have been notified. If any observer throws an exception, an
+link:{service-registry-base-url}/io/helidon/service/registry/EventDispatchException.html[`EventDispatchException`]
+is thrown, with all caught exceptions added as suppressed. This ensures that all observers are invoked, even if an exception occurs.
+
+=== Event Observer
+An event observer is a service which processes fired event.
+
+To create an event observer:
+
+- create an observer method, with a single parameter of the event type you want to observe
+- annotate the method with
+link:{service-registry-base-url}/io/helidon/service/registry/Event.Observer.html[`@Event.Observer`]
+
+[source,java]
+.Event observer example
+----
+include::{sourcedir}/se/inject/EventsExample.java[tag=snippet_3, indent=0]
+----
+
+== Qualified Events
+
+A Qualified Event is only delivered to Event Observers that use the same qualifier.
+
+=== Qualified Event Producer
+
+A qualified event can be produced with two options:
+
+1. The injection point of
+link:{service-registry-base-url}/io/helidon/service/registry/Event.Emitter.html[`@Event.Emitter`]
+(the constructor parameter, or field) is annotated with a qualifier annotation
+2. The `Event.Emitter.emit(..)` method is called with explicit qualifier(s), note that if combined, the qualifier specified by the injection point will always be present!
+
+We are using qualifier created in the chapter <<Custom qualifiers,Custom qualifier>>,
+to demonstrate how events work with qualifiers.
+Now we need to create a new event producer, which fires event only to observers qualified with `@Blue`.
+[source,java]
+.Qualified event producer
+----
+include::{sourcedir}/se/inject/EventsExample.java[tag=snippet_6, indent=0]
+----
+
+=== Qualified Event Observers
+
+To consume a qualified event, observer method must be annotated with the correct qualifier(s).
+If we want to consume the same messages which are produced by the producer in the example above,
+our observer needs to be annotated with the same qualifier.
+In this case it is `@Blue`.
+
+[source,java]
+.Qualified event observer
+----
+include::{sourcedir}/se/inject/EventsExample.java[tag=snippet_7, indent=0]
+----
+
+== Asynchronous Events
+Events can be emitted asynchronously, and event observers can also operate asynchronously.
+
+An executor service for handling asynchronous events can be registered in the service registry by providing
+a service that implements the `java.util.concurrent.ExecutorService` contract
+and is named link:{service-registry-base-url}/io/helidon/service/registry/EventManager.html[`EventManager`].
+
+If no custom executor service is provided, the system defaults to a thread-per-task executor using Virtual Threads,
+with thread names prefixed as `inject-event-manager-`.
+
+=== Asynchronous Event Producer
+All asynchronous event producers must use the `Event.Emitter.emitAsync(..)` method instead of the synchronous `Event.Emitter.emit(..)`.
+
+The `emitAsync` method returns a `CompletionStage<MyEvent>` instance. When executed, it completes once all event observers have been submitted to the executor service. However, there is no guarantee that any event has been delivered—it may have been sent to anywhere from 0 to n observers (where n represents the number of synchronous observers).
+
+[source,java]
+.Asynchronous Event Producer Example
+----
+include::{sourcedir}/se/inject/EventsExample.java[tag=snippet_4, indent=0]
+----
+
+=== Asynchronous Observer
+Asynchronous observer methods are invoked from separate threads (through the executor service mentioned above), and their results are ignored by the Event Emitter; if there is an exception thrown from the observer method, it is logged with `WARNING` log level into logger named link:{service-registry-base-url}/io/helidon/service/registry/EventManager.html[`EventManager`].
+
+To declare an asynchronous observer use annotation
+link:{service-registry-base-url}/io/helidon/service/registry/Event.AsyncObserver.html[`@Event.AsyncObserver`]
+instead of
+link:{service-registry-base-url}/io/helidon/service/registry/Event.Observer.html[`@Event.Observer`].
+
+[source,java]
+.Asynchronous Event Observer Example
+----
+include::{sourcedir}/se/inject/EventsExample.java[tag=snippet_5, indent=0]
+----
+
+== Programmatic Lookup
+If you want to use programmatic lookup, there are several ways how to get a
+link:{service-registry-base-url}/io/helidon/service/registry/ServiceRegistry.html[`ServiceRegistry`] instance.
+
+We can either get the global one or create a custom one (more advanced use case).
+In most of the cases, the global service registry is enough (and expected to be used) for a single
+applications.
+A custom service registry should only be created for specific use cases.
+
+To get the global
+link:{service-registry-base-url}/io/helidon/service/registry/ServiceRegistry.html[`ServiceRegistry`]
+we need to use
+link:{service-registry-base-url}/io/helidon/service/registry/GlobalServiceRegistry.html[`GlobalServiceRegistry`]
+and select `registry` method.
+
+However, it is also possible to access global service registry via
+link:{service-registry-base-url}/io/helidon/service/registry/Services.html[`Services`]
+static methods.
+This is the shortcut for accessing the services from the global service registry.
+Global service registry shouldn’t be used from the factories or services.
+Intended use is in the `main` methods or when one needs static access.
+
+Note that all instances in the registry are created lazily,
+meaning the service registry does nothing by default.
+If a service performs any actions during construction or post-construction,
+you must first retrieve an instance from the registry to trigger its initialization.
+
+Registry methods:
+
+- `T get(...)` - immediately get an instance of a contract from the registry; throws if implementation not available
+- `Optional<T> first(...)` - immediately get an instance of a contract from the registry; there may not be an implementation
+available
+- `List<T> all(...)` - immediately get all instances of a contract from the registry; result may be empty
+- `Supplier<T> supply(...)` - get a supplier of an instance; the service may be instantiated only when `get` is called
+- `Supplier<Optional<T>> supplyFirst(...)` - get a supplier of an optional instance
+- `Supplier<List<T>> supplyAll(...)` - get a supplier of all instances
+
+Lookup parameter options:
+
+- `Class<?>` - the contract we’re looking for
+- link:{types-javadoc-base-url}/io/helidon/common/types/TypeName.html[`TypeName`] -
+the same, but using Helidon abstraction of type names (may have type arguments)
+- link:{service-registry-base-url}/io/helidon/service/registry/Lookup.html[`Lookup`] -
+a full search criteria for a registry lookup
+
+=== Service registry injection
+It is also possible to inject
+link:{service-registry-base-url}/io/helidon/service/registry/ServiceRegistry.html[`ServiceRegistry`].
+Keep in mind that when injected, the provided instance will be the same one,
+which is used to create the service instance.
+
+=== Custom service registry
+It is possible to create custom
+link:{service-registry-base-url}/io/helidon/service/registry/ServiceRegistry.html[`ServiceRegistry`]
+instance.
+Keep in mind, this whole process is advanced and should be used only when you know what you are doing.
+
+To create a custom registry and manager instance:
+
+[source,java]
+----
+include::{sourcedir}/se/inject/ServiceRegistryExample.java[tag=snippet_1, indent=0]
+----
+
+Keep in mind, that custom
+link:{service-registry-base-url}/io/helidon/service/registry/ServiceRegistryManager.html[`ServiceRegistryManager`]
+must be shut down, once it is not needed.
+[source,java]
+----
+include::{sourcedir}/se/inject/ServiceRegistryExample.java[tag=snippet_2, indent=0]
+----
+
+== Startup
+
+Helidon provides a Maven plugin (`io.helidon.service:helidon-service-maven-plugin`, goal `create-application`) to generate
+build time bindings, that can be used to start the service registry without any classpath discovery and reflection.
+Default name is `ApplicationBinding` (customizable)
+
+Methods that accept the bindings are on
+link:{service-registry-base-url}/io/helidon/service/registry/ServiceRegistryManager.html[`ServiceRegistryManager`]:
+
+- `start(Binding)` - starts the service registry with the generated binding,
+initializing all singleton and per-lookup services annotated with a
+link:{service-registry-base-url}/io/helidon/service/registry/Service.RunLevel.html[`@Service.RunLevel`]
+annotation (i.e. `start(ApplicationBinding.create())`)
+- `start(Binding, ServiceRegistryConfig)` - same as above, allows for customization of configuration,
+if used, remember to set discovery to `false` to prevent automated discovery from the classpath
+
+All options to start a Helidon application that uses service registry:
+// Can be commented out once the PR https://github.com/helidon-io/helidon/pull/9840 is merged
+// - A custom Main method using `ServiceRegistryManager.start(...)` methods, or `ServiceRegistryManager.create(...)` methods
+- A generated `ApplicationMain` - optional feature of the Maven plugin, requires property `generateMain` to be set to `true`.
+It uses link:{service-registry-base-url}/io/helidon/service/registry/Service.RunLevel.html[`@Service.RunLevel`] actively,
+but via code generated classes -> See <<RunLevel,RunLevel>> for more information.
+This is the only approach that is fully reflection free and skips lookups for injection points.
+- The Helidon startup class `io.helidon.Main`, which will start the registry manager and initialize all
+link:{service-registry-base-url}/io/helidon/service/registry/Service.RunLevel.html[`@Service.RunLevel`]
+services, though it uses service discover (which in turn must use reflection to get service descriptor instances)
+
+=== ServiceRegistryManager
+Manager is responsible for managing the state of a single
+link:{service-registry-base-url}/io/helidon/service/registry/ServiceRegistry.html[`ServiceRegistry`] instance.
+
+When created programmatically, two possible methods can be chosen.
+
+- `create` - Creates a new
+link:{service-registry-base-url}/io/helidon/service/registry/ServiceRegistry.html[`ServiceRegistry`] instance,
+but does not create any service instance. Service instances are created only when needed.
+- `start` - Creates a new
+link:{service-registry-base-url}/io/helidon/service/registry/ServiceRegistry.html[`ServiceRegistry`] instance and
+creates all services annotated with
+link:{service-registry-base-url}/io/helidon/service/registry/Service.RunLevel.html[`@Service.RunLevel`].
+See <<RunLevel,RunLevel>> chapter.
+
+It is important to note, that once you don’t need your service registry,
+method `shutdown` on the manager must be called to ensure proper termination of the service registry.
+
+=== RunLevel
+link:{service-registry-base-url}/io/helidon/service/registry/Service.RunLevel.html[`@Service.RunLevel`]
+is the annotation used for specifying the steps in which certain services should be started.
+It always starts from the lowest number to the highest.
+It is possible to have one or more services in each run level.
+When more than one service is defined to a specific run level, the order of creation is defined by
+link:{common-javadoc-base-url}/io/helidon/common/Weight.html[`@Weight`].
+
+To start, add the
+link:{service-registry-base-url}/io/helidon/service/registry/Service.RunLevel.html[`@Service.RunLevel`]
+on the service.
+
+[source,java]
+----
+include::{sourcedir}/se/inject/RunLevelExample.java[tag=snippet_1, indent=0]
+----
+
+For better understanding, we can also add helpful method, which get executed post service construction.
+
+The easiest way for us to use these annotations, is to use `start` method on the
+link:{service-registry-base-url}/io/helidon/service/registry/ServiceRegistryManager.html[`ServiceRegistryManager`].
+
+[source,java]
+----
+include::{sourcedir}/se/inject/RunLevelExample.java[tag=snippet_2, indent=0]
+----
+
+Once executed, we get the following output:
+[source,text]
+----
+level1 created
+level2 created
+----
