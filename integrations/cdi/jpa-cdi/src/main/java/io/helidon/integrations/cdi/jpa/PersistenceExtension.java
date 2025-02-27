@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -1571,34 +1570,6 @@ public final class PersistenceExtension implements Extension {
 
         private <T> T produce(Supplier<? extends T> supplier,
                               Consumer<? super T> disposer,
-                              Class<T> type,
-                              Annotation... qualifiers) {
-            return this.produce(supplier, disposer, Set.of(type), Set.copyOf(Arrays.asList(qualifiers)));
-        }
-
-        private <T> T produce(Supplier<? extends T> supplier,
-                              Consumer<? super T> disposer,
-                              TypeLiteral<T> type,
-                              Set<Annotation> qualifiers) {
-            return this.produce(supplier, disposer, Set.of(type.getType()), qualifiers);
-        }
-
-        private <T> T produce(Supplier<? extends T> supplier,
-                              Consumer<? super T> disposer,
-                              TypeLiteral<T> type,
-                              Annotation... qualifiers) {
-            return this.produce(supplier, disposer, Set.of(type.getType()), Set.copyOf(Arrays.asList(qualifiers)));
-        }
-
-        private <T> T produce(Supplier<? extends T> supplier,
-                              Consumer<? super T> disposer,
-                              Set<Type> types,
-                              Annotation... qualifiers) {
-            return this.produce(supplier, disposer, types, Set.copyOf(Arrays.asList(qualifiers)));
-        }
-
-        private <T> T produce(Supplier<? extends T> supplier,
-                              Consumer<? super T> disposer,
                               Set<Type> types,
                               Set<Annotation> qualifiers) {
             Objects.requireNonNull(supplier, "supplier");
@@ -1615,22 +1586,6 @@ public final class PersistenceExtension implements Extension {
 
         private <T> void dispose(Class<T> type, Set<Annotation> qualifiers) {
             this.dispose(Set.of(type), qualifiers);
-        }
-
-        private <T> void dispose(Class<T> type, Annotation... qualifiers) {
-            this.dispose(Set.of(type), Set.copyOf(Arrays.asList(qualifiers)));
-        }
-
-        private <T> void dispose(TypeLiteral<T> type, Set<Annotation> qualifiers) {
-            this.dispose(Set.of(type.getType()), qualifiers);
-        }
-
-        private <T> void dispose(TypeLiteral<T> type, Annotation... qualifiers) {
-            this.dispose(Set.of(type.getType()), Set.copyOf(Arrays.asList(qualifiers)));
-        }
-
-        private <T> void dispose(Set<Type> types, Annotation... qualifiers) {
-            this.dispose(types, Set.copyOf(Arrays.asList(qualifiers)));
         }
 
         private <T> void dispose(Set<Type> types, Set<Annotation> qualifiers) {

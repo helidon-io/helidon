@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021 Oracle and/or its affiliates.
+# Copyright (c) 2021, 2024 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,17 +13,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-bothFail:
+bothFailWithDeprecatedPrefix:
   helidon:
     health:
       diskSpace:
         thresholdPercent: 0.0
       heapMemory:
         thresholdPercent: 0.0
-bothPass:
+bothPassWithDeprecatedPrefix:
   helidon:
     health:
       diskSpace:
         thresholdPercent: 98.1
       heapMemory:
         thresholdPercent: 98.1
+# Following are set to zero to avoid the defaults and force a DOWN state the test can easily detect.
+bothFailWithoutDeprecatedHelidonPrefix:
+  health:
+    checks:
+      diskSpace:
+        thresholdPercent: 0.0
+      heapMemory:
+        thresholdPercent: 0.0

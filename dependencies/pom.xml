@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-bom</artifactId>
-        <version>3.2.11-SNAPSHOT</version>
+        <version>3.2.13-SNAPSHOT</version>
         <relativePath>../bom/pom.xml</relativePath>
     </parent>
     <artifactId>helidon-dependencies</artifactId>
@@ -41,8 +41,8 @@
         <version.lib.annotation-api>1.3.5</version.lib.annotation-api>
         <version.lib.brave-opentracing>1.0.0</version.lib.brave-opentracing>
         <version.lib.reactivestreams>1.0.4</version.lib.reactivestreams>
-        <!-- Force upgrade byte-buddy for Java 23. Remove after upgrading hibernate -->
-        <version.lib.byte-buddy>1.14.18</version.lib.byte-buddy>
+        <!-- Force upgrade byte-buddy latest Java -->
+        <version.lib.byte-buddy>1.15.10</version.lib.byte-buddy>
         <version.lib.commons-logging>1.2</version.lib.commons-logging>
         <version.lib.cron-utils>9.2.1</version.lib.cron-utils>
         <version.lib.dropwizard.metrics>4.1.2</version.lib.dropwizard.metrics>
@@ -61,7 +61,7 @@
         <version.lib.graphql-java>22.1</version.lib.graphql-java>
         <version.lib.graphql-java.extended.scalars>22.0</version.lib.graphql-java.extended.scalars>
         <version.lib.gson>2.9.0</version.lib.gson>
-        <version.lib.grpc>1.60.0</version.lib.grpc>
+        <version.lib.grpc>1.65.1</version.lib.grpc>
         <version.lib.guava>32.0.1-jre</version.lib.guava>
         <version.lib.h2>2.1.212</version.lib.h2>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
@@ -70,7 +70,7 @@
         <version.lib.hibernate-validator>7.0.5.Final</version.lib.hibernate-validator>
         <version.lib.hikaricp>5.0.1</version.lib.hikaricp>
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
-        <version.lib.jackson>2.15.2</version.lib.jackson>
+        <version.lib.jackson>2.18.1</version.lib.jackson>
         <version.lib.jakarta.activation-api>2.0.1</version.lib.jakarta.activation-api>
         <version.lib.jakarta.annotation-api>2.0.0</version.lib.jakarta.annotation-api>
         <version.lib.jakarta.cdi-api>3.0.0</version.lib.jakarta.cdi-api>
@@ -100,7 +100,7 @@
         <version.lib.jgit>6.7.0.202309050840-r</version.lib.jgit>
         <version.lib.jsonp-impl>2.0.1</version.lib.jsonp-impl>
         <version.lib.junit>5.7.0</version.lib.junit>
-        <version.lib.kafka>3.6.2</version.lib.kafka>
+        <version.lib.kafka>3.8.1</version.lib.kafka>
         <version.lib.log4j>2.21.1</version.lib.log4j>
         <version.lib.logback>1.4.14</version.lib.logback>
         <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
@@ -128,10 +128,10 @@
         <version.lib.mysql-connector-j>8.2.0</version.lib.mysql-connector-j>
         <version.lib.narayana>5.12.0.Final</version.lib.narayana>
         <version.lib.neo4j>5.12.0</version.lib.neo4j>
-        <version.lib.netty>4.1.108.Final</version.lib.netty>
+        <version.lib.netty>4.1.118.Final</version.lib.netty>
         <version.lib.netty-io_uring>0.0.19.Final</version.lib.netty-io_uring>
         <version.lib.oci>3.46.1</version.lib.oci>
-        <version.lib.ojdbc8>21.3.0.0</version.lib.ojdbc8>
+        <version.lib.ojdbc8>21.15.0.0</version.lib.ojdbc8>
         <version.lib.database.messaging>19.3.0.0</version.lib.database.messaging>
         <!-- Manage okio version for dependency convergence -->
         <version.lib.okio>3.6.0</version.lib.okio>
@@ -150,7 +150,7 @@
         <version.lib.slf4j>2.0.9</version.lib.slf4j>
         <version.lib.smallrye-openapi>2.1.24</version.lib.smallrye-openapi>
         <version.lib.smallrye-openapi-ui>3.13.0</version.lib.smallrye-openapi-ui>
-        <version.lib.snakeyaml>2.2</version.lib.snakeyaml>
+        <version.lib.snakeyaml>2.4</version.lib.snakeyaml>
         <version.lib.typesafe-config>1.4.2</version.lib.typesafe-config>
         <version.lib.tyrus>2.1.5</version.lib.tyrus>
         <version.lib.weld-api>4.0.SP1</version.lib.weld-api>

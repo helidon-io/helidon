@@ -19,24 +19,98 @@
 <archetype-script xmlns="https://helidon.io/archetype/2.0"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
-    <output>
-        <model if="${tracing}">
-            <list key="Main-helidon-imports">
-                <value>io.helidon.tracing.TracerBuilder</value>
-            </list>
-            <list key="Main-serverBuilder">
-                <value>                .tracer(TracerBuilder.create(config.get("tracing")).build())</value>
-            </list>
-            <list key="application-yaml-entries">
-                <value if="${tracing.provider} == 'jaeger'"><![CDATA[
+
+    <methods>
+        <method name="metrics">
+            <output if="${metrics}">
+                <model>
+                    <list key="dependencies">
+                        <map order="800">
+                            <value key="groupId">io.helidon.metrics</value>
+                            <value key="artifactId">helidon-metrics-api</value>
+                        </map>
+                        <map if="${db}">
+                            <value key="groupId">io.helidon.dbclient</value>
+                            <value key="artifactId">helidon-dbclient-metrics-jdbc</value>
+                        </map>
+                        <map if="${db}">
+                            <value key="groupId">io.helidon.dbclient</value>
+                            <value key="artifactId">helidon-dbclient-metrics</value>
+                        </map>
+                    </list>
+                    <list key="Main-helidon-imports">
+                        <value>io.helidon.metrics.MetricsSupport</value>
+                    </list>
+                    <list key="Main-routingBuilder">
+                        <value><![CDATA[                .register(MetricsSupport.create()) // Metrics at "/metrics"]]>
+                        </value>
+                    </list>
+                    <list key="MainTest-methods">
+                        <value><![CDATA[
+    @Test
+    void testMetrics() {
+        WebClientResponse response = webClient.get()
+                .path("/metrics")
+                .request()
+                .await(Duration.ofSeconds(5));
+        assertThat(response.status().code(), is(200));
+    }]]>
+                        </value>
+                    </list>
+                    <list key="module-requires">
+                        <value>io.helidon.metrics</value>
+                    </list>
+                    <list key="readme-sections">
+                        <value><![CDATA[
+## Try metrics
+
+```
+# Prometheus Format
+curl -s -X GET http://localhost:8080/metrics
+# TYPE base:gc_g1_young_generation_count gauge
+. . .
+
+# JSON Format
+curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
+{"base":...
+. . .
+```]]>
+                        </value>
+                    </list>
+                </model>
+            </output>
+        </method>
+        <method name="metrics.builtin">
+            <output if="${metrics}">
+                <model if="${metrics.builtin}">
+                    <list key="dependencies">
+                        <map>
+                            <value key="groupId">io.helidon.metrics</value>
+                            <value key="artifactId">helidon-metrics</value>
+                        </map>
+                    </list>
+                </model>
+            </output>
+        </method>
+        <method name="tracing">
+            <output if="${tracing}">
+                <model>
+                    <list key="Main-helidon-imports">
+                        <value>io.helidon.tracing.TracerBuilder</value>
+                    </list>
+                    <list key="Main-serverBuilder">
+                        <value>                .tracer(TracerBuilder.create(config.get("tracing")).build())</value>
+                    </list>
+                    <list key="application-yaml-entries">
+                        <value if="${tracing.provider} == 'jaeger'"><![CDATA[
 tracing:
   service: "helidon-full-http"
   host: "localhost"     # JAEGER_ENDPOINT
   port: 14250           # JAEGER_ENDPOINT
   sampler-type: "ratio" # JAEGER_SAMPLER_TYPE (https://www.jaegertracing.io/docs/latest/sampling/#client-sampling-configuration)
-  sampler-param: 0.5    # JAEGER_SAMPLER_PARAM (number)
-]]></value>
-                <value if="${tracing.provider} == 'zipkin'"><![CDATA[
+  sampler-param: 0.5    # JAEGER_SAMPLER_PARAM (number)]]>
+                        </value>
+                        <value if="${tracing.provider} == 'zipkin'"><![CDATA[
 tracing:
   service: "helidon-service"
   protocol: "http"
@@ -53,15 +127,21 @@ tracing:
     tag4: false
   int-tags:
     tag5: 145
-    tag6: 741]]></value>
-            </list>
-            <list key="config-test">
-                <value><![CDATA[
+    tag6: 741]]>
+                        </value>
+                    </list>
+                    <list key="config-test">
+                        <value><![CDATA[
 tracing:
   service: "testing-service"
-  global: false
-                ]]></value>
-            </list>
-        </model>
-    </output>
+  global: false]]>
+                        </value>
+                    </list>
+                </model>
+            </output>
+        </method>
+    </methods>
+    <call method="metrics"/>
+    <call method="metrics.builtin"/>
+    <call method="tracing"/>
 </archetype-script>

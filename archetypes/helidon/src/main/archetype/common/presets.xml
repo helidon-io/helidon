@@ -25,7 +25,6 @@
             <value>json</value>
         </list>
         <boolean path="metrics">true</boolean>
-        <enum path="metrics.provider">microprofile</enum>
         <boolean path="metrics.builtin">true</boolean>
         <boolean path="health">true</boolean>
         <boolean path="health.builtin">true</boolean>

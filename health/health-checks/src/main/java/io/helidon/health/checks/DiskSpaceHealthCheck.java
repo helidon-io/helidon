@@ -16,7 +16,6 @@
 
 package io.helidon.health.checks;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileStore;
 import java.nio.file.Files;
@@ -24,14 +23,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Formatter;
 import java.util.Locale;
+import java.util.function.Consumer;
 
 import io.helidon.config.Config;
+import io.helidon.config.mp.DeprecatedMpConfig;
 import io.helidon.health.HealthCheckException;
 import io.helidon.health.common.BuiltInHealthCheck;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.Liveness;
@@ -43,7 +43,8 @@ import org.eclipse.microprofile.health.Liveness;
  * <p>
  * By default, this health check has a threshold of 100%, meaning that it will never fail the threshold check.
  * Also, by default, it will check the root path {@code /}. These defaults can be modified using the
- * {@value CONFIG_KEY_PATH} property (default {@value DEFAULT_PATH}), and the {@value CONFIG_KEY_THRESHOLD_PERCENT}
+ * {@value CURRENT_CONFIG_KEY_PATH} property (default {@value DEFAULT_PATH}), and the
+ * {@value CURRENT_CONFIG_KEY_THRESHOLD_PERCENT}
  * property (default {@value DEFAULT_THRESHOLD}, virtually 100). The threshold should be set to a percent, such as 50 for 50% or
  * 99 for 99%. If disk usage
  * exceeds this threshold, then the health check will fail.
@@ -69,7 +70,7 @@ public class DiskSpaceHealthCheck implements HealthCheck {
      * directory as application path), use
      * {@link io.helidon.health.checks.DiskSpaceHealthCheck.Builder#path(java.nio.file.Path)}.
      * When running within a MicroProfile server, you can configure path using a configuration key
-     * {@value #CONFIG_KEY_PATH}
+     * {@value #CURRENT_CONFIG_KEY_PATH}
      * Defaults to {@value}
      */
     public static final String DEFAULT_PATH = ".";
@@ -82,19 +83,34 @@ public class DiskSpaceHealthCheck implements HealthCheck {
     static final String CONFIG_KEY_DISKSPACE_PREFIX = "diskSpace";
 
     static final String CONFIG_KEY_PATH_SUFFIX = "path";
-    static final String CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX = "thresholdPercent";
-
     /**
      * Full configuration key for path, when configured through MicroProfile config.
+     *
+     * @deprecated The value will change to {@value CURRENT_CONFIG_KEY_PATH} in a future release
      */
-    public static final String CONFIG_KEY_PATH = HealthChecks.CONFIG_KEY_HEALTH_PREFIX
+    @Deprecated(since = "3.2.11")
+    public static final String CONFIG_KEY_PATH = HealthChecks.DEPRECATED_CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX
+            + "." + CONFIG_KEY_DISKSPACE_PREFIX
+            + "." + CONFIG_KEY_PATH_SUFFIX;
+    static final String CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX = "thresholdPercent";
+    /**
+     * Full configuration key for threshold percent, when configured through Microprofile config.
+     *
+     * @deprecated The value will change to {@value CURRENT_CONFIG_KEY_THRESHOLD_PERCENT} in future release
+     */
+    @Deprecated(since = "3.2.11")
+    public static final String CONFIG_KEY_THRESHOLD_PERCENT = HealthChecks.DEPRECATED_CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX
+            + "." + CONFIG_KEY_DISKSPACE_PREFIX
+            + "." + CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX;
+
+    // The following two constants are used in the Javadoc to nudge users toward using the config key prefix "health.checks"
+    // rather than the obsolete "helidon.health". Because the original public constants above have always referred to the
+    // now-deprecated config prefixes, those values are unchanged to preserve backward compatibility.
+    private static final String CURRENT_CONFIG_KEY_PATH = HealthChecks.CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX
             + "." + CONFIG_KEY_DISKSPACE_PREFIX
             + "." + CONFIG_KEY_PATH_SUFFIX;
 
-    /**
-     * Full configuration key for threshold percent, when configured through Microprofile config.
-     */
-    public static final String CONFIG_KEY_THRESHOLD_PERCENT = HealthChecks.CONFIG_KEY_HEALTH_PREFIX
+    private static final String CURRENT_CONFIG_KEY_THRESHOLD_PERCENT = HealthChecks.CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX
             + "." + CONFIG_KEY_DISKSPACE_PREFIX
             + "." + CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX;
 
@@ -114,16 +130,8 @@ public class DiskSpaceHealthCheck implements HealthCheck {
     }
 
     @Inject
-    DiskSpaceHealthCheck(
-            @ConfigProperty(name = CONFIG_KEY_PATH, defaultValue = DEFAULT_PATH) File path,
-            @ConfigProperty(name = CONFIG_KEY_THRESHOLD_PERCENT, defaultValue = "99.999") double thresholdPercent
-    ) {
-        try {
-            this.fileStore = Files.getFileStore(path.toPath());
-        } catch (IOException e) {
-            throw new HealthCheckException("Failed to obtain file store for path " + path.getAbsolutePath(), e);
-        }
-        this.thresholdPercent = thresholdPercent;
+    DiskSpaceHealthCheck(org.eclipse.microprofile.config.Config mpConfig) {
+        this(builder().update(applyConfig(mpConfig)));
     }
 
     private DiskSpaceHealthCheck(Builder builder) {
@@ -172,6 +180,29 @@ public class DiskSpaceHealthCheck implements HealthCheck {
      */
     public static DiskSpaceHealthCheck create() {
         return builder().build();
+    }
+
+    private static Consumer<Builder> applyConfig(org.eclipse.microprofile.config.Config mpConfig) {
+        return builder -> {
+            DeprecatedMpConfig.getConfigValue(mpConfig,
+                                              Path.class,
+                                              configKey(HealthChecks.CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX,
+                                                        CONFIG_KEY_PATH_SUFFIX),
+                                              configKey(HealthChecks.DEPRECATED_CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX,
+                                                        CONFIG_KEY_PATH_SUFFIX))
+                    .ifPresent(builder::path);
+            DeprecatedMpConfig.getConfigValue(mpConfig,
+                                              Double.class,
+                                              configKey(HealthChecks.CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX,
+                                                        CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX),
+                                              configKey(HealthChecks.DEPRECATED_CONFIG_KEY_BUILT_IN_HEALTH_CHECKS_PREFIX,
+                                                        CONFIG_KEY_THRESHOLD_PERCENT_SUFFIX))
+                    .ifPresent(builder::thresholdPercent);
+        };
+    }
+
+    private static String configKey(String prefix, String suffix) {
+        return prefix + "." + CONFIG_KEY_DISKSPACE_PREFIX + "." + suffix;
     }
 
     @Override

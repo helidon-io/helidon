@@ -9,6 +9,39 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [3.2.12]
+
+This is a bugfix release of Helidon and is recommended for all users of Helidon 3.  Helidon 3 requires Java 17 or newer.
+
+### CHANGES
+
+- Dependencies: Upgrade ASM to 9.7.1 and Byte Buddy to 1.15.10 for Java 24 support [9572](https://github.com/helidon-io/helidon/pull/9572)
+- Dependencies: Upgrade Netty to 4.1.118.Final [9772](https://github.com/helidon-io/helidon/pull/9772)
+- Cleanup: Remove duplicated methods from CustomScalars [9541](https://github.com/helidon-io/helidon/pull/9541)
+- Cleanup: Remove unused method ConfigMapperManager.mapper [9668](https://github.com/helidon-io/helidon/pull/9668)
+- Cleanup: Remove unused code from ConfigAsciidocGenerator [9667](https://github.com/helidon-io/helidon/pull/9667)
+- Cleanup: Remove unused code from ClasspathSourceHelper [9666](https://github.com/helidon-io/helidon/pull/9666)
+- Docs: Fix typo @Provided -> @Provider in jaxrs-applications.adoc [9633](https://github.com/helidon-io/helidon/pull/9633)
+
+## [3.2.11]
+
+This is a bugfix release of Helidon and is recommended for all users of Helidon 3.  Helidon 3 requires Java 17 or newer.
+
+### CHANGES
+
+- Config: Remove unnecessary logging from HoconMpConfigIncluder [9400](https://github.com/helidon-io/helidon/pull/9400)
+- Health: Support built-in health check config at `health.checks` [9337](https://github.com/helidon-io/helidon/pull/9337)
+- JPA: Remove unused methods 'produce' and 'dispose' from PersistenceExtension.ReferenceCountingProducer [9422](https://github.com/helidon-io/helidon/pull/9422)
+- Messaging: Replace manual casts on pattern with instanceof in helidon/messaging modules [9394](https://github.com/helidon-io/helidon/pull/9394)
+- Dependencies: Upgrade ojdbc dependency to 21.15.0.0 [9423](https://github.com/helidon-io/helidon/pull/9423)
+- Dependencies: netty 4.1.115, grpc-java 1.65.1 [9498](https://github.com/helidon-io/helidon/pull/9498)
+- Dependencies: Update the version of the SmallRye OpenAPI UI library [9395](https://github.com/helidon-io/helidon/pull/9395)
+- Dependencies: Uptake build-tools 3.0.10 [9376](https://github.com/helidon-io/helidon/pull/9376)
+- Dependencies: Upgrade jackson to 2.18.1 [9481](https://github.com/helidon-io/helidon/pull/9481)
+- Dependencies: Upgrade kafka-clients to 3.8.1 [9526](https://github.com/helidon-io/helidon/pull/9526)
+- Docs: Replace deprecated VM memory flags in docs for building container images (#9480) [9483](https://github.com/helidon-io/helidon/pull/9483)
+- Examples: Update starter UI for Helidon MP Metrics [9403](https://github.com/helidon-io/helidon/pull/9403)
+
 ## [3.2.10]
 
 This is a bugfix release of Helidon and is recommended for all users of Helidon 3.  Helidon 3 requires Java 17 or newer.
@@ -945,6 +978,9 @@ Notable changes:
 - Examples: Update bare-mp archetype to use microprofile-core [3795](https://github.com/oracle/helidon/pull/3795)
 
 
+[3.2.12]: https://github.com/helidon-io/helidon/compare/3.2.11...3.2.12
+[3.2.11]: https://github.com/helidon-io/helidon/compare/3.2.10...3.2.11
+[3.2.10]: https://github.com/helidon-io/helidon/compare/3.2.9...3.2.10
 [3.2.9]: https://github.com/helidon-io/helidon/compare/3.2.8...3.2.9
 [3.2.8]: https://github.com/helidon-io/helidon/compare/3.2.7...3.2.8
 [3.2.7]: https://github.com/helidon-io/helidon/compare/3.2.6...3.2.7
