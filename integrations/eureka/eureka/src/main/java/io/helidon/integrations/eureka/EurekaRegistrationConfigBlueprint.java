@@ -107,7 +107,7 @@ interface EurekaRegistrationConfigBlueprint extends Prototype.Factory<EurekaRegi
     String name();
 
     /**
-     * The (zero or positive) {@linkplain Weighted weight} of this instance.
+     * The (zero or positive) {@linkplain io.helidon.common.Weighted weight} of this instance.
      *
      * @return the (zero or positive) weight of this instance
      */
