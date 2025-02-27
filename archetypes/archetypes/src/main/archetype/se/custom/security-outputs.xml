@@ -24,39 +24,40 @@
             <output if="${security.atn} contains ['oidc']">
                 <model>
                     <list key="providers-config-entries">
-                        <value><![CDATA[
-  - oidc:
-      client-id: "your-client-id"
-      client-secret: "changeit"
-      identity-uri: "https://your-tenant-id.identity.oracle.com"
-      # A prefix used for custom scopes
-      scope-audience: "http://localhost:7987/test-application"
-      proxy-host: ""
-      # Used as a base for redirects back to us (based on Host header now, so no need to explicitly define it)
-      # If explicitly defined, will override host header
-      # frontend-uri: "http://localhost:7987"
-      # support for non-public signature JWK (and maybe other IDCS specific handling)
-      server-type: "idcs"
-      logout-enabled: true
-      # Can define just a path, host will be taken from header
-      post-logout-uri: "/loggedout"
-      # We want to redirect to login page (and token can be received either through cookie or header)
-      redirect: true
-  - idcs-role-mapper:
-      multitenant: false
-      oidc-config:
-        # we must repeat IDCS configuration, as in this case
-        # IDCS serves both as open ID connect authenticator and
-        # as a role mapper. Using minimal configuration here
+                        <value><![CDATA[    - oidc:
         client-id: "your-client-id"
         client-secret: "changeit"
-        identity-uri: "https://your-tenant-id.identity.oracle.com"]]></value>
+        identity-uri: "https://your-tenant-id.identity.oracle.com"
+        # A prefix used for custom scopes
+        scope-audience: "http://localhost:7987/test-application"
+        proxy-host: ""
+        # Used as a base for redirects back to us (based on Host header now, so no need to explicitly define it)
+        # If explicitly defined, will override host header
+        # frontend-uri: "http://localhost:7987"
+        # support for non-public signature JWK (and maybe other IDCS specific handling)
+        server-type: "idcs"
+        logout-enabled: true
+        # Can define just a path, host will be taken from header
+        post-logout-uri: "/loggedout"
+        # We want to redirect to login page (and token can be received either through cookie or header)
+        redirect: true
+    - idcs-role-mapper:
+        multitenant: false
+        oidc-config:
+          # we must repeat IDCS configuration, as in this case
+          # IDCS serves both as open ID connect authenticator and
+          # as a role mapper. Using minimal configuration here
+          client-id: "your-client-id"
+          client-secret: "changeit"
+          identity-uri: "https://your-tenant-id.identity.oracle.com"]]>
+                        </value>
                     </list>
                     <list key="paths-config-entries">
-                        <value><![CDATA[   - path: "/rest/profile"
-             methods: ["get"]
-             authenticate: true
-             roles-allowed: ["my_admins"]]]></value>
+                        <value><![CDATA[          - path: "/rest/profile"
+            methods: ["get"]
+            authenticate: true
+            roles-allowed: ["my_admins"]]]>
+                        </value>
                     </list>
                     <list key="dependencies">
                         <map>
@@ -84,7 +85,8 @@
         Security security = Security.create(config.get("security"));
         // this is needed for proper encryption/decryption of cookies
         Contexts.globalContext().register(security);
-]]></value>
+]]>
+                        </value>
                     </list>
                     <list key="Main-routing">
                         <value><![CDATA[
@@ -92,19 +94,21 @@
             // IDCS requires a web resource for redirects
             routing.addFeature(OidcFeature.create(Config.global()));
         }
-]]></value>
+]]>
+                        </value>
                     </list>
                     <list key="Main-routing-builder">
                         <value><![CDATA[// web server does not (yet) have possibility to configure routes in config files, so explicit...
-                        .get("/rest/profile", (req, res) -> {
-                            Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
-                            res.headers().contentType(HttpMediaTypes.PLAINTEXT_UTF_8);
-                            res.send("Response from config based service, you are: \n" + securityContext
-                                    .flatMap(SecurityContext::user)
-                                    .map(Subject::toString)
-                                    .orElse("Security context is null"));
-                        })
-                        .get("/loggedout", (req, res) -> res.send("You have been logged out"))]]></value>
+                .get("/rest/profile", (req, res) -> {
+                    Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
+                    res.headers().contentType(HttpMediaTypes.PLAINTEXT_UTF_8);
+                    res.send("Response from config based service, you are: \n" + securityContext
+                            .flatMap(SecurityContext::user)
+                            .map(Subject::toString)
+                            .orElse("Security context is null"));
+                })
+                .get("/loggedout", (req, res) -> res.send("You have been logged out"))]]>
+                        </value>
                     </list>
                     <list key="module-requires">
                         <value>io.helidon.security</value>
@@ -134,7 +138,8 @@ Build and run the application and then try the endpoints:
 1. Open http://localhost:7987/rest/profile in your browser. This should present
  you with a response highlighting your logged in role (null) correctly as you are not logged in
 2. Open `http://localhost:7987/oidc/logout` in your browser. This will log you out from your IDCS and Helidon sessions
-]]></value>
+]]>
+                        </value>
                     </list>
                 </model>
             </output>
@@ -176,19 +181,19 @@ Build and run the application and then try the endpoints:
                     </list>
                     <list key="Main-main">
                         <value><![CDATA[
-        Security security = Security.builder()
+        Security googleSecurity = Security.builder()
                 .addProvider(GoogleTokenProvider.builder()
                         .clientId("your-client-id.apps.googleusercontent.com"))
-                .build();
-]]></value>
+                .build();]]>
+                        </value>
                     </list>
                     <list key="Main-server-builder">
                         <value><![CDATA[.featuresDiscoverServices(false)
                 .addFeature(ContextFeature.create())
                 .addFeature(SecurityFeature.builder()
-                                    .security(security)
-                                    .build())
-]]></value>
+                                    .security(googleSecurity)
+                                    .build())]]>
+                        </value>
                     </list>
                     <list key="Main-routing-builder">
                         <value><![CDATA[.get("/rest/profile", SecurityFeature.authenticate(),
@@ -201,16 +206,24 @@ Build and run the application and then try the endpoints:
                                 .orElse("Security context is null"));
                         res.next();
                     })
-            .register(StaticContentService.create("/WEB"))
-]]></value>
+                .register(StaticContentService.create("/WEB"))]]>
+                        </value>
                     </list>
                     <list key="Main-logging">
                         <value><![CDATA[
-            System.out.println("Check Google login http://localhost:" + server.port() + "/google-login.html");]]></value>
+            System.out.println("Check Google login http://localhost:" + server.port() + "/google-login.html");]]>
+                        </value>
                     </list>
                     <list key="security-properties">
                         <value><![CDATA[    google-client-id: "your-app-id.apps.googleusercontent.com"
-    proxy-host: ""]]></value>
+    proxy-host: ""]]>
+                        </value>
+                    </list>
+                    <list key="paths-config-entries">
+                        <value><![CDATA[          - path: "/rest/profile"
+            methods: ["get"]
+            authenticate: true]]>
+                        </value>
                     </list>
                     <list key="providers-config-entries">
                         <value><![CDATA[    - google-login:
@@ -232,7 +245,8 @@ Build and run the application and then try the endpoints:
         #  prefix: "bearer "
         # optional alternative - looking for first matching group
         #  regexp: "bearer (.*)"
-        #}]]></value>
+        #}]]>
+                        </value>
                     </list>
                     <list key="readme-sections" >
                         <value template="mustache"><![CDATA[
@@ -245,7 +259,8 @@ Update the following files with your client id (it should support http://localho
 1. src/main/resources/application.yaml - set security.properties.google-client-id or override it in a file in ~/helidon/examples.yaml
 2. src/main/resources/WEB/index.html - update the meta tag in header with name "google-signin-client_id"
 3. src/main/java/io/helidon/security/examples/google/GoogleMain.java - update the client id in builder of provider
-]]></value>
+]]>
+                        </value>
                     </list>
                 </model>
             </output>
@@ -301,12 +316,14 @@ Update the following files with your client id (it should support http://localho
                         <value><![CDATA[
         Config clientConfig = Config.create(ConfigSources.classpath("client-service-jwt.yaml"));
         Config backendConfig = Config.create(ConfigSources.classpath("backend-service-jwt.yaml"));
-]]></value>
+]]>
+                        </value>
                     </list>
                     <list key="Main-after-server">
                         <value><![CDATA[
         server.context().register(server);
-]]></value>
+]]>
+                        </value>
                     </list>
                     <list key="Main-server-builder">
                         <value><![CDATA[// backend that prints the current user
@@ -328,15 +345,17 @@ Update the following files with your client id (it should support http://localho
 
                                     res.send(username);
                                 })))
-]]></value>
+]]>
+                        </value>
                     </list>
                     <list key="Main-routing-builder">
                         <value><![CDATA[.addFeature(SecurityHttpFeature.create(clientConfig.get("security.web-server")))
-                .register(new JwtOverrideService())
-]]></value>
+                .register(new JwtOverrideService())]]>
+                        </value>
                     </list>
                     <list key="Main-routing">
-                        <value><![CDATA[        Config clientConfig = Config.create(ConfigSources.classpath("client-service-jwt.yaml"));]]></value>
+                        <value><![CDATA[Config clientConfig = Config.create(ConfigSources.classpath("client-service-jwt.yaml"));]]>
+                        </value>
                     </list>
                     <list key="module-requires">
                         <value>io.helidon.webclient.security</value>
@@ -353,7 +372,8 @@ curl -u "jack:changeit" http://localhost:8080/override
 curl -u "jill:changeit" http://localhost:8080/propagate
 curl -u "jill:changeit" http://localhost:8080/override
 ```
-]]></value>
+]]>
+                        </value>
                     </list>
                 </model>
             </output>
@@ -438,19 +458,21 @@ curl -u "jill:changeit" http://localhost:8080/override
             }
         });
     }
-]]></value>
+]]>
+                        </value>
                     </list>
                     <list key="Main-routing">
                         <value><![CDATA[
         SecurityHttpFeature security = SecurityHttpFeature.create(security1())
                 .securityDefaults(SecurityFeature.authenticate());
-]]></value>
+]]>
+                        </value>
                     </list>
                     <list key="Main-routing-builder">
                         <value><![CDATA[.addFeature(security)
                 .get("/service1*", SecurityFeature.rolesAllowed("user"))
-                .register(new Service1())
-]]></value>
+                .register(new Service1())]]>
+                        </value>
                     </list>
                     <list key="main-class-content">
                         <value><![CDATA[
@@ -553,14 +575,17 @@ private static void routing2(HttpRouting.Builder routing) {
     private static SecureUserStore users() {
         return login -> Optional.ofNullable(USERS.get(login));
     }
-]]></value>
+]]>
+                        </value>
                     </list>
                     <list key="Main-server-builder">
                         <value><![CDATA[.putSocket("service2", socket -> socket
-                        .routing(Main::routing2))]]></value>
+                        .routing(Main::routing2))]]>
+                        </value>
                     </list>
                     <list key="Main-after-server">
-                        <value><![CDATA[server.context().register(server);]]></value>
+                        <value><![CDATA[server.context().register(server);]]>
+                        </value>
                     </list>
                     <list key="module-requires">
                         <value>io.helidon.webclient.http1</value>
@@ -579,7 +604,8 @@ curl -u "jack:changeit" http://localhost:8080/service1
 curl -u "jill:changeit" http://localhost:8080/service1-rsa
 curl -v -u "john:changeit" http://localhost:8080/service1
 ```
-]]></value>
+]]>
+                        </value>
                     </list>
                 </model>
             </output>
@@ -598,11 +624,10 @@ curl -v -u "john:changeit" http://localhost:8080/service1
                         </map>
                     </list>
                     <list key="providers-config-entries">
-                        <value><![CDATA[
-  - abac:
-      fail-on-unvalidated: true
-      fail-if-none-validated: true
-]]></value>
+                        <value><![CDATA[    - abac:
+        fail-on-unvalidated: true
+        fail-if-none-validated: true]]>
+                        </value>
                     </list>
                 </model>
             </output>
@@ -625,7 +650,8 @@ curl -v -u "john:changeit" http://localhost:8080/service1
                 <value><![CDATA[
 security:
   enabled: false
-]]></value>
+]]>
+                </value>
             </list>
             <list key="module-requires">
                 <value>io.helidon.security.integration.common</value>
@@ -635,7 +661,6 @@ security:
                   if="!(${security.atn} contains 'http-signature' || ${security.atn} contains 'jwt')">
                 <value template="mustache"><![CDATA[
 {{#security}}
-
 security:
   config.require-encryption: false
   properties:
@@ -646,7 +671,8 @@ security:
 {{#providers-config-entries}}
 {{.}}
 {{/providers-config-entries}}
-{{/security}}]]></value>
+{{/security}}]]>
+                </value>
             </list>
         </model>
     </output>

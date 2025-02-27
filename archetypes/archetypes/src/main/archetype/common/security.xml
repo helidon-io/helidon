@@ -48,11 +48,6 @@
                                             <value key="artifactId">helidon-security-providers-google-login</value>
                                         </map>
                                     </list>
-                                    <list key="paths-config-entries">
-                                        <value><![CDATA[    - path: "/rest/profile"
-      methods: ["get"]
-      authenticate: true]]></value>
-                                    </list>
                                     <list key="module-requires">
                                         <value>io.helidon.webserver.context</value>
                                         <value>io.helidon.webserver.staticcontent</value>
@@ -103,17 +98,17 @@
                         <value key="security">true</value>
                         <value key="features">true</value>
                         <list key="server-features">
-                            <value template="mustache"><![CDATA[
-    security:
+                            <value template="mustache"><![CDATA[security:
       defaults:
         authenticate: true
       web-server:
         # protected paths on the web server - do not include paths served by Jersey, as those are protected directly
         paths:
-        {{#paths-config-entries}}
-        {{.}}
-        {{/paths-config-entries}}
-]]></value>
+{{#paths-config-entries}}
+{{.}}
+{{/paths-config-entries}}
+]]>
+                            </value>
                         </list>
                     </model>
                 </output>

@@ -9,7 +9,6 @@
         # Configure proxy host if needed
         proxy-host: "proxy-host"
         # proxy-port: 80
-
         # This is the default for GoogleTokenProvider
         #token:
         #  header: "Authorization"

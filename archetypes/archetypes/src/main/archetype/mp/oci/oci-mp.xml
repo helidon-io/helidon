@@ -89,7 +89,8 @@ oci.logging.id=<your oci custom log id>
 
 # OCI Authentication strategy
 oci.auth-strategy=config-file,instance-principals,resource-principal
-                    ]]></value>
+]]>
+                    </value>
                 </list>
                 <list key="yaml-config-entries">
                     <value template="mustache"><![CDATA[
@@ -107,7 +108,8 @@ ocimetrics:
   scopes: [base, vendor, application]
   # Enable or disable metric transmission to OCI. Defaults to true if not specified.
   enabled: true
-                    ]]></value>
+]]>
+                    </value>
                 </list>
                 <list key="oci-logging-entries">
                     <value template="mustache"><![CDATA[
@@ -119,7 +121,8 @@ ocimetrics:
 #
 # Check https://docs.oracle.com/en-us/iaas/Content/Logging/Concepts/custom_logs.htm for more information on how to
 # set up Custom Logs that uses the Unified monitoring agent.
-                    ]]></value>
+]]>
+                    </value>
                 </list>
             </model>
         </templates>
@@ -284,7 +287,8 @@ ocimetrics:
                         <include>**/*MockedTest</include>
                     </includes>
                 </configuration>
-            </plugin>]]></value>
+            </plugin>]]>
+                </value>
             </list>
             <list key="maven-profiles">
                 <value template="mustache"><![CDATA[
@@ -321,11 +325,11 @@ ocimetrics:
                 </plugins>
             </build>
         </profile>
-    </profiles>]]></value>
+    </profiles>]]>
+                </value>
             </list>
             <value key="readme-description" file="files/README-Description.md"/>
-            <value key="readme-run-commands" template="mustache">
-                <![CDATA[
+            <value key="readme-run-commands" template="mustache"><![CDATA[
 ### Build the application
 
 1. Build without running a test
@@ -359,7 +363,7 @@ principal when running it in an oci compute instance.
      ```bash
      java -Dconfig.profile=prod -jar server/target/{{artifactId}}.jar
      ```
-            ]]>
+]]>
             </value>
             <list key="readme-exercise-the-application">
                 <value template="mustache"><![CDATA[
@@ -382,7 +386,8 @@ principal when running it in an oci compute instance.
    $ curl -X GET  http://localhost:8080/health/ready
    {"outcome":"UP","status":"UP","checks":[{"name":"CustomReadinessCheck","state":"UP","status":"UP","data":{"time":1646361474774}}]}
    ```
-                ]]></value>
+]]>
+                </value>
             </list>
             <list key="k8s-readme-sections">
                 <value template="mustache"><![CDATA[
@@ -405,7 +410,8 @@ Mount this volume as part of your application containers specification
         - mountPath: /root/.oci
           name: oci-config
 ```
-                                ]]></value>
+]]>
+                </value>
             </list>
             <list key="poms">
                 <value>ADD pom.xml pom.xml</value>

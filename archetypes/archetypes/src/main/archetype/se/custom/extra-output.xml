@@ -56,8 +56,7 @@
                         (req, res, ex) -> res.status(Status.REQUEST_TIMEOUT_408).send("timeout"))
                 .error(Throwable.class,
                         (req, res, ex) -> res.status(Status.INTERNAL_SERVER_ERROR_500)
-                                .send(ex.getClass().getName() + ": " + ex.getMessage()))
-]]>
+                                .send(ex.getClass().getName() + ": " + ex.getMessage()))]]>
                 </value>
             </list>
             <list key="Abstract-tests" if="${extra} contains 'fault-tolerance'">
@@ -199,7 +198,8 @@
             assertThat(clientResponse.as(String.class), is("timeout"));
         }
     }
-]]></value>
+]]>
+                </value>
             </list>
             <list key="module-requires" if="${extra} contains 'fault-tolerance'">
                 <value>io.helidon.faulttolerance</value>
