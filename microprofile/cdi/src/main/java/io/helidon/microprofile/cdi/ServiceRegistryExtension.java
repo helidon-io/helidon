@@ -90,6 +90,14 @@ import static io.helidon.service.registry.Service.Named.WILDCARD_NAME;
 /**
  * {@link java.util.ServiceLoader} provider implementation of CDI extension to add service registry types as CDI beans.
  */
+/*
+How does this work:
+- we add all Helidon Service Registry qualifiers as CDI qualifiers (registerTypes)
+- we collect all synthetic and managed beans of CDI (processManagedBean, processSyntheticBean)
+- we collect all producers of CDI (processProducers)
+- we add ServiceRegistry itself as a bean (afterBeanDiscovery)
+- we add CDI beans to service registry and registry beans to CDI in crossRegisterBeans
+ */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class ServiceRegistryExtension implements Extension {
     private static final TypeName CDI_NAMED_TYPE = TypeName.create(Named.class);
@@ -97,6 +105,8 @@ public class ServiceRegistryExtension implements Extension {
     // higher than default - CDI beans are "more important" as we run in CDI
     private static final double WEIGHT = Weighted.DEFAULT_WEIGHT + 10;
 
+    // set of beans that are already in CDI and that should not be added by service registry
+    private final Set<UniqueBean> beansAlreadyInCdi = new HashSet<>();
     private final Set<CdiServiceId> processedBeans = new HashSet<>();
     private final List<CdiBean> collectedCdiBeans = new ArrayList<>();
     private final List<CdiProducer> collectedCdiProducers = new ArrayList<>();
@@ -135,15 +145,15 @@ public class ServiceRegistryExtension implements Extension {
     /*
     We must be one of the last ones, as what we get here, we insert to registry
      */
-    void processManagedBean(@Observes @Priority(Interceptor.Priority.PLATFORM_AFTER + 2000) ProcessManagedBean<?> pb) {
+    void processManagedBean(@Observes @Priority(Interceptor.Priority.PLATFORM_AFTER) ProcessManagedBean<?> pb) {
         this.doProcessBean(pb);
     }
 
-    void processSyntheticBean(@Observes @Priority(Interceptor.Priority.PLATFORM_AFTER + 2000) ProcessSyntheticBean<?> pb) {
+    void processSyntheticBean(@Observes @Priority(Interceptor.Priority.PLATFORM_AFTER) ProcessSyntheticBean<?> pb) {
         this.doProcessBean(pb);
     }
 
-    void processProducer(@Observes @Priority(Interceptor.Priority.PLATFORM_AFTER + 2000) ProcessProducer pb) {
+    void processProducer(@Observes @Priority(Interceptor.Priority.PLATFORM_AFTER) ProcessProducer pb) {
         // make sure we also add produced stuff (now we only add beans themself)
         var member = pb.getAnnotatedMember();
         Set<Type> typeClosure = member.getTypeClosure();
@@ -154,13 +164,16 @@ public class ServiceRegistryExtension implements Extension {
 
         for (Type type : typeClosure) {
             this.collectedCdiProducers.add(new CdiProducer(beanType, type, annotations, qualifiers));
+
+            beansAlreadyInCdi.add(new UniqueBean(ResolvedType.create(type), qualifiers));
         }
     }
 
     /*
-    This must be done as early as possible,
+    We must handle all synthetic beans created as part of other extensions in after bean discovery,
+    so we must do this late
      */
-    void crossRegisterBeans(@Observes @Priority(Interceptor.Priority.PLATFORM_BEFORE) AfterBeanDiscovery abd, BeanManager bm) {
+    void crossRegisterBeans(@Observes @Priority(Interceptor.Priority.PLATFORM_AFTER + 2000) AfterBeanDiscovery abd, BeanManager bm) {
         registryPending = false;
 
         var registry = GlobalServiceRegistry.registry();
@@ -184,9 +197,7 @@ public class ServiceRegistryExtension implements Extension {
             }
             addServiceInfo(abd, bm, registry, processedTypes, service);
         }
-    }
 
-    void afterBeanDiscovery(@Observes AfterBeanDiscovery abd) {
         // add support for injecting the service registry itself into CDI beans
         abd.addBean()
                 .id("helidon-service-registry")
@@ -459,6 +470,12 @@ public class ServiceRegistryExtension implements Extension {
             // we need to be sure we register each bean only once
             CdiServiceId id = new CdiServiceId(bean.getBeanClass(), bean.hashCode());
             if (processedBeans.add(id)) {
+                Set<Qualifier> registryQualifiers = findRegistryQualifiers(bean.getQualifiers());
+                Set<Type> types = bean.getTypes();
+                for (Type type : types) {
+                    beansAlreadyInCdi.add(new UniqueBean(ResolvedType.create(type), registryQualifiers));
+                }
+
                 collectedCdiBeans.add(new CdiBean(id, bean, pb.getAnnotated()));
             }
         }
@@ -556,8 +573,13 @@ public class ServiceRegistryExtension implements Extension {
         Set<ResolvedType> usedContracts = new HashSet<>();
         // first collect all contracts that we should advertise for this bean
         for (ResolvedType contract : contracts) {
-            if (!processedTypes.add(new UniqueBean(contract, service.qualifiers()))) {
+            var uniqueBean = new UniqueBean(contract, service.qualifiers());
+            if (!processedTypes.add(uniqueBean)) {
                 // this contract is already advertised by a higher weighted service; CDI only supports one bean
+                continue;
+            }
+            if (beansAlreadyInCdi.contains(uniqueBean)) {
+                // this is already in CDI, we cannot add it again
                 continue;
             }
 
