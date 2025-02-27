@@ -36,7 +36,7 @@ class EventsExample {
     @Service.Singleton
     record MyEventProducer(Event.Emitter<MyEvent> emitter) {
 
-        void emit(String msg) {
+        void produce(String msg) {
             emitter.emit(new MyEvent(msg));
         }
     }
@@ -57,9 +57,9 @@ class EventsExample {
 
     // tag::snippet_4[]
     @Service.Singleton
-    record MyAsyncEmitter(Event.Emitter<MyEvent> emitter) {
+    record MyAsyncProducer(Event.Emitter<MyEvent> emitter) {
 
-        void emit(String msg) {
+        void produce(String msg) {
             CompletionStage<MyEvent> completionStage = emitter.emitAsync(new MyEvent(msg));
             //Do something with the completion stage
         }
@@ -81,7 +81,7 @@ class EventsExample {
     @Service.Singleton
     record MyBlueProducer(@Blue Event.Emitter<String> emitter) {
 
-        void emit(String msg) {
+        void produce(String msg) {
             emitter.emit(msg);
         }
     }

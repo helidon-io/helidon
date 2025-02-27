@@ -555,12 +555,10 @@ While it is not required on interfaces, it will still work correctly if applied 
 If you need to enable interception for classes using delegation, you should make sure about the following:
 
 - The class must have accessible no-arg constructor (at least package local)
-- The class must must be extensible (not final)
+- The class must be extensible (not final)
 - The constructor should have no side effects, as the instance will act only as a wrapper for the delegate
 - All invoked methods must be accessible (at least package local) and non-final
 
-Therefore, using link:{service-registry-base-url}/io/helidon/service/registry/Interception.Delegate.html[`@Interception.Delegate`]
-on the classes can be considered as acknowledgement of the rules above.
 
 [source,java]
 .Delegate used on the class
@@ -611,12 +609,12 @@ A single event can be delivered to zero or more consumers.
 
 Key Terminology:
 
-- *Event Object* – Any object that is sent as an event.
-- *Event Emitter* – A service responsible for emitting events into the event system. Emitters are always generated.
-- *Event Producer* – A service that triggers an event by calling an emitter.
-- *Event Observer* – A service that listens for events, with a method annotated using
+- *<<Event Object>>* – Any object that is sent as an event.
+- *<<Event Emitter>>* – A service responsible for emitting events into the event system. Emitters are always generated.
+- *<<Event Producer>>* – A service that triggers an event by calling an emitter.
+- *<<Event Observer>>* – A service that listens for events, with a method annotated using
 link:{service-registry-base-url}/io/helidon/service/registry/Event.Observer.html[`@Event.Observer`].
-- *Qualified Event* – An event emitted with a qualifier, using an annotation marked with
+- *<<Qualified Events,Qualified Events>>* – An event emitted with a qualifier, using an annotation marked with
 link:{service-registry-base-url}/io/helidon/service/registry/Service.Qualifier.html[`@Service.Qualifier`].
 
 === Event Object
@@ -750,6 +748,11 @@ link:{service-registry-base-url}/io/helidon/service/registry/ServiceRegistry.htm
 link:{service-registry-base-url}/io/helidon/service/registry/GlobalServiceRegistry.html[`GlobalServiceRegistry`]
 ** This shouldn’t be used from the factories or services.
 Intended use is in the `main` methods or when one needs static access.
+** It is also possible to access global service registry via
+link:{service-registry-base-url}/io/helidon/service/registry/Services.html[`Services`]
+static methods. This is the shortcut for accessing the services from the global service registry.
+** In most of the cases, the global service registry is enough (and expected to be used) for a single
+applications. A custom service registry should only be created for specific use cases.
 * Create a new
 link:{service-registry-base-url}/io/helidon/service/registry/ServiceRegistry.html[`ServiceRegistry`]
 instance and search for the desired service.
@@ -757,14 +760,14 @@ instance and search for the desired service.
 link:{service-registry-base-url}/io/helidon/service/registry/ServiceRegistry.html[`ServiceRegistry`]
 instance which is used to create the service instance.
 
-To create a registry instance:
+To create a custom registry and manager instance:
 
 [source,java]
 ----
 include::{sourcedir}/se/inject/ServiceRegistryExample.java[tag=snippet_1, indent=0]
 ----
 
-Keep in mind, that
+Keep in mind, that custom
 link:{service-registry-base-url}/io/helidon/service/registry/ServiceRegistryManager.html[`ServiceRegistryManager`]
 needs to be shut down, once it is not needed.
 [source,java]
@@ -841,8 +844,11 @@ method `shutdown` on the manager must be called to ensure proper termination of 
 
 === RunLevel
 link:{service-registry-base-url}/io/helidon/service/registry/Service.RunLevel.html[`@Service.RunLevel`]
-is the annotation used for specifying the order in which certain services should be created.
+is the annotation used for specifying the steps in which certain services should be started.
 It always starts from the lowest number to the highest.
+It is possible to zero to n services in each run level.
+When more than one service is defined to a specific run level, the order of creation is defined by
+link:{common-javadoc-base-url}/io/helidon/common/Weight.html[`@Weight`].
 
 To start, add the
 link:{service-registry-base-url}/io/helidon/service/registry/Service.RunLevel.html[`@Service.RunLevel`]
@@ -853,7 +859,7 @@ on the service.
 include::{sourcedir}/se/inject/RunLevelExample.java[tag=snippet_1, indent=0]
 ----
 
-For better understanding, we can also add helpful method, which get executed upon service construction.
+For better understanding, we can also add helpful method, which get executed post service construction.
 
 The easiest way for us to use these annotations, is to use `start` method on the
 link:{service-registry-base-url}/io/helidon/service/registry/ServiceRegistryManager.html[`ServiceRegistryManager`].
