@@ -405,6 +405,12 @@ backend:
                   - "oci.adoc"
                   - "hcv.adoc"
                   - "neo4j.adoc"
+              - type: "PAGE"
+                title: "Injection"
+                source: "injection.adoc"
+                glyph:
+                  type: "icon"
+                  value: "colorize"
               - type: "MENU"
                 title: "Metrics"
                 dir: "metrics"

@@ -204,6 +204,13 @@ The definition of a "request" is not enforced by the injection framework
 but aligns with concepts like an HTTP request-response cycle or message consumption in a messaging system.
 
 == Build time
+Helidon injection is compile/build time based injection.
+This provides a significant performance boost since it eliminates the need for reflection or
+dynamic proxying at runtime, resulting in faster startup.
+Additionally, it integrates well with Native Image, making it an efficient choice for high-performance applications.
+
+Because of that it needs to generate all the needed classes at compile time, so it minimizes the need
+of runtime processing.
 To ensure everything works correctly,
 you need to add the following annotation processors to your application's compilation process.
 
@@ -300,10 +307,18 @@ Uses a `String` name to qualify a service.
 Works the same way as `@Service.Named` but uses a class type instead.
 The name that would be used is the fully qualified name of the type.
 
+Both
+link:{service-registry-base-url}/io/helidon/service/registry/Service.Named.html[`@Service.Named`]
+and
+link:{service-registry-base-url}/io/helidon/service/registry/Service.NamedByType.html[`@Service.NamedByType`]
+are interchangeable, so one can combine them.
+To see an example of this see <<Named by the type>> chapter.
+
 === Named service injection
 
 Services can be assigned names, allowing them to be specified by name during injection.
-This ensures that the correct service is injected. To achieve this, we use the @Service.Named annotation.
+This ensures that the correct service is injected. To achieve this, we use the
+link:{service-registry-base-url}/io/helidon/service/registry/Service.Named.html[`@Service.Named`] annotation.
 
 [source,java]
 .Create named services
@@ -407,10 +422,10 @@ However, this approach only works if the contract is an interface and we’re im
 
 These challenges can be addressed by implementing one of the factory interfaces supported by the Helidon Service Registry:
 
-- <<Supplier>>
-- <<ServicesFactory>>
-- <<InjectionPointFactory>>
-- <<QualifiedFactory>>
+- <<Supplier,Supplier>>
+- <<ServicesFactory,ServicesFactory>>
+- <<InjectionPointFactory,InjectionPointFactory>>
+- <<QualifiedFactory,QualifiedFactory>>
 
 === Supplier
 A factory that supplies a single instance (it can also return `Optional<MyContract>`)
@@ -608,10 +623,10 @@ A single event can be delivered to zero or more consumers.
 
 Key Terminology:
 
-- *<<Event Object>>* – Any object that is sent as an event.
-- *<<Event Emitter>>* – Helidon generated service responsible for emitting events into the event system.
-- *<<Event Producer>>* – A service that triggers an event by calling an emitter.
-- *<<Event Observer>>* – A service that listens for events, with a method annotated using
+- *<<Event Object,Event Object>>* – Any object that is sent as an event.
+- *<<Event Emitter,Event Emitter>>* – Helidon generated service responsible for emitting events into the event system.
+- *<<Event Producer,Event Producer>>* – A service that triggers an event by calling an emitter.
+- *<<Event Observer,Event Observer>>* – A service that listens for events, with a method annotated using
 link:{service-registry-base-url}/io/helidon/service/registry/Event.Observer.html[`@Event.Observer`].
 - *<<Qualified Events,Qualified Events>>* – An event emitted with a qualifier, using an annotation marked with
 link:{service-registry-base-url}/io/helidon/service/registry/Service.Qualifier.html[`@Service.Qualifier`].
@@ -734,41 +749,28 @@ include::{sourcedir}/se/inject/EventsExample.java[tag=snippet_5, indent=0]
 
 == Programmatic Lookup
 If you want to use programmatic lookup, there are several ways how to get a
-link:{service-registry-base-url}/io/helidon/service/registry/ServiceRegistry.html[`ServiceRegistry`] instance:
+link:{service-registry-base-url}/io/helidon/service/registry/ServiceRegistry.html[`ServiceRegistry`] instance.
 
-* Get the global
-link:{service-registry-base-url}/io/helidon/service/registry/ServiceRegistry.html[`ServiceRegistry`] via
+We can either get the global one or create a custom one (more advanced use case).
+In most of the cases, the global service registry is enough (and expected to be used) for a single
+applications.
+A custom service registry should only be created for specific use cases.
+
+To get the global
+link:{service-registry-base-url}/io/helidon/service/registry/ServiceRegistry.html[`ServiceRegistry`]
+we need to use
 link:{service-registry-base-url}/io/helidon/service/registry/GlobalServiceRegistry.html[`GlobalServiceRegistry`]
-** This shouldn’t be used from the factories or services.
-Intended use is in the `main` methods or when one needs static access.
-** It is also possible to access global service registry via
+and select `registry` method.
+
+However, it is also possible to access global service registry via
 link:{service-registry-base-url}/io/helidon/service/registry/Services.html[`Services`]
-static methods. This is the shortcut for accessing the services from the global service registry.
-** In most of the cases, the global service registry is enough (and expected to be used) for a single
-applications. A custom service registry should only be created for specific use cases.
-* Create a new
-link:{service-registry-base-url}/io/helidon/service/registry/ServiceRegistry.html[`ServiceRegistry`]
-instance and search for the desired service.
-* Inject the
-link:{service-registry-base-url}/io/helidon/service/registry/ServiceRegistry.html[`ServiceRegistry`]
-instance which is used to create the service instance.
+static methods.
+This is the shortcut for accessing the services from the global service registry.
+Global service registry shouldn’t be used from the factories or services.
+Intended use is in the `main` methods or when one needs static access.
 
-To create a custom registry and manager instance:
-
-[source,java]
-----
-include::{sourcedir}/se/inject/ServiceRegistryExample.java[tag=snippet_1, indent=0]
-----
-
-Keep in mind, that custom
-link:{service-registry-base-url}/io/helidon/service/registry/ServiceRegistryManager.html[`ServiceRegistryManager`]
-must be shut down, once it is not needed.
-[source,java]
-----
-include::{sourcedir}/se/inject/ServiceRegistryExample.java[tag=snippet_2, indent=0]
-----
-
-Note that all instances are created lazily, meaning the service registry does nothing by default.
+Note that all instances in the registry are created lazily,
+meaning the service registry does nothing by default.
 If a service performs any actions during construction or post-construction,
 you must first retrieve an instance from the registry to trigger its initialization.
 
@@ -785,8 +787,37 @@ available
 Lookup parameter options:
 
 - `Class<?>` - the contract we’re looking for
-- `TypeName` - the same, but using Helidon abstraction of type names (may have type arguments)
-- `Lookup` - a full search criteria for a registry lookup
+- link:{types-javadoc-base-url}/io/helidon/common/types/TypeName.html[`TypeName`] -
+the same, but using Helidon abstraction of type names (may have type arguments)
+- link:{service-registry-base-url}/io/helidon/service/registry/Lookup.html[`Lookup`] -
+a full search criteria for a registry lookup
+
+=== Service registry injection
+It is also possible to inject
+link:{service-registry-base-url}/io/helidon/service/registry/ServiceRegistry.html[`ServiceRegistry`].
+Keep in mind that when injected, the provided instance will be the same one,
+which is used to create the service instance.
+
+=== Custom service registry
+It is possible to create custom
+link:{service-registry-base-url}/io/helidon/service/registry/ServiceRegistry.html[`ServiceRegistry`]
+instance.
+Keep in mind, this whole process is advanced and should be used only when you know what you are doing.
+
+To create a custom registry and manager instance:
+
+[source,java]
+----
+include::{sourcedir}/se/inject/ServiceRegistryExample.java[tag=snippet_1, indent=0]
+----
+
+Keep in mind, that custom
+link:{service-registry-base-url}/io/helidon/service/registry/ServiceRegistryManager.html[`ServiceRegistryManager`]
+must be shut down, once it is not needed.
+[source,java]
+----
+include::{sourcedir}/se/inject/ServiceRegistryExample.java[tag=snippet_2, indent=0]
+----
 
 == Startup
 
@@ -805,8 +836,8 @@ annotation (i.e. `start(ApplicationBinding.create())`)
 if used, remember to set discovery to `false` to prevent automated discovery from the classpath
 
 All options to start a Helidon application that uses service registry:
-
-- A custom Main method using `ServiceRegistryManager.start(...)` methods, or `ServiceRegistryManager.create(...)` methods
+// Can be commented out once the PR https://github.com/helidon-io/helidon/pull/9840 is merged
+// - A custom Main method using `ServiceRegistryManager.start(...)` methods, or `ServiceRegistryManager.create(...)` methods
 - A generated `ApplicationMain` - optional feature of the Maven plugin, requires property `generateMain` to be set to `true`.
 It uses link:{service-registry-base-url}/io/helidon/service/registry/Service.RunLevel.html[`@Service.RunLevel`] actively,
 but via code generated classes -> See <<RunLevel,RunLevel>> for more information.

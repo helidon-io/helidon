@@ -81,7 +81,7 @@ Expose health statuses of your applications.
 //Injection
 [CARD]
 .Injection
-[icon=message,link=injection.adoc]
+[icon=colorize,link=injection.adoc]
 --
 Use of the Helidon injection in your applications.
 --

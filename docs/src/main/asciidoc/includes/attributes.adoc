@@ -233,6 +233,7 @@ endif::[]
 :telemetry-javadoc-base-url: {javadoc-base-url}/io.helidon.microprofile.telemetry
 :tracing-javadoc-base-url: {javadoc-base-url}/io.helidon.tracing
 :tracing-otel-provider-javadoc-base-url: {javadoc-base-url}/io.helidon.tracing.providers.opentelemetry
+:types-javadoc-base-url: {javadoc-base-url}/io.helidon.common.types
 
 :webclient-javadoc-base-url: {javadoc-base-url}/io.helidon.webclient
 :webserver-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver
