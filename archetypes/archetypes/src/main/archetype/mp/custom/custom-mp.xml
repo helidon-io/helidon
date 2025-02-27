@@ -67,7 +67,8 @@
                 .get(JsonObject.class);
         assertThat(jsonObject.getString("message"), is("Hello World!"));
     }
-                ]]></value>
+]]>
+                </value>
             </list>
             <list key="MainTest-methods" if="['jsonb', 'jackson'] contains ${media.json-lib}">
                 <value><![CDATA[
@@ -79,7 +80,8 @@
                 .get(Message.class);
         assertThat(message.getMessage(), is("Hello World!"));
     }
-                ]]></value>
+]]>
+                </value>
             </list>
             <list key="dependencies">
                 <map order="1000">

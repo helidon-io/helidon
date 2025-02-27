@@ -50,7 +50,8 @@ This example demonstrates integration with OIDC (Open ID Connect) providers.
 
 To configure it, you need to replace the default values from configuration
 to your tenant and application configuration.
-]]></value>
+]]>
+                        </value>
                     </list>
                 </model>
             </output>
@@ -86,6 +87,12 @@ to your tenant and application configuration.
                 <model>
                     <list key="providers-config-entries">
                         <value file="files/application.google.yaml"/>
+                    </list>
+                    <list key="paths-config-entries">
+                        <value><![CDATA[      - path: "/rest/profile"
+        methods: ["get"]
+        authenticate: true]]>
+                        </value>
                     </list>
                 </model>
             </output>
@@ -123,9 +130,10 @@ to your tenant and application configuration.
                 </map>
             </list>
             <list key="paths-config-entries">
-                <value><![CDATA[    - path: "/simple-greet"
-      methods: ["get"]
-      authenticate: true]]></value>
+                <value><![CDATA[      - path: "/simple-greet"
+        methods: ["get"]
+        authenticate: true]]>
+                </value>
             </list>
         </model>
     </output>

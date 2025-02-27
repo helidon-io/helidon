@@ -1,16 +1,16 @@
-  - oidc:
-      # use a custom name, so it does not clash with other examples
-      cookie-name: "OIDC_EXAMPLE_COOKIE"
-      # support for "Authorization" header with bearer token
-      header-use: true
-      # the default redirect-uri, where the webserver listens on redirects from identity server
-      redirect-uri: "/oidc/redirect"
-      issuer: "https://tenant.some-server.com/oauth2/default"
-      audience: "configured audience"
-      client-id: "some client id"
-      client-secret: "some client secret"
-      identity-uri: "https://tenant.some-server.com/oauth2/default"
-      frontend-uri: "http://localhost:7987"
-      server-type: "@default"
-      # We want to redirect to login page (and token can be received either through cookie or header)
-      redirect: true
+    - oidc:
+        # use a custom name, so it does not clash with other examples
+        cookie-name: "OIDC_EXAMPLE_COOKIE"
+        # support for "Authorization" header with bearer token
+        header-use: true
+        # the default redirect-uri, where the webserver listens on redirects from identity server
+        redirect-uri: "/oidc/redirect"
+        issuer: "https://tenant.some-server.com/oauth2/default"
+        audience: "configured audience"
+        client-id: "some client id"
+        client-secret: "some client secret"
+        identity-uri: "https://tenant.some-server.com/oauth2/default"
+        frontend-uri: "http://localhost:7987"
+        server-type: "@default"
+        # We want to redirect to login page (and token can be received either through cookie or header)
+        redirect: true
