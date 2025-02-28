@@ -74,6 +74,8 @@ endif::[]
 :version-lib-jakarta-inject: 2.0
 
 // 3rd party
+:version-lib-eureka: 2.0.4
+:version-lib-eureka-client: {version-lib-eureka}
 :version-lib-jaeger: 1.22
 :version-lib-hikaricp: 5.0.1
 :version-lib-eclipselink: 4.0.2
@@ -206,6 +208,7 @@ endif::[]
 :grpc-server-javadoc-base-url: {javadoc-base-url}/io.helidon.webserver.grpc
 :health-javadoc-base-url: {javadoc-base-url}/io.helidon.health.checks
 :http-javadoc-base-url: {javadoc-base-url}/io.helidon.http
+:integration-eureka-javadoc-base-url: {javadoc-base-url}/io.helidon.integrations.eureka
 :integration-oci-sdk-cdi-javadoc-base-url: {javadoc-base-url}/io.helidon.integrations.oci.sdk.cdi
 :media-jsonp-javadoc-base-url: {javadoc-base-url}/io.helidon.http.media.jsonp
 :media-jsonb-javadoc-base-url: {javadoc-base-url}/io.helidon.http.media.jsonb
@@ -251,6 +254,7 @@ endif::[]
 :faulttolerance-javadoc-base-url: {javadoc-base-url}/io.helidon.faulttolerance
 
 // 3rd party versioned URLs
+:eureka-client-javadoc-base-url: {javadoc-io-base-url}/com.netflix.eureka/eureka-client/{version-lib-eureka-client}
 :jaeger-doc-base-url: https://www.jaegertracing.io/docs/{version-lib-jaeger}
 :hikaricp-base-url: https://github.com/brettwooldridge/HikariCP/blob/HikariCP-{version-lib-hikaricp}
 :hikaricp-javadoc-url: {javadoc-io-base-url}/com.zaxxer/HikariCP/{version-lib-hikaricp}

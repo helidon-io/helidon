@@ -45,6 +45,7 @@
         <module>crac</module>
         <module>graal</module>
         <module>db</module>
+        <module>eureka</module>
         <module>jdbc</module>
         <module>jta</module>
         <module>micronaut</module>

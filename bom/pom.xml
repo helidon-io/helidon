@@ -914,6 +914,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.integrations.eureka</groupId>
+                <artifactId>helidon-integrations-eureka</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.integrations.jdbc</groupId>
                 <artifactId>helidon-integrations-jdbc</artifactId>
                 <version>${helidon.version}</version>

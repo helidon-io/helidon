@@ -37,6 +37,7 @@
     <modules>
         <module>config</module>
         <module>dbclient</module>
+        <module>eureka</module>
         <module>harness</module>
         <module>health</module>
         <module>jep290</module>
