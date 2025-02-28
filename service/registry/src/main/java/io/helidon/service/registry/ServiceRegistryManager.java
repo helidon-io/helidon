@@ -156,6 +156,11 @@ public final class ServiceRegistryManager {
                 .update(binding::configure)
                 .build();
 
+        if (binding instanceof EmptyBinding) {
+            // we must make sure we start everything correctly when using empty binding
+            return start(config);
+        }
+
         ServiceRegistryManager manager = create(config);
         return boundManager(binding, config, manager);
     }
@@ -579,18 +584,9 @@ public final class ServiceRegistryManager {
         }
     }
 
-    private static class NoOpBinding implements Binding {
-        @Override
-        public String name() {
-            return "no-op";
-        }
-
-        @Override
-        public void binding(DependencyPlanBinder binder) {
-        }
-
-        @Override
-        public void configure(ServiceRegistryConfig.Builder builder) {
+    private static class NoOpBinding extends EmptyBinding {
+        protected NoOpBinding() {
+            super("no-op");
         }
     }
 }

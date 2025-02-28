@@ -17,10 +17,13 @@
 package io.helidon.service.registry;
 
 /**
- * An empty binding that re-enables service discovery and configures nothing.
+ * An empty binding that configures nothing.
  * <p>
  * This is used as a base class for bindings generated during annotation processing, to be later replaced by
  * the {@code helidon-service-maven-plugin}.
+ * <p>
+ * Do not extend this class for custom binding implementations, as it will be ignored by some components,
+ * as any instance that is an instance of this class will have special handling.
  */
 public class EmptyBinding implements Binding {
     private static final System.Logger LOGGER = System.getLogger(EmptyBinding.class.getName());
