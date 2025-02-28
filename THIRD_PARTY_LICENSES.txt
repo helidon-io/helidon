@@ -9406,6 +9406,99 @@ Fourth Party Dependencies
   Apache License Version 2.0
 --------------------------------------------
 
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+LangChain4j (dev.langchain4j:langchain4j-*)
+Apache 2.0
+Used by: [helidon-integrations-langchain4j-*]
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+LangChain4j (dev.langchain4j:langchain4j-*)
+--------------------------------------------
+See full text at the bottom of this document for license: Apache-2.0
+--------------------------------------------
+"SLF4J API Module" (org.slf4j:slf4j-api)
+  MIT License
+  Copyright (c) 2004-2022 QOS.ch
+--------------------------------------------
+The MIT License SPDX short identifier: MIT
+
+Further resources on the MIT License Copyright <YEAR> <COPYRIGHT HOLDER>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+--------------------------------------------
+"Gson" (com.google.code.gson:gson)
+  Apache-2.0
+  Copyright (C) 2017,2018 The Gson authors
+  Copyright (C) 2008,2021 Google Inc.
+  Copyright (C) 2010 The Android Open Source Project
+--------------------------------------------
+"Retrofit" (com.squareup.retrofit2:retrofit)
+  The Apache Software License, Version 2.0
+  Copyright (C) 2011,2019 Square, Inc.
+  Copyright (C) 2008 Google Inc.
+--------------------------------------------
+"Converter: Jackson" (com.squareup.retrofit2:converter-jackson)
+  The Apache Software License, Version 2.0
+  Copyright (C) 2015 Square, Inc.
+--------------------------------------------
+"Jackson-annotations" (com.fasterxml.jackson.core:jackson-annotations)
+"Jackson-core" (com.fasterxml.jackson.core:jackson-core)
+"jackson-databind" (com.fasterxml.jackson.core:jackson-databind)
+  The Apache Software License, Version 2.0
+  Copyright (c) 2007- Tatu Saloranta, tatu.saloranta@iki.fi
+  Copyright 2010,2011 Google Inc. All Rights Re
+--------------------------------------------
+"okhttp" (com.squareup.okhttp3:okhttp)
+  The Apache Software License, Version 2.0
+--------------------------------------------
+"okio" (com.squareup.okio:okio)
+  The Apache Software License, Version 2.0
+--------------------------------------------
+"okio" (com.squareup.okio:okio-jvm)
+  The Apache Software License, Version 2.0
+--------------------------------------------
+"Kotlin Stdlib Jdk8" (org.jetbrains.kotlin:kotlin-stdlib-jdk8)
+  The Apache License, Version 2.0
+--------------------------------------------
+"Kotlin Stdlib" (org.jetbrains.kotlin:kotlin-stdlib)
+  The Apache License, Version 2.0
+  Copyright 2010-2021 JetBrains s.r.o. and Kotlin Programming Language contributors.
+--------------------------------------------
+"Kotlin Stdlib Common" (org.jetbrains.kotlin:kotlin-stdlib-common)
+  The Apache License, Version 2.0
+--------------------------------------------
+"IntelliJ IDEA Annotations" (org.jetbrains:annotations)
+  The Apache Software License, Version 2.0
+  Copyright 2000-2013 JetBrains s.r.o.
+  Copyright 2006 Sascha Weinreuter
+--------------------------------------------
+"Kotlin Stdlib Jdk7" (org.jetbrains.kotlin:kotlin-stdlib-jdk7)
+  The Apache License, Version 2.0
+--------------------------------------------
+"Java Client for OpenAI (ChatGPT)" (dev.ai4j:openai4j)
+  Apache-2.0
+--------------------------------------------
+"Apache OpenNLP Tools" (org.apache.opennlp:opennlp-tools)
+  Apache License, Version 2.0
+  Copyright (c) 2001, Dr Martin Porter
+  Copyright (c) 2002, Richard Boulton
+  Copyright (c) 2010, ISOCO
+  Copyright (c) 2010, Israel Olalla
+--------------------------------------------
 
 =======================================================================
 Full Text of Referenced Licenses
