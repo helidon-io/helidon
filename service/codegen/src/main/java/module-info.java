@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,8 @@ module io.helidon.service.codegen {
     uses io.helidon.service.codegen.spi.InjectAssignmentProvider;
 
     provides io.helidon.codegen.spi.CodegenExtensionProvider
-            with io.helidon.service.codegen.ServiceRegistryCodegenProvider;
+            with io.helidon.service.codegen.ServiceRegistryCodegenProvider,
+                    io.helidon.service.codegen.ServiceBindingCodegenProvider;
     provides io.helidon.service.codegen.spi.RegistryCodegenExtensionProvider
             with io.helidon.service.codegen.ServiceExtensionProvider,
                     io.helidon.service.codegen.EventObserverExtensionProvider;

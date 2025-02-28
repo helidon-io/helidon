@@ -37,6 +37,7 @@ import io.helidon.service.registry.Dependency;
 import io.helidon.service.registry.DependencyCardinality;
 import io.helidon.service.registry.DependencyContext;
 import io.helidon.service.registry.DependencyPlanBinder;
+import io.helidon.service.registry.EmptyBinding;
 import io.helidon.service.registry.Event;
 import io.helidon.service.registry.EventManager;
 import io.helidon.service.registry.FactoryType;
@@ -94,6 +95,7 @@ class ServiceCodegenTypesTest {
         checkField(toCheck, checked, fields, "SERVICE_ANNOTATION_CONTRACT", Service.Contract.class);
         checkField(toCheck, checked, fields, "SERVICE_ANNOTATION_EXTERNAL_CONTRACTS", Service.ExternalContracts.class);
         checkField(toCheck, checked, fields, "SERVICE_ANNOTATION_DESCRIPTOR", Service.Descriptor.class);
+        checkField(toCheck, checked, fields, "SERVICE_ANNOTATION_GENERATE_BINDING", Service.GenerateBinding.class);
         checkField(toCheck, checked, fields, "SERVICE_DEPENDENCY", Dependency.class);
         checkField(toCheck, checked, fields, "SERVICE_DEPENDENCY_CONTEXT", DependencyContext.class);
         checkField(toCheck, checked, fields, "SERVICE_DESCRIPTOR", ServiceDescriptor.class);
@@ -137,6 +139,7 @@ class ServiceCodegenTypesTest {
         checkField(toCheck, checked, fields, "SERVICE_QUALIFIER", Qualifier.class);
         checkField(toCheck, checked, fields, "SERVICE_SERVICE_INSTANCE", ServiceInstance.class);
         checkField(toCheck, checked, fields, "SERVICE_BINDING", Binding.class);
+        checkField(toCheck, checked, fields, "SERVICE_BINDING_EMPTY", EmptyBinding.class);
         checkField(toCheck, checked, fields, "SERVICE_PLAN_BINDER", DependencyPlanBinder.class);
 
         // api.* interception types

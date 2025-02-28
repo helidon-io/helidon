@@ -101,6 +101,11 @@ public final class ServiceCodegenTypes {
     public static final TypeName SERVICE_ANNOTATION_EXTERNAL_CONTRACTS = TypeName.create("io.helidon.service.registry.Service"
                                                                                                  + ".ExternalContracts");
     /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Service.GenerateBinding}.
+     */
+    public static final TypeName SERVICE_ANNOTATION_GENERATE_BINDING =
+            TypeName.create("io.helidon.service.registry.Service.GenerateBinding");
+    /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Service.Descriptor}.
      */
     public static final TypeName SERVICE_ANNOTATION_DESCRIPTOR =
@@ -155,6 +160,11 @@ public final class ServiceCodegenTypes {
      */
     public static final TypeName SERVICE_BINDING =
             TypeName.create("io.helidon.service.registry.Binding");
+    /**
+     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.EmptyBinding}.
+     */
+    public static final TypeName SERVICE_BINDING_EMPTY =
+            TypeName.create("io.helidon.service.registry.EmptyBinding");
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.DependencyPlanBinder}.
      */
