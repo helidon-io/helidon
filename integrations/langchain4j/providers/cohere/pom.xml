@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.integrations.langchain4j.providers</groupId>
         <artifactId>helidon-integrations-langchain4j-providers-project</artifactId>
-        <version>4.2.0-SNAPSHOT</version>
+        <version>4.2.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
