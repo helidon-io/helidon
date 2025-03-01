@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -277,6 +277,18 @@ final class MySQLSimpleRemoteTestIT extends MySQLRemoteTest implements SimpleTes
     @Test
     @Override
     public void testInsertOrderArgs() {
+        remoteTest();
+    }
+
+    @Test
+    @Override
+    public void testInsertNamedArgsReturnedKeys() {
+        remoteTest();
+    }
+
+    @Test
+    @Override
+    public void testInsertNamedArgsReturnedColumns() {
         remoteTest();
     }
 
