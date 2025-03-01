@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Tests {@link io.helidon.config.FileSystemWatcher}.
  */
-@Disabled //TODO tests are still TOO slow to be unit tests -> refactor it to run much quicker
 public class FileSystemWatcherTest {
     private static final String WATCHED_FILE = "watched-file.yaml";
 
@@ -104,6 +103,7 @@ public class FileSystemWatcherTest {
         assertThat(watchedFileLatch.await(40, TimeUnit.SECONDS), is(true));
     }
 
+    @Disabled //TODO test is still TOO slow to be unit test -> refactor it to run much quicker
     @Test
     public void testPollingSymLink() throws InterruptedException, IOException {
         CountDownLatch firstEventLatch = new CountDownLatch(1);
