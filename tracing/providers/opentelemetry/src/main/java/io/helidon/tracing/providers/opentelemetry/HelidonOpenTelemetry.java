@@ -212,7 +212,7 @@ public final class HelidonOpenTelemetry {
          * @param config Configuration
          * @return boolean
          */
-        public static boolean isAgentPresent(Config config) {
+        public static boolean isAgentPresent(io.helidon.common.config.Config config) {
 
             //Explicitly check if agent property is set
             if (config != null) {

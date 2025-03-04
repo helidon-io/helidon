@@ -31,8 +31,9 @@ module io.helidon.tracing.providers.opentelemetry {
     requires transitive io.helidon.tracing;
     requires transitive io.opentelemetry.api;
     requires io.opentelemetry.exporter.otlp;
-    requires io.opentelemetry.exporter.logging.otlp;
     requires io.helidon.common.configurable;
+    requires io.helidon.common.context;
+    requires io.opentelemetry.exporter.internal;
 
     exports io.helidon.tracing.providers.opentelemetry;
 
