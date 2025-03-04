@@ -692,7 +692,7 @@ public class OpenTelemetryTracerBuilder implements TracerBuilder<OpenTelemetryTr
 
         static ExporterProtocol create(String protocol) {
             for (ExporterProtocol exporterProtocol : ExporterProtocol.values()) {
-                if (exporterProtocol.protocol.equals(protocol)) {
+                if (exporterProtocol.protocol.equals(protocol) || exporterProtocol.name().equals(protocol)) {
                     return exporterProtocol;
                 }
             }
@@ -749,7 +749,7 @@ public class OpenTelemetryTracerBuilder implements TracerBuilder<OpenTelemetryTr
 
         static PropagationFormat create(String value) {
             for (PropagationFormat propagationFormat : PropagationFormat.values()) {
-                if (propagationFormat.format.equals(value)) {
+                if (propagationFormat.format.equals(value) || propagationFormat.name().equals(value)) {
                     return propagationFormat;
                 }
             }
@@ -815,7 +815,7 @@ public class OpenTelemetryTracerBuilder implements TracerBuilder<OpenTelemetryTr
 
         static SamplerType create(String value) {
             for (SamplerType samplerType : SamplerType.values()) {
-                if (samplerType.config.equals(value)) {
+                if (samplerType.config.equals(value) || samplerType.name().equals(value)) {
                     return samplerType;
                 }
             }
@@ -845,7 +845,14 @@ public class OpenTelemetryTracerBuilder implements TracerBuilder<OpenTelemetryTr
 
         static final String DEFAULT_STRING = "batch";
         static SpanProcessorType create(String value) {
-            return SpanProcessorType.valueOf(value.toUpperCase(Locale.ROOT));
+            for (SpanProcessorType spanProcessorType : SpanProcessorType.values()) {
+                if (spanProcessorType.processorType.equals(value) || spanProcessorType.name().equals(value)) {
+                    return spanProcessorType;
+                }
+            }
+            throw new IllegalArgumentException("Unknown span processor type: " + value + "; expected one of "
+                                                       + Arrays.toString(SpanProcessorType.values()));
+
         }
     }
 }
