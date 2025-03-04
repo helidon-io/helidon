@@ -50,11 +50,28 @@
         </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-sdk-trace</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-semconv</artifactId>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-extension-trace-propagators</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-metadata</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
@@ -64,18 +81,14 @@
         </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-sdk</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-sdk-extension-autoconfigure</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-otlp</artifactId>
-            <scope>test</scope>
+            <scope>provided</scope>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.testing</groupId>
@@ -103,6 +116,24 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>io.helidon.codegen</groupId>
+                            <artifactId>helidon-codegen-apt</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.config.metadata</groupId>
+                            <artifactId>helidon-config-metadata-codegen</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <properties>
@@ -118,6 +149,9 @@
                             <excludes>
                                 <exclude>**/TestGlobalTracerAssignment.java</exclude>
                             </excludes>
+                            <systemPropertyVariables>
+                                <otel.java.global-autoconfigure.enabled>true</otel.java.global-autoconfigure.enabled>
+                            </systemPropertyVariables>
                         </configuration>
                     </execution>
                     <execution>
@@ -129,6 +163,20 @@
                             <includes>
                                 <include>**/TestGlobalTracerAssignment.java</include>
                             </includes>
+                            <systemPropertyVariables>
+                                <otel.java.global-autoconfigure.enabled>true</otel.java.global-autoconfigure.enabled>
+                            </systemPropertyVariables>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>tests-without-otel-autoconfigure</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <excludes>
+                                <exclude>**/TestGlobalTracerAssignment.java</exclude>
+                            </excludes>
                         </configuration>
                     </execution>
                 </executions>
