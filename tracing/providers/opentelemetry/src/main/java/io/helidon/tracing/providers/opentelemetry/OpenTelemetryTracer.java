@@ -111,6 +111,12 @@ class OpenTelemetryTracer implements Tracer {
         return this;
     }
 
+    @Override
+    public Tracer unregister(SpanListener listener) {
+        spanListeners.remove(listener);
+        return this;
+    }
+
     List<SpanListener> spanListeners() {
         return Collections.unmodifiableList(spanListeners);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ import io.helidon.tracing.TracerBuilder;
 
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -61,6 +62,10 @@ class TestSpanCallbacks {
 
     private static List<Logger> strongLoggers = new ArrayList<>();
 
+    // Each test reuses these fields to simplify post-test clean-up.
+    private Tracer tracer;
+    private SpanListener spanListener;
+
     @BeforeAll
     static void setup() {
         tracerBuilder = TracerBuilder.create("spanCallbackTracer");
@@ -70,6 +75,14 @@ class TestSpanCallbacks {
     @AfterAll
     static void cleanup() {
         strongLoggers.clear();
+    }
+
+    @AfterEach
+    void clear() {
+        if (spanListener != null) {
+            tracer.unregister(spanListener);
+            spanListener = null;
+        }
     }
 
     @Test
@@ -94,15 +107,15 @@ class TestSpanCallbacks {
 
     @Test
     void checkRejectBeforeStart() {
-        SpanListener l1 = new SpanListener() {
+        spanListener = new SpanListener() {
             @Override
             public void starting(Span.Builder<?> spanBuilder) throws SpanListener.ForbiddenOperationException {
                 spanBuilder.start();
             }
         };
 
-        Tracer tracer = tracerBuilder.build();
-        tracer.register(l1);
+        tracer = tracerBuilder.build();
+        tracer.register(spanListener);
         Span.Builder<?> spanBuilder = tracer.spanBuilder("rejectBeforeStart");
 
         checkForUnsupported(spanBuilder, () -> spanBuilder.start());
@@ -110,15 +123,15 @@ class TestSpanCallbacks {
 
     @Test
     void checkRejectAfterStart() {
-        SpanListener l1 = new SpanListener() {
+        spanListener = new SpanListener() {
             @Override
             public void started(Span span) throws SpanListener.ForbiddenOperationException {
                 span.end();
             }
         };
 
-        Tracer tracer = tracerBuilder.build();
-        tracer.register(l1);
+        tracer = tracerBuilder.build();
+        tracer.register(spanListener);
         Span.Builder<?> spanBuilder = tracer.spanBuilder("rejectAfterStart");
 
         checkForUnsupported(spanBuilder, spanBuilder::build);
@@ -126,15 +139,15 @@ class TestSpanCallbacks {
 
     @Test
     void checkRejectAfterActivateEndSpan() {
-        SpanListener l1 = new SpanListener() {
+        spanListener = new SpanListener() {
             @Override
             public void activated(Span span, Scope scope) throws SpanListener.ForbiddenOperationException {
                 span.end();
             }
         };
 
-        Tracer tracer = tracerBuilder.build();
-        tracer.register(l1);
+        tracer = tracerBuilder.build();
+        tracer.register(spanListener);
         Span.Builder<?> spanBuilder = tracer.spanBuilder("rejectAfterActivateSpan");
         Span span = spanBuilder.start();
         try (Scope scope = checkForUnsupported(span, span::activate)) {
@@ -144,15 +157,15 @@ class TestSpanCallbacks {
 
     @Test
     void checkRejectAfterCloseSpan() {
-        SpanListener l1 = new SpanListener() {
+        spanListener = new SpanListener() {
             @Override
             public void closed(Span span, Scope scope) throws SpanListener.ForbiddenOperationException {
                 span.end();
             }
         };
 
-        Tracer tracer = tracerBuilder.build();
-        tracer.register(l1);
+        tracer = tracerBuilder.build();
+        tracer.register(spanListener);
         Span.Builder<?> spanBuilder = tracer.spanBuilder("rejectAfterCloseSpan");
         Span span = spanBuilder.start();
 
@@ -163,15 +176,15 @@ class TestSpanCallbacks {
 
     @Test
     void checkRejectAfterCloseScope() {
-        SpanListener l1 = new SpanListener() {
+        spanListener = new SpanListener() {
             @Override
             public void activated(Span span, Scope scope) throws SpanListener.ForbiddenOperationException {
                 scope.close();
             }
         };
 
-        Tracer tracer = tracerBuilder.build();
-        tracer.register(l1);
+        tracer = tracerBuilder.build();
+        tracer.register(spanListener);
         Span.Builder<?> spanBuilder = tracer.spanBuilder("rejectAfterCloseScope");
         Span span = spanBuilder.start();
 
@@ -182,15 +195,15 @@ class TestSpanCallbacks {
 
     @Test
     void checkRejectAfterEndOk() {
-        SpanListener l1 = new SpanListener() {
+        spanListener = new SpanListener() {
             @Override
             public void ended(Span span) throws SpanListener.ForbiddenOperationException {
                 span.end();
             }
         };
 
-        Tracer tracer = tracerBuilder.build();
-        tracer.register(l1);
+        tracer = tracerBuilder.build();
+        tracer.register(spanListener);
         Span.Builder<?> spanBuilder = tracer.spanBuilder("rejectAfterEndOk");
         Span span = spanBuilder.start();
 
@@ -200,15 +213,15 @@ class TestSpanCallbacks {
 
     @Test
     void checkRejectAfterEndBad() {
-        SpanListener l1 = new SpanListener() {
+        spanListener = new SpanListener() {
             @Override
             public void ended(Span span, Throwable t) throws SpanListener.ForbiddenOperationException {
                 span.end(new Throwable());
             }
         };
 
-        Tracer tracer = tracerBuilder.build();
-        tracer.register(l1);
+        tracer = tracerBuilder.build();
+        tracer.register(spanListener);
         Span.Builder<?> spanBuilder = tracer.spanBuilder("rejectAfterEndBad");
         Span span = spanBuilder.start();
         checkForUnsupported(span, () -> span.end(new Throwable()));
@@ -262,11 +275,11 @@ class TestSpanCallbacks {
                                    Matcher<Map<? extends String, ?>> spanAutoEndBadMatcher,
                                    Consumer<Span> spanEnder) {
         Map<String, Object> listenerInfo = new HashMap<>();
-        TestListener listener = new TestListener(listenerInfo);
+        spanListener = new TestListener(listenerInfo);
 
-        Tracer tracer = tracerBuilder.build();
+        tracer = tracerBuilder.build();
 
-        tracer.register(listener);
+        tracer.register(spanListener);
         String spanName = "checkSpanStartEnd";
         Span.Builder<?> spanBuilder = tracer.spanBuilder(spanName);
         Span span = spanBuilder.start();

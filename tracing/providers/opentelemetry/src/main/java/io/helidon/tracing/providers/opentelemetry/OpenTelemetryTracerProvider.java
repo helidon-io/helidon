@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.tracing.providers.opentelemetry;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -58,8 +59,19 @@ public class OpenTelemetryTracerProvider implements TracerProvider {
                             LOGGER.log(System.Logger.Level.TRACE, "Global tracer is not registered. Register it through "
                                     + "Tracer.global(HelidonOpenTelemetry.create(ot, tracer). Using global open telemetry");
                         }
-                        OpenTelemetry ot = GlobalOpenTelemetry.get();
-                        return new OpenTelemetryTracer(ot, ot.getTracer("helidon-service"), Map.of());
+
+                        List<String> otelReasonsForUsingAutoConfig = OpenTelemetryTracerBuilder.otelReasonsForUsingAutoConfig();
+                        if (!otelReasonsForUsingAutoConfig.isEmpty()) {
+                            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                                LOGGER.log(System.Logger.Level.TRACE,
+                                           "Using OTel autoconfigure: " + otelReasonsForUsingAutoConfig);
+                            }
+                            OpenTelemetry ot = GlobalOpenTelemetry.get();
+                            return new OpenTelemetryTracer(ot, ot.getTracer("helidon-service"), Map.of());
+                        }
+                        return OpenTelemetryTracer.builder()
+                                .serviceName("helidon-service")
+                                .build();
                     });
         });
     }
