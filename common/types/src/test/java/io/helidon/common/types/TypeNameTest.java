@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static io.helidon.common.types.TypeName.builder;
 import static io.helidon.common.types.TypeName.create;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -489,6 +490,16 @@ class TypeNameTest {
 
         assertThat(f.wildcard(), is(true));
         assertThat(s.wildcard(), is(true));
+    }
+
+    @Test
+    void testInnerClassNoPackageWildcard() {
+        TypeName t = TypeName.create("ServiceRegistryConfig.BuilderBase<?,?>");
+
+        assertThat(t.packageName(), is(""));
+        assertThat(t.className(), is("BuilderBase"));
+        assertThat(t.enclosingNames(), hasItems("ServiceRegistryConfig"));
+        assertThat(t.typeArguments(), hasItems(TypeNames.WILDCARD, TypeNames.WILDCARD));
     }
 
     private static Stream<EqualsData> equalsAndCompareSource() {

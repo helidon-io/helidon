@@ -28,6 +28,9 @@ import jakarta.ws.rs.client.WebTarget;
 import org.assertj.core.api.Condition;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnJre;
+import org.junit.jupiter.api.condition.EnabledOnJre;
+import org.junit.jupiter.api.condition.JRE;
 import org.junit.platform.testkit.engine.EngineTestKit;
 import org.junit.platform.testkit.engine.Event;
 import org.junit.platform.testkit.engine.Events;
@@ -44,6 +47,7 @@ import static org.junit.platform.testkit.engine.TestExecutionResultConditions.me
 class TestPinnedThread {
 
     @Test
+    @EnabledOnJre(JRE.JAVA_21)
     void engineTest() {
         Events events = EngineTestKit.engine("junit-jupiter")
                 .configurationParameter("TestPinnedThread", "true")
@@ -64,6 +68,25 @@ class TestPinnedThread {
                         event(displayClass(PinningTestCase.class), failedWithPinningException("pinningInResourceMethod")),
                         event(displayClass(PinningExtraThreadTestCase.class), failedWithPinningException("lambda$pinningTest$0"))
                 );
+    }
+
+    @Test
+    // disable for Java 21, which pins on synchronized, current "tip" of Java is 24, which is not pinning
+    @DisabledOnJre(JRE.JAVA_21)
+    void engineTestNewJava() {
+        Events events = EngineTestKit.engine("junit-jupiter")
+                .configurationParameter("TestPinnedThread", "true")
+                .selectors(
+                        selectClass(PinningTestCase.class),
+                        selectClass(PinningExtraThreadTestCase.class),
+                        selectClass(NoPinningTestCase.class),
+                        selectClass(NoPinningExtraThreadTestCase.class)
+                )
+                .execute()
+                .containerEvents()
+                .assertStatistics(stats -> stats
+                        .failed(0)
+                        .succeeded(5));
     }
 
     private Condition<Event> failedWithPinningException(String expectedPinningMethodName) {

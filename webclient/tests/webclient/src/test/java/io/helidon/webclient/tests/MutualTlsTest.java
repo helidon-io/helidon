@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,7 +101,12 @@ class MutualTlsTest {
 
         IOException cause = ex.getCause();
         if (cause instanceof SSLHandshakeException) {
-            assertThat(cause.getMessage(), containsString("Received fatal alert: bad_certificate"));
+            // Java 24 returns a different message
+            String message = cause.getMessage();
+            if (!message.contains("Received fatal alert: bad_certificate")
+                    && !message.contains("Received fatal alert: certificate_required")) {
+                fail("Expected a fatal alert for certificate, but got: " + message);
+            }
         } else {
             if (!(cause instanceof SocketException)) {
                 fail("Call must fail with either SSLHandshakeException or SocketException", cause);
@@ -125,7 +130,7 @@ class MutualTlsTest {
         Http1Client clientOne = createWebClient(CONFIG.get("server-cert-invalid-cn"));
 
         RuntimeException ex = assertThrows(RuntimeException.class, () -> exec(clientOne, "https", port));
-        assertThat(ex.getCause().getMessage(), is("No name matching localhost found"));
+        assertThat(ex.getCause().getMessage(), containsString("No name matching localhost found"));
 
         Http1Client webClientTwo = createWebClient(CONFIG.get("client-disable-hostname-verification"));
         assertThat(exec(webClientTwo, "https", port), is("Hello Helidon-client!"));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import io.helidon.webserver.WebServerConfig;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -83,7 +84,7 @@ public class RevocationConfigTest {
         //Exception happens on the server, this connection just fails with HandshakeException
         UncheckedIOException exception = assertThrows(UncheckedIOException.class, this::executeRequest);
         assertThat(exception.getCause(), instanceOf(SSLHandshakeException.class));
-        assertThat(exception.getCause().getMessage(), is("Received fatal alert: certificate_unknown"));
+        assertThat(exception.getCause().getMessage(), containsString("Received fatal alert: certificate_unknown"));
     }
 
     private void executeRequest() {

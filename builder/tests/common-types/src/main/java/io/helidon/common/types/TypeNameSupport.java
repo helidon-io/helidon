@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,10 @@
 
 package io.helidon.common.types;
 
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -198,6 +200,22 @@ final class TypeNameSupport {
             builder.wildcard(true);
             return;
         }
+        if (reflectGenericType instanceof TypeVariable<?> tv) {
+            for (Type bound : tv.getBounds()) {
+                builder.addUpperBound(TypeName.create(bound));
+            }
+
+            builder.className(tv.getName())
+                    .generic(true);
+            return;
+        }
+        if (reflectGenericType instanceof GenericArrayType ga) {
+            TypeName componentType = TypeName.create(ga.getGenericComponentType());
+
+            builder.from(componentType)
+                    .array(true);
+            return;
+        }
 
         throw new IllegalArgumentException("We can only create a type from a class, GenericType, or a ParameterizedType,"
                                                    + " but got: " + reflectGenericType.getClass().getName());
@@ -284,13 +302,9 @@ final class TypeNameSupport {
             className = className.substring(dot + 1);
         }
 
-        if (packageElements.isEmpty()) {
-            return builder.className(typeName)
-                    .build();
-        }
-
         String packageName = String.join(".", packageElements);
         String[] types = className.split("\\.");
+
         return builder.packageName(packageName)
                 .update(it -> {
                     for (int i = 0; i < (types.length - 1); i++) {

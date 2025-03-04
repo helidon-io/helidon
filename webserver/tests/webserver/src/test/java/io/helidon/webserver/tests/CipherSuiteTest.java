@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import io.helidon.webserver.testing.junit5.Socket;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -48,21 +49,23 @@ class CipherSuiteTest {
     private final WebClient invalidClient;
 
     CipherSuiteTest(@Socket("@default") URI defaultUri, @Socket("invalid") URI invalidUri) {
+        // the "valid" algorithm was updated for Java 24, as the previous is no longer valid
+        // the current setup works both in Java 21 and in Java 24
         this.defaultClient = WebClient.builder()
                 .baseUri(defaultUri)
-                .tls(tls -> tls.enabledCipherSuites(List.of("TLS_RSA_WITH_AES_128_GCM_SHA256"))
+                .tls(tls -> tls.enabledCipherSuites(List.of("TLS_DHE_RSA_WITH_AES_256_GCM_SHA384"))
                         .trustAll(true)
                         .endpointIdentificationAlgorithm("NONE"))
                 .build();
         this.invalidClient = WebClient.builder()
                 .baseUri(invalidUri)
-                .tls(tls -> tls.enabledCipherSuites(List.of("TLS_RSA_WITH_AES_128_GCM_SHA256"))
+                .tls(tls -> tls.enabledCipherSuites(List.of("TLS_DHE_RSA_WITH_AES_128_GCM_SHA256"))
                         .trustAll(true)
                         .endpointIdentificationAlgorithm("NONE"))
                 .build();
     }
 
-    private static final String DEFAULT_ENDPOINT = "Allowed cipher: \"TLS_RSA_WITH_AES_128_GCM_SHA256\"";
+    private static final String DEFAULT_ENDPOINT = "Allowed cipher: \"TLS_DHE_RSA_WITH_AES_256_GCM_SHA384\"";
 
     @SetUpServer
     static void setupServer(WebServerConfig.Builder server) {
@@ -89,7 +92,7 @@ class CipherSuiteTest {
     void testInvalidCipherSuite() {
         UncheckedIOException exception = assertThrows(UncheckedIOException.class, () -> invalidClient.get().request());
         assertThat(exception.getCause(), instanceOf(SSLHandshakeException.class));
-        assertThat(exception.getCause().getMessage(), is("Received fatal alert: handshake_failure"));
+        assertThat(exception.getCause().getMessage(), containsString("Received fatal alert: handshake_failure"));
     }
 
 }

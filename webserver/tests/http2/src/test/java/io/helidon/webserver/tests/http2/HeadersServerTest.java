@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,13 +49,13 @@ import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static io.helidon.http.Method.GET;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @ServerTest
 public class HeadersServerTest {
@@ -64,6 +64,13 @@ public class HeadersServerTest {
     private static final String DATA = "Helidon!!!".repeat(10);
     private static final Header TEST_TRAILER_HEADER = HeaderValues.create("test-trailer", "trailer-value");
     private final Http2Client client;
+
+    HeadersServerTest(WebServer server) {
+        client = Http2Client.builder()
+                .baseUri("http://localhost:" + server.port())
+                .protocolConfig(Http2ClientProtocolConfig.builder().priorKnowledge(true).build())
+                .build();
+    }
 
     @SetUpServer
     static void setUpServer(WebServerConfig.Builder serverBuilder) {
@@ -143,13 +150,6 @@ public class HeadersServerTest {
         ));
     }
 
-    HeadersServerTest(WebServer server) {
-        client = Http2Client.builder()
-                .baseUri("http://localhost:" + server.port())
-                .protocolConfig(Http2ClientProtocolConfig.builder().priorKnowledge(true).build())
-                .build();
-    }
-
     @Test
     void serverOutbound(WebServer server) throws IOException, InterruptedException {
         URI base = URI.create("http://localhost:" + server.port());
@@ -203,20 +203,32 @@ public class HeadersServerTest {
     @Test
     void serverInboundTooLarge(WebServer server) throws IOException, InterruptedException {
         URI base = URI.create("http://localhost:" + server.port());
-        HttpClient client = http2Client(base);
+        try (HttpClient client = http2Client(base)) {
 
-        HttpRequest.Builder req = HttpRequest.newBuilder()
-                .timeout(TIMEOUT)
-                .GET();
+            HttpRequest.Builder req = HttpRequest.newBuilder()
+                    .timeout(TIMEOUT)
+                    .GET();
 
-        for (int i = 0; i < 5200; i++) {
-            req.setHeader("test-header-" + i, DATA + i);
+            for (int i = 0; i < 5200; i++) {
+                req.setHeader("test-header-" + i, DATA + i);
+            }
+
+            // There is no way how to access GO_AWAY status code and additional data with JDK Http client
+            try {
+                HttpResponse<String> response = client.send(req.uri(base.resolve("/cont-in")).build(),
+                                                            HttpResponse.BodyHandlers.ofString());
+
+                int status = response.statusCode();
+                // since Java 24, we get a 400 back and not an exception
+                assertThat("IOException or status 400 was expected, but got status " + response.statusCode()
+                                   + ", headers: " + response.headers()
+                                   + ", and response: " + response.body(),
+                           status,
+                           is(400));
+            } catch (IOException e) {
+                // this is expected
+            }
         }
-
-        // There is no way how to access GO_AWAY status code and additional data with JDK Http client
-        Assertions.assertThrows(IOException.class,
-                () -> client.send(req.uri(base.resolve("/cont-in")).build(),
-                        HttpResponse.BodyHandlers.ofString()));
     }
 
     @Test
