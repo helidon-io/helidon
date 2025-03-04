@@ -272,6 +272,16 @@ class ConfigProvider implements Supplier<Config> {
         public io.helidon.common.config.Config get(io.helidon.common.config.Config.Key key) {
             return delegate.get(key);
         }
+
+        @Override
+        public boolean equals(Object obj) {
+            return delegate.equals(obj);
+        }
+
+        @Override
+        public int hashCode() {
+            return delegate.hashCode();
+        }
     }
 
     private static class CommonKeyWrapper implements Config.Key {
@@ -302,115 +312,18 @@ class ConfigProvider implements Supplier<Config> {
         }
 
         @Override
-        public int compareTo(io.helidon.common.config.Config.Key o) {
-            return delegate.compareTo(o);
-        }
-    }
-
-    static class SeConfigValue<T> implements ConfigValue<T> {
-        private final Config.Key key;
-        private final Supplier<T> valueSupplier;
-        private final Config owningConfig;
-
-        SeConfigValue(Config config, Config.Key key, Supplier<T> valueSupplier) {
-            this.owningConfig = config;
-            this.key = key;
-            this.valueSupplier = valueSupplier;
-        }
-
-        @Override
-        public Config.Key key() {
-            return key;
-        }
-
-        @Override
-        public Optional<T> asOptional() throws ConfigMappingException {
-            try {
-                return Optional.of(valueSupplier.get());
-            } catch (MissingValueException e) {
-                return Optional.empty();
-            }
-        }
-
-        @Override
-        public <N> ConfigValue<N> as(Function<? super T, ? extends N> mapper) {
-            return new SeConfigValue<>(owningConfig, key, () -> mapper.apply(valueSupplier.get()));
-        }
-
-        @Override
-        public <N> ConfigValue<N> as(Class<N> type) {
-            return owningConfig.as(type);
-        }
-
-        @Override
-        public <N> ConfigValue<N> as(GenericType<N> type) {
-            return owningConfig.as(type);
-        }
-
-        @Override
-        public Supplier<T> supplier() {
-            return valueSupplier;
-        }
-
-        @Override
-        public Supplier<T> supplier(T defaultValue) {
-            return () -> {
-                try {
-                    return valueSupplier.get();
-                } catch (MissingValueException e) {
-                    return defaultValue;
-                }
-            };
-        }
-
-        @Override
-        public Supplier<Optional<T>> optionalSupplier() {
-            return this::asOptional;
+        public boolean equals(Object obj) {
+            return delegate.equals(obj);
         }
 
         @Override
         public int hashCode() {
-            try {
-                return Objects.hash(key, asOptional());
-            } catch (ConfigMappingException e) {
-                return Objects.hash(key);
-            }
+            return delegate.hashCode();
         }
 
         @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            SeConfigValue<?> that = (SeConfigValue<?>) o;
-            if (!key.equals(that.key)) {
-                return false;
-            }
-
-            Optional<?> myOptional;
-            try {
-                myOptional = asOptional();
-            } catch (ConfigMappingException e) {
-                try {
-                    that.asOptional();
-                    // same key, one failed -> different value
-                    return false;
-                } catch (ConfigMappingException configMappingException) {
-                    // same key, both failed -> same value
-                    return true;
-                }
-            }
-            try {
-                Optional<?> thatOptional = that.asOptional();
-                return myOptional.equals(thatOptional);
-            } catch (ConfigMappingException e) {
-                // same key, one failed -> different value
-                return false;
-            }
+        public int compareTo(io.helidon.common.config.Config.Key o) {
+            return delegate.compareTo(o);
         }
     }
-
 }
