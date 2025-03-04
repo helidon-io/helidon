@@ -220,7 +220,7 @@ public class HeadersServerTest {
 
                 int status = response.statusCode();
                 // since Java 24, we get a 400 back and not an exception
-                assertThat("IOException or status 400 was expected, but go status " + response.statusCode()
+                assertThat("IOException or status 400 was expected, but got status " + response.statusCode()
                                    + ", headers: " + response.headers()
                                    + ", and response: " + response.body(),
                            status,
