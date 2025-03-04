@@ -41,7 +41,6 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.NativeImageHelper;
 import io.helidon.config.ConfigException;
-import io.helidon.config.mp.MpConfig;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -174,19 +173,6 @@ public class ConfigCdiExtension implements Extension {
                 .beanClass(org.eclipse.microprofile.config.Config.class)
                 .scope(ApplicationScoped.class)
                 .createWith(creationalContext -> new SerializableConfig());
-
-        abd.addBean()
-                .addTransitiveTypeClosure(io.helidon.config.Config.class)
-                .beanClass(io.helidon.config.Config.class)
-                .scope(ApplicationScoped.class)
-                .createWith(creationalContext -> {
-                    Config config = ConfigProvider.getConfig();
-                    if (config instanceof io.helidon.config.Config) {
-                        return config;
-                    } else {
-                        return MpConfig.toHelidonConfig(config);
-                    }
-                });
 
         Set<Type> types = ips.stream()
                 .map(InjectionPoint::getType)
