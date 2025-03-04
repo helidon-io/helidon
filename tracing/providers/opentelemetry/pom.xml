@@ -136,6 +136,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <!-- Attempt to get the pipeline Windows job to work. -->
+                    <reuseForks>false</reuseForks>
+                    
                     <properties>
                         <configurationParameters>
                             junit.jupiter.extensions.autodetection.enabled = true
