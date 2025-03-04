@@ -43,7 +43,7 @@ public class TestPinnedThread {
     void testPinnedThread() {
         String javaVersion = System.getProperty("java.version");
         // when building on Java "tip" (currently 24), synchronized no longer pins
-        boolean expectedToPin = javaVersion.equals("21");
+        boolean expectedToPin = javaVersion.startsWith("21");
 
         TestListenerAdapter tla = new TestNGRunner()
                 .name("TestPinnedThread")
