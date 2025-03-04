@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,6 +114,15 @@ class UriValidatorTest {
                          "Query contains invalid char: a=@/?%6147?, index: 10, char: 0x7b");
         validateBadQuery("a=@/?%6147\t",
                          "Query contains invalid char: a=@/?%6147?, index: 10, char: 0x09");
+    }
+
+    @Test
+    void testAllCharsInQuery() {
+        UriQuery.create("aA9-._~", true);
+        UriQuery.create("%20%AB", true);
+        UriQuery.create("!$&'()*+,;=", true);
+        UriQuery.create(":@", true);
+        UriQuery.create("/?", true);
     }
 
     @Test
