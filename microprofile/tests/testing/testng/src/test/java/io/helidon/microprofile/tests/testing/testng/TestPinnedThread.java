@@ -30,6 +30,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -40,6 +41,10 @@ public class TestPinnedThread {
 
     @Test
     void testPinnedThread() {
+        String javaVersion = System.getProperty("java.version");
+        // when building on Java "tip" (currently 24), synchronized no longer pins
+        boolean expectedToPin = javaVersion.equals("21");
+
         TestListenerAdapter tla = new TestNGRunner()
                 .name("TestPinnedThread")
                 .parameter("TestPinnedThread", "true")
@@ -50,11 +55,16 @@ public class TestPinnedThread {
                 .findFirst()
                 .map(ITestResult::getThrowable)
                 .orElse(null);
-        assertThat(ex, is(not(nullValue())));
-        assertThat(ex, is(instanceOf(PinningAssertionError.class)));
-        assertThat(ex.getMessage(), startsWith("Pinned virtual threads were detected:"));
-        assertThat("Method with pinning is missing from stack strace.", Arrays.asList(ex.getStackTrace()),
-                hasItem(new StackTraceElementMatcher(EXPECTED_PINNING_METHOD_NAME)));
+
+        if (expectedToPin) {
+            assertThat(ex, is(notNullValue()));
+            assertThat(ex, is(instanceOf(PinningAssertionError.class)));
+            assertThat(ex.getMessage(), startsWith("Pinned virtual threads were detected:"));
+            assertThat("Method with pinning is missing from stack strace.", Arrays.asList(ex.getStackTrace()),
+                       hasItem(new StackTraceElementMatcher(EXPECTED_PINNING_METHOD_NAME)));
+        } else {
+            assertThat(ex, nullValue());
+        }
     }
 
     private static class StackTraceElementMatcher extends BaseMatcher<StackTraceElement> {
