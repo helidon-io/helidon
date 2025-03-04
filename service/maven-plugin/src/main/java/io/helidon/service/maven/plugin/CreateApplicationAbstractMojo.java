@@ -379,11 +379,12 @@ abstract class CreateApplicationAbstractMojo extends CodegenAbstractMojo {
     }
 
     LinkedHashSet<Path> getSourceClasspathElements() {
+        // the application biding must use runtime classpath
         MavenProject project = mavenProject();
-        LinkedHashSet<Path> result = new LinkedHashSet<>(project.getCompileArtifacts().size());
+        LinkedHashSet<Path> result = new LinkedHashSet<>();
         result.add(Paths.get(project.getBuild().getOutputDirectory()));
-        for (Object a : project.getCompileArtifacts()) {
-            result.add(((Artifact) a).getFile().toPath());
+        for (Object dependency : project.getRuntimeArtifacts()) {
+            result.add(((Artifact) dependency).getFile().toPath());
         }
         return result;
     }

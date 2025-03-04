@@ -34,7 +34,7 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 @Mojo(name = "create-application",
       defaultPhase = LifecyclePhase.COMPILE,
       threadSafe = true,
-      requiresDependencyResolution = ResolutionScope.COMPILE)
+      requiresDependencyResolution = ResolutionScope.RUNTIME)
 public class CreateApplicationMojo extends CreateApplicationAbstractMojo {
 
     /**

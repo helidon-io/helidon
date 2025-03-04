@@ -35,7 +35,9 @@ import org.apache.maven.project.MavenProject;
  * A mojo wrapper to {@link BindingGenerator} for test specific types.
  * For test scope, we only generate binding, as main class would not be useful.
  */
-@Mojo(name = "test-application-create", defaultPhase = LifecyclePhase.TEST_COMPILE, threadSafe = true,
+@Mojo(name = "test-application-create",
+      defaultPhase = LifecyclePhase.TEST_COMPILE,
+      threadSafe = true,
       requiresDependencyResolution = ResolutionScope.TEST)
 @SuppressWarnings("unused")
 public class CreateTestApplicationMojo extends CreateApplicationAbstractMojo {
