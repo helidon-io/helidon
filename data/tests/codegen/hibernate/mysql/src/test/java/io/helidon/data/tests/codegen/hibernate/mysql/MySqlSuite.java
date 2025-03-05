@@ -20,8 +20,8 @@ import java.lang.reflect.Type;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.data.api.DataConfig;
-import io.helidon.data.api.DataRegistry;
+import io.helidon.data.DataConfig;
+import io.helidon.data.DataRegistry;
 import io.helidon.data.sql.testing.SqlTestContainerConfig;
 import io.helidon.data.tests.codegen.common.InitialData;
 import io.helidon.data.tests.codegen.repository.PokemonRepository;

@@ -153,8 +153,8 @@ final class JakartaRepositoryProviderGenerator {
 
         /*
         We may have one or two parameters depending on combinations, as follows:
-        a) hasNamed && nameRequired - @Injection.Named("name") Supplier<JpaRepositoryExecutor> executor
-        b) hasNamed && !nameRequired - @Injection.Named("name") Supplier<Optional<JpaRepositoryExecutor>> executor,
+        a) hasNamed && nameRequired - @Service.Named("name") Supplier<JpaRepositoryExecutor> executor
+        b) hasNamed && !nameRequired - @Service.Named("name") Supplier<Optional<JpaRepositoryExecutor>> executor,
                                            Supplier<Optional<JpaRepositoryExecutor>> defaultExecutor
         c) !hasNamed - Supplier<JpaRepositoryExecutor> executor
          */
@@ -173,10 +173,10 @@ final class JakartaRepositoryProviderGenerator {
 
         Constructor.Builder ctr = Constructor.builder()
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE);
-        Annotation supportTypeQualifier = Annotation.create(TypeName.create("io.helidon.data.api.Data.SupportType"), "jakarta");
+        Annotation supportTypeQualifier = Annotation.create(TypeName.create("io.helidon.data.Data.SupportType"), "jakarta");
         if (hasNamed) {
             Annotation named = Annotation.builder()
-                    .typeName(TypeName.create("io.helidon.service.inject.api.Injection.Named"))
+                    .typeName(TypeName.create("io.helidon.service.registry.Service.Named"))
                     .putValue("value", name)
                     .build();
             // first parameter always has the named annotation

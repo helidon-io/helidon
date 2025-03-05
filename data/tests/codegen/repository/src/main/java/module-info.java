@@ -22,7 +22,7 @@ module io.helidon.data.tests.codegen.repository {
 
     requires jakarta.persistence;
 
-    requires io.helidon.data.api;
+    requires io.helidon.data;
     requires io.helidon.data.jakarta.persistence.gapi;
     requires io.helidon.data.tests.codegen.model;
 

@@ -19,15 +19,13 @@ package io.helidon.data;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.helidon.data.api.DataConfig;
-import io.helidon.data.api.DataRegistry;
 import io.helidon.data.spi.DataProvider;
-import io.helidon.service.inject.InjectConfig;
-import io.helidon.service.inject.InjectRegistryManager;
-import io.helidon.service.inject.api.InjectRegistry;
-import io.helidon.service.inject.api.Injection;
-import io.helidon.service.inject.api.Lookup;
-import io.helidon.service.inject.api.Qualifier;
+import io.helidon.service.registry.Lookup;
+import io.helidon.service.registry.Qualifier;
+import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceRegistry;
+import io.helidon.service.registry.ServiceRegistryConfig;
+import io.helidon.service.registry.ServiceRegistryManager;
 
 /**
  * Implementation of Helidon data, a {@link java.util.ServiceLoader} provider implementation of
@@ -42,16 +40,16 @@ public class HelidonDataProvider implements DataProvider {
 
     @Override
     public List<DataRegistry> create(List<DataConfig> config) {
-        var injectConfig = InjectConfig.builder()
+        var injectConfig = ServiceRegistryConfig.builder()
                 .putServiceInstance(DataConfigFactory__ServiceDescriptor.INSTANCE, DataConfigFactory.create(config))
                 .build();
-        InjectRegistryManager manager = InjectRegistryManager.create(injectConfig);
-        InjectRegistry registry = manager.registry();
+        ServiceRegistryManager manager = ServiceRegistryManager.create(injectConfig);
+        ServiceRegistry registry = manager.registry();
 
         List<DataRegistry> result = new ArrayList<>();
 
         for (DataConfig dataConfig : config) {
-            if (dataConfig.name().equals(Injection.Named.DEFAULT_NAME)) {
+            if (dataConfig.name().equals(Service.Named.DEFAULT_NAME)) {
                 result.add(registry.get(DataRegistry.class));
             } else {
                 result.add(registry.get(Lookup.builder()

@@ -21,40 +21,40 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import io.helidon.data.api.Data;
-import io.helidon.data.api.DataConfig;
-import io.helidon.service.inject.api.Injection;
-import io.helidon.service.inject.api.Qualifier;
+import io.helidon.data.Data;
+import io.helidon.data.DataConfig;
+import io.helidon.service.registry.Qualifier;
+import io.helidon.service.registry.Service;
 
 import static io.helidon.data.jakarta.persistence.DataJpaSupportProviderService.PROVIDER_TYPE;
 
-@Injection.Singleton
+@Service.Singleton
 @Data.SupportType(PROVIDER_TYPE)
-@Injection.Named(Injection.Named.WILDCARD_NAME)
-class DataJpaSupportFactory implements Injection.ServicesFactory<DataJpaSupport> {
+@Service.Named(Service.Named.WILDCARD_NAME)
+class DataJpaSupportFactory implements Service.ServicesFactory<DataJpaSupport> {
     private static final Qualifier SUPPORT_TYPE_QUALIFIER = Qualifier.create(Data.SupportType.class, PROVIDER_TYPE);
     private final List<DataConfig> dataConfig;
     private final DataJpaSupportProviderService provider;
 
-    @Injection.Inject
-    DataJpaSupportFactory(@Injection.Named(Injection.Named.WILDCARD_NAME) List<DataConfig> dataConfigs,
-                          @Injection.Named(PROVIDER_TYPE) DataJpaSupportProviderService provider) {
+    @Service.Inject
+    DataJpaSupportFactory(@Service.Named(Service.Named.WILDCARD_NAME) List<DataConfig> dataConfigs,
+                          @Service.Named(PROVIDER_TYPE) DataJpaSupportProviderService provider) {
         this.dataConfig = dataConfigs;
         this.provider = provider;
     }
 
     @Override
-    public List<Injection.QualifiedInstance<DataJpaSupport>> services() {
+    public List<Service.QualifiedInstance<DataJpaSupport>> services() {
         return dataConfig.stream()
                 .filter(it -> it.provider().type().equals(PROVIDER_TYPE))
                 .map(this::mapConfig)
                 .collect(Collectors.toUnmodifiableList());
     }
 
-    private Injection.QualifiedInstance<DataJpaSupport> mapConfig(DataConfig dataConfig) {
+    private Service.QualifiedInstance<DataJpaSupport> mapConfig(DataConfig dataConfig) {
         Set<Qualifier> qualifiers = new HashSet<>();
         qualifiers.add(Qualifier.createNamed(dataConfig.name()));
         qualifiers.add(SUPPORT_TYPE_QUALIFIER);
-        return Injection.QualifiedInstance.create(provider.create(dataConfig), qualifiers);
+        return Service.QualifiedInstance.create(provider.create(dataConfig), qualifiers);
     }
 }

@@ -15,7 +15,7 @@
  */
 package io.helidon.data.tests.codegen.repository;
 
-import io.helidon.data.api.Data;
+import io.helidon.data.Data;
 import io.helidon.data.tests.codegen.model.Region;
 
 @Data.Repository
