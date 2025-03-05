@@ -27,21 +27,17 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import io.helidon.data.api.Data;
-import io.helidon.data.api.DataConfig;
-import io.helidon.data.api.DataException;
-import io.helidon.data.api.DataRegistry;
+import io.helidon.common.Functions;
 import io.helidon.data.spi.DataSupport;
 import io.helidon.data.spi.RepositoryProvider;
-import io.helidon.function.ThrowingRunnable;
-import io.helidon.service.inject.api.Injection;
-import io.helidon.service.inject.api.Qualifier;
-import io.helidon.service.inject.api.ServiceInstance;
+import io.helidon.service.registry.Qualifier;
+import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceInstance;
 import io.helidon.transaction.Tx;
 
-@Injection.Singleton
-@Injection.Named(Injection.Named.WILDCARD_NAME)
-class DataRegistryFactory implements Injection.ServicesFactory<DataRegistry> {
+@Service.Singleton
+@Service.Named(Service.Named.WILDCARD_NAME)
+class DataRegistryFactory implements Service.ServicesFactory<DataRegistry> {
     private final List<ServiceInstance<DataSupport>> supports;
     private final List<RepositoryProvider<?>> repositories;
 
@@ -51,20 +47,20 @@ class DataRegistryFactory implements Injection.ServicesFactory<DataRegistry> {
     }
 
     @Override
-    public List<Injection.QualifiedInstance<DataRegistry>> services() {
+    public List<Service.QualifiedInstance<DataRegistry>> services() {
         // each support is one registry
         return supports.stream()
                 .map(it -> toRegistry(it, repositories))
                 .collect(Collectors.toUnmodifiableList());
     }
 
-    private Injection.QualifiedInstance<DataRegistry> toRegistry(ServiceInstance<DataSupport> it,
+    private Service.QualifiedInstance<DataRegistry> toRegistry(ServiceInstance<DataSupport> it,
                                                                  List<RepositoryProvider<?>> repositories) {
         DataSupport dataSupport = it.get();
         String type = dataSupport.type();
         String name = it.qualifiers()
                 .stream()
-                .filter(q -> q.typeName().equals(Injection.Named.TYPE))
+                .filter(q -> q.typeName().equals(Service.Named.TYPE))
                 .findFirst()
                 .flatMap(Qualifier::value)
                 .orElse(null);
@@ -76,13 +72,13 @@ class DataRegistryFactory implements Injection.ServicesFactory<DataRegistry> {
         if (name != null) {
             qualifiers.add(Qualifier.createNamed(name));
         }
-        return Injection.QualifiedInstance.create(new RegistryImpl(dataSupport, matchingRepositories), qualifiers);
+        return Service.QualifiedInstance.create(new RegistryImpl(dataSupport, matchingRepositories), qualifiers);
     }
 
     private boolean sameName(RepositoryProvider<?> repo, String name) {
         String repoName = repo.dataSourceName();
 
-        if (name == null && repoName.equals(Injection.Named.DEFAULT_NAME)) {
+        if (name == null && repoName.equals(Service.Named.DEFAULT_NAME)) {
             return true;
         }
         if (name == null) {
@@ -132,7 +128,7 @@ class DataRegistryFactory implements Injection.ServicesFactory<DataRegistry> {
         }
 
         @Override
-        public void transaction(Tx.Type type, ThrowingRunnable task) {
+        public <E extends Throwable> void transaction(Tx.Type type, Functions.CheckedRunnable<E> task) {
             support.transaction(type, task);
         }
 

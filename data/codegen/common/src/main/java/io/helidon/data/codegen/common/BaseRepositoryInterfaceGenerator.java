@@ -157,12 +157,12 @@ public abstract class BaseRepositoryInterfaceGenerator
      *
      * @param builder method builder
      * @param content additional statement content
+     * @param executorType repository executor type
      * @deprecated will be removed with Jakarta Persistence 3.2
      */
     @Deprecated
-    protected static void optionalFromQuery(Method.Builder builder, Consumer<Method.Builder> content) {
-        builder.addContent(TypeName.create(
-                        "io.helidon.data.jakarta.persistence.gapi.JpaRepositoryExecutor"))
+    protected static void optionalFromQuery(Method.Builder builder, Consumer<Method.Builder> content, TypeName executorType) {
+        builder.addContent(executorType)
                 .addContent(".optionalFromQuery(");
         content.accept(builder);
         builder.addContent(")");

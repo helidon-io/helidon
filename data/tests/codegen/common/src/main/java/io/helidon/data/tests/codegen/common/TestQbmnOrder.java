@@ -17,9 +17,9 @@ package io.helidon.data.tests.codegen.common;
 
 import java.util.List;
 
-import io.helidon.data.api.DataRegistry;
-import io.helidon.data.api.Order;
-import io.helidon.data.api.Sort;
+import io.helidon.data.DataRegistry;
+import io.helidon.data.Order;
+import io.helidon.data.Sort;
 import io.helidon.data.tests.codegen.model.Pokemon;
 import io.helidon.data.tests.codegen.repository.PokemonRepository;
 

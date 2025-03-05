@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.data.api;
+package io.helidon.data;
 
 /**
  * Order definition of the query result ordering.

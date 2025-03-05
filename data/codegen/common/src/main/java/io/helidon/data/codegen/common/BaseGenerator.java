@@ -149,6 +149,18 @@ public abstract class BaseGenerator {
         builder.addContent(value);
     }
 
+    protected static void initializedVariable(Method.Builder builder,
+                                              TypeName type,
+                                              String name,
+                                              Consumer<Method.Builder> value) {
+        builder.addContent(type)
+                .addContent(" ")
+                .addContent(name)
+                .addContent(" = ");
+        value.accept(builder);
+    }
+
+
     /**
      * Generate {@code null} value.
      *
