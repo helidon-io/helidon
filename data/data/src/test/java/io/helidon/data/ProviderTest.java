@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.data.api;
+package io.helidon.data;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;

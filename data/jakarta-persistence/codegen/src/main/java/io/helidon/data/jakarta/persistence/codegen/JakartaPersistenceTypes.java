@@ -21,19 +21,18 @@ import io.helidon.common.types.TypeName;
 
 class JakartaPersistenceTypes {
 
-    static final TypeName DATA_EXCEPTION = TypeName.create("io.helidon.data.api.DataException");
-    static final TypeName DATA_SOURCE_ANNOTATION = TypeName.create("io.helidon.data.api.Data.DataSource");
+    static final TypeName DATA_EXCEPTION = TypeName.create("io.helidon.data.DataException");
+    static final TypeName DATA_SOURCE_ANNOTATION = TypeName.create("io.helidon.data.Data.DataSource");
     static final TypeName BASE_REPOSITORY_EXECUTOR = TypeName.create(
             "io.helidon.data.jakarta.persistence.gapi.JpaRepositoryExecutor");
     static final TypeName REPOSITORY_FACTORY = TypeName.create("io.helidon.data.spi.RepositoryFactory");
-    static final TypeName JPA_REPOSITORY_PROVIDER = TypeName.create(
-            "io.helidon.data.jakarta.persistence.gapi.spi.JakartaPersistenceRepositoryProvider");
     static final TypeName REPOSITORY_PROVIDER = TypeName.create("io.helidon.data.spi.RepositoryProvider");
+    static final TypeName EXECUTOR = TypeName.create("io.helidon.data.jakarta.persistence.gapi.JpaRepositoryExecutor");
 
     static final TypeName ENTITY_MANAGER = TypeName.create("jakarta.persistence.EntityManager");
     // SessionRepository<EntityManager>
     static final TypeName SESSION_REPOSITORY = TypeName.builder()
-            .from(TypeName.create("io.helidon.data.api.Data.SessionRepository"))
+            .from(TypeName.create("io.helidon.data.Data.SessionRepository"))
             .addTypeArgument(ENTITY_MANAGER)
             .build();
     // Consumer<EntityManager>
@@ -65,7 +64,7 @@ class JakartaPersistenceTypes {
     // Jakarta Persistence criteria Expression with no generic type
     static final TypeName RAW_EXPRESSION = TypeName.create("jakarta.persistence.criteria.Expression");
     static final Annotation INJECTION_SINGLETON = Annotation.create(TypeName.create(
-            "io.helidon.service.inject.api.Injection.Singleton"));
+            "io.helidon.service.registry.Service.Singleton"));
     static final Annotation INJECTION_PRE_DESTROY = Annotation.create(TypeName.create(
             "io.helidon.service.registry.Service.PreDestroy"));
 

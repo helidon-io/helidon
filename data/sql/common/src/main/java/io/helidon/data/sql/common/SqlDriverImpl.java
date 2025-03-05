@@ -22,7 +22,7 @@ import java.sql.SQLException;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.helidon.data.api.DataException;
+import io.helidon.data.DataException;
 
 record SqlDriverImpl(Class<? extends Driver> driverClass, Driver driver) implements SqlDriver {
     static SqlDriver create(SqlConfigBlueprint dataConfig) {

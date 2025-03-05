@@ -112,6 +112,9 @@ class MethodNameParserImpl implements MethodNameParser {
         return FINAL_TOKENS.contains(lastToken.getType()) && errorListener.isEmpty();
     }
 
+    // FIXME: this can be split into at least two methods, if one of the switch statements exceeds, just add suppress
+    // the fall through of switch is intentional
+    @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:FallThrough"})
     @Override
     public DataQuery dataQuery() {
         DataQuery.Builder queryBuilder = DataQuery.builder();
@@ -527,7 +530,7 @@ class MethodNameParserImpl implements MethodNameParser {
                         }
                     }
                 },
-                // This shall not happen until parser code is broken
+                // This should not happen unless the parser code is broken
                 () -> {
                     throw new MethodNameParserException("Error parsing Max token: missing return type limitation",
                                                         methodName,

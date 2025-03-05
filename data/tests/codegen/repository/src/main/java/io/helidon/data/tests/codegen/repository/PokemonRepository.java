@@ -22,10 +22,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import io.helidon.data.api.Data;
-import io.helidon.data.api.JpaData;
-import io.helidon.data.api.Query;
-import io.helidon.data.api.Sort;
+import io.helidon.data.Data;
+import io.helidon.data.JpaData;
+import io.helidon.data.Query;
+import io.helidon.data.Sort;
 import io.helidon.data.tests.codegen.model.Pokemon;
 
 import jakarta.persistence.EntityManager;

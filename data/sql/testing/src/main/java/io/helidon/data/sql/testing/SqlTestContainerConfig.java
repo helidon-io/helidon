@@ -19,10 +19,9 @@ package io.helidon.data.sql.testing;
 import java.lang.reflect.Method;
 
 import io.helidon.common.config.Config;
-import io.helidon.data.api.DataConfig;
-import io.helidon.data.api.ProviderConfig;
+import io.helidon.data.DataConfig;
+import io.helidon.data.ProviderConfig;
 import io.helidon.data.sql.common.SqlConfig;
-import io.helidon.testing.integration.junit5.suite.ConfigUtils;
 
 import org.testcontainers.containers.JdbcDatabaseContainer;
 
@@ -48,6 +47,23 @@ public final class SqlTestContainerConfig {
                 .filter(provider -> provider instanceof SqlConfig)
                 .map(SqlConfig.class::cast)
                 .ifPresent(sqlConfig -> configureContainer(sqlConfig, container));
+    }
+
+    /**
+     * Configure the test container from the {@link SqlConfig}.
+     *
+     * @param sqlConfig SQL specific configuration
+     * @param container container to configure (before it is started)
+     */
+    public static void configureContainer(SqlConfig sqlConfig, JdbcDatabaseContainer<?> container) {
+        sqlConfig.username().ifPresent(container::withUsername);
+        sqlConfig.password()
+                .map(String::new)
+                .ifPresent(container::withPassword);
+        sqlConfig.connectionString()
+                .map(ConfigUtils::uriFromDbUrl)
+                .map(ConfigUtils::dbNameFromUri)
+                .ifPresent(container::withDatabaseName);
     }
 
     /**
@@ -90,6 +106,56 @@ public final class SqlTestContainerConfig {
         return targetConfigBuilder.build();
     }
 
+    /**
+     * Replace port value in provided URL.
+     *
+     * @param url  source URL
+     * @param port new port value in returned URL
+     * @return source url with port replaced by {@code port} value.
+     */
+    public static String replacePortInUrl(String url, int port) {
+        int begin = indexOfHostSeparator(url);
+        if (begin >= 0) {
+            int end = url.indexOf('/', begin + 3);
+            int portBeg = url.indexOf(':', begin + 3);
+            // Found port position in URL
+            if (end > 0 && portBeg < end) {
+                String frontPart = url.substring(0, portBeg + 1);
+                String endPart = url.substring(end);
+                return frontPart + port + endPart;
+            } else {
+                throw new IllegalStateException(
+                        String.format("URL %s does not contain host and port part \"://host:port/\"", url));
+            }
+        } else {
+            throw new IllegalStateException(
+                    String.format("Could not find host separator \"://\" in URL %s", url));
+        }
+    }
+
+    // Find separator before host in database URL
+    // Regular separator is "://", bur Oracle DB has an exception and uses ":@"
+    private static int indexOfHostSeparator(String src) {
+        // First check DB type
+        int jdbcSep = src.indexOf(':');
+        String scheme = src.substring(0, jdbcSep);
+        if (!"jdbc".equals(scheme)) {
+            throw new IllegalArgumentException(
+                    String.format("Database JDBC url shall start with \"jdbc:\" prefix, but URC is %s", src));
+        }
+        if (src.length() > jdbcSep + 2) {
+            int typeSep = src.indexOf(':', jdbcSep + 1);
+            String dbType = src.substring(jdbcSep + 1, typeSep);
+            // Keeping switch here to simplify future extension
+            return switch (dbType) {
+                case "oracle" -> src.indexOf(":@");
+                default -> src.indexOf("://");
+            };
+        } else {
+            throw new IllegalArgumentException("Database JDBC url has nothing after \"jdbc:\" prefix");
+        }
+    }
+
     private static DataConfig createDataConfig(Config config) {
         if (config.isList()) {
             return DataConfig.create(config.get("0"));
@@ -123,41 +189,4 @@ public final class SqlTestContainerConfig {
         }
     }
 
-    /**
-     * Replace port value in provided URL.
-     *
-     * @param url  source URL
-     * @param port new port value in returned URL
-     * @return source url with port replaced by {@code port} value.
-     */
-    private static String replacePortInUrl(String url, int port) {
-        int begin = url.indexOf("://");
-        if (begin >= 0) {
-            int end = url.indexOf('/', begin + 3);
-            int portBeg = url.indexOf(':', begin + 3);
-            // Found port position in URL
-            if (end > 0 && portBeg < end) {
-                String frontPart = url.substring(0, portBeg + 1);
-                String endPart = url.substring(end);
-                return frontPart + port + endPart;
-            } else {
-                throw new IllegalStateException(
-                        String.format("URL %s does not contain host and port part \"://host:port/\"", url));
-            }
-        } else {
-            throw new IllegalStateException(
-                    String.format("Could not find host separator \"://\" in URL %s", url));
-        }
-    }
-
-    private static void configureContainer(SqlConfig sqlConfig, JdbcDatabaseContainer<?> container) {
-        sqlConfig.username().ifPresent(container::withUsername);
-        sqlConfig.password()
-                .map(String::new)
-                .ifPresent(container::withPassword);
-        sqlConfig.connectionString()
-                .map(ConfigUtils::uriFromDbUrl)
-                .map(ConfigUtils::dbNameFromUri)
-                .ifPresent(container::withDatabaseName);
-    }
 }

@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
-import io.helidon.data.api.DataException;
+import io.helidon.data.DataException;
 
 import jakarta.persistence.SharedCacheMode;
 import jakarta.persistence.ValidationMode;
@@ -243,12 +243,12 @@ class PersistenceUnitInfoImpl implements PersistenceUnitInfo {
 
     @Override
     public final DataSource getJtaDataSource() {
-        return null;
+        return config.jtaDataSource();
     }
 
     @Override
     public final DataSource getNonJtaDataSource() {
-        return null;
+        return config.nonJtaDataSource();
     }
 
     @Override
