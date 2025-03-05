@@ -302,13 +302,9 @@ final class TypeNameSupport {
             className = className.substring(dot + 1);
         }
 
-        if (packageElements.isEmpty()) {
-            return builder.className(typeName)
-                    .build();
-        }
-
         String packageName = String.join(".", packageElements);
         String[] types = className.split("\\.");
+
         return builder.packageName(packageName)
                 .update(it -> {
                     for (int i = 0; i < (types.length - 1); i++) {

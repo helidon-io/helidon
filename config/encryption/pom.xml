@@ -94,7 +94,6 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <addClasspath>true</addClasspath>
                             <mainClass>io.helidon.config.encryption.Main</mainClass>
                         </manifest>
                     </archive>
