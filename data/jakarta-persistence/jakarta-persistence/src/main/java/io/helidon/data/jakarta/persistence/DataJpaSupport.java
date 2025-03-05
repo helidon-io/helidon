@@ -196,7 +196,6 @@ class DataJpaSupport implements DataSupport {
         return type() + " data support, config: " + config;
     }
 
-
     private static void beginManualTransaction(int counter, PersistenceUnitTransactionType transactionType, Tx.Type type) {
         try {
             beginTransaction(transactionType, type);

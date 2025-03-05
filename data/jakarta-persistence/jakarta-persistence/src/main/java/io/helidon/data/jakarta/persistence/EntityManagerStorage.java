@@ -84,26 +84,6 @@ final class EntityManagerStorage implements Closeable {
         }
     }
 
-    // Get EntityManager.
-    // Use from pool if not empty or create a new one.
-    private EntityManager getManager() {
-        if (managers.isEmpty()) {
-            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
-                LOGGER.log(System.Logger.Level.TRACE, "Creating EntityManager");
-            }
-            return factory.createEntityManager();
-        } else {
-            EntityManager manager = managers.removeLast();
-            if (!manager.isOpen()) {
-                throw new IllegalStateException("EntityManager from pool is closed");
-            }
-            if (!manager.getTransaction().isActive()) {
-                throw new IllegalStateException("EntityManager from pool has transaction in progress");
-            }
-            return manager;
-        }
-    }
-
     // EntityManager to be used in common state while transaction is not suspended
     void addCommonManager(int counter, boolean active, boolean newTx) {
         // 1st level (stack is empty) or new transaction requested
@@ -182,6 +162,26 @@ final class EntityManagerStorage implements Closeable {
     // EntityTransaction from current EntityManager
     EntityTransaction transaction() {
         return current().getTransaction();
+    }
+
+    // Get EntityManager.
+    // Use from pool if not empty or create a new one.
+    private EntityManager getManager() {
+        if (managers.isEmpty()) {
+            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                LOGGER.log(System.Logger.Level.TRACE, "Creating EntityManager");
+            }
+            return factory.createEntityManager();
+        } else {
+            EntityManager manager = managers.removeLast();
+            if (!manager.isOpen()) {
+                throw new IllegalStateException("EntityManager from pool is closed");
+            }
+            if (!manager.getTransaction().isActive()) {
+                throw new IllegalStateException("EntityManager from pool has transaction in progress");
+            }
+            return manager;
+        }
     }
 
     // Current transaction method call level

@@ -33,7 +33,7 @@ public class EntityExistsException extends DataException {
      * Create new exception for a message and a cause.
      *
      * @param message descriptive message
-     * @param cause original throwable causing this exception
+     * @param cause   original throwable causing this exception
      */
     public EntityExistsException(String message, Throwable cause) {
         super(message, cause);

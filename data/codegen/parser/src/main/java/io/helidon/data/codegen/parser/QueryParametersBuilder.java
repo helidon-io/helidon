@@ -22,6 +22,7 @@ import java.util.Set;
 import io.helidon.data.codegen.query.QueryParameters;
 
 // This is pkg only visible, Builder is implemented just to follow common pattern
+
 /**
  * {@link QueryParameters} builder.
  */

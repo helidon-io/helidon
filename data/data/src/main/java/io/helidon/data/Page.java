@@ -27,12 +27,11 @@ public interface Page<T> extends Slice<T> {
     /**
      * Create query result as page with total size of the result.
      *
-     * @param request pageable query result request
-     * @param content page content as {@link java.util.List}
+     * @param request   pageable query result request
+     * @param content   page content as {@link java.util.List}
      * @param totalSize total size of the result across all pages
-     * @param <T> query result type (entity or entity attribute)
+     * @param <T>       query result type (entity or entity attribute)
      * @return new instance of the query result
-     *
      */
     static <T> Page<T> create(PageRequest request, List<T> content, int totalSize) {
         return new PageImpl<>(request, content, totalSize);

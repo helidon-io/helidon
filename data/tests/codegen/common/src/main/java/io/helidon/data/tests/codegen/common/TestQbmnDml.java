@@ -45,6 +45,18 @@ public class TestQbmnDml {
 
     // DML simple delete (JPQL)
 
+    @BeforeAll
+    public static void before(DataRegistry data) {
+        pokemonRepository = data.repository(PokemonRepository.class);
+        DELETE_POKEMONS.keySet().forEach(key -> pokemonRepository.insert(DELETE_POKEMONS.get(key)));
+    }
+
+    @AfterAll
+    public static void after() {
+        pokemonRepository.run(InitialData::deleteTemp);
+        pokemonRepository = null;
+    }
+
     @Test
     public void testDeleteByNameVoid() {
         pokemonRepository.deleteByName("Pansear");
@@ -128,7 +140,6 @@ public class TestQbmnDml {
         assertThat(maybePokemon.isPresent(), is(false));
     }
 
-
     @Test
     public void testDeleteByNameByte() {
         byte result = pokemonRepository.byteDeleteByName("Blitzle");
@@ -144,18 +155,6 @@ public class TestQbmnDml {
         assertThat(result, is(notNullValue()));
         assertThat(result, is((byte) 1));
         assertThat(maybePokemon.isPresent(), is(false));
-    }
-
-    @BeforeAll
-    public static void before(DataRegistry data) {
-        pokemonRepository = data.repository(PokemonRepository.class);
-        DELETE_POKEMONS.keySet().forEach(key -> pokemonRepository.insert(DELETE_POKEMONS.get(key)));
-    }
-
-    @AfterAll
-    public static void after() {
-        pokemonRepository.run(InitialData::deleteTemp);
-        pokemonRepository = null;
     }
 
     private static Map<Integer, Pokemon> deletePokemons() {

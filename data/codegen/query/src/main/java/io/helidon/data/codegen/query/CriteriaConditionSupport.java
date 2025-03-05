@@ -30,7 +30,7 @@ class CriteriaConditionSupport {
      * Create criteria condition with {@link CriteriaOperator#Equal}.
      * Condition parameter is set and will not be required externally.
      *
-     * @param property condition entity property
+     * @param property  condition entity property
      * @param parameter condition parameter
      * @return new instance of criteria condition
      */

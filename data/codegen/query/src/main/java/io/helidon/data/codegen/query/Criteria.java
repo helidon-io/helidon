@@ -93,6 +93,7 @@ public class Criteria {
 
     // Criteria builder has specific API to be used with method name parser
     // so blueprint usage won't help much.
+
     /**
      * {@link Criteria} builder.
      * Conditions and logical operators are added as they are in query statement:

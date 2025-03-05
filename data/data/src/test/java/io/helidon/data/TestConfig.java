@@ -17,7 +17,7 @@ package io.helidon.data;
 
 import io.helidon.common.config.Config;
 
-class TestConfig implements ProviderConfig{
+class TestConfig implements ProviderConfig {
     private final Config config;
     private final String name;
 

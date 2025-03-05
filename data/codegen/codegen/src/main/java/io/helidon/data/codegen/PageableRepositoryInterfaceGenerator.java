@@ -34,7 +34,9 @@ import static io.helidon.data.codegen.HelidonDataTypes.PAGE;
 import static io.helidon.data.codegen.HelidonDataTypes.SLICE;
 
 class PageableRepositoryInterfaceGenerator extends BaseRepositoryInterfaceGenerator {
-    /** Method parameter: PageRequest pageRequest. */
+    /**
+     * Method parameter: PageRequest pageRequest.
+     */
     protected static final String PAGE_REQUEST_PARAM_NAME = "pageRequest";
     protected static final Parameter PAGE_REQUEST_PARAM = Parameter.builder()
             .name(PAGE_REQUEST_PARAM_NAME)

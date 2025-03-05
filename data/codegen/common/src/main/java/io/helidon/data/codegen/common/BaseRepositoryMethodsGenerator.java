@@ -37,9 +37,9 @@ public abstract class BaseRepositoryMethodsGenerator extends BaseRepositoryInter
     /**
      * Creates an instance of data repository interface code generator base class for methods generators.
      *
-     * @param repositoryInfo data repository interface info
-     * @param classModel target class builder
-     * @param codegenContext code processing and generation context
+     * @param repositoryInfo       data repository interface info
+     * @param classModel           target class builder
+     * @param codegenContext       code processing and generation context
      * @param persistenceGenerator persistence provider specific generator
      */
     protected BaseRepositoryMethodsGenerator(RepositoryInfo repositoryInfo,
@@ -98,7 +98,7 @@ public abstract class BaseRepositoryMethodsGenerator extends BaseRepositoryInter
     /**
      * Generate method header matching interface prototype and return method parameters.
      *
-     * @param builder method builder
+     * @param builder    method builder
      * @param methodInfo method info
      * @return method parameters
      */
@@ -120,7 +120,7 @@ public abstract class BaseRepositoryMethodsGenerator extends BaseRepositoryInter
      * Process method parameter.
      * Extending class must implement this method to properly handle each parameter of the generated method.
      *
-     * @param builder method builder
+     * @param builder   method builder
      * @param paramInfo method parameter info
      */
     protected abstract void processParam(MethodParams.Builder builder, TypedElementInfo paramInfo);

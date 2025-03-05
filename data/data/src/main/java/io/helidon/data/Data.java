@@ -116,7 +116,8 @@ public final class Data {
 
         /**
          * Persists all provided entities.
-         * Implementations of this method may always execute {@code insert} without detecting whether the entity was already saved or
+         * Implementations of this method may always execute {@code insert} without detecting whether the entity was already saved
+         * or
          * not.
          *
          * @param entities the entities to persist, shall not be {@code null}
@@ -130,7 +131,8 @@ public final class Data {
          * Find entity by ID (primary key) value.
          *
          * @param id the ID of the entity to search for, shall not be {@code null}
-         * @return the entity with the given ID or {@code Optional#empty()} if no such entity was found, never returns {@code null}
+         * @return the entity with the given ID or {@code Optional#empty()} if no such entity was found, never returns
+         *         {@code null}
          * @throws io.helidon.data.DataException if the ID is {@code null} or the operation has failed
          */
         Optional<E> findById(ID id);
@@ -225,7 +227,7 @@ public final class Data {
          * is already present in the database.
          *
          * @param entities the entities to persist, shall not be {@code null}
-         * @param <T>    type of the entity
+         * @param <T>      type of the entity
          * @return persisted entity, never returns {@code null}
          */
         <T extends E> Iterable<T> insertAll(Iterable<T> entities);
@@ -266,9 +268,10 @@ public final class Data {
      * Data repository interface with persistence session support.
      * Implementing this interface makes repository class to depend on specific persistence session type.
      * Target persistence session type must match session type of the specific persistence provider, e.g.<ul>
-     *     <li>{@code EntityManager} for Jakarta Persistence</li>
-     *     <li>{@code ClientSession} for native EclipseLink</li>
+     * <li>{@code EntityManager} for Jakarta Persistence</li>
+     * <li>{@code ClientSession} for native EclipseLink</li>
      * </ul>
+     *
      * @param <S> type of the persistence session, e.g. {@code EntityManager}
      */
     public interface SessionRepository<S> {
@@ -286,7 +289,7 @@ public final class Data {
          * Task computes and returns result.
          *
          * @param task task to be executed
-         * @param <R> task result type
+         * @param <R>  task result type
          * @return task result
          */
         <R> R call(Function<S, R> task);

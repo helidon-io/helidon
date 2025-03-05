@@ -28,6 +28,10 @@ public class CriteriaConditionNext {
         this.criteriaCondition = criteriaCondition;
     }
 
+    static CriteriaConditionNext create(LogicalOperator logicalOperator, CriteriaCondition criteriaCondition) {
+        return new CriteriaConditionNext(logicalOperator, criteriaCondition);
+    }
+
     /**
      * Joins this criteria condition with the previous one.
      *
@@ -44,10 +48,6 @@ public class CriteriaConditionNext {
      */
     public CriteriaCondition criteria() {
         return criteriaCondition;
-    }
-
-    static CriteriaConditionNext create(LogicalOperator logicalOperator, CriteriaCondition criteriaCondition) {
-        return new CriteriaConditionNext(logicalOperator, criteriaCondition);
     }
 
 }

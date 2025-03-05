@@ -26,7 +26,7 @@ import io.helidon.data.sql.datasource.spi.DataSourceConfigProvider;
  *
  * @see io.helidon.data.sql.datasource.DataSourceConfig.Builder#provider(io.helidon.data.sql.datasource.ProviderConfig)
  */
-public class UcpDataSourceConfigProvider implements DataSourceConfigProvider  {
+public class UcpDataSourceConfigProvider implements DataSourceConfigProvider {
 
     /**
      * Required default constructor for {@link java.util.ServiceLoader}.

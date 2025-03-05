@@ -33,7 +33,7 @@ public class OptimisticLockException extends DataException {
      * Create new exception for a message and a cause.
      *
      * @param message descriptive message
-     * @param cause original throwable causing this exception
+     * @param cause   original throwable causing this exception
      */
     public OptimisticLockException(String message, Throwable cause) {
         super(message, cause);
