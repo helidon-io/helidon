@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,15 @@ import io.helidon.common.features.api.Preview;
 
 /**
  * Provides support for Microstream core features integration.
+ *
+ * @deprecated Microstream is no longer maintained, the project has been renamed to Eclipse store
  */
-@Preview
 @Feature(value = "Microstream",
         description = "Microstream Integration",
         in = HelidonFlavor.SE,
         path = "Microstream"
 )
+@Deprecated(forRemoval = true, since = "4.2.1")
 @Aot(false)
 module io.helidon.integrations.microstream {
     requires static io.helidon.common.features.api;

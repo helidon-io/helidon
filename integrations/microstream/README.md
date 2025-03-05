@@ -1,5 +1,9 @@
 # Microstream integration into Helidon
 
+This module is now deprecated, as Microstream is now Eclipse Store (https://eclipsestore.io/), and this project is no longer released.
+
+Also modules in this integration will stop being usable with Java 24.
+
 This projects add [Microstream](https://microstream.one) support to Helidon.
 
 The official [Microstream documentation](https://manual.docs.microstream.one/) can be found here.

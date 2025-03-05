@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,9 @@ import one.microstream.cache.types.CachingProvider;
  *
  * @param <K> type of the cache key
  * @param <V> type of the cache value
+ * @deprecated Microstream is renamed to Eclipse store and no longer updated
  */
+@Deprecated(forRemoval = true, since = "4.2.1")
 public class CacheBuilder<K, V> {
     private static final String MICROSTREAM_CACHING_PROVIDER = "one.microstream.cache.types.CachingProvider";
 

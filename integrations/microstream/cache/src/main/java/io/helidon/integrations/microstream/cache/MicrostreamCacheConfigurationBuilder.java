@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,9 @@ import one.microstream.persistence.binary.util.SerializerFoundation;
  *
  * @param <K> type of the cache key
  * @param <V> type of the cache value
+ * @deprecated Microstream is renamed to Eclipse store and no longer updated
  */
+@Deprecated(forRemoval = true, since = "4.2.1")
 public class MicrostreamCacheConfigurationBuilder<K, V>
         implements CacheConfigurationPropertyNames,
                    CacheConfiguration.Builder<K, V>,
