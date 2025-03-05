@@ -31,6 +31,11 @@ final class JakartaStatementGenerator
         extends BaseGenerator implements PersistenceGenerator.StatementGenerator {
 
     @Override
+    public TypeName executorType() {
+        return JakartaPersistenceTypes.EXECUTOR;
+    }
+
+    @Override
     public void addPersist(Method.Builder builder, String identifier) {
         addEmLambda(builder, b -> addEmPersist(b, identifier));
     }
@@ -46,8 +51,8 @@ final class JakartaStatementGenerator
     }
 
     @Override
-    public void addMergeCollection(Method.Builder builder, String identifier) {
-        addEmLambda(builder, b -> addEmMergeCollection(b, identifier));
+    public void addMergeCollection(Method.Builder builder, String identifier, String merged) {
+        addEmLambda(builder, b -> addEmMergeCollection(b, identifier, merged));
     }
 
     @Override
@@ -502,9 +507,11 @@ final class JakartaStatementGenerator
                 .addContent(".forEach(em::persist)");
     }
 
-    private static void addEmMergeCollection(Method.Builder builder, String identifier) {
+    private static void addEmMergeCollection(Method.Builder builder, String identifier, String merged) {
         builder.addContent(identifier)
-                .addContent(".forEach(em::merge)");
+                .addContent(".forEach(e -> ")
+                .addContent(merged)
+                .addContent(".add(em.merge(e)))");
     }
 
     private static void addEmRemove(Method.Builder builder, Consumer<Method.Builder> content) {

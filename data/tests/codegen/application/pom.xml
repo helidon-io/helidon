@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.data.tests.codegen</groupId>
         <artifactId>helidon-data-tests-codegen-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-data-tests-codegen-application</artifactId>
@@ -33,7 +33,6 @@
         <dependency>
             <groupId>io.helidon.data.tests.codegen</groupId>
             <artifactId>helidon-data-tests-codegen-repository</artifactId>
-            <version>${project.version}</version>
         </dependency>
     </dependencies>
 

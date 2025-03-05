@@ -13,19 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.data.api;
 
-import io.helidon.common.config.Config;
-import io.helidon.data.spi.ProviderConfigProvider;
+/**
+ * Helidon Integration Tests Suite Extension.
+ */
+module io.helidon.testing.junit5.suite {
 
-public class TestDataConfigProvider implements ProviderConfigProvider {
-    @Override
-    public String configKey() {
-        return "test";
-    }
+    requires transitive org.junit.jupiter.api;
+    requires io.helidon.common;
+    requires io.helidon.logging.common;
 
-    @Override
-    public ProviderConfig create(Config config, String name) {
-        return TestConfig.create(config, name);
-    }
+    uses io.helidon.testing.junit5.suite.spi.SuiteProvider;
+
+    exports io.helidon.testing.junit5.suite;
+    exports io.helidon.testing.junit5.suite.spi;
 }

@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.data.api;
+package io.helidon.data;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-record SortImpl(List<io.helidon.data.api.Order> orderBy) implements Sort {
+record SortImpl(List<io.helidon.data.Order> orderBy) implements Sort {
 
     static final Sort UNSORTED = new SortImpl(Collections.emptyList());
 

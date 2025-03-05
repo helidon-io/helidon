@@ -52,7 +52,7 @@ class QueryMethods {
 
     // Method types (to assign specific code generator)
     enum Type {
-        // Method with Query.JPQL annotation
+        // Method with Query annotation
         QUERY,
         // Query by method name
         BY_NAME;
@@ -62,8 +62,7 @@ class QueryMethods {
         private static final Map<TypeName, Type> TYPES_MAP = new HashMap<>(LENGTH);
 
         static {
-            TYPES_MAP.put(HelidonDataTypes.QUERY_JPQL_NAME, Type.QUERY);
-            TYPES_MAP.put(HelidonDataTypes.QUERY_SQL_NAME, Type.QUERY_SQL);
+            TYPES_MAP.put(HelidonDataTypes.QUERY_ANNOTATION, Type.QUERY);
         }
 
     }

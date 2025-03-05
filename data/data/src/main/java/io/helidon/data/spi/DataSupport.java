@@ -20,8 +20,8 @@ import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import io.helidon.data.api.DataConfig;
-import io.helidon.function.ThrowingRunnable;
+import io.helidon.common.Functions;
+import io.helidon.data.DataConfig;
 import io.helidon.transaction.Tx;
 
 /**
@@ -51,7 +51,7 @@ public interface DataSupport extends AutoCloseable {
      * @param task task to run in transaction
      * @param <T>  the result type of the task
      * @return computed task result
-     * @throws io.helidon.data.api.DataException when result computation failed
+     * @throws io.helidon.data.DataException when result computation failed
      */
     <T> T transaction(Tx.Type type, Callable<T> task);
 
@@ -61,9 +61,10 @@ public interface DataSupport extends AutoCloseable {
      *
      * @param type transaction type
      * @param task task to run in transaction
-     * @throws io.helidon.data.api.DataException when task computation failed
+     * @param <E> type of thrown (checked) exception
+     * @throws io.helidon.data.DataException when task computation failed
      */
-    void transaction(Tx.Type type, ThrowingRunnable task);
+    <E extends Throwable> void transaction(Tx.Type type, Functions.CheckedRunnable<E> task);
 
     /**
      * Execute provided task as database transaction.

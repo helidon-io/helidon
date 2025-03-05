@@ -19,24 +19,27 @@ package io.helidon.data.jakarta.persistence;
 import java.util.List;
 
 import io.helidon.common.Weight;
-import io.helidon.data.api.DataConfig;
+import io.helidon.data.DataConfig;
 import io.helidon.data.jakarta.persistence.gapi.JpaEntityProvider;
 import io.helidon.data.jakarta.persistence.spi.JakartaPersistenceExtension;
 import io.helidon.data.jakarta.persistence.spi.JakartaPersistenceExtensionProvider;
-import io.helidon.service.inject.api.Injection;
+import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceRegistry;
 
 @Weight(90)
-@Injection.Singleton
+@Service.Singleton
 class JpaExtensionProviderService implements JakartaPersistenceExtensionProvider {
     private final List<JpaEntityProvider<?>> providers;
+    private final ServiceRegistry registry;
 
-    @Injection.Inject
-    JpaExtensionProviderService(List<JpaEntityProvider<?>> providers) {
+    @Service.Inject
+    JpaExtensionProviderService(List<JpaEntityProvider<?>> providers, ServiceRegistry registry) {
         this.providers = providers;
+        this.registry = registry;
     }
 
     @Override
     public JakartaPersistenceExtension create(DataConfig config) {
-        return new JpaExtensionImpl(config, providers);
+        return new JpaExtensionImpl(config, registry, providers);
     }
 }

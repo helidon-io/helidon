@@ -16,7 +16,7 @@
 
 package io.helidon.data.spi;
 
-import io.helidon.data.api.DataConfig;
+import io.helidon.data.DataConfig;
 import io.helidon.service.registry.Service;
 
 /**

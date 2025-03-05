@@ -23,7 +23,7 @@
     <parent>
         <artifactId>helidon-data-tests</artifactId>
         <groupId>io.helidon.data.tests</groupId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-data-tests-codegen-project</artifactId>

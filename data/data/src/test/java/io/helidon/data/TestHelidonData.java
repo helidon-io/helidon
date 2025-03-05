@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.data.api;
+package io.helidon.data;
 
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import io.helidon.function.ThrowingRunnable;
+import io.helidon.common.Functions;
 import io.helidon.transaction.Tx;
 
 public class TestHelidonData implements DataRegistry {
@@ -41,7 +41,7 @@ public class TestHelidonData implements DataRegistry {
     }
 
     @Override
-    public void transaction(Tx.Type type, ThrowingRunnable task) {
+    public <E extends Throwable> void transaction(Tx.Type type, Functions.CheckedRunnable<E> task) {
     }
 
     @Override
