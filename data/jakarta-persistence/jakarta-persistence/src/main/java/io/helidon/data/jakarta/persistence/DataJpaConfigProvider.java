@@ -17,14 +17,14 @@
 package io.helidon.data.jakarta.persistence;
 
 import io.helidon.common.config.Config;
-import io.helidon.data.api.ProviderConfig;
+import io.helidon.data.ProviderConfig;
 import io.helidon.data.spi.ProviderConfigProvider;
 
 /**
  * Implementation of a service provider interface to create Jakarta provider configuration.
  * This type is loaded through {@link java.util.ServiceLoader}.
  *
- * @see io.helidon.data.api.DataConfig.Builder#provider(io.helidon.data.api.ProviderConfig)
+ * @see io.helidon.data.DataConfig.Builder#provider(io.helidon.data.ProviderConfig)
  */
 public class DataJpaConfigProvider implements ProviderConfigProvider {
     /**

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.data.api;
+package io.helidon.data;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,11 +24,11 @@ import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import io.helidon.common.Functions.CheckedRunnable;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.config.Config;
 import io.helidon.common.config.ConfigException;
 import io.helidon.data.spi.DataProvider;
-import io.helidon.function.ThrowingRunnable;
 import io.helidon.transaction.Tx;
 
 /**
@@ -42,7 +42,7 @@ import io.helidon.transaction.Tx;
  * new service registry is created for each call.
  * <p>
  * Specific repositories are available in the default data instance, unless they are annotated with
- * {@link io.helidon.data.api.Data.DataSource} with the correct name.
+ * {@link io.helidon.data.Data.DataSource} with the correct name.
  * A repository CANNOT be available in more than one data registry.
  */
 public interface DataRegistry extends AutoCloseable {
@@ -119,7 +119,7 @@ public interface DataRegistry extends AutoCloseable {
      * @param repository data repository interface or abstract class to create, shall not be {@code null}
      * @param <T>        target data repository type
      * @return new data repository instance
-     * @throws io.helidon.data.api.DataException in case the repository is not a valid type for this registry
+     * @throws io.helidon.data.DataException in case the repository is not a valid type for this registry
      */
     <T extends Data.GenericRepository<?, ?>> T repository(Class<? super T> repository);
 
@@ -153,9 +153,10 @@ public interface DataRegistry extends AutoCloseable {
      * Transaction is handled automatically. Task does not return any result.
      *
      * @param task task to run in transaction
+     * @param <E> type of thrown (checked) exception
      * @throws DataException when task computation failed
      */
-    default void transaction(ThrowingRunnable task) {
+    default <E extends Throwable> void transaction(CheckedRunnable<E> task) {
         transaction(Tx.Type.REQUIRED, task);
     }
 
@@ -165,9 +166,10 @@ public interface DataRegistry extends AutoCloseable {
      *
      * @param type transaction type
      * @param task task to run in transaction
+     * @param <E> type of thrown (checked) exception
      * @throws DataException when task computation failed
      */
-    void transaction(Tx.Type type, ThrowingRunnable task);
+    <E extends Throwable> void transaction(Tx.Type type, CheckedRunnable<E> task);
 
     /**
      * Execute provided task as database transaction.

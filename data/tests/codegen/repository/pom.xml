@@ -23,7 +23,7 @@
     <parent>
         <groupId>io.helidon.data.tests.codegen</groupId>
         <artifactId>helidon-data-tests-codegen-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-data-tests-codegen-repository</artifactId>
@@ -33,17 +33,10 @@
         <dependency>
             <groupId>io.helidon.data.tests.codegen</groupId>
             <artifactId>helidon-data-tests-codegen-model</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.data</groupId>
-            <artifactId>helidon-data-api</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>io.helidon.data.jakarta.persistence</groupId>
             <artifactId>helidon-data-jakarta-persistence-gapi</artifactId>
-            <version>${project.version}</version>
         </dependency>
     </dependencies>
 
@@ -66,19 +59,19 @@
                             <version>${helidon.version}</version>
                         </path>
                         <path>
-                            <groupId>io.helidon.service.inject</groupId>
-                            <artifactId>helidon-service-inject-codegen</artifactId>
+                            <groupId>io.helidon.service</groupId>
+                            <artifactId>helidon-service-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                         <path>
                             <groupId>io.helidon.data.codegen</groupId>
                             <artifactId>helidon-data-codegen</artifactId>
-                            <version>${project.version}</version>
+                            <version>${helidon.version}</version>
                         </path>
                         <path>
                             <groupId>io.helidon.data.jakarta.persistence</groupId>
                             <artifactId>helidon-data-jakarta-persistence-codegen</artifactId>
-                            <version>${project.version}</version>
+                            <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
@@ -96,16 +89,16 @@
                     <dependency>
                         <groupId>io.helidon.data.codegen</groupId>
                         <artifactId>helidon-data-codegen</artifactId>
-                        <version>${project.version}</version>
+                        <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
                         <groupId>io.helidon.data.jakarta.persistence</groupId>
                         <artifactId>helidon-data-jakarta-persistence-codegen</artifactId>
-                        <version>${project.version}</version>
+                        <version>${helidon.version}</version>
                     </dependency>
                     <dependency>
-                        <groupId>io.helidon.service.inject</groupId>
-                        <artifactId>helidon-service-inject-codegen</artifactId>
+                        <groupId>io.helidon.service</groupId>
+                        <artifactId>helidon-service-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                 </dependencies>

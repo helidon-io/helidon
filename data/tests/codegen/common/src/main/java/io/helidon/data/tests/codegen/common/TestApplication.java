@@ -17,8 +17,8 @@ package io.helidon.data.tests.codegen.common;
 
 import java.util.Optional;
 
-import io.helidon.data.api.DataConfig;
-import io.helidon.data.api.ProviderConfig;
+import io.helidon.data.DataConfig;
+import io.helidon.data.ProviderConfig;
 import io.helidon.data.jakarta.persistence.DataJpaConfig;
 import io.helidon.data.tests.codegen.application.ApplicationData;
 import io.helidon.data.tests.codegen.model.Pokemon;
@@ -55,7 +55,7 @@ public class TestApplication {
 
         ApplicationData applicationData = new ApplicationData(newDataConfig);
         MatcherAssert.assertThat(applicationData.data(), notNullValue());
-        io.helidon.data.api.DataRegistry data = applicationData.data();
+        io.helidon.data.DataRegistry data = applicationData.data();
         PokemonRepository pokemonRepository = data.repository(PokemonRepository.class);
         Optional<Pokemon> pokemon = pokemonRepository.findById(InitialData.POKEMONS[1].getId());
         assertThat(pokemon.isPresent(), is(true));

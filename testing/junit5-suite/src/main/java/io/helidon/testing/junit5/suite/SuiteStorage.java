@@ -13,34 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.data.api;
+package io.helidon.testing.junit5.suite;
 
-import io.helidon.common.config.Config;
-
-class TestConfig implements ProviderConfig{
-    private final Config config;
-    private final String name;
-
-    TestConfig(Config config, String name) {
-        this.config = config;
-        this.name = name;
-    }
-
-    static ProviderConfig create(Config config, String name) {
-        return new TestConfig(config, name);
-    }
-
-    @Override
-    public String name() {
-        return name;
-    }
-
-    @Override
-    public String type() {
-        return "test";
-    }
-
-    Config config() {
-        return config;
-    }
+/**
+ * {@code SuiteStorage} defines API for suite providers to provide suite specific storage
+ * shared for all tests running as part of the suite.
+ * Storage is available as arguments resolver for the {@link Storage} class.
+ */
+public interface SuiteStorage {
 }

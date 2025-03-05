@@ -16,18 +16,18 @@
 
 package io.helidon.data.jakarta.persistence;
 
-import io.helidon.data.api.DataConfig;
+import io.helidon.data.DataConfig;
 import io.helidon.data.jakarta.persistence.spi.JakartaPersistenceExtensionProvider;
-import io.helidon.service.inject.api.Injection;
+import io.helidon.service.registry.Service;
 
-@Injection.Singleton
-@Injection.Named(DataJpaSupportProviderService.PROVIDER_TYPE)
+@Service.Singleton
+@Service.Named(DataJpaSupportProviderService.PROVIDER_TYPE)
 class DataJpaSupportProviderService implements DataJpaSupportProvider {
     static final String PROVIDER_TYPE = "jakarta";
 
     private final JakartaPersistenceExtensionProvider persistenceProvider;
 
-    @Injection.Inject
+    @Service.Inject
     DataJpaSupportProviderService(JakartaPersistenceExtensionProvider persistenceProvider) {
         this.persistenceProvider = persistenceProvider;
     }
