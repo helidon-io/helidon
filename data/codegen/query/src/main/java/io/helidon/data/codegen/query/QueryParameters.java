@@ -34,7 +34,7 @@ public class QueryParameters {
     /**
      * Create an instance of {@link QueryParameters}.
      *
-     * @param type parameter type
+     * @param type       parameter type
      * @param parameters parameters of the query
      * @return new instance of {@link QueryParameters}
      */
@@ -93,9 +93,13 @@ public class QueryParameters {
      * Query parameter type.
      */
     public enum Type {
-        /** Ordinal parameter, e.g. {@code $1}. */
+        /**
+         * Ordinal parameter, e.g. {@code $1}.
+         */
         ORDINAL,
-        /** Named parameter, e.g. {@code :name}. */
+        /**
+         * Named parameter, e.g. {@code :name}.
+         */
         NAMED;
     }
 

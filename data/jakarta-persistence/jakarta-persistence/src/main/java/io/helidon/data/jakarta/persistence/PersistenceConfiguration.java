@@ -368,8 +368,8 @@ public final class PersistenceConfiguration {
      * Copies database connection configuration into persistence unit configuration.
      *
      * @param dataJpaConfig source Helidon data Configuration
-     * @param driverClass JDBC driver class
-     * @param registry service registry
+     * @param driverClass   JDBC driver class
+     * @param registry      service registry
      */
     public void configureConnection(DataJpaConfig dataJpaConfig,
                                     Class<? extends Driver> driverClass,
@@ -412,9 +412,9 @@ public final class PersistenceConfiguration {
     // Configure DataSource using name from Config
     private void configureDataSource(String dataSourceName, boolean isJta, ServiceRegistry registry) {
         DataSource ds = registry.get(Lookup.builder()
-                             .addContract(DataSource.class)
-                             .addQualifier(Qualifier.createNamed(dataSourceName))
-                             .build());
+                                             .addContract(DataSource.class)
+                                             .addQualifier(Qualifier.createNamed(dataSourceName))
+                                             .build());
         if (isJta) {
             jtaDataSource(ds);
         } else {

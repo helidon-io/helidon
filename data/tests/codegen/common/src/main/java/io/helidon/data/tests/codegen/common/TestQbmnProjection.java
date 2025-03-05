@@ -43,10 +43,21 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class TestQbmnProjection {
 
-
     private static PokemonRepository pokemonRepository;
 
     // Simple (JPQL) get projection
+
+    @BeforeAll
+    public static void before(DataRegistry data) {
+        pokemonRepository = data.repository(PokemonRepository.class);
+    }
+
+    @AfterAll
+    public static void after() {
+        pokemonRepository = null;
+    }
+
+    // Simple (JPQL) Optional<Entity> get projection
 
     @Test
     public void testGetByName() {
@@ -63,7 +74,8 @@ public class TestQbmnProjection {
         assertThrows(RuntimeException.class, () -> pokemonRepository.getByName("Beedrill"));
     }
 
-    // Simple (JPQL) Optional<Entity> get projection
+    // Dynamic (criteria API) get projection
+    // Sort makes no sense in those kind of projections, but it shall work too because SQL allows it
 
     @Test
     public void testOptionalGetByName() {
@@ -77,11 +89,11 @@ public class TestQbmnProjection {
     @Test
     public void testOptionalGetMissingByName() {
         // Pokemon is not in the database
-        Optional<Pokemon> result =  pokemonRepository.optionalGetByName("Kakuna");
+        Optional<Pokemon> result = pokemonRepository.optionalGetByName("Kakuna");
         assertThat(result.isPresent(), is(false));
     }
 
-    // Dynamic (criteria API) get projection
+    // Dynamic (criteria API) Optional<Entity> get projection
     // Sort makes no sense in those kind of projections, but it shall work too because SQL allows it
 
     @Test
@@ -99,8 +111,7 @@ public class TestQbmnProjection {
         assertThrows(RuntimeException.class, () -> pokemonRepository.getByName("Beedrill", Sort.create(Order.create("name"))));
     }
 
-    // Dynamic (criteria API) Optional<Entity> get projection
-    // Sort makes no sense in those kind of projections, but it shall work too because SQL allows it
+    // Simple (JPQL) List<Entity> find projection
 
     @Test
     public void testDynamicOptionalGetByName() {
@@ -111,14 +122,16 @@ public class TestQbmnProjection {
         assertThat(result.get(), is(pokemon));
     }
 
+    // Simple (JPQL) Stream<Entity> find projection
+
     @Test
     public void testDynamicOptionalGetMissingByName() {
         // Pokemon is not in the database
-        Optional<Pokemon> result =  pokemonRepository.optionalGetByName("Kakuna", Sort.create(Order.create("name")));
+        Optional<Pokemon> result = pokemonRepository.optionalGetByName("Kakuna", Sort.create(Order.create("name")));
         assertThat(result.isPresent(), is(false));
     }
 
-    // Simple (JPQL) List<Entity> find projection
+    // Simple (JPQL) Collection<Entity> find projection
 
     @Test
     public void testListFind() {
@@ -126,7 +139,7 @@ public class TestQbmnProjection {
         assertThat(pokemons, hasSize(POKEMONS_LIST.size()));
     }
 
-    // Simple (JPQL) Stream<Entity> find projection
+    // Simple (JPQL) Stream<Entity> stream all projection
 
     @Test
     public void testStreamFind() {
@@ -134,15 +147,13 @@ public class TestQbmnProjection {
         assertThat(pokemons.toList(), hasSize(POKEMONS_LIST.size()));
     }
 
-    // Simple (JPQL) Collection<Entity> find projection
-
     @Test
     public void testCollectionFind() {
         Collection<Pokemon> pokemons = pokemonRepository.collectonFindAll();
         assertThat(pokemons, hasSize(POKEMONS_LIST.size()));
     }
 
-    // Simple (JPQL) Stream<Entity> stream all projection
+    // Simple (JPQL) List<Entity> list all projection
 
     @Test
     public void testStream() {
@@ -156,7 +167,7 @@ public class TestQbmnProjection {
         assertThat(pokemons.toList(), hasSize(POKEMONS_LIST.size()));
     }
 
-    // Simple (JPQL) List<Entity> list all projection
+    // Dynamic (criteria API) List<Entity> find projection
 
     @Test
     public void testList() {
@@ -164,13 +175,15 @@ public class TestQbmnProjection {
         assertThat(pokemons, hasSize(POKEMONS_LIST.size()));
     }
 
+    // Dynamic (criteria API) Stream<Entity> find projection
+
     @Test
     public void testListAll() {
         List<Pokemon> pokemons = pokemonRepository.listAll();
         assertThat(pokemons, hasSize(POKEMONS_LIST.size()));
     }
 
-    // Dynamic (criteria API) List<Entity> find projection
+    // Dynamic (criteria API) Collection<Entity> find projection
 
     @Test
     public void testDynamicListFind() {
@@ -178,7 +191,7 @@ public class TestQbmnProjection {
         checkSortedPokemonsListByName(pokemons);
     }
 
-    // Dynamic (criteria API) Stream<Entity> find projection
+    // Dynamic (criteria API) Stream<Entity> stream all projection
 
     @Test
     public void testDynamicStreamFind() {
@@ -186,15 +199,13 @@ public class TestQbmnProjection {
         checkSortedPokemonsListByName(pokemons);
     }
 
-    // Dynamic (criteria API) Collection<Entity> find projection
-
     @Test
     public void testDynamicCollectionFind() {
         Collection<Pokemon> pokemons = pokemonRepository.collectonFindAll(Sort.create(Order.create("name")));
         checkSortedPokemonsListByName(pokemons.stream().toList());
     }
 
-    // Dynamic (criteria API) Stream<Entity> stream all projection
+    // Dynamic (criteria API) List<Entity> list all projection
 
     @Test
     public void testDynamicStream() {
@@ -208,7 +219,7 @@ public class TestQbmnProjection {
         checkSortedPokemonsListByName(pokemons);
     }
 
-    // Dynamic (criteria API) List<Entity> list all projection
+    // Simple (JPQL) exists projection
 
     @Test
     public void testDynamicList() {
@@ -221,8 +232,6 @@ public class TestQbmnProjection {
         List<Pokemon> pokemons = pokemonRepository.listAll(Sort.create(Order.create("name")));
         checkSortedPokemonsListByName(pokemons);
     }
-
-    // Simple (JPQL) exists projection
 
     @Test
     public void testExistsByName() {
@@ -238,6 +247,8 @@ public class TestQbmnProjection {
         assertThat(result, is(false));
     }
 
+    // Dynamic (criteria API) exists projection
+
     @Test
     public void testBoxedExistsByName() {
         // Pokemon is in the database
@@ -251,8 +262,6 @@ public class TestQbmnProjection {
         boolean result = pokemonRepository.boxedExistsByName("Zapdos");
         assertThat(result, is(false));
     }
-
-    // Dynamic (criteria API) exists projection
 
     @Test
     public void testDynamicExistsByName() {
@@ -268,6 +277,8 @@ public class TestQbmnProjection {
         assertThat(result, is(false));
     }
 
+    // Simple (JPQL) count projection
+
     @Test
     public void testDynamicBoxedExistsByName() {
         // Pokemon is in the database
@@ -282,15 +293,13 @@ public class TestQbmnProjection {
         assertThat(result, is(false));
     }
 
-    // Simple (JPQL) count projection
-
     @Test
     public void testCountByName() {
         // Pokemon is in the database
         Number result = pokemonRepository.countByName("Snorlax");
         assertThat(result, notNullValue());
         assertThat(result.intValue(), is(1));
-  }
+    }
 
     @Test
     public void testEmptyCountByName() {
@@ -390,6 +399,8 @@ public class TestQbmnProjection {
         assertThat(result, is(1D));
     }
 
+    // Dynamic (criteria API) count projection
+
     @Test
     public void testBigIntegerCountByName() {
         // Pokemon is in the database
@@ -403,8 +414,6 @@ public class TestQbmnProjection {
         BigDecimal result = pokemonRepository.bigDecimalCountByName("Snorlax");
         assertThat(result, is(BigDecimal.valueOf(1L)));
     }
-
-    // Dynamic (criteria API) count projection
 
     @Test
     public void testDynamicCountByName() {
@@ -512,6 +521,9 @@ public class TestQbmnProjection {
         assertThat(result, is(1D));
     }
 
+    // Simple (JPQL) max/min/avg/sum
+    // Added criteria to filter out Pokemons with ID < 100 to search in default set of records
+
     @Test
     public void testDynamicBigIntegerCountByName() {
         // Pokemon is in the database
@@ -525,9 +537,6 @@ public class TestQbmnProjection {
         BigDecimal result = pokemonRepository.bigDecimalCountByName("Snorlax", Sort.create(Order.create("name")));
         assertThat(result, is(BigDecimal.valueOf(1L)));
     }
-
-    // Simple (JPQL) max/min/avg/sum
-    // Added criteria to filter out Pokemons with ID < 100 to search in default set of records
 
     @Test
     public void testLongGetMaxHpByIdGreaterThan() {
@@ -554,7 +563,6 @@ public class TestQbmnProjection {
         assertThat(result, notNullValue());
         assertThat(result, is(285));
     }
-
 
     @Test
     public void testShortGetMinHpByIdLessThan() {
@@ -635,13 +643,16 @@ public class TestQbmnProjection {
         assertThat(result, is(134.8d));
     }
 
-
     @Test
     public void testDoubleGetSumHpByIdLessThan() {
         Double result = pokemonRepository.doubleGetSumHpByIdLessThan(100);
         assertThat(result, notNullValue());
         assertThat(result, is(2696d));
     }
+
+    // Dynamic (criteria API) max/min/avg/sum
+    // Added criteria to filter out Pokemons with ID < 100 to search in default set of records
+    // Sort makes no sense in those kind of projections, but it shall work too because SQL allows it
 
     @Test
     public void testBigIntegerGetMaxHpByIdLessThan() {
@@ -656,10 +667,6 @@ public class TestQbmnProjection {
         assertThat(result, notNullValue());
         assertThat(result, is(BigDecimal.valueOf(30L)));
     }
-
-    // Dynamic (criteria API) max/min/avg/sum
-    // Added criteria to filter out Pokemons with ID < 100 to search in default set of records
-    // Sort makes no sense in those kind of projections, but it shall work too because SQL allows it
 
     @Test
     public void testDynamicLongGetMaxHpByIdGreaterThan() {
@@ -686,7 +693,6 @@ public class TestQbmnProjection {
         assertThat(result, notNullValue());
         assertThat(result, is(285));
     }
-
 
     @Test
     public void testDynamicShortGetMinHpByIdLessThan() {
@@ -767,7 +773,6 @@ public class TestQbmnProjection {
         assertThat(result, is(134.8d));
     }
 
-
     @Test
     public void testDynamicDoubleGetSumHpByIdLessThan() {
         Double result = pokemonRepository.doubleGetSumHpByIdLessThan(100, Sort.create(Order.create("name")));
@@ -787,16 +792,6 @@ public class TestQbmnProjection {
         BigDecimal result = pokemonRepository.bigDecGetMinHpByIdLessThan(100, Sort.create(Order.create("name")));
         assertThat(result, notNullValue());
         assertThat(result, is(BigDecimal.valueOf(30L)));
-    }
-
-    @BeforeAll
-    public static void before(DataRegistry data) {
-        pokemonRepository = data.repository(PokemonRepository.class);
-    }
-
-    @AfterAll
-    public static void after() {
-        pokemonRepository = null;
     }
 
 }

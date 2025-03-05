@@ -41,9 +41,9 @@ public interface PersistenceGenerator {
      * There is always just one data repository provider bound to single data repository interface
      * and its implementing class.
      *
-     * @param codegenContext code processing and generation context
-     * @param roundContext codegen round context
-     * @param repository data repository interface info
+     * @param codegenContext      code processing and generation context
+     * @param roundContext        codegen round context
+     * @param repository          data repository interface info
      * @param repositoryGenerator specific data repository code generator
      */
     void generate(CodegenContext codegenContext,
@@ -67,6 +67,50 @@ public interface PersistenceGenerator {
     StatementGenerator statementGenerator();
 
     // Abstract BaseQuery common ancestor is separated to be prepared for query with dynamic parts
+
+    /**
+     * Query return type.
+     * Depends on statement type (query or DML) and query projection.
+     */
+    enum QueryReturnType {
+        /**
+         * Numeric value for {@code Count}, {@code Min}, {@code Max}, {@code Sum} and {@code Avg}.
+         */
+        NUMBER,
+        /**
+         * Boolean value for {@code Exists}.
+         */
+        BOOLEAN,
+        /**
+         * Entity or its attribute for entity query.
+         */
+        ENTITY,
+        /**
+         * DML statement return type (numeric value or boolean).
+         */
+        DML;
+    }
+
+    /**
+     * Defines which query parts shall be dynamic.
+     */
+    enum DynamicQueryParts {
+
+        /**
+         * Criteria part of the query is dynamic.
+         */
+        CRITERIA,
+        /**
+         * Ordering part of the query is dynamic.
+         */
+        ORDER;
+
+        /**
+         * Length of {@link DynamicQueryParts}.
+         */
+        public static final int LENGTH = DynamicQueryParts.values().length;
+    }
+
     /**
      * Base query generated code.
      */
@@ -108,6 +152,8 @@ public interface PersistenceGenerator {
         String query();
     }
 
+    // Currently used in codegen code. May be also part of query with dynamic parts interface.
+
     /**
      * Generated query settings code snippet.
      */
@@ -120,36 +166,6 @@ public interface PersistenceGenerator {
          */
         CharSequence code();
 
-    }
-
-    /**
-     * Query return type.
-     * Depends on statement type (query or DML) and query projection.
-     */
-    enum QueryReturnType {
-        /** Numeric value for {@code Count}, {@code Min}, {@code Max}, {@code Sum} and {@code Avg}. */
-        NUMBER,
-        /** Boolean value for {@code Exists}. */
-        BOOLEAN,
-        /** Entity or its attribute for entity query. */
-        ENTITY,
-        /** DML statement return type (numeric value or boolean). */
-        DML;
-    }
-
-    // Currently used in codegen code. May be also part of query with dynamic parts interface.
-    /**
-     * Defines which query parts shall be dynamic.
-     */
-    enum DynamicQueryParts {
-
-        /** Criteria part of the query is dynamic. */
-        CRITERIA,
-        /** Ordering part of the query is dynamic. */
-        ORDER;
-
-        /** Length of {@link DynamicQueryParts}. */
-        public static final int LENGTH = DynamicQueryParts.values().length;
     }
 
     /**
@@ -180,7 +196,7 @@ public interface PersistenceGenerator {
         /**
          * Build provider specific {@link Query} from {@link DataQuery}.
          *
-         * @param query source {@link DataQuery}
+         * @param query  source {@link DataQuery}
          * @param params query parameters
          * @return query with settings.
          */
@@ -191,7 +207,7 @@ public interface PersistenceGenerator {
          * Only works for query with projection action set to {@link io.helidon.data.codegen.query.ProjectionAction#Select}
          * and with no projection expression (entity or entity property is returned).
          *
-         * @param query source {@link DataQuery}
+         * @param query  source {@link DataQuery}
          * @param params query parameters
          * @return query with settings.
          */
@@ -200,8 +216,8 @@ public interface PersistenceGenerator {
         /**
          * Build provider specific {@link Query} from query {@link String} and {@link List} of {@link MethodParameter}.
          *
-         * @param query source query {@link String}
-         * @param queryParameters query parameters
+         * @param query            source query {@link String}
+         * @param queryParameters  query parameters
          * @param methodParameters method parameters {@link List}
          * @return query with settings
          */
@@ -234,7 +250,7 @@ public interface PersistenceGenerator {
             /**
              * Creates an instance of method parameter.
              *
-             * @param name parameter name
+             * @param name  parameter name
              * @param alias parameter alias
              * @return new instance of {@link MethodParameter}
              */
@@ -279,7 +295,7 @@ public interface PersistenceGenerator {
         /**
          * Add code to persist single entity.
          *
-         * @param builder method builder
+         * @param builder    method builder
          * @param identifier entity identifier
          */
         void addPersist(Method.Builder builder, String identifier);
@@ -287,7 +303,7 @@ public interface PersistenceGenerator {
         /**
          * Add code to merge single entity.
          *
-         * @param builder method builder
+         * @param builder    method builder
          * @param identifier entity identifier
          */
         void addMerge(Method.Builder builder, String identifier);
@@ -295,7 +311,7 @@ public interface PersistenceGenerator {
         /**
          * Add code to persist entities {@code Collection}.
          *
-         * @param builder method builder
+         * @param builder    method builder
          * @param identifier entity identifier
          */
         void addPersistCollection(Method.Builder builder, String identifier);
@@ -303,16 +319,16 @@ public interface PersistenceGenerator {
         /**
          * Add code to merge entities {@code Collection}.
          *
-         * @param builder method builder
+         * @param builder    method builder
          * @param identifier entity identifier
-         * @param merged  merged collection identifier
+         * @param merged     merged collection identifier
          */
         void addMergeCollection(Method.Builder builder, String identifier, String merged);
 
         /**
          * Add code to remove single entity.
          *
-         * @param builder method builder
+         * @param builder    method builder
          * @param identifier entity identifier
          */
         void addRemove(Method.Builder builder, String identifier);
@@ -320,7 +336,7 @@ public interface PersistenceGenerator {
         /**
          * Add code to remove entities {@code Collection}.
          *
-         * @param builder method builder
+         * @param builder    method builder
          * @param identifier entity identifier
          */
         void addRemoveCollection(Method.Builder builder, String identifier);
@@ -328,17 +344,17 @@ public interface PersistenceGenerator {
         /**
          * Add code to find entity by primary key.
          *
-         * @param builder method builder
+         * @param builder    method builder
          * @param identifier primary key identitifer
-         * @param entity entity class name
+         * @param entity     entity class name
          */
         void addFind(Method.Builder builder, String identifier, TypeName entity);
 
         /**
          * Add code to execute query on entity and return single {@code returnType} instance.
          *
-         * @param builder method builder
-         * @param query query string
+         * @param builder    method builder
+         * @param query      query string
          * @param returnType query result type
          */
         void addExecuteSimpleQueryItem(Method.Builder builder, String query, TypeName returnType);
@@ -347,8 +363,8 @@ public interface PersistenceGenerator {
          * Add code to execute query on entity and return {@link java.util.List} of entity instances.
          *
          * @param builder method builder
-         * @param query query string
-         * @param entity entity class name
+         * @param query   query string
+         * @param entity  entity class name
          */
         void addExecuteSimpleQueryList(Method.Builder builder, String query, TypeName entity);
 
@@ -356,16 +372,16 @@ public interface PersistenceGenerator {
          * Add code to execute query on entity and return {@link java.util.stream.Stream} of entity instances.
          *
          * @param builder method builder
-         * @param query query string
-         * @param entity entity class name
+         * @param query   query string
+         * @param entity  entity class name
          */
         void addExecuteSimpleQueryStream(Method.Builder builder, String query, TypeName entity);
 
         /**
          * Add code to execute query and return single {@code returnType} instance.
          *
-         * @param builder method builder
-         * @param query query generated code
+         * @param builder    method builder
+         * @param query      query generated code
          * @param returnType query result type
          */
         void addExecuteQueryItem(Method.Builder builder,
@@ -375,26 +391,26 @@ public interface PersistenceGenerator {
         /**
          * Add code to execute query and return single {@code returnType} instance.
          *
-         * @param builder method builder
+         * @param builder        method builder
          * @param repositoryInfo data repository interface info
-         * @param methodInfo  method descriptor
-         * @param methodParams method parameters
-         * @param dataQuery query abstract model
-         * @param returnType query result type
+         * @param methodInfo     method descriptor
+         * @param methodParams   method parameters
+         * @param dataQuery      query abstract model
+         * @param returnType     query result type
          */
         void addExecuteDynamicQueryItem(Method.Builder builder,
-                                      RepositoryInfo repositoryInfo,
-                                      TypedElementInfo methodInfo,
-                                      MethodParams methodParams,
-                                      DataQuery dataQuery,
-                                      TypeName returnType);
+                                        RepositoryInfo repositoryInfo,
+                                        TypedElementInfo methodInfo,
+                                        MethodParams methodParams,
+                                        DataQuery dataQuery,
+                                        TypeName returnType);
 
         /**
          * Add code to execute query and return single {@code returnType} instance or {@code null}.
          * Requires Jakarta Persistence 3.2.
          *
-         * @param builder method builder
-         * @param query query generated code
+         * @param builder    method builder
+         * @param query      query generated code
          * @param returnType query result type
          */
         void addExecuteQueryItemOrNull(Method.Builder builder,
@@ -405,12 +421,12 @@ public interface PersistenceGenerator {
          * Add code to execute query and return single {@code returnType} instance or {@code null}.
          * Requires Jakarta Persistence 3.2.
          *
-         * @param builder method builder
+         * @param builder        method builder
          * @param repositoryInfo data repository interface info
-         * @param methodInfo  method descriptor
-         * @param methodParams method parameters
-         * @param dataQuery query abstract model
-         * @param returnType query result type
+         * @param methodInfo     method descriptor
+         * @param methodParams   method parameters
+         * @param dataQuery      query abstract model
+         * @param returnType     query result type
          */
         void addExecuteDynamicQueryItemOrNull(Method.Builder builder,
                                               RepositoryInfo repositoryInfo,
@@ -422,8 +438,8 @@ public interface PersistenceGenerator {
         /**
          * Add code to execute query and return {@link java.util.List} of {@code returnType} instances.
          *
-         * @param builder method builder
-         * @param query query generated code
+         * @param builder    method builder
+         * @param query      query generated code
          * @param returnType query result type
          */
         void addExecuteQueryList(Method.Builder builder,
@@ -433,12 +449,12 @@ public interface PersistenceGenerator {
         /**
          * Add code to execute dynamic query and return {@link java.util.List} of {@code returnType} instances.
          *
-         * @param builder method builder
+         * @param builder        method builder
          * @param repositoryInfo data repository interface info
-         * @param methodInfo  method descriptor
-         * @param methodParams method parameters
-         * @param dataQuery query abstract model
-         * @param returnType query result type
+         * @param methodInfo     method descriptor
+         * @param methodParams   method parameters
+         * @param dataQuery      query abstract model
+         * @param returnType     query result type
          */
         void addExecuteDynamicQueryList(Method.Builder builder,
                                         RepositoryInfo repositoryInfo,
@@ -450,8 +466,8 @@ public interface PersistenceGenerator {
         /**
          * Add code to execute query and return {@link java.util.stream.Stream} of {@code returnType} instances.
          *
-         * @param builder method builder
-         * @param query query generated code
+         * @param builder    method builder
+         * @param query      query generated code
          * @param returnType query result type
          */
         void addExecuteQueryStream(Method.Builder builder,
@@ -461,12 +477,12 @@ public interface PersistenceGenerator {
         /**
          * Add code to execute dynamic query and return {@link java.util.stream.Stream} of {@code returnType} instances.
          *
-         * @param builder method builder
+         * @param builder        method builder
          * @param repositoryInfo data repository interface info
-         * @param methodInfo  method descriptor
-         * @param methodParams method parameters
-         * @param dataQuery query abstract model
-         * @param returnType query result type
+         * @param methodInfo     method descriptor
+         * @param methodParams   method parameters
+         * @param dataQuery      query abstract model
+         * @param returnType     query result type
          */
         void addExecuteDynamicQueryStream(Method.Builder builder,
                                           RepositoryInfo repositoryInfo,
@@ -478,8 +494,8 @@ public interface PersistenceGenerator {
         /**
          * Add query from provided query.
          *
-         * @param builder method builder
-         * @param query query generated code
+         * @param builder    method builder
+         * @param query      query generated code
          * @param returnType query result type
          */
         void addQueryItem(Method.Builder builder, PersistenceGenerator.Query query, TypeName returnType);
@@ -488,11 +504,11 @@ public interface PersistenceGenerator {
          * Add code to create query and return {@link java.util.List} of {@code returnType} instances
          * with pagination applied.
          *
-         * @param builder method builder
-         * @param query query generated code
-         * @param returnType query result type
+         * @param builder     method builder
+         * @param query       query generated code
+         * @param returnType  query result type
          * @param firstResult position of the first result to retrieve
-         * @param maxResults maximum number of results to retrieve
+         * @param maxResults  maximum number of results to retrieve
          */
         void addQueryPage(Method.Builder builder,
                           PersistenceGenerator.Query query,
@@ -504,12 +520,12 @@ public interface PersistenceGenerator {
          * Add code to create query and return {@link java.util.List} of {@code returnType} instances
          * with pagination applied.
          *
-         * @param builder method builder
+         * @param builder      method builder
          * @param queryContent query parameter content
-         * @param settings query settings
-         * @param returnType query result type
-         * @param firstResult position of the first result to retrieve
-         * @param maxResults maximum number of results to retrieve
+         * @param settings     query settings
+         * @param returnType   query result type
+         * @param firstResult  position of the first result to retrieve
+         * @param maxResults   maximum number of results to retrieve
          */
         void addQueryPage(Method.Builder builder,
                           Consumer<Method.Builder> queryContent,
@@ -522,17 +538,17 @@ public interface PersistenceGenerator {
          * Add {@code COUNT} query from provided query.
          *
          * @param builder method builder
-         * @param query query generated code
+         * @param query   query generated code
          */
         void addQueryCount(Method.Builder builder, PersistenceGenerator.Query query);
 
         /**
          * Add {@code COUNT} query from provided query.
          *
-         * @param builder method builder
+         * @param builder      method builder
          * @param queryContent query parameter content
-         * @param settings query settings
-         * @param returnType query result type
+         * @param settings     query settings
+         * @param returnType   query result type
          */
         void addQueryCount(Method.Builder builder,
                            Consumer<Method.Builder> queryContent,
@@ -540,40 +556,41 @@ public interface PersistenceGenerator {
                            TypeName returnType);
 
         // Pageable support with dynamic queries
+
         /**
          * Add code to create dynamic query for {@code Slice}.
          * Slice requires data query to return {@link java.util.List} of {@code returnType} instances.
          *
-         * @param builder method builder
-         * @param repositoryInfo data repository interface info
-         * @param methodInfo  method descriptor
-         * @param methodParams method parameters
-         * @param dataQuery query abstract model
+         * @param builder            method builder
+         * @param repositoryInfo     data repository interface info
+         * @param methodInfo         method descriptor
+         * @param methodParams       method parameters
+         * @param dataQuery          query abstract model
          * @param dataQueryStatement name of the data query statement (used in following code to create {@code Page})
-         * @param returnType query result type
+         * @param returnType         query result type
          * @return settings query settings
          */
         List<PersistenceGenerator.QuerySettings> addDynamicSliceQuery(Method.Builder builder,
-                                                                       RepositoryInfo repositoryInfo,
-                                                                       TypedElementInfo methodInfo,
-                                                                       MethodParams methodParams,
-                                                                       DataQuery dataQuery,
-                                                                       String dataQueryStatement,
-                                                                       TypeName returnType);
+                                                                      RepositoryInfo repositoryInfo,
+                                                                      TypedElementInfo methodInfo,
+                                                                      MethodParams methodParams,
+                                                                      DataQuery dataQuery,
+                                                                      String dataQueryStatement,
+                                                                      TypeName returnType);
 
         /**
          * Add code to create dynamic queries for {@code Page}.
          * Page requires data query to return {@link java.util.List} of {@code returnType} instances
          * and additional query to count size of the query result across all pages.
          *
-         * @param builder method builder
-         * @param repositoryInfo data repository interface info
-         * @param methodInfo  method descriptor
-         * @param methodParams method parameters
-         * @param dataQuery query abstract model
-         * @param dataQueryStatement name of the data query statement (used in following code to create {@code Page})
+         * @param builder             method builder
+         * @param repositoryInfo      data repository interface info
+         * @param methodInfo          method descriptor
+         * @param methodParams        method parameters
+         * @param dataQuery           query abstract model
+         * @param dataQueryStatement  name of the data query statement (used in following code to create {@code Page})
          * @param countQueryStatement name of the count query statement (used in following code to create {@code Page})
-         * @param returnType query result type
+         * @param returnType          query result type
          * @return settings query settings
          */
         // FIXME: Try to reduce number of parameters to remove checkstyle suppression
@@ -591,7 +608,7 @@ public interface PersistenceGenerator {
          * Add code to execute DML statement with no parameters.
          *
          * @param builder method builder
-         * @param dml DML statement string
+         * @param dml     DML statement string
          */
         void addExecuteSimpleDml(Method.Builder builder, String dml);
 
@@ -599,19 +616,19 @@ public interface PersistenceGenerator {
          * Add code to execute DML statement.
          *
          * @param builder method builder
-         * @param dml DML statement string
+         * @param dml     DML statement string
          */
         void addExecuteDml(Method.Builder builder, PersistenceGenerator.Query dml);
 
         /**
          * Add code to execute dynamic DML statement.
          *
-         * @param builder method builder
+         * @param builder        method builder
          * @param repositoryInfo data repository interface info
-         * @param methodInfo method descriptor
-         * @param methodParams method parameters
-         * @param dataQuery query abstract model
-         * @param returnType query result type
+         * @param methodInfo     method descriptor
+         * @param methodParams   method parameters
+         * @param dataQuery      query abstract model
+         * @param returnType     query result type
          */
         void addDynamicDml(Method.Builder builder,
                            RepositoryInfo repositoryInfo,

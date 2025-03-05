@@ -47,37 +47,23 @@ import jakarta.persistence.spi.PersistenceUnitTransactionType;
  */
 class PersistenceUnitInfoImpl implements PersistenceUnitInfo {
 
+    private static final String WEBINF_CLASSES_STR = "WEB-INF/classes/";
     private final PersistenceConfiguration config;
-
     private final ClassLoader classLoader;
-
     private final ClassLoader originalClassLoader;
-
     private final boolean excludeUnlistedClasses;
-
     private final List<URL> jarFileUrls;
-
     private final Set<String> managedClassNames;
-
     private final List<String> managedClassNamesView;
-
     private final List<String> mappingFileNames;
-
     private final URL persistenceUnitRootUrl;
-
     private final String persistenceXMLSchemaVersion;
-
     private final SharedCacheMode sharedCacheMode;
-
     private final Consumer<? super ClassTransformer> classTransformerConsumer;
-
     private final Supplier<? extends ClassLoader> tempClassLoaderSupplier;
-
     private final Properties properties;
-
     @SuppressWarnings("removal")
     private final PersistenceUnitTransactionType transactionType;
-
     private final ValidationMode validationMode;
 
     PersistenceUnitInfoImpl(PersistenceConfiguration config) {
@@ -89,15 +75,15 @@ class PersistenceUnitInfoImpl implements PersistenceUnitInfo {
         excludeUnlistedClasses = true;
         // Translate PersistenceUnitTransactionType from temporary enum
         switch (config.transactionType()) {
-            case JTA:
-                transactionType = PersistenceUnitTransactionType.JTA;
-                break;
-            case RESOURCE_LOCAL:
-                transactionType = PersistenceUnitTransactionType.RESOURCE_LOCAL;
-                break;
-            default:
-                throw new UnsupportedOperationException("Unknown PersistenceUnitTransactionType "
-                                                                + config.transactionType().name());
+        case JTA:
+            transactionType = PersistenceUnitTransactionType.JTA;
+            break;
+        case RESOURCE_LOCAL:
+            transactionType = PersistenceUnitTransactionType.RESOURCE_LOCAL;
+            break;
+        default:
+            throw new UnsupportedOperationException("Unknown PersistenceUnitTransactionType "
+                                                            + config.transactionType().name());
         }
         properties = new Properties(config.properties().size());
         properties.putAll(config.properties());
@@ -115,14 +101,17 @@ class PersistenceUnitInfoImpl implements PersistenceUnitInfo {
             public boolean isEmpty() {
                 return managedClassNames.isEmpty();
             }
+
             @Override
             public int size() {
                 return managedClassNames.size();
             }
+
             @Override
             public Iterator<String> iterator() {
                 return managedClassNames.iterator();
             }
+
             @Override
             public String get(final int index) {
                 final Iterator<String> iterator = this.iterator();
@@ -143,6 +132,88 @@ class PersistenceUnitInfoImpl implements PersistenceUnitInfo {
             throw new DataException("Could not build persistence unit URL", ex);
         }
 
+    }
+
+    /**
+     * Determine the URL path to the persistence unit.
+     *
+     * @param pxmlURL            URL of a resource belonging to the PU (obtained for
+     *                           {@code descriptorLocation} via {@code Classloader.getResource(String)}).
+     * @param descriptorLocation the name of the resource.
+     * @return The URL of the PU root containing the resource.
+     * @throws IllegalStateException if the resolved root doesn't conform to the JPA specification (8.2)
+     */
+    public static URL computePURootURL(URL pxmlURL, String descriptorLocation) throws IOException, URISyntaxException {
+        StringTokenizer tokenizer = new StringTokenizer(descriptorLocation, "/\\");
+        int descriptorDepth = tokenizer.countTokens() - 1;
+        URL result;
+        String protocol = pxmlURL.getProtocol();
+        if ("file".equals(protocol)) { // NOI18N
+            StringBuilder path = new StringBuilder();
+            boolean firstElement = true;
+            for (int i = 0; i < descriptorDepth; i++) {
+                if (!firstElement) {
+                    path.append("/"); // 315097 URL use standard separators
+                }
+                path.append("..");
+                firstElement = false;
+            }
+            // e.g. file:/tmp/META-INF/persistence.xml
+            // 210280: any file url will be assumed to always reference a file (not a directory)
+            result = new URL(pxmlURL, path.toString()); // NOI18N
+        } else if ("zip".equals(protocol) || "jar".equals(protocol) || "wsjar".equals(protocol)) {
+            // e.g. file:/foo/bar.jar!/META-INF/persistence.xml
+            // "zip:" URLs require additional handling.
+            String spec = "zip".equals(protocol)
+                    ? "file:" + pxmlURL.getFile()
+                    : pxmlURL.getFile();
+
+            // Warning: if we ever support nested archive URLs here, make sure
+            // that we get the entry in the *innermost* archive.
+            int separator = spec.lastIndexOf("!/");
+
+            // It could be possible for a "zip:" or "wsjar:" URL to not have
+            // an entry! In that case we take the root of the archive.
+            String file = separator == -1 ? spec : spec.substring(0, separator);
+            String entry = separator == -1 ? "" : spec.substring(separator + 2);
+
+            // The jar file or directory whose META-INF directory contains
+            // the persistence.xml file is termed the root of the persistence
+            // unit. (JPA Spec, 8.2)
+            if (!entry.endsWith(descriptorLocation)) {
+                // Shouldn't happen unless we have a particularly tricky
+                // classloader - which we're not obligated to support.
+                throw new IllegalStateException(
+                        String.format("Invalid persistence root URL %s with descriptor %s", pxmlURL, descriptorLocation));
+            }
+
+            String rootEntry = entry.substring(0, entry.length() - descriptorLocation.length());
+
+            // "wsjar:" URLs always have an entry for historical reasons.
+            result = !rootEntry.isEmpty() || "wsjar".equals(protocol)
+                    ? new URL("jar:" + file + "!/" + rootEntry)
+                    : new URL(file);
+
+            // Since EclipseLink is a reference implementation, let's validate
+            // the produced root!
+            if (!isValidRootInArchive(file, rootEntry)) {
+                throw new IllegalStateException(
+                        String.format("Invalid persistence root URL %s with descriptor %s", pxmlURL, descriptorLocation));
+            }
+
+        } else if ("bundleentry".equals(protocol)) {
+            // mkeith - add bundle protocol cases
+            result = new URL("bundleentry://" + pxmlURL.getAuthority());
+        } else if ("bundleresource".equals(protocol)) {
+            result = new URL("bundleresource://" + pxmlURL.getAuthority());
+        } else {
+            StringBuilder path = new StringBuilder();
+            path.append("../".repeat(Math.max(0, descriptorDepth))); // 315097 URL use standard separators
+            // some other protocol
+            result = new URL(pxmlURL, path.toString()); // NOI18N
+        }
+        result = fixUNC(result);
+        return result;
     }
 
     @Override
@@ -261,91 +332,6 @@ class PersistenceUnitInfoImpl implements PersistenceUnitInfo {
         return this.getPersistenceUnitName() + " (" + this.getPersistenceUnitRootUrl() + ")";
     }
 
-
-    /**
-     * Determine the URL path to the persistence unit.
-     *
-     * @param pxmlURL URL of a resource belonging to the PU (obtained for
-     *                {@code descriptorLocation} via {@code Classloader.getResource(String)}).
-     * @param descriptorLocation the name of the resource.
-     * @return The URL of the PU root containing the resource.
-     * @throws IllegalStateException if the resolved root doesn't conform to the JPA specification (8.2)
-     */
-    public static URL computePURootURL(URL pxmlURL, String descriptorLocation) throws IOException, URISyntaxException {
-        StringTokenizer tokenizer = new StringTokenizer(descriptorLocation, "/\\");
-        int descriptorDepth = tokenizer.countTokens() - 1;
-        URL result;
-        String protocol = pxmlURL.getProtocol();
-        if ("file".equals(protocol)) { // NOI18N
-            StringBuilder path = new StringBuilder();
-            boolean firstElement = true;
-            for (int i = 0; i < descriptorDepth; i++) {
-                if (!firstElement) {
-                    path.append("/"); // 315097 URL use standard separators
-                }
-                path.append("..");
-                firstElement = false;
-            }
-            // e.g. file:/tmp/META-INF/persistence.xml
-            // 210280: any file url will be assumed to always reference a file (not a directory)
-            result = new URL(pxmlURL, path.toString()); // NOI18N
-        } else if ("zip".equals(protocol) || "jar".equals(protocol) || "wsjar".equals(protocol)) {
-            // e.g. file:/foo/bar.jar!/META-INF/persistence.xml
-            // "zip:" URLs require additional handling.
-            String spec = "zip".equals(protocol)
-                    ? "file:" + pxmlURL.getFile()
-                    : pxmlURL.getFile();
-
-            // Warning: if we ever support nested archive URLs here, make sure
-            // that we get the entry in the *innermost* archive.
-            int separator = spec.lastIndexOf("!/");
-
-            // It could be possible for a "zip:" or "wsjar:" URL to not have
-            // an entry! In that case we take the root of the archive.
-            String file = separator == -1 ? spec : spec.substring(0, separator);
-            String entry = separator == -1 ? "" : spec.substring(separator + 2);
-
-            // The jar file or directory whose META-INF directory contains
-            // the persistence.xml file is termed the root of the persistence
-            // unit. (JPA Spec, 8.2)
-            if (!entry.endsWith(descriptorLocation)) {
-                // Shouldn't happen unless we have a particularly tricky
-                // classloader - which we're not obligated to support.
-                throw new IllegalStateException(
-                        String.format("Invalid persistence root URL %s with descriptor %s", pxmlURL, descriptorLocation));
-            }
-
-            String rootEntry = entry.substring(0, entry.length() - descriptorLocation.length());
-
-            // "wsjar:" URLs always have an entry for historical reasons.
-            result = !rootEntry.isEmpty() || "wsjar".equals(protocol)
-                    ? new URL("jar:" + file + "!/" + rootEntry)
-                    : new URL(file);
-
-            // Since EclipseLink is a reference implementation, let's validate
-            // the produced root!
-            if (!isValidRootInArchive(file, rootEntry)) {
-                throw new IllegalStateException(
-                        String.format("Invalid persistence root URL %s with descriptor %s", pxmlURL, descriptorLocation));
-            }
-
-        } else if ("bundleentry".equals(protocol)) {
-            // mkeith - add bundle protocol cases
-            result = new URL("bundleentry://" + pxmlURL.getAuthority());
-        } else if ("bundleresource".equals(protocol)) {
-            result = new URL("bundleresource://" + pxmlURL.getAuthority());
-        } else {
-            StringBuilder path = new StringBuilder();
-            path.append("../".repeat(Math.max(0, descriptorDepth))); // 315097 URL use standard separators
-            // some other protocol
-            result = new URL(pxmlURL, path.toString()); // NOI18N
-        }
-        result = fixUNC(result);
-        return result;
-    }
-
-    private static final String WEBINF_CLASSES_STR = "WEB-INF/classes/";
-
     private static boolean isValidRootInArchive(String file, String rootEntry) {
         String extension = file.substring(Math.max(0, file.length() - 4));
         if (extension.equalsIgnoreCase(".jar")) {
@@ -373,8 +359,8 @@ class PersistenceUnitInfoImpl implements PersistenceUnitInfo {
         String authority = url.getAuthority();
         String file = url.getFile();
         if (authority != null) {
-//            AbstractSessionLog.getLog().finer(
-//                    "fixUNC: before fixing: url = " + url + ", authority = " + authority + ", file = " + file);
+            //            AbstractSessionLog.getLog().finer(
+            //                    "fixUNC: before fixing: url = " + url + ", authority = " + authority + ", file = " + file);
             assert (url.getPort() == -1);
 
             // See GlassFish issue https://glassfish.dev.java.net/issues/show_bug.cgi?id=3209 and
@@ -396,8 +382,9 @@ class PersistenceUnitInfoImpl implements PersistenceUnitInfo {
             }
             file = prefix.concat(authority).concat(file);
             url = new URL(protocol, null, file);
-//            AbstractSessionLog.getLog().finer(
-//                    "fixUNC: after fixing: url = " + url + ", authority = " + url.getAuthority() + ", file = " + url.getFile());
+            //            AbstractSessionLog.getLog().finer(
+            //                    "fixUNC: after fixing: url = " + url + ", authority = " + url.getAuthority() + ", file = " +
+            //                    url.getFile());
         }
         return url;
     }

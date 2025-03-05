@@ -48,7 +48,6 @@ public class MySqlSuite implements SuiteProvider, SuiteResolver {
     private final MySQLContainer<?> container;
     private Config config;
 
-
     public MySqlSuite() {
         config = Config.just(ConfigSources.classpath("application.yaml"));
         container = new MySQLContainer<>(DockerImageName.parse("mysql:8.0"));

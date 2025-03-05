@@ -64,6 +64,7 @@ interface CriteriaConditionBlueprint {
 
     /**
      * Whether {@link String} arguments are case-insensitive.
+     *
      * @return value of {@code true} when {@link String} arguments are case-insensitive or {@code false} otherwise
      */
     @Option.DefaultBoolean(false)
