@@ -1,3 +1,4 @@
+module:com.fasterxml.jackson.core
 com.fasterxml.jackson.core
 com.fasterxml.jackson.core.async
 com.fasterxml.jackson.core.base
@@ -5,8 +6,6 @@ com.fasterxml.jackson.core.exc
 com.fasterxml.jackson.core.filter
 com.fasterxml.jackson.core.format
 com.fasterxml.jackson.core.io
-com.fasterxml.jackson.core.io.doubleparser
-com.fasterxml.jackson.core.io.schubfach
 com.fasterxml.jackson.core.json
 com.fasterxml.jackson.core.json.async
 com.fasterxml.jackson.core.sym

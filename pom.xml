@@ -185,10 +185,10 @@
         <javadoc.link.ojdbc>https://docs.oracle.com/en/database/oracle/oracle-database/${version.lib.ojdbc.family}/jajdb/</javadoc.link.ojdbc>
         <javadoc.link.ucp>https://docs.oracle.com/en/database/oracle/oracle-database/${version.lib.ojdbc.family}/jjuar/</javadoc.link.ucp>
 
-        <javadoc.jackson.version>2.14</javadoc.jackson.version>
-        <javadoc.link.jackson-annotations>https://fasterxml.github.io/jackson-annotations/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-annotations>
-        <javadoc.link.jackson-core>https://fasterxml.github.io/jackson-core/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-core>
-        <javadoc.link.jackson-databind>https://fasterxml.github.io/jackson-databind/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-databind>
+        <javadoc.jackson.version>2.18.1</javadoc.jackson.version>
+        <javadoc.link.jackson-annotations>https://www.javadoc.io/doc/com.fasterxml.jackson.core/jackson-annotations/${javadoc.jackson.version}/</javadoc.link.jackson-annotations>
+        <javadoc.link.jackson-core>https://www.javadoc.io/doc/com.fasterxml.jackson.core/jackson-core/${javadoc.jackson.version}/</javadoc.link.jackson-core>
+        <javadoc.link.jackson-databind>https://www.javadoc.io/doc/com.fasterxml.jackson.core/jackson-databind/${javadoc.jackson.version}/</javadoc.link.jackson-databind>
         <javadoc.link.oci-common>https://javadoc.io/static/com.oracle.oci.sdk/oci-java-sdk-common/${version.lib.oci}/</javadoc.link.oci-common>
         <javadoc.link.oci-addons-oke-workload-identity>https://javadoc.io/static/com.oracle.oci.sdk/oci-java-sdk-addons-oke-workload-identity/${version.lib.oci}/</javadoc.link.oci-addons-oke-workload-identity>
         <javadoc.link.reactive-streams>https://www.reactive-streams.org/reactive-streams-${version.lib.reactivestreams}-javadoc</javadoc.link.reactive-streams>

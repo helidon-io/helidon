@@ -33,6 +33,10 @@
 
     <packaging>pom</packaging>
 
+    <properties>
+        <javadoc.fail-on-warnings>true</javadoc.fail-on-warnings>
+    </properties>
+
     <modules>
         <module>encoding</module>
         <module>http</module>
