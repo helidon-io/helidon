@@ -153,7 +153,7 @@ public interface DataRegistry extends AutoCloseable {
      * Transaction is handled automatically. Task does not return any result.
      *
      * @param task task to run in transaction
-     * @param <E> type of thrown (checked) exception
+     * @param <E>  type of thrown (checked) exception
      * @throws DataException when task computation failed
      */
     default <E extends Throwable> void transaction(CheckedRunnable<E> task) {
@@ -166,7 +166,7 @@ public interface DataRegistry extends AutoCloseable {
      *
      * @param type transaction type
      * @param task task to run in transaction
-     * @param <E> type of thrown (checked) exception
+     * @param <E>  type of thrown (checked) exception
      * @throws DataException when task computation failed
      */
     <E extends Throwable> void transaction(Tx.Type type, CheckedRunnable<E> task);

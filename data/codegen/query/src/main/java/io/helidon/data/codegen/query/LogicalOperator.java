@@ -19,8 +19,12 @@ package io.helidon.data.codegen.query;
  * Logical operator in criteria expressions.
  */
 public enum LogicalOperator {
-    /** Logical operator AND. */
+    /**
+     * Logical operator AND.
+     */
     AND,
-    /** Logical operator OR. */
+    /**
+     * Logical operator OR.
+     */
     OR
 }

@@ -42,6 +42,16 @@ public class TestQbmnCriteria {
 
     // Simple (JPQL) criteria After
 
+    @BeforeAll
+    public static void before(DataRegistry data) {
+        pokemonRepository = data.repository(PokemonRepository.class);
+    }
+
+    @AfterAll
+    public static void after() {
+        pokemonRepository = null;
+    }
+
     @Test
     public void testFindByNameAfter() {
         List<Pokemon> pokemons = pokemonRepository.findByNameAfter("Lugia");
@@ -55,6 +65,8 @@ public class TestQbmnCriteria {
         List<Pokemon> checkPokemons = pokemonsById(11, 12, 13, 14, 15, 16, 17, 18, 19, 20);
         checkPokemonsList(pokemons, checkPokemons);
     }
+
+    // Dynamic (JPQL) criteria After
 
     @Test
     public void testFindByNameNotAfter() {
@@ -70,8 +82,6 @@ public class TestQbmnCriteria {
         checkPokemonsList(pokemons, checkPokemons);
     }
 
-    // Dynamic (JPQL) criteria After
-
     @Test
     public void testDynamicFindByNameAfter() {
         List<Pokemon> pokemons = pokemonRepository.findByNameAfter("Lugia",
@@ -84,16 +94,18 @@ public class TestQbmnCriteria {
     @Test
     public void testDynamicFindByIdAfter() {
         List<Pokemon> pokemons = pokemonRepository.findByIdAfter(10,
-                                                                   Sort.create(Order.create("name")));
+                                                                 Sort.create(Order.create("name")));
         List<Pokemon> checkPokemons = sortedPokemonsListByName(
                 pokemonsById(11, 12, 13, 14, 15, 16, 17, 18, 19, 20));
         checkPokemonsSortedList(pokemons, checkPokemons);
     }
 
+    // Simple (JPQL) criteria Before
+
     @Test
     public void testDynamicFindByNameNotAfter() {
         List<Pokemon> pokemons = pokemonRepository.findByNameNotAfter("Lugia",
-                                                                   Sort.create(Order.create("name")));
+                                                                      Sort.create(Order.create("name")));
         List<Pokemon> checkPokemons = sortedPokemonsListByName(
                 pokemonsById(5, 9, 10, 11, 14, 16, 17, 19));
         checkPokemonsSortedList(pokemons, checkPokemons);
@@ -102,13 +114,11 @@ public class TestQbmnCriteria {
     @Test
     public void testDynamicFindByIdNotAfter() {
         List<Pokemon> pokemons = pokemonRepository.findByIdNotAfter(10,
-                                                                 Sort.create(Order.create("name")));
+                                                                    Sort.create(Order.create("name")));
         List<Pokemon> checkPokemons = sortedPokemonsListByName(
                 pokemonsById(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
         checkPokemonsSortedList(pokemons, checkPokemons);
     }
-
-    // Simple (JPQL) criteria Before
 
     @Test
     public void testFindByNameBefore() {
@@ -124,6 +134,8 @@ public class TestQbmnCriteria {
         checkPokemonsList(pokemons, checkPokemons);
     }
 
+    // Dynamic (JPQL) criteria Before
+
     @Test
     public void testFindByNameNotBefore() {
         List<Pokemon> pokemons = pokemonRepository.findByNameNotBefore("Lugia");
@@ -138,12 +150,10 @@ public class TestQbmnCriteria {
         checkPokemonsList(pokemons, checkPokemons);
     }
 
-    // Dynamic (JPQL) criteria Before
-
     @Test
     public void testDynamicFindByNameBefore() {
         List<Pokemon> pokemons = pokemonRepository.findByNameBefore("Lugia",
-                                                                   Sort.create(Order.create("name")));
+                                                                    Sort.create(Order.create("name")));
         List<Pokemon> checkPokemons = sortedPokemonsListByName(
                 pokemonsById(5, 9, 10, 11, 14, 17, 19));
         checkPokemonsSortedList(pokemons, checkPokemons);
@@ -152,16 +162,20 @@ public class TestQbmnCriteria {
     @Test
     public void testDynamicFindByIdBefore() {
         List<Pokemon> pokemons = pokemonRepository.findByIdBefore(10,
-                                                                 Sort.create(Order.create("name")));
+                                                                  Sort.create(Order.create("name")));
         List<Pokemon> checkPokemons = sortedPokemonsListByName(
                 pokemonsById(1, 2, 3, 4, 5, 6, 7, 8, 9));
         checkPokemonsSortedList(pokemons, checkPokemons);
     }
 
+    // Simple (JPQL) criteria Contains
+    // Case sensitivity depends on database setup and tests may not always work as expected,
+    // so upper case pattern for case-sensitive test is not present.
+
     @Test
     public void testDynamicFindByNameNotBefore() {
         List<Pokemon> pokemons = pokemonRepository.findByNameNotBefore("Lugia",
-                                                                      Sort.create(Order.create("name")));
+                                                                       Sort.create(Order.create("name")));
         List<Pokemon> checkPokemons = sortedPokemonsListByName(
                 pokemonsById(1, 2, 3, 4, 6, 7, 8, 12, 13, 15, 16, 18, 20));
         checkPokemonsSortedList(pokemons, checkPokemons);
@@ -170,15 +184,11 @@ public class TestQbmnCriteria {
     @Test
     public void testDynamicFindByIdNotBefore() {
         List<Pokemon> pokemons = pokemonRepository.findByIdNotBefore(10,
-                                                                    Sort.create(Order.create("name")));
+                                                                     Sort.create(Order.create("name")));
         List<Pokemon> checkPokemons = sortedPokemonsListByName(
                 pokemonsById(10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20));
         checkPokemonsSortedList(pokemons, checkPokemons);
     }
-
-    // Simple (JPQL) criteria Contains
-    // Case sensitivity depends on database setup and tests may not always work as expected,
-    // so upper case pattern for case-sensitive test is not present.
 
     @Test
     public void testFindByNameContains() {
@@ -208,6 +218,10 @@ public class TestQbmnCriteria {
         checkPokemonsList(pokemons, checkPokemons);
     }
 
+    // Dynamic (criteria API) criteria Contains
+    // Case sensitivity depends on database setup and tests may not always work as expected,
+    // so upper case pattern for case-sensitive test is not present.
+
     @Test
     public void testFindByNameIgnoreCaseContainsUpper() {
         List<Pokemon> pokemons = pokemonRepository.findByNameIgnoreCaseContains("EAR");
@@ -221,10 +235,6 @@ public class TestQbmnCriteria {
         List<Pokemon> checkPokemons = pokemonsById(1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20);
         checkPokemonsList(pokemons, checkPokemons);
     }
-
-    // Dynamic (criteria API) criteria Contains
-    // Case sensitivity depends on database setup and tests may not always work as expected,
-    // so upper case pattern for case-sensitive test is not present.
 
     @Test
     public void testDynamicFindByNameContains() {
@@ -262,6 +272,10 @@ public class TestQbmnCriteria {
         checkPokemonsSortedList(pokemons, checkPokemons);
     }
 
+    // Simple (JPQL) criteria EndsWith
+    // Case sensitivity depends on database setup and tests may not always work as expected,
+    // so upper case pattern for case-sensitive test is not present.
+
     @Test
     public void testDynamicFindByNameIgnoreCaseContainsUpper() {
         List<Pokemon> pokemons = pokemonRepository.findByNameIgnoreCaseContains("EAR",
@@ -279,10 +293,6 @@ public class TestQbmnCriteria {
                 pokemonsById(1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20));
         checkPokemonsSortedList(pokemons, checkPokemons);
     }
-
-    // Simple (JPQL) criteria EndsWith
-    // Case sensitivity depends on database setup and tests may not always work as expected,
-    // so upper case pattern for case-sensitive test is not present.
 
     @Test
     public void testFindByNameEndsWith() {
@@ -312,6 +322,12 @@ public class TestQbmnCriteria {
         checkPokemonsList(pokemons, checkPokemons);
     }
 
+    //------------------------------------
+
+    // Dynamic (criteria API) criteria EndsWith
+    // Case sensitivity depends on database setup and tests may not always work as expected,
+    // so upper case pattern for case-sensitive test is not present.
+
     @Test
     public void testFindByNameIgnoreCaseEndsWithUpper() {
         List<Pokemon> pokemons = pokemonRepository.findByNameIgnoreCaseEndsWith("EAROW");
@@ -325,12 +341,6 @@ public class TestQbmnCriteria {
         List<Pokemon> checkPokemons = pokemonsById(1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20);
         checkPokemonsList(pokemons, checkPokemons);
     }
-
-    //------------------------------------
-
-    // Dynamic (criteria API) criteria EndsWith
-    // Case sensitivity depends on database setup and tests may not always work as expected,
-    // so upper case pattern for case-sensitive test is not present.
 
     @Test
     public void testDynamicFindByNameEndsWith() {
@@ -368,6 +378,10 @@ public class TestQbmnCriteria {
         checkPokemonsSortedList(pokemons, checkPokemons);
     }
 
+    // Simple (JPQL) criteria StartsWith
+    // Case sensitivity depends on database setup and tests may not always work as expected,
+    // so upper case pattern for case-sensitive test is not present.
+
     @Test
     public void testDynamicFindByNameIgnoreCaseEndsWithUpper() {
         List<Pokemon> pokemons = pokemonRepository.findByNameIgnoreCaseEndsWith("EAROW",
@@ -385,10 +399,6 @@ public class TestQbmnCriteria {
                 pokemonsById(1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20));
         checkPokemonsSortedList(pokemons, checkPokemons);
     }
-
-    // Simple (JPQL) criteria StartsWith
-    // Case sensitivity depends on database setup and tests may not always work as expected,
-    // so upper case pattern for case-sensitive test is not present.
 
     @Test
     public void testFindByNameStartsWith() {
@@ -418,6 +428,10 @@ public class TestQbmnCriteria {
         checkPokemonsList(pokemons, checkPokemons);
     }
 
+    // Dynamic (criteria API) criteria StartsWith
+    // Case sensitivity depends on database setup and tests may not always work as expected,
+    // so upper case pattern for case-sensitive test is not present.
+
     @Test
     public void testFindByNameIgnoreCaseStartsWithUpper() {
         List<Pokemon> pokemons = pokemonRepository.findByNameIgnoreCaseStartsWith("SAND");
@@ -432,14 +446,10 @@ public class TestQbmnCriteria {
         checkPokemonsList(pokemons, checkPokemons);
     }
 
-    // Dynamic (criteria API) criteria StartsWith
-    // Case sensitivity depends on database setup and tests may not always work as expected,
-    // so upper case pattern for case-sensitive test is not present.
-
     @Test
     public void testDynamicFindByNameStartsWith() {
         List<Pokemon> pokemons = pokemonRepository.findByNameStartsWith("Sand",
-                                                                      Sort.create(Order.create("name")));
+                                                                        Sort.create(Order.create("name")));
         List<Pokemon> checkPokemons = sortedPokemonsListByName(
                 pokemonsById(12, 13));
         checkPokemonsSortedList(pokemons, checkPokemons);
@@ -448,7 +458,7 @@ public class TestQbmnCriteria {
     @Test
     public void testDynamicFindByNameNotStartsWith() {
         List<Pokemon> pokemons = pokemonRepository.findByNameNotStartsWith("Sand",
-                                                                         Sort.create(Order.create("name")));
+                                                                           Sort.create(Order.create("name")));
         List<Pokemon> checkPokemons = sortedPokemonsListByName(
                 pokemonsById(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 14, 15, 16, 17, 18, 19, 20));
         checkPokemonsSortedList(pokemons, checkPokemons);
@@ -457,7 +467,7 @@ public class TestQbmnCriteria {
     @Test
     public void testDynamicFindByNameIgnoreCaseStartsWithLower() {
         List<Pokemon> pokemons = pokemonRepository.findByNameIgnoreCaseStartsWith("Sand",
-                                                                                Sort.create(Order.create("name")));
+                                                                                  Sort.create(Order.create("name")));
         List<Pokemon> checkPokemons = sortedPokemonsListByName(
                 pokemonsById(12, 13));
         checkPokemonsSortedList(pokemons, checkPokemons);
@@ -466,16 +476,18 @@ public class TestQbmnCriteria {
     @Test
     public void testDynamicFindByNameIgnoreCaseNotStartsWithLower() {
         List<Pokemon> pokemons = pokemonRepository.findByNameIgnoreCaseNotStartsWith("Sand",
-                                                                                   Sort.create(Order.create("name")));
+                                                                                     Sort.create(Order.create("name")));
         List<Pokemon> checkPokemons = sortedPokemonsListByName(
                 pokemonsById(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 14, 15, 16, 17, 18, 19, 20));
         checkPokemonsSortedList(pokemons, checkPokemons);
     }
 
+    // Simple (JPQL) criteria LessThan, numbers
+
     @Test
     public void testDynamicFindByNameIgnoreCaseStartsWithUpper() {
         List<Pokemon> pokemons = pokemonRepository.findByNameIgnoreCaseStartsWith("SAND",
-                                                                                Sort.create(Order.create("name")));
+                                                                                  Sort.create(Order.create("name")));
         List<Pokemon> checkPokemons = sortedPokemonsListByName(
                 pokemonsById(12, 13));
         checkPokemonsSortedList(pokemons, checkPokemons);
@@ -484,13 +496,13 @@ public class TestQbmnCriteria {
     @Test
     public void testDynamicFindByNameIgnoreCaseNotStartsWithUpper() {
         List<Pokemon> pokemons = pokemonRepository.findByNameIgnoreCaseNotStartsWith("SAND",
-                                                                                   Sort.create(Order.create("name")));
+                                                                                     Sort.create(Order.create("name")));
         List<Pokemon> checkPokemons = sortedPokemonsListByName(
                 pokemonsById(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 14, 15, 16, 17, 18, 19, 20));
         checkPokemonsSortedList(pokemons, checkPokemons);
     }
 
-    // Simple (JPQL) criteria LessThan, numbers
+    // Dynamic (criteria API) criteria LessThan, numbers
 
     @Test
     public void testFindByHpLessThan() {
@@ -506,7 +518,7 @@ public class TestQbmnCriteria {
         checkPokemonsList(pokemons, checkPokemons);
     }
 
-    // Dynamic (criteria API) criteria LessThan, numbers
+    // Simple (JPQL) criteria LessThan, numbers
 
     @Test
     public void testDynamicFindByHpLessThan() {
@@ -526,7 +538,7 @@ public class TestQbmnCriteria {
         checkPokemonsSortedList(pokemons, checkPokemons);
     }
 
-    // Simple (JPQL) criteria LessThan, numbers
+    // Dynamic (criteria API) criteria LessThan, numbers
 
     @Test
     public void testFindByHpLessThanEqual() {
@@ -542,12 +554,12 @@ public class TestQbmnCriteria {
         checkPokemonsList(pokemons, checkPokemons);
     }
 
-    // Dynamic (criteria API) criteria LessThan, numbers
+    // Simple (JPQL) criteria GreaterThan, numbers
 
     @Test
     public void testDynamicFindByHpLessThanEqual() {
         List<Pokemon> pokemons = pokemonRepository.findByHpLessThanEqual(140,
-                                                                    Sort.create(Order.create("name")));
+                                                                         Sort.create(Order.create("name")));
         List<Pokemon> checkPokemons = sortedPokemonsListByName(
                 pokemonsById(1, 2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14));
         checkPokemonsSortedList(pokemons, checkPokemons);
@@ -556,13 +568,13 @@ public class TestQbmnCriteria {
     @Test
     public void testDynamicFindByHpNotLessThanEqual() {
         List<Pokemon> pokemons = pokemonRepository.findByHpNotLessThanEqual(140,
-                                                                       Sort.create(Order.create("name")));
+                                                                            Sort.create(Order.create("name")));
         List<Pokemon> checkPokemons = sortedPokemonsListByName(
                 pokemonsById(4, 5, 15, 16, 17, 18, 19, 20));
         checkPokemonsSortedList(pokemons, checkPokemons);
     }
 
-    // Simple (JPQL) criteria GreaterThan, numbers
+    // Dynamic (criteria API) criteria GreaterThan, numbers
 
     @Test
     public void testFindByHpGreaterThan() {
@@ -578,12 +590,12 @@ public class TestQbmnCriteria {
         checkPokemonsList(pokemons, checkPokemons);
     }
 
-    // Dynamic (criteria API) criteria GreaterThan, numbers
+    // Simple (JPQL) criteria GreaterThanEqual, numbers
 
     @Test
     public void testDynamicFindByHpGreaterThan() {
         List<Pokemon> pokemons = pokemonRepository.findByHpGreaterThan(140,
-                                                                    Sort.create(Order.create("name")));
+                                                                       Sort.create(Order.create("name")));
         List<Pokemon> checkPokemons = sortedPokemonsListByName(
                 pokemonsById(4, 5, 15, 16, 17, 18, 19, 20));
         checkPokemonsSortedList(pokemons, checkPokemons);
@@ -592,13 +604,13 @@ public class TestQbmnCriteria {
     @Test
     public void testDynamicFindByHpNotGreaterThan() {
         List<Pokemon> pokemons = pokemonRepository.findByHpNotGreaterThan(140,
-                                                                       Sort.create(Order.create("name")));
+                                                                          Sort.create(Order.create("name")));
         List<Pokemon> checkPokemons = sortedPokemonsListByName(
                 pokemonsById(1, 2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14));
         checkPokemonsSortedList(pokemons, checkPokemons);
     }
 
-    // Simple (JPQL) criteria GreaterThanEqual, numbers
+    // Dynamic (criteria API) criteria GreaterThanEqual, numbers
 
     @Test
     public void testFindByHpGreaterThanEqual() {
@@ -614,12 +626,12 @@ public class TestQbmnCriteria {
         checkPokemonsList(pokemons, checkPokemons);
     }
 
-    // Dynamic (criteria API) criteria GreaterThanEqual, numbers
+    // Simple (JPQL) criteria Between, numbers
 
     @Test
     public void testDynamicFindByHpGreaterThanEqual() {
         List<Pokemon> pokemons = pokemonRepository.findByHpGreaterThanEqual(140,
-                                                                       Sort.create(Order.create("name")));
+                                                                            Sort.create(Order.create("name")));
         List<Pokemon> checkPokemons = sortedPokemonsListByName(
                 pokemonsById(4, 5, 13, 15, 16, 17, 18, 19, 20));
         checkPokemonsSortedList(pokemons, checkPokemons);
@@ -628,13 +640,13 @@ public class TestQbmnCriteria {
     @Test
     public void testDynamicFindByHpNotGreaterThanEqual() {
         List<Pokemon> pokemons = pokemonRepository.findByHpNotGreaterThanEqual(140,
-                                                                          Sort.create(Order.create("name")));
+                                                                               Sort.create(Order.create("name")));
         List<Pokemon> checkPokemons = sortedPokemonsListByName(
                 pokemonsById(1, 2, 3, 6, 7, 8, 9, 10, 11, 12, 14));
         checkPokemonsSortedList(pokemons, checkPokemons);
     }
 
-    // Simple (JPQL) criteria Between, numbers
+    // Dynamic (criteria API) criteria Between, numbers
 
     @Test
     public void testFindByHpBetween() {
@@ -650,12 +662,12 @@ public class TestQbmnCriteria {
         checkPokemonsList(pokemons, checkPokemons);
     }
 
-    // Dynamic (criteria API) criteria Between, numbers
+    // Simple (JPQL) criteria Like, String only
 
     @Test
     public void testDynamicFindByHpBetween() {
         List<Pokemon> pokemons = pokemonRepository.findByHpBetween(115, 166,
-                                                                            Sort.create(Order.create("name")));
+                                                                   Sort.create(Order.create("name")));
         List<Pokemon> checkPokemons = sortedPokemonsListByName(
                 pokemonsById(2, 3, 5, 9, 11, 13, 18, 20));
         checkPokemonsSortedList(pokemons, checkPokemons);
@@ -664,13 +676,11 @@ public class TestQbmnCriteria {
     @Test
     public void testDynamicFindByHpNotBetween() {
         List<Pokemon> pokemons = pokemonRepository.findByHpNotBetween(115, 166,
-                                                                               Sort.create(Order.create("name")));
+                                                                      Sort.create(Order.create("name")));
         List<Pokemon> checkPokemons = sortedPokemonsListByName(
                 pokemonsById(1, 4, 6, 7, 8, 10, 12, 14, 15, 16, 17, 19));
         checkPokemonsSortedList(pokemons, checkPokemons);
     }
-
-    // Simple (JPQL) criteria Like, String only
 
     @Test
     public void testFindByNameLike() {
@@ -700,6 +710,8 @@ public class TestQbmnCriteria {
         checkPokemonsList(pokemons, checkPokemons);
     }
 
+    // Dynamic (criteria API) criteria Like, String only
+
     @Test
     public void testFindByNameIgnoreCaseLikeUpper() {
         List<Pokemon> pokemons = pokemonRepository.findByNameIgnoreCaseLike("%GIR%");
@@ -713,8 +725,6 @@ public class TestQbmnCriteria {
         List<Pokemon> checkPokemons = pokemonsById(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18);
         checkPokemonsList(pokemons, checkPokemons);
     }
-
-    // Dynamic (criteria API) criteria Like, String only
 
     @Test
     public void testDynamicFindByNameLike() {
@@ -752,6 +762,8 @@ public class TestQbmnCriteria {
         checkPokemonsSortedList(pokemons, checkPokemons);
     }
 
+    // Simple (JPQL) criteria In, String
+
     @Test
     public void testDynamicFindByNameIgnoreCaseLikeUpper() {
         List<Pokemon> pokemons = pokemonRepository.findByNameIgnoreCaseLike("%GIR%",
@@ -770,7 +782,7 @@ public class TestQbmnCriteria {
         checkPokemonsSortedList(pokemons, checkPokemons);
     }
 
-    // Simple (JPQL) criteria In, String
+    // Simple (JPQL) criteria In, Integer
 
     @Test
     public void testFindByNameIn() {
@@ -790,7 +802,7 @@ public class TestQbmnCriteria {
         checkPokemonsList(pokemons, checkPokemons);
     }
 
-    // Simple (JPQL) criteria In, Integer
+    // Dynamic (criteria API) criteria In, String
 
     @Test
     public void testFindByHpIn() {
@@ -806,7 +818,7 @@ public class TestQbmnCriteria {
         checkPokemonsList(pokemons, checkPokemons);
     }
 
-    // Dynamic (criteria API) criteria In, String
+    // Dynamic (criteria API) criteria In, Integer
 
     @Test
     public void testDynamicFindByNameIn() {
@@ -830,7 +842,7 @@ public class TestQbmnCriteria {
         checkPokemonsSortedList(pokemons, checkPokemons);
     }
 
-    // Dynamic (criteria API) criteria In, Integer
+    // Simple (JPQL) criteria AND/OR
 
     @Test
     public void testDynamicFindByHpIn() {
@@ -849,8 +861,6 @@ public class TestQbmnCriteria {
                 pokemonsById(2, 4, 6, 8, 9, 11, 12, 13, 14, 15, 18, 19, 20));
         checkPokemonsSortedList(pokemons, checkPokemons);
     }
-
-    // Simple (JPQL) criteria AND/OR
 
     @Test
     public void testFindByNameAndHp() {
@@ -875,6 +885,8 @@ public class TestQbmnCriteria {
         checkPokemonsList(pokemons, checkPokemons);
     }
 
+    // Dynamic (criteria API) criteria AND/OR
+
     @Test
     public void testFindByNameAndHpOrId() {
         List<Pokemon> pokemons = pokemonRepository.findByNameAndHpOrId("Machop", 132, 17);
@@ -888,8 +900,6 @@ public class TestQbmnCriteria {
         List<Pokemon> checkPokemons = pokemonsById(4, 18);
         checkPokemonsList(pokemons, checkPokemons);
     }
-
-    // Dynamic (criteria API) criteria AND/OR
 
     @Test
     public void testDynamicFindByNameAndHp() {
@@ -912,7 +922,7 @@ public class TestQbmnCriteria {
     @Test
     public void testDynamicFindByNameOrHpOrId() {
         List<Pokemon> pokemons = pokemonRepository.findByNameOrHpOrId("Raichu", 193, 19,
-                                                                  Sort.create(Order.create("name")));
+                                                                      Sort.create(Order.create("name")));
         List<Pokemon> checkPokemons = sortedPokemonsListByName(pokemonsById(2, 16, 17, 19));
         checkPokemonsSortedList(pokemons, checkPokemons);
     }
@@ -931,16 +941,6 @@ public class TestQbmnCriteria {
                                                                        Sort.create(Order.create("name")));
         List<Pokemon> checkPokemons = sortedPokemonsListByName(pokemonsById(4, 18));
         checkPokemonsSortedList(pokemons, checkPokemons);
-    }
-
-    @BeforeAll
-    public static void before(DataRegistry data) {
-        pokemonRepository = data.repository(PokemonRepository.class);
-    }
-
-    @AfterAll
-    public static void after() {
-        pokemonRepository = null;
     }
 
 }

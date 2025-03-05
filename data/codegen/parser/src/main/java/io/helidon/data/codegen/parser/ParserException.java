@@ -28,7 +28,7 @@ public class ParserException extends RuntimeException {
      * Create new exception for a message.
      *
      * @param message descriptive message, shall not be {@code null}
-     * @param string {@link String} being parsed
+     * @param string  {@link String} being parsed
      */
     public ParserException(String message, String string) {
         super(message);
@@ -40,8 +40,8 @@ public class ParserException extends RuntimeException {
      * Create new exception for a message and a cause.
      *
      * @param message descriptive message
-     * @param cause original throwable causing this exception
-     * @param string {@link String} being parsed
+     * @param cause   original throwable causing this exception
+     * @param string  {@link String} being parsed
      */
     public ParserException(String message, Throwable cause, String string) {
         super(message, cause);

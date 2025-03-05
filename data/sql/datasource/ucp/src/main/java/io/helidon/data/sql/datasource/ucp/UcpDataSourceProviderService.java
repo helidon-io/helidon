@@ -54,6 +54,23 @@ class UcpDataSourceProviderService implements Service.ServicesFactory<DataSource
     }
 
     /**
+     * Transforms {@link Config} to the {@link Service.QualifiedInstance} containing {@link DataSource}.
+     *
+     * @param config the {@link io.helidon.data.sql.datasource.DataSourceConfig} config
+     * @return target {@link Service.QualifiedInstance} with UCP {@link DataSource}
+     *         or {@code null} when provider config is not {@link UcpDataSourceConfig}
+     */
+    Service.QualifiedInstance<DataSource> mapSingleConfig(Config config) {
+        DataSourceConfig dataSourceConfig = DataSourceConfig.create(config);
+        ProviderConfig providerConfig = dataSourceConfig.provider();
+        if (providerConfig instanceof UcpDataSourceConfig ucpDataSourceConfig) {
+            return Service.QualifiedInstance.create(UcpDataSourceFactory.create(ucpDataSourceConfig),
+                                                    Qualifier.createNamed(dataSourceConfig.name()));
+        }
+        return null;
+    }
+
+    /**
      * Transforms {@link List} of {@link Config} to the {@link List} of {@link Service.QualifiedInstance}
      * containing {@link DataSource}.
      *
@@ -68,22 +85,6 @@ class UcpDataSourceProviderService implements Service.ServicesFactory<DataSource
                 // Unsupported configs will appear as null values and must be removed
                 .filter(Objects::nonNull)
                 .collect(Collectors.toUnmodifiableList());
-    }
-
-    /**
-     * Transforms {@link Config} to the {@link Service.QualifiedInstance} containing {@link DataSource}.
-     * @param config the {@link io.helidon.data.sql.datasource.DataSourceConfig} config
-     * @return target {@link Service.QualifiedInstance} with UCP {@link DataSource}
-     *         or {@code null} when provider config is not {@link UcpDataSourceConfig}
-     */
-    Service.QualifiedInstance<DataSource> mapSingleConfig(Config config) {
-        DataSourceConfig dataSourceConfig = DataSourceConfig.create(config);
-        ProviderConfig providerConfig = dataSourceConfig.provider();
-        if (providerConfig instanceof UcpDataSourceConfig ucpDataSourceConfig) {
-            return Service.QualifiedInstance.create(UcpDataSourceFactory.create(ucpDataSourceConfig),
-                                                      Qualifier.createNamed(dataSourceConfig.name()));
-        }
-        return null;
     }
 
 }

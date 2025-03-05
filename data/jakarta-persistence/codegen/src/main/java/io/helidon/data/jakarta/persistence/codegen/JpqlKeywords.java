@@ -71,7 +71,7 @@ class JpqlKeywords {
      * Print {@code COUNT} function call.
      *
      * @param builder target JPQL builder
-     * @param param Count  {@code COUNT} function parameter
+     * @param param   Count  {@code COUNT} function parameter
      */
     static void count(StringBuilder builder, CharSequence param) {
         function(builder, param, COUNT);
@@ -81,7 +81,7 @@ class JpqlKeywords {
      * Print {@code MAX} function call.
      *
      * @param builder target JPQL builder
-     * @param param Count  {@code MAX} function parameter
+     * @param param   Count  {@code MAX} function parameter
      */
     static void max(StringBuilder builder, CharSequence param) {
         function(builder, param, MAX);
@@ -91,7 +91,7 @@ class JpqlKeywords {
      * Print {@code MIN} function call.
      *
      * @param builder target JPQL builder
-     * @param param Count  {@code MIN} function parameter
+     * @param param   Count  {@code MIN} function parameter
      */
     static void min(StringBuilder builder, CharSequence param) {
         function(builder, param, MIN);
@@ -101,7 +101,7 @@ class JpqlKeywords {
      * Print {@code AVG} function call.
      *
      * @param builder target JPQL builder
-     * @param param Count  {@code AVG} function parameter
+     * @param param   Count  {@code AVG} function parameter
      */
     static void avg(StringBuilder builder, CharSequence param) {
         function(builder, param, AVG);
@@ -111,7 +111,7 @@ class JpqlKeywords {
      * Print {@code SUM} function call.
      *
      * @param builder target JPQL builder
-     * @param param Count  {@code SUM} function parameter
+     * @param param   Count  {@code SUM} function parameter
      */
     static void sum(StringBuilder builder, CharSequence param) {
         function(builder, param, SUM);
@@ -122,7 +122,7 @@ class JpqlKeywords {
      * Single space character is prepended.
      *
      * @param builder target JPQL builder
-     * @param not whether {@code NOT} keyword should be added
+     * @param not     whether {@code NOT} keyword should be added
      */
     static void maybeNot(StringBuilder builder, boolean not) {
         if (not) {
@@ -136,7 +136,7 @@ class JpqlKeywords {
      * Single space character is appended.
      *
      * @param builder target JPQL builder
-     * @param comma whether {@code ','} should be added
+     * @param comma   whether {@code ','} should be added
      */
     static void maybeComma(StringBuilder builder, boolean comma) {
         if (comma) {
@@ -149,15 +149,15 @@ class JpqlKeywords {
      * Print entity property into JPQL builder.
      * Single {@code '.'} character is added between entity alias and property.
      *
-     * @param builder target JPQL builder
+     * @param builder     target JPQL builder
      * @param entityAlias entity alias in the statement
-     * @param property entity property
-     * @param ignoreCase whether property content is case-insensitive
+     * @param property    entity property
+     * @param ignoreCase  whether property content is case-insensitive
      */
     static void property(StringBuilder builder,
-                                CharSequence entityAlias,
-                                CharSequence property,
-                                boolean ignoreCase) {
+                         CharSequence entityAlias,
+                         CharSequence property,
+                         boolean ignoreCase) {
         if (ignoreCase) {
             builder.append(UPPER)
                     .append("(")
@@ -176,26 +176,26 @@ class JpqlKeywords {
      * Print entity property into JPQL builder.
      * Single {@code '.'} character is added between entity alias and property.
      *
-     * @param builder target JPQL builder
+     * @param builder     target JPQL builder
      * @param entityAlias entity alias in the statement
-     * @param property entity property
+     * @param property    entity property
      */
     static void property(StringBuilder builder,
-                                CharSequence entityAlias,
-                                CharSequence property) {
+                         CharSequence entityAlias,
+                         CharSequence property) {
         property(builder, entityAlias, property, false);
     }
 
     /**
      * Print statement named parameter into JPQL builder.
      *
-     * @param builder target JPQL builder
-     * @param param name of the parameter
+     * @param builder    target JPQL builder
+     * @param param      name of the parameter
      * @param ignoreCase whether parameter content is case-insensitive
      */
     static void param(StringBuilder builder,
-                             CharSequence param,
-                             boolean ignoreCase) {
+                      CharSequence param,
+                      boolean ignoreCase) {
         if (ignoreCase) {
             builder.append(UPPER)
                     .append("(")
@@ -212,10 +212,10 @@ class JpqlKeywords {
      * Print statement named parameter into JPQL builder.
      *
      * @param builder target JPQL builder
-     * @param param name of the parameter
+     * @param param   name of the parameter
      */
     static void param(StringBuilder builder,
-                             CharSequence param) {
+                      CharSequence param) {
         param(builder, param, false);
     }
 

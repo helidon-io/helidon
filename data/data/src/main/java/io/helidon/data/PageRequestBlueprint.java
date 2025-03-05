@@ -35,8 +35,8 @@ interface PageRequestBlueprint {
     /**
      * Requested page size.
      * <p>Valid {@code size} values are:<ul>
-     *     <li>{@code -1} when no pagination is defined</li>
-     *     <li>{@code size > 0} for requested page size</li></ul>
+     * <li>{@code -1} when no pagination is defined</li>
+     * <li>{@code size > 0} for requested page size</li></ul>
      *
      * @return page size
      */
