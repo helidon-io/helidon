@@ -55,7 +55,7 @@ class DataRegistryFactory implements Service.ServicesFactory<DataRegistry> {
     }
 
     private Service.QualifiedInstance<DataRegistry> toRegistry(ServiceInstance<DataSupport> it,
-                                                                 List<RepositoryProvider<?>> repositories) {
+                                                               List<RepositoryProvider<?>> repositories) {
         DataSupport dataSupport = it.get();
         String type = dataSupport.type();
         String name = it.qualifiers()

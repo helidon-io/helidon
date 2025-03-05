@@ -39,6 +39,23 @@ public class TestCrudRepository {
 
     private static PokemonRepository pokemonRepository;
 
+    @BeforeAll
+    public static void before(DataRegistry data) {
+        pokemonRepository = data.repository(PokemonRepository.class);
+        // Used in testUpdate()
+        pokemonRepository.insert(NEW_POKEMONS.get(106));
+        // Used in testUpdateAll()
+        pokemonRepository.insert(NEW_POKEMONS.get(107));
+        pokemonRepository.insert(NEW_POKEMONS.get(108));
+
+    }
+
+    @AfterAll
+    public static void after() {
+        pokemonRepository.run(InitialData::deleteTemp);
+        pokemonRepository = null;
+    }
+
     // Add new pokemon and verify it in the database
     @Test
     public void testInsert() {
@@ -140,23 +157,6 @@ public class TestCrudRepository {
     @Test
     public void testUpdateAllNotExisting() {
         LOGGER.log(System.Logger.Level.DEBUG, "Skipping testUpdateAllNotExisting: Not implemented yet");
-    }
-
-    @BeforeAll
-    public static void before(DataRegistry data) {
-        pokemonRepository = data.repository(PokemonRepository.class);
-        // Used in testUpdate()
-        pokemonRepository.insert(NEW_POKEMONS.get(106));
-        // Used in testUpdateAll()
-        pokemonRepository.insert(NEW_POKEMONS.get(107));
-        pokemonRepository.insert(NEW_POKEMONS.get(108));
-
-    }
-
-    @AfterAll
-    public static void after() {
-        pokemonRepository.run(InitialData::deleteTemp);
-        pokemonRepository = null;
     }
 
 }

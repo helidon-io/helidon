@@ -43,6 +43,7 @@ interface ProjectionBlueprint {
 
     /**
      * Projection expression.
+     *
      * @return the projection expression.
      */
     Optional<ProjectionExpression> expression();

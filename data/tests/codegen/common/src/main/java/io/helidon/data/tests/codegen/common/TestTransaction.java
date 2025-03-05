@@ -47,6 +47,18 @@ public class TestTransaction {
     private static DataRegistry data;
     private static PokemonRepository pokemonRepository;
 
+    @BeforeAll
+    public static void before(DataRegistry data) {
+        TestTransaction.data = data;
+        pokemonRepository = data.repository(PokemonRepository.class);
+    }
+
+    @AfterAll
+    public static void after() {
+        pokemonRepository.run(InitialData::deleteTemp);
+        pokemonRepository = null;
+    }
+
     // Calling top level transaction of tye Tx.Type.MANDATORY shall throw an exception
     @Test
     public void testMandatoryAutomaticTopLevel() {
@@ -364,8 +376,8 @@ public class TestTransaction {
     @Test
     public void testAutomaticNever2ndLevel() {
         testAutomatic2ndLevelInactive("testAutomaticNever2ndLevel",
-                                    Tx.Type.NEVER,
-                                    List.of(Tx.Type.NEVER, Tx.Type.SUPPORTED, Tx.Type.UNSUPPORTED));
+                                      Tx.Type.NEVER,
+                                      List.of(Tx.Type.NEVER, Tx.Type.SUPPORTED, Tx.Type.UNSUPPORTED));
         testAutomatic2ndLevelMustFail("testAutomaticNever2ndLevel",
                                       Tx.Type.NEVER,
                                       List.of(Tx.Type.NEW, Tx.Type.REQUIRED));
@@ -388,8 +400,8 @@ public class TestTransaction {
     @Test
     public void testAutomaticSupported2ndLevel() {
         testAutomatic2ndLevelActive("testAutomaticSupported2ndLevel",
-                                      Tx.Type.SUPPORTED,
-                                      List.of(Tx.Type.NEW, Tx.Type.REQUIRED));
+                                    Tx.Type.SUPPORTED,
+                                    List.of(Tx.Type.NEW, Tx.Type.REQUIRED));
         testAutomatic2ndLevelInactive("testAutomaticSupported2ndLevel",
                                       Tx.Type.SUPPORTED,
                                       List.of(Tx.Type.NEVER, Tx.Type.SUPPORTED, Tx.Type.UNSUPPORTED));
@@ -414,11 +426,11 @@ public class TestTransaction {
     @Test
     public void testManualMandatory2ndLevel() {
         testManual2ndLevelActive("testManualMandatory2ndLevel",
-                                    Tx.Type.MANDATORY,
-                                    List.of(Tx.Type.NEW, Tx.Type.REQUIRED));
+                                 Tx.Type.MANDATORY,
+                                 List.of(Tx.Type.NEW, Tx.Type.REQUIRED));
         testManual2ndLevelMustFail("testManualMandatory2ndLevel",
-                                      Tx.Type.MANDATORY,
-                                      List.of(Tx.Type.NEVER, Tx.Type.SUPPORTED, Tx.Type.UNSUPPORTED));
+                                   Tx.Type.MANDATORY,
+                                   List.of(Tx.Type.NEVER, Tx.Type.SUPPORTED, Tx.Type.UNSUPPORTED));
     }
 
     // Tx.Type.NEW will always start a new transaction so this test must pass for all supported entry level Tx.Type values.
@@ -428,8 +440,8 @@ public class TestTransaction {
                 .filter(type -> type != Tx.Type.MANDATORY)
                 .toList();
         testManual2ndLevelActive("testManualNew2ndLevel",
-                                    Tx.Type.NEW,
-                                    entryTypes);
+                                 Tx.Type.NEW,
+                                 entryTypes);
     }
 
     // Tx.Type.NEVER will not throw an exception only when running with NEVER, SUPPORTED and UNSUPPORTED Tx.Type on entry level.
@@ -439,11 +451,11 @@ public class TestTransaction {
     @Test
     public void testManualNever2ndLevel() {
         testManual2ndLevelInactive("testManualNever2ndLevel",
-                                      Tx.Type.NEVER,
-                                      List.of(Tx.Type.NEVER, Tx.Type.SUPPORTED, Tx.Type.UNSUPPORTED));
+                                   Tx.Type.NEVER,
+                                   List.of(Tx.Type.NEVER, Tx.Type.SUPPORTED, Tx.Type.UNSUPPORTED));
         testManual2ndLevelMustFail("testManualNever2ndLevel",
-                                      Tx.Type.NEVER,
-                                      List.of(Tx.Type.NEW, Tx.Type.REQUIRED));
+                                   Tx.Type.NEVER,
+                                   List.of(Tx.Type.NEW, Tx.Type.REQUIRED));
     }
 
     // Tx.Type.REQUIRED will start a new transaction when running outside a transaction context so this test must pass for all
@@ -454,8 +466,8 @@ public class TestTransaction {
                 .filter(type -> type != Tx.Type.MANDATORY)
                 .toList();
         testManual2ndLevelActive("testManualRequired2ndLevel",
-                                    Tx.Type.REQUIRED,
-                                    entryTypes);
+                                 Tx.Type.REQUIRED,
+                                 entryTypes);
     }
 
     // Tx.Type.SUPPORTED will keep transaction context from previous level. This test must pass for all supported entry level
@@ -463,11 +475,11 @@ public class TestTransaction {
     @Test
     public void testManualSupported2ndLevel() {
         testManual2ndLevelActive("testManualSupported2ndLevel",
-                                    Tx.Type.SUPPORTED,
-                                    List.of(Tx.Type.NEW, Tx.Type.REQUIRED));
+                                 Tx.Type.SUPPORTED,
+                                 List.of(Tx.Type.NEW, Tx.Type.REQUIRED));
         testManual2ndLevelInactive("testManualSupported2ndLevel",
-                                      Tx.Type.SUPPORTED,
-                                      List.of(Tx.Type.NEVER, Tx.Type.SUPPORTED, Tx.Type.UNSUPPORTED));
+                                   Tx.Type.SUPPORTED,
+                                   List.of(Tx.Type.NEVER, Tx.Type.SUPPORTED, Tx.Type.UNSUPPORTED));
     }
 
     // Tx.Type.UNSUPPORTED will suspend active transaction context when exists so this test must pass for all supported
@@ -478,8 +490,8 @@ public class TestTransaction {
                 .filter(type -> type != Tx.Type.MANDATORY)
                 .toList();
         testManual2ndLevelInactive("testManualUnsupported2ndLevel",
-                                      Tx.Type.SUPPORTED,
-                                      entryTypes);
+                                   Tx.Type.SUPPORTED,
+                                   entryTypes);
     }
 
     // Tx.Type.MANDATORY will not throw an exception only when running with NEW and REQUIRED Tx.Type on entry level.
@@ -491,9 +503,9 @@ public class TestTransaction {
         testUser2ndLevelActive("testUserMandatory2ndLevel",
                                Tx.Type.MANDATORY,
                                List.of(Tx.Type.NEW, Tx.Type.REQUIRED));
-            testUser2ndLevelMustFail("testUserMandatory2ndLevel",
-                                       Tx.Type.MANDATORY,
-                                       List.of(Tx.Type.NEVER, Tx.Type.SUPPORTED, Tx.Type.UNSUPPORTED));
+        testUser2ndLevelMustFail("testUserMandatory2ndLevel",
+                                 Tx.Type.MANDATORY,
+                                 List.of(Tx.Type.NEVER, Tx.Type.SUPPORTED, Tx.Type.UNSUPPORTED));
     }
 
     // Tx.Type.NEW will always start a new transaction so this test must pass for all supported entry level Tx.Type values.
@@ -514,11 +526,11 @@ public class TestTransaction {
     @Test
     public void testUserNever2ndLevel() {
         testUser2ndLevelInactive("testUserNever2ndLevel",
-                                   Tx.Type.NEVER,
-                                   List.of(Tx.Type.NEVER, Tx.Type.SUPPORTED, Tx.Type.UNSUPPORTED));
+                                 Tx.Type.NEVER,
+                                 List.of(Tx.Type.NEVER, Tx.Type.SUPPORTED, Tx.Type.UNSUPPORTED));
         testUser2ndLevelMustFail("testUserNever2ndLevel",
-                                   Tx.Type.NEVER,
-                                   List.of(Tx.Type.NEW, Tx.Type.REQUIRED));
+                                 Tx.Type.NEVER,
+                                 List.of(Tx.Type.NEW, Tx.Type.REQUIRED));
     }
 
     // Tx.Type.REQUIRED will start a new transaction when running outside a transaction context so this test must pass for all
@@ -529,8 +541,8 @@ public class TestTransaction {
                 .filter(type -> type != Tx.Type.MANDATORY)
                 .toList();
         testUser2ndLevelActive("testUserRequired2ndLevel",
-                                 Tx.Type.REQUIRED,
-                                 entryTypes);
+                               Tx.Type.REQUIRED,
+                               entryTypes);
     }
 
     // Tx.Type.SUPPORTED will keep transaction context from previous level. This test must pass for all supported entry level
@@ -538,8 +550,8 @@ public class TestTransaction {
     @Test
     public void testUserSupported2ndLevel() {
         testUser2ndLevelActive("testUserSupported2ndLevel",
-                                 Tx.Type.SUPPORTED,
-                                 List.of(Tx.Type.NEW, Tx.Type.REQUIRED));
+                               Tx.Type.SUPPORTED,
+                               List.of(Tx.Type.NEW, Tx.Type.REQUIRED));
         testManual2ndLevelInactive("testUserSupported2ndLevel",
                                    Tx.Type.SUPPORTED,
                                    List.of(Tx.Type.NEVER, Tx.Type.SUPPORTED, Tx.Type.UNSUPPORTED));
@@ -553,20 +565,8 @@ public class TestTransaction {
                 .filter(type -> type != Tx.Type.MANDATORY)
                 .toList();
         testUser2ndLevelInactive("testUserUnsupported2ndLevel",
-                                   Tx.Type.SUPPORTED,
-                                   entryTypes);
-    }
-
-    @BeforeAll
-    public static void before(DataRegistry data) {
-        TestTransaction.data = data;
-        pokemonRepository = data.repository(PokemonRepository.class);
-    }
-
-    @AfterAll
-    public static void after() {
-        pokemonRepository.run(InitialData::deleteTemp);
-        pokemonRepository = null;
+                                 Tx.Type.SUPPORTED,
+                                 entryTypes);
     }
 
     // Test 2nd level transaction call type which is expected to fail with TxException

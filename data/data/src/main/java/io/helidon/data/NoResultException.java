@@ -33,7 +33,7 @@ public class NoResultException extends DataException {
      * Create new exception for a message and a cause.
      *
      * @param message descriptive message
-     * @param cause original throwable causing this exception
+     * @param cause   original throwable causing this exception
      */
     public NoResultException(String message, Throwable cause) {
         super(message, cause);

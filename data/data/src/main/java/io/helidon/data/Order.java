@@ -35,7 +35,7 @@ public interface Order {
      * Create new instance of order definition with default case-sensitivity.
      * Default value of {@link #ignoreCase()} is {@code false}.
      *
-     * @param property entity property
+     * @param property  entity property
      * @param direction direction of the ordering
      * @return new order definition instance
      */
@@ -46,8 +46,8 @@ public interface Order {
     /**
      * Create new instance of order definition.
      *
-     * @param property entity property
-     * @param direction direction of the ordering
+     * @param property   entity property
+     * @param direction  direction of the ordering
      * @param ignoreCase value of {@code true} for case-insensitive or {@code false} for case-sensitive ordering
      * @return new order definition instance
      */
@@ -80,9 +80,13 @@ public interface Order {
      * Direction of the ordering.
      */
     enum Direction {
-        /** Ordering in ascending direction. */
+        /**
+         * Ordering in ascending direction.
+         */
         ASC,
-        /** Ordering in descending direction. */
+        /**
+         * Ordering in descending direction.
+         */
         DESC
     }
 
