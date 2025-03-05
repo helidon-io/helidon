@@ -23,7 +23,7 @@
     <parent>
         <artifactId>helidon-data-sql-project</artifactId>
         <groupId>io.helidon.data.sql</groupId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -38,18 +38,28 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-registry</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.data</groupId>
+            <artifactId>helidon-data</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-config</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.data.sql</groupId>
             <artifactId>helidon-data-sql-common</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>jdbc</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.testing.integration.junit5</groupId>
-            <artifactId>helidon-testing-integration-junit5-suite</artifactId>
-            <version>${project.version}</version>
         </dependency>
     </dependencies>
 </project>

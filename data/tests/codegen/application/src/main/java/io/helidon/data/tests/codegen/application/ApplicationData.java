@@ -15,8 +15,8 @@
  */
 package io.helidon.data.tests.codegen.application;
 
-import io.helidon.data.api.DataConfig;
-import io.helidon.data.api.DataRegistry;
+import io.helidon.data.DataConfig;
+import io.helidon.data.DataRegistry;
 
 /**
  * Helidon Data application level context holder.

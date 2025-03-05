@@ -17,13 +17,13 @@ package io.helidon.data.spi;
 
 import java.util.List;
 
-import io.helidon.data.api.DataConfig;
-import io.helidon.data.api.DataRegistry;
+import io.helidon.data.DataConfig;
+import io.helidon.data.DataRegistry;
 
 /**
  * Helidon Data provider for specific platform.
  * Implementation of this class serves as factory class to build platform specific implementation
- * of {@link io.helidon.data.api.Data} interface.
+ * of {@link io.helidon.data.Data} interface.
  * <p>
  * There is expected to be only one implementation, provided by Helidon Data module.
  * <p>
@@ -32,10 +32,10 @@ import io.helidon.data.api.DataRegistry;
 public interface DataProvider {
 
     /**
-     * Create instance of {@link io.helidon.data.api.Data} interface.
+     * Create instance of {@link io.helidon.data.Data} interface.
      *
      * @param config data repository configuration, shall not be {@code null}
-     * @return new instance of {@link io.helidon.data.api.Data} interface.
+     * @return new instance of {@link io.helidon.data.Data} interface.
      */
     List<DataRegistry> create(List<DataConfig> config);
 }

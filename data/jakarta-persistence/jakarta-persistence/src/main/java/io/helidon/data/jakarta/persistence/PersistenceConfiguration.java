@@ -24,6 +24,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import javax.sql.DataSource;
+
+import io.helidon.service.registry.Lookup;
+import io.helidon.service.registry.Qualifier;
+import io.helidon.service.registry.ServiceRegistry;
+
 import jakarta.persistence.SharedCacheMode;
 import jakarta.persistence.ValidationMode;
 
@@ -42,8 +48,8 @@ public final class PersistenceConfiguration {
     private final List<String> mappingFileNames = new ArrayList<>();
     private final Map<String, Object> properties = new HashMap<>();
     private String provider;
-    private String jtaDataSource;
-    private String nonJtaDataSource;
+    private DataSource jtaDataSource;
+    private DataSource nonJtaDataSource;
     private SharedCacheMode sharedCacheMode = SharedCacheMode.UNSPECIFIED;
     private ValidationMode validationMode = ValidationMode.AUTO;
     private PersistenceUnitTransactionType transactionType = PersistenceUnitTransactionType.RESOURCE_LOCAL;
@@ -106,7 +112,7 @@ public final class PersistenceConfiguration {
      * @param dataSourceJndiName the JNDI name of a JTA datasource
      * @return this configuration
      */
-    public PersistenceConfiguration jtaDataSource(String dataSourceJndiName) {
+    public PersistenceConfiguration jtaDataSource(DataSource dataSourceJndiName) {
         this.jtaDataSource = dataSourceJndiName;
         return this;
     }
@@ -116,7 +122,7 @@ public final class PersistenceConfiguration {
      *
      * @return the configured JTA datasource, if any, or null
      */
-    public String jtaDataSource() {
+    public DataSource jtaDataSource() {
         return jtaDataSource;
     }
 
@@ -126,7 +132,7 @@ public final class PersistenceConfiguration {
      * @param dataSourceJndiName the JNDI name of a non-JTA datasource
      * @return this configuration
      */
-    public PersistenceConfiguration nonJtaDataSource(String dataSourceJndiName) {
+    public PersistenceConfiguration nonJtaDataSource(DataSource dataSourceJndiName) {
         this.nonJtaDataSource = dataSourceJndiName;
         return this;
     }
@@ -136,7 +142,7 @@ public final class PersistenceConfiguration {
      *
      * @return the configured non-JTA datasource, if any, or null
      */
-    public String nonJtaDataSource() {
+    public DataSource nonJtaDataSource() {
         return nonJtaDataSource;
     }
 
@@ -291,24 +297,24 @@ public final class PersistenceConfiguration {
      * Jakarta Persistence DDL scripts configuration.
      * Copies database initialization and cleanup scripts configuration into persistence unit configuration.
      *
-     * @param repositoryConfig source Helidon data Configuration
+     * @param dataJpaConfig source Helidon data Configuration
      */
-    public void configureScripts(DataJpaConfig repositoryConfig) {
+    public void configureScripts(DataJpaConfig dataJpaConfig) {
         if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
             LOGGER.log(System.Logger.Level.DEBUG, "DDL script initialization");
         }
         byte databaseAction = 0x00;
-        if (repositoryConfig.initScript().isPresent()) {
+        if (dataJpaConfig.initScript().isPresent()) {
             property("jakarta.persistence.schema-generation.create-script-source",
-                     repositoryConfig.initScript().get());
+                     dataJpaConfig.initScript().get());
             property("jakarta.persistence.schema-generation.create-source",
                      "script");
 
             databaseAction |= 0x01;
         }
-        if (repositoryConfig.dropScript().isPresent()) {
+        if (dataJpaConfig.dropScript().isPresent()) {
             property("jakarta.persistence.schema-generation.drop-script-source",
-                     repositoryConfig.dropScript().get());
+                     dataJpaConfig.dropScript().get());
             property("jakarta.persistence.schema-generation.drop-source",
                      "script");
             databaseAction |= 0x02;
@@ -337,18 +343,18 @@ public final class PersistenceConfiguration {
      * Persistence provider configuration.
      * Copies common persistence provider configuration.
      *
-     * @param repositoryConfig source Helidon data Configuration
+     * @param dataJpaConfig source Helidon data Configuration
      */
-    public void configureProvider(DataJpaConfig repositoryConfig) {
-        repositoryConfig.providerClassName()
+    public void configureProvider(DataJpaConfig dataJpaConfig) {
+        dataJpaConfig.providerClassName()
                 .ifPresent(this::provider);
-        repositoryConfig.properties()
+        dataJpaConfig.properties()
                 .forEach(this::property);
         if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
             LOGGER.log(System.Logger.Level.DEBUG, "Persistence provider initialization");
-            if (repositoryConfig.providerClassName().isPresent()) {
+            if (dataJpaConfig.providerClassName().isPresent()) {
                 LOGGER.log(System.Logger.Level.DEBUG, String.format(" - provider: %s",
-                                                                    repositoryConfig.providerClassName().get()));
+                                                                    dataJpaConfig.providerClassName().get()));
             }
             for (Map.Entry<String, Object> mapEntry : properties().entrySet()) {
                 LOGGER.log(System.Logger.Level.DEBUG,
@@ -361,31 +367,59 @@ public final class PersistenceConfiguration {
      * Jakarta Persistence database connection configuration.
      * Copies database connection configuration into persistence unit configuration.
      *
-     * @param repositoryConfig source Helidon data Configuration
-     * @param driverClass      JDBC driver class
+     * @param dataJpaConfig source Helidon data Configuration
+     * @param driverClass JDBC driver class
+     * @param registry service registry
      */
-    public void configureConnection(DataJpaConfig repositoryConfig,
-                                    Class<? extends Driver> driverClass) {
+    public void configureConnection(DataJpaConfig dataJpaConfig,
+                                    Class<? extends Driver> driverClass,
+                                    ServiceRegistry registry) {
         if (LOGGER.isLoggable(Level.DEBUG)) {
             LOGGER.log(Level.DEBUG, "Database connection initialization");
         }
-        // Set JDBC driver found by DriverManager when no value was configured
-        repositoryConfig.jdbcDriverClassName()
-                .ifPresentOrElse(value -> property("jakarta.persistence.jdbc.driver", value),
-                                 () -> property("jakarta.persistence.jdbc.driver", driverClass.getName()));
-        repositoryConfig.username()
-                .ifPresent(value -> property("jakarta.persistence.jdbc.user", value));
-        repositoryConfig.password()
-                .ifPresent(value -> property(
-                        "jakarta.persistence.jdbc.password",
-                        // Temporary removed, because EclipseLink 4.0 fails with password as char[]
-                        // EclipseLink accepts password as char[] value, but common Jakarta Persistence API does not
-                        //repositoryConfig.provider().isPresent()
-                        //        && repositoryConfig.provider().get().startsWith("org.eclipse.persistence")
-                        //        ? value : new String(value)));
-                        // EclipseLink 4.0 workaround
-                        new String(value)));
-        repositoryConfig.connectionString()
-                .ifPresent(value -> property("jakarta.persistence.jdbc.url", value));
+        // Only exactly one of the following options is possible, DataSource or URL
+        // - DataSource
+        if (dataJpaConfig.dataSource().isPresent()) {
+            configureDataSource(dataJpaConfig.dataSource().get(),
+                                dataJpaConfig.jtaDataSource().orElse(false),
+                                registry);
+        }
+        // - URL as connection-string
+        if (dataJpaConfig.connectionString().isPresent()) {
+            // Set JDBC driver found by DriverManager when no value was configured
+            // This is required only with URL
+            dataJpaConfig.jdbcDriverClassName()
+                    .ifPresentOrElse(value -> property("jakarta.persistence.jdbc.driver", value),
+                                     () -> property("jakarta.persistence.jdbc.driver", driverClass.getName()));
+            // Connection may be configured using connectionString, username and password or using DataSource
+            dataJpaConfig.username()
+                    .ifPresent(value -> property("jakarta.persistence.jdbc.user", value));
+            dataJpaConfig.password()
+                    .ifPresent(value -> property(
+                            "jakarta.persistence.jdbc.password",
+                            // Temporary removed, because EclipseLink 4.0 fails with password as char[]
+                            // EclipseLink accepts password as char[] value, but common Jakarta Persistence API does not
+                            //dataJpaConfig.provider().isPresent()
+                            //        && dataJpaConfig.provider().get().startsWith("org.eclipse.persistence")
+                            //        ? value : new String(value)));
+                            // EclipseLink 4.0 workaround
+                            new String(value)));
+            dataJpaConfig.connectionString()
+                    .ifPresent(value -> property("jakarta.persistence.jdbc.url", value));
+        }
     }
+
+    // Configure DataSource using name from Config
+    private void configureDataSource(String dataSourceName, boolean isJta, ServiceRegistry registry) {
+        DataSource ds = registry.get(Lookup.builder()
+                             .addContract(DataSource.class)
+                             .addQualifier(Qualifier.createNamed(dataSourceName))
+                             .build());
+        if (isJta) {
+            jtaDataSource(ds);
+        } else {
+            nonJtaDataSource(ds);
+        }
+    }
+
 }

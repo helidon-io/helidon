@@ -15,6 +15,6 @@
  */
 
 /**
- * Data repository runtime.
+ * Data repository.
  */
 package io.helidon.data;

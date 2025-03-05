@@ -157,6 +157,37 @@ class RoundContextImpl implements RoundContext {
             }
         }
 
+        if (!typeName.packageName().isEmpty()) {
+            return Optional.empty();
+        }
+
+        // this is most likely a type that is generated,
+        // so there is a good chance it was generated before, let's try
+        // with package name(s) of the generated types
+        // default (empty) package should not be used by programs, so we can make this bold assumption
+
+        for (var classCode : newTypes.values()) {
+            String packageName = classCode.newType().packageName();
+            TypeName toFind = TypeName.builder(typeName)
+                    .packageName(packageName)
+                    .build();
+            var inProgress = classCode.classModel().find(toFind);
+            if (inProgress.isPresent()) {
+                return inProgress;
+            }
+        }
+
+        for (var classCode : newTypesFromPreviousExtensions) {
+            String packageName = classCode.newType().packageName();
+            TypeName toFind = TypeName.builder(typeName)
+                    .packageName(packageName)
+                    .build();
+            var inProgress = classCode.classModel().find(toFind);
+            if (inProgress.isPresent()) {
+                return inProgress;
+            }
+        }
+
         return Optional.empty();
     }
 
