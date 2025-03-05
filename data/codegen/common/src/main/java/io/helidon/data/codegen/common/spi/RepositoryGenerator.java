@@ -49,7 +49,7 @@ public interface RepositoryGenerator {
      * Create data repository interface descriptor (info).
      * Contains list of provider specific interfaces to be implemented and entity and ID types.
      *
-     * @param interfaceInfo data repository interface type information
+     * @param interfaceInfo  data repository interface type information
      * @param codegenContext code processing and generation context
      * @return data repository interface descriptor
      */
@@ -66,9 +66,9 @@ public interface RepositoryGenerator {
     /**
      * Generate repository interfaces (e.g. CrudRepository) methods.
      *
-     * @param repositoryInfo data repository interface info
-     * @param classModel target class builder
-     * @param codegenContext code processing and generation context
+     * @param repositoryInfo       data repository interface info
+     * @param classModel           target class builder
+     * @param codegenContext       code processing and generation context
      * @param persistenceGenerator persistence provider specific generator
      */
     void generateInterfaces(RepositoryInfo repositoryInfo,
@@ -79,9 +79,9 @@ public interface RepositoryGenerator {
     /**
      * Generate query by method name methods.
      *
-     * @param repositoryInfo data repository interface info
-     * @param classModel target class builder
-     * @param codegenContext code processing and generation context
+     * @param repositoryInfo       data repository interface info
+     * @param classModel           target class builder
+     * @param codegenContext       code processing and generation context
      * @param persistenceGenerator persistence provider specific generator
      */
     void generateQueryMethods(RepositoryInfo repositoryInfo,

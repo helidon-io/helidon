@@ -89,7 +89,7 @@ public interface JpaRepositoryExecutor extends AutoCloseable {
      * @param <R>  task result type
      * @param <E>  type of (checked) exception that can be thrown
      * @return task result
-     * @throws RuntimeException                  as is if unable to compute a result
+     * @throws RuntimeException              as is if unable to compute a result
      * @throws io.helidon.data.DataException with checked {@link Exception} as a cause if unable to compute a result
      */
     <R, E extends Throwable> R call(Functions.CheckedFunction<EntityManager, R, E> task);
@@ -98,8 +98,8 @@ public interface JpaRepositoryExecutor extends AutoCloseable {
      * Run persistence session task.
      *
      * @param task task to run
-     * @param <E> type of (checked) exception that can be thrown
-     * @throws RuntimeException                  as is if unable to compute a result
+     * @param <E>  type of (checked) exception that can be thrown
+     * @throws RuntimeException              as is if unable to compute a result
      * @throws io.helidon.data.DataException with checked {@link Exception} as a cause if unable to compute a result
      */
     <E extends Throwable> void run(Functions.CheckedConsumer<EntityManager, E> task);
@@ -115,7 +115,7 @@ public interface JpaRepositoryExecutor extends AutoCloseable {
          * @param em   persistence session
          * @param task task to call
          * @param <R>  task result type
-         * @param <E> type of (checked) exception that can be thrown
+         * @param <E>  type of (checked) exception that can be thrown
          * @return task result
          */
         <R, E extends Throwable> R call(EntityManager em, Functions.CheckedFunction<EntityManager, R, E> task);
@@ -125,7 +125,7 @@ public interface JpaRepositoryExecutor extends AutoCloseable {
          *
          * @param em   persistence session
          * @param task task to run
-         * @param <E> type of (checked) exception that can be thrown
+         * @param <E>  type of (checked) exception that can be thrown
          */
         <E extends Throwable> void run(EntityManager em, Functions.CheckedConsumer<EntityManager, E> task);
     }

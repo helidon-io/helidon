@@ -24,9 +24,9 @@ import io.helidon.common.types.TypeName;
 /**
  * Implemented interface info.
  *
- * @param typeName type of the repository
+ * @param typeName   type of the repository
  * @param entityType type of the entity
- * @param idType type of the ID
+ * @param idType     type of the ID
  */
 public record RepositoryInterfaceInfo(TypeName typeName, TypeName entityType, TypeName idType) {
 

@@ -34,6 +34,20 @@ public class TestBasicRepositoryDelete {
 
     private static LeagueRepository leagueRepository;
 
+    @BeforeAll
+    public static void before(DataRegistry data) {
+        leagueRepository = data.repository(LeagueRepository.class);
+    }
+
+    @AfterAll
+    public static void after() {
+        // League instances are used for delete tests, so they must be restored
+        leagueRepository.deleteAll();
+        for (int i = 1; i < LEAGUES.length; i++) {
+            leagueRepository.save(LEAGUES[i]);
+        }
+    }
+
     // Delete League with specific ID and verify that it does no more exist in the database
     @Test
     public void testDeleteById() {
@@ -92,20 +106,6 @@ public class TestBasicRepositoryDelete {
     // Restore League instances before each test
     @BeforeEach
     public void beforeEach() {
-        leagueRepository.deleteAll();
-        for (int i = 1; i < LEAGUES.length; i++) {
-            leagueRepository.save(LEAGUES[i]);
-        }
-    }
-
-    @BeforeAll
-    public static void before(DataRegistry data) {
-        leagueRepository = data.repository(LeagueRepository.class);
-    }
-
-    @AfterAll
-    public static void after() {
-        // League instances are used for delete tests, so they must be restored
         leagueRepository.deleteAll();
         for (int i = 1; i < LEAGUES.length; i++) {
             leagueRepository.save(LEAGUES[i]);

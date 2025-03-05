@@ -73,10 +73,10 @@ class BasicRepositoryInterfaceGenerator extends BaseRepositoryInterfaceGenerator
                 .addGenericArgument(extendsType(GENERIC_T, repositoryInfo().entity()));
         // Method body: return executor.call(em -> em.merge(entity));
         returnStatement(builder,
-                  b1 -> call(b1,
-                            b2 -> statementGenerator()
-                                    .addMerge(b2, ENTITY),
-                            EXECUTOR));
+                        b1 -> call(b1,
+                                   b2 -> statementGenerator()
+                                           .addMerge(b2, ENTITY),
+                                   EXECUTOR));
     }
 
     // <T extends E> Iterable<T> saveAll(Iterable<T> entities)
@@ -95,8 +95,8 @@ class BasicRepositoryInterfaceGenerator extends BaseRepositoryInterfaceGenerator
                                             LIST_T,
                                             "mergedEntities",
                                             b2 -> b2.addContent("new ")
-                                                        .addContent(ArrayList.class)
-                                                        .addContent("<>()")));
+                                                    .addContent(ArrayList.class)
+                                                    .addContent("<>()")));
         statement(builder,
                   b1 -> run(b1,
                             b2 -> statementGenerator()

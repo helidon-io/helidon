@@ -31,7 +31,8 @@ public final class Tx {
 
     /**
      * Transaction type.
-     * Indicates whether method is to be executed within a transaction context where the values provide the following corresponding behavior.
+     * Indicates whether method is to be executed within a transaction context where the values provide the following
+     * corresponding behavior.
      */
     public enum Type {
         /**

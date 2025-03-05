@@ -52,6 +52,7 @@ interface UcpDataSourceConfigBlueprint extends DataSourceProviderConfig, Provide
      * {@link oracle.ucp.jdbc.PoolXADataSource} instance is returned when {@code true},
      * {@link oracle.ucp.jdbc.PoolDataSource} instance is returned when {@code false}.
      * Default value is {@code false}.
+     *
      * @return whether distributed transactions are supported.
      */
     @Option.Configured
@@ -65,7 +66,6 @@ interface UcpDataSourceConfigBlueprint extends DataSourceProviderConfig, Provide
      */
     @Option.Configured
     Optional<Integer> abandonedConnectionTimeout();
-
 
     /**
      * Sets the {@code boolean} value for the property that controls the behavior of UCP

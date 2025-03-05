@@ -48,110 +48,6 @@ class QueryByJpqlMethodsGenerator extends BaseQueryMethodsGenerator {
         this.methods = methods;
     }
 
-    // Add generated method to the model
-    private void addGeneratedMethod(TypedElementInfo methodInfo) {
-        try {
-            classModel().addMethod(builder -> generateMethod(builder, methodInfo));
-        } catch (CodegenException e) {
-            throw e;
-        } catch (Exception e) {
-            String message = e.getMessage() != null && !e.getMessage().isEmpty()
-                    ? e.getMessage()
-                    : "Code generation of @Data.Query annotated method failed";
-            throw new CodegenException(message, e, methodInfo.originatingElement());
-        }
-    }
-
-    // Generate method code
-    private void generateMethod(Method.Builder builder, TypedElementInfo methodInfo) {
-        MethodParams methodParams = generateHeader(builder, methodInfo);
-
-        codegenContext().logger()
-                .log(Level.TRACE, String.format("JPQL method %s", methodInfo.elementName()));
-
-        if (methodParams.dynamic()) {
-            throw new IllegalArgumentException("Method " + methodInfo.elementName()
-                                                            + " contains dynamic query parameter of type Sort");
-        }
-
-        // Query string from @Query annotation
-        String jpql = methodInfo.annotation(HelidonDataTypes.QUERY_ANNOTATION)
-                .value()
-                .orElseThrow(() -> new CodegenException("@Data.Query annotation value is missing",
-                                                        methodInfo.originatingElement()));
-
-        PersistenceGenerator.Query query = queryBuilder().buildQuery(jpql,
-                                                                     parser.parse(jpql),
-                                                                     params(methodParams));
-        if (STREAM.equals(methodInfo.typeName())) {
-            generateQueryStream(builder, methodInfo, statementGenerator(), query);
-        } else if (isListOrCollection(methodInfo.typeName())) {
-            generateQueryList(builder, methodInfo, statementGenerator(), query);
-        } else if (methodInfo.typeName().isOptional()) {
-            generateQueryOptional(builder, methodInfo, query);
-        } else if (SLICE.equals(methodInfo.typeName())) {
-            generateQuerySlice(builder, methodInfo, statementGenerator(), query, methodParams);
-        } else if (PAGE.equals(methodInfo.typeName())) {
-            generateQueryPage(builder, methodInfo, statementGenerator(), query, methodParams);
-        } else {
-            generateQueryItem(builder, query, methodInfo.typeName());
-        }
-    }
-
-    private void generateQueryOptional(Method.Builder builder,
-                                       TypedElementInfo methodInfo,
-                                       PersistenceGenerator.Query query) {
-        returnStatement(
-                builder,
-                // Jakarta Persistence 3.2 compliant code disabled
-                // b1 -> optionalOfNullable(b1,
-                // Jakarta Persistence 3.1 workaround
-                b1 -> optionalFromQuery(
-                        b1,
-                        b2 -> call(
-                                b2,
-                                // Jakarta Persistence 3.2 compliant code disabled
-                                // b3 -> statementGenerator().addExecuteQueryItemOrNull(b3,
-                                // Jakarta Persistence 3.1 workaround
-                                b3 -> statementGenerator().addExecuteQueryList(
-                                        b3,
-                                        query,
-                                        genericReturnTypeArgument(
-                                                methodInfo)),
-                                EXECUTOR),
-                        statementGenerator().executorType()));
-    }
-
-    private void generateQueryItem(Method.Builder builder,
-                                   PersistenceGenerator.Query query,
-                                   TypeName resultType) {
-        returnStatement(builder,
-                        b1 -> call(b1,
-                                   b2 -> statementGenerator().addExecuteQueryItem(b2,
-                                                                                  query,
-                                                                                  resultType),
-                                   EXECUTOR));
-
-    }
-
-    /**
-     * Create {@link List} of {@link PersistenceGenerator.QueryBuilder.MethodParameter} from method parameters
-     * {@link List} of {@link TypedElementInfo}.
-     * Returned list contains information about optional parameter aliases to link parameter
-     * with query named parameter.
-     *
-     * @param methodParams method parameters
-     * @return {@link List} of {@link PersistenceGenerator.QueryBuilder.MethodParameter}
-     */
-    private List<PersistenceGenerator.QueryBuilder.MethodParameter> params(MethodParams methodParams) {
-        List<PersistenceGenerator.QueryBuilder.MethodParameter> params = new ArrayList<>(methodParams.params().size());
-        methodParams.params()
-                .forEach(param -> params.add(
-                        PersistenceGenerator.QueryBuilder.MethodParameter.create(param.elementName(),
-                                                                                 param.elementName())));
-        return List.copyOf(params);
-    }
-
     // Generate all "query by method name" methods
     static void generate(RepositoryInfo repositoryInfo,
                          List<TypedElementInfo> methods,
@@ -256,6 +152,110 @@ class QueryByJpqlMethodsGenerator extends BaseQueryMethodsGenerator {
                                        decreasePadding(b3, 2);
                                    }),
                                    EXECUTOR));
+    }
+
+    // Add generated method to the model
+    private void addGeneratedMethod(TypedElementInfo methodInfo) {
+        try {
+            classModel().addMethod(builder -> generateMethod(builder, methodInfo));
+        } catch (CodegenException e) {
+            throw e;
+        } catch (Exception e) {
+            String message = e.getMessage() != null && !e.getMessage().isEmpty()
+                    ? e.getMessage()
+                    : "Code generation of @Data.Query annotated method failed";
+            throw new CodegenException(message, e, methodInfo.originatingElement());
+        }
+    }
+
+    // Generate method code
+    private void generateMethod(Method.Builder builder, TypedElementInfo methodInfo) {
+        MethodParams methodParams = generateHeader(builder, methodInfo);
+
+        codegenContext().logger()
+                .log(Level.TRACE, String.format("JPQL method %s", methodInfo.elementName()));
+
+        if (methodParams.dynamic()) {
+            throw new IllegalArgumentException("Method " + methodInfo.elementName()
+                                                       + " contains dynamic query parameter of type Sort");
+        }
+
+        // Query string from @Query annotation
+        String jpql = methodInfo.annotation(HelidonDataTypes.QUERY_ANNOTATION)
+                .value()
+                .orElseThrow(() -> new CodegenException("@Data.Query annotation value is missing",
+                                                        methodInfo.originatingElement()));
+
+        PersistenceGenerator.Query query = queryBuilder().buildQuery(jpql,
+                                                                     parser.parse(jpql),
+                                                                     params(methodParams));
+        if (STREAM.equals(methodInfo.typeName())) {
+            generateQueryStream(builder, methodInfo, statementGenerator(), query);
+        } else if (isListOrCollection(methodInfo.typeName())) {
+            generateQueryList(builder, methodInfo, statementGenerator(), query);
+        } else if (methodInfo.typeName().isOptional()) {
+            generateQueryOptional(builder, methodInfo, query);
+        } else if (SLICE.equals(methodInfo.typeName())) {
+            generateQuerySlice(builder, methodInfo, statementGenerator(), query, methodParams);
+        } else if (PAGE.equals(methodInfo.typeName())) {
+            generateQueryPage(builder, methodInfo, statementGenerator(), query, methodParams);
+        } else {
+            generateQueryItem(builder, query, methodInfo.typeName());
+        }
+    }
+
+    private void generateQueryOptional(Method.Builder builder,
+                                       TypedElementInfo methodInfo,
+                                       PersistenceGenerator.Query query) {
+        returnStatement(
+                builder,
+                // Jakarta Persistence 3.2 compliant code disabled
+                // b1 -> optionalOfNullable(b1,
+                // Jakarta Persistence 3.1 workaround
+                b1 -> optionalFromQuery(
+                        b1,
+                        b2 -> call(
+                                b2,
+                                // Jakarta Persistence 3.2 compliant code disabled
+                                // b3 -> statementGenerator().addExecuteQueryItemOrNull(b3,
+                                // Jakarta Persistence 3.1 workaround
+                                b3 -> statementGenerator().addExecuteQueryList(
+                                        b3,
+                                        query,
+                                        genericReturnTypeArgument(
+                                                methodInfo)),
+                                EXECUTOR),
+                        statementGenerator().executorType()));
+    }
+
+    private void generateQueryItem(Method.Builder builder,
+                                   PersistenceGenerator.Query query,
+                                   TypeName resultType) {
+        returnStatement(builder,
+                        b1 -> call(b1,
+                                   b2 -> statementGenerator().addExecuteQueryItem(b2,
+                                                                                  query,
+                                                                                  resultType),
+                                   EXECUTOR));
+
+    }
+
+    /**
+     * Create {@link List} of {@link PersistenceGenerator.QueryBuilder.MethodParameter} from method parameters
+     * {@link List} of {@link TypedElementInfo}.
+     * Returned list contains information about optional parameter aliases to link parameter
+     * with query named parameter.
+     *
+     * @param methodParams method parameters
+     * @return {@link List} of {@link PersistenceGenerator.QueryBuilder.MethodParameter}
+     */
+    private List<PersistenceGenerator.QueryBuilder.MethodParameter> params(MethodParams methodParams) {
+        List<PersistenceGenerator.QueryBuilder.MethodParameter> params = new ArrayList<>(methodParams.params().size());
+        methodParams.params()
+                .forEach(param -> params.add(
+                        PersistenceGenerator.QueryBuilder.MethodParameter.create(param.elementName(),
+                                                                                 param.elementName())));
+        return List.copyOf(params);
     }
 
 }
