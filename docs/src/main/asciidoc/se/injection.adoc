@@ -835,6 +835,10 @@ annotation (i.e. `start(ApplicationBinding.create())`)
 - `start(Binding, ServiceRegistryConfig)` - same as above, allows for customization of configuration,
 if used, remember to set discovery to `false` to prevent automated discovery from the classpath
 
+Application binding contains reference to all services that can be used by the application at runtime. As a result,
+when using the generated binding and JPMS (`module-info.java`), all modules that contain services (or Java ServiceLoader providers used by the registry) must be configured as `required` in the module info, otherwise
+the binding cannot be compiled.
+
 All options to start a Helidon application that uses service registry:
 // Can be commented out once the PR https://github.com/helidon-io/helidon/pull/9840 is merged
 // - A custom Main method using `ServiceRegistryManager.start(...)` methods, or `ServiceRegistryManager.create(...)` methods
