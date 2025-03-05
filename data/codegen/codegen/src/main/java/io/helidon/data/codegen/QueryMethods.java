@@ -80,12 +80,6 @@ class QueryMethods {
             return info.kind() == ElementKind.METHOD;
         }
 
-        Builder addMethod(TypedElementInfo methodInfo) {
-            listByType(methodType(methodInfo))
-                    .add(methodInfo);
-            return this;
-        }
-
         @Override
         public QueryMethods build() {
             return new QueryMethods(
@@ -93,6 +87,12 @@ class QueryMethods {
                                        .stream()
                                        .map(Builder::unmodifiableEntry)
                                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))));
+        }
+
+        Builder addMethod(TypedElementInfo methodInfo) {
+            listByType(methodType(methodInfo))
+                    .add(methodInfo);
+            return this;
         }
 
         private static Map.Entry<Type, List<TypedElementInfo>> unmodifiableEntry(Map.Entry<Type, List<TypedElementInfo>> entry) {

@@ -19,6 +19,7 @@ import java.util.List;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+
 /**
  * Data query ordering.
  */
@@ -28,6 +29,7 @@ interface OrderBlueprint {
 
     /**
      * Ordering expressions.
+     *
      * @return {@link List} of ordering expressions
      */
     @Option.Singular

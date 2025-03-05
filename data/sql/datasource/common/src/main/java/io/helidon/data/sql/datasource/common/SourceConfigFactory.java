@@ -22,6 +22,7 @@ import io.helidon.common.config.Config;
 import io.helidon.service.registry.Service;
 
 // FIXME: Temporary workaround until it's fixed in Helidon
+
 /**
  * {@link Config} factory.
  */

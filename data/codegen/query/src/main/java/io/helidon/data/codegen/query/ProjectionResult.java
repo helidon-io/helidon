@@ -19,18 +19,32 @@ package io.helidon.data.codegen.query;
  * Projection return type limitation.
  */
 public enum ProjectionResult {
-    /** Only boolean values. */
+    /**
+     * Only boolean values.
+     */
     Exists,
-    /** Only numeric values. */
+    /**
+     * Only numeric values.
+     */
     Count,
-    /** Only single entity or entity property instance, cannot return {@code null}. */
+    /**
+     * Only single entity or entity property instance, cannot return {@code null}.
+     */
     Get,
-    /** {@code Optional} of single entity or entity property instance. */
+    /**
+     * {@code Optional} of single entity or entity property instance.
+     */
     Find,
-    /** {@code List} of entity or entity property values. */
+    /**
+     * {@code List} of entity or entity property values.
+     */
     List,
-    /** {@code Stream} of entity or entity property values. */
+    /**
+     * {@code Stream} of entity or entity property values.
+     */
     Stream,
-    /** DML result. */
+    /**
+     * DML result.
+     */
     Dml;
 }

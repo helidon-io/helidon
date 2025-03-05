@@ -43,6 +43,24 @@ public class TestBasicRepository {
     private static RegionRepository regionRepository;
     private static PokemonRepository pokemonRepository;
 
+    @BeforeAll
+    public static void before(DataRegistry data) {
+        regionRepository = data.repository(RegionRepository.class);
+        pokemonRepository = data.repository(PokemonRepository.class);
+        // Used in testSaveExisting()
+        pokemonRepository.insert(NEW_POKEMONS.get(106));
+        // Used in testSaveAllExisting()
+        pokemonRepository.insert(NEW_POKEMONS.get(107));
+        pokemonRepository.insert(NEW_POKEMONS.get(108));
+    }
+
+    @AfterAll
+    public static void after() {
+        pokemonRepository.run(InitialData::deleteTemp);
+        regionRepository = null;
+        pokemonRepository = null;
+    }
+
     // Add new pokemon and verify it in the database
     @Test
     public void testSave() {
@@ -162,25 +180,6 @@ public class TestBasicRepository {
     public void testCount() {
         long count = regionRepository.count();
         assertThat(count, is((long) (REGIONS.length - 1)));
-    }
-
-
-    @BeforeAll
-    public static void before(DataRegistry data) {
-        regionRepository = data.repository(RegionRepository.class);
-        pokemonRepository = data.repository(PokemonRepository.class);
-        // Used in testSaveExisting()
-        pokemonRepository.insert(NEW_POKEMONS.get(106));
-        // Used in testSaveAllExisting()
-        pokemonRepository.insert(NEW_POKEMONS.get(107));
-        pokemonRepository.insert(NEW_POKEMONS.get(108));
-    }
-
-    @AfterAll
-    public static void after() {
-        pokemonRepository.run(InitialData::deleteTemp);
-        regionRepository = null;
-        pokemonRepository = null;
     }
 
 }

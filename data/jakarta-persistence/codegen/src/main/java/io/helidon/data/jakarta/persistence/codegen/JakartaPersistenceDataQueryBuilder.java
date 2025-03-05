@@ -139,14 +139,14 @@ final class JakartaPersistenceDataQueryBuilder extends JakartaPersistenceBaseQue
     private void buildCountFromProjection(DataQuery query, BaseQuery.BaseBuilder<?, ?> queryBuilder) {
         Projection projection = query.projection();
         switch (projection.action()) {
-            case Select:
-                appendSelectCount(projection, queryBuilder);
-                break;
-            case Delete:
-            case Update:
-                throw new CodegenException("Cannot build COUNT query from " + projection.action() + " statement");
-            default:
-                throw new CodegenException("Unknown query action " + projection.action());
+        case Select:
+            appendSelectCount(projection, queryBuilder);
+            break;
+        case Delete:
+        case Update:
+            throw new CodegenException("Cannot build COUNT query from " + projection.action() + " statement");
+        default:
+            throw new CodegenException("Unknown query action " + projection.action());
         }
     }
 
@@ -191,7 +191,7 @@ final class JakartaPersistenceDataQueryBuilder extends JakartaPersistenceBaseQue
                     case Exists:
                         projection.property().ifPresentOrElse(
                                 property -> count(jpql, distinctProperty(projection.distinct(),
-                                                                          entityProperty(property.toString()))),
+                                                                         entityProperty(property.toString()))),
                                 () -> count(jpql, distinctProperty(projection.distinct(), entityAlias)));
                         queryBuilder.returnType(QueryReturnType.BOOLEAN);
                         break;

@@ -37,18 +37,18 @@ abstract class JakartaPersistenceBaseQueryBuilder extends JakartaPersistenceBase
         if (query.projection().expression().isPresent()) {
             ProjectionExpression expression = query.projection().expression().get();
             switch (expression.operator()) {
-                case First:
-                    return QueryReturnType.ENTITY;
-                case Exists:
-                    return QueryReturnType.BOOLEAN;
-                case Count:
-                case Min:
-                case Max:
-                case Sum:
-                case Avg:
-                    return QueryReturnType.NUMBER;
-                default:
-                    throw new CodegenException("Unknown projection expression operator " + expression.operator());
+            case First:
+                return QueryReturnType.ENTITY;
+            case Exists:
+                return QueryReturnType.BOOLEAN;
+            case Count:
+            case Min:
+            case Max:
+            case Sum:
+            case Avg:
+                return QueryReturnType.NUMBER;
+            default:
+                throw new CodegenException("Unknown projection expression operator " + expression.operator());
             }
         } else {
             return QueryReturnType.ENTITY;
@@ -140,13 +140,13 @@ abstract class JakartaPersistenceBaseQueryBuilder extends JakartaPersistenceBase
             this.query = query;
         }
 
+        static Builder builder() {
+            return new Builder();
+        }
+
         @Override
         public String query() {
             return query;
-        }
-
-        static Builder builder() {
-            return new Builder();
         }
 
         static class Builder extends BaseBuilder<Builder, Query>
@@ -159,14 +159,14 @@ abstract class JakartaPersistenceBaseQueryBuilder extends JakartaPersistenceBase
                 this.query = null;
             }
 
-            Builder query(String query) {
-                this.query = query;
-                return this;
-            }
-
             @Override
             public Query build() {
                 return new Query(query, List.copyOf(settings()), returnType(), isDml());
+            }
+
+            Builder query(String query) {
+                this.query = query;
+                return this;
             }
 
         }

@@ -60,7 +60,7 @@ public class DataConfigFactory implements Service.ServicesFactory<DataConfig> {
      * @return a new factory instance to register with
      *         {@link
      *         io.helidon.service.registry.ServiceRegistryConfig.Builder#putServiceInstance(
-     *         io.helidon.service.registry.ServiceDescriptor, Object)}
+     *io.helidon.service.registry.ServiceDescriptor, Object)}
      */
     public static DataConfigFactory create(List<DataConfig> configurations) {
         return new DataConfigFactory(configurations);
