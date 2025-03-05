@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -187,10 +187,10 @@ public interface Headers extends Iterable<Header> {
      * Whether this media type is accepted by these headers.
      * As this method is useful only for server request headers, it returns {@code true } by default.
      *
-     * @param mediaType media type to test
+     * @param mediaTypes media type to test
      * @return {@code true} if this media type would be accepted
      */
-    default boolean isAccepted(MediaType mediaType) {
+    default boolean isAccepted(MediaType... mediaTypes) {
         return true;
     }
 
