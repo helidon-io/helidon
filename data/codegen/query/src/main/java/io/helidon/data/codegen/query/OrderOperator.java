@@ -16,14 +16,19 @@
 package io.helidon.data.codegen.query;
 
 // FIXME: Test to validate OrderOperator against io.helidon.data.Order.Direction
+
 /**
  * Ordering operator in order expression.
  * Copy of {@code io.helidon.data.OrderDirection}, because code processing and generation
  * shall not depend on API module.
  */
 public enum OrderOperator {
-    /** Ascending order. */
+    /**
+     * Ascending order.
+     */
     ASC,
-    /** descending order. */
+    /**
+     * descending order.
+     */
     DESC;
 }

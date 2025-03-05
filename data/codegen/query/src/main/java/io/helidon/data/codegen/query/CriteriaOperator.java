@@ -19,39 +19,73 @@ package io.helidon.data.codegen.query;
  * Criteria condition operator.
  */
 public enum CriteriaOperator {
-    /** {@code Equal} operator. */
+    /**
+     * {@code Equal} operator.
+     */
     Equal(1),
-    /** {@code After} operator. */
+    /**
+     * {@code After} operator.
+     */
     After(1),
-    /** {@code Before} operator. */
+    /**
+     * {@code Before} operator.
+     */
     Before(1),
-    /** {@code Contains} operator. */
+    /**
+     * {@code Contains} operator.
+     */
     Contains(1),
-    /** {@code EndsWith} operator. */
+    /**
+     * {@code EndsWith} operator.
+     */
     EndsWith(1),
-    /** {@code StartsWith} operator. */
+    /**
+     * {@code StartsWith} operator.
+     */
     StartsWith(1),
-    /** {@code LessThan} operator. */
+    /**
+     * {@code LessThan} operator.
+     */
     LessThan(1),
-    /** {@code LessThanEqual} operator. */
+    /**
+     * {@code LessThanEqual} operator.
+     */
     LessThanEqual(1),
-    /** {@code GreaterThan} operator. */
+    /**
+     * {@code GreaterThan} operator.
+     */
     GreaterThan(1),
-    /** {@code GreaterThanEqual} operator. */
+    /**
+     * {@code GreaterThanEqual} operator.
+     */
     GreaterThanEqual(1),
-    /** {@code Between} operator. */
+    /**
+     * {@code Between} operator.
+     */
     Between(2),
-    /** {@code Like} operator. */
+    /**
+     * {@code Like} operator.
+     */
     Like(1),
-    /** {@code In} operator. */
+    /**
+     * {@code In} operator.
+     */
     In(1),
-    /** {@code Empty} operator. */
+    /**
+     * {@code Empty} operator.
+     */
     Empty(0),
-    /** {@code Null} operator. */
+    /**
+     * {@code Null} operator.
+     */
     Null(0),
-    /** {@code True} operator. */
+    /**
+     * {@code True} operator.
+     */
     True(0),
-    /** {@code False} operator. */
+    /**
+     * {@code False} operator.
+     */
     False(0);
 
     private final int paramsCount;

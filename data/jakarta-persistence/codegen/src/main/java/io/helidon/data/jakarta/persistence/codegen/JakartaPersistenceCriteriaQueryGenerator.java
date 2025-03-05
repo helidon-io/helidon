@@ -152,209 +152,6 @@ final class JakartaPersistenceCriteriaQueryGenerator extends JakartaPersistenceB
         return settings();
     }
 
-    private void buildProjection(Method.Builder builder) {
-        Projection projection = dataQuery.projection();
-        switch (projection.action()) {
-            case Select:
-                appendSelect(builder, projection);
-                break;
-            // Currently dynamic queries support only Sort, so they do not make sense to be used with Delete or Update.
-            // Delete is partially implemented to show future solution, but an attempt to call it will cause an exception.
-            case Delete:
-                //appendDelete(builder);
-                throw new UnsupportedOperationException("Sort parameter used in delete statement");
-                //break;
-            case Update:
-                // Not implemented yet
-                throw new UnsupportedOperationException("Sort parameter used in update statement");
-            default:
-                throw new UnsupportedOperationException("Unknown query action " + projection.action());
-        }
-    }
-
-    private void buildCriteria(Method.Builder builder, Criteria criteria, String name) {
-        CriteriaBuilder criteriaBuilder = new CriteriaBuilder();
-        criteriaBuilder.first(criteria.first());
-        criteria.next().forEach(
-                nextExpression -> {
-                    switch (nextExpression.operator()) {
-                        case AND:
-                            criteriaBuilder.and(nextExpression.criteria());
-                            break;
-                        case OR:
-                            criteriaBuilder.or(nextExpression.criteria());
-                            break;
-                        default:
-                            throw new UnsupportedOperationException(
-                                    "Unknown criteria logical operator " + nextExpression.operator());
-                    }
-                });
-
-        Iterator<TypedElementInfo> parameters = methodParams.params().iterator();
-        statement(builder,
-                  b1 -> where(b1,
-                              b2 -> criteriaBuilder.build(b2, parameters, setParameter()),
-                              name));
-    }
-
-    private void buildOrder(Method.Builder builder) {
-        // Ordering is valid only for query statement.
-        if (dataQuery.projection().action() == ProjectionAction.Select) {
-                appendCreateOrderList(builder, "orderBy");
-                dataQuery.order().ifPresent(
-                        order -> appendOrderExpression(builder, order, "orderBy"));
-                methodParams.sort().ifPresent(
-                        sort -> appendSortExpression(builder, sort, "orderBy"));
-                appendSetOrderBy(builder,
-                                 dataQuery.order().isEmpty() || dataQuery.order().get().expressions().isEmpty(),
-                                 "orderBy",
-                                 "stmt");
-        }
-    }
-
-    private void buildCreateQuery(Method.Builder builder) {
-        Projection projection = dataQuery.projection();
-        switch (projection.action()) {
-            case Select:
-            case Delete:
-                if (!returnType.equals(TypeNames.PRIMITIVE_VOID) && !returnType.equals(TypeNames.BOXED_VOID)) {
-                    builder.addContent("return ");
-                }
-                builder.addContentLine("em.createQuery(stmt)");
-                break;
-            case Update:
-                throw new UnsupportedOperationException("Update statement is not supported");
-            default:
-                throw new UnsupportedOperationException("Unknown query action " + projection.action());
-        }
-    }
-
-    // CriteriaDelete<Entity> and Root<Entity> instances
-    private void appendDelete(Method.Builder builder) {
-        appendCreateDeleteInstance(builder, repositoryInfo().entity(), "stmt");
-        // Root instance is required only for criteria
-        if (dataQuery.criteria().isPresent()) {
-            appendCreateRootFromQuery(builder, repositoryInfo(), "root", "stmt");
-        }
-    }
-
-    // CriteriaQuery<Result>and Root<Entity> instances with projection setting
-    private void appendSelect(Method.Builder builder, Projection projection) {
-        appendCreateQueryInstance(builder, returnType, "stmt");
-        appendCreateRootFromQuery(builder, repositoryInfo(), "root", "stmt");
-        appendSetSelectExpression(builder, projection, "stmt", "root");
-    }
-
-    // Generate projection part of the CriteriaQuery
-    private void appendSetSelectExpression(Method.Builder builder,
-                                           Projection projection,
-                                           String queryName,
-                                           String rootName) {
-        statement(builder,
-                  b1 -> select(b1,
-                               b2 -> appendSelectExpression(b2, projection, rootName),
-                               queryName));
-    }
-
-    // Generate projection part of the CriteriaQuery
-    private void appendSetSelectCountExpression(Method.Builder builder,
-                                                Projection projection,
-                                                String queryName,
-                                                String rootName) {
-        statement(builder,
-                  b1 -> select(b1,
-                               b2 -> count(b2,
-                                           b3 -> appendSelectExpression(b3, projection, rootName),
-                                           projection),
-                               queryName));
-    }
-
-    // Generate projection expression of the CriteriaQuery
-    private void appendSelectExpression(Method.Builder builder, Projection projection, String rootName) {
-        projection.expression().ifPresentOrElse(
-                expression -> {
-                    switch (expression.operator()) {
-                        case First:
-                            expression.parameter().ifPresentOrElse(
-                                    parameter -> {
-                                        if (parameter.type() != Integer.class) {
-                                            throw new IllegalArgumentException(
-                                                    "First projection operator parameter is not Integer");
-                                        }
-                                        projectionTarget(builder, projection, rootName);
-                                        settings.add(new JakartaPersistenceBaseQueryBuilder.Limit((Integer) parameter.value()));
-                                    },
-                                    () -> {
-                                        throw new IllegalArgumentException(
-                                                "Missing First projection operator parameter");
-                                    }
-                            );
-                            break;
-                        case Count:
-                        case Exists:
-                            count(builder, b -> projectionTarget(b, projection, rootName), projection);
-                            break;
-                        case Max:
-                            max(builder, b -> projectionTarget(b, projection, rootName));
-                            break;
-                        case Min:
-                            min(builder, b -> projectionTarget(b, projection, rootName));
-                            break;
-                        case Sum:
-                            sum(builder, b -> projectionTarget(b, projection, rootName));
-                            break;
-                        case Avg:
-                            if (returnType.equals(TypeNames.PRIMITIVE_DOUBLE)
-                                    || returnType.equals(TypeNames.BOXED_DOUBLE)
-                                    || returnType.equals(NUMBER)) {
-                                avg(builder, b -> projectionTarget(b, projection, rootName));
-                            // This must be caught in validation stage so hitting this exception means bug in the code
-                            } else {
-                                throw new UnsupportedOperationException(
-                                        "Jakarta Persistence Criteria API avg function does not support " + returnType);
-                            }
-                            break;
-                        default:
-                            throw new UnsupportedOperationException(
-                                    "Unknown projection expression operator " + expression.operator());
-                    }
-                },
-                () -> projectionTarget(builder, projection, rootName)
-        );
-    }
-
-    private void appendCriteriaInstance(Method.Builder builder, Criteria criteria, String name) {
-        CriteriaBuilder criteriaBuilder = new CriteriaBuilder();
-        criteriaBuilder.first(criteria.first());
-        criteria.next().forEach(
-                nextExpression -> {
-                    switch (nextExpression.operator()) {
-                        case AND:
-                            criteriaBuilder.and(nextExpression.criteria());
-                            break;
-                        case OR:
-                            criteriaBuilder.or(nextExpression.criteria());
-                            break;
-                        default:
-                            throw new UnsupportedOperationException(
-                                    "Unknown criteria logical operator " + nextExpression.operator());
-                    }
-                });
-
-        TypeName expressionType = TypeName.builder()
-                .from(RAW_EXPRESSION)
-                .addTypeArgument(TypeNames.BOXED_BOOLEAN)
-                .build();
-        Iterator<TypedElementInfo> parameters = methodParams.params().iterator();
-        statement(builder, b -> {
-            b.addContent(expressionType)
-                    .addContent(" ")
-                    .addContent(name)
-                    .addContent(" = ");
-            criteriaBuilder.build(b, parameters, setParameter());
-        });
-    }
-
     // Generate projection target based on Projection content:
     // - "root" when no parameter is present
     // - "root.get(<parameter>)" when parameter is present
@@ -493,15 +290,15 @@ final class JakartaPersistenceCriteriaQueryGenerator extends JakartaPersistenceB
             builder.addContent(orderName)
                     .addContent(".add(cb.");
             switch (expression.operator()) {
-                case ASC:
-                    builder.addContent("asc");
-                    break;
-                case DESC:
-                    builder.addContent("desc");
-                    break;
-                default:
-                    throw new UnsupportedOperationException(
-                            "Unknown order direction operator " + expression.operator());
+            case ASC:
+                builder.addContent("asc");
+                break;
+            case DESC:
+                builder.addContent("desc");
+                break;
+            default:
+                throw new UnsupportedOperationException(
+                        "Unknown order direction operator " + expression.operator());
             }
             builder.addContent("(root.get(\"")
                     .addContent(expression.property().name().toString())
@@ -544,6 +341,209 @@ final class JakartaPersistenceCriteriaQueryGenerator extends JakartaPersistenceB
         builder.addContent(", ");
         content2.accept(builder);
         builder.addContent(")");
+    }
+
+    private void buildProjection(Method.Builder builder) {
+        Projection projection = dataQuery.projection();
+        switch (projection.action()) {
+        case Select:
+            appendSelect(builder, projection);
+            break;
+        // Currently dynamic queries support only Sort, so they do not make sense to be used with Delete or Update.
+        // Delete is partially implemented to show future solution, but an attempt to call it will cause an exception.
+        case Delete:
+            //appendDelete(builder);
+            throw new UnsupportedOperationException("Sort parameter used in delete statement");
+            //break;
+        case Update:
+            // Not implemented yet
+            throw new UnsupportedOperationException("Sort parameter used in update statement");
+        default:
+            throw new UnsupportedOperationException("Unknown query action " + projection.action());
+        }
+    }
+
+    private void buildCriteria(Method.Builder builder, Criteria criteria, String name) {
+        CriteriaBuilder criteriaBuilder = new CriteriaBuilder();
+        criteriaBuilder.first(criteria.first());
+        criteria.next().forEach(
+                nextExpression -> {
+                    switch (nextExpression.operator()) {
+                    case AND:
+                        criteriaBuilder.and(nextExpression.criteria());
+                        break;
+                    case OR:
+                        criteriaBuilder.or(nextExpression.criteria());
+                        break;
+                    default:
+                        throw new UnsupportedOperationException(
+                                "Unknown criteria logical operator " + nextExpression.operator());
+                    }
+                });
+
+        Iterator<TypedElementInfo> parameters = methodParams.params().iterator();
+        statement(builder,
+                  b1 -> where(b1,
+                              b2 -> criteriaBuilder.build(b2, parameters, setParameter()),
+                              name));
+    }
+
+    private void buildOrder(Method.Builder builder) {
+        // Ordering is valid only for query statement.
+        if (dataQuery.projection().action() == ProjectionAction.Select) {
+            appendCreateOrderList(builder, "orderBy");
+            dataQuery.order().ifPresent(
+                    order -> appendOrderExpression(builder, order, "orderBy"));
+            methodParams.sort().ifPresent(
+                    sort -> appendSortExpression(builder, sort, "orderBy"));
+            appendSetOrderBy(builder,
+                             dataQuery.order().isEmpty() || dataQuery.order().get().expressions().isEmpty(),
+                             "orderBy",
+                             "stmt");
+        }
+    }
+
+    private void buildCreateQuery(Method.Builder builder) {
+        Projection projection = dataQuery.projection();
+        switch (projection.action()) {
+        case Select:
+        case Delete:
+            if (!returnType.equals(TypeNames.PRIMITIVE_VOID) && !returnType.equals(TypeNames.BOXED_VOID)) {
+                builder.addContent("return ");
+            }
+            builder.addContentLine("em.createQuery(stmt)");
+            break;
+        case Update:
+            throw new UnsupportedOperationException("Update statement is not supported");
+        default:
+            throw new UnsupportedOperationException("Unknown query action " + projection.action());
+        }
+    }
+
+    // CriteriaDelete<Entity> and Root<Entity> instances
+    private void appendDelete(Method.Builder builder) {
+        appendCreateDeleteInstance(builder, repositoryInfo().entity(), "stmt");
+        // Root instance is required only for criteria
+        if (dataQuery.criteria().isPresent()) {
+            appendCreateRootFromQuery(builder, repositoryInfo(), "root", "stmt");
+        }
+    }
+
+    // CriteriaQuery<Result>and Root<Entity> instances with projection setting
+    private void appendSelect(Method.Builder builder, Projection projection) {
+        appendCreateQueryInstance(builder, returnType, "stmt");
+        appendCreateRootFromQuery(builder, repositoryInfo(), "root", "stmt");
+        appendSetSelectExpression(builder, projection, "stmt", "root");
+    }
+
+    // Generate projection part of the CriteriaQuery
+    private void appendSetSelectExpression(Method.Builder builder,
+                                           Projection projection,
+                                           String queryName,
+                                           String rootName) {
+        statement(builder,
+                  b1 -> select(b1,
+                               b2 -> appendSelectExpression(b2, projection, rootName),
+                               queryName));
+    }
+
+    // Generate projection part of the CriteriaQuery
+    private void appendSetSelectCountExpression(Method.Builder builder,
+                                                Projection projection,
+                                                String queryName,
+                                                String rootName) {
+        statement(builder,
+                  b1 -> select(b1,
+                               b2 -> count(b2,
+                                           b3 -> appendSelectExpression(b3, projection, rootName),
+                                           projection),
+                               queryName));
+    }
+
+    // Generate projection expression of the CriteriaQuery
+    private void appendSelectExpression(Method.Builder builder, Projection projection, String rootName) {
+        projection.expression().ifPresentOrElse(
+                expression -> {
+                    switch (expression.operator()) {
+                    case First:
+                        expression.parameter().ifPresentOrElse(
+                                parameter -> {
+                                    if (parameter.type() != Integer.class) {
+                                        throw new IllegalArgumentException(
+                                                "First projection operator parameter is not Integer");
+                                    }
+                                    projectionTarget(builder, projection, rootName);
+                                    settings.add(new JakartaPersistenceBaseQueryBuilder.Limit((Integer) parameter.value()));
+                                },
+                                () -> {
+                                    throw new IllegalArgumentException(
+                                            "Missing First projection operator parameter");
+                                }
+                        );
+                        break;
+                    case Count:
+                    case Exists:
+                        count(builder, b -> projectionTarget(b, projection, rootName), projection);
+                        break;
+                    case Max:
+                        max(builder, b -> projectionTarget(b, projection, rootName));
+                        break;
+                    case Min:
+                        min(builder, b -> projectionTarget(b, projection, rootName));
+                        break;
+                    case Sum:
+                        sum(builder, b -> projectionTarget(b, projection, rootName));
+                        break;
+                    case Avg:
+                        if (returnType.equals(TypeNames.PRIMITIVE_DOUBLE)
+                                || returnType.equals(TypeNames.BOXED_DOUBLE)
+                                || returnType.equals(NUMBER)) {
+                            avg(builder, b -> projectionTarget(b, projection, rootName));
+                            // This must be caught in validation stage so hitting this exception means bug in the code
+                        } else {
+                            throw new UnsupportedOperationException(
+                                    "Jakarta Persistence Criteria API avg function does not support " + returnType);
+                        }
+                        break;
+                    default:
+                        throw new UnsupportedOperationException(
+                                "Unknown projection expression operator " + expression.operator());
+                    }
+                },
+                () -> projectionTarget(builder, projection, rootName)
+        );
+    }
+
+    private void appendCriteriaInstance(Method.Builder builder, Criteria criteria, String name) {
+        CriteriaBuilder criteriaBuilder = new CriteriaBuilder();
+        criteriaBuilder.first(criteria.first());
+        criteria.next().forEach(
+                nextExpression -> {
+                    switch (nextExpression.operator()) {
+                    case AND:
+                        criteriaBuilder.and(nextExpression.criteria());
+                        break;
+                    case OR:
+                        criteriaBuilder.or(nextExpression.criteria());
+                        break;
+                    default:
+                        throw new UnsupportedOperationException(
+                                "Unknown criteria logical operator " + nextExpression.operator());
+                    }
+                });
+
+        TypeName expressionType = TypeName.builder()
+                .from(RAW_EXPRESSION)
+                .addTypeArgument(TypeNames.BOXED_BOOLEAN)
+                .build();
+        Iterator<TypedElementInfo> parameters = methodParams.params().iterator();
+        statement(builder, b -> {
+            b.addContent(expressionType)
+                    .addContent(" ")
+                    .addContent(name)
+                    .addContent(" = ");
+            criteriaBuilder.build(b, parameters, setParameter());
+        });
     }
 
     // Expression interface
@@ -670,56 +670,56 @@ final class JakartaPersistenceCriteriaQueryGenerator extends JakartaPersistenceB
                           Iterator<TypedElementInfo> parameters,
                           Map<CharSequence, PersistenceGenerator.QuerySettings> setParameter) {
             switch (condition.operator()) {
-                case Equal:
-                    criteriaEqual(builder, condition, parameters, setParameter);
-                    break;
-                case Contains:
-                    criteriaContains(builder, condition, parameters, setParameter);
-                    break;
-                case EndsWith:
-                    criteriaEndsWith(builder, condition, parameters, setParameter);
-                    break;
-                case StartsWith:
-                    criteriaStartsWith(builder, condition, parameters, setParameter);
-                    break;
-                case Before:
-                case LessThan:
-                    criteriaLessThan(builder, condition, parameters, setParameter);
-                    break;
-                case LessThanEqual:
-                    criteriaLessThanEqual(builder, condition, parameters, setParameter);
-                    break;
-                case After:
-                case GreaterThan:
-                    criteriaGreaterThan(builder, condition, parameters, setParameter);
-                    break;
-                case GreaterThanEqual:
-                    criteriaGreaterThanEqual(builder, condition, parameters, setParameter);
-                    break;
-                case Between:
-                    criteriaBetween(builder, condition, parameters, setParameter);
-                    break;
-                case Like:
-                    criteriaLike(builder, condition, parameters, setParameter);
-                    break;
-                case In:
-                    criteriaIn(builder, condition, parameters, setParameter);
-                    break;
-                case Empty:
-                    criteriaEmpty(builder, condition);
-                    break;
-                case Null:
-                    criteriaNull(builder, condition);
-                    break;
-                case True:
-                    criteriaTrue(builder, condition);
-                    break;
-                case False:
-                    criteriaFalse(builder, condition);
-                    break;
-                default:
-                    throw new UnsupportedOperationException(
-                            "Unknown criteria expression operator " + condition.operator());
+            case Equal:
+                criteriaEqual(builder, condition, parameters, setParameter);
+                break;
+            case Contains:
+                criteriaContains(builder, condition, parameters, setParameter);
+                break;
+            case EndsWith:
+                criteriaEndsWith(builder, condition, parameters, setParameter);
+                break;
+            case StartsWith:
+                criteriaStartsWith(builder, condition, parameters, setParameter);
+                break;
+            case Before:
+            case LessThan:
+                criteriaLessThan(builder, condition, parameters, setParameter);
+                break;
+            case LessThanEqual:
+                criteriaLessThanEqual(builder, condition, parameters, setParameter);
+                break;
+            case After:
+            case GreaterThan:
+                criteriaGreaterThan(builder, condition, parameters, setParameter);
+                break;
+            case GreaterThanEqual:
+                criteriaGreaterThanEqual(builder, condition, parameters, setParameter);
+                break;
+            case Between:
+                criteriaBetween(builder, condition, parameters, setParameter);
+                break;
+            case Like:
+                criteriaLike(builder, condition, parameters, setParameter);
+                break;
+            case In:
+                criteriaIn(builder, condition, parameters, setParameter);
+                break;
+            case Empty:
+                criteriaEmpty(builder, condition);
+                break;
+            case Null:
+                criteriaNull(builder, condition);
+                break;
+            case True:
+                criteriaTrue(builder, condition);
+                break;
+            case False:
+                criteriaFalse(builder, condition);
+                break;
+            default:
+                throw new UnsupportedOperationException(
+                        "Unknown criteria expression operator " + condition.operator());
             }
         }
 

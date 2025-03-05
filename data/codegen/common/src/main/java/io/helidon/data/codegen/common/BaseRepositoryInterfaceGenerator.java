@@ -47,9 +47,9 @@ public abstract class BaseRepositoryInterfaceGenerator
     /**
      * Creates an instance of data repository interface code generator base class.
      *
-     * @param repositoryInfo data repository interface info
-     * @param classModel target class builder
-     * @param codegenContext code processing and generation context
+     * @param repositoryInfo       data repository interface info
+     * @param classModel           target class builder
+     * @param codegenContext       code processing and generation context
      * @param persistenceGenerator persistence provider specific generator
      */
     protected BaseRepositoryInterfaceGenerator(RepositoryInfo repositoryInfo,
@@ -65,6 +65,77 @@ public abstract class BaseRepositoryInterfaceGenerator
         this.statementGenerator = persistenceGenerator().statementGenerator();
     }
 
+    /**
+     * Generate {@link java.util.Optional#ofNullable(Object)} call.
+     *
+     * @param builder method builder
+     * @param content additional statement content
+     */
+    protected static void optionalOfNullable(Method.Builder builder, Consumer<Method.Builder> content) {
+        builder.addContent(Optional.class)
+                .addContent(".ofNullable(");
+        content.accept(builder);
+        builder.addContent(")");
+    }
+
+    /**
+     * Generate {@code  <T> Optional<T> RepositoryExecutor#optionalFromQuery(List<T>)} call.
+     * This is Jakarta Persistence 3.1 workaround.
+     *
+     * @param builder      method builder
+     * @param content      additional statement content
+     * @param executorType repository executor type
+     * @deprecated will be removed with Jakarta Persistence 3.2
+     */
+    @Deprecated
+    protected static void optionalFromQuery(Method.Builder builder, Consumer<Method.Builder> content, TypeName executorType) {
+        builder.addContent(executorType)
+                .addContent(".optionalFromQuery(");
+        content.accept(builder);
+        builder.addContent(")");
+    }
+
+    /**
+     * Generate {@code Callable} call.
+     *
+     * @param builder    method builder
+     * @param content    additional statement content
+     * @param identifier {@code Callable} instance identifier
+     */
+    protected static void call(Method.Builder builder, Consumer<Method.Builder> content, String identifier) {
+        builder.addContent(identifier)
+                .addContent(".call(");
+        content.accept(builder);
+        builder.addContent(")");
+    }
+
+    /**
+     * Generate {@code Runnable} run.
+     *
+     * @param builder    method builder
+     * @param content    additional statement content
+     * @param identifier {@code Callable} instance identifier
+     */
+    protected static void run(Method.Builder builder, Consumer<Method.Builder> content, String identifier) {
+        builder.addContent(identifier)
+                .addContent(".run(");
+        content.accept(builder);
+        builder.addContent(")");
+    }
+
+    /**
+     * Generate {@code <type> extends <extended>} generic type.
+     *
+     * @param type     extending type
+     * @param extended type being extended
+     * @return {@code extends} generic type
+     */
+    protected static TypeArgument extendsType(String type, TypeName extended) {
+        return TypeArgument.builder()
+                .bound(extended)
+                .token(type)
+                .build();
+    }
 
     /**
      * Data repository interface info.
@@ -108,6 +179,8 @@ public abstract class BaseRepositoryInterfaceGenerator
         return persistenceGenerator;
     }
 
+    // Common patterns of generated code
+
     /**
      * Query code builder from persistence provider generator.
      *
@@ -130,86 +203,12 @@ public abstract class BaseRepositoryInterfaceGenerator
      * Log method generation warning.
      *
      * @param methodInfo method info
-     * @param message warning message
+     * @param message    warning message
      */
     protected void methodWarning(TypedElementInfo methodInfo, String message) {
         codegenContext().logger()
                 .log(Level.WARNING,
                      String.format("%s: %s", methodPrototypeString(methodInfo), message));
-    }
-
-    /**
-     * Generate {@link java.util.Optional#ofNullable(Object)} call.
-     *
-     * @param builder method builder
-     * @param content additional statement content
-     */
-    protected static void optionalOfNullable(Method.Builder builder, Consumer<Method.Builder> content) {
-        builder.addContent(Optional.class)
-                .addContent(".ofNullable(");
-        content.accept(builder);
-        builder.addContent(")");
-    }
-
-    /**
-     * Generate {@code  <T> Optional<T> RepositoryExecutor#optionalFromQuery(List<T>)} call.
-     * This is Jakarta Persistence 3.1 workaround.
-     *
-     * @param builder method builder
-     * @param content additional statement content
-     * @param executorType repository executor type
-     * @deprecated will be removed with Jakarta Persistence 3.2
-     */
-    @Deprecated
-    protected static void optionalFromQuery(Method.Builder builder, Consumer<Method.Builder> content, TypeName executorType) {
-        builder.addContent(executorType)
-                .addContent(".optionalFromQuery(");
-        content.accept(builder);
-        builder.addContent(")");
-    }
-
-    // Common patterns of generated code
-
-    /**
-     * Generate {@code Callable} call.
-     *
-     * @param builder method builder
-     * @param content additional statement content
-     * @param identifier {@code Callable} instance identifier
-     */
-    protected static void call(Method.Builder builder, Consumer<Method.Builder> content, String identifier) {
-        builder.addContent(identifier)
-                .addContent(".call(");
-        content.accept(builder);
-        builder.addContent(")");
-    }
-
-    /**
-     * Generate {@code Runnable} run.
-     *
-     * @param builder method builder
-     * @param content additional statement content
-     * @param identifier {@code Callable} instance identifier
-     */
-    protected static void run(Method.Builder builder, Consumer<Method.Builder> content, String identifier) {
-        builder.addContent(identifier)
-                .addContent(".run(");
-        content.accept(builder);
-        builder.addContent(")");
-    }
-
-    /**
-     * Generate {@code <type> extends <extended>} generic type.
-     *
-     * @param type extending type
-     * @param extended type being extended
-     * @return {@code extends} generic type
-     */
-    protected static TypeArgument extendsType(String type, TypeName extended) {
-        return TypeArgument.builder()
-                .bound(extended)
-                .token(type)
-                .build();
     }
 
     private static String methodPrototypeString(TypedElementInfo methodInfo) {

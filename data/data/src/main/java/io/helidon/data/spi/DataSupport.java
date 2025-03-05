@@ -61,7 +61,7 @@ public interface DataSupport extends AutoCloseable {
      *
      * @param type transaction type
      * @param task task to run in transaction
-     * @param <E> type of thrown (checked) exception
+     * @param <E>  type of thrown (checked) exception
      * @throws io.helidon.data.DataException when task computation failed
      */
     <E extends Throwable> void transaction(Tx.Type type, Functions.CheckedRunnable<E> task);

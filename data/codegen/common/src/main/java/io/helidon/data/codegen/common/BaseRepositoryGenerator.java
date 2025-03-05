@@ -37,12 +37,23 @@ public abstract class BaseRepositoryGenerator implements RepositoryGenerator {
     }
 
     /**
-     * Data repository specific repository interface info builder ({@link RepositoryInfo.Builder}).
+     * Search for the provided {@code interfaceName} in {@link TypeInfo} interfaces hierarchy.
      *
-     * @param codegenContext code processing and generation context
-     * @return repository interface info builder
+     * @param interfaceInfo interfaces hierarchy to walk through
+     * @param interfaceName interface name to search for
+     * @return value of {@code true} when interfaces hierarchy contains {@code interfaceName} or {@code false} otherwise
      */
-    protected abstract RepositoryInfo.Builder repositoryInfoBuilder(CodegenContext codegenContext);
+    public static boolean hasInterface(TypeInfo interfaceInfo, TypeName interfaceName) {
+        AtomicBoolean result = new AtomicBoolean();
+        result.set(false);
+        StreamSupport.stream(new TypeInfoSpliterator(interfaceInfo), false)
+                .forEach(info -> {
+                    if (info.typeName().equals(interfaceName)) {
+                        result.set(true);
+                    }
+                });
+        return result.get();
+    }
 
     /**
      * Create data repository interface info.
@@ -67,23 +78,12 @@ public abstract class BaseRepositoryGenerator implements RepositoryGenerator {
     }
 
     /**
-     * Search for the provided {@code interfaceName} in {@link TypeInfo} interfaces hierarchy.
+     * Data repository specific repository interface info builder ({@link RepositoryInfo.Builder}).
      *
-     * @param interfaceInfo interfaces hierarchy to walk through
-     * @param interfaceName interface name to search for
-     * @return value of {@code true} when interfaces hierarchy contains {@code interfaceName} or {@code false} otherwise
+     * @param codegenContext code processing and generation context
+     * @return repository interface info builder
      */
-    public static boolean hasInterface(TypeInfo interfaceInfo, TypeName interfaceName) {
-        AtomicBoolean result = new AtomicBoolean();
-        result.set(false);
-        StreamSupport.stream(new TypeInfoSpliterator(interfaceInfo), false)
-                .forEach(info -> {
-                    if (info.typeName().equals(interfaceName)) {
-                        result.set(true);
-                    }
-                });
-        return result.get();
-    }
+    protected abstract RepositoryInfo.Builder repositoryInfoBuilder(CodegenContext codegenContext);
 
     /**
      * Repository interface generator factory.
@@ -92,9 +92,9 @@ public abstract class BaseRepositoryGenerator implements RepositoryGenerator {
         /**
          * Create repository interface code generator.
          *
-         * @param repositoryInfo data repository interface info
-         * @param classModel target class builder
-         * @param codegenContext code processing and generation context
+         * @param repositoryInfo       data repository interface info
+         * @param classModel           target class builder
+         * @param codegenContext       code processing and generation context
          * @param persistenceGenerator persistence provider specific generator
          * @return new instance of interface code generator
          */

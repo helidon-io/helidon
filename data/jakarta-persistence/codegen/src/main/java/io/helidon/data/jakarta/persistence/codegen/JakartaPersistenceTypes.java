@@ -36,7 +36,7 @@ class JakartaPersistenceTypes {
             .addTypeArgument(ENTITY_MANAGER)
             .build();
     // Consumer<EntityManager>
-    static final TypeName SESSION_CONSUMER =  TypeName.builder()
+    static final TypeName SESSION_CONSUMER = TypeName.builder()
             .from(TypeName.create("java.util.function.Consumer"))
             .addTypeArgument(ENTITY_MANAGER)
             .build();
@@ -45,7 +45,7 @@ class JakartaPersistenceTypes {
             .token("R")
             .build();
     // Function<EntityManager, R>
-    static final TypeName SESSION_FUNCTION =  TypeName.builder()
+    static final TypeName SESSION_FUNCTION = TypeName.builder()
             .from(TypeName.create("java.util.function.Function"))
             .addTypeArgument(ENTITY_MANAGER)
             .addTypeArgument(GENERIC_R)

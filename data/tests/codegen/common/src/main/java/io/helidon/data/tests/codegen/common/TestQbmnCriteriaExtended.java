@@ -47,6 +47,20 @@ public class TestQbmnCriteriaExtended {
 
     // Simple (JPQL) criteria Empty
 
+    @BeforeAll
+    public static void before(DataRegistry data) {
+        pokemonRepository = data.repository(PokemonRepository.class);
+        EMPTY_POKEMONS.keySet().forEach(key -> pokemonRepository.insert(EMPTY_POKEMONS.get(key)));
+    }
+
+    @AfterAll
+    public static void after() {
+        pokemonRepository.run(InitialData::deleteTemp);
+        pokemonRepository = null;
+    }
+
+    // Dynamic (criteria API) criteria Empty
+
     @Test
     public void testFindByTypeEmpty() {
         List<Pokemon> pokemons = pokemonRepository.findByTypesEmpty();
@@ -61,7 +75,7 @@ public class TestQbmnCriteriaExtended {
         checkPokemonsList(pokemons, checkPokemons);
     }
 
-    // Dynamic (criteria API) criteria Empty
+    // Simple (JPQL) criteria Null
 
     @Test
     public void testDynamicFindByTypeEmpty() {
@@ -77,7 +91,7 @@ public class TestQbmnCriteriaExtended {
         checkPokemonsSortedList(pokemons, checkPokemons);
     }
 
-    // Simple (JPQL) criteria Null
+    // Dynamic (criteria API) criteria Null
 
     @Test
     public void testFindByTrainerNull() {
@@ -93,7 +107,7 @@ public class TestQbmnCriteriaExtended {
         checkPokemonsList(pokemons, checkPokemons);
     }
 
-    // Dynamic (criteria API) criteria Null
+    // Simple (JPQL) criteria True
 
     @Test
     public void testDynamicFindByTrainerNull() {
@@ -109,7 +123,7 @@ public class TestQbmnCriteriaExtended {
         checkPokemonsSortedList(pokemons, checkPokemons);
     }
 
-    // Simple (JPQL) criteria True
+    // Dynamic (criteria API) criteria True
 
     @Test
     public void testFindByTrainerTrue() {
@@ -125,7 +139,7 @@ public class TestQbmnCriteriaExtended {
         checkPokemonsList(pokemons, checkPokemons);
     }
 
-    // Dynamic (criteria API) criteria True
+    // Simple (JPQL) criteria False
 
     @Test
     public void testDynamicFindByTrainerTrue() {
@@ -141,7 +155,7 @@ public class TestQbmnCriteriaExtended {
         checkPokemonsSortedList(pokemons, checkPokemons);
     }
 
-    // Simple (JPQL) criteria False
+    // Dynamic (criteria API) criteria False
 
     @Test
     public void testFindByTrainerFalse() {
@@ -157,8 +171,6 @@ public class TestQbmnCriteriaExtended {
         checkPokemonsList(pokemons, checkPokemons);
     }
 
-    // Dynamic (criteria API) criteria False
-
     @Test
     public void testDynamicFindByTrainerFalse() {
         List<Pokemon> pokemons = pokemonRepository.findByAliveFalse(Sort.create(Order.create("name")));
@@ -171,18 +183,6 @@ public class TestQbmnCriteriaExtended {
         List<Pokemon> pokemons = pokemonRepository.findByAliveNotFalse(Sort.create(Order.create("name")));
         List<Pokemon> checkPokemons = sortedPokemonsListByName(pokemonsList());
         checkPokemonsSortedList(pokemons, checkPokemons);
-    }
-
-    @BeforeAll
-    public static void before(DataRegistry data) {
-        pokemonRepository = data.repository(PokemonRepository.class);
-        EMPTY_POKEMONS.keySet().forEach(key -> pokemonRepository.insert(EMPTY_POKEMONS.get(key)));
-    }
-
-    @AfterAll
-    public static void after() {
-        pokemonRepository.run(InitialData::deleteTemp);
-        pokemonRepository = null;
     }
 
 }

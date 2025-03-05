@@ -30,9 +30,8 @@ public interface Slice<T> extends Iterable<T> {
      *
      * @param request pageable query result request
      * @param content page content as {@link List<T>}
-     * @param <T> query result type (entity or entity attribute)
+     * @param <T>     query result type (entity or entity attribute)
      * @return new instance of the query result
-     *
      */
     static <T> Slice<T> create(PageRequest request, List<T> content) {
         return new SliceImpl<>(request, content);

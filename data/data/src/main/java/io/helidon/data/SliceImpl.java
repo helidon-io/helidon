@@ -21,6 +21,7 @@ import java.util.stream.Stream;
 
 /**
  * Query result as page without total size of the result.
+ *
  * @param <T> query result type (entity or entity attribute)
  */
 class SliceImpl<T> implements Slice<T> {
