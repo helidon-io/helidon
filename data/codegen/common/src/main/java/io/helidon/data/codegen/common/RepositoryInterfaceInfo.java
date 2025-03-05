@@ -30,12 +30,6 @@ import io.helidon.common.types.TypeName;
  */
 public record RepositoryInterfaceInfo(TypeName typeName, TypeName entityType, TypeName idType) {
 
-    // FIXME: This method expects that interface has 2 generic arguments:
-    //         1. entity type
-    //         2. ID (primary key) type
-    //       Data repository interfaces like CrudRepository<E, ID> match this rule, but user may always put his own
-    //       interfaces structure above and this will require additional user code generic arguments analysis.
-
     /**
      * Creates an instance of implemented interface info.
      *

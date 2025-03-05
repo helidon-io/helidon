@@ -18,7 +18,7 @@
  */
 module io.helidon.data.tests.codegen.application {
 
-    requires io.helidon.data.api;
+    requires io.helidon.data;
     requires io.helidon.common.config;
 
     exports io.helidon.data.tests.codegen.application;

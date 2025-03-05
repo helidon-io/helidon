@@ -75,7 +75,7 @@ class QueryByJpqlMethodsGenerator extends BaseQueryMethodsGenerator {
         }
 
         // Query string from @Query annotation
-        String jpql = methodInfo.annotation(HelidonDataTypes.QUERY_JPQL_NAME)
+        String jpql = methodInfo.annotation(HelidonDataTypes.QUERY_ANNOTATION)
                 .value()
                 .orElseThrow(() -> new CodegenException("@Data.Query annotation value is missing",
                                                         methodInfo.originatingElement()));
@@ -118,7 +118,8 @@ class QueryByJpqlMethodsGenerator extends BaseQueryMethodsGenerator {
                                         query,
                                         genericReturnTypeArgument(
                                                 methodInfo)),
-                                EXECUTOR)));
+                                EXECUTOR),
+                        statementGenerator().executorType()));
     }
 
     private void generateQueryItem(Method.Builder builder,

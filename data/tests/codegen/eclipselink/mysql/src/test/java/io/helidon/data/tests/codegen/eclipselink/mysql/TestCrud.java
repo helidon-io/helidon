@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import io.helidon.data.api.DataRegistry;
+import io.helidon.data.DataRegistry;
 import io.helidon.data.tests.codegen.common.InitialData;
 import io.helidon.data.tests.codegen.model.Pokemon;
 import io.helidon.data.tests.codegen.model.Trainer;

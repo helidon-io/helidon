@@ -20,8 +20,7 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Optional;
 
-import io.helidon.function.ThrowingConsumer;
-import io.helidon.function.ThrowingFunction;
+import io.helidon.common.Functions;
 import io.helidon.service.registry.Service;
 
 import jakarta.persistence.EntityManager;
@@ -88,20 +87,22 @@ public interface JpaRepositoryExecutor extends AutoCloseable {
      *
      * @param task task to run
      * @param <R>  task result type
+     * @param <E>  type of (checked) exception that can be thrown
      * @return task result
      * @throws RuntimeException                  as is if unable to compute a result
-     * @throws io.helidon.data.api.DataException with checked {@link Exception} as a cause if unable to compute a result
+     * @throws io.helidon.data.DataException with checked {@link Exception} as a cause if unable to compute a result
      */
-    <R> R call(ThrowingFunction<EntityManager, R> task);
+    <R, E extends Throwable> R call(Functions.CheckedFunction<EntityManager, R, E> task);
 
     /**
      * Run persistence session task.
      *
      * @param task task to run
+     * @param <E> type of (checked) exception that can be thrown
      * @throws RuntimeException                  as is if unable to compute a result
-     * @throws io.helidon.data.api.DataException with checked {@link Exception} as a cause if unable to compute a result
+     * @throws io.helidon.data.DataException with checked {@link Exception} as a cause if unable to compute a result
      */
-    void run(ThrowingConsumer<EntityManager> task);
+    <E extends Throwable> void run(Functions.CheckedConsumer<EntityManager, E> task);
 
     /**
      * Persistence tasks executor.
@@ -114,16 +115,18 @@ public interface JpaRepositoryExecutor extends AutoCloseable {
          * @param em   persistence session
          * @param task task to call
          * @param <R>  task result type
+         * @param <E> type of (checked) exception that can be thrown
          * @return task result
          */
-        <R> R call(EntityManager em, ThrowingFunction<EntityManager, R> task);
+        <R, E extends Throwable> R call(EntityManager em, Functions.CheckedFunction<EntityManager, R, E> task);
 
         /**
          * Run persistence session task with no result.
          *
          * @param em   persistence session
          * @param task task to run
+         * @param <E> type of (checked) exception that can be thrown
          */
-        void run(EntityManager em, ThrowingConsumer<EntityManager> task);
+        <E extends Throwable> void run(EntityManager em, Functions.CheckedConsumer<EntityManager, E> task);
     }
 }

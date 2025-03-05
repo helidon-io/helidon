@@ -18,7 +18,7 @@
  * SQL specific support, use by all modules that interact with SQL databases.
  */
 module io.helidon.data.sql.common {
-    requires transitive io.helidon.data.api;
+    requires transitive io.helidon.data;
     requires java.sql;
     requires io.helidon.builder.api;
 

@@ -17,7 +17,7 @@
 package io.helidon.data.spi;
 
 import io.helidon.common.config.ConfiguredProvider;
-import io.helidon.data.api.ProviderConfig;
+import io.helidon.data.ProviderConfig;
 
 /**
  * Provider (as in {@link java.util.ServiceLoader}) of provider (as in jakarta, eclipselink, sql) configuration.
