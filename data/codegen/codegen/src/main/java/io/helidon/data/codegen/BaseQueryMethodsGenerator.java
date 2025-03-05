@@ -37,6 +37,24 @@ abstract class BaseQueryMethodsGenerator extends BaseRepositoryMethodsGenerator 
 
     }
 
+    /**
+     * Check that pageRequest argument is present in method parameters and return it.
+     *
+     * @param methodParams method parameters
+     * @param methodInfo   method descriptor
+     * @return pageRequest argument
+     * @throws CodegenException when pageRequest argument is missing
+     */
+    protected static TypedElementInfo pageRequestRequired(MethodParams methodParams,
+                                                          TypedElementInfo methodInfo) throws CodegenException {
+        if (methodParams.pageRequest().isEmpty()) {
+            throw new CodegenException("Method " + methodInfo.elementName()
+                                               + " returns " + methodInfo.typeName()
+                                               + ", but PageRequest parameter is missing");
+        }
+        return methodParams.pageRequest().get();
+    }
+
     @Override
     protected void processParam(MethodParams.Builder builder, TypedElementInfo paramInfo) {
         if (paramInfo.typeName().equals(HelidonDataTypes.SORT)) {
@@ -46,24 +64,6 @@ abstract class BaseQueryMethodsGenerator extends BaseRepositoryMethodsGenerator 
         } else {
             builder.addParam(paramInfo);
         }
-    }
-
-    /**
-     * Check that pageRequest argument is present in method parameters and return it.
-     *
-     * @param methodParams method parameters
-     * @param methodInfo method descriptor
-     * @return pageRequest argument
-     * @throws CodegenException when pageRequest argument is missing
-     */
-    protected static TypedElementInfo pageRequestRequired(MethodParams methodParams,
-                                              TypedElementInfo methodInfo) throws CodegenException {
-        if (methodParams.pageRequest().isEmpty()) {
-            throw new CodegenException("Method " + methodInfo.elementName()
-                                               + " returns " + methodInfo.typeName()
-                                               + ", but PageRequest parameter is missing");
-        }
-        return methodParams.pageRequest().get();
     }
 
 }

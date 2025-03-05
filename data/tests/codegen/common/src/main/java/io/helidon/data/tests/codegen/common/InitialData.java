@@ -29,12 +29,6 @@ import jakarta.persistence.EntityManager;
 
 public class InitialData {
 
-    private static final System.Logger LOGGER = System.getLogger(InitialData.class.getName());
-
-    private InitialData() {
-        throw new UnsupportedOperationException("No instances of Data are allowed");
-    }
-
     /**
      * List of {@code Type}s. Array index matches ID.
      */
@@ -59,7 +53,6 @@ public class InitialData {
             new Type(17, "Dark"),
             new Type(18, "Fairy")
     };
-
     /**
      * List of {@code Regions}s. Array index matches ID.
      */
@@ -76,7 +69,6 @@ public class InitialData {
             new Region(9, "Kitakami"),
             new Region(10, "Hoenn")
     };
-
     /**
      * List of {@code League}s. Array index matches ID.
      */
@@ -92,7 +84,6 @@ public class InitialData {
             new League(8, "Paldea League", REGIONS[8]),
             new League(9, "Hoenn League", REGIONS[10]),
     };
-
     /**
      * List of {@code Team}s. Array index matches ID.
      */
@@ -101,7 +92,6 @@ public class InitialData {
             new Team(1, "Kanto"),
             new Team(2, "Johto")
     };
-
     /**
      * List of {@code Keeper}s. Array index matches ID.
      */
@@ -114,7 +104,6 @@ public class InitialData {
             new Trainer(5, "Falkner", TEAMS[2]),
             new Trainer(6, "Whitney", TEAMS[2])
     };
-
     /**
      * List of {@code Pokemons}s. Array index matches ID.
      */
@@ -141,7 +130,6 @@ public class InitialData {
             new Pokemon(19, TRAINERS[6], "Giratina", 268, true, List.of(TYPES[8], TYPES[16])),
             new Pokemon(20, TRAINERS[6], "Regirock", 149, true, List.of(TYPES[6]))
     };
-
     /**
      * Pokemons not stored in the database.
      */
@@ -160,6 +148,11 @@ public class InitialData {
             108, new Pokemon(108, TRAINERS[3], "Meowth", 85, true, List.of(TYPES[1])),
             109, new Pokemon(109, TRAINERS[3], "Magikarp", 51, true, List.of(TYPES[11]))
     );
+    private static final System.Logger LOGGER = System.getLogger(InitialData.class.getName());
+
+    private InitialData() {
+        throw new UnsupportedOperationException("No instances of Data are allowed");
+    }
 
     /**
      * Initialize database data.

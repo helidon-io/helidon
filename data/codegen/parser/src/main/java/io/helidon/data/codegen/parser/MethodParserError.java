@@ -18,8 +18,8 @@ package io.helidon.data.codegen.parser;
 /**
  * Method name parsing error.
  *
- * @param symbol symbol being parsed
- * @param line source code line number
+ * @param symbol   symbol being parsed
+ * @param line     source code line number
  * @param position source code line position
  */
 public record MethodParserError(Object symbol, int line, int position) {

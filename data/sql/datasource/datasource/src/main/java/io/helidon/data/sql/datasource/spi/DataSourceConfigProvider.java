@@ -21,5 +21,5 @@ import io.helidon.data.sql.datasource.ProviderConfig;
 /**
  * Provider (as in {@link java.util.ServiceLoader}) of provider (as in ucp) configuration.
  */
-public interface DataSourceConfigProvider extends ConfiguredProvider<ProviderConfig>  {
+public interface DataSourceConfigProvider extends ConfiguredProvider<ProviderConfig> {
 }

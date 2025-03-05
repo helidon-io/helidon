@@ -26,10 +26,10 @@ import io.helidon.common.types.TypeName;
 /**
  * Data repository interface descriptor (info).
  *
- * @param interfaceInfo type info
+ * @param interfaceInfo  type info
  * @param interfacesInfo implemented interfaces
- * @param entityInfo type of the entity
- * @param id type of the ID
+ * @param entityInfo     type of the entity
+ * @param id             type of the ID
  */
 public record RepositoryInfo(TypeInfo interfaceInfo,
                              Map<TypeName, RepositoryInterfaceInfo> interfacesInfo,
@@ -121,6 +121,29 @@ public record RepositoryInfo(TypeInfo interfaceInfo,
         }
 
         /**
+         * Add data repository interface type info.
+         *
+         * @param interfaceInfo interface type info
+         * @return this builder
+         */
+        public Builder interfaceInfo(TypeInfo interfaceInfo) {
+            this.interfaceInfo = interfaceInfo;
+            return this;
+        }
+
+        /**
+         * Add implemented interface.
+         *
+         * @param name implemented interface type name
+         * @param info implemented interface info
+         * @return this builder
+         */
+        public Builder addInterface(TypeName name, RepositoryInterfaceInfo info) {
+            interfaces.put(name, info);
+            return this;
+        }
+
+        /**
          * Implemented interfaces.
          *
          * @return interfaces {@link Map}
@@ -145,29 +168,6 @@ public record RepositoryInfo(TypeInfo interfaceInfo,
          */
         protected CodegenContext codegenContext() {
             return codegenContext;
-        }
-
-        /**
-         * Add data repository interface type info.
-         *
-         * @param interfaceInfo interface type info
-         * @return this builder
-         */
-        public Builder interfaceInfo(TypeInfo interfaceInfo) {
-            this.interfaceInfo = interfaceInfo;
-            return this;
-        }
-
-        /**
-         * Add implemented interface.
-         *
-         * @param name implemented interface type name
-         * @param info implemented interface info
-         * @return this builder
-         */
-        public Builder addInterface(TypeName name, RepositoryInterfaceInfo info) {
-            interfaces.put(name, info);
-            return this;
         }
 
     }

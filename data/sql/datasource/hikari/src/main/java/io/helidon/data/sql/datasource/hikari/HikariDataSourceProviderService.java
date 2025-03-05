@@ -54,6 +54,23 @@ class HikariDataSourceProviderService implements Service.ServicesFactory<DataSou
     }
 
     /**
+     * Transforms {@link Config} to the {@link Service.QualifiedInstance} containing {@link DataSource}.
+     *
+     * @param config the {@link DataSourceConfig} config
+     * @return target {@link Service.QualifiedInstance} with Hikari {@link DataSource}
+     *         or {@code null} when provider config is not {@link HikariDataSourceConfig}
+     */
+    Service.QualifiedInstance<DataSource> mapSingleConfig(Config config) {
+        DataSourceConfig dataSourceConfig = DataSourceConfig.create(config);
+        ProviderConfig providerConfig = dataSourceConfig.provider();
+        if (providerConfig instanceof HikariDataSourceConfig hikariDataSourceConfig) {
+            return Service.QualifiedInstance.create(HikariDataSourceFactory.create(hikariDataSourceConfig),
+                                                    Qualifier.createNamed(dataSourceConfig.name()));
+        }
+        return null;
+    }
+
+    /**
      * Transforms {@link List} of {@link Config} to the {@link List} of {@link Service.QualifiedInstance}
      * containing {@link DataSource}.
      *
@@ -68,22 +85,6 @@ class HikariDataSourceProviderService implements Service.ServicesFactory<DataSou
                 // Unsupported configs will appear as null values and must be removed
                 .filter(Objects::nonNull)
                 .collect(Collectors.toUnmodifiableList());
-    }
-
-    /**
-     * Transforms {@link Config} to the {@link Service.QualifiedInstance} containing {@link DataSource}.
-     * @param config the {@link DataSourceConfig} config
-     * @return target {@link Service.QualifiedInstance} with Hikari {@link DataSource}
-     *         or {@code null} when provider config is not {@link HikariDataSourceConfig}
-     */
-    Service.QualifiedInstance<DataSource> mapSingleConfig(Config config) {
-        DataSourceConfig dataSourceConfig = DataSourceConfig.create(config);
-        ProviderConfig providerConfig = dataSourceConfig.provider();
-        if (providerConfig instanceof HikariDataSourceConfig hikariDataSourceConfig) {
-            return Service.QualifiedInstance.create(HikariDataSourceFactory.create(hikariDataSourceConfig),
-                                                      Qualifier.createNamed(dataSourceConfig.name()));
-        }
-        return null;
     }
 
 }

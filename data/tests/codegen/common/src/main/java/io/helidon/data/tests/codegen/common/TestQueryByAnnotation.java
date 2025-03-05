@@ -44,6 +44,18 @@ public class TestQueryByAnnotation {
 
     // Return single Pokemon bv annotation
 
+    @BeforeAll
+    public static void before(DataRegistry data) {
+        pokemonRepository = data.repository(PokemonRepository.class);
+    }
+
+    @AfterAll
+    public static void after() {
+        pokemonRepository = null;
+    }
+
+    // Return Optional<Pokemon> by annotation
+
     @Test
     public void testSelectByName() {
         // Pokemon is in the database
@@ -59,7 +71,7 @@ public class TestQueryByAnnotation {
         assertThrows(RuntimeException.class, () -> pokemonRepository.selectByName("Beedrill"));
     }
 
-    // Return Optional<Pokemon> by annotation
+    // Return List<Entity> find projection
 
     @Test
     public void testOptionalSelectByName() {
@@ -70,14 +82,16 @@ public class TestQueryByAnnotation {
         assertThat(result.get(), is(pokemon));
     }
 
+    // Return Collection<Entity> find projection
+
     @Test
     public void testOptionalSelectMissingByName() {
         // Pokemon is not in the database
-        Optional<Pokemon> result =  pokemonRepository.optionalSelectByName("Kakuna");
+        Optional<Pokemon> result = pokemonRepository.optionalSelectByName("Kakuna");
         assertThat(result.isPresent(), is(false));
     }
 
-    // Return List<Entity> find projection
+    // Return Stream<Entity> find projection
 
     @Test
     public void testSelectAll() {
@@ -86,8 +100,6 @@ public class TestQueryByAnnotation {
         checkPokemonsList(pokemons, checkPokemons);
     }
 
-    // Return Collection<Entity> find projection
-
     @Test
     public void testCollectionSelectAll() {
         Collection<Pokemon> pokemons = pokemonRepository.collectionSelectAll();
@@ -95,24 +107,11 @@ public class TestQueryByAnnotation {
         checkPokemonsList(pokemons, checkPokemons);
     }
 
-    // Return Stream<Entity> find projection
-
     @Test
     public void testStreamSelectAll() {
         Stream<Pokemon> pokemons = pokemonRepository.streamSelectAll();
         List<Pokemon> checkPokemons = pokemonsList();
         checkPokemonsList(pokemons.toList(), checkPokemons);
-    }
-
-
-    @BeforeAll
-    public static void before(DataRegistry data) {
-        pokemonRepository = data.repository(PokemonRepository.class);
-    }
-
-    @AfterAll
-    public static void after() {
-        pokemonRepository = null;
     }
 
 }

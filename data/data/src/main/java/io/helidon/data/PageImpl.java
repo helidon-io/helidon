@@ -19,6 +19,7 @@ import java.util.List;
 
 /**
  * Query result as page with total size of the result.
+ *
  * @param <T> query result type (entity or entity attribute)
  */
 class PageImpl<T> extends SliceImpl<T> implements Page<T> {

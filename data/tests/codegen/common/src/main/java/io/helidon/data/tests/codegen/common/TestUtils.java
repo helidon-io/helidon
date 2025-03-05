@@ -112,8 +112,8 @@ class TestUtils {
         return p1.getHp() < p2.getHp()
                 ? -1
                 : p1.getHp() > p2.getHp()
-                    ? 1
-                    : p1.getName().compareTo(p2.getName());
+                        ? 1
+                        : p1.getName().compareTo(p2.getName());
     }
 
     static void printPokemons(Collection<Pokemon> pokemons) {
