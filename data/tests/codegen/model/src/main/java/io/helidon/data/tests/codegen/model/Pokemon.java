@@ -32,20 +32,12 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "POKEMNON")
-@NamedQuery(name="Pokemon.deleteTemp", query="DELETE FROM Pokemon p WHERE p.id >= 100")
+@NamedQuery(name = "Pokemon.deleteTemp", query = "DELETE FROM Pokemon p WHERE p.id >= 100")
 public class Pokemon {
-
-    @Id
-    private int id;
-
-    private String name;
-    private int hp;
-    private boolean alive;
 
     @ManyToOne
     @JoinColumn(name = "TRAINER_ID")
     public Trainer trainer;
-
     @ManyToMany(targetEntity = Type.class, fetch = FetchType.EAGER)
     @JoinTable(name = "POKEMNON_TYPE",
                joinColumns = @JoinColumn(
@@ -57,6 +49,11 @@ public class Pokemon {
                        referencedColumnName = "ID"
                ))
     public Collection<Type> types;
+    @Id
+    private int id;
+    private String name;
+    private int hp;
+    private boolean alive;
 
     public Pokemon() {
         this(-1, null, null, -1, false, Collections.emptyList());
@@ -145,30 +142,6 @@ public class Pokemon {
                 && typesEquals(((Pokemon) obj).types);
     }
 
-    private boolean typesEquals(Collection<Type> collection) {
-        if (types == collection) {
-            return true;
-        } else if (types == null || collection == null) {
-            return false;
-        }
-        if (types.size() != collection.size()) {
-            return false;
-        }
-        Iterator<Type> typeIterator = types.iterator();
-        Iterator<Type> collectionIterator = collection.iterator();
-        int size = types.size();
-        for (int i = 0; i < size; i++) {
-            if (typeIterator.hasNext() && collectionIterator.hasNext()) {
-                if (!Objects.equals(typeIterator.next(), collectionIterator.next())) {
-                    return false;
-                }
-            } else {
-                return false;
-            }
-        }
-        return true;
-    }
-
     @Override
     public int hashCode() {
         int result = Objects.hash(id, name, trainer);
@@ -204,5 +177,29 @@ public class Pokemon {
         }
         sb.append("]}");
         return sb.toString();
+    }
+
+    private boolean typesEquals(Collection<Type> collection) {
+        if (types == collection) {
+            return true;
+        } else if (types == null || collection == null) {
+            return false;
+        }
+        if (types.size() != collection.size()) {
+            return false;
+        }
+        Iterator<Type> typeIterator = types.iterator();
+        Iterator<Type> collectionIterator = collection.iterator();
+        int size = types.size();
+        for (int i = 0; i < size; i++) {
+            if (typeIterator.hasNext() && collectionIterator.hasNext()) {
+                if (!Objects.equals(typeIterator.next(), collectionIterator.next())) {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        }
+        return true;
     }
 }

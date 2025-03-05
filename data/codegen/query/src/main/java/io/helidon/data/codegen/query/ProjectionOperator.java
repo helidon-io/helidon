@@ -19,19 +19,33 @@ package io.helidon.data.codegen.query;
  * Projection expression operator.
  */
 public enum ProjectionOperator {
-    /** {@code First} operator. */
+    /**
+     * {@code First} operator.
+     */
     First,
-    /** {@code Count} operator. */
+    /**
+     * {@code Count} operator.
+     */
     Count,
-    /** {@code Exists} operator. */
+    /**
+     * {@code Exists} operator.
+     */
     Exists,
-    /** {@code Min} operator. */
+    /**
+     * {@code Min} operator.
+     */
     Min,
-    /** {@code Max} operator. */
+    /**
+     * {@code Max} operator.
+     */
     Max,
-    /** {@code Sum} operator. */
+    /**
+     * {@code Sum} operator.
+     */
     Sum,
-    /** {@code Avg} operator. */
+    /**
+     * {@code Avg} operator.
+     */
     Avg;
 
     /**

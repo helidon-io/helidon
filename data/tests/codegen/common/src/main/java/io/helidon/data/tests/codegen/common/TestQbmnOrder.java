@@ -37,6 +37,16 @@ public class TestQbmnOrder {
 
     private static PokemonRepository pokemonRepository;
 
+    @BeforeAll
+    public static void before(DataRegistry data) {
+        pokemonRepository = data.repository(PokemonRepository.class);
+    }
+
+    @AfterAll
+    public static void after() {
+        pokemonRepository = null;
+    }
+
     // Static ordering (JPQL)
     @Test
     public void testFindAllOrderByHpAscName() {
@@ -51,16 +61,6 @@ public class TestQbmnOrder {
         List<Pokemon> pokemons = pokemonRepository.findAllOrderByHp(Sort.create(Order.create("name")));
         List<Pokemon> checkPokemons = sortedPokemonsListByHpAndName(pokemonsList());
         checkPokemonsSortedList(pokemons, checkPokemons);
-    }
-
-    @BeforeAll
-    public static void before(DataRegistry data) {
-        pokemonRepository = data.repository(PokemonRepository.class);
-    }
-
-    @AfterAll
-    public static void after() {
-        pokemonRepository = null;
     }
 
 }
