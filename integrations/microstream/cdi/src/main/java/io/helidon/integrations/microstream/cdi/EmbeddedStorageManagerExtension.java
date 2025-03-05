@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,9 @@ import static jakarta.interceptor.Interceptor.Priority.PLATFORM_BEFORE;
 /**
  * An {@link Extension} that arranges for named {@link MicrostreamStorage}
  * injection points to be satisfied.
+ * @deprecated Microstream is renamed to Eclipse store and no longer updated
  */
+@Deprecated(forRemoval = true, since = "4.2.1")
 public class EmbeddedStorageManagerExtension implements Extension {
 
     private final Map<Set<Annotation>, Object> embeddedStorageBeans;

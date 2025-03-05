@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,10 +33,11 @@ import one.microstream.storage.types.StorageRawFileStatistics;
 import static io.helidon.metrics.api.Meter.BaseUnits.BYTES;
 
 /**
- *
  * Helper class that provides the default metrics for an Microstream EmbeddedStorageManager.
  *
+ * @deprecated Microstream is renamed to Eclipse store and no longer updated
  */
+@Deprecated(forRemoval = true, since = "4.2.1")
 public class MicrostreamMetricsSupport {
 
     private static final String CONFIG_METRIC_ENABLED_VENDOR = "vendor.";
