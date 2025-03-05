@@ -115,6 +115,7 @@
         <version.plugin.archetype-packaging>3.1.2</version.plugin.archetype-packaging>
         <version.plugin.archetype>3.1.2</version.plugin.archetype>
         <version.plugin.ant>3.1.0</version.plugin.ant>
+        <version.plugin.antlr>4.13.1</version.plugin.antlr>
         <version.plugin.build-helper>3.4.0</version.plugin.build-helper>
         <version.plugin.checkstyle>3.3.1</version.plugin.checkstyle>
         <version.plugin.compiler>3.11.0</version.plugin.compiler>
@@ -242,6 +243,8 @@
         <module>testing</module>
         <module>declarative</module>
         <module>discovery</module>
+        <module>data</module>
+        <module>transaction</module>
     </modules>
 
     <build>
@@ -898,6 +901,11 @@
                             <version>${version.lib.groovy}</version>
                         </dependency>
                     </dependencies>
+                </plugin>
+                <plugin>
+                    <groupId>org.antlr</groupId>
+                    <artifactId>antlr4-maven-plugin</artifactId>
+                    <version>${version.plugin.antlr}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
