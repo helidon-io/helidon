@@ -15,6 +15,7 @@
  */
 package io.helidon.data.codegen;
 
+import java.util.ArrayList;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -35,7 +36,7 @@ import io.helidon.data.codegen.query.Projection;
 import io.helidon.data.codegen.query.Property;
 
 /**
- * {@code io.helidon.data.api.CrudRepository} interface implementation generator.
+ * {@code io.helidon.data.CrudRepository} interface implementation generator.
  * Only direct interface member methods are added. Super interfaces must have their own generators.
  */
 class BasicRepositoryInterfaceGenerator extends BaseRepositoryInterfaceGenerator {
@@ -70,15 +71,12 @@ class BasicRepositoryInterfaceGenerator extends BaseRepositoryInterfaceGenerator
                 .addParameter(T_ENTITY)
                 .returnType(T)
                 .addGenericArgument(extendsType(GENERIC_T, repositoryInfo().entity()));
-        // Method body: executor.run(em -> em.merge(entity));
-        statement(builder,
-                  b1 -> run(b1,
+        // Method body: return executor.call(em -> em.merge(entity));
+        returnStatement(builder,
+                  b1 -> call(b1,
                             b2 -> statementGenerator()
                                     .addMerge(b2, ENTITY),
                             EXECUTOR));
-        // Method body: return entity;
-        returnStatement(builder,
-                        b -> identifier(b, ENTITY));
     }
 
     // <T extends E> Iterable<T> saveAll(Iterable<T> entities)
@@ -89,15 +87,23 @@ class BasicRepositoryInterfaceGenerator extends BaseRepositoryInterfaceGenerator
                 .addParameter(ITERABLE_T_ENTITIES)
                 .addGenericArgument(extendsType(GENERIC_T, repositoryInfo().entity()))
                 .returnType(ITERABLE_T);
-        // Method body: executor.run(em -> entities.forEach(em::merge));
+        // Method body: List<T> mergedEntities = new ArrayList<>();
+        //              executor.run(em -> entities.forEach(e -> mergedEntities.add(em.merge(e))));
+        //              return mergedEntities;
+        statement(builder,
+                  b1 -> initializedVariable(b1,
+                                            LIST_T,
+                                            "mergedEntities",
+                                            b2 -> b2.addContent("new ")
+                                                        .addContent(ArrayList.class)
+                                                        .addContent("<>()")));
         statement(builder,
                   b1 -> run(b1,
                             b2 -> statementGenerator()
-                                    .addMergeCollection(b2, ENTITIES),
+                                    .addMergeCollection(b2, ENTITIES, "mergedEntities"),
                             EXECUTOR));
-        // Method body: return entities;
         returnStatement(builder,
-                        b -> identifier(b, ENTITIES));
+                        b -> identifier(b, "mergedEntities"));
     }
 
     // Optional<E> findById(ID id)

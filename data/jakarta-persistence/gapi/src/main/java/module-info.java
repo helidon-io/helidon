@@ -20,9 +20,7 @@
 module io.helidon.data.jakarta.persistence.gapi {
 
     requires jakarta.persistence;
-    requires io.helidon.data.api;
     requires transitive io.helidon.service.registry;
-    requires transitive io.helidon.service.inject.api;
 
     exports io.helidon.data.jakarta.persistence.gapi;
 }

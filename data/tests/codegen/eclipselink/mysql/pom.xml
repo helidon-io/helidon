@@ -23,21 +23,11 @@
     <parent>
         <groupId>io.helidon.data.tests.codegen.eclipselink</groupId>
         <artifactId>helidon-data-tests-codegen-eclipselink-project</artifactId>
-        <version>4.0.0-SNAPSHOT</version>
+        <version>4.2.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-data-tests-codegen-eclipselink-mysql</artifactId>
     <name>Helidon Data Codegen Tests Eclipselink with MySQL</name>
-
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>jakarta.persistence</groupId>
-                <artifactId>jakarta.persistence-api</artifactId>
-                <version>3.1.0</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
 
     <dependencies>
         <dependency>
@@ -57,21 +47,18 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.testing.integration.junit5</groupId>
-            <artifactId>helidon-testing-integration-junit5-suite</artifactId>
+            <groupId>io.helidon.testing</groupId>
+            <artifactId>helidon-testing-junit5-suite</artifactId>
             <scope>test</scope>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.persistence</groupId>
             <artifactId>org.eclipse.persistence.jpa</artifactId>
-            <version>4.0.4</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.eclipse.persistence</groupId>
             <artifactId>org.eclipse.persistence.core</artifactId>
-            <version>4.0.4</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
@@ -97,7 +84,6 @@
         <dependency>
             <groupId>io.helidon.data.sql</groupId>
             <artifactId>helidon-data-sql-testing</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
