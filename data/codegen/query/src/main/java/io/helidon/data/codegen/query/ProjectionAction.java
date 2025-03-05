@@ -19,11 +19,17 @@ package io.helidon.data.codegen.query;
  * Projection action, e.g. {@code SELECT}, {@code DELETE}, {@code UPDATE}.
  */
 public enum ProjectionAction {
-    /** {@code SELECT} action. */
+    /**
+     * {@code SELECT} action.
+     */
     Select,
-    /** {@code DELETE} action. */
+    /**
+     * {@code DELETE} action.
+     */
     Delete,
-    /** {@code UPDATE} action. */
+    /**
+     * {@code UPDATE} action.
+     */
     Update;
 
     /**

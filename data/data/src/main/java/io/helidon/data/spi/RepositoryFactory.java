@@ -28,9 +28,9 @@ public interface RepositoryFactory {
      * Create a new repository instance.
      *
      * @param creator function that creates an instance based on an executor (that is provider specific)
+     * @param <T>     type of the repository
+     * @param <E>     type the repository expects to be instantiated (specific to each data support)
      * @return result of the creator
-     * @param <T> type of the repository
-     * @param <E> type the repository expects to be instantiated (specific to each data support)
      */
     <E, T> T create(Function<E, T> creator);
 }

@@ -17,6 +17,7 @@ package io.helidon.data.sql.datasource;
 
 import io.helidon.common.config.NamedService;
 // DataSourceProviderConfig
+
 /**
  * Provider specific configuration.
  * Each provider, such as {@code hikari}, {@code ucp} would have its own configuration.
