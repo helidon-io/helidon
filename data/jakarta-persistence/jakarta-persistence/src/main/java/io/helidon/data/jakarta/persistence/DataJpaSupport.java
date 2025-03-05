@@ -21,12 +21,12 @@ import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import io.helidon.data.api.DataConfig;
-import io.helidon.data.api.DataException;
+import io.helidon.common.Functions;
+import io.helidon.data.DataConfig;
+import io.helidon.data.DataException;
 import io.helidon.data.jakarta.persistence.spi.JakartaPersistenceExtension;
 import io.helidon.data.spi.DataSupport;
 import io.helidon.data.spi.RepositoryFactory;
-import io.helidon.function.ThrowingRunnable;
 import io.helidon.transaction.Tx;
 
 import jakarta.persistence.EntityManagerFactory;
@@ -95,7 +95,7 @@ class DataJpaSupport implements DataSupport {
     }
 
     @Override
-    public void transaction(Tx.Type type, ThrowingRunnable task) {
+    public <E extends Throwable> void transaction(Tx.Type type, Functions.CheckedRunnable<E> task) {
         // Jakarta Persistence 3.2 compliant code disabled
         // PersistenceUnitTransactionType transactionType = factory.getTransactionType();
         // Jakarta Persistence 3.1 workaround
@@ -112,7 +112,7 @@ class DataJpaSupport implements DataSupport {
             }
             rollbackTransaction(transactionType, type);
             throw e;
-        } catch (Exception e) {
+        } catch (Throwable e) {
             if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
                 LOGGER.log(System.Logger.Level.DEBUG, String.format("Data repository transaction failed: %s", e.getMessage()));
             }

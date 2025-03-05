@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.data.api;
+package io.helidon.data;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -24,7 +24,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import io.helidon.service.inject.api.Injection;
+import io.helidon.service.registry.Service;
 
 /**
  * Helidon Data Repository annotations and interfaces.
@@ -70,7 +70,7 @@ public final class Data {
      * Qualifier used in generated code to reference which support type to use when creating instances of repositories,
      * such as {@code eclipselink, jakarta, sql}.
      */
-    @Injection.Qualifier
+    @Service.Qualifier
     @Target({ElementType.TYPE, ElementType.PARAMETER, ElementType.FIELD})
     public @interface SupportType {
         /**
@@ -110,7 +110,7 @@ public final class Data {
          * @param entity the entity to persist, shall not be {@code null}
          * @param <T>    type of the entity
          * @return persisted entity. Never returns {@code null}
-         * @throws io.helidon.data.api.DataException if the entity is {@code null} or the operation has failed
+         * @throws io.helidon.data.DataException if the entity is {@code null} or the operation has failed
          */
         <T extends E> T save(T entity);
 
@@ -122,7 +122,7 @@ public final class Data {
          * @param entities the entities to persist, shall not be {@code null}
          * @param <T>      type of the entity
          * @return persisted entities, never returns {@code null}
-         * @throws io.helidon.data.api.DataException if the entities are {@code null} or the operation has failed
+         * @throws io.helidon.data.DataException if the entities are {@code null} or the operation has failed
          */
         <T extends E> Iterable<T> saveAll(Iterable<T> entities);
 
@@ -131,7 +131,7 @@ public final class Data {
          *
          * @param id the ID of the entity to search for, shall not be {@code null}
          * @return the entity with the given ID or {@code Optional#empty()} if no such entity was found, never returns {@code null}
-         * @throws io.helidon.data.api.DataException if the ID is {@code null} or the operation has failed
+         * @throws io.helidon.data.DataException if the ID is {@code null} or the operation has failed
          */
         Optional<E> findById(ID id);
 
@@ -140,7 +140,7 @@ public final class Data {
          *
          * @param id the ID of the entity to search for, shall not be {@code null}
          * @return value of {2ode true} if an entity with the given ID exists or {@code false} otherwise
-         * @throws io.helidon.data.api.DataException if the ID is {@code null} or the operation has failed
+         * @throws io.helidon.data.DataException if the ID is {@code null} or the operation has failed
          */
         boolean existsById(ID id);
 
@@ -148,7 +148,7 @@ public final class Data {
          * Return all entities of the {@code E} type.
          *
          * @return all entities found, never returns {@code null}
-         * @throws io.helidon.data.api.DataException if the operation has failed
+         * @throws io.helidon.data.DataException if the operation has failed
          */
         Stream<E> findAll();
 
@@ -156,7 +156,7 @@ public final class Data {
          * Return the number of all entities of the {@code E} type.
          *
          * @return the number of all entities found
-         * @throws io.helidon.data.api.DataException if the operation has failed
+         * @throws io.helidon.data.DataException if the operation has failed
          */
         long count();
 
@@ -165,7 +165,7 @@ public final class Data {
          *
          * @param id ID of the entity to be deleted, shall not be {@code null}
          * @return the number of deleted entities
-         * @throws io.helidon.data.api.DataException if the ID is {@code null} or the operation has failed
+         * @throws io.helidon.data.DataException if the ID is {@code null} or the operation has failed
          */
         long deleteById(ID id);
 
@@ -173,7 +173,7 @@ public final class Data {
          * Deletes provided entity.
          *
          * @param entity the entity to delete, shall not be {@code null}
-         * @throws io.helidon.data.api.DataException if the entity is {@code null} or the operation has failed
+         * @throws io.helidon.data.DataException if the entity is {@code null} or the operation has failed
          */
         void delete(E entity);
 
@@ -181,7 +181,7 @@ public final class Data {
          * Deletes all provided entities.
          *
          * @param entities the entities to delete, shall not be {@code null}
-         * @throws io.helidon.data.api.DataException if the entities are {@code null} or the operation has failed
+         * @throws io.helidon.data.DataException if the entities are {@code null} or the operation has failed
          */
         void deleteAll(Iterable<? extends E> entities);
 
@@ -189,7 +189,7 @@ public final class Data {
          * Deletes all entities of the {@code E} type.
          *
          * @return the number of deleted entities
-         * @throws io.helidon.data.api.DataException if the operation has failed
+         * @throws io.helidon.data.DataException if the operation has failed
          */
         long deleteAll();
 
@@ -236,7 +236,7 @@ public final class Data {
          * @param entity the entity to persist, shall not be {@code null}
          * @param <T>    type of the entity
          * @return persisted entity, never returns {@code null}
-         * @throws io.helidon.data.api.DataException if the entity is {@code null} or the operation has failed
+         * @throws io.helidon.data.DataException if the entity is {@code null} or the operation has failed
          */
         <T extends E> T update(T entity);
 
@@ -246,7 +246,7 @@ public final class Data {
          * @param entities the entities to persist, shall not be {@code null}
          * @param <T>      type of the entity
          * @return persisted entities, never returns {@code null}
-         * @throws io.helidon.data.api.DataException if the entities are {@code null} or the operation has failed
+         * @throws io.helidon.data.DataException if the entities are {@code null} or the operation has failed
          */
         <T extends E> Iterable<T> updateAll(Iterable<T> entities);
 
@@ -306,7 +306,7 @@ public final class Data {
          *
          * @param pageable the query result request
          * @return all entities found, never returns {@code null}
-         * @throws io.helidon.data.api.DataException if the operation has failed
+         * @throws io.helidon.data.DataException if the operation has failed
          */
         Page<E> pages(PageRequest pageable);
 
@@ -315,7 +315,7 @@ public final class Data {
          *
          * @param pageable the query result request
          * @return all entities found, never returns {@code null}
-         * @throws io.helidon.data.api.DataException if the operation has failed
+         * @throws io.helidon.data.DataException if the operation has failed
          */
         Slice<E> slices(PageRequest pageable);
 

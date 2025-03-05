@@ -270,6 +270,13 @@ public interface PersistenceGenerator {
     interface StatementGenerator {
 
         /**
+         * Repository executor type.
+         *
+         * @return the type of the executor
+         */
+        TypeName executorType();
+
+        /**
          * Add code to persist single entity.
          *
          * @param builder method builder
@@ -298,8 +305,9 @@ public interface PersistenceGenerator {
          *
          * @param builder method builder
          * @param identifier entity identifier
+         * @param merged  merged collection identifier
          */
-        void addMergeCollection(Method.Builder builder, String identifier);
+        void addMergeCollection(Method.Builder builder, String identifier, String merged);
 
         /**
          * Add code to remove single entity.
@@ -553,7 +561,6 @@ public interface PersistenceGenerator {
                                                                        String dataQueryStatement,
                                                                        TypeName returnType);
 
-        // FIXME: Try to reduce number of parameters to remove checkstyle suppression
         /**
          * Add code to create dynamic queries for {@code Page}.
          * Page requires data query to return {@link java.util.List} of {@code returnType} instances
@@ -569,6 +576,8 @@ public interface PersistenceGenerator {
          * @param returnType query result type
          * @return settings query settings
          */
+        // FIXME: Try to reduce number of parameters to remove checkstyle suppression
+        @SuppressWarnings("checkstyle:ParameterNumber")
         List<PersistenceGenerator.QuerySettings> addDynamicPageQueries(Method.Builder builder,
                                                                        RepositoryInfo repositoryInfo,
                                                                        TypedElementInfo methodInfo,

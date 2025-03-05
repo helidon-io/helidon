@@ -25,13 +25,13 @@ class HelidonDataTypes {
     /* Helidon Data interfaces */
 
     // GenericRepository<T, K> is top level repository interface
-    static final TypeName GENERIC_REPOSITORY = TypeName.create("io.helidon.data.api.Data.GenericRepository");
+    static final TypeName GENERIC_REPOSITORY = TypeName.create("io.helidon.data.Data.GenericRepository");
     // BasicRepository<E, ID> extends GenericRepository<E, ID> adds basic set of repository operations
-    static final TypeName BASIC_REPOSITORY = TypeName.create("io.helidon.data.api.Data.BasicRepository");
+    static final TypeName BASIC_REPOSITORY = TypeName.create("io.helidon.data.Data.BasicRepository");
     // CrudRepository<T, K> extends BasicRepository<E, ID> adds CRUD repository operations
-    static final TypeName CRUD_REPOSITORY = TypeName.create("io.helidon.data.api.Data.CrudRepository");
+    static final TypeName CRUD_REPOSITORY = TypeName.create("io.helidon.data.Data.CrudRepository");
     // PageableRepository<E, ID> extends GenericRepository<E, ID> adds pagination support
-    static final TypeName PAGEABLE_REPOSITORY = TypeName.create("io.helidon.data.api.Data.PageableRepository");
+    static final TypeName PAGEABLE_REPOSITORY = TypeName.create("io.helidon.data.Data.PageableRepository");
     // Interfaces sorted from the most generic top the most specific interface.
     static final List<TypeName> INTERFACES_PRIORITY = List.of(GENERIC_REPOSITORY,
                                                               BASIC_REPOSITORY,
@@ -41,10 +41,10 @@ class HelidonDataTypes {
 
     /* Helidon Data types */
 
-    static final TypeName SORT = TypeName.create("io.helidon.data.api.Sort");
-    static final TypeName SLICE = TypeName.create("io.helidon.data.api.Slice");
-    static final TypeName PAGE = TypeName.create("io.helidon.data.api.Page");
-    static final TypeName PAGE_REQUEST = TypeName.create("io.helidon.data.api.PageRequest");
+    static final TypeName SORT = TypeName.create("io.helidon.data.Sort");
+    static final TypeName SLICE = TypeName.create("io.helidon.data.Slice");
+    static final TypeName PAGE = TypeName.create("io.helidon.data.Page");
+    static final TypeName PAGE_REQUEST = TypeName.create("io.helidon.data.PageRequest");
 
     static final TypeName DATA_QUERY = TypeName.create("io.helidon.data.query.DataQuery");
     static final TypeName PROJECTION = TypeName.create("io.helidon.data.query.Projection");
@@ -52,11 +52,9 @@ class HelidonDataTypes {
     /* Helidon Data annotations */
 
     // @Repository annotation (marks data repository interface)
-    static final TypeName REPOSITORY = TypeName.create("io.helidon.data.api.Data.Repository");
-    // @Query.SQL method annotation
-    static final TypeName QUERY_SQL_NAME = TypeName.create("io.helidon.data.api.Query.SQL");
+    static final TypeName REPOSITORY = TypeName.create("io.helidon.data.Data.Repository");
     // @Data.Query method annotation
-    static final TypeName QUERY_JPQL_NAME = TypeName.create("io.helidon.data.api.Query.JPQL");
+    static final TypeName QUERY_ANNOTATION = TypeName.create("io.helidon.data.api.Data.Query");
 
     // Set of annotations passed to codegen repository interfaces filtering
     static final Set<TypeName> ANNOTATIONS = Set.of(REPOSITORY);

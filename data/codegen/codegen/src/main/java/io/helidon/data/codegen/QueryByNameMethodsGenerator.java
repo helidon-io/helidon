@@ -236,7 +236,8 @@ class QueryByNameMethodsGenerator extends BaseQueryMethodsGenerator {
                                                                    b3,
                                                                    query,
                                                                    genericReturnTypeArgument(methodInfo)),
-                                                           EXECUTOR)));
+                                                           EXECUTOR),
+                                                statementGenerator.executorType()));
     }
 
     private static void generateDynamicQueryOptional(Method.Builder builder,
@@ -261,7 +262,8 @@ class QueryByNameMethodsGenerator extends BaseQueryMethodsGenerator {
                                                                    methodParams,
                                                                    dataQuery,
                                                                    genericReturnTypeArgument(methodInfo)),
-                                                           EXECUTOR)));
+                                                           EXECUTOR),
+                                                statementGenerator.executorType()));
     }
 
     private static void generateQueryList(Method.Builder builder,
@@ -586,8 +588,7 @@ class QueryByNameMethodsGenerator extends BaseQueryMethodsGenerator {
                                            PersistenceGenerator.Query query) {
         returnStatement(builder,
                         b1 -> {
-                            // FIXME uses JPA gapi from codegen
-                            b1.addContent(TypeName.create("io.helidon.data.jakarta.persistence.gapi.JpaRepositoryExecutor"))
+                            b1.addContent(statementGenerator.executorType())
                                     .addContent(".createBigDecimal(");
                             call(b1,
                                  b2 -> statementGenerator.addExecuteQueryItem(b2, query, NUMBER),
@@ -788,8 +789,7 @@ class QueryByNameMethodsGenerator extends BaseQueryMethodsGenerator {
                                                   TypeName returnType) {
         returnStatement(builder,
                         b1 -> {
-                            // FIXME uses JPA gapi from codegen
-                            b1.addContent(TypeName.create("io.helidon.data.jakarta.persistence.gapi.JpaRepositoryExecutor"))
+                            b1.addContent(statementGenerator.executorType())
                                     .addContent(".createBigDecimal(");
                             call(b1,
                                  b2 -> statementGenerator.addExecuteDynamicQueryItem(

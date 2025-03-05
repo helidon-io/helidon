@@ -26,6 +26,6 @@ module io.helidon.data.tests.tests {
     requires io.helidon.data.tests.codegen.repository;
     requires io.helidon.data.tests.codegen.application;
     requires io.helidon.data.jakarta.persistence;
-    requires io.helidon.data.api;
+    requires io.helidon.data;
 
 }
