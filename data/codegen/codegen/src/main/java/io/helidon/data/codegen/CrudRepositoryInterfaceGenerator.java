@@ -15,6 +15,8 @@
  */
 package io.helidon.data.codegen;
 
+import java.util.ArrayList;
+
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.Method;
@@ -92,15 +94,12 @@ class CrudRepositoryInterfaceGenerator extends BaseRepositoryInterfaceGenerator 
         //       - verify entity existence with em.find
         //       - or at least verify that entity has ID present
         //       But codegen code does not have an access to ID attribute information
-        // Method body: executor.run(em -> em.merge(entity));
-        statement(builder,
-                  b1 -> run(b1,
-                            b2 -> statementGenerator()
-                                    .addMerge(b2, ENTITY),
-                            EXECUTOR));
-        // Method body: return entity;
+        // Method body: return executor.call(em -> em.merge(entity));
         returnStatement(builder,
-                        b -> identifier(b, ENTITY));
+                        b1 -> call(b1,
+                                   b2 -> statementGenerator()
+                                           .addMerge(b2, ENTITY),
+                                   EXECUTOR));
     }
 
     // <T extends E> Iterable<T> updateAll(Iterable<T> entities)
@@ -117,14 +116,23 @@ class CrudRepositoryInterfaceGenerator extends BaseRepositoryInterfaceGenerator 
         //       - or at least verify that entity has ID present
         //       But codegen code does not have an access to ID attribute information
         // Method body: executor.run(em -> entities.forEach(em::merge));
+        // Method body: List<T> mergedEntities = new ArrayList<>();
+        //              executor.run(em -> entities.forEach(e -> mergedEntities.add(em.merge(e))));
+        //              return mergedEntities;
+        statement(builder,
+                  b1 -> initializedVariable(b1,
+                                            LIST_T,
+                                            "mergedEntities",
+                                            b2 -> b2.addContent("new ")
+                                                    .addContent(ArrayList.class)
+                                                    .addContent("<>()")));
         statement(builder,
                   b1 -> run(b1,
                             b2 -> statementGenerator()
-                                    .addMergeCollection(b2, ENTITIES),
+                                    .addMergeCollection(b2, ENTITIES, "mergedEntities"),
                             EXECUTOR));
-        // Method body: return entities;
         returnStatement(builder,
-                        b -> identifier(b, ENTITIES));
+                        b -> identifier(b, "mergedEntities"));
     }
 
 }

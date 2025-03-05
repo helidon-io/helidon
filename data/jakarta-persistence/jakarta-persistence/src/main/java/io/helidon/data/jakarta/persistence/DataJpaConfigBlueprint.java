@@ -22,7 +22,7 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.data.api.ProviderConfig;
+import io.helidon.data.ProviderConfig;
 import io.helidon.data.spi.ProviderConfigProvider;
 import io.helidon.data.sql.common.SqlConfig;
 

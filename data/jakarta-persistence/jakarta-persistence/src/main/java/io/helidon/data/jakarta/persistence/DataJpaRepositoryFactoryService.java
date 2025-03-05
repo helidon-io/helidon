@@ -18,15 +18,15 @@ package io.helidon.data.jakarta.persistence;
 
 import java.util.function.Function;
 
-import io.helidon.data.api.Data;
+import io.helidon.data.Data;
 import io.helidon.data.spi.DataSupport;
 import io.helidon.data.spi.RepositoryFactory;
-import io.helidon.service.inject.api.Injection;
+import io.helidon.service.registry.Service;
 
 import static io.helidon.data.jakarta.persistence.DataJpaSupportProviderService.PROVIDER_TYPE;
 
-@Injection.Singleton
-@Injection.PerInstance(DataJpaSupport.class)
+@Service.Singleton
+@Service.PerInstance(DataJpaSupport.class)
 @Data.SupportType(PROVIDER_TYPE)
 class DataJpaRepositoryFactoryService implements RepositoryFactory {
     private final DataSupport support;

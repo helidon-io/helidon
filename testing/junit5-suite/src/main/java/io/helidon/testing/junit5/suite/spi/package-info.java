@@ -13,19 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.data.api;
 
-import java.util.List;
-
-import io.helidon.data.spi.DataProvider;
-
-public class TestDataProvider implements DataProvider {
-
-    public TestDataProvider() {
-    }
-
-    @Override
-    public List<DataRegistry> create(List<DataConfig> config) {
-        return List.of(new TestHelidonData(config.getFirst()));
-    }
-}
+/**
+ * jUnit test suite SPI.
+ * @see io.helidon.testing.junit5.suite.spi.SuiteProvider
+ */
+package io.helidon.testing.junit5.suite.spi;

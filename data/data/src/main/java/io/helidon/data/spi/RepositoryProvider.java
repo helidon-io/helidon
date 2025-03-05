@@ -16,7 +16,6 @@
 
 package io.helidon.data.spi;
 
-import io.helidon.service.inject.api.Injection;
 import io.helidon.service.registry.Service;
 
 /**
@@ -32,7 +31,7 @@ public interface RepositoryProvider<T> {
     /**
      * Persistence entity class.
      *
-     * @return type of the entity matching {@link io.helidon.data.api.Data.GenericRepository} generic type {@code E}
+     * @return type of the entity matching {@link io.helidon.data.Data.GenericRepository} generic type {@code E}
      */
     Class<?> entityClass();
 
@@ -51,12 +50,12 @@ public interface RepositoryProvider<T> {
     T get();
 
     /**
-     * Name of the data source. Defaults to {@value io.helidon.service.inject.api.Injection.Named#DEFAULT_NAME}.
+     * Name of the data source. Defaults to {@value io.helidon.service.registry.Service.Named#DEFAULT_NAME}.
      *
      * @return name of the data source
      */
     default String dataSourceName() {
-        return Injection.Named.DEFAULT_NAME;
+        return Service.Named.DEFAULT_NAME;
     }
 
     /**
