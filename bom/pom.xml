@@ -674,6 +674,16 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.transaction</groupId>
+                <artifactId>helidon-transaction-jta</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.transaction</groupId>
+                <artifactId>helidon-transaction-narayana</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.data</groupId>
                 <artifactId>helidon-data</artifactId>
                 <version>${project.version}</version>
