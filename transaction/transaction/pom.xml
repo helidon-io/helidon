@@ -29,4 +29,13 @@
 
     <artifactId>helidon-transaction</artifactId>
     <name>Helidon Transaction API</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-registry</artifactId>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+
 </project>
