@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,14 @@
  */
 
 /**
- * Helidon Transaction API.
+ * Jakarta Transaction Providers Registry.
  */
-module io.helidon.transaction {
+module io.helidon.transaction.jta {
 
-    requires static io.helidon.service.registry;
+    requires jakarta.transaction;
+    requires io.helidon.service.registry;
+    requires io.helidon.transaction;
 
-    exports io.helidon.transaction;
+    exports io.helidon.transaction.jta;
 
 }
