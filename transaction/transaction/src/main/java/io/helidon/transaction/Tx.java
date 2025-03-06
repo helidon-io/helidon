@@ -20,6 +20,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import io.helidon.service.registry.Interception;
+
 /**
  * Transaction annotations and types.
  */
@@ -92,6 +94,7 @@ public final class Tx {
     /**
      * Defines {@link Type#MANDATORY} transaction type of the annotated method.
      */
+    @Interception.Intercepted
     @TransactionType(Type.MANDATORY)
     @Retention(RetentionPolicy.SOURCE)
     @Target({ElementType.TYPE, ElementType.METHOD})
@@ -100,6 +103,7 @@ public final class Tx {
     /**
      * Defines {@link Type#NEW} transaction type of the annotated method.
      */
+    @Interception.Intercepted
     @TransactionType(Type.NEW)
     @Retention(RetentionPolicy.SOURCE)
     @Target({ElementType.TYPE, ElementType.METHOD})
@@ -108,6 +112,7 @@ public final class Tx {
     /**
      * Defines {@link Type#NEVER} transaction type of the annotated method.
      */
+    @Interception.Intercepted
     @TransactionType(Type.NEVER)
     @Retention(RetentionPolicy.SOURCE)
     @Target({ElementType.TYPE, ElementType.METHOD})
@@ -116,6 +121,7 @@ public final class Tx {
     /**
      * Defines {@link Type#REQUIRED} transaction type of the annotated method.
      */
+    @Interception.Intercepted
     @TransactionType(Type.REQUIRED)
     @Retention(RetentionPolicy.SOURCE)
     @Target({ElementType.TYPE, ElementType.METHOD})
@@ -124,6 +130,7 @@ public final class Tx {
     /**
      * Defines {@link Type#SUPPORTED} transaction type of the annotated method.
      */
+    @Interception.Intercepted
     @TransactionType(Type.SUPPORTED)
     @Retention(RetentionPolicy.SOURCE)
     @Target({ElementType.TYPE, ElementType.METHOD})
@@ -132,6 +139,7 @@ public final class Tx {
     /**
      * Defines {@link Type#UNSUPPORTED} transaction type of the annotated method.
      */
+    @Interception.Intercepted
     @TransactionType(Type.UNSUPPORTED)
     @Retention(RetentionPolicy.SOURCE)
     @Target({ElementType.TYPE, ElementType.METHOD})
