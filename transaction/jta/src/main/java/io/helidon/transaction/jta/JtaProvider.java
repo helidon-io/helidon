@@ -1,0 +1,62 @@
+/*
+ * Copyright (c) 2025 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package io.helidon.transaction.jta;
+
+import java.util.Optional;
+
+import jakarta.transaction.TransactionManager;
+import jakarta.transaction.TransactionSynchronizationRegistry;
+import jakarta.transaction.UserTransaction;
+
+/**
+ * Jakarta Transaction service provider.
+ */
+public interface JtaProvider {
+
+    /**
+     * Returns {@link Optional} JTA provider instance.
+     * {@link JtaProvider} interface access using programmatic lookup.
+     *
+     * @return the JTA provider
+     * @throws NullPointerException when no JtaProvider service was found
+     */
+    static Optional<JtaProvider> provider() {
+        return JtaProviderSupplier.getInstance()
+                .get();
+    }
+
+    /**
+     * Returns {@link TransactionManager} instance.
+     *
+     * @return the {@link TransactionManager} instance
+     */
+    TransactionManager transactionManager();
+
+    /**
+     * Returns {@link UserTransaction} instance.
+     *
+     * @return the {@link UserTransaction} instance
+     */
+    UserTransaction userTransaction();
+
+    /**
+     * Returns {@link TransactionSynchronizationRegistry} instance.
+     *
+     * @return the {@link TransactionSynchronizationRegistry} instance
+     */
+    TransactionSynchronizationRegistry transactionSynchronizationRegistry();
+
+}
