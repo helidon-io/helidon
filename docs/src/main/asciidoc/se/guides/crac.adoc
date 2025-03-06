@@ -23,6 +23,6 @@
 
 include::{rootdir}/includes/se.adoc[]
 
-This guide describes how to create a CRaC snapshot for a Helidon {flavor-uc } application.
+This guide describes how to create a CRaC snapshot for a Helidon SE application.
 
 include::{rootdir}/includes/guides/crac.adoc[]

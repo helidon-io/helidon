@@ -46,6 +46,9 @@ https://github.com/langchain4j/langchain4j[LangChain4J] is a Java framework for 
 
 Helidon provides a LangChain4J integration module that simplifies the use of LangChain4J in Helidon applications.
 
+[NOTE]
+LangChain4J integration is a preview feature. The APIs shown here are subject to change. These APIs will be finalized in a future release of Helidon.
+
 === Features
 
 - *Integration with Helidon Inject*

@@ -33,6 +33,9 @@ endif::mp-flavor[]
 
 CRaC - Coordinated Restore at Checkpoint
 
+[NOTE]
+CRaC support is a preview feature. The feature shown here is subject to change, and will be finalized in a future release of Helidon.
+
 == What You Need
 
 For this 10 minute tutorial, you will need the following:
