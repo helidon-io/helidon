@@ -1,0 +1,148 @@
+/*
+ * Copyright (c) 2025 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.helidon.common;
+
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+/**
+ * A container class for default values related types for Helidon declarative.
+ */
+public class Default {
+    /**
+     * A default value specified as a string.
+     * <p>
+     * Depending on the usage, this may be mapped to other types as needed.
+     */
+    @Target({ElementType.PARAMETER, ElementType.FIELD})
+    @Retention(RetentionPolicy.CLASS)
+    @Documented
+    public @interface Value {
+        /**
+         * Default value(s) for this element.
+         *
+         * @return default value as a string, or an array of strings, if the element is a list, set, or an array
+         */
+        String[] value();
+    }
+
+    /**
+     * A default value specified as an integer.
+     * This can only be used on element of the correct type.
+     */
+    @Target({ElementType.PARAMETER, ElementType.FIELD})
+    @Retention(RetentionPolicy.CLASS)
+    @Documented
+    public @interface Int {
+        /**
+         * Default value(s) for this element.
+         *
+         * @return default value as an integer, or an array of integers, if the element is a list, set, or an array
+         */
+        int[] value();
+    }
+
+    /**
+     * A default value specified as a long.
+     * This can only be used on element of the correct type.
+     */
+    @Target({ElementType.PARAMETER, ElementType.FIELD})
+    @Retention(RetentionPolicy.CLASS)
+    @Documented
+    public @interface Long {
+        /**
+         * Default value(s) for this element.
+         *
+         * @return default value as a long, or an array of longs, if the element is a list, set, or an array
+         */
+        long[] value();
+    }
+
+    /**
+     * A default value specified as a double.
+     * This can only be used on element of the correct type.
+     */
+    @Target({ElementType.PARAMETER, ElementType.FIELD})
+    @Retention(RetentionPolicy.CLASS)
+    @Documented
+    public @interface Double {
+        /**
+         * Default value(s) for this element.
+         *
+         * @return default value as a double, or an array of doubles, if the element is a list, set, or an array
+         */
+        double[] value();
+    }
+
+    /**
+     * A default value specified as a boolean.
+     * This can only be used on element of the correct type.
+     */
+    @Target({ElementType.PARAMETER, ElementType.FIELD})
+    @Retention(RetentionPolicy.CLASS)
+    @Documented
+    public @interface Boolean {
+        /**
+         * Default value(s) for this element.
+         *
+         * @return default value as a boolean, or an array of booleans, if the element is a list, set, or an array
+         */
+        boolean[] value();
+    }
+
+    /**
+     * A default value specified as a type.
+     * <p>
+     * This type is expected to be available in service registry (other approaches may be used to obtain an instance,
+     * including reflection - depends on component that resolves the value).
+     */
+    @Target({ElementType.PARAMETER, ElementType.FIELD})
+    @Retention(RetentionPolicy.CLASS)
+    @Documented
+    public @interface Provider {
+        /**
+         * Default value for this element.
+         *
+         * @return default value as a string
+         */
+        Class<? extends DefaultValueProvider<?, ?>> value();
+    }
+
+    /**
+     * A type capable of providing default values.
+     *
+     * @param <T> type of the value provided
+     */
+    public interface DefaultValueProvider<T, O> {
+        /**
+         * Get the default value.
+         *
+         * @param type    expected type
+         * @param name    name of the field or parameter
+         * @param context the type of the context depends on the usage of the annotation - for example config
+         *                may provide a root config instance, HTTP header may provide HTTP request etc. See documentation
+         *                of the type that a default value is provided for
+         * @return provided value
+         */
+        T apply(GenericType<T> type,
+                String name,
+                O context);
+    }
+}

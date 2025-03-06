@@ -1527,6 +1527,11 @@
                 <artifactId>helidon-service-maven-plugin</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.declarative</groupId>
+                <artifactId>helidon-declarative-codegen</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
             <!-- Metadata -->
             <dependency>

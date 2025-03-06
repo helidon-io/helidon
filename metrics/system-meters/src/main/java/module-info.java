@@ -33,6 +33,9 @@ module io.helidon.metrics.systemmeters {
     requires java.management;
     requires jdk.jfr;
 
+    // we must see these classes, as they are used in generated ApplicationBinding
+    exports io.helidon.metrics.systemmeters;
+
     provides io.helidon.metrics.spi.MetersProvider
             with io.helidon.metrics.systemmeters.SystemMetersProvider,
                     io.helidon.metrics.systemmeters.VThreadSystemMetersProvider;

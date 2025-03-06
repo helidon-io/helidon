@@ -123,7 +123,7 @@ interface DependencyBlueprint {
     AccessModifier access();
 
     /**
-     * The annotations on this element.
+     * The annotations on this element, excluding {@link #qualifiers()}.
      *
      * @return the annotations on this element
      */

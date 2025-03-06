@@ -22,11 +22,12 @@
     <parent>
         <groupId>io.helidon</groupId>
         <artifactId>helidon-project</artifactId>
-        <version>4.2.0-SNAPSHOT</version>
+        <version>4.1.0-SNAPSHOT</version>
     </parent>
     <modules>
         <module>config</module>
         <module>security</module>
+        <module>apt</module>
     </modules>
 
     <packaging>pom</packaging>

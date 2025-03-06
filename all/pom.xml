@@ -1149,6 +1149,10 @@
             <artifactId>helidon-service-maven-plugin</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.declarative</groupId>
+            <artifactId>helidon-declarative-codegen</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.metadata</groupId>
             <artifactId>helidon-metadata-hson</artifactId>
         </dependency>

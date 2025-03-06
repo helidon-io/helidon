@@ -31,14 +31,17 @@ import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.config.GlobalConfig;
+import io.helidon.common.config.Config;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.testing.virtualthreads.PinningRecorder;
+import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.service.registry.Services;
 import io.helidon.webserver.ListenerConfig;
 import io.helidon.webserver.Router;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.WebServerService__ServiceDescriptor;
 import io.helidon.webserver.testing.junit5.spi.ServerJunitExtension;
 
 import org.junit.jupiter.api.extension.AfterAllCallback;
@@ -95,9 +98,9 @@ class HelidonServerJunitExtension extends JunitExtensionBase
 
             WebServerConfig.Builder builder = WebServer.builder();
 
-
-            builder.config(GlobalConfig.config().get("server"))
-                    .host("localhost");
+            builder.config(Services.get(Config.class).get("server"));
+            setupWebServerFromRegistry(builder);
+            builder.host("localhost");
 
             extensions.forEach(it -> it.beforeAll(context));
             extensions.forEach(it -> it.updateServerBuilder(builder));
@@ -213,6 +216,25 @@ class HelidonServerJunitExtension extends JunitExtensionBase
 
             return super.resolveParameter(parameterContext, extensionContext);
         });
+    }
+
+    private static void setupWebServerFromRegistry(WebServerConfig.Builder serverBuilder) {
+        Object o = GlobalServiceRegistry.registry()
+                .get(WebServerService__ServiceDescriptor.INSTANCE)
+                .orElseThrow(() -> {
+                    return new IllegalStateException("Could not discover WebServerService in service registry, both "
+                                                             + "'helidon-service-registry' and `helidon-webserver` must be on "
+                                                             + "classpath.");
+                });
+        // the service is package local
+        Class<?> clazz = o.getClass();
+        try {
+            Method method = clazz.getDeclaredMethod("updateServerBuilder", WebServerConfig.BuilderBase.class);
+            method.setAccessible(true);
+            method.invoke(o, serverBuilder);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("Failed to get service registry specific method on WebServerService", e);
+        }
     }
 
     private URI uri(Executable declaringExecutable, String socketName) {
@@ -335,5 +357,4 @@ class HelidonServerJunitExtension extends JunitExtensionBase
                     ListenerConfig.Builder listenerBuilder,
                     Router.RouterBuilder<?> routerBuilder);
     }
-
 }

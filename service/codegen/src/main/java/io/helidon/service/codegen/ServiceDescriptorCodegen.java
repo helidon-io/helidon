@@ -1144,6 +1144,20 @@ public class ServiceDescriptorCodegen {
                             }
                         }
 
+                        // filter annotations by removing qualifiers
+                        var qualifierTypes = param.qualifiers()
+                                .stream()
+                                .map(Annotation::typeName)
+                                .collect(Collectors.toUnmodifiableSet());
+                        param.annotations()
+                                .stream()
+                                .filter(annotation -> !qualifierTypes.contains(annotation.typeName()))
+                                .forEach(annotation -> {
+                                    it.addContent(".addAnnotation(")
+                                            .addContentCreate(annotation)
+                                            .addContentLine(")");
+                                });
+
                         if (!dependencyMetadata.cardinality.equals("REQUIRED")) {
                             // only set if not default
                             it.addContent(".cardinality(")

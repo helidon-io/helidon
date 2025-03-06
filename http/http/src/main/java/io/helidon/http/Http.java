@@ -126,6 +126,23 @@ public final class Http {
     }
 
     /**
+     * Inject query parameter into a method parameter.
+     */
+    @Target(ElementType.PARAMETER)
+    @Retention(RetentionPolicy.CLASS)
+    @Documented
+    @Service.Qualifier
+    public @interface QueryParam {
+        /**
+         * Name of the query parameter.
+         *
+         * @return name of the query parameter
+         */
+        String value();
+    }
+
+
+    /**
      * Inject path parameter into a method parameter.
      * Path parameters are obtained from the path template of the routing method.
      */
