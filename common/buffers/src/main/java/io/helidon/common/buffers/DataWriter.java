@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ package io.helidon.common.buffers;
  * Do not combine {@link #write(io.helidon.common.buffers.BufferData)} and {@link #writeNow(io.helidon.common.buffers.BufferData)}
  * to a single underlying transport, unless you can guarantee there will not be a race between these two methods.
  */
-public interface DataWriter {
+public interface DataWriter extends AutoCloseable {
     /**
      * Write buffers, may delay writing and may write on a different thread.
      * This method also may combine multiple calls into a single write to the underlying transport.
@@ -49,4 +49,19 @@ public interface DataWriter {
      * @param buffer buffer to write
      */
     void writeNow(BufferData buffer);
+
+    /**
+     * Flushes to the underlying transport any pending data that has been written using
+     * either {@link #write(BufferData)} or {@link #write(BufferData...)}.
+     */
+    default void flush() {
+    }
+
+    /**
+     * Closes this writer and frees any associated resources. Defaults to just a call
+     * to {@link #flush()}.
+     */
+    default void close() {
+        flush();
+    }
 }
