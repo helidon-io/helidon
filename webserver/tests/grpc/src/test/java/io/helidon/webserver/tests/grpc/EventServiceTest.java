@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,17 @@
 
 package io.helidon.webserver.tests.grpc;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.webserver.grpc.events.EventServiceGrpc;
-import io.helidon.webserver.grpc.events.Events;
-import io.helidon.webserver.grpc.GrpcRouting;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.Router;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.grpc.GrpcRouting;
+import io.helidon.webserver.grpc.events.EventServiceGrpc;
+import io.helidon.webserver.grpc.events.Events;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -40,7 +39,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
-public class EventsTest {
+public class EventServiceTest {
     private final int port;
 
     protected ManagedChannel channel;
@@ -49,7 +48,7 @@ public class EventsTest {
 
     protected EventServiceGrpc.EventServiceStub stub;
 
-    EventsTest(WebServer server) {
+    EventServiceTest(WebServer server) {
         this.port = server.port();
     }
 
@@ -82,7 +81,7 @@ public class EventsTest {
 
     @Test
     public void shouldReceiveEvents() throws Exception {
-        TestObserver observer = new TestObserver();
+        var observer = new TestObserver<Events.EventResponse>();
 
         StreamObserver<Events.EventRequest> requests = stub.events(observer);
 
@@ -144,42 +143,5 @@ public class EventsTest {
         return Events.Message.newBuilder()
                 .setText(text)
                 .build();
-    }
-
-    private static class TestObserver
-            implements StreamObserver<Events.EventResponse> {
-
-        private final List<Events.EventResponse> responses = new ArrayList<>();
-
-        private CountDownLatch latch;
-
-        public CountDownLatch setLatch(int count) {
-            latch = new CountDownLatch(count);
-            return latch;
-        }
-
-        public List<Events.EventResponse> getResponses() {
-            return responses;
-        }
-
-        public void clear() {
-            responses.clear();
-        }
-
-        @Override
-        public void onNext(Events.EventResponse response) {
-            responses.add(response);
-            if (latch != null) {
-                latch.countDown();
-            }
-        }
-
-        @Override
-        public void onError(Throwable throwable) {
-        }
-
-        @Override
-        public void onCompleted() {
-        }
     }
 }
