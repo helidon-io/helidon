@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.config;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -698,6 +699,19 @@ public class ConfigTest {
 
         // Implicit sources always take precedence! (??)
         assertThat(config.get(OVERRIDE_NAME).asString().get(), is(OVERRIDE_ENV_VAR_VALUE));
+    }
+
+    @Test
+    void testAsMapTreeNodeWithValue() {
+        Map<String, String> map = new HashMap<>();
+        map.put("logging.level", "FINEST"); // both level and level.weaver have values - need to be in the final map as well
+        map.put("logging.level.weaver", "OFF");
+        map.put("logging.parameters", "true");
+
+        Config config = Config.just(ConfigSources.create(map));
+        Map<String, String> fromConfig = config.asMap().get();
+
+        assertThat(fromConfig, is(map));
     }
 
     private void testConfigKeyEscapeUnescapeName(String name, String escapedName) {
