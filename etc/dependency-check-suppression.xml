@@ -22,13 +22,12 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
     In 4.x we made this component "provided". We can't do that in 2.x and 3.x due to compatiblity concerns.
     Also, this is primarily a developer feature and not intended for a production runtime.
 -->
-
 <suppress>
    <notes><![CDATA[
-   file name: smallrye-open-api-ui-2.0.26.jar: swagger-ui-bundle.js
+   file name: smallrye-open-api-ui-3.13.0.jar: swagger-ui-bundle.js
    ]]></notes>
    <packageUrl regex="true">^pkg:javascript/DOMPurify@.*$</packageUrl>
-   <vulnerabilityName>CVE-2024-45801</vulnerabilityName>
+   <vulnerabilityName>CVE-2025-26791</vulnerabilityName>
 </suppress>
 
 
