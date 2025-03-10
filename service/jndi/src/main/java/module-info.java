@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,28 +19,22 @@ import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.common.features.api.Preview;
 
 /**
- * Core service registry, supporting {@link io.helidon.service.registry.Service.Provider}.
+ * JNDI support backed by service registry.
  */
-@Feature(value = "Registry",
-         description = "Service Registry",
+@Feature(value = "JNDI",
+         description = "JNDI backed by Service Registry",
          in = HelidonFlavor.SE,
-         path = "Registry"
+         path = {"Registry", "JNDI"}
 )
 @Preview
-module io.helidon.service.registry {
+module io.helidon.service.jndi {
     requires static io.helidon.common.features.api;
 
     requires io.helidon.common.context;
     requires io.helidon.service.metadata;
-    requires io.helidon.metadata.hson;
-    requires io.helidon;
-
-    requires transitive io.helidon.builder.api;
-    requires transitive io.helidon.common.types;
     requires java.naming;
+    requires io.helidon.service.registry;
+    requires java.rmi;
 
-    exports io.helidon.service.registry;
-
-    provides io.helidon.spi.HelidonStartupProvider
-            with io.helidon.service.registry.RegistryStartupProvider;
+    exports io.helidon.service.jndi;
 }
