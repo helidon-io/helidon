@@ -17,11 +17,13 @@
 package io.helidon.declarative.codegen;
 
 import java.util.List;
+import java.util.Set;
 
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
 
 record ParamDef(TypeName type,
                 String name,
-                List<Annotation> qualifiers) {
+                List<Annotation> qualifiers,
+                Set<Annotation> annotations) {
 }

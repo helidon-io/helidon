@@ -106,43 +106,4 @@ public class Default {
          */
         boolean[] value();
     }
-
-    /**
-     * A default value specified as a type.
-     * <p>
-     * This type is expected to be available in service registry (other approaches may be used to obtain an instance,
-     * including reflection - depends on component that resolves the value).
-     */
-    @Target({ElementType.PARAMETER, ElementType.FIELD})
-    @Retention(RetentionPolicy.CLASS)
-    @Documented
-    public @interface Provider {
-        /**
-         * Default value for this element.
-         *
-         * @return default value as a string
-         */
-        Class<? extends DefaultValueProvider<?, ?>> value();
-    }
-
-    /**
-     * A type capable of providing default values.
-     *
-     * @param <T> type of the value provided
-     */
-    public interface DefaultValueProvider<T, O> {
-        /**
-         * Get the default value.
-         *
-         * @param type    expected type
-         * @param name    name of the field or parameter
-         * @param context the type of the context depends on the usage of the annotation - for example config
-         *                may provide a root config instance, HTTP header may provide HTTP request etc. See documentation
-         *                of the type that a default value is provided for
-         * @return provided value
-         */
-        T apply(GenericType<T> type,
-                String name,
-                O context);
-    }
 }

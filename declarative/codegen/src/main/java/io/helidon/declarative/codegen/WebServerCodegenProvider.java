@@ -25,7 +25,7 @@ import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.types.TypeName;
 
-import static io.helidon.declarative.codegen.WebServerCodegenTypes.HTTP_PATH_ANNOTATION;
+import static io.helidon.declarative.codegen.DeclarativeCodegenTypes.HTTP_PATH_ANNOTATION;
 
 /**
  * Java {@link java.util.ServiceLoader} provider implementation of {@link io.helidon.codegen.spi.CodegenExtensionProvider}

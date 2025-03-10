@@ -17,22 +17,38 @@
 package io.helidon.declarative.codegen;
 
 import java.util.List;
+import java.util.Set;
 
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
+import io.helidon.service.codegen.FieldHandler;
 
 /**
  * Information related to parameter processing.
  */
 public interface ParameterCodegenContext {
     /**
+     * Constant handler for the type being created.
+     *
+     * @return constant handler
+     */
+    FieldHandler fieldHandler();
+
+    /**
      * Parameter qualifier annotations.
+     *
+     * @return qualifiers of the parameter
+     */
+    List<Annotation> qualifiers();
+
+    /**
+     * Parameter annotations.
      *
      * @return annotations of the parameter
      */
-    List<Annotation> qualifiers();
+    Set<Annotation> annotations();
 
     /**
      * Type of the parameter.

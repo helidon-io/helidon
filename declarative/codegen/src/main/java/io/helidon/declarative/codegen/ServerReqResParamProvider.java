@@ -25,12 +25,12 @@ class ServerReqResParamProvider implements io.helidon.declarative.codegen.spi.Ht
         TypeName parameterType = ctx.parameterType();
         ContentBuilder<?> contentBuilder = ctx.contentBuilder();
 
-        if (WebServerCodegenTypes.SERVER_REQUEST.equals(parameterType)) {
+        if (DeclarativeCodegenTypes.SERVER_REQUEST.equals(parameterType)) {
             contentBuilder.addContent(ctx.serverRequestParamName())
                     .addContent(";");
             return true;
         }
-        if (WebServerCodegenTypes.SERVER_RESPONSE.equals(parameterType)) {
+        if (DeclarativeCodegenTypes.SERVER_RESPONSE.equals(parameterType)) {
             contentBuilder.addContent(ctx.serverResponseParamName())
                     .addContent(";");
             return true;

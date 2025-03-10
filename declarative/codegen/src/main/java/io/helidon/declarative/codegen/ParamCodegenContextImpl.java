@@ -17,13 +17,17 @@
 package io.helidon.declarative.codegen;
 
 import java.util.List;
+import java.util.Set;
 
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
+import io.helidon.service.codegen.FieldHandler;
 
-record ParamCodegenContextImpl(List<Annotation> qualifiers,
+record ParamCodegenContextImpl(FieldHandler fieldHandler,
+                               List<Annotation> qualifiers,
+                               Set<Annotation> annotations,
                                TypeName parameterType,
                                ClassModel.Builder classBuilder,
                                ContentBuilder<?> contentBuilder,

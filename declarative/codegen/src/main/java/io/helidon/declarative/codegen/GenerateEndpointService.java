@@ -16,23 +16,18 @@
 
 package io.helidon.declarative.codegen;
 
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.ServiceLoader;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.classmodel.ClassModel;
+import io.helidon.codegen.classmodel.Constructor;
 import io.helidon.codegen.classmodel.Method;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.types.AccessModifier;
@@ -43,26 +38,27 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.declarative.codegen.spi.HttpParameterCodegenProvider;
+import io.helidon.service.codegen.FieldHandler;
 
 import static io.helidon.codegen.CodegenUtil.toConstantName;
+import static io.helidon.declarative.codegen.DeclarativeCodegenTypes.COMMON_CONTEXT;
+import static io.helidon.declarative.codegen.DeclarativeCodegenTypes.HTTP_METHOD;
+import static io.helidon.declarative.codegen.DeclarativeCodegenTypes.HTTP_STATUS;
+import static io.helidon.declarative.codegen.DeclarativeCodegenTypes.HTTP_STATUS_ANNOTATION;
+import static io.helidon.declarative.codegen.DeclarativeCodegenTypes.INJECT_SCOPE;
+import static io.helidon.declarative.codegen.DeclarativeCodegenTypes.MEDIA_TYPE;
+import static io.helidon.declarative.codegen.DeclarativeCodegenTypes.MEDIA_TYPES;
+import static io.helidon.declarative.codegen.DeclarativeCodegenTypes.SERVER_HTTP_ROUTE;
+import static io.helidon.declarative.codegen.DeclarativeCodegenTypes.SERVER_HTTP_ROUTING_BUILDER;
+import static io.helidon.declarative.codegen.DeclarativeCodegenTypes.SERVER_HTTP_RULES;
+import static io.helidon.declarative.codegen.DeclarativeCodegenTypes.SERVER_REQUEST;
+import static io.helidon.declarative.codegen.DeclarativeCodegenTypes.SERVER_RESPONSE;
+import static io.helidon.declarative.codegen.DeclarativeCodegenTypes.SERVICE_CONTEXT;
+import static io.helidon.declarative.codegen.DeclarativeCodegenTypes.SERVICE_HEADERS;
+import static io.helidon.declarative.codegen.DeclarativeCodegenTypes.SERVICE_PROLOGUE;
+import static io.helidon.declarative.codegen.DeclarativeCodegenTypes.SERVICE_SERVER_REQUEST;
+import static io.helidon.declarative.codegen.DeclarativeCodegenTypes.SERVICE_SERVER_RESPONSE;
 import static io.helidon.declarative.codegen.WebServerCodegenExtension.GENERATOR;
-import static io.helidon.declarative.codegen.WebServerCodegenTypes.COMMON_CONTEXT;
-import static io.helidon.declarative.codegen.WebServerCodegenTypes.HTTP_METHOD;
-import static io.helidon.declarative.codegen.WebServerCodegenTypes.HTTP_STATUS;
-import static io.helidon.declarative.codegen.WebServerCodegenTypes.HTTP_STATUS_ANNOTATION;
-import static io.helidon.declarative.codegen.WebServerCodegenTypes.INJECT_SCOPE;
-import static io.helidon.declarative.codegen.WebServerCodegenTypes.MEDIA_TYPE;
-import static io.helidon.declarative.codegen.WebServerCodegenTypes.MEDIA_TYPES;
-import static io.helidon.declarative.codegen.WebServerCodegenTypes.SERVER_HTTP_ROUTE;
-import static io.helidon.declarative.codegen.WebServerCodegenTypes.SERVER_HTTP_ROUTING_BUILDER;
-import static io.helidon.declarative.codegen.WebServerCodegenTypes.SERVER_HTTP_RULES;
-import static io.helidon.declarative.codegen.WebServerCodegenTypes.SERVER_REQUEST;
-import static io.helidon.declarative.codegen.WebServerCodegenTypes.SERVER_RESPONSE;
-import static io.helidon.declarative.codegen.WebServerCodegenTypes.SERVICE_CONTEXT;
-import static io.helidon.declarative.codegen.WebServerCodegenTypes.SERVICE_HEADERS;
-import static io.helidon.declarative.codegen.WebServerCodegenTypes.SERVICE_PROLOGUE;
-import static io.helidon.declarative.codegen.WebServerCodegenTypes.SERVICE_SERVER_REQUEST;
-import static io.helidon.declarative.codegen.WebServerCodegenTypes.SERVICE_SERVER_RESPONSE;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_INJECT;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_SINGLETON;
 
@@ -108,77 +104,47 @@ final class GenerateEndpointService {
                 .type(generatedType)
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .addAnnotation(Annotation.create(SERVICE_ANNOTATION_SINGLETON))
-                .addInterface(WebServerCodegenTypes.SERVER_HTTP_FEATURE);
+                .addInterface(DeclarativeCodegenTypes.SERVER_HTTP_FEATURE);
 
         boolean singleton = endpoint.hasAnnotation(SERVICE_ANNOTATION_SINGLETON);
 
-        Map<String, String> mediaTypesToConstantNames = new HashMap<>();
-
-        // add media type constants
-        addMediaTypeConstants(endpointService, httpMethods, mediaTypesToConstantNames);
         // the endpoint itself
         addFields(endpointService, endpoint.typeName(), singleton);
         // constructor injecting the fields
-        addConstructor(endpointService, endpoint.typeName(), singleton);
+        Constructor.Builder constructor = addConstructor(endpoint.typeName(), singleton);
+
+        FieldHandler fieldHandler = FieldHandler.create(endpointService, constructor);
         // HttpFeature.setup(HttpRouting.Builder routing)
         addSetupMethod(endpointService, path);
         // private void routing(HttpRules rules)
-        addRoutingMethod(endpointService, httpMethods, mediaTypesToConstantNames);
+        addRoutingMethod(endpointService, fieldHandler, httpMethods);
 
         // now each method
         int methodIndex = 0;
         for (MethodDef httpMethod : httpMethods) {
             addEndpointMethod(endpoint.typeName(),
                               endpointService,
+                              fieldHandler,
                               singleton,
-                              mediaTypesToConstantNames,
                               httpMethod,
                               methodIndex);
             methodIndex++;
         }
 
+        endpointService.addConstructor(constructor);
+
         ctx.filer()
                 .writeSourceFile(endpointService.build(), endpoint.originatingElement().orElseGet(endpoint::typeName));
     }
 
-    private static void addMediaTypeConstants(ClassModel.Builder endpointService,
-                                              List<MethodDef> httpMethods,
-                                              Map<String, String> mediaTypesToConstantNames) {
-        AtomicInteger index = new AtomicInteger();
-
-        for (MethodDef httpMethod : httpMethods) {
-            Stream.concat(httpMethod.producesMediaTypes().stream(),
-                          httpMethod.consumesMediaTypes().stream())
-                    .forEach(mediaType -> {
-                        if (!mediaTypesToConstantNames.containsKey(mediaType)) {
-                            mediaTypesToConstantNames.put(mediaType, "MEDIA_TYPE_" + index.getAndIncrement());
-                        }
-                    });
-        }
-
-        mediaTypesToConstantNames.forEach((mediaType, constantName) -> {
-            endpointService.addField(constant -> constant
-                    .accessModifier(AccessModifier.PRIVATE)
-                    .isStatic(true)
-                    .isFinal(true)
-                    .type(MEDIA_TYPE)
-                    .name(constantName)
-                    .addContent(MEDIA_TYPES)
-                    .addContent(".create(\"")
-                    .addContent(mediaType)
-                    .addContent("\")"));
-        });
-    }
-
-    private static void addConstructor(ClassModel.Builder endpointService, TypeName endpoint, boolean singleton) {
-        endpointService.addConstructor(ctr -> ctr
+    private static Constructor.Builder addConstructor(TypeName endpoint, boolean singleton) {
+        return Constructor.builder()
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .addAnnotation(Annotation.create(SERVICE_ANNOTATION_INJECT))
                 .addParameter(param -> param
                         .type(singleton ? endpoint : supplierOf(endpoint))
                         .name("endpoint"))
-                .addContentLine("this.endpoint = endpoint;")
-        );
+                .addContentLine("this.endpoint = endpoint;");
     }
 
     private static void addFields(ClassModel.Builder endpointService, TypeName endpointType, boolean singleton) {
@@ -198,8 +164,8 @@ final class GenerateEndpointService {
 
     private static void addEndpointMethod(TypeName endpointType,
                                           ClassModel.Builder endpointService,
+                                          FieldHandler fieldHandler,
                                           boolean singleton,
-                                          Map<String, String> mediaTypesToConstantNames,
                                           MethodDef httpMethod,
                                           int methodIndex) {
         endpointService.addMethod(method -> method
@@ -215,8 +181,8 @@ final class GenerateEndpointService {
                         .forEach(checked -> it.addThrows(thrown -> thrown.type(checked))))
                 .update(it -> endpointMethodBody(endpointType,
                                                  endpointService,
+                                                 fieldHandler,
                                                  singleton,
-                                                 mediaTypesToConstantNames,
                                                  it,
                                                  httpMethod,
                                                  methodIndex)));
@@ -224,8 +190,8 @@ final class GenerateEndpointService {
 
     private static void endpointMethodBody(TypeName endpointType,
                                            ClassModel.Builder classModel,
+                                           FieldHandler fieldHandler,
                                            boolean singleton,
-                                           Map<String, String> mediaTypesToConstantNames,
                                            Method.Builder method,
                                            MethodDef httpMethod,
                                            int methodIndex) {
@@ -238,7 +204,7 @@ final class GenerateEndpointService {
             method.addContent("var ")
                     .addContent(paramName)
                     .addContent(" = ");
-            invokeParamHandler(endpointType, classModel, method, httpMethod, param, methodIndex, paramIndex);
+            invokeParamHandler(endpointType, classModel, fieldHandler, method, httpMethod, param, methodIndex, paramIndex);
             method.addContentLine("");
             paramIndex++;
         }
@@ -285,9 +251,10 @@ final class GenerateEndpointService {
         if (httpMethod.producesMediaTypes().size() == 1) {
             String mediaType = httpMethod.producesMediaTypes().getFirst();
             if (!"*/*".equals(mediaType)) {
+                String constantName = ensureMediaTypeConstant(fieldHandler, mediaType);
                 method.addContent(RESPONSE_PARAM_NAME)
                         .addContent(".headers().contentType(")
-                        .addContent(mediaTypesToConstantNames.get(mediaType))
+                        .addContent(constantName)
                         .addContentLine(");");
             }
         }
@@ -300,23 +267,20 @@ final class GenerateEndpointService {
             String reason = statusAnnotation.stringValue("reason").filter(Predicate.not(String::isBlank))
                     .orElse(null);
 
-            String constantName = toConstantName(httpMethod.methodName() + "Status_" + methodIndex);
-            classModel.addField(statusField -> statusField
-                    .accessModifier(AccessModifier.PRIVATE)
-                    .isStatic(true)
-                    .isFinal(true)
-                    .type(HTTP_STATUS)
-                    .name(constantName)
-                    .addContent(HTTP_STATUS)
-                    .addContent(".create(")
-                    .addContent(String.valueOf(status))
-                    .update(it -> {
-                        if (reason != null) {
-                            it.addContent(", \"" + reason + "\"");
-                        }
-                    })
-                    .addContent(")")
-            );
+            String constantName = fieldHandler.constant("STATUS_" + status,
+                                                        HTTP_STATUS,
+                                                        status + (reason == null ? "" : "-" + reason),
+                                                        content -> {
+                                                            content.addContent(HTTP_STATUS)
+                                                                    .addContent(".create(")
+                                                                    .addContent(String.valueOf(status));
+
+                                                            if (reason != null) {
+                                                                content.addContent(", \"" + reason + "\"");
+                                                            }
+                                                            content.addContent(")");
+                                                        });
+
             method.addContent(RESPONSE_PARAM_NAME)
                     .addContent(".status(")
                     .addContent(constantName)
@@ -335,6 +299,7 @@ final class GenerateEndpointService {
 
     private static void invokeParamHandler(TypeName endpointType,
                                            ClassModel.Builder classModel,
+                                           FieldHandler fieldHandler,
                                            Method.Builder method,
                                            MethodDef httpMethod,
                                            ParamDef param,
@@ -342,7 +307,9 @@ final class GenerateEndpointService {
                                            int paramIndex) {
         for (HttpParameterCodegenProvider paramProvider : PARAM_PROVIDERS) {
             try {
-                if (paramProvider.codegen(new ParamCodegenContextImpl(param.qualifiers(),
+                if (paramProvider.codegen(new ParamCodegenContextImpl(fieldHandler,
+                                                                      param.qualifiers(),
+                                                                      param.annotations(),
                                                                       param.type(),
                                                                       classModel,
                                                                       method,
@@ -371,10 +338,9 @@ final class GenerateEndpointService {
     }
 
     private static void addRoutingMethod(ClassModel.Builder endpointService,
-                                         List<MethodDef> httpMethods,
-                                         Map<String, String> mediaTypesToConstantNames) {
-        // we must add each constant just once, this is to keep track of them
-        Set<String> addedHttpMethods = new HashSet<>();
+                                         FieldHandler fieldHandler,
+                                         List<MethodDef> httpMethods) {
+
         endpointService.addMethod(routing -> routing
                 .accessModifier(AccessModifier.PRIVATE)
                 .name("routing")
@@ -382,31 +348,28 @@ final class GenerateEndpointService {
                         .type(SERVER_HTTP_RULES)
                         .name("rules"))
                 .update(it -> httpMethods.forEach(methodDef -> addRoutingMethodContent(endpointService,
+                                                                                       fieldHandler,
                                                                                        it,
-                                                                                       methodDef,
-                                                                                       addedHttpMethods,
-                                                                                       mediaTypesToConstantNames)))
+                                                                                       methodDef)))
         );
     }
 
     private static void addRoutingMethodContent(ClassModel.Builder endpointService,
+                                                FieldHandler fieldHandler,
                                                 Method.Builder routing,
-                                                MethodDef methodDef,
-                                                Set<String> addedHttpMethods,
-                                                Map<String, String> mediaTypesToConstantNames) {
+                                                MethodDef methodDef) {
 
         if (methodDef.producesMediaTypes().isEmpty() && methodDef.consumesMediaTypes().isEmpty()) {
-            addSimpleRoute(endpointService, routing, methodDef, addedHttpMethods);
+            addSimpleRoute(endpointService, fieldHandler, routing, methodDef);
         } else {
-            addHttpRoute(endpointService, routing, methodDef, addedHttpMethods, mediaTypesToConstantNames);
+            addHttpRoute(endpointService, fieldHandler, routing, methodDef);
         }
     }
 
     private static void addHttpRoute(ClassModel.Builder endpointService,
+                                     FieldHandler fieldHandler,
                                      Method.Builder routing,
-                                     MethodDef methodDef,
-                                     Set<String> addedHttpMethods,
-                                     Map<String, String> mediaTypesToConstantNames) {
+                                     MethodDef methodDef) {
         routing.addContent("rules.route(")
                 .addContent(SERVER_HTTP_ROUTE)
                 .addContentLine(".builder()")
@@ -422,7 +385,7 @@ final class GenerateEndpointService {
                     .addContent(httpMethod);
             break;
         default:
-            String methodConstant = ensureHttpMethodConstant(endpointService, addedHttpMethods, httpMethod);
+            String methodConstant = ensureHttpMethodConstant(fieldHandler, httpMethod);
             routing.addContent(methodConstant);
             break;
         }
@@ -436,7 +399,7 @@ final class GenerateEndpointService {
             routing.addContent("headers.testContentType(");
             routing.addContent(methodDef.consumesMediaTypes()
                                        .stream()
-                                       .map(mediaTypesToConstantNames::get)
+                                       .map(it -> ensureMediaTypeConstant(fieldHandler, it))
                                        .collect(Collectors.joining(", ")));
             routing.addContent(")");
         }
@@ -448,7 +411,7 @@ final class GenerateEndpointService {
             routing.addContent("headers.isAccepted(");
             routing.addContent(methodDef.producesMediaTypes()
                                        .stream()
-                                       .map(mediaTypesToConstantNames::get)
+                                       .map(it -> ensureMediaTypeConstant(fieldHandler, it))
                                        .collect(Collectors.joining(", ")));
             routing.addContent(")");
         }
@@ -469,9 +432,9 @@ final class GenerateEndpointService {
     }
 
     private static void addSimpleRoute(ClassModel.Builder endpointService,
+                                       FieldHandler fieldHandler,
                                        Method.Builder routing,
-                                       MethodDef methodDef,
-                                       Set<String> addedHttpMethods) {
+                                       MethodDef methodDef) {
         routing.addContent("rules.");
 
         String httpMethod = methodDef.httpMethod();
@@ -481,7 +444,7 @@ final class GenerateEndpointService {
                     .addContent("(");
             break;
         default:
-            String methodConstant = ensureHttpMethodConstant(endpointService, addedHttpMethods, httpMethod);
+            String methodConstant = ensureHttpMethodConstant(fieldHandler, httpMethod);
             routing.addContent("route(" + methodConstant + ", ");
             break;
         }
@@ -497,24 +460,29 @@ final class GenerateEndpointService {
                 .addContentLine(");");
     }
 
-    private static String ensureHttpMethodConstant(ClassModel.Builder endpointService,
-                                                   Set<String> addedHttpMethods,
+    private static String ensureMediaTypeConstant(FieldHandler fieldHandler,
+                                                  String mediaType) {
+
+        return fieldHandler.constant("MEDIA_TYPE",
+                                     MEDIA_TYPE,
+                                     mediaType,
+                                     content -> content
+                                             .addContent(MEDIA_TYPES)
+                                             .addContent(".create(\"")
+                                             .addContent(mediaType)
+                                             .addContent("\")"));
+    }
+
+    private static String ensureHttpMethodConstant(FieldHandler fieldHandler,
                                                    String httpMethod) {
         String constantName = toConstantName("ENDPOINT_METHOD_" + httpMethod);
-        if (addedHttpMethods.add(constantName)) {
-            endpointService.addField(httpMethodField -> httpMethodField
-                    .accessModifier(AccessModifier.PRIVATE)
-                    .isStatic(true)
-                    .isFinal(true)
-                    .type(HTTP_METHOD)
-                    .name(constantName)
-                    .addContent(HTTP_METHOD)
-                    .addContent(".create(\"")
-                    .addContent(httpMethod)
-                    .addContent("\"")
-            );
-        }
-        return constantName;
+        return fieldHandler.constant(constantName,
+                                     HTTP_METHOD,
+                                     httpMethod.toUpperCase(Locale.ROOT),
+                                     content -> content.addContent(HTTP_METHOD)
+                                             .addContent(".create(\"")
+                                             .addContent(httpMethod)
+                                             .addContent("\""));
     }
 
     private static void addSetupMethod(ClassModel.Builder endpointService, String path) {

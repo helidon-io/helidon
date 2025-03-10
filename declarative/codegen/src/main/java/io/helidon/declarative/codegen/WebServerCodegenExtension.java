@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenException;
@@ -31,10 +32,10 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
 
-import static io.helidon.declarative.codegen.WebServerCodegenTypes.HTTP_CONSUMES_ANNOTATION;
-import static io.helidon.declarative.codegen.WebServerCodegenTypes.HTTP_METHOD_ANNOTATION;
-import static io.helidon.declarative.codegen.WebServerCodegenTypes.HTTP_PATH_ANNOTATION;
-import static io.helidon.declarative.codegen.WebServerCodegenTypes.HTTP_PRODUCES_ANNOTATION;
+import static io.helidon.declarative.codegen.DeclarativeCodegenTypes.HTTP_CONSUMES_ANNOTATION;
+import static io.helidon.declarative.codegen.DeclarativeCodegenTypes.HTTP_METHOD_ANNOTATION;
+import static io.helidon.declarative.codegen.DeclarativeCodegenTypes.HTTP_PATH_ANNOTATION;
+import static io.helidon.declarative.codegen.DeclarativeCodegenTypes.HTTP_PRODUCES_ANNOTATION;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_QUALIFIER;
 import static java.util.function.Predicate.not;
 
@@ -122,7 +123,8 @@ class WebServerCodegenExtension implements CodegenExtension {
 
         return new ParamDef(type,
                             name,
-                            qualifiers);
+                            qualifiers,
+                            Set.copyOf(elementInfo.annotations()));
     }
 
     private String httpMethodFromMethod(TypeInfo endpoint, TypedElementInfo element) {

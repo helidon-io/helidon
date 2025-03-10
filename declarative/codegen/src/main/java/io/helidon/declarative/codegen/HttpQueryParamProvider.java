@@ -22,8 +22,10 @@ import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.common.types.Annotation;
 import io.helidon.declarative.codegen.spi.HttpParameterCodegenProvider;
+import io.helidon.service.codegen.DefaultsCodegen;
+import io.helidon.service.codegen.DefaultsParams;
 
-import static io.helidon.declarative.codegen.WebServerCodegenTypes.HTTP_QUERY_PARAM_ANNOTATION;
+import static io.helidon.declarative.codegen.DeclarativeCodegenTypes.HTTP_QUERY_PARAM_ANNOTATION;
 
 class HttpQueryParamProvider extends AbstractParametersProvider implements HttpParameterCodegenProvider {
     @Override
@@ -36,6 +38,9 @@ class HttpQueryParamProvider extends AbstractParametersProvider implements HttpP
             return false;
         }
 
+        Optional<DefaultsCodegen.DefaultCode> defaultCode = DefaultsCodegen.findDefault(ctx.annotations(),
+                                                                                        HTTP_QUERY_PARAM_ANNOTATION);
+
         Annotation queryParam = first.get();
         String queryParamName = queryParam.value()
                 .orElseThrow(() -> new CodegenException("@QueryParam annotation must have a value."));
@@ -46,7 +51,29 @@ class HttpQueryParamProvider extends AbstractParametersProvider implements HttpP
 
         codegenFromParameters(contentBuilder,
                               ctx.parameterType(),
-                              queryParamName);
+                              queryParamName,
+                              ctx.parameterType().isOptional() || defaultCode.isPresent());
+
+        if (defaultCode.isPresent()) {
+            var defaultInfo = defaultCode.get();
+            if (defaultInfo.requiresMapper()) {
+                // ensure mapper
+                ensureMapperField(ctx);
+            }
+
+            var params = DefaultsParams.builder()
+                    .contextField(ctx.serverRequestParamName() + ".query()")
+                    .mapperQualifier("uri/query")
+                    .mappersField("mappers")
+                    .build();
+            DefaultsCodegen.codegenOptional(contentBuilder,
+                                            defaultCode.get(),
+                                            ctx.fieldHandler(),
+                                            params);
+        }
+
+        contentBuilder.addContentLine(";");
+
         return true;
     }
 

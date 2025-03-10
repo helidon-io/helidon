@@ -118,6 +118,19 @@ public interface Headers extends Iterable<Header> {
     }
 
     /**
+     * Find the first header.
+     *
+     * @param headerName the header name
+     * @return the header, or empty optional if the header is not defined
+     */
+    default Optional<Header> find(HeaderName headerName) {
+        if (contains(headerName)) {
+            return Optional.of(get(headerName));
+        }
+        return Optional.empty();
+    }
+
+    /**
      * Returns an unmodifiable {@link java.util.List} of all comma separated header value parts - <b>Such segmentation is NOT
      * valid for
      * all header semantics, however it is very common</b>. Refer to actual header semantics standard/description before use.

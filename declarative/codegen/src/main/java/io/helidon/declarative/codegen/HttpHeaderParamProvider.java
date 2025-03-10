@@ -24,11 +24,15 @@ import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
 import io.helidon.declarative.codegen.spi.HttpParameterCodegenProvider;
+import io.helidon.service.codegen.DefaultsCodegen;
+import io.helidon.service.codegen.DefaultsParams;
+import io.helidon.service.codegen.FieldHandler;
 
 import static io.helidon.codegen.CodegenUtil.toConstantName;
-import static io.helidon.declarative.codegen.WebServerCodegenTypes.HTTP_HEADER_NAME;
-import static io.helidon.declarative.codegen.WebServerCodegenTypes.HTTP_HEADER_NAMES;
-import static io.helidon.declarative.codegen.WebServerCodegenTypes.HTTP_HEADER_PARAM_ANNOTATION;
+import static io.helidon.declarative.codegen.DeclarativeCodegenTypes.COMMON_MAPPERS;
+import static io.helidon.declarative.codegen.DeclarativeCodegenTypes.HTTP_HEADER_NAME;
+import static io.helidon.declarative.codegen.DeclarativeCodegenTypes.HTTP_HEADER_NAMES;
+import static io.helidon.declarative.codegen.DeclarativeCodegenTypes.HTTP_HEADER_PARAM_ANNOTATION;
 
 class HttpHeaderParamProvider extends AbstractParametersProvider implements HttpParameterCodegenProvider {
     @Override
@@ -45,57 +49,71 @@ class HttpHeaderParamProvider extends AbstractParametersProvider implements Http
         String headerParamName = headerParam.value()
                 .orElseThrow(() -> new CodegenException("@HeaderParam annotation must have a value."));
 
-        String headerConstantName =
-                toConstantName("header_" + headerParamName
-                                       + "_" + ctx.methodIndex()
-                                       + "_" + ctx.paramIndex());
+        FieldHandler fieldHandler = ctx.fieldHandler();
 
-        // add the header name constant
-        ctx.classBuilder().addField(header -> header
-                .accessModifier(AccessModifier.PRIVATE)
-                .isStatic(true)
-                .isFinal(true)
-                .type(HTTP_HEADER_NAME)
-                .name(headerConstantName)
-                .addContent(HTTP_HEADER_NAMES)
-                .addContent(".create(\"")
-                .addContent(headerParamName)
-                .addContent("\")"));
+        String constantPrefix =
+                toConstantName("header_" + headerParamName);
+
+        String headerConstantName = fieldHandler.constant(constantPrefix,
+                                                          HTTP_HEADER_NAME,
+                                                          headerParamName,
+                                                          content -> content
+                                                                  .addContent(HTTP_HEADER_NAMES)
+                                                                  .addContent(".create(\"")
+                                                                  .addContent(headerParamName)
+                                                                  .addContent("\")"));
+
+        TypeName parameterType = ctx.parameterType();
+        TypeName realType;
+        if (parameterType.isOptional()) {
+            realType = parameterType.typeArguments().getFirst();
+        } else {
+            realType = parameterType;
+        }
+
+        var defaultCode = DefaultsCodegen.findDefault(ctx.annotations(), realType);
 
         ContentBuilder<?> contentBuilder = ctx.contentBuilder();
         String serverRequestParamName = ctx.serverRequestParamName();
-        TypeName parameterType = ctx.parameterType();
 
         contentBuilder.addContent(serverRequestParamName)
                 .addContent(".headers()");
 
         // add generated code to obtain the header from request
-        if (parameterType.isOptional()) {
-            TypeName realType = parameterType.typeArguments().getFirst();
-            contentBuilder.addContent(".contains(")
+        if (parameterType.isOptional() || defaultCode.isPresent()) {
+            contentBuilder.addContent(".find(")
                     .addContent(headerConstantName)
                     .addContentLine(")")
-                    .addContent("? ")
-                    .addContent(Optional.class)
-                    .addContent(".of(")
-                    .addContent(serverRequestParamName)
-                    .addContent(".headers().get(")
-                    .addContent(headerConstantName)
-                    .addContent(").");
+                    .addContent(".map(it -> it.");
             getMethod(contentBuilder, realType);
-            contentBuilder.addContentLine(")")
-                    .addContent(":")
-                    .addContent(Optional.class)
-                    .addContent(".empty();");
+            contentBuilder.addContentLine(")");
+
+            if (defaultCode.isPresent()) {
+                DefaultsCodegen.DefaultCode defaultInfo = defaultCode.get();
+                if (defaultInfo.requiresMapper()) {
+                    // ensure mapper
+                    ensureMapperField(ctx);
+                }
+                DefaultsParams params = DefaultsParams.builder()
+                        .contextField(ctx.serverRequestParamName() + ".headers()")
+                        .mapperQualifier("headers")
+                        .mappersField("mappers")
+                        .build();
+
+                DefaultsCodegen.codegenOptional(contentBuilder,
+                                                defaultInfo,
+                                                fieldHandler,
+                                                params);
+                contentBuilder.addContentLine(";");
+            }
         } else {
             contentBuilder.addContent(".get(")
                     .addContent(headerConstantName)
                     .addContent(").");
             getMethod(contentBuilder, parameterType);
-            contentBuilder.addContent(";");
+            contentBuilder.addContentLine(";");
         }
 
         return true;
     }
-
 }

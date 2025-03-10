@@ -19,20 +19,23 @@ package io.helidon.declarative.codegen;
 import java.util.stream.Collectors;
 
 import io.helidon.codegen.classmodel.ContentBuilder;
+import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 
+import static io.helidon.declarative.codegen.DeclarativeCodegenTypes.COMMON_MAPPERS;
+
 abstract class AbstractParametersProvider {
-    void codegenFromParameters(ContentBuilder<?> contentBuilder, TypeName parameterType, String paramName) {
-        if (parameterType.isOptional()) {
-            TypeName realType = parameterType.typeArguments().getFirst();
+    void codegenFromParameters(ContentBuilder<?> contentBuilder, TypeName parameterType, String paramName, boolean optional) {
+        if (optional) {
+            TypeName realType = parameterType.isOptional() ? parameterType.typeArguments().getFirst() : parameterType;
             // optional
             contentBuilder
                     .addContent(".first(\"")
                     .addContent(paramName)
                     .addContent("\").");
             asMethod(contentBuilder, realType);
-            contentBuilder.addContent(".asOptional();");
+            contentBuilder.addContent(".asOptional()");
         } else if (parameterType.isList()) {
             TypeName realType = parameterType.typeArguments().getFirst();
             // list
@@ -46,7 +49,7 @@ abstract class AbstractParametersProvider {
             contentBuilder.addContentLine(")")
                     .addContent(".collect(")
                     .addContent(Collectors.class)
-                    .addContent(".toList());");
+                    .addContent(".toList())");
         } else {
             // direct type
             contentBuilder
@@ -54,7 +57,6 @@ abstract class AbstractParametersProvider {
                     .addContent(paramName)
                     .addContent("\").");
             getMethod(contentBuilder, parameterType);
-            contentBuilder.addContent(";");
         }
 
     }
@@ -123,5 +125,19 @@ abstract class AbstractParametersProvider {
         content.addContent("get(")
                 .addContent(boxed)
                 .addContent(".class)");
+    }
+
+    void ensureMapperField(ParameterCodegenContext ctx) {
+        ctx.fieldHandler()
+                .field(COMMON_MAPPERS,
+                       "mappers",
+                       AccessModifier.PRIVATE,
+                       field -> {
+                       },
+                       constructor -> constructor
+                               .addParameter(param -> param.name("mappers")
+                                       .type(COMMON_MAPPERS))
+                               .addContentLine("this.mappers = mappers;")
+                );
     }
 }

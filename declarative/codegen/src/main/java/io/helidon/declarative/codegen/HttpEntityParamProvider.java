@@ -21,7 +21,7 @@ import java.util.Optional;
 import io.helidon.common.types.Annotation;
 import io.helidon.declarative.codegen.spi.HttpParameterCodegenProvider;
 
-import static io.helidon.declarative.codegen.WebServerCodegenTypes.HTTP_ENTITY_PARAM_ANNOTATION;
+import static io.helidon.declarative.codegen.DeclarativeCodegenTypes.HTTP_ENTITY_PARAM_ANNOTATION;
 
 class HttpEntityParamProvider extends AbstractParametersProvider implements HttpParameterCodegenProvider {
     @Override

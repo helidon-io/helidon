@@ -50,7 +50,7 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
 
     @Override
     public List<String> all(HeaderName name, Supplier<List<String>> defaultSupplier) {
-        Header headerValue = find(name);
+        Header headerValue = findOrNull(name);
         if (headerValue == null) {
             return defaultSupplier.get();
         }
@@ -59,12 +59,12 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
 
     @Override
     public boolean contains(HeaderName name) {
-        return find(name) != null;
+        return findOrNull(name) != null;
     }
 
     @Override
     public boolean contains(Header headerWithValue) {
-        Header headerValue = find(headerWithValue.headerName());
+        Header headerValue = findOrNull(headerWithValue.headerName());
         if (headerValue == null) {
             return false;
         }
@@ -77,7 +77,7 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
 
     @Override
     public Header get(HeaderName name) {
-        Header headerValue = find(name);
+        Header headerValue = findOrNull(name);
         if (headerValue == null) {
             throw new NoSuchElementException("Header " + name + " is not present in these headers");
         }
@@ -112,7 +112,7 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
 
     @Override
     public T setIfAbsent(Header header) {
-        Header found = find(header.headerName());
+        Header found = findOrNull(header.headerName());
         if (found == null) {
             set(header);
         }
@@ -123,7 +123,7 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
     @Override
     public T add(Header header) {
         HeaderName name = header.headerName();
-        Header headerValue = find(name);
+        Header headerValue = findOrNull(name);
         if (headerValue == null) {
             set(header);
         } else {
@@ -237,7 +237,7 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
         return customHeaders().remove(name);
     }
 
-    private Header find(HeaderName name) {
+    private Header findOrNull(HeaderName name) {
         int index = name.index();
 
         if (index > -1) {

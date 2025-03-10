@@ -18,8 +18,9 @@ package io.helidon.declarative.codegen;
 
 import io.helidon.common.types.TypeName;
 
-final class WebServerCodegenTypes {
+final class DeclarativeCodegenTypes {
     static final TypeName COMMON_CONTEXT = TypeName.create("io.helidon.common.context.Context");
+    static final TypeName COMMON_MAPPERS = TypeName.create("io.helidon.common.mapper.Mappers");
 
     static final TypeName SERVER_REQUEST = TypeName.create("io.helidon.webserver.http.ServerRequest");
     static final TypeName SERVER_RESPONSE = TypeName.create("io.helidon.webserver.http.ServerResponse");
@@ -53,6 +54,6 @@ final class WebServerCodegenTypes {
 
     static final TypeName INJECT_SCOPE = TypeName.create("io.helidon.service.inject.api.Scope");
 
-    private WebServerCodegenTypes() {
+    private DeclarativeCodegenTypes() {
     }
 }

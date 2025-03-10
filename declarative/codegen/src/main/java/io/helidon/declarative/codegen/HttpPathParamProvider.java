@@ -23,7 +23,7 @@ import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.common.types.Annotation;
 import io.helidon.declarative.codegen.spi.HttpParameterCodegenProvider;
 
-import static io.helidon.declarative.codegen.WebServerCodegenTypes.HTTP_PATH_PARAM_ANNOTATION;
+import static io.helidon.declarative.codegen.DeclarativeCodegenTypes.HTTP_PATH_PARAM_ANNOTATION;
 
 class HttpPathParamProvider extends AbstractParametersProvider implements HttpParameterCodegenProvider {
     @Override
@@ -44,7 +44,8 @@ class HttpPathParamProvider extends AbstractParametersProvider implements HttpPa
         contentBuilder.addContent(ctx.serverRequestParamName())
                 .addContent(".path().pathParameters()");
 
-        codegenFromParameters(contentBuilder, ctx.parameterType(), pathParamName);
+        codegenFromParameters(contentBuilder, ctx.parameterType(), pathParamName, ctx.parameterType().isOptional());
+        contentBuilder.addContentLine(";");
 
         return true;
     }

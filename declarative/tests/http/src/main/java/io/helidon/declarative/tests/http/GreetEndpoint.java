@@ -76,7 +76,8 @@ class GreetEndpoint {
     @Http.Path("/{name}")
     @Http.Produces(MediaTypes.APPLICATION_JSON_VALUE)
     JsonObject getMessageHandler(@Http.PathParam("name") String name,
-                                 @Http.HeaderParam("X-TEST") @Default.Int(42) int header) {
+                                 @Http.HeaderParam("X-TEST") @Default.Int(42) int header,
+                                 @Http.QueryParam("query-param") @Default.Double(12.0) double queryParam) {
         return response(name);
     }
 
@@ -89,7 +90,8 @@ class GreetEndpoint {
     @Http.Path("/greeting")
     @Http.Status(Status.NO_CONTENT_204_CODE)
     @Http.Consumes(MediaTypes.APPLICATION_JSON_VALUE)
-    void updateGreetingHandler(@Http.Entity JsonObject greetingMessage) {
+    void updateGreetingHandler(@Http.Entity JsonObject greetingMessage,
+                               @Http.HeaderParam("X-TEST") @Default.Value("42") int header) {
         if (!greetingMessage.containsKey("greeting")) {
             // mapped by QuickstartErrorHandler
             throw new QuickstartException(Status.BAD_REQUEST_400, "No greeting provided");
@@ -108,7 +110,8 @@ class GreetEndpoint {
     @Http.Path("/greeting")
     @Http.Consumes(MediaTypes.APPLICATION_JSON_VALUE)
     @Http.Produces(MediaTypes.APPLICATION_JSON_VALUE)
-    JsonObject updateGreetingHandlerReturningCurrent(@Http.Entity JsonObject greetingMessage) {
+    JsonObject updateGreetingHandlerReturningCurrent(@Http.Entity JsonObject greetingMessage,
+                                                     @Http.HeaderParam("X-TEST") @Default.Value("42") String header) {
         if (!greetingMessage.containsKey("greeting")) {
             // mapped by QuickstartErrorHandler
             throw new QuickstartException(Status.BAD_REQUEST_400, "No greeting provided");
