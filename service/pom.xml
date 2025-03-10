@@ -46,6 +46,7 @@
         <module>codegen</module>
         <module>registry</module>
         <module>maven-plugin</module>
+        <module>jndi</module>
     </modules>
 
     <build>
