@@ -61,7 +61,6 @@ class HelidonTestConfigSynthetic extends HelidonTestConfigDelegate {
     HelidonTestConfigSynthetic(HelidonTestInfo<?> testInfo, Runnable onUpdate) {
         this.testInfo = testInfo;
         this.onUpdate = onUpdate;
-        map.put(ConfigSource.CONFIG_ORDINAL, "1000");
         map.put("server.port", "0");
         map.put("mp.config.profile", "test");
         testInfo.addConfigs().forEach(this::update);
@@ -148,20 +147,24 @@ class HelidonTestConfigSynthetic extends HelidonTestConfigDelegate {
 
     private Config buildConfig() {
         List<ConfigSource> configSources = new ArrayList<>();
-        configSources.add(MpConfigSources.create(testInfo.id(), map));
+        ConfigSource configSource = MpConfigSources.create(testInfo.id(), map);
+        configSources.add(addConfigOrdinal(configSource, "1000"));
         blocks.forEach((type, values) -> {
             for (String value : values) {
-                configSources.add(MpConfigSources.create(type, new StringReader(value)));
+                ConfigSource config = MpConfigSources.create(type, new StringReader(value));
+                configSources.add(addConfigOrdinal(config, type, "900"));
             }
         });
         for (Method m : methods) {
-            configSources.add(invoke(ConfigSource.class, requireStatic(m), null));
+            ConfigSource config = invoke(ConfigSource.class, requireStatic(m), null);
+            configSources.add(addConfigOrdinal(config, "800"));
         }
         for (String source : resources) {
             String filename = source.trim();
             for (URL url : resources(filename)) {
                 String type = extension(filename);
-                configSources.add(MpConfigSources.create(type, url));
+                ConfigSource config = MpConfigSources.create(type, url);
+                configSources.add(addConfigOrdinal(config, type, "700"));
             }
         }
         ConfigBuilder builder = ConfigProviderResolver.instance()
@@ -171,6 +174,16 @@ class HelidonTestConfigSynthetic extends HelidonTestConfigDelegate {
                 .addDiscoveredConverters();
         configSources.forEach(builder::withSources);
         return builder.build();
+    }
+
+    private ConfigSource addConfigOrdinal(ConfigSource config, String ordinal) {
+        return addConfigOrdinal(config, "Map", ordinal);
+    }
+
+    private ConfigSource addConfigOrdinal(ConfigSource config, String type, String ordinal) {
+        Map<String, String> properties = new HashMap<>(config.getProperties());
+        properties.putIfAbsent(ConfigSource.CONFIG_ORDINAL, ordinal);
+        return MpConfigSources.create(type, properties);
     }
 
     private static String extension(String filename) {
