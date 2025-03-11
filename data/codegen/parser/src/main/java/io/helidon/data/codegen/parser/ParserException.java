@@ -22,6 +22,7 @@ import java.util.Objects;
  */
 public class ParserException extends RuntimeException {
 
+    /** {@link String} being parsed. */
     private final String string;
 
     /**

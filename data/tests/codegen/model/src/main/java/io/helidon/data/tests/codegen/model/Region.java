@@ -21,6 +21,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+/**
+ * Tests Model: World region.
+ */
 @Entity
 @Table(name = "REGION")
 public class Region {

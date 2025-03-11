@@ -23,8 +23,6 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import io.helidon.data.Data;
-import io.helidon.data.JpaData;
-import io.helidon.data.Query;
 import io.helidon.data.Sort;
 import io.helidon.data.tests.codegen.model.Pokemon;
 

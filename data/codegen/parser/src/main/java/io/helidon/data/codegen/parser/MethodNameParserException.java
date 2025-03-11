@@ -22,6 +22,7 @@ import java.util.Objects;
  */
 public class MethodNameParserException extends ParserException {
 
+    /** Invalid last token. */
     private final String token;
 
     /**

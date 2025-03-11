@@ -32,9 +32,9 @@ module io.helidon.service.jndi {
 
     requires io.helidon.common.context;
     requires io.helidon.service.metadata;
-    requires java.naming;
     requires io.helidon.service.registry;
     requires java.rmi;
+    requires java.naming;
 
     exports io.helidon.service.jndi;
 }

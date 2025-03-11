@@ -23,6 +23,12 @@ import io.helidon.data.codegen.common.spi.PersistenceGeneratorProvider;
  */
 public class JakartaPersistenceGeneratorProvider implements PersistenceGeneratorProvider {
 
+    /**
+     * Creates an instance of Jakarta Persistence generator provider.
+     */
+    public JakartaPersistenceGeneratorProvider() {
+    }
+
     @Override
     public PersistenceGenerator create() {
         return new JakartaPersistenceGenerator();
