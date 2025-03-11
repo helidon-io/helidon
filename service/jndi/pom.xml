@@ -33,14 +33,15 @@
         JNDI backed by service registry
     </description>
 
+    <properties>
+        <!-- the plugin is confused, trying to get common into test scope -->
+        <dependency-plugin-check-dependencies.skip>true</dependency-plugin-check-dependencies.skip>
+    </properties>
+
     <dependencies>
         <dependency>
-            <groupId>io.helidon</groupId>
-            <artifactId>helidon</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common</artifactId>
+            <artifactId>helidon-common-types</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.service</groupId>
@@ -50,6 +51,10 @@
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features-api</artifactId>
             <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.testing</groupId>
