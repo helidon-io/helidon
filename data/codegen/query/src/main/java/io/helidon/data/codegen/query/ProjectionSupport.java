@@ -55,6 +55,7 @@ class ProjectionSupport {
      * Create {@code SELECT} projection with returned records count limit.
      * Query will return first {@code count} of unmodified entity instances.
      *
+     * @param count returned records count limit
      * @return new instance of {@link Projection}
      */
     @Prototype.FactoryMethod

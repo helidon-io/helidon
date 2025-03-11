@@ -23,6 +23,9 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
+/**
+ * Tests Model: Pokemon league.
+ */
 @Entity
 @Table(name = "LEAGUE")
 public class League {

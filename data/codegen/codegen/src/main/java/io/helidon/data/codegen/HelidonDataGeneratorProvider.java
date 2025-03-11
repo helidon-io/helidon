@@ -19,9 +19,15 @@ import io.helidon.data.codegen.common.spi.RepositoryGenerator;
 import io.helidon.data.codegen.common.spi.RepositoryGeneratorProvider;
 
 /**
- * Helidon Data repository generator provider.
+ * Data repository generator provider.
  */
 public class HelidonDataGeneratorProvider implements RepositoryGeneratorProvider {
+
+    /**
+     * Creates an instance of Data repository generator provider.
+     */
+    public HelidonDataGeneratorProvider() {
+    }
 
     @Override
     public RepositoryGenerator create() {
