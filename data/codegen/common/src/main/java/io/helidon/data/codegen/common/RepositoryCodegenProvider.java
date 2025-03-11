@@ -63,6 +63,12 @@ public class RepositoryCodegenProvider implements CodegenExtensionProvider {
         SUPPORTED_ANNOTATIONS = Set.copyOf(supportedAnnotations);
     }
 
+    /**
+     * Creates an instance of Data repository {@link CodegenExtension} provider.
+     */
+    public RepositoryCodegenProvider() {
+    }
+
     @Override
     public CodegenExtension create(CodegenContext ctx, TypeName typeName) {
         return new RepositoryCodegen(ctx, DATA_REPOSITORY_GENERATORS, PERSISTENCE_GENERATORS);

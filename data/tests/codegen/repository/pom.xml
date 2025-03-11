@@ -31,12 +31,33 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.data.tests.codegen</groupId>
-            <artifactId>helidon-data-tests-codegen-model</artifactId>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-types</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-registry</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.data</groupId>
+            <artifactId>helidon-data</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.data.jakarta.persistence</groupId>
             <artifactId>helidon-data-jakarta-persistence-gapi</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.data.tests.codegen</groupId>
+            <artifactId>helidon-data-tests-codegen-model</artifactId>
+            <version>${helidon.version}</version>
         </dependency>
     </dependencies>
 

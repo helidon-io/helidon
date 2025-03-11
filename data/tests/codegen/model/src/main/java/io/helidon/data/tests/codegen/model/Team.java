@@ -21,6 +21,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+/**
+ * Tests Model: Trainers team.
+ */
 @Entity
 @Table(name = "TEAM")
 public class Team {

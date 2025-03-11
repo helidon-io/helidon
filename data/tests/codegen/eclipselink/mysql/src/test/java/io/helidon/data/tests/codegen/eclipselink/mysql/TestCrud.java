@@ -27,7 +27,7 @@ import io.helidon.data.tests.codegen.model.Type;
 import io.helidon.data.tests.codegen.repository.PokemonRepository;
 import io.helidon.data.tests.codegen.repository.TrainerRepository;
 import io.helidon.data.tests.codegen.repository.TypeRepository;
-import io.helidon.testing.integration.junit5.suite.Suite;
+import io.helidon.testing.junit5.suite.Suite;
 
 import org.junit.jupiter.api.Test;
 

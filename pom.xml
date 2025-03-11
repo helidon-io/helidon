@@ -151,6 +151,7 @@
         <version.plugin.version-plugin>2.3</version.plugin.version-plugin>
         <version.plugin.buildnumber>3.1.0</version.plugin.buildnumber>
         <version.plugin.wiremock>2.14.0</version.plugin.wiremock>
+        <version.plugin.replacer>1.4.1</version.plugin.replacer>
 
         <version.helidon-cli>3.0.0</version.helidon-cli>
 
@@ -905,6 +906,11 @@
                     <groupId>org.antlr</groupId>
                     <artifactId>antlr4-maven-plugin</artifactId>
                     <version>${version.lib.antlr}</version>
+                </plugin>
+                <plugin>
+                    <groupId>com.google.code.maven-replacer-plugin</groupId>
+                    <artifactId>maven-replacer-plugin</artifactId>
+                    <version>${version.plugin.replacer}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
