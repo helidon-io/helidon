@@ -21,11 +21,10 @@ module io.helidon.data.tests.tests {
     requires org.junit.jupiter.api;
     requires hamcrest.all;
 
-    requires io.helidon.config;
+    requires io.helidon.data;
     requires io.helidon.data.tests.codegen.model;
     requires io.helidon.data.tests.codegen.repository;
     requires io.helidon.data.tests.codegen.application;
     requires io.helidon.data.jakarta.persistence;
-    requires io.helidon.data;
 
 }

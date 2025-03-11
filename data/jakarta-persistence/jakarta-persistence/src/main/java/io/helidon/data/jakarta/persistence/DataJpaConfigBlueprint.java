@@ -33,6 +33,15 @@ import io.helidon.data.sql.common.SqlConfig;
 @Prototype.Configured(root = false, value = DataJpaSupportProviderService.PROVIDER_TYPE)
 @Prototype.Provides(ProviderConfigProvider.class)
 interface DataJpaConfigBlueprint extends SqlConfig, ProviderConfig {
+
+    /**
+     * Name of this provider.
+     *
+     * @return the provider name
+     */
+    @Override
+    String name();
+
     /**
      * Persistence provider class name.
      * Implementation of {@code jakarta.persistence.spi.PersistenceProvider}, e.g.
