@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+/**
+ * UCP {@link javax.sql.DataSource} support.
+ */
 module io.helidon.data.sql.datasource.ucp {
 
     requires io.helidon.common.config;
