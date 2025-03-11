@@ -30,6 +30,9 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.NamedQuery;
 import jakarta.persistence.Table;
 
+/**
+ * Tests Model: Pokemon.
+ */
 @Entity
 @Table(name = "POKEMNON")
 @NamedQuery(name = "Pokemon.deleteTemp", query = "DELETE FROM Pokemon p WHERE p.id >= 100")
