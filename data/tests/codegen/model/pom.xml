@@ -32,8 +32,16 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.data</groupId>
-            <artifactId>helidon-data</artifactId>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-types</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-registry</artifactId>
         </dependency>
         <dependency>
             <groupId>jakarta.persistence</groupId>

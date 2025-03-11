@@ -31,9 +31,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.data.tests.codegen</groupId>
-            <artifactId>helidon-data-tests-codegen-common</artifactId>
-            <version>${project.version}</version>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -54,6 +53,12 @@
         <dependency>
             <groupId>io.helidon.data.sql.source</groupId>
             <artifactId>helidon-data-sql-datasource-hikari</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.data.tests.codegen</groupId>
+            <artifactId>helidon-data-tests-codegen-common</artifactId>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

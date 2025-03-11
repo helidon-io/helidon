@@ -25,7 +25,6 @@ import java.util.stream.Stream;
 import io.helidon.data.Data;
 import io.helidon.data.Page;
 import io.helidon.data.PageRequest;
-import io.helidon.data.Query;
 import io.helidon.data.Slice;
 import io.helidon.data.Sort;
 import io.helidon.data.tests.codegen.model.Type;

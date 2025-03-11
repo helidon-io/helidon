@@ -48,6 +48,14 @@ interface UcpDataSourceConfigBlueprint extends DataSourceProviderConfig, Provide
     }
 
     /**
+     * Name of this provider.
+     *
+     * @return the provider name
+     */
+    @Override
+    String name();
+
+    /**
      * Support for distributed transactions.
      * {@link oracle.ucp.jdbc.PoolXADataSource} instance is returned when {@code true},
      * {@link oracle.ucp.jdbc.PoolDataSource} instance is returned when {@code false}.

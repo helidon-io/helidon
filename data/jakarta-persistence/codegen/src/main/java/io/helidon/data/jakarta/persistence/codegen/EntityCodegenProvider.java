@@ -40,6 +40,12 @@ import static io.helidon.data.jakarta.persistence.codegen.JakartaPersistenceType
 public class EntityCodegenProvider implements CodegenExtensionProvider {
     private static final TypeName ENTITY = TypeName.create("jakarta.persistence.Entity");
 
+    /**
+     * Creates an instance of entity providers codegen.
+     */
+    public EntityCodegenProvider() {
+    }
+
     @Override
     public CodegenExtension create(CodegenContext codegenContext, TypeName typeName) {
         return new EntityCodegen();

@@ -33,12 +33,11 @@
         JNDI backed by service registry
     </description>
 
-    <properties>
-        <!-- the plugin is confused, trying to get common into test scope -->
-        <dependency-plugin-check-dependencies.skip>true</dependency-plugin-check-dependencies.skip>
-    </properties>
-
     <dependencies>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common</artifactId>
+        </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-types</artifactId>
@@ -51,10 +50,6 @@
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features-api</artifactId>
             <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.testing</groupId>
@@ -75,6 +70,13 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <configuration>
+                    <ignoredNonTestScopedDependencies>io.helidon.common:helidon-common</ignoredNonTestScopedDependencies>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
