@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+/**
+ * {@link javax.sql.DataSource} support API.
+ */
 module io.helidon.data.sql.datasource {
 
     requires io.helidon.common.config;

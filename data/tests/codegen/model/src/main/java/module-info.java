@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 /**
  * Helidon Data Codegen Tests Model.
  */
@@ -20,7 +21,6 @@ module io.helidon.data.tests.codegen.model {
 
     requires java.compiler;
     requires jakarta.persistence;
-    requires io.helidon.data;
     requires io.helidon.data.jakarta.persistence.gapi;
     requires io.helidon.service.registry;
 
