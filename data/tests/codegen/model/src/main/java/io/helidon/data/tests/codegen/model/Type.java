@@ -21,6 +21,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+/**
+ * Tests Model: Pokemon type.
+ */
 @Entity
 @Table(name = "TYPE")
 public class Type {

@@ -71,6 +71,27 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>com.google.code.maven-replacer-plugin</groupId>
+                <artifactId>maven-replacer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>process-sources</phase>
+                        <goals>
+                            <goal>replace</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <includes>
+                        <include>target/generated-sources/antlr4/io/helidon/data/codegen/parser/MethodName.java</include>
+                        <include>target/generated-sources/antlr4/io/helidon/data/codegen/parser/QueryParams.java</include>
+                    </includes>
+                    <variableTokenValueMap>
+                        public class=class
+                    </variableTokenValueMap>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 

@@ -25,11 +25,11 @@ import io.helidon.data.DataRegistry;
 import io.helidon.data.sql.testing.SqlTestContainerConfig;
 import io.helidon.data.tests.codegen.common.InitialData;
 import io.helidon.data.tests.codegen.repository.PokemonRepository;
-import io.helidon.testing.integration.junit5.suite.AfterSuite;
-import io.helidon.testing.integration.junit5.suite.BeforeSuite;
-import io.helidon.testing.integration.junit5.suite.Suite;
-import io.helidon.testing.integration.junit5.suite.SuiteResolver;
-import io.helidon.testing.integration.junit5.suite.spi.SuiteProvider;
+import io.helidon.testing.junit5.suite.AfterSuite;
+import io.helidon.testing.junit5.suite.BeforeSuite;
+import io.helidon.testing.junit5.suite.Suite;
+import io.helidon.testing.junit5.suite.SuiteResolver;
+import io.helidon.testing.junit5.suite.spi.SuiteProvider;
 
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;

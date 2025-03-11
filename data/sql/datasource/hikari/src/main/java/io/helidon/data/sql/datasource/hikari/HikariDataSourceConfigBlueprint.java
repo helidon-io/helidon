@@ -32,12 +32,20 @@ interface HikariDataSourceConfigBlueprint extends DataSourceProviderConfig, Prov
     /**
      * Type of this provider.
      *
-     * @return provider type - {@value HikariDataSourceProviderService#PROVIDER_TYPE}
+     * @return the provider type - {@value HikariDataSourceProviderService#PROVIDER_TYPE}
      */
     @Override
     default String type() {
         return HikariDataSourceProviderService.PROVIDER_TYPE;
     }
+
+    /**
+     * Name of this provider.
+     *
+     * @return the provider name
+     */
+    @Override
+    String name();
 
     /**
      * Set whether pool suspension is allowed.
