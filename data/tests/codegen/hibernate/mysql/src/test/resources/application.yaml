@@ -19,7 +19,7 @@ data:
     password: "password"
     connection-string: "jdbc:mysql://localhost:3306/testdb"
     jdbc-driver-class-name: "com.mysql.cj.jdbc.Driver"
-    # EclipseLink properties
+    # Hibernate properties
     properties:
       hibernate.dialect: "org.hibernate.dialect.MySQLDialect"
       jakarta.persistence.schema-generation.database.action: drop-and-create
