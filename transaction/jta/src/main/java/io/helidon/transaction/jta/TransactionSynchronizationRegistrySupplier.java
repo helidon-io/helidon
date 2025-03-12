@@ -15,7 +15,7 @@
  */
 package io.helidon.transaction.jta;
 
-import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import io.helidon.service.registry.Service;
@@ -26,21 +26,19 @@ import jakarta.transaction.TransactionSynchronizationRegistry;
  * Jakarta Transactions {@link TransactionSynchronizationRegistry} supplier.
  */
 @Service.Singleton
-public class TransactionSynchronizationRegistrySupplier implements Supplier<TransactionSynchronizationRegistry>  {
+@Service.Named("helidon:jndi/TransactionSynchronizationRegistry")
+public class TransactionSynchronizationRegistrySupplier implements Supplier<Optional<TransactionSynchronizationRegistry>>  {
 
-    private final JtaProviderSupplier jtaProviderSupplier;
+    private final Optional<JtaProvider> provider;
 
     @Service.Inject
-    TransactionSynchronizationRegistrySupplier(JtaProviderSupplier jtaProviderSupplier) {
-        this.jtaProviderSupplier = jtaProviderSupplier;
+    TransactionSynchronizationRegistrySupplier(Optional<JtaProvider> provider) {
+        this.provider = provider;
     }
 
     @Override
-    public TransactionSynchronizationRegistry get() {
-        if (jtaProviderSupplier.get().isPresent()) {
-            return jtaProviderSupplier.get().get().transactionSynchronizationRegistry();
-        }
-        throw new NoSuchElementException("No Jakarta Transactions provider was found.");
+    public Optional<TransactionSynchronizationRegistry> get() {
+        return provider.map(JtaProvider::transactionSynchronizationRegistry);
     }
 
 }
