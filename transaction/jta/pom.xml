@@ -43,6 +43,11 @@
             <groupId>io.helidon.service</groupId>
             <artifactId>helidon-service-registry</artifactId>
         </dependency>
+        <!--dependency>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-jndi</artifactId>
+            <version>${helidon.version}</version>
+        </dependency-->
         <dependency>
             <groupId>io.helidon.transaction</groupId>
             <artifactId>helidon-transaction</artifactId>
