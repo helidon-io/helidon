@@ -16,19 +16,18 @@
 package io.helidon.data.tests.codegen.eclipselink.mysql;
 
 import java.lang.System.Logger.Level;
-import java.lang.reflect.Type;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.data.DataConfig;
 import io.helidon.data.DataRegistry;
 import io.helidon.data.sql.testing.SqlTestContainerConfig;
 import io.helidon.data.tests.codegen.common.InitialData;
 import io.helidon.data.tests.codegen.repository.PokemonRepository;
+import io.helidon.service.registry.Services;
+import io.helidon.testing.junit5.Testing;
 import io.helidon.testing.junit5.suite.AfterSuite;
 import io.helidon.testing.junit5.suite.BeforeSuite;
 import io.helidon.testing.junit5.suite.Suite;
-import io.helidon.testing.junit5.suite.SuiteResolver;
 import io.helidon.testing.junit5.suite.spi.SuiteProvider;
 
 import org.testcontainers.containers.MySQLContainer;
@@ -38,7 +37,7 @@ import org.testcontainers.utility.DockerImageName;
 /**
  * MySQL suite.
  */
-public class MySqlSuite implements SuiteProvider, SuiteResolver {
+public class MySqlSuite implements SuiteProvider {
 
     private static final System.Logger LOGGER = System.getLogger(MySqlSuite.class.getName());
     @Container
@@ -57,7 +56,8 @@ public class MySqlSuite implements SuiteProvider, SuiteResolver {
     public void beforeSuite() {
         container.start();
         // Update URL in config with exposed port
-        data = DataRegistry.create(SqlTestContainerConfig.configureDataRegistry(config, container, 3306));
+        System.setProperty("sql.mysql.port", String.valueOf(container.getMappedPort(3306)));
+        data = Services.get(DataRegistry.class);
         pokemonRepository = data.repository(PokemonRepository.class);
         // Initialize database content
         pokemonRepository.run(InitialData::init);
@@ -73,77 +73,58 @@ public class MySqlSuite implements SuiteProvider, SuiteResolver {
         container.stop();
     }
 
-    @Override
-    public boolean supportsParameter(Type type) {
-        if (!(type instanceof Class<?> clazz)) {
-            return false;
-        }
-        return Config.class.isAssignableFrom(clazz)
-                || DataConfig.class.isAssignableFrom(clazz)
-                || DataRegistry.class.isAssignableFrom(clazz)
-                || PokemonRepository.class.isAssignableFrom(clazz);
-    }
-
-    @Override
-    public Object resolveParameter(Type type) {
-        if (!(type instanceof Class<?> clazz)) {
-            return false;
-        }
-
-        if (Config.class.isAssignableFrom(clazz)) {
-            return config;
-        } else if (DataConfig.class.isAssignableFrom(clazz)) {
-            return data.dataConfig();
-        } else if (DataRegistry.class.isAssignableFrom(clazz)) {
-            return data;
-        } else if (PokemonRepository.class.isAssignableFrom(clazz)) {
-            return pokemonRepository;
-        }
-        throw new IllegalArgumentException(String.format("Cannot resolve parameter Type %s", type.getTypeName()));
-    }
-
+    @Testing.Test
     @Suite(MySqlSuite.class)
     public static class TestApplication extends io.helidon.data.tests.codegen.common.TestApplication {
     }
 
+    @Testing.Test
     @Suite(MySqlSuite.class)
     public static class TestBasicRepository extends io.helidon.data.tests.codegen.common.TestBasicRepository {
     }
 
+    @Testing.Test
     @Suite(MySqlSuite.class)
     public static class TestBasicRepositoryDelete extends io.helidon.data.tests.codegen.common.TestBasicRepositoryDelete {
     }
 
+    @Testing.Test
     @Suite(MySqlSuite.class)
     public static class TestCrudRepository extends io.helidon.data.tests.codegen.common.TestCrudRepository {
     }
 
+    @Testing.Test
     @Suite(MySqlSuite.class)
     public static class TestTransaction extends io.helidon.data.tests.codegen.common.TestTransaction {
     }
 
+    @Testing.Test
     @Suite(MySqlSuite.class)
     public static class TestQbmnProjection extends io.helidon.data.tests.codegen.common.TestQbmnProjection {
     }
 
+    @Testing.Test
     @Suite(MySqlSuite.class)
     public static class TestQbmnCriteria extends io.helidon.data.tests.codegen.common.TestQbmnCriteria {
     }
 
+    @Testing.Test
     @Suite(MySqlSuite.class)
     public static class TestQbmnCriteriaExtended extends io.helidon.data.tests.codegen.common.TestQbmnCriteriaExtended {
     }
 
+    @Testing.Test
     @Suite(MySqlSuite.class)
     public static class TestQbmnDml extends io.helidon.data.tests.codegen.common.TestQbmnDml {
     }
 
+    @Testing.Test
     @Suite(MySqlSuite.class)
     public static class TestQbmnOrder extends io.helidon.data.tests.codegen.common.TestQbmnOrder {
     }
 
+    @Testing.Test
     @Suite(MySqlSuite.class)
     public static class TestQueryByAnnotation extends io.helidon.data.tests.codegen.common.TestQueryByAnnotation {
     }
-
 }
