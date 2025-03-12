@@ -28,10 +28,10 @@ class TxInterceptor {
 
     static abstract class AbstractInterceptor implements Interception.Interceptor {
 
-        private final JtaProviderSupplier supplier;
+        private final Optional<JtaProvider> provider;
 
-        AbstractInterceptor(JtaProviderSupplier supplier) {
-            this.supplier = supplier;
+        AbstractInterceptor(Optional<JtaProvider> provider) {
+            this.provider = provider;
         }
 
         <V> V proceed(Tx.Type type, InterceptionContext interceptionContext, Chain<V> chain, Object... args) throws Exception {
@@ -41,11 +41,11 @@ class TxInterceptor {
                                          type.name(),
                                          Thread.currentThread().hashCode()));
             }
-            if (supplier.exists()) {
+            if (provider.isPresent()) {
 
             }
             V result = chain.proceed(args);
-            if (supplier.exists()) {
+            if (provider.isPresent()) {
 
             }
             if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
@@ -58,7 +58,7 @@ class TxInterceptor {
         }
 
         Optional<JtaProvider> provider() {
-            return supplier.get();
+            return provider;
         }
 
     }
@@ -68,7 +68,7 @@ class TxInterceptor {
     static final class Mandatory extends AbstractInterceptor {
 
         @Service.Inject
-        Mandatory(JtaProviderSupplier supplier) {
+        Mandatory(Optional<JtaProvider> supplier) {
             super(supplier);
         }
 
@@ -84,7 +84,7 @@ class TxInterceptor {
     static final class New extends AbstractInterceptor {
 
         @Service.Inject
-        New(JtaProviderSupplier supplier) {
+        New(Optional<JtaProvider> supplier) {
             super(supplier);
         }
 
@@ -100,7 +100,7 @@ class TxInterceptor {
     static final class Never extends AbstractInterceptor {
 
         @Service.Inject
-        Never(JtaProviderSupplier supplier) {
+        Never(Optional<JtaProvider> supplier) {
             super(supplier);
         }
 
@@ -116,7 +116,7 @@ class TxInterceptor {
     static final class Required extends AbstractInterceptor {
 
         @Service.Inject
-        Required(JtaProviderSupplier supplier) {
+        Required(Optional<JtaProvider> supplier) {
             super(supplier);
         }
 
@@ -132,7 +132,7 @@ class TxInterceptor {
     static final class Supported extends AbstractInterceptor {
 
         @Service.Inject
-        Supported(JtaProviderSupplier supplier) {
+        Supported(Optional<JtaProvider> supplier) {
             super(supplier);
         }
 
@@ -148,7 +148,7 @@ class TxInterceptor {
     static final class Unsupported extends AbstractInterceptor {
 
         @Service.Inject
-        Unsupported(JtaProviderSupplier supplier) {
+        Unsupported(Optional<JtaProvider> supplier) {
             super(supplier);
         }
 
