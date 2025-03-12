@@ -36,7 +36,6 @@ import io.helidon.service.registry.ServiceInstance;
 import io.helidon.transaction.Tx;
 
 @Service.Singleton
-@Service.Named(Service.Named.WILDCARD_NAME)
 class DataRegistryFactory implements Service.ServicesFactory<DataRegistry> {
     private final List<ServiceInstance<DataSupport>> supports;
     private final List<RepositoryProvider<?>> repositories;

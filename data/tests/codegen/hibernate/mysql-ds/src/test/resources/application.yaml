@@ -24,7 +24,7 @@ data-source:
 data:
   provider.jakarta:
     data-source: "test"
-    # EclipseLink properties
+    # Hibernate properties
     properties:
       hibernate.dialect: "org.hibernate.dialect.MySQLDialect"
       jakarta.persistence.schema-generation.database.action: drop-and-create

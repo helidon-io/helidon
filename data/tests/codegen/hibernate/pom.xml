@@ -33,6 +33,21 @@
 
     <modules>
         <module>mysql</module>
+        <module>mysql-ds</module>
+        <module>ucp</module>
     </modules>
+
+    <build>
+        <plugins>
+            <!-- Module testcontainers adds junit:junit dependency which should be ignored. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <configuration>
+                    <ignoredUsedUndeclaredDependencies>junit:junit</ignoredUsedUndeclaredDependencies>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
