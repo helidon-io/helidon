@@ -27,17 +27,6 @@ import jakarta.transaction.UserTransaction;
 public interface JtaProvider {
 
     /**
-     * Returns {@link Optional} JTA provider instance.
-     * Programmatic {@link JtaProvider} interface access.
-     *
-     * @return the JTA provider or {@link java.util.Optional#empty()} when no provider was found.
-     */
-    static Optional<JtaProvider> provider() {
-        return JtaProviderSupplier.getInstance()
-                .get();
-    }
-
-    /**
      * Returns {@link TransactionManager} instance.
      *
      * @return the {@link TransactionManager} instance
