@@ -30,7 +30,6 @@ data:
       eclipselink.target-database: "Oracle"
       eclipselink.target-server: "None"
       eclipselink.weaving: false
-      # Broken, this property is missing in PU properties
       eclipselink.logging.level: "FINEST"
       eclipselink.logging.level.weaver: "OFF"
       eclipselink.logging.parameters: true

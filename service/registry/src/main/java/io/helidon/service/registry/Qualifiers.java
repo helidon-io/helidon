@@ -43,15 +43,14 @@ final class Qualifiers {
             return true;
         }
 
-        if (src.isEmpty()) {
-            // neither defines qualifiers
-            return false;
-        }
-
-        // criteria has a qualifier while service does not
         // only return true if criteria contains ONLY wildcard named qualifier
         if (criteria.size() == 1 && criteria.contains(Qualifier.WILDCARD_NAMED)) {
             return true;
+        }
+
+        if (src.isEmpty()) {
+            // criteria has a qualifier while service does not
+            return false;
         }
 
         if (src.contains(Qualifier.WILDCARD_NAMED)) {
