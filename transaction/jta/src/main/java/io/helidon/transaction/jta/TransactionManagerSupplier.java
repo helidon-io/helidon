@@ -15,7 +15,6 @@
  */
 package io.helidon.transaction.jta;
 
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -26,20 +25,20 @@ import jakarta.transaction.TransactionManager;
 /**
  * Jakarta Transactions {@link TransactionManager} supplier.
  */
-@Service.Named("helidon:jndi/TransactionManager")
 @Service.Singleton
+@Service.Named("helidon:jndi/TransactionManager")
 public class TransactionManagerSupplier implements Supplier<Optional<TransactionManager>> {
 
-    private final Optional<JtaProvider> jtaProviderSupplier;
+    private final Optional<JtaProvider> provider;
 
     @Service.Inject
-    TransactionManagerSupplier(Optional<JtaProvider> jtaProviderSupplier) {
-        this.jtaProviderSupplier = jtaProviderSupplier;
+    TransactionManagerSupplier(Optional<JtaProvider> provider) {
+        this.provider = provider;
     }
 
     @Override
     public Optional<TransactionManager> get() {
-        return jtaProviderSupplier.map(JtaProvider::transactionManager);
+        return provider.map(JtaProvider::transactionManager);
     }
 
 }

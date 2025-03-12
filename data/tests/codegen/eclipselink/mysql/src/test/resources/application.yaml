@@ -13,18 +13,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+sql:
+  mysql.port: 3306
+
 data:
   provider.jakarta:
     username: "test"
     password: "password"
-    connection-string: "jdbc:mysql://localhost:3306/testdb"
+    connection-string: "jdbc:mysql://localhost:${sql.mysql.port}/testdb"
     jdbc-driver-class-name: "com.mysql.cj.jdbc.Driver"
     # EclipseLink properties
     properties:
       eclipselink.target-database: "MySQL"
       eclipselink.target-server: "None"
       eclipselink.weaving: false
-      # Broken, this property is missing in PU properties
       eclipselink.logging.level: "FINEST"
       eclipselink.logging.level.weaver: "OFF"
       eclipselink.logging.parameters: true

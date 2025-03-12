@@ -31,10 +31,6 @@
     <name>Helidon Data Tests</name>
     <packaging>pom</packaging>
 
-    <properties>
-        <dependency-plugin-check-dependencies.skip>true</dependency-plugin-check-dependencies.skip>
-    </properties>
-
     <modules>
         <module>codegen</module>
     </modules>
