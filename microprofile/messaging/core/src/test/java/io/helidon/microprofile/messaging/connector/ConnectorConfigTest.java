@@ -34,7 +34,6 @@ import org.eclipse.microprofile.reactive.messaging.spi.IncomingConnectorFactory;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
 import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -43,10 +42,13 @@ import java.util.concurrent.ExecutionException;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Disabled("because @Inject and @HelidonTest(resetPerTest=true) throws exception")
-@HelidonTest(resetPerTest = true)
+@HelidonTest
 @DisableDiscovery
 @AddExtension(MessagingCdiExtension.class)
+@AddConfig(key = "mp.messaging.incoming.config-channel-in.connector", value = "config-connector")
+@AddConfig(key = "mp.messaging.incoming.config-channel-in.non-empty-value", value = "a_value")
+@AddConfig(key = "mp.messaging.incoming.config-channel-in.empty-value", value = "${EMPTY}")
+@AddBean(ConnectorConfigTest.ConfigConnector.class)
 public class ConnectorConfigTest {
 
     @Inject
@@ -54,10 +56,6 @@ public class ConnectorConfigTest {
     private Multi<Config> configMulti;
 
     @Test
-    @AddConfig(key = "mp.messaging.incoming.config-channel-in.connector", value = "config-connector")
-    @AddConfig(key = "mp.messaging.incoming.config-channel-in.non-empty-value", value = "a_value")
-    @AddConfig(key = "mp.messaging.incoming.config-channel-in.empty-value", value = "${EMPTY}")
-    @AddBean(ConfigConnector.class)
     void emptyConfigValueTest() throws ExecutionException, InterruptedException {
         Config connectorConfig = configMulti.collectList().get().get(0);
         var helidonConfig = MpConfig.toHelidonConfig(connectorConfig);
