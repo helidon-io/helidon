@@ -177,6 +177,14 @@ public class ServiceContracts {
         // it is implemented
         TypeInfo typeInfo = implementedFactory.get();
         TypeName contract = resolveOptional(typeInfo, requiredTypeArgument(typeInfo), factoryInterface);
+
+        if (contract.packageName().isEmpty()) {
+            // we implement a factory of a generated type, "guess" the package
+            contract = TypeName.builder(contract)
+                    .packageName(serviceInfo.typeName().packageName())
+                    .build();
+        }
+
         Set<ResolvedType> contracts = new HashSet<>();
         contracts.add(ResolvedType.create(contract));
 

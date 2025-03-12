@@ -16,6 +16,7 @@
 package io.helidon.transaction.jta;
 
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import io.helidon.service.registry.Service;
@@ -26,21 +27,19 @@ import jakarta.transaction.UserTransaction;
  * Jakarta Transactions {@link UserTransaction} supplier.
  */
 @Service.Singleton
-public class UserTransactionSupplier implements Supplier<UserTransaction> {
+@Service.Named("helidon:jndi/UserTransaction")
+public class UserTransactionSupplier implements Supplier<Optional<UserTransaction>> {
 
-    private final JtaProviderSupplier jtaProviderSupplier;
+    private final Optional<JtaProvider> provider;
 
     @Service.Inject
-    UserTransactionSupplier(JtaProviderSupplier jtaProviderSupplier) {
-        this.jtaProviderSupplier = jtaProviderSupplier;
+    UserTransactionSupplier(Optional<JtaProvider> provider) {
+        this.provider = provider;
     }
 
     @Override
-    public UserTransaction get() {
-        if (jtaProviderSupplier.get().isPresent()) {
-            return jtaProviderSupplier.get().get().userTransaction();
-        }
-        throw new NoSuchElementException("No Jakarta Transactions provider was found.");
+    public Optional<UserTransaction> get() {
+        return provider.map(JtaProvider::userTransaction);
     }
 
 }

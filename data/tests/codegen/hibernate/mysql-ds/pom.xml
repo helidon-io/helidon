@@ -32,9 +32,13 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.data.tests.codegen</groupId>
-            <artifactId>helidon-data-tests-codegen-common</artifactId>
-            <version>${project.version}</version>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-config</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -48,14 +52,44 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-registry</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.data</groupId>
+            <artifactId>helidon-data</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.testing</groupId>
+            <artifactId>helidon-testing-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.testing</groupId>
             <artifactId>helidon-testing-junit5-suite</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.data.sql.source</groupId>
+            <groupId>io.helidon.data.sql</groupId>
+            <artifactId>helidon-data-sql-common</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.data.sql</groupId>
+            <artifactId>helidon-data-sql-testing</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.data.sql.datasource</groupId>
             <artifactId>helidon-data-sql-datasource-hikari</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.hibernate.orm</groupId>
@@ -63,8 +97,36 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>io.helidon.data.tests.codegen</groupId>
+            <artifactId>helidon-data-tests-codegen-model</artifactId>
+            <version>${helidon.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.data.tests.codegen</groupId>
+            <artifactId>helidon-data-tests-codegen-repository</artifactId>
+            <version>${helidon.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.data.tests.codegen</groupId>
+            <artifactId>helidon-data-tests-codegen-common</artifactId>
+            <version>${helidon.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>jdbc</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -78,13 +140,23 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.data.sql</groupId>
-            <artifactId>helidon-data-sql-testing</artifactId>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-core</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
