@@ -30,7 +30,6 @@ import static io.helidon.data.jakarta.persistence.DataJpaSupportProviderService.
 
 @Service.Singleton
 @Data.SupportType(PROVIDER_TYPE)
-@Service.Named(Service.Named.WILDCARD_NAME)
 class DataJpaSupportFactory implements Service.ServicesFactory<DataJpaSupport> {
     private static final Qualifier SUPPORT_TYPE_QUALIFIER = Qualifier.create(Data.SupportType.class, PROVIDER_TYPE);
     private final List<DataConfig> dataConfig;
