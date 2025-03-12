@@ -23,8 +23,8 @@ import java.util.function.Supplier;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.data.api.DataConfig;
-import io.helidon.data.api.DataRegistry;
+import io.helidon.data.DataConfig;
+import io.helidon.data.DataRegistry;
 import io.helidon.data.sql.common.SqlConfig;
 import io.helidon.data.sql.testing.SqlTestContainerConfig;
 import io.helidon.data.sql.testing.TestConfigFactory;
@@ -33,11 +33,11 @@ import io.helidon.data.tests.codegen.repository.PokemonRepository;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryManager;
-import io.helidon.testing.integration.junit5.suite.AfterSuite;
-import io.helidon.testing.integration.junit5.suite.BeforeSuite;
-import io.helidon.testing.integration.junit5.suite.Suite;
-import io.helidon.testing.integration.junit5.suite.SuiteResolver;
-import io.helidon.testing.integration.junit5.suite.spi.SuiteProvider;
+import io.helidon.testing.junit5.suite.AfterSuite;
+import io.helidon.testing.junit5.suite.BeforeSuite;
+import io.helidon.testing.junit5.suite.Suite;
+import io.helidon.testing.junit5.suite.SuiteResolver;
+import io.helidon.testing.junit5.suite.spi.SuiteProvider;
 
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.MySQLContainer;

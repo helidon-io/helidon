@@ -35,7 +35,6 @@ import io.helidon.service.registry.Service;
  */
 @Weight(10)
 @Service.Singleton
-@Service.Named(Service.Named.WILDCARD_NAME)
 public class DataConfigFactory implements Service.ServicesFactory<DataConfig> {
     private final Supplier<Config> config;
     private final List<DataConfig> explicitConfig;
