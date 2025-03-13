@@ -272,18 +272,17 @@ common health check statuses:
 // Had to move the anchor to the heading above because the rendered page did not define the ID
 // correctly on the table so the link did not work. The link itself looks OK; just no ID generated on the page.
 //[[built-in-health-checks-table]]
-[cols="1,1,3,15,3,3"]
+[cols="1,1,3,15,3"]
 |=======
-|Built-in health check |Health check name |JavaDoc |Config properties (within `server.features.observe.observers.health`) |Default config value |Graal VM Support
+|Built-in health check |Health check name |JavaDoc |Config properties (within `server.features.observe.observers.health`) |Default config value
 
-|deadlock detection
+|deadlock detection &dagger;
 |`deadlock`
 | link:{health-javadoc-base-url}/io/helidon/health/checks/DeadlockHealthCheck.html[`DeadlockHealthCheck`]
 | n/a
 | n/a
-| No
 
-|available disk space
+|available disk space &dagger;
 |`diskSpace`
 | link:{health-javadoc-base-url}/io/helidon/health/checks/DiskSpaceHealthCheck.html[`DiskSpaceHealthCheck`]
 |`helidon.health.diskSpace.thresholdPercent` +
@@ -292,14 +291,13 @@ common health check statuses:
 | `99.999` +
 +
 `/`
-| No
 |available heap memory
 | `heapMemory`
 | link:{health-javadoc-base-url}/io/helidon/health/checks/HeapMemoryHealthCheck.html[`HeapMemoryHealthCheck`]
 |`helidon.health.heapMemory.thresholdPercent`
 |`98`
-| Yes
 |=======
+&dagger; Helidon cannot support the indicated health checks in the GraalVM native image environment, so with native image those health checks do not appear in the health output.
 
 Simply adding the built-in health check dependency is sufficient to register all the built-in health checks automatically.
 If you want to use only some of the built-in checks in your application, you can disable automatic discovery of the built-in health checks and register only the ones you want.
