@@ -15,8 +15,6 @@
  */
 package io.helidon.transaction.jta;
 
-import java.util.Optional;
-
 import jakarta.transaction.TransactionManager;
 import jakarta.transaction.TransactionSynchronizationRegistry;
 import jakarta.transaction.UserTransaction;

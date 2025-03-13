@@ -102,6 +102,14 @@
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
+            <!-- Does not contain any public API. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 

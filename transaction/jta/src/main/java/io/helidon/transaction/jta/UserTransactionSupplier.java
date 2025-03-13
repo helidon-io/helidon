@@ -15,7 +15,6 @@
  */
 package io.helidon.transaction.jta;
 
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.Supplier;
 

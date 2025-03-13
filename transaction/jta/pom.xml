@@ -43,11 +43,6 @@
             <groupId>io.helidon.service</groupId>
             <artifactId>helidon-service-registry</artifactId>
         </dependency>
-        <!--dependency>
-            <groupId>io.helidon.service</groupId>
-            <artifactId>helidon-service-jndi</artifactId>
-            <version>${helidon.version}</version>
-        </dependency-->
         <dependency>
             <groupId>io.helidon.transaction</groupId>
             <artifactId>helidon-transaction</artifactId>
@@ -106,6 +101,17 @@
                             <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+            <!-- Issue with jakarta injection and transactions modules -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <configuration>
+                    <additionalOptions>
+                        <option>--link-modularity-mismatch</option>
+                        <option>info</option>
+                    </additionalOptions>
                 </configuration>
             </plugin>
         </plugins>
