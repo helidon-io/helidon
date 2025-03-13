@@ -21,9 +21,8 @@
         xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0 https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
 
     <Match>
-        <!-- Doesn't construct SQL string. It converts string to statement -->
-        <Class name="io.helidon.data.codegen.parser.MethodNameParserImpl"/>
-        <Method name="dataQuery"/>
-        <Bug pattern="SF_SWITCH_FALLTHROUGH"/>
+        <!-- ANTLR generated code, can't fix. -->
+        <Class name="io.helidon.data.codegen.parser.MethodName"/>
+        <Bug pattern="SF_SWITCH_NO_DEFAULT"/>
     </Match>
 </FindBugsFilter>
