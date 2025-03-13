@@ -51,7 +51,7 @@ public class TestConfigFactory implements Service.ServicesFactory<Config> {
         return config;
     }
 
-    private void config(Config config) {
+    private static void config(Config config) {
         TestConfigFactory.config = config;
     }
 
