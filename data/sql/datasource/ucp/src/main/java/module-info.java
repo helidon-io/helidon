@@ -26,7 +26,7 @@ module io.helidon.data.sql.datasource.ucp {
     requires io.helidon.data.sql.datasource;
     requires io.helidon.data.sql.datasource.common;
 
-    // required by com.oracle.database.ucp
+    // Required by com.oracle.database.ucp
     requires com.oracle.database.jdbc;
     requires com.oracle.database.ucp;
     requires java.sql;
