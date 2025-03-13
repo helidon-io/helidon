@@ -178,18 +178,18 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
         // PersistenceException mapping
         private static void handlePersistenceException(PersistenceException pe) throws DataException {
             switch (pe) {
-            case jakarta.persistence.EntityExistsException ignore:
-                throw new EntityExistsException("Entity already exists.", pe);
-            case jakarta.persistence.EntityNotFoundException ignore:
-                throw new EntityNotFoundException("Entity was not found.", pe);
-            case jakarta.persistence.NoResultException ignore:
-                throw new NoResultException("Query returned no result.", pe);
-            case jakarta.persistence.NonUniqueResultException ignore:
-                throw new NonUniqueResultException("Query returned multiple result.", pe);
-            case jakarta.persistence.OptimisticLockException ignore:
-                throw new OptimisticLockException("Optimistic locking conflict.", pe);
-            default:
-                throw new DataException("Persistence session task failed.", pe);
+                case jakarta.persistence.EntityExistsException ex:
+                    throw new EntityExistsException("Entity already exists.", ex);
+                case jakarta.persistence.EntityNotFoundException ex:
+                    throw new EntityNotFoundException("Entity was not found.", ex);
+                case jakarta.persistence.NoResultException ex:
+                    throw new NoResultException("Query returned no result.", ex);
+                case jakarta.persistence.NonUniqueResultException ex:
+                    throw new NonUniqueResultException("Query returned multiple result.", ex);
+                case jakarta.persistence.OptimisticLockException ex:
+                    throw new OptimisticLockException("Optimistic locking conflict.", ex);
+                default:
+                    throw new DataException("Persistence session task failed.", pe);
             }
         }
     }

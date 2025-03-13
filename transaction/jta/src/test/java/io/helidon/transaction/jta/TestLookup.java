@@ -15,7 +15,7 @@
  */
 package io.helidon.transaction.jta;
 
-import java.util.NoSuchElementException;
+import java.util.Optional;
 
 import io.helidon.service.registry.Services;
 
@@ -23,14 +23,13 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class TestLookup {
 
     // JtaProvider.exists() shall return false with no provider available
     @Test
     void testExistsWithNoProvider() {
-        assertThat(Services.first(JtaProvider.class), is(false));
+        assertThat(Services.first(JtaProvider.class), is(Optional.empty()));
     }
 
 }
