@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,11 @@ import java.util.Map;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.config.mp.MpConfig;
 import io.helidon.config.mp.MpConfigSources;
 
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
+import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -190,5 +192,19 @@ class AdHocConfigBuilderTest {
 
         assertThat(c.getValue(ADDITION_ATTR_1, String.class), is(ADDITION_ATTR_1_VALUE));
         assertThat(c.getValue(ADDITION_ATTR_2, String.class), is(ADDITION_ATTR_2_VALUE));
+    }
+
+    @Test
+    void emptyTest() {
+        ConfigSource mpSource = MpConfigSources.create(Map.of("ssl.endpoint.first", "${EMPTY}"));
+
+        org.eclipse.microprofile.config.Config c = AdHocConfigBuilder
+                .from(Config.just(() -> ConfigSources.create(
+                        "ssl.endpoint.second: ${EMPTY}",
+                        "application/x-yaml")))
+                .putAll(MpConfig.toHelidonConfig(ConfigProviderResolver.instance().getBuilder().withSources(mpSource).build()))
+                .build();
+        assertThat(c.getValue("ssl.endpoint.first", String.class), is(""));
+        assertThat(c.getValue("ssl.endpoint.second", String.class), is(""));
     }
 }
