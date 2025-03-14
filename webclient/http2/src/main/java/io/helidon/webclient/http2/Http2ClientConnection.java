@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,7 +106,7 @@ public class Http2ClientConnection {
         this.writer = new Http2ConnectionWriter(connection.helidonSocket(), connection.writer(), List.of());
     }
 
-    /**
+    /**x
      * Creates an HTTP2 client connection.
      *
      * @param http2Client the HTTP2 client

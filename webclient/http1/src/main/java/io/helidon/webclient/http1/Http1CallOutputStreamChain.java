@@ -293,6 +293,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                     writeContent(firstPacket);
                 }
             }
+            writer.close();
             super.close();
         }
 
@@ -337,7 +338,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
                 ctx.log(LOGGER, System.Logger.Level.TRACE, "send data:%n%s", toWrite.debugDataHex());
             }
-            writer.writeNow(toWrite);
+            writer.write(toWrite);
         }
 
         private void writeContent(BufferData buffer) throws IOException {
@@ -350,7 +351,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
                 ctx.log(LOGGER, System.Logger.Level.TRACE, "send data:%n%s", buffer.debugDataHex());
             }
-            writer.writeNow(buffer);
+            writer.write(buffer);
         }
 
         private void sendPrologueAndHeader() {
@@ -385,7 +386,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 ctx.log(LOGGER, System.Logger.Level.TRACE, "send headers:%n%s", headers);
             }
             writeHeaders(headers, buffer, protocolConfig.validateRequestHeaders());
-            writer.writeNow(buffer);
+            writer.write(buffer);
 
             whenSent.complete(request);
 
@@ -393,6 +394,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 Status responseStatus;
 
                 try {
+                    writer.flush();     // flush before a read
                     connection.readTimeout(originalRequest.readContinueTimeout());
                     responseStatus = Http1StatusParser.readStatus(reader, protocolConfig.maxStatusLineLength());
                     connection.helidonSocket().log(LOGGER, TRACE, "recv status: %n%s", responseStatus);
