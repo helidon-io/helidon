@@ -18,5 +18,9 @@
  * Helidon Transaction API.
  */
 module io.helidon.transaction {
+
+    requires static io.helidon.service.registry;
+
     exports io.helidon.transaction;
+
 }

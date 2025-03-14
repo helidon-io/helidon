@@ -167,6 +167,14 @@ public abstract class BaseGenerator {
         builder.addContent(value);
     }
 
+    /**
+     * Generate initialized variable.
+     *
+     * @param builder method builder
+     * @param type variable type
+     * @param name  variable name
+     * @param value variable value content
+     */
     protected static void initializedVariable(Method.Builder builder,
                                               TypeName type,
                                               String name,

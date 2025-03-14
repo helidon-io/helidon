@@ -89,8 +89,8 @@ public interface JpaRepositoryExecutor extends AutoCloseable {
      * @param <R>  task result type
      * @param <E>  type of (checked) exception that can be thrown
      * @return task result
-     * @throws RuntimeException              as is if unable to compute a result
-     * @throws io.helidon.data.DataException with checked {@link Exception} as a cause if unable to compute a result
+     * @throws RuntimeException as is if unable to compute a result, usually {@code io.helidon.data.DataException}
+     *                          with checked {@link Exception} as a cause if unable to compute a result
      */
     <R, E extends Throwable> R call(Functions.CheckedFunction<EntityManager, R, E> task);
 
@@ -99,8 +99,8 @@ public interface JpaRepositoryExecutor extends AutoCloseable {
      *
      * @param task task to run
      * @param <E>  type of (checked) exception that can be thrown
-     * @throws RuntimeException              as is if unable to compute a result
-     * @throws io.helidon.data.DataException with checked {@link Exception} as a cause if unable to compute a result
+     * @throws RuntimeException as is if unable to compute a result, usually {@code io.helidon.data.DataException}
+     *                          with checked {@link Exception} as a cause if unable to compute a result
      */
     <E extends Throwable> void run(Functions.CheckedConsumer<EntityManager, E> task);
 

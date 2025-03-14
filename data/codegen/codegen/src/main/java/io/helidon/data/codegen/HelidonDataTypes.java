@@ -54,7 +54,7 @@ class HelidonDataTypes {
     // @Repository annotation (marks data repository interface)
     static final TypeName REPOSITORY = TypeName.create("io.helidon.data.Data.Repository");
     // @Data.Query method annotation
-    static final TypeName QUERY_ANNOTATION = TypeName.create("io.helidon.data.api.Data.Query");
+    static final TypeName QUERY_ANNOTATION = TypeName.create("io.helidon.data.Data.Query");
 
     // Set of annotations passed to codegen repository interfaces filtering
     static final Set<TypeName> ANNOTATIONS = Set.of(REPOSITORY);

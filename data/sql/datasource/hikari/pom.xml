@@ -211,7 +211,7 @@
 
     <profiles>
         <profile>
-            <id>testcontainers</id>
+            <id>tests</id>
             <build>
                 <plugins>
                     <plugin>
@@ -219,8 +219,7 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <systemPropertyVariables>
-                                <junit.jupiter.extensions.autodetection.enabled>true
-                                </junit.jupiter.extensions.autodetection.enabled>
+                                <junit.jupiter.extensions.autodetection.enabled>true</junit.jupiter.extensions.autodetection.enabled>
                             </systemPropertyVariables>
                             <skip>false</skip>
                         </configuration>
