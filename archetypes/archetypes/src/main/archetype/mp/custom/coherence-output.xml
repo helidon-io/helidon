@@ -33,7 +33,7 @@
             <list key="pom-properties">
                 <map>
                     <value key="key">version.lib.coherence</value>
-                    <value key="value">24.03.1</value>
+                    <value key="value">24.09.3</value>
                 </map>
             </list>
             <list key="dependencies-management">
