@@ -52,7 +52,6 @@ import static java.lang.System.Logger.Level.TRACE;
  */
 public class TcpClientConnection implements ClientConnection {
     private static final System.Logger LOGGER = System.getLogger(TcpClientConnection.class.getName());
-    private static final int WRITER_BUFFER_SIZE = 4 * 1024;
 
     private final WebClient webClient;
     private final ConnectionKey connectionKey;
@@ -147,8 +146,10 @@ public class TcpClientConnection implements ClientConnection {
         } else {
             this.helidonSocket = PlainSocket.client(socket, channelId);
         }
+
         this.reader = new DataReader(helidonSocket);
-        this.writer = new BufferedDataWriter(helidonSocket, WRITER_BUFFER_SIZE);
+        int writeBufferSize = webClient.prototype().writeBufferSize();
+        this.writer = new BufferedDataWriter(helidonSocket, writeBufferSize);
 
         return this;
     }
@@ -314,10 +315,6 @@ public class TcpClientConnection implements ClientConnection {
     static class BufferedDataWriter implements DataWriter {
         private final BufferData writerBuffer;
         private final HelidonSocket helidonSocket;
-
-        BufferedDataWriter(HelidonSocket helidonSocket) {
-            this(helidonSocket, -1);
-        }
 
         BufferedDataWriter(HelidonSocket helidonSocket, int bufferSize) {
             this.helidonSocket = helidonSocket;
