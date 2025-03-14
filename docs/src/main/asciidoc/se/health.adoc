@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -276,13 +276,13 @@ common health check statuses:
 |=======
 |Built-in health check |Health check name |JavaDoc |Config properties (within `server.features.observe.observers.health`) |Default config value
 
-|deadlock detection
+|deadlock detection &dagger;
 |`deadlock`
 | link:{health-javadoc-base-url}/io/helidon/health/checks/DeadlockHealthCheck.html[`DeadlockHealthCheck`]
 | n/a
 | n/a
 
-|available disk space
+|available disk space &dagger;
 |`diskSpace`
 | link:{health-javadoc-base-url}/io/helidon/health/checks/DiskSpaceHealthCheck.html[`DiskSpaceHealthCheck`]
 |`helidon.health.diskSpace.thresholdPercent` +
@@ -297,6 +297,7 @@ common health check statuses:
 |`helidon.health.heapMemory.thresholdPercent`
 |`98`
 |=======
+&dagger; Helidon cannot support the indicated health checks in the GraalVM native image environment, so with native image those health checks do not appear in the health output.
 
 Simply adding the built-in health check dependency is sufficient to register all the built-in health checks automatically.
 If you want to use only some of the built-in checks in your application, you can disable automatic discovery of the built-in health checks and register only the ones you want.
