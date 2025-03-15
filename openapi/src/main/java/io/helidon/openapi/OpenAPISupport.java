@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -591,6 +591,12 @@ public abstract class OpenAPISupport implements Service {
                     try {
                         JsonReader reader = JSON_READER_FACTORY.createReader(new StringReader(value));
                         JsonValue jsonValue = reader.readValue();
+                        // readValue will truncate the input to convert to a number if it can. Make sure the value is the same
+                        // length as the original.
+                        if (jsonValue.getValueType().equals(JsonValue.ValueType.NUMBER)
+                                && value.length() != jsonValue.toString().length()) {
+                            return value;
+                        }
                         return convertJsonValue(jsonValue);
                     } catch (Exception ex) {
                         LOGGER.log(Level.SEVERE, String.format("Error parsing value: %s", value), ex);
