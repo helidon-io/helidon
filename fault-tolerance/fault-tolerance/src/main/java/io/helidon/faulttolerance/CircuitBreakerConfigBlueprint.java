@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,9 @@ import java.util.concurrent.ExecutorService;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
+//@ConfigDriven.ConfigBean
+//@ConfigDriven.WantDefault
+//@ConfigDriven.Repeatable
 @Prototype.Blueprint(decorator = CircuitBreakerConfigBlueprint.BuilderDecorator.class)
 @Prototype.Configured("fault-tolerance.circuit-breakers")
 interface CircuitBreakerConfigBlueprint extends Prototype.Factory<CircuitBreaker> {

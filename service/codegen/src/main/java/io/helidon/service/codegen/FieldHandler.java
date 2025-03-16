@@ -1,5 +1,6 @@
 package io.helidon.service.codegen;
 
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import io.helidon.codegen.classmodel.ClassModel;
@@ -42,18 +43,21 @@ public interface FieldHandler {
                     Consumer<ContentBuilder<?>> contentBuilder);
 
     /**
-     * Ensure a final field of the type and name exists. In case of conflicts (i.e. the field of the same name exists,
-     * but is of a different type) and exception is thrown.
+     * Creates (or re-uses) a private final field in the generated class.
+     * <p>
+     * In case a new field is needed, and there is a name conflict, a number will be used to uniquely identify the field.
      *
      * @param typeName           type of the field
      * @param fieldName          name of the field
      * @param modifier           modifier of the declaration
      * @param fieldUpdater       consumer of the field content builder (if it is initialized inlined)
-     * @param constructorUpdater consumer of the constructor builder (if it is initialized in constructor)
+     * @param constructorUpdater bi-consumer of the constructor builder (if it is initialized in constructor),
+     *                           and the field name
      */
-    void field(TypeName typeName,
-               String fieldName,
-               AccessModifier modifier,
-               Consumer<ContentBuilder<?>> fieldUpdater,
-               Consumer<Constructor.Builder> constructorUpdater);
+    String field(TypeName typeName,
+                 String fieldName,
+                 AccessModifier modifier,
+                 Object uniqueIdentifier,
+                 Consumer<ContentBuilder<?>> fieldUpdater,
+                 BiConsumer<Constructor.Builder, String> constructorUpdater);
 }

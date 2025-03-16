@@ -52,4 +52,9 @@ class Http1ServerRequestNoEntity extends Http1ServerRequest {
     @Override
     public void streamFilter(UnaryOperator<InputStream> filterFunction) {
     }
+
+    @Override
+    public String toString() {
+        return super.toString() + " without entity";
+    }
 }

@@ -21,6 +21,7 @@ module io.helidon.http {
 
     requires static io.helidon.config.metadata;
     requires static io.helidon.service.registry;
+    requires static io.helidon.common.types;
 
     requires transitive io.helidon.common.buffers;
     requires transitive io.helidon.common.configurable;

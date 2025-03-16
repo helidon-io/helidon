@@ -79,6 +79,16 @@ class TypeHandlerList extends TypeHandlerCollection {
                 .addContentLine(".class));");
     }
 
+    @Override
+    protected String decoratorSetMethodName() {
+        return "decorateSetList";
+    }
+
+    @Override
+    protected String decoratorAddMethodName() {
+        return "decorateAddList";
+    }
+
     private String isMutatedField() {
         return isMutatedField(name());
     }

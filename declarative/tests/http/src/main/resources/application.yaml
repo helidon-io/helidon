@@ -14,9 +14,17 @@
 # limitations under the License.
 #
 
-#app:
-#  greeting: "Hello"
+app:
+  greeting: "Hello"
 
 server:
   port: 8080
   host: 0.0.0.0
+
+io:
+  helidon:
+    declarative:
+      tests:
+        http:
+          GreetEndpointClient:
+            uri: "http://localhost:${test.server.port}"

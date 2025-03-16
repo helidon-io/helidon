@@ -26,6 +26,8 @@ import io.helidon.builder.api.Prototype;
 /**
  * {@link Async} configuration bean.
  */
+//@ConfigDriven.ConfigBean("fault-tolerance.asyncs")
+//@ConfigDriven.Repeatable
 @Prototype.Blueprint(decorator = AsyncConfigBlueprint.BuilderDecorator.class)
 @Prototype.Configured
 interface AsyncConfigBlueprint extends Prototype.Factory<Async> {

@@ -44,6 +44,10 @@
             <artifactId>helidon-codegen</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.declarative</groupId>
+            <artifactId>helidon-declarative-codegen-model</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.codegen</groupId>
             <artifactId>helidon-codegen-class-model</artifactId>
         </dependency>

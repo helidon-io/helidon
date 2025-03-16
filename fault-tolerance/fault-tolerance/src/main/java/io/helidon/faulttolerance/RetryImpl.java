@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,9 +28,9 @@ import java.util.function.Supplier;
 
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Tag;
+import io.helidon.service.registry.Service;
 
 class RetryImpl implements Retry {
-
     private final ErrorChecker errorChecker;
     private final long maxTimeNanos;
     private final RetryPolicy retryPolicy;
@@ -42,14 +42,15 @@ class RetryImpl implements Retry {
     private Counter callsCounterMetric;
     private Counter retryCounterMetric;
 
-    RetryImpl(RetryConfig config) {
-        this.name = config.name().orElseGet(() -> "retry-" + System.identityHashCode(config));
-        this.errorChecker = ErrorChecker.create(config.skipOn(), config.applyOn());
-        this.maxTimeNanos = config.overallTimeout().toNanos();
-        this.retryPolicy = config.retryPolicy().orElseThrow();
-        this.retryConfig = config;
+    @Service.Inject
+    RetryImpl(RetryConfig retryConfig) {
+        this.name = retryConfig.name().orElseGet(() -> "retry-" + System.identityHashCode(retryConfig));
+        this.errorChecker = ErrorChecker.create(retryConfig.skipOn(), retryConfig.applyOn());
+        this.maxTimeNanos = retryConfig.overallTimeout().toNanos();
+        this.retryPolicy = retryConfig.retryPolicy().orElseThrow();
+        this.retryConfig = retryConfig;
 
-        this.metricsEnabled = config.enableMetrics() || MetricsUtils.defaultEnabled();
+        this.metricsEnabled = retryConfig.enableMetrics() || MetricsUtils.defaultEnabled();
         if (metricsEnabled) {
             Tag nameTag = Tag.create("name", name);
             callsCounterMetric = MetricsUtils.counterBuilder(FT_RETRY_CALLS_TOTAL, nameTag);

@@ -42,8 +42,10 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.jersey.webserver.JaxRsService;
 import io.helidon.microprofile.cdi.RuntimeStart;
+import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.webserver.ListenerConfig;
+import io.helidon.webserver.RequestScopeFeature__ServiceDescriptor;
 import io.helidon.webserver.Router;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
@@ -343,6 +345,13 @@ public class ServerCdiExtension implements Extension {
         if (!config.get("server.features.context").exists()) {
             // not created automatically from configuration, create it manually
             serverBuilder.addFeature(ContextFeature.create());
+        }
+        if (!config.get("server.features.request-scope").exists()) {
+            GlobalServiceRegistry.registry()
+                    .get(RequestScopeFeature__ServiceDescriptor.INSTANCE)
+                            .ifPresent(serverBuilder::addFeature);
+            serverBuilder.addFeature(
+                                             .orElse());
         }
     }
 

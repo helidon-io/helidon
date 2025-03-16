@@ -2,6 +2,8 @@ package io.helidon.service.codegen;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import io.helidon.codegen.CodegenException;
@@ -14,8 +16,17 @@ import io.helidon.common.types.TypeName;
 class FieldHandlerImpl implements FieldHandler {
     private final ClassModel.Builder classModel;
     private final Constructor.Builder constructor;
-    private final Map<TypeName, Map<String, Constants>> constants = new HashMap<>();
-    private final Map<String, TypeName> fields = new HashMap<>();
+
+    /*
+    // each prefix has a single sequence, a new constant is created for each unique type and unique identifier
+    // identifier 42
+    private static final String MY_PREFIX = "42";
+    private static final String MY_PREFIX_2 = "43";
+    // identifier 42, but different type
+    private static final Integer MY_PREFIX_3 = 42;
+     */
+    private final Map<String, PrefixedConstants> constants = new HashMap<>();
+    private final Map<String, PrefixedFields> fields = new HashMap<>();
 
     FieldHandlerImpl(ClassModel.Builder classModel, Constructor.Builder constructor) {
         this.classModel = classModel;
@@ -27,76 +38,106 @@ class FieldHandlerImpl implements FieldHandler {
                            TypeName constantType,
                            Object uniqueIdentifier,
                            Consumer<ContentBuilder<?>> contentBuilder) {
-        return constants.computeIfAbsent(constantType, it -> new HashMap<>())
-                .computeIfAbsent(constantNamePrefix, it -> new Constants(constantNamePrefix, classModel, constantType))
-                .constant(uniqueIdentifier, contentBuilder);
+        return constants.computeIfAbsent(constantNamePrefix, it -> new PrefixedConstants(classModel, constantNamePrefix))
+                .constant(constantType, uniqueIdentifier, contentBuilder);
     }
 
     @Override
-    public void field(TypeName typeName,
+    public String field(TypeName typeName,
                       String fieldName,
                       AccessModifier modifier,
+                      Object uniqueIdentifier,
                       Consumer<ContentBuilder<?>> fieldUpdater,
-                      Consumer<Constructor.Builder> constructorUpdater) {
-        TypeName existing = fields.get(fieldName);
-        if (existing == null) {
-            addField(typeName, fieldName, modifier, fieldUpdater, constructorUpdater);
-            fields.put(fieldName, typeName);
-        } else {
-            if (!typeName.equals(existing)) {
-                throw new CodegenException("Attempting to create a field \"" + fieldName + "\" with different types."
-                                                   + "Existing: " + existing.fqName() + ", new: " + typeName.fqName());
-            }
-        }
+                      BiConsumer<Constructor.Builder, String> constructorUpdater) {
+        return fields.computeIfAbsent(fieldName, it -> new PrefixedFields(classModel, constructor, fieldName))
+                .field(typeName, modifier, uniqueIdentifier, fieldUpdater, constructorUpdater);
     }
 
-    private void addField(TypeName typeName,
-                          String fieldName,
-                          AccessModifier modifier,
-                          Consumer<ContentBuilder<?>> fieldUpdater,
-                          Consumer<Constructor.Builder> constructorUpdater) {
-        classModel.addField(field -> field
-                .name(fieldName)
-                .accessModifier(modifier)
-                .isFinal(true)
-                .type(typeName)
-                .update(fieldUpdater::accept));
-        constructorUpdater.accept(constructor);
-    }
+    private static class PrefixedFields {
 
-    private static class Constants {
-        private final String constantNamePrefix;
         private final ClassModel.Builder classModel;
-        private final TypeName typeName;
-        private final Map<Object, String> existingConstants = new HashMap<>();
-        private int counter;
+        private final Constructor.Builder constructor;
+        private final String fieldNamePrefix;
+        private final AtomicInteger counter = new AtomicInteger();
+        private final Map<UniqueIdentifier, String> existingFields = new HashMap<>();
+        private final boolean suffixed;
 
-        private Constants(String constantNamePrefix, ClassModel.Builder classModel, TypeName typeName) {
-            this.constantNamePrefix = constantNamePrefix;
+        public PrefixedFields(ClassModel.Builder classModel, Constructor.Builder constructor, String fieldNamePrefix) {
             this.classModel = classModel;
-            this.typeName = typeName;
+            this.constructor = constructor;
+            this.fieldNamePrefix = fieldNamePrefix;
+            this.suffixed = fieldNamePrefix.endsWith("_");;
         }
 
-        private String constant(Object uniqueIdentifier, Consumer<ContentBuilder<?>> contentBuilder) {
-            String constantName = existingConstants.get(uniqueIdentifier);
-            if (constantName != null) {
-                return constantName;
-            }
+        public String field(TypeName typeName,
+                          AccessModifier modifier,
+                          Object uniqueIdentifier,
+                          Consumer<ContentBuilder<?>> fieldUpdater,
+                          BiConsumer<Constructor.Builder, String> constructorUpdater) {
+            UniqueIdentifier ui = new UniqueIdentifier(uniqueIdentifier, typeName);
+            return existingFields.computeIfAbsent(ui, it -> {
+                int nextId = counter.getAndIncrement();
+                String name;
+                if (nextId == 0 && !suffixed) {
+                    name = fieldNamePrefix;
+                } else {
+                    if (suffixed) {
+                        name = fieldNamePrefix + nextId;
+                    } else {
+                        name = fieldNamePrefix + "_" + nextId;
+                    }
+                }
 
-            String newConstantName = counter == 0 ? constantNamePrefix : constantNamePrefix + "_" + counter;
-            counter++;
-            existingConstants.put(uniqueIdentifier, newConstantName);
+                classModel.addField(field -> field
+                        .name(name)
+                        .accessModifier(modifier)
+                        .isFinal(true)
+                        .type(typeName)
+                        .update(fieldUpdater::accept));
+                constructorUpdater.accept(constructor, name);
 
-            classModel.addField(newConstant -> newConstant
-                    .name(newConstantName)
-                    .type(typeName)
-                    .accessModifier(AccessModifier.PRIVATE)
-                    .isStatic(true)
-                    .isFinal(true)
-                    .update(contentBuilder::accept)
-            );
-
-            return newConstantName;
+                return name;
+            });
         }
+    }
+
+
+    private static class PrefixedConstants {
+        private final ClassModel.Builder classModel;
+        private final String constantNamePrefix;
+        private final AtomicInteger counter = new AtomicInteger();
+        private final Map<UniqueIdentifier, String> existingConstants = new HashMap<>();
+
+        private PrefixedConstants(ClassModel.Builder classModel, String constantNamePrefix) {
+            this.classModel = classModel;
+            this.constantNamePrefix = constantNamePrefix;
+        }
+
+        public String constant(TypeName constantType, Object uniqueIdentifier, Consumer<ContentBuilder<?>> contentBuilder) {
+            UniqueIdentifier ui = new UniqueIdentifier(uniqueIdentifier, constantType);
+            return existingConstants.computeIfAbsent(ui, it -> {
+                int nextId = counter.getAndIncrement();
+                String name;
+                if (nextId == 0 && !constantNamePrefix.endsWith("_")) {
+                    name = constantNamePrefix;
+                } else {
+                    name = constantNamePrefix + "_" + nextId;
+                }
+
+                classModel.addField(newConstant -> newConstant
+                        .name(name)
+                        .type(constantType)
+                        .accessModifier(AccessModifier.PRIVATE)
+                        .isStatic(true)
+                        .isFinal(true)
+                        .update(contentBuilder::accept)
+                );
+
+                return name;
+            });
+        }
+    }
+
+    private record UniqueIdentifier(Object uniqueIdentifier, TypeName typeName) {
     }
 }

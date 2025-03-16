@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@ import io.helidon.builder.api.Prototype;
 /**
  * {@link Timeout} configuration bean.
  */
+//@ConfigDriven.ConfigBean("fault-tolerance.timeouts")
+//@ConfigDriven.Repeatable
 @Prototype.Blueprint(decorator = TimeoutConfigBlueprint.BuilderDecorator.class)
 @Prototype.Configured("fault-tolerance.timeouts")
 interface TimeoutConfigBlueprint extends Prototype.Factory<Timeout> {
@@ -50,7 +52,7 @@ interface TimeoutConfigBlueprint extends Prototype.Factory<Timeout> {
      * Flag to indicate that code must be executed in current thread instead
      * of in an executor's thread. This flag is {@code false} by default.
      *
-     * @return  whether to execute on current thread ({@code true}), or in an executor service ({@code false}})
+     * @return whether to execute on current thread ({@code true}), or in an executor service ({@code false}})
      */
     @Option.Configured
     @Option.DefaultBoolean(false)

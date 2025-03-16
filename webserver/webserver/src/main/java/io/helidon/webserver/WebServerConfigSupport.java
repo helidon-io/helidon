@@ -23,10 +23,12 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Builder;
 import io.helidon.common.config.Config;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.config.ConfigException;
@@ -99,6 +101,21 @@ class WebServerConfigSupport {
                 }
             }
             target.features(uniqueFeatures);
+
+            Optional<HttpRouting.Builder> routing = target.routing();
+
+            Optional<HttpRouting.Builder> httpRouting = target.routings()
+                    .stream()
+                    .filter(it -> it instanceof HttpRouting.Builder)
+                    .map(HttpRouting.Builder.class::cast)
+                    .findFirst();
+            if (routing.isPresent() && httpRouting.isPresent()) {
+                if (routing.get() != httpRouting.get()) {
+                    throw new IllegalStateException(
+                            "HTTP routing is configured both through a Builder.routing(...) and builder.routings(...),"
+                                    + " which is not compatible.");
+                }
+            }
         }
 
         record FeatureId(String type, String name) {
@@ -149,7 +166,7 @@ class WebServerConfigSupport {
         /**
          * Customize HTTP routing of this listener.
          *
-         * @param builder listener config builder
+         * @param builder         listener config builder
          * @param builderConsumer consumer of HTTP Routing builder
          */
         @Prototype.BuilderMethod
@@ -157,6 +174,46 @@ class WebServerConfigSupport {
             HttpRouting.Builder routingBuilder = HttpRouting.builder();
             builderConsumer.accept(routingBuilder);
             builder.routing(routingBuilder);
+        }
+    }
+
+    static class RoutingsDecorator implements Prototype.OptionDecorator<ListenerConfig.BuilderBase<?, ?>,
+            io.helidon.common.Builder<?, ? extends Routing>> {
+        @Override
+        public void decorate(ListenerConfig.BuilderBase<?, ?> builder, Builder<?, ? extends Routing> optionValue) {
+            if (optionValue instanceof HttpRouting.Builder httpRouting) {
+                if (builder.routings().isEmpty()) {
+                    builder.routing(httpRouting);
+                } else {
+                    throw new IllegalStateException("HTTP routing is configured both through routing() "
+                                                            + "and routings() method. This would end up with two distinct"
+                                                            + " HTTP routings for a single listener, which is not allowed.");
+                }
+            }
+        }
+
+        @Override
+        public void decorateSetList(ListenerConfig.BuilderBase<?, ?> builder, List<Builder<?, ? extends Routing>> optionValues) {
+            for (Builder<?, ? extends Routing> optionValue : optionValues) {
+                if (optionValue instanceof HttpRouting.Builder httpRouting) {
+                    if (builder.routing().isEmpty()) {
+                        builder.routing(httpRouting);
+                    } else {
+                        // intentional instance equality - if the routing is the same instance, there is no issue
+                        if (builder.routing().get() != httpRouting) {
+                            throw new IllegalStateException("HTTP routing is configured both through routing() "
+                                                                    + "and routings() method. This would end up with two distinct"
+                                                                    + " HTTP routings for a single listener, which is not "
+                                                                    + "allowed.");
+                        }
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void decorateAddList(ListenerConfig.BuilderBase<?, ?> builder, List<Builder<?, ? extends Routing>> optionValues) {
+            decorateSetList(builder, optionValues);
         }
     }
 }

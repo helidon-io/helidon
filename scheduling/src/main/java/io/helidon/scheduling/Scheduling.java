@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.scheduling;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.common.LazyValue;
 import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
 
 /**
@@ -39,6 +40,13 @@ import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
  * }</pre>
  */
 public class Scheduling {
+    static final String DEFAULT_THREAD_NAME_PREFIX = "scheduled-";
+    static final LazyValue<ScheduledExecutorService> DEFAULT_SCHEDULER = LazyValue.create(() -> {
+        return ScheduledThreadPoolSupplier.builder()
+                .threadNamePrefix(DEFAULT_THREAD_NAME_PREFIX)
+                .build()
+                .get();
+    });
 
     private Scheduling() {
         //hidden constructor
@@ -194,8 +202,6 @@ public class Scheduling {
      */
     @Deprecated(since = "4.0.2", forRemoval = true)
     public static final class CronBuilder implements io.helidon.common.Builder<CronBuilder, Task> {
-
-        static final String DEFAULT_THREAD_NAME_PREFIX = "scheduled-";
 
         private ScheduledExecutorService executorService;
         private String cronExpression;

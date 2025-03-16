@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,9 @@ import java.util.function.Supplier;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
+import io.helidon.service.registry.Service;
 
+@Service.PerInstance(TimeoutConfigBlueprint.class)
 class TimeoutImpl implements Timeout {
     private static final System.Logger LOGGER = System.getLogger(TimeoutImpl.class.getName());
 
@@ -40,6 +42,7 @@ class TimeoutImpl implements Timeout {
     private Counter callsCounterMetric;
     private Timer executionDurationMetric;
 
+    @Service.Inject
     TimeoutImpl(TimeoutConfig config) {
         this.timeoutMillis = config.timeout().toMillis();
         this.executor = config.executor().orElseGet(FaultTolerance.executor());
@@ -105,7 +108,7 @@ class TimeoutImpl implements Timeout {
             try {
                 T result = supplier.get();
                 if (interrupted.get()) {
-                    throw new TimeoutException("Supplier execution interrupted", null);
+                    throw new TimeoutException("Supplier execution interrupted");
                 }
                 return result;
             } catch (Throwable t) {
@@ -135,7 +138,7 @@ class TimeoutImpl implements Timeout {
         if (throwable instanceof InterruptedException) {
             return new TimeoutException("Call interrupted", throwable);
         } else if (throwable instanceof java.util.concurrent.TimeoutException) {
-            return new TimeoutException("Timeout reached", throwable.getCause());
+            return new TimeoutException("Timeout reached", throwable);
         } else if (interrupted != null && interrupted.get()) {
             return new TimeoutException("Supplier execution interrupted", t);
         }

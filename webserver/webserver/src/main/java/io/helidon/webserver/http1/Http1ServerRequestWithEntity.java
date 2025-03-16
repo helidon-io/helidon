@@ -98,6 +98,11 @@ final class Http1ServerRequestWithEntity extends Http1ServerRequest {
         this.streamFilter = it -> filterFunction.apply(current.apply(it));
     }
 
+    @Override
+    public String toString() {
+        return super.toString() + " with entity";
+    }
+
     private void trySend100(boolean drain) {
         if (!continueImmediately && expectContinue && !drain) {
             BufferData buffer = BufferData.create(Http1Connection.CONTINUE_100);

@@ -34,6 +34,7 @@ import io.helidon.codegen.CodegenOptions;
 import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.ElementInfoPredicates;
 import io.helidon.codegen.ModuleInfo;
+import io.helidon.codegen.TypeHierarchy;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.codegen.classmodel.Field;
@@ -68,6 +69,7 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.INTERCEPTION_EXTERN
 import static io.helidon.service.codegen.ServiceCodegenTypes.INTERCEPT_EXCEPTION;
 import static io.helidon.service.codegen.ServiceCodegenTypes.INTERCEPT_METADATA;
 import static io.helidon.service.codegen.ServiceCodegenTypes.LIST_OF_DEPENDENCIES;
+import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_ENTRY_POINT;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_INJECT;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_NAMED;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_PER_INSTANCE;
@@ -2242,26 +2244,65 @@ public class ServiceDescriptorCodegen {
         TypeInfo typeInfo = service.serviceDescriptor().typeInfo();
 
         for (TypedElements.ElementMeta element : interceptedElements) {
-            var method = element.element();
-            String uniqueName = ctx.uniqueName(typeInfo, method);
-            String constantName = "METHOD_" + toConstantName(uniqueName);
-
-            // add inherited annotations from interfaces
-            List<Annotation> elementAnnotations = new ArrayList<>(method.annotations());
-            addInterfaceAnnotations(elementAnnotations, element.abstractMethods());
-            TypedElementInfo typedElementInfo = TypedElementInfo.builder()
-                    .from(method)
-                    .annotations(elementAnnotations)
-                    .build();
-            classModel.addField(constant -> constant
-                    .description("Element info for method: {@code " + method.signature() + "}.")
-                    .accessModifier(AccessModifier.PUBLIC)
-                    .isStatic(true)
-                    .isFinal(true)
-                    .type(TypeNames.TYPED_ELEMENT_INFO)
-                    .name(constantName)
-                    .addContentCreate(typedElementInfo));
+            addMethodElementField(typeInfo, classModel, element);
         }
+
+        // now go through all methods that have meta-annotation of an entry point and add them
+        service.serviceDescriptor()
+                .elements()
+                .plainElements()
+                .stream()
+                .filter(this::isEntryPoint)
+                .forEach(element -> {
+                    addMethodElementField(typeInfo, classModel, element);
+                });
+    }
+
+    private boolean isEntryPoint(TypedElements.ElementMeta element) {
+        TypedElementInfo method = element.element();
+        if (!ElementInfoPredicates.isMethod(method)) {
+            return false;
+        }
+        if (ElementInfoPredicates.isAbstract(method)) {
+            return false;
+        }
+        if (ElementInfoPredicates.isStatic(method)) {
+            return false;
+        }
+        List<Annotation> elementAnnotations = new ArrayList<>(method.annotations());
+        addInterfaceAnnotations(elementAnnotations, element.abstractMethods());
+
+        for (Annotation elementAnnotation : elementAnnotations) {
+            if (elementAnnotation.hasMetaAnnotation(SERVICE_ANNOTATION_ENTRY_POINT)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void addMethodElementField(TypeInfo typeInfo,
+                                       ClassModel.Builder classModel,
+                                       TypedElements.ElementMeta element) {
+
+        var method = element.element();
+        String uniqueName = ctx.uniqueName(typeInfo, method);
+        String constantName = "METHOD_" + toConstantName(uniqueName);
+
+        // add inherited annotations from interfaces
+        List<Annotation> elementAnnotations = new ArrayList<>(method.annotations());
+        addInterfaceAnnotations(elementAnnotations, element.abstractMethods());
+        TypedElementInfo typedElementInfo = TypedElementInfo.builder()
+                .from(method)
+                .annotations(elementAnnotations)
+                .build();
+        classModel.addField(constant -> constant
+                .description("Element info for method: {@code " + method.signature() + "}.")
+                .accessModifier(AccessModifier.PUBLIC)
+                .isStatic(true)
+                .isFinal(true)
+                .type(TypeNames.TYPED_ELEMENT_INFO)
+                .name(constantName)
+                .addContentCreate(typedElementInfo));
     }
 
     private void generateInterceptedType(RegistryRoundContext roundContext,

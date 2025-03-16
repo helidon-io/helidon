@@ -16,15 +16,22 @@
 
 package io.helidon.faulttolerance;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
+import io.helidon.service.registry.Lookup;
+import io.helidon.service.registry.Qualifier;
+import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceRegistry;
+
 /**
  * Implementation of {@code Async}. Default executor accessed from {@link FaultTolerance#executor()}.
  */
+@Service.PerInstance(AsyncConfigBlueprint.class)
 class AsyncImpl implements Async {
     private static final System.Logger LOGGER = System.getLogger(AsyncImpl.class.getName());
 
@@ -32,7 +39,17 @@ class AsyncImpl implements Async {
     private final CompletableFuture<Async> onStart;
     private final AsyncConfig config;
 
-    AsyncImpl(AsyncConfig config) {
+    // this must only be invoked when within Inject, so we can use inject services
+    @Service.Inject
+    AsyncImpl(ServiceRegistry services, AsyncConfig config) {
+        this.executor = config.executor()
+                .or(() -> config.executorName().flatMap(it -> executorService(services, it)))
+                .orElseGet(() -> FaultTolerance.executor().get());
+        this.onStart = config.onStart().orElseGet(CompletableFuture::new);
+        this.config = config;
+    }
+
+    AsyncImpl(AsyncConfig config, boolean internal) {
         this.executor = config.executor().orElseGet(() -> FaultTolerance.executor().get());
         this.onStart = config.onStart().orElseGet(CompletableFuture::new);
         this.config = config;
@@ -77,5 +94,12 @@ class AsyncImpl implements Async {
         ourFuture.set(future);
 
         return result;
+    }
+
+    private static Optional<ExecutorService> executorService(ServiceRegistry services, String name) {
+        return services.first(Lookup.builder()
+                                      .addContract(ExecutorService.class)
+                                      .addQualifier(Qualifier.createNamed(name))
+                                      .build());
     }
 }

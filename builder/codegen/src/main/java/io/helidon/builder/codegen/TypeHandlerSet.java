@@ -75,4 +75,14 @@ class TypeHandlerSet extends TypeHandlerCollection {
                 .addContent(actualType())
                 .addContentLine(".class)));");
     }
+
+    @Override
+    protected String decoratorSetMethodName() {
+        return "decorateSetSet";
+    }
+
+    @Override
+    protected String decoratorAddMethodName() {
+        return "decorateAddSet";
+    }
 }

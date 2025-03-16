@@ -1150,6 +1150,10 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.declarative</groupId>
+            <artifactId>helidon-declarative-codegen-model</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.declarative</groupId>
             <artifactId>helidon-declarative-codegen</artifactId>
         </dependency>
         <dependency>

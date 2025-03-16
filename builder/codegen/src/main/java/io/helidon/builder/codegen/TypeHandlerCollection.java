@@ -397,10 +397,20 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
                         .type(actualType()))
                 .accessModifier(setterAccessModifier(configured))
                 .addContent(Objects.class)
-                .addContentLine(".requireNonNull(" + singularName + ");")
-                .addContentLine("this." + name() + ".add(" + singularName + ");")
+                .addContentLine(".requireNonNull(" + singularName + ");");
+
+        if (configured.decorator() != null) {
+            builder.addContent("new ")
+                    .addContent(configured.decorator())
+                    .addContent("().decorate(this, ")
+                    .addContent(singularName)
+                    .addContentLine(");");
+        }
+
+        builder.addContentLine("this." + name() + ".add(" + singularName + ");")
                 .update(this::extraAdderContent)
                 .addContentLine("return self();");
+
         classBuilder.addMethod(builder);
     }
 
@@ -439,7 +449,7 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
                                  Javadoc blueprintJavadoc) {
         // we cannot call super. as collections are always final
         // there is always a setter with the declared type, replacing values
-        Method.Builder builder = Method.builder()
+        Method.Builder setMethod = Method.builder()
                 .name(setterName())
                 .returnType(returnType, "updated builder instance")
                 .description(blueprintJavadoc.content())
@@ -449,20 +459,51 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
                         .description(blueprintJavadoc.returnDescription()))
                 .accessModifier(setterAccessModifier(configured))
                 .addContent(Objects.class)
-                .addContentLine(".requireNonNull(" + name() + ");")
-                .update(this::extraSetterContent)
+                .addContentLine(".requireNonNull(" + name() + ");");
+
+        Method.Builder addMethod = Method.builder()
+                .name("add" + capitalize(name()))
+                .returnType(returnType, "updated builder instance")
+                .description(blueprintJavadoc.content())
+                .addJavadocTag("see", "#" + getterName() + "()")
+                .addParameter(param -> param.name(name())
+                        .type(argumentTypeName())
+                        .description(blueprintJavadoc.returnDescription()))
+                .accessModifier(setterAccessModifier(configured))
+                .addContent(Objects.class)
+                .addContentLine(".requireNonNull(" + name() + ");");
+
+        // in case the method has a decorator, we need to handle it as well
+        if (configured.decorator() != null) {
+            setMethod.addContent("new ")
+                    .addContent(configured.decorator())
+                    .addContent("().")
+                    .addContent(decoratorSetMethodName())
+                    .addContent("(this, ")
+                    .addContent(name())
+                    .addContentLine(");");
+
+            addMethod.addContent("new ")
+                    .addContent(configured.decorator())
+                    .addContent("().")
+                    .addContent(decoratorAddMethodName())
+                    .addContent("(this, ")
+                    .addContent(name())
+                    .addContentLine(");");
+        }
+
+        // first decorate (above), then set the values
+        setMethod.update(this::extraSetterContent)
                 .addContentLine("this." + name() + ".clear();")
                 .addContentLine("this." + name() + ".addAll(" + name() + ");")
                 .addContentLine("return self();");
-        classBuilder.addMethod(builder);
 
-        builder.name("add" + capitalize(name()))
-                .clearContent()
-                .addContentLine("Objects.requireNonNull(" + name() + ");") //Overwrites existing content
-                .update(this::extraAdderContent)
+        addMethod.update(this::extraAdderContent)
                 .addContentLine("this." + name() + ".addAll(" + name() + ");")
                 .addContentLine("return self();");
-        classBuilder.addMethod(builder);
+
+        classBuilder.addMethod(setMethod);
+        classBuilder.addMethod(addMethod);
     }
 
     Method.Builder extraSetterContent(Method.Builder builder) {
@@ -473,4 +514,6 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
         return builder;
     }
 
+    protected abstract String decoratorSetMethodName();
+    protected abstract String decoratorAddMethodName();
 }

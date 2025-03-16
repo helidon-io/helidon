@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
+import io.helidon.service.registry.Service;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.ListenerConfig;
@@ -131,7 +132,10 @@ public class Http1ServerJunitExtension implements ServerJunitExtension {
                                        WebServerConfig.Builder serverBuilder,
                                        ListenerConfig.Builder listenerBuilder,
                                        Router.RouterBuilder<?> routerBuilder) {
-            return HttpRouting.builder();
+            if (listenerBuilder.routing().isEmpty()) {
+                listenerBuilder.routing(HttpRouting.builder());
+            }
+            return listenerBuilder.routing().get();
         }
 
         @Override

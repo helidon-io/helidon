@@ -25,7 +25,7 @@ import io.helidon.builder.api.RuntimeType;
  *
  * <pre>{@code
  * Scheduling.fixedRate()
- *      .delay(2)
+ *      .interval(Duration.ofSecond(2))
  *      .task(inv -> System.out.println("Executed every 2 seconds"))
  *      .build();
  * }</pre>
@@ -63,15 +63,15 @@ public interface FixedRate extends RuntimeType.Api<FixedRateConfig>, Task {
     }
 
     /**
-     * Whether the delay should be calculated from the start or end of the previous task.
+     * Whether the interval of the next invocation should be calculated from the start or end of the previous task.
      */
     enum DelayType {
         /**
-         * Next invocation delay is measured from the previous invocation task start.
+         * Next invocation start is measured from the previous invocation task start.
          */
         SINCE_PREVIOUS_START,
         /**
-         * Next invocation delay is measured from the previous invocation task end.
+         * Next invocation start is measured from the previous invocation task end.
          */
         SINCE_PREVIOUS_END
     }

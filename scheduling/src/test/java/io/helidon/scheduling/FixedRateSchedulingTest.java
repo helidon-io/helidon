@@ -40,6 +40,7 @@ public class FixedRateSchedulingTest {
 
     static final long ERROR_MARGIN_MILLIS = 500;
 
+    @SuppressWarnings("removal")
     @Test
     void fixedRateDelayDeprecated() {
         IntervalMeter meter = new IntervalMeter();
@@ -68,7 +69,7 @@ public class FixedRateSchedulingTest {
         try {
             Scheduling.fixedRate()
                     .executor(executorService)
-                    .delay(2)
+                    .interval(Duration.ofSeconds(2))
                     .task(cronInvocation -> meter
                             .start()
                             .sleep(200, TimeUnit.MILLISECONDS)
@@ -93,9 +94,8 @@ public class FixedRateSchedulingTest {
             Scheduling.fixedRate()
                     .executor(executorService)
                     .delayType(FixedRate.DelayType.SINCE_PREVIOUS_START)
-                    .initialDelay(0)
-                    .timeUnit(TimeUnit.MILLISECONDS)
-                    .delay(delayMillis)
+                    .delayBy(Duration.ZERO)
+                    .interval(Duration.ofMillis(delayMillis))
                     .task(i -> {
                         lastStartTime.set(System.currentTimeMillis());
                         Thread.sleep(300);
@@ -123,9 +123,8 @@ public class FixedRateSchedulingTest {
             Scheduling.fixedRate()
                     .executor(executorService)
                     .delayType(FixedRate.DelayType.SINCE_PREVIOUS_END)
-                    .initialDelay(0)
-                    .timeUnit(TimeUnit.MILLISECONDS)
-                    .delay(delayMillis)
+                    .delayBy(Duration.ZERO)
+                    .interval(Duration.ofMillis(delayMillis))
                     .task(i -> {
                         lastStartTime.set(System.currentTimeMillis());
                         Thread.sleep(300);
@@ -142,6 +141,7 @@ public class FixedRateSchedulingTest {
         }
     }
 
+    @SuppressWarnings("removal")
     @Test
     void fixedRateInitialDelayDeprecated() {
         IntervalMeter meter = new IntervalMeter();
@@ -189,9 +189,8 @@ public class FixedRateSchedulingTest {
 
             var builder = Scheduling.fixedRate()
                     .executor(executorService)
-                    .initialDelay(expectedInitialDelay)
-                    .delay(1000)
-                    .timeUnit(TimeUnit.MILLISECONDS)
+                    .delayBy(Duration.ofMillis(expectedInitialDelay))
+                    .interval(Duration.ofSeconds(1))
                     .task(cronInvocation -> meter
                             .start()
                             .sleep(200, TimeUnit.MILLISECONDS)
@@ -214,6 +213,7 @@ public class FixedRateSchedulingTest {
         meter.assertAverageDuration(Duration.ofSeconds(1), Duration.ofMillis(ERROR_MARGIN_MILLIS));
     }
 
+    @SuppressWarnings("removal")
     @Test
     void fixedRateInvalidDelayDeprecated() {
         ScheduledExecutorService executorService = ScheduledThreadPoolSupplier.create().get();
@@ -236,7 +236,7 @@ public class FixedRateSchedulingTest {
         try {
             Assertions.assertThrows(IllegalArgumentException.class, () -> Scheduling.fixedRate()
                     .executor(executorService)
-                    .delay(0)
+                    .interval(Duration.ZERO)
                     .task(inv -> {
                     })
                     .build());
@@ -246,6 +246,7 @@ public class FixedRateSchedulingTest {
         }
     }
 
+    @SuppressWarnings("removal")
     @Test
     void fixedRateInvalidMissingDelayDeprecated() {
         ScheduledExecutorService executorService = ScheduledThreadPoolSupplier.create().get();
@@ -276,6 +277,7 @@ public class FixedRateSchedulingTest {
         }
     }
 
+    @SuppressWarnings("removal")
     @Test
     void fixedRateMissingTaskDeprecated() {
         ScheduledExecutorService executorService = ScheduledThreadPoolSupplier.create().get();
@@ -296,7 +298,7 @@ public class FixedRateSchedulingTest {
         try {
             Assertions.assertThrows(Errors.ErrorMessagesException.class, () -> Scheduling.fixedRate()
                     .executor(executorService)
-                    .delay(2)
+                    .interval(Duration.ofSeconds(2))
                     .build());
 
         } finally {

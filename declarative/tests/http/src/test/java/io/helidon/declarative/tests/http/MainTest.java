@@ -16,9 +16,16 @@
 
 package io.helidon.declarative.tests.http;
 
+import java.net.URI;
 import java.util.Map;
+import java.util.Optional;
 
+import io.helidon.http.HttpException;
 import io.helidon.http.Status;
+import io.helidon.service.registry.Lookup;
+import io.helidon.service.registry.Qualifier;
+import io.helidon.service.registry.ServiceRegistry;
+import io.helidon.webclient.api.RestClient;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.testing.junit5.ServerTest;
 
@@ -29,15 +36,22 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ServerTest
 class MainTest {
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
 
     private final Http1Client client;
+    private final ServiceRegistry registry;
+    private final URI serverUri;
 
-    protected MainTest(Http1Client client) {
+    protected MainTest(Http1Client client,
+                       ServiceRegistry registry,
+                       URI serverUri) {
         this.client = client;
+        this.registry = registry;
+        this.serverUri = serverUri;
     }
 
     @Test
@@ -75,5 +89,48 @@ class MainTest {
         assertThat(response.status(), is(Status.BAD_REQUEST_400));
         JsonObject entity = response.entity();
         assertThat(entity.getString("error"), is("No greeting provided"));
+    }
+
+    @Test
+    void testTypedClient() {
+        GreetEndpointClient typedClient = registry.get(Lookup.builder()
+                                                               .addContract(GreetEndpointClient.class)
+                                                               .addQualifier(Qualifier.create(RestClient.Client.class))
+                                                               .build());
+
+        String message = typedClient.getDefaultMessageHandlerPlain();
+        assertThat(message, is("Hello World!"));
+
+        JsonObject jsonMessage = typedClient.getDefaultMessageHandler();
+        assertThat(jsonMessage.getString("message"), is("Hello World!"));
+
+        message = typedClient.failingFallback(serverUri.getAuthority());
+        assertThat(message, is("Fallback " + serverUri.getAuthority()));
+
+        message = typedClient.retriable();
+        assertThat(message, is("Success"));
+
+        HttpException exception = assertThrows(HttpException.class, typedClient::breaker);
+        assertThat(exception.status(), is(Status.FORBIDDEN_403));
+
+        message = typedClient.timeout(Optional.empty());
+        assertThat(message, is("Success"));
+
+        exception = assertThrows(HttpException.class, () -> typedClient.timeout(Optional.of(2)));
+        assertThat(exception.status(), is(Status.SERVICE_UNAVAILABLE_503));
+
+        jsonMessage = typedClient.getMessageHandler("test");
+        assertThat(jsonMessage.getString("message"), is("Hello test!"));
+
+        JsonObject newGreeting = JSON.createObjectBuilder()
+                .add("greeting", "Ahoj")
+                .build();
+        typedClient.updateGreetingHandler(newGreeting);
+
+        newGreeting = JSON.createObjectBuilder()
+                .add("greeting", "Hello")
+                .build();
+        jsonMessage = typedClient.updateGreetingHandlerReturningCurrent(newGreeting);
+        assertThat(jsonMessage.getString("message"), is("Ahoj World!"));
     }
 }

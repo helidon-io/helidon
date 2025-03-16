@@ -39,6 +39,7 @@
 
     <modules>
         <module>codegen</module>
+        <module>codegen-model</module>
     </modules>
 
     <build>

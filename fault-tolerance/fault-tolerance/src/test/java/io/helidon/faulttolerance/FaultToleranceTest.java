@@ -70,9 +70,11 @@ class FaultToleranceTest {
     }
 
     private String fallback(Throwable throwable) {
-        if (throwable instanceof RuntimeException && throwable.getCause() != null) {
-            throwable = throwable.getCause();
+        if (throwable instanceof FaultToleranceException || throwable.getCause() == null) {
+            return throwable.getClass().getName();
         }
+
+        throwable = throwable.getCause();
         return throwable.getClass().getName();
     }
 

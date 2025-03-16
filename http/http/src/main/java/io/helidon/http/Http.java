@@ -18,6 +18,7 @@ package io.helidon.http;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -49,6 +50,7 @@ public final class Http {
     @Target({ElementType.TYPE, ElementType.METHOD})
     @Retention(RetentionPolicy.CLASS)
     @Documented
+    @Inherited
     public @interface Path {
         /**
          * Path to use, defaults to {@code /}.
@@ -90,6 +92,7 @@ public final class Http {
     @Retention(RetentionPolicy.CLASS)
     @Documented
     @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
+    @Service.EntryPoint
     public @interface HttpMethod {
         /**
          * Text of the HTTP method.

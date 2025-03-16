@@ -87,6 +87,7 @@ interface ListenerConfigBlueprint {
      * @return router for this listener/server
      */
     @Option.Singular
+    @Option.Decorator(WebServerConfigSupport.RoutingsDecorator.class)
     List<io.helidon.common.Builder<?, ? extends Routing>> routings();
 
     /**

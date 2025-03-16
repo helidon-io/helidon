@@ -21,10 +21,12 @@ module io.helidon.declarative.tests.http {
     requires io.helidon.service.registry;
     requires jakarta.json;
     requires io.helidon.config.yaml;
-    requires io.helidon.security.abac.role;
     requires io.helidon.webserver.security;
     requires io.helidon.logging.common;
     requires io.helidon.metrics.systemmeters;
+    requires io.helidon.scheduling;
+    requires io.helidon.webclient.api;
+    requires io.helidon.faulttolerance;
 
     exports io.helidon.declarative.tests.http;
 }

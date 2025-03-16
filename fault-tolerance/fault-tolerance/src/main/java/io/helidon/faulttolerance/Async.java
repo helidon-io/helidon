@@ -45,7 +45,7 @@ public interface Async extends RuntimeType.Api<AsyncConfig> {
      * @return a default async instance
      */
     static Async create(AsyncConfig config) {
-        return new AsyncImpl(config);
+        return new AsyncImpl(config, true);
     }
 
     /**

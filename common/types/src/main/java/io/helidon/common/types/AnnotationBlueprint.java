@@ -672,9 +672,14 @@ interface AnnotationBlueprint {
      * @return {@code true} if the annotation is declared on this annotation, or is inherited from a declared annotation
      */
     default boolean hasMetaAnnotation(TypeName annotationType) {
-        return metaAnnotations()
-                .stream()
-                .map(Annotation::typeName)
-                .anyMatch(annotationType::equals);
+        for (Annotation metaAnnotation : metaAnnotations()) {
+            if (metaAnnotation.typeName().equals(annotationType)) {
+                return true;
+            }
+            if (metaAnnotation.hasMetaAnnotation(annotationType)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

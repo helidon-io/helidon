@@ -16,6 +16,8 @@
 
 package io.helidon.microprofile.scheduling;
 
+import java.time.Duration;
+import java.time.LocalTime;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -23,17 +25,21 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.helidon.microprofile.testing.junit5.AddBean;
-import io.helidon.microprofile.testing.junit5.AddExtension;
-import io.helidon.microprofile.testing.junit5.Configuration;
-import io.helidon.microprofile.testing.junit5.DisableDiscovery;
+import io.helidon.microprofile.testing.AddBean;
+import io.helidon.microprofile.testing.AddExtension;
+import io.helidon.microprofile.testing.Configuration;
+import io.helidon.microprofile.testing.DisableDiscovery;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 import io.helidon.scheduling.CronInvocation;
 import io.helidon.scheduling.FixedRateInvocation;
+import io.helidon.scheduling.Schedule;
 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
@@ -41,7 +47,7 @@ import static org.hamcrest.Matchers.lessThan;
 
 @HelidonTest
 @DisableDiscovery
-@AddBean(ScheduledBean.class)
+@AddBean(SchedulingTest.ScheduledBean.class)
 @AddExtension(SchedulingCdiExtension.class)
 @Configuration(configSources = "test.properties")
 public class SchedulingTest {
@@ -55,31 +61,30 @@ public class SchedulingTest {
     final CompletableFuture<Integer> concurrentExecFuture = new CompletableFuture<>();
     final CompletableFuture<String> overriddenCronFuture = new CompletableFuture<>();
     final CompletableFuture<Boolean> overriddenConcurrentFuture = new CompletableFuture<>();
-    final CompletableFuture<Long> overriddenInitDelayFuture = new CompletableFuture<>();
-    final CompletableFuture<Long> overriddenDelayFuture = new CompletableFuture<>();
-    final CompletableFuture<TimeUnit> overriddenTimeUnitFuture = new CompletableFuture<>();
+    final CompletableFuture<Duration> overriddenDelayByFuture = new CompletableFuture<>();
+    final CompletableFuture<Duration> overriddenIntervalFuture = new CompletableFuture<>();
 
     @Inject
     ScheduledBean scheduledBean;
+    AtomicInteger noConcurrentContenderCnt = new AtomicInteger(0);
+    AtomicInteger concurrentContenderCnt = new AtomicInteger(0);
 
-    @FixedRate(value = 100, timeUnit = TimeUnit.MILLISECONDS)
+    @Schedule.FixedRate("PT0.1S")
     public void rate() {
         fixedRateLatch.countDown();
     }
 
-    @FixedRate(999999)
+    @Schedule.FixedRate("PT999999S")
     public void rateFromConfig() {
         fixedRateFromConfigLatch.countDown();
     }
 
-    @Scheduled("${test-cron-expr}")
+    @Schedule.Cron("${test-cron-expr}")
     void placeholder() {
         exprLatch.countDown();
     }
 
-    AtomicInteger noConcurrentContenderCnt = new AtomicInteger(0);
-
-    @Scheduled(value = "0/1 * * * * ? *", concurrentExecution = false)
+    @Schedule.Cron(value = "0/1 * * * * ? *", concurrent = false)
     void noConcurrentExecutions() throws InterruptedException {
         noConcurrentContenderCnt.incrementAndGet();
         Thread.sleep(1800);
@@ -87,9 +92,7 @@ public class SchedulingTest {
         noConcurrentContenderCnt.decrementAndGet();
     }
 
-    AtomicInteger concurrentContenderCnt = new AtomicInteger(0);
-
-    @Scheduled(value = "0/1 * * * * ? *")
+    @Schedule.Cron("0/1 * * * * ? *")
     void concurrentExecutions() throws InterruptedException {
         concurrentContenderCnt.incrementAndGet();
         Thread.sleep(1800);
@@ -97,77 +100,107 @@ public class SchedulingTest {
         concurrentContenderCnt.decrementAndGet();
     }
 
-    @Scheduled(value = "0 0 * * * ? *", concurrentExecution = true)
+    @Schedule.Cron("0 0 * * * ? *")
     void overriddenValuesCron(CronInvocation inv) {
         overriddenCronFuture.complete(inv.cron());
         overriddenConcurrentFuture.complete(inv.concurrent());
     }
 
-    @FixedRate(initialDelay = 500, value = 1000, timeUnit = TimeUnit.HOURS)
+    @Schedule.FixedRate(delayBy = "PT500H", value = "PT1H")
     void overriddenValuesFixed(FixedRateInvocation inv) {
-        overriddenInitDelayFuture.complete(inv.initialDelay());
-        overriddenDelayFuture.complete(inv.delay());
-        overriddenTimeUnitFuture.complete(inv.timeUnit());
+        overriddenDelayByFuture.complete(inv.delayBy());
+        overriddenIntervalFuture.complete(inv.interval());
     }
 
     @Test
     void expressionPlaceHolder() throws InterruptedException {
         assertThat("Scheduled method expected to be invoked at least once",
-                exprLatch.await(5, TimeUnit.SECONDS));
+                   exprLatch.await(5, TimeUnit.SECONDS));
     }
 
     @Test
     void executedEvery2Sec() throws InterruptedException {
         assertThat("Scheduled method expected to be invoked at least twice",
-                scheduledBean.getCountDownLatch().await(5, TimeUnit.SECONDS));
+                   scheduledBean.getCountDownLatch().await(5, TimeUnit.SECONDS));
         assertDuration(TWO_SEC_MILLIS, scheduledBean.getDuration(), 2000);
     }
 
     @Test
     void fixedRate() throws InterruptedException {
         assertThat("Scheduled method expected to be invoked at least 5 times",
-                fixedRateLatch.await(3, TimeUnit.SECONDS));
+                   fixedRateLatch.await(3, TimeUnit.SECONDS));
     }
 
     @Test
     void fixedRateFromConfig() throws InterruptedException {
         assertThat("Scheduled method expected to be invoked at least twice",
-                fixedRateLatch.await(3, TimeUnit.SECONDS));
+                   fixedRateLatch.await(3, TimeUnit.SECONDS));
     }
 
     @Test
     void forbiddenConcurrentExec() throws InterruptedException, TimeoutException, ExecutionException {
         assertThat("Scheduled method expected is NOT expected to be invoked concurrently with concurrentExecution = false",
-                noConcurrentExecFuture.get(3, TimeUnit.SECONDS), equalTo(1));
+                   noConcurrentExecFuture.get(3, TimeUnit.SECONDS), equalTo(1));
     }
 
     @Test
     void concurrentExec() throws InterruptedException, TimeoutException, ExecutionException {
         assertThat("Scheduled method is expected to be invoked concurrently with concurrentExecution = true.",
-                concurrentExecFuture.get(3, TimeUnit.SECONDS), greaterThan(1));
+                   concurrentExecFuture.get(3, TimeUnit.SECONDS), greaterThan(1));
     }
 
     @Test
     void overriddenCron() throws InterruptedException, TimeoutException, ExecutionException {
         assertThat("Cron expression should have been overridden by config value",
-                overriddenCronFuture.get(5, TimeUnit.SECONDS), equalTo("0/2 * * * * ? *"));
+                   overriddenCronFuture.get(5, TimeUnit.SECONDS), equalTo("0/2 * * * * ? *"));
         assertThat("Concurrent flag should have been overridden by config value",
-                overriddenConcurrentFuture.get(5, TimeUnit.SECONDS), equalTo(Boolean.FALSE));
+                   overriddenConcurrentFuture.get(5, TimeUnit.SECONDS), equalTo(Boolean.FALSE));
     }
 
     @Test
     void overriddenFixedRate() throws InterruptedException, TimeoutException, ExecutionException {
-        assertThat("Cron expression should have been overridden by config value",
-                overriddenInitDelayFuture.get(5, TimeUnit.SECONDS), equalTo(1L));
-        assertThat("Concurrent flag should have been overridden by config value",
-                overriddenDelayFuture.get(5, TimeUnit.SECONDS), equalTo(2L));
-        assertThat("Concurrent flag should have been overridden by config value",
-                overriddenTimeUnitFuture.get(5, TimeUnit.SECONDS), equalTo(TimeUnit.SECONDS));
+        Duration delayBy = overriddenDelayByFuture.get(5, TimeUnit.SECONDS);
+        Duration interval = overriddenIntervalFuture.get(5, TimeUnit.SECONDS);
+
+        Assertions.assertAll(
+                () -> assertThat("Delay by should have been overridden by config value",
+                                 delayBy, is(Duration.ofSeconds(1))),
+                () -> assertThat("Interval should have been overridden by config value",
+                                 interval, is(Duration.ofSeconds(2)))
+        );
     }
 
     private void assertDuration(long expectedDuration, long duration, long allowedDiscrepancy) {
         String durationString = "Expected duration is 2 sec, but was " + ((float) duration / 1000) + "sec";
         assertThat(durationString, duration, greaterThan(expectedDuration - allowedDiscrepancy));
         assertThat(durationString, duration, lessThan(expectedDuration + allowedDiscrepancy));
+    }
+
+    @ApplicationScoped
+    public static class ScheduledBean {
+
+        private static final System.Logger LOGGER = System.getLogger(ScheduledBean.class.getName());
+
+        final CountDownLatch countDownLatch = new CountDownLatch(2);
+
+
+        volatile long duration = 0;
+        volatile long stamp = 0;
+
+        public CountDownLatch getCountDownLatch() {
+            return countDownLatch;
+        }
+
+        public long getDuration() {
+            return duration;
+        }
+
+        @Schedule.Cron("0/2 * * * * ? *")
+        public void test2sec() {
+            duration = System.currentTimeMillis() - stamp;
+            stamp = System.currentTimeMillis();
+            countDownLatch.countDown();
+            LOGGER.log(System.Logger.Level.DEBUG, () -> "Executed at " + LocalTime.now().toString());
+        }
     }
 }

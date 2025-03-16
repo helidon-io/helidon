@@ -21,12 +21,30 @@ module io.helidon.declarative.codegen {
     requires io.helidon.codegen;
     requires io.helidon.codegen.classmodel;
     requires io.helidon.service.codegen;
+    requires io.helidon.declarative.codegen.model;
 
     exports io.helidon.declarative.codegen;
-    exports io.helidon.declarative.codegen.spi;
 
-    uses io.helidon.declarative.codegen.spi.HttpParameterCodegenProvider;
+    exports io.helidon.declarative.codegen.http;
+    // webserver related code generation (HTTP endpoints)
+    exports io.helidon.declarative.codegen.http.webserver;
+    exports io.helidon.declarative.codegen.http.webserver.spi;
+    // typed web client
+    exports io.helidon.declarative.codegen.http.restclient;
 
-    provides io.helidon.codegen.spi.CodegenExtensionProvider
-            with io.helidon.declarative.codegen.WebServerCodegenProvider;
+    // fault tolerance (fallback, retry, circuit breaker)
+    exports io.helidon.declarative.codegen.faulttolerance;
+    // scheduling
+    exports io.helidon.declarative.codegen.scheduling;
+
+    uses io.helidon.declarative.codegen.http.webserver.spi.HttpParameterCodegenProvider;
+
+    provides io.helidon.service.codegen.spi.RegistryCodegenExtensionProvider
+            with io.helidon.declarative.codegen.faulttolerance.FtExtensionProvider,
+                    io.helidon.declarative.codegen.scheduling.SchedulingExtensionProvider,
+                    io.helidon.declarative.codegen.http.restclient.RestClientExtensionProvider,
+                    io.helidon.declarative.codegen.http.webserver.RestServerExtensionProvider;
+
+    provides io.helidon.codegen.spi.AnnotationMapperProvider
+            with io.helidon.declarative.codegen.http.restclient.RestClientAnnotationMapperProvider;
 }

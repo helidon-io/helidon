@@ -35,6 +35,9 @@ import io.helidon.common.config.Config;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.testing.virtualthreads.PinningRecorder;
+import io.helidon.config.spi.ConfigNode;
+import io.helidon.config.spi.ConfigSource;
+import io.helidon.config.spi.LazyConfigSource;
 import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.Services;
 import io.helidon.webserver.ListenerConfig;
@@ -83,6 +86,8 @@ class HelidonServerJunitExtension extends JunitExtensionBase
                     && System.getProperty("config.profile") == null) {
                 System.setProperty("helidon.config.profile", "test");
             }
+            TestConfigSource testConfigSource = new TestConfigSource();
+            Services.add(ConfigSource.class, 10000D, testConfigSource);
 
             Class<?> testClass = context.getRequiredTestClass();
             super.testClass(testClass);
@@ -122,8 +127,8 @@ class HelidonServerJunitExtension extends JunitExtensionBase
             } else {
                 uris.put(DEFAULT_SOCKET_NAME, URI.create("http://localhost:" + server.port() + "/"));
             }
-            // TODO set the port in config
-            // super.setConfig("test.server.port", String.valueOf(server.port()));
+
+            testConfigSource.set("test.server.port", String.valueOf(server.port()));
         });
     }
 
@@ -356,5 +361,19 @@ class HelidonServerJunitExtension extends JunitExtensionBase
                     WebServerConfig.Builder serverBuilder,
                     ListenerConfig.Builder listenerBuilder,
                     Router.RouterBuilder<?> routerBuilder);
+    }
+
+    private static class TestConfigSource implements ConfigSource, LazyConfigSource {
+        private final Map<String, String> values = new HashMap<>();
+
+        @Override
+        public Optional<ConfigNode> node(String key) {
+            return Optional.ofNullable(values.get(key))
+                    .map(ConfigNode.ValueNode::create);
+        }
+
+        private void set(String key, String value) {
+            values.put(key, value);
+        }
     }
 }

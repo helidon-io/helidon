@@ -23,6 +23,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.inject.literal.InjectLiteral;
+import jakarta.enterprise.inject.literal.NamedLiteral;
 import jakarta.enterprise.inject.spi.AfterBeanDiscovery;
 import jakarta.enterprise.inject.spi.AfterDeploymentValidation;
 import jakarta.enterprise.inject.spi.AnnotatedParameter;
@@ -62,7 +63,7 @@ public class MockBeansCdiExtension implements Extension {
                     Class<?> parameterType = parameter.getJavaParameter().getType();
                     mocks.put(parameterType, mockBean);
                 }
-            }
+            };
         }
     }
 

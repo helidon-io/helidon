@@ -36,8 +36,6 @@
         - Helidon @Generated extension
         - Helidon Declarative
         Does not contain:
-        - Helidon Service Inject Jakarta
-        - Helidon Service Inject Javax
         - Helidon Copyright extension
     </description>
 
