@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,19 @@
 package io.helidon.health.checks;
 
 import java.lang.management.ThreadMXBean;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.NativeImageHelper;
+import io.helidon.health.HealthCheckException;
 import io.helidon.health.common.BuiltInHealthCheck;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
+import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 import org.eclipse.microprofile.health.Liveness;
 
 /**
@@ -80,17 +83,22 @@ public class DeadlockHealthCheck implements HealthCheck {
                     .build();
         }
 
-        boolean noDeadLock = false;
+        HealthCheckResponseBuilder builder = HealthCheckResponse.builder()
+                .name(NAME);
+
         try {
             // Thanks to https://stackoverflow.com/questions/1102359/programmatic-deadlock-detection-in-java#1102410
-            noDeadLock = (threadBean.findDeadlockedThreads() == null);
+            long[] deadlockedThreads = threadBean.findDeadlockedThreads();
+            if (deadlockedThreads != null) {
+                builder.down();
+                LOGGER.log(Level.FINEST, "Health check observed deadlocked threads: " + Arrays.toString(deadlockedThreads));
+            }
         } catch (Throwable e) {
-            // ThreadBean does not work - probably in native image
-            LOGGER.log(Level.FINEST, "Failed to find deadlocks in ThreadMXBean, ignoring this healthcheck", e);
+            // Throw HealthCheckException, not report DOWN, because we do not know that
+            // there are deadlocks which DOWN should imply; we simply cannot find out.
+            throw new HealthCheckException("Error invoking ThreadMXBean to find deadlocks; cannot complete this healthcheck", e);
         }
-        return HealthCheckResponse.named(NAME)
-                .status(noDeadLock)
-                .build();
+        return builder.build();
     }
 }
 
