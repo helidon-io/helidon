@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -212,6 +213,7 @@ public final class HealthSupport extends HelidonRestServiceSupport {
                 .collect(Collectors.toList());
 
         Status status = responses.stream()
+                .filter(Predicate.not(HcResponse::internalError))
                 .map(HcResponse::status)
                 .filter(Status.DOWN::equals)
                 .findFirst()

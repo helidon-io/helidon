@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.health.checks;
 
 import java.lang.management.ThreadMXBean;
 
+import io.helidon.health.HealthCheckException;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class DeadlockHealthCheckTest {
     private ThreadMXBean threadBean;
@@ -57,5 +59,13 @@ class DeadlockHealthCheckTest {
         HealthCheckResponse response = check.call();
         MatcherAssert.assertThat(HealthCheckResponse.Status.UP, is(response.getStatus()));
         MatcherAssert.assertThat(response.getData().isPresent(), is(false));
+    }
+
+    @Test
+    void errorInvokingMBean() {
+        Mockito.when(threadBean.findDeadlockedThreads()).thenThrow(new RuntimeException("Simulated error invoking MBean"));
+        DeadlockHealthCheck check = new DeadlockHealthCheck(threadBean);
+        HealthCheckException exception = assertThrows(HealthCheckException.class, check::call);
+        MatcherAssert.assertThat(exception.getMessage(), is("Error invoking ThreadMXBean to find deadlocks; cannot complete this healthcheck"));
     }
 }
