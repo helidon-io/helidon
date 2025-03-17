@@ -146,8 +146,10 @@ public class TcpClientConnection implements ClientConnection {
         } else {
             this.helidonSocket = PlainSocket.client(socket, channelId);
         }
+
         this.reader = new DataReader(helidonSocket);
-        this.writer = new DirectDatatWriter(helidonSocket);
+        int writeBufferSize = webClient.prototype().writeBufferSize();
+        this.writer = new BufferedDataWriter(helidonSocket, writeBufferSize);
 
         return this;
     }
@@ -310,33 +312,68 @@ public class TcpClientConnection implements ClientConnection {
         return String.join(", ", certs);
     }
 
-    private static class DirectDatatWriter implements DataWriter {
+    static class BufferedDataWriter implements DataWriter {
+        private final BufferData writerBuffer;
         private final HelidonSocket helidonSocket;
 
-        DirectDatatWriter(HelidonSocket helidonSocket) {
+        BufferedDataWriter(HelidonSocket helidonSocket, int bufferSize) {
             this.helidonSocket = helidonSocket;
+            this.writerBuffer = bufferSize > 0 ? BufferData.create(bufferSize) : null;
         }
 
         @Override
         public void write(BufferData... buffers) {
-            writeNow(buffers);
+            for (BufferData buffer : buffers) {
+                write(buffer);
+            }
         }
 
         @Override
         public void write(BufferData buffer) {
+            // no buffering, just write now
+            if (writerBuffer == null) {
+                writeNow(buffer);
+                return;
+            }
+            // have space in writerBuffer?
+            if (buffer.available() <= writerBuffer.capacity()) {
+                writerBuffer.write(buffer);
+                return;
+            }
+            // write and reset writerBuffer if we have data
+            if (writerBuffer.available() > 0) {
+                writeNow(writerBuffer);
+                writerBuffer.reset();
+                // have space now?
+                if (buffer.available() <= writerBuffer.capacity()) {
+                    writerBuffer.write(buffer);
+                    return;
+                }
+            }
+            // no luck, we need to write it now
             writeNow(buffer);
         }
 
         @Override
         public void writeNow(BufferData... buffers) {
+            flush();
             for (BufferData buffer : buffers) {
-                writeNow(buffer);
+                helidonSocket.write(buffer);
             }
         }
 
         @Override
         public void writeNow(BufferData buffer) {
+            flush();
             helidonSocket.write(buffer);
+        }
+
+        @Override
+        public void flush() {
+            if (writerBuffer != null && writerBuffer.available() > 0) {
+                helidonSocket.write(writerBuffer);
+                writerBuffer.reset();
+            }
         }
     }
 }
