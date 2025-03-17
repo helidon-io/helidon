@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -266,4 +266,17 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
     @Option.Configured
     @Option.DefaultInt(131072)
     int maxInMemoryEntity();
+
+    /**
+     * Buffer size used when writing data to the underlying socket on a client TCP
+     * connection. A value that is less or equal to 1 can be set to disable buffering
+     * at this level. Note that if writing data to the socket in small chunks, they
+     * may not be delivered to the network immediately due to Nagle's algorithm (i.e.,
+     * if TCP_NO_DELAY is turned off).
+     *
+     * @return number of bytes in write buffer
+     */
+    @Option.Configured
+    @Option.DefaultInt(4096)
+    int writeBufferSize();
 }
