@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2023, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -66,33 +66,50 @@ Helidon connector to handle the underlying HTTP connection.
 
 == Configuration
 
-The Helidon connector implementation is based on `WebClient`, so it can be configured
-using config in the same way as any other instance of that class.
-The config root used by the Helidon connector to initialize all instances of `WebClient` is
-rooted at `jersey.connector.helidon.config`. Thus, if using a properties file,
-use this prefix for all the properties that you want to set in the connector.
+The Helidon connector implementation is based on WebClient. Even though WebClient can handle
+protocols other than HTTP (such as gRPC), only its HTTP capabilities are exercised by
+the connector when using Jersey. Since it is based on WebClient, it can be configured
+by passing a config fragment that matches the properties defined in `HttpClientConfig`
+&mdash;a supertype of `WebClientConfig` that handles HTTP specific configuration.
 
-For example, suppose you need to enable automatic storage for server cookies and to
-turn off redirects, you can add the following lines to your `microprofile-config.properties` file:
-
-[source, properties]
-----
-jersey.connector.helidon.config.cookie-manager.automatic-store-enabled=true
-jersey.connector.helidon.config.follow-redirects=false
-----
-
-Alternatively, assuming the root of the `WebClient` configuration is located at
+Assuming the root of the `WebClient` configuration is located at
 `my.webclient`, this can be done programmatically when building the `ClientConfig`
-instance as follows:
+instance in the Jakarta REST API:
 
 [source,java]
 ----
 include::{sourcedir}/mp/jaxrs/HelidonConnectorSnippets.java[tag=snippet_2, indent=0]
 ----
 
-There are additional properties that can be set programmatically and that shall
-override any related property set via config. The following table lists all the
-properties supported by the connector, their types, scopes and default values.
+If not provided as the value of the `HelidonProperties.CONFIG` property as shown
+above, the connector will look for WebClient configuration rooted at
+`jersey.connector.webclient`. For example, the following YAML config file can be used
+to set some socket options and turn off 100-continue support for all WebClient
+instances created by the connector:
+
+[source, properties]
+----
+jersey:
+  connector:
+    webclient:
+      socket-options:
+        connect-timeout: PT1M
+        read-timeout: PT1M
+        socket-receive-buffer-size: 1024
+        socket-send-buffer-size: 1024
+        tcp-no-delay: false
+      send-expect-continue: false
+----
+
+There are some additional properties that can be passed via `ClientConfig` that also
+affect how WebClient instance used by the connector are configured. Some of these
+properties are defined by Jersey (those prefixed by `jersey.config.client`) and
+some by Helidon (those prefixed by `jersey.connector.helidon`). If any of these
+properties is specified, it will override the equivalent setting provided
+in a WebClient config as shown above &mdash;regardless of whether it was passed
+in using `HelidonProperties.CONFIG` or located at the `jersey.connector.webclient` root.
+
+The complete list of properties supported by the Helidon connector is listed below:
 
 |===
 |Property Name |Type |Scope |Default
@@ -148,6 +165,10 @@ properties supported by the connector, their types, scopes and default values.
 |false
 |===
 
+
+NOTE: Each of the properties in the table above accepts a well-defined type
+for its value. If passing a value whose type cannot be converted to the
+required one, the property is simply ignored by the connector.
 
 === HTTP/2 Support
 
