@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,8 +40,8 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.NativeImageHelper;
 import io.helidon.config.ConfigException;
-import io.helidon.config.mp.MpConfig;
 
+import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.context.spi.CreationalContext;
@@ -62,6 +62,7 @@ import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
 import jakarta.enterprise.inject.spi.ProcessBean;
 import jakarta.enterprise.inject.spi.ProcessObserverMethod;
 import jakarta.enterprise.inject.spi.WithAnnotations;
+import jakarta.interceptor.Interceptor;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.ConfigValue;
@@ -163,26 +164,13 @@ public class ConfigCdiExtension implements Extension {
      *
      * @param abd event from CDI container
      */
-    private void registerConfigProducer(@Observes AfterBeanDiscovery abd) {
+    private void registerConfigProducer(@Observes @Priority(Interceptor.Priority.PLATFORM_BEFORE) AfterBeanDiscovery abd) {
         // we also must support injection of Config itself
         abd.addBean()
                 .addTransitiveTypeClosure(org.eclipse.microprofile.config.Config.class)
                 .beanClass(org.eclipse.microprofile.config.Config.class)
                 .scope(ApplicationScoped.class)
                 .createWith(creationalContext -> new SerializableConfig());
-
-        abd.addBean()
-                .addTransitiveTypeClosure(io.helidon.config.Config.class)
-                .beanClass(io.helidon.config.Config.class)
-                .scope(ApplicationScoped.class)
-                .createWith(creationalContext -> {
-                    Config config = ConfigProvider.getConfig();
-                    if (config instanceof io.helidon.config.Config) {
-                        return config;
-                    } else {
-                        return MpConfig.toHelidonConfig(config);
-                    }
-                });
 
         Set<Type> types = ips.stream()
                 .map(InjectionPoint::getType)
