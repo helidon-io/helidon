@@ -64,7 +64,7 @@ import static org.glassfish.jersey.client.ClientProperties.getValue;
 
 class HelidonConnector implements Connector {
     static final System.Logger LOGGER = System.getLogger(HelidonConnector.class.getName());
-    private static final String CONNECTOR_CONFIG_ROOT = "connector";
+    private static final String CONNECTOR_CONFIG_ROOT = "jersey.connector.webclient";
 
     private static final String HELIDON_VERSION = "Helidon/" + Version.VERSION + " (java "
             + PropertiesHelper.getSystemProperty("java.runtime.version") + ")";

@@ -14,14 +14,16 @@
 # limitations under the License.
 #
 
-connector:
-  base-uri: http://foo.bar:8090/
-  socket-options:
-    connect-timeout: PT1M
-    read-timeout: PT1M
-    socket-receive-buffer-size: 1024
-    socket-send-buffer-size: 1024
-    tcp-no-delay: false
-  send-expect-continue: false
-  relative-uris: true
-  share-connection-cache: false
+jersey:
+  connector:
+    webclient:
+      base-uri: http://foo.bar:8090/
+      socket-options:
+        connect-timeout: PT1M
+        read-timeout: PT1M
+        socket-receive-buffer-size: 1024
+        socket-send-buffer-size: 1024
+        tcp-no-delay: false
+      send-expect-continue: false
+      relative-uris: true
+      share-connection-cache: false
