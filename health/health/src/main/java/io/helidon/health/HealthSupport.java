@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -212,7 +213,7 @@ public final class HealthSupport extends HelidonRestServiceSupport {
                 .collect(Collectors.toList());
 
         Status status = responses.stream()
-                .filter(this::internalErrorExcluded)
+                .filter(Predicate.not(HcResponse::internalError))
                 .map(HcResponse::status)
                 .filter(Status.DOWN::equals)
                 .findFirst()
@@ -256,10 +257,6 @@ public final class HealthSupport extends HelidonRestServiceSupport {
 
     private boolean notExcluded(HcResponse response) {
         return !excludedHealthChecks.contains(response.hcr.getName());
-    }
-
-    private boolean internalErrorExcluded(HcResponse response) {
-        return !response.internalError();
     }
 
     private HcResponse callHealthChecks(HealthCheck hc) {
