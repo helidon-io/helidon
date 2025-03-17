@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -212,6 +212,7 @@ public final class HealthSupport extends HelidonRestServiceSupport {
                 .collect(Collectors.toList());
 
         Status status = responses.stream()
+                .filter(this::internalErrorExcluded)
                 .map(HcResponse::status)
                 .filter(Status.DOWN::equals)
                 .findFirst()
@@ -255,6 +256,10 @@ public final class HealthSupport extends HelidonRestServiceSupport {
 
     private boolean notExcluded(HcResponse response) {
         return !excludedHealthChecks.contains(response.hcr.getName());
+    }
+
+    private boolean internalErrorExcluded(HcResponse response) {
+        return !response.internalError();
     }
 
     private HcResponse callHealthChecks(HealthCheck hc) {
