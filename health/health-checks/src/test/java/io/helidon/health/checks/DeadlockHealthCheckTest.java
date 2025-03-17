@@ -26,7 +26,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class DeadlockHealthCheckTest {
@@ -67,6 +66,6 @@ class DeadlockHealthCheckTest {
         Mockito.when(threadBean.findDeadlockedThreads()).thenThrow(new RuntimeException("Simulated error invoking MBean"));
         DeadlockHealthCheck check = new DeadlockHealthCheck(threadBean);
         HealthCheckException exception = assertThrows(HealthCheckException.class, check::call);
-        assertEquals("Error invoking ThreadMXBean to find deadlocks; cannot complete this healthcheck", exception.getMessage());
+        MatcherAssert.assertThat(exception.getMessage(), is("Error invoking ThreadMXBean to find deadlocks; cannot complete this healthcheck"));
     }
 }
