@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import io.helidon.codegen.CodegenException;
@@ -46,6 +47,7 @@ import io.helidon.service.codegen.RegistryRoundContext;
 import io.helidon.service.codegen.ServiceCodegenTypes;
 import io.helidon.service.codegen.spi.RegistryCodegenExtension;
 
+import static io.helidon.declarative.codegen.DeclarativeTypes.CONFIG;
 import static io.helidon.declarative.codegen.scheduling.SchedulingTypes.CRON;
 import static io.helidon.declarative.codegen.scheduling.SchedulingTypes.CRON_ANNOTATION;
 import static io.helidon.declarative.codegen.scheduling.SchedulingTypes.CRON_INVOCATION;
@@ -173,6 +175,9 @@ class SchedulingExtension implements RegistryCodegenExtension {
                 .name("postConstruct")
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE);
 
+        postConstruct.addContentLine("var config = configSupplier.get();");
+        postConstruct.addContentLine("var classConfig = config.get(getClass().getName());");
+
         for (Scheduled scheduled : allScheduled) {
             addStartScheduled(postConstruct, serviceToFields, scheduled);
         }
@@ -191,17 +196,36 @@ class SchedulingExtension implements RegistryCodegenExtension {
                 .addContent(" = ");
         scheduled.createScheduledContent(postConstruct);
 
+        // config
+        // classConfig
+        String configVariable;
+        String configKey;
+        if (scheduled.configKey().isPresent()) {
+            // root config
+            configVariable = "config";
+            configKey = scheduled.configKey().get();
+        } else {
+            // class config + method name
+            configVariable = "classConfig";
+            configKey = scheduled.methodName() + ".schedule";
+        }
+        postConstruct.increaseContentPadding()
+                .increaseContentPadding()
+                .addContent(".config(")
+                .addContent(configVariable)
+                .addContent(".get(\"")
+                .addContent(configKey)
+                .addContentLine("\"))");
+
         if (scheduled.hasParameter()) {
-            postConstruct.increaseContentPadding()
-                    .increaseContentPadding()
+            postConstruct
                     .addContent(".task(")
                     .addContent(serviceToFields.get(scheduled.serviceType()))
                     .addContent("::")
                     .addContent(scheduled.methodName())
                     .addContentLine(")");
         } else {
-            postConstruct.increaseContentPadding()
-                    .increaseContentPadding()
+            postConstruct
                     .addContent(".task(sinv -> ")
                     .addContent(serviceToFields.get(scheduled.serviceType()))
                     .addContent(".")
@@ -215,11 +239,28 @@ class SchedulingExtension implements RegistryCodegenExtension {
     }
 
     private void addConstructor(ClassModel.Builder classModel, Map<TypeName, String> serviceToFields) {
+        TypeName configSupplierType = TypeName.builder(TypeNames.SUPPLIER)
+                .addTypeArgument(CONFIG)
+                .build();
+
         /*
          StarterType(Service1 service1, Service2 service2) {
          */
         Constructor.Builder ctr = Constructor.builder()
-                .accessModifier(AccessModifier.PACKAGE_PRIVATE);
+                .accessModifier(AccessModifier.PACKAGE_PRIVATE)
+                .addParameter(configSupplier -> configSupplier
+                        .name("configSupplier")
+                        .type(configSupplierType)
+                        .name("configSupplier")
+                )
+                .addContentLine("this.configSupplier = configSupplier;");
+
+        classModel.addField(configSupplier -> configSupplier
+                .accessModifier(AccessModifier.PRIVATE)
+                .isFinal(true)
+                .name("configSupplier")
+                .type(configSupplierType)
+        );
 
         serviceToFields.forEach((type, fieldName) -> {
             ctr.addParameter(service -> service
@@ -298,6 +339,8 @@ class SchedulingExtension implements RegistryCodegenExtension {
         Annotation annotation = element.annotation(CRON_ANNOTATION);
         String expression = annotation.stringValue().orElse("* * * * * ?"); // required
         boolean concurrent = annotation.booleanValue("concurrent").orElse(true);
+        Optional<String> configKey = annotation.stringValue("configKey")
+                .filter(Predicate.not(String::isEmpty));
 
         // add for processing
         allScheduled.add(new Cron(typeInfo.typeName(),
@@ -305,7 +348,8 @@ class SchedulingExtension implements RegistryCodegenExtension {
                                   hasInvocationArgument,
                                   scheduledCounter.getAndIncrement(),
                                   expression,
-                                  concurrent));
+                                  concurrent,
+                                  configKey));
     }
 
     private void processFixedRate(RegistryRoundContext roundContext,
@@ -323,6 +367,8 @@ class SchedulingExtension implements RegistryCodegenExtension {
         String rate = annotation.stringValue().orElse("PT10S"); // required
         String delayBy = annotation.stringValue("delayBy").orElse("PT0S");
         String delayType = annotation.stringValue("delayType").orElse("SINCE_PREVIOUS_START");
+        Optional<String> configKey = annotation.stringValue("configKey")
+                        .filter(Predicate.not(String::isEmpty));
 
         CodegenValidator.validateDuration(typeInfo.typeName(), element, FIXED_RATE_ANNOTATION, "interval", rate);
         CodegenValidator.validateDuration(typeInfo.typeName(), element, FIXED_RATE_ANNOTATION, "delayBy", delayBy);
@@ -334,13 +380,14 @@ class SchedulingExtension implements RegistryCodegenExtension {
                                        scheduledCounter.getAndIncrement(),
                                        rate,
                                        delayBy,
-                                       delayType));
+                                       delayType,
+                                       configKey));
     }
 
-    private boolean checkAndHasArgument(TypeInfo typeInfo, TypedElementInfo element, TypeName fixedRateInvocation) {
+    private boolean checkAndHasArgument(TypeInfo typeInfo, TypedElementInfo element, TypeName invocationArgumentType) {
         List<TypedElementInfo> typedElementInfos = element.parameterArguments();
         if (typedElementInfos.size() == 1
-                && typedElementInfos.getFirst().typeName().equals(FIXED_RATE_INVOCATION)) {
+                && typedElementInfos.getFirst().typeName().equals(invocationArgumentType)) {
             return true;
         } else if (typedElementInfos.isEmpty()) {
             return false;
@@ -387,6 +434,8 @@ class SchedulingExtension implements RegistryCodegenExtension {
         int index();
 
         void createScheduledContent(ContentBuilder<?> content);
+
+        Optional<String> configKey();
     }
 
     private record Cron(TypeName serviceType,
@@ -394,7 +443,8 @@ class SchedulingExtension implements RegistryCodegenExtension {
                         boolean hasParameter,
                         int index,
                         String expression,
-                        boolean concurrent)
+                        boolean concurrent,
+                        Optional<String> configKey)
             implements Scheduled {
 
         @Override
@@ -422,7 +472,8 @@ class SchedulingExtension implements RegistryCodegenExtension {
                              int index,
                              String rate,
                              String delayBy,
-                             String delayType) implements Scheduled {
+                             String delayType,
+                             Optional<String> configKey) implements Scheduled {
         @Override
         public void createScheduledContent(ContentBuilder<?> content) {
             content.addContent(FIXED_RATE)
@@ -436,14 +487,14 @@ class SchedulingExtension implements RegistryCodegenExtension {
                     .addContentLine("\"))");
 
             if (!"PT0S".equals(delayBy)) {
-                content.addContent("delayBy(")
+                content.addContent(".delayBy(")
                         .addContent(Duration.class)
                         .addContent(".parse(\"")
                         .addContent(delayBy)
                         .addContentLine("\"))");
             }
             if (!"SINCE_PREVIOUS_START".equals(delayType)) {
-                content.addContent("delayType(")
+                content.addContent(".delayType(")
                         .addContent(SchedulingTypes.FIXED_RATE_DELAY_TYPE)
                         .addContent(".")
                         .addContent(delayType)

@@ -43,7 +43,7 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.declarative.codegen.FieldHelper;
+import io.helidon.declarative.codegen.http.HttpFields;
 import io.helidon.declarative.codegen.http.RestExtensionBase;
 import io.helidon.declarative.codegen.http.webserver.spi.HttpParameterCodegenProvider;
 import io.helidon.declarative.codegen.model.http.ComputedHeader;
@@ -240,7 +240,7 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
                           TypedElementInfo method) {
         Set<Annotation> annotations = new HashSet<>(TypeHierarchy.hierarchyAnnotations(ctx, endpoint, method));
 
-        Optional<Annotation> httpMethodAnnotation = findMetaAnnotated(method, HTTP_METHOD_ANNOTATION, annotations);
+        Optional<Annotation> httpMethodAnnotation = findMetaAnnotated(HTTP_METHOD_ANNOTATION, annotations);
         if (httpMethodAnnotation.isEmpty()) {
             // this method does not have an Http.Method meta annotation present, we can skip it
             return;
@@ -515,7 +515,7 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
             if (!"*/*".equals(mediaType)) {
                 method.addContent(RESPONSE_PARAM_NAME)
                         .addContent(".headers().contentType(")
-                        .addContent(FieldHelper.ensureHttpMediaTypeConstant(fieldHandler, mediaType))
+                        .addContent(HttpFields.ensureHttpMediaTypeConstant(fieldHandler, mediaType))
                         .addContentLine(");");
             }
         }
@@ -525,18 +525,18 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
 
             method.addContent(RESPONSE_PARAM_NAME)
                     .addContent(".status(")
-                    .addContent(FieldHelper.ensureHttpStatusConstant(fieldHandler, httpStatus))
+                    .addContent(HttpFields.ensureHttpStatusConstant(fieldHandler, httpStatus))
                     .addContentLine(");");
         }
 
         // now each header value, header producer, and header parameter
         for (HeaderValue header : restMethod.headers()) {
             method.addContent("helidonDeclarative__server_res.header(")
-                    .addContent(FieldHelper.ensureHeaderValueConstant(fieldHandler, header))
+                    .addContent(HttpFields.ensureHeaderValueConstant(fieldHandler, header))
                     .addContentLine(");");
         }
         for (ComputedHeader computedHeader : restMethod.computedHeaders()) {
-            String headerNameConstant = FieldHelper.ensureHeaderNameConstant(fieldHandler, computedHeader.name());
+            String headerNameConstant = HttpFields.ensureHeaderNameConstant(fieldHandler, computedHeader.name());
 
             method.addContent(headerProducers.get(computedHeader.producer()))
                     .addContent(".produceHeader(")
@@ -631,7 +631,7 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
             routing.addContent(httpMethod.name().toLowerCase(Locale.ROOT))
                     .addContent("(");
         } else {
-            routing.addContent("route(" + FieldHelper.ensureHttpMethodConstant(fieldHandler, httpMethod.name()) + ", ");
+            routing.addContent("route(" + HttpFields.ensureHttpMethodConstant(fieldHandler, httpMethod.name()) + ", ");
         }
 
         String path = restMethod.path().orElse("/");
@@ -661,7 +661,7 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
                     .addContent(".")
                     .addContent(httpMethod.name());
         } else {
-            routing.addContent(FieldHelper.ensureHttpMethodConstant(fieldHandler, httpMethod.name()));
+            routing.addContent(HttpFields.ensureHttpMethodConstant(fieldHandler, httpMethod.name()));
         }
 
         routing.addContentLine(")"); // end of methods(Method.GET)
@@ -674,7 +674,7 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
             routing.addContent("headers.testContentType(");
             routing.addContent(restMethod.consumes()
                                        .stream()
-                                       .map(it -> FieldHelper.ensureHttpMediaTypeConstant(fieldHandler, it))
+                                       .map(it -> HttpFields.ensureHttpMediaTypeConstant(fieldHandler, it))
                                        .collect(Collectors.joining(", ")));
             routing.addContent(")");
         }
@@ -686,7 +686,7 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
             routing.addContent("headers.isAccepted(");
             routing.addContent(restMethod.produces()
                                        .stream()
-                                       .map(it -> FieldHelper.ensureHttpMediaTypeConstant(fieldHandler, it))
+                                       .map(it -> HttpFields.ensureHttpMediaTypeConstant(fieldHandler, it))
                                        .collect(Collectors.joining(", ")));
             routing.addContent(")");
         }

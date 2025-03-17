@@ -31,7 +31,13 @@ public final class DeclarativeTypes {
      * Mappers type.
      */
     public static final TypeName COMMON_MAPPERS = TypeName.create("io.helidon.common.mapper.Mappers");
+    /**
+     * Common config type.
+     */
     public static final TypeName CONFIG = TypeName.create("io.helidon.common.config.Config");
+    /**
+     * Common config exception type.
+     */
     public static final TypeName CONFIG_EXCEPTION = TypeName.create("io.helidon.common.config.ConfigException");
 
     /**

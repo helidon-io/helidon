@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.config.Config;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.MeterRegistry;

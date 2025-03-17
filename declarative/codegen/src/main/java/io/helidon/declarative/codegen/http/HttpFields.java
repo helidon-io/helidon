@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.declarative.codegen;
+package io.helidon.declarative.codegen.http;
 
 import java.util.Locale;
 
@@ -31,7 +31,20 @@ import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_MEDIA_TYPE;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_METHOD;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_STATUS;
 
-public class FieldHelper {
+/**
+ * Helper methods for common HTTP constants and fields.
+ */
+public final class HttpFields {
+    private HttpFields() {
+    }
+
+    /**
+     * Ensure a header name constant.
+     *
+     * @param fieldHandler handler for the processed type
+     * @param headerName   name of the header to add
+     * @return constant name for the header name
+     */
     public static String ensureHeaderNameConstant(FieldHandler fieldHandler, String headerName) {
         String constantPrefix =
                 toConstantName("header_" + headerName);
@@ -46,6 +59,13 @@ public class FieldHelper {
                                              .addContent("\")"));
     }
 
+    /**
+     * Ensure a header value constant.
+     *
+     * @param fieldHandler handler for the processed type
+     * @param headerValue  header value information
+     * @return constant name for the header value
+     */
     public static String ensureHeaderValueConstant(FieldHandler fieldHandler, HeaderValue headerValue) {
         return fieldHandler.constant("HEADER_VALUE",
                                      HTTP_HEADER,
@@ -59,6 +79,13 @@ public class FieldHelper {
                                              .addContent("\")"));
     }
 
+    /**
+     * Ensure HTTP Media Type constant.
+     *
+     * @param fieldHandler handler for the processed type
+     * @param mediaType    HTTP media type string
+     * @return constant name for the HTTP media type
+     */
     public static String ensureHttpMediaTypeConstant(FieldHandler fieldHandler,
                                                      String mediaType) {
 
@@ -72,6 +99,13 @@ public class FieldHelper {
                                              .addContent("\")"));
     }
 
+    /**
+     * Ensure an HTTP method constant.
+     *
+     * @param fieldHandler handler for the processed type
+     * @param httpMethod   name of the HTTP Method
+     * @return constant name for the HTTP method
+     */
     public static String ensureHttpMethodConstant(FieldHandler fieldHandler,
                                                   String httpMethod) {
         String constantName = toConstantName("ENDPOINT_METHOD_" + httpMethod);
@@ -84,6 +118,13 @@ public class FieldHelper {
                                              .addContent("\""));
     }
 
+    /**
+     * Ensure an HTTP status constant.
+     *
+     * @param fieldHandler handler for the processed type
+     * @param httpStatus   HTTP status information
+     * @return constant name for the HTTP status
+     */
     public static String ensureHttpStatusConstant(FieldHandler fieldHandler, HttpStatus httpStatus) {
         return fieldHandler.constant("STATUS_" + httpStatus.code(),
                                      HTTP_STATUS,

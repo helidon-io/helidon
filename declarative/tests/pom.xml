@@ -45,6 +45,7 @@
 
     <modules>
         <module>http</module>
+        <module>scheduling</module>
     </modules>
 
 </project>

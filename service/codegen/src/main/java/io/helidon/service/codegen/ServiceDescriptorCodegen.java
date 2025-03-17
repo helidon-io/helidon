@@ -34,7 +34,6 @@ import io.helidon.codegen.CodegenOptions;
 import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.ElementInfoPredicates;
 import io.helidon.codegen.ModuleInfo;
-import io.helidon.codegen.TypeHierarchy;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.codegen.classmodel.Field;

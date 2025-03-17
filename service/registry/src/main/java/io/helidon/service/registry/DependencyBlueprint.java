@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -123,7 +123,7 @@ interface DependencyBlueprint {
     AccessModifier access();
 
     /**
-     * The annotations on this element, excluding {@link #qualifiers()}.
+     * The annotations on this element, excluding {@link io.helidon.service.registry.Dependency#qualifiers()}.
      *
      * @return the annotations on this element
      */

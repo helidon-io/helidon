@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2025 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.service.codegen;
 
 import java.util.List;
@@ -18,12 +34,15 @@ import static io.helidon.common.types.TypeNames.GENERIC_TYPE;
 /**
  * Code generation for handling of {@link io.helidon.common.Default} annotations.
  */
-public class DefaultsCodegen {
+public final class DefaultsCodegen {
     private static final TypeName VALUE_TYPE = TypeName.create(Default.Value.class);
     private static final TypeName INT_TYPE = TypeName.create(Default.Int.class);
     private static final TypeName DOUBLE_TYPE = TypeName.create(Default.Double.class);
     private static final TypeName BOOLEAN_TYPE = TypeName.create(Default.Boolean.class);
     private static final TypeName LONG_TYPE = TypeName.create(Default.Long.class);
+
+    private DefaultsCodegen() {
+    }
 
     /**
      * Find a default annotation within the set of annotations on an element.
@@ -147,11 +166,29 @@ public class DefaultsCodegen {
         contentBuilder.addContent(")");
     }
 
+    /**
+     * Information about a default element.
+     */
     public interface DefaultCode {
+        /**
+         * If a {@code io.helidon.common.mapper.Mappers} instance is required to process this default.
+         *
+         * @return if a mappers instance is needed
+         */
         boolean requiresMapper();
 
+        /**
+         * The default annotation.
+         *
+         * @return annotation found on the element that defines a default value
+         */
         Annotation annotation();
 
+        /**
+         * Type of the annotated element.
+         *
+         * @return type of the target for default
+         */
         TypeName targetType();
     }
 

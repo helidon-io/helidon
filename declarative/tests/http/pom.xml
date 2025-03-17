@@ -30,7 +30,7 @@
 
     <artifactId>helidon-declarative-tests-http</artifactId>
     <name>Helidon Declarative Tests HTTP</name>
-    <description>Tests for HTTP endpoints</description>
+    <description>Tests for Declarative HTTP endpoints</description>
 
     <dependencies>
         <dependency>

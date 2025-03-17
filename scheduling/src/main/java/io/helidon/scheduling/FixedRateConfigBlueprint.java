@@ -49,7 +49,7 @@ interface FixedRateConfigBlueprint extends TaskConfigBlueprint, Prototype.Factor
      * @deprecated use {@link io.helidon.scheduling.FixedRateConfig#interval()} instead
      */
     @Option.Configured
-    @Option.Deprecated("rate")
+    @Option.Deprecated("interval")
     @Option.Required
     @Option.Decorator(FixedRateDecorator.DelayDecorator.class)
     @Deprecated(forRemoval = true, since = "4.2.0")

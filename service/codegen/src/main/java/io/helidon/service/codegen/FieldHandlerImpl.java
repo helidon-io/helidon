@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2025 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package io.helidon.service.codegen;
 
 import java.util.HashMap;
@@ -6,7 +22,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.Constructor;
 import io.helidon.codegen.classmodel.ContentBuilder;
@@ -18,8 +33,8 @@ class FieldHandlerImpl implements FieldHandler {
     private final Constructor.Builder constructor;
 
     /*
-    // each prefix has a single sequence, a new constant is created for each unique type and unique identifier
-    // identifier 42
+    each prefix has a single sequence, a new constant is created for each unique type and unique identifier
+    identifier 42
     private static final String MY_PREFIX = "42";
     private static final String MY_PREFIX_2 = "43";
     // identifier 42, but different type
@@ -44,11 +59,11 @@ class FieldHandlerImpl implements FieldHandler {
 
     @Override
     public String field(TypeName typeName,
-                      String fieldName,
-                      AccessModifier modifier,
-                      Object uniqueIdentifier,
-                      Consumer<ContentBuilder<?>> fieldUpdater,
-                      BiConsumer<Constructor.Builder, String> constructorUpdater) {
+                        String fieldName,
+                        AccessModifier modifier,
+                        Object uniqueIdentifier,
+                        Consumer<ContentBuilder<?>> fieldUpdater,
+                        BiConsumer<Constructor.Builder, String> constructorUpdater) {
         return fields.computeIfAbsent(fieldName, it -> new PrefixedFields(classModel, constructor, fieldName))
                 .field(typeName, modifier, uniqueIdentifier, fieldUpdater, constructorUpdater);
     }
@@ -62,18 +77,18 @@ class FieldHandlerImpl implements FieldHandler {
         private final Map<UniqueIdentifier, String> existingFields = new HashMap<>();
         private final boolean suffixed;
 
-        public PrefixedFields(ClassModel.Builder classModel, Constructor.Builder constructor, String fieldNamePrefix) {
+        private PrefixedFields(ClassModel.Builder classModel, Constructor.Builder constructor, String fieldNamePrefix) {
             this.classModel = classModel;
             this.constructor = constructor;
             this.fieldNamePrefix = fieldNamePrefix;
-            this.suffixed = fieldNamePrefix.endsWith("_");;
+            this.suffixed = fieldNamePrefix.endsWith("_");
         }
 
-        public String field(TypeName typeName,
-                          AccessModifier modifier,
-                          Object uniqueIdentifier,
-                          Consumer<ContentBuilder<?>> fieldUpdater,
-                          BiConsumer<Constructor.Builder, String> constructorUpdater) {
+        private String field(TypeName typeName,
+                             AccessModifier modifier,
+                             Object uniqueIdentifier,
+                             Consumer<ContentBuilder<?>> fieldUpdater,
+                             BiConsumer<Constructor.Builder, String> constructorUpdater) {
             UniqueIdentifier ui = new UniqueIdentifier(uniqueIdentifier, typeName);
             return existingFields.computeIfAbsent(ui, it -> {
                 int nextId = counter.getAndIncrement();
@@ -100,7 +115,6 @@ class FieldHandlerImpl implements FieldHandler {
             });
         }
     }
-
 
     private static class PrefixedConstants {
         private final ClassModel.Builder classModel;

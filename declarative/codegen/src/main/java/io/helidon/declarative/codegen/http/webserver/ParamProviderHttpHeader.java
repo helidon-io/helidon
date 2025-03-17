@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
-import io.helidon.declarative.codegen.FieldHelper;
+import io.helidon.declarative.codegen.http.HttpFields;
 import io.helidon.declarative.codegen.http.webserver.spi.HttpParameterCodegenProvider;
 import io.helidon.service.codegen.DefaultsCodegen;
 import io.helidon.service.codegen.DefaultsParams;
@@ -47,7 +47,7 @@ class ParamProviderHttpHeader extends AbstractParametersProvider implements Http
 
         FieldHandler fieldHandler = ctx.fieldHandler();
 
-        String headerConstantName = FieldHelper.ensureHeaderNameConstant(fieldHandler, headerParamName);
+        String headerConstantName = HttpFields.ensureHeaderNameConstant(fieldHandler, headerParamName);
 
         TypeName parameterType = ctx.parameterType();
         TypeName realType;

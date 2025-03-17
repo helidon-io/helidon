@@ -25,7 +25,10 @@ import java.lang.annotation.Target;
 /**
  * A container class for default values related types for Helidon declarative.
  */
-public class Default {
+public final class Default {
+    private Default() {
+    }
+
     /**
      * A default value specified as a string.
      * <p>

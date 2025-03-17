@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -457,8 +457,10 @@ public final class Option {
      * <p>
      * Decorator on {@link java.util.List} option will have the
      * {@link io.helidon.builder.api.Prototype.OptionDecorator#decorate(Object, Object)} called for singular values,
-     * and {@link io.helidon.builder.api.Prototype.OptionDecorator#decorateList(Object, java.util.List)} called for setter
-     * of the list.
+     * and {@link io.helidon.builder.api.Prototype.OptionDecorator#decorateSetList(Object, java.util.List)}
+     * called for setter of the list, and
+     * {@link io.helidon.builder.api.Prototype.OptionDecorator#decorateAddList(Object, java.util.List)}
+     * called for additive setter of the list.
      * <p>
      * Similar approach is taken when decorating a {@link java.util.Set} option.
      * <p>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.declarative.codegen.FieldHelper;
+import io.helidon.declarative.codegen.http.HttpFields;
 import io.helidon.declarative.codegen.http.RestExtensionBase;
 import io.helidon.declarative.codegen.model.http.ClientEndpoint;
 import io.helidon.declarative.codegen.model.http.ComputedHeader;
@@ -192,7 +192,7 @@ class RestClientExtension extends RestExtensionBase implements RegistryCodegenEx
                                         TypeName metaAnnotation,
                                         Set<Annotation> annotations) {
 
-        return findMetaAnnotated(method, metaAnnotation, annotations)
+        return findMetaAnnotated(metaAnnotation, annotations)
                 .orElseThrow(() -> new CodegenException("Cannot find meta annotation " + metaAnnotation.fqName() + " on method",
                                                         method.originatingElementValue()));
     }
@@ -397,17 +397,17 @@ class RestClientExtension extends RestExtensionBase implements RegistryCodegenEx
                     .addContentLine("(declarative__uri);");
         } else {
             it.addContent("method(")
-                    .addContent(FieldHelper.ensureHttpMethodConstant(fieldHandler, method.httpMethod().name()))
+                    .addContent(HttpFields.ensureHttpMethodConstant(fieldHandler, method.httpMethod().name()))
                     .addContentLine(").path(declarative__uri);");
         }
         // now each header value, header producer, and header parameter
         for (HeaderValue header : method.headers()) {
             it.addContent("declarative__builder.header(")
-                    .addContent(FieldHelper.ensureHeaderValueConstant(fieldHandler, header))
+                    .addContent(HttpFields.ensureHeaderValueConstant(fieldHandler, header))
                     .addContentLine(");");
         }
         for (ComputedHeader computedHeader : method.computedHeaders()) {
-            String headerNameConstant = FieldHelper.ensureHeaderNameConstant(fieldHandler, computedHeader.name());
+            String headerNameConstant = HttpFields.ensureHeaderNameConstant(fieldHandler, computedHeader.name());
 
             it.addContent(headerProducers.get(computedHeader.producer()))
                     .addContent(".produceHeader(")
@@ -420,7 +420,7 @@ class RestClientExtension extends RestExtensionBase implements RegistryCodegenEx
             it.addContent("declarative__builder.header(")
                     .addContent(HTTP_HEADER_VALUES)
                     .addContent(".create(")
-                    .addContent(FieldHelper.ensureHeaderNameConstant(fieldHandler, headerNameFromHeaderParam(headerParameter)))
+                    .addContent(HttpFields.ensureHeaderNameConstant(fieldHandler, headerNameFromHeaderParam(headerParameter)))
                     .addContent(", ")
                     .addContent(headerParameter.name())
                     .addContentLine("));");
@@ -448,7 +448,7 @@ class RestClientExtension extends RestExtensionBase implements RegistryCodegenEx
         if (!produces.isEmpty()) {
             it.addContent("declarative__builder.accept(");
             it.addContent(produces.stream()
-                                  .map(mediaType -> FieldHelper.ensureHttpMediaTypeConstant(fieldHandler, mediaType))
+                                  .map(mediaType -> HttpFields.ensureHttpMediaTypeConstant(fieldHandler, mediaType))
                                   .collect(Collectors.joining(", ")));
             it.addContentLine(");");
         }
@@ -456,7 +456,7 @@ class RestClientExtension extends RestExtensionBase implements RegistryCodegenEx
         List<String> consumes = method.consumes();
         if (consumes.size() == 1) {
             it.addContent("declarative__builder.contentType(")
-                    .addContent(FieldHelper.ensureHttpMediaTypeConstant(fieldHandler, consumes.getFirst()))
+                    .addContent(HttpFields.ensureHttpMediaTypeConstant(fieldHandler, consumes.getFirst()))
                     .addContentLine(");");
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -186,6 +186,13 @@ public abstract class RestExtensionBase {
                 .build();
     }
 
+    /**
+     * Find all header producers and create appropriate fields, parameters, and assignments for them.
+     *
+     * @param fieldHandler field handler for the current generated type
+     * @param endpoint rest endpoint to analyze
+     * @return map of types of handlers to field names that will store them
+     */
     protected Map<TypeName, String> headerProducers(FieldHandler fieldHandler, RestEndpoint endpoint) {
         Map<TypeName, String> result = new HashMap<>();
 
@@ -202,8 +209,14 @@ public abstract class RestExtensionBase {
         return result;
     }
 
-    protected Optional<Annotation> findMetaAnnotated(TypedElementInfo method,
-                                                     TypeName metaAnnotation,
+    /**
+     * Find an annotation with the provided "meta-annotation".
+     *
+     * @param metaAnnotation type of the meta annotation we are looking for
+     * @param annotations set of annotations on the element
+     * @return the meta annotation instance, or empty optional if not found
+     */
+    protected Optional<Annotation> findMetaAnnotated(TypeName metaAnnotation,
                                                      Set<Annotation> annotations) {
         for (Annotation annotation : annotations) {
             if (annotation.typeName().equals(metaAnnotation)) {

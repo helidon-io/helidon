@@ -68,6 +68,15 @@ public final class Schedule {
         String delayBy() default "PT0S";
 
         /**
+         * Configuration key for overriding the values.
+         * Defaults to fully qualified class name + {@code .schedule}.
+         * Overridden schedule cannot change the type - it must still be fixed rate.
+         *
+         * @return configuration key (from the root) to override the setup by this annotation
+         */
+        String configKey() default "";
+
+        /**
          * Whether the interval should be calculated from the start or end of the previous task.
          *
          * @return delay type
@@ -255,5 +264,14 @@ public final class Schedule {
          * @return true for allowing concurrent invocation
          */
         boolean concurrent() default true;
+
+        /**
+         * Configuration key for overriding the values.
+         * Defaults to fully qualified class name + {@code .schedule}.
+         * Overridden schedule cannot change the type - it must still be cron.
+         *
+         * @return configuration key (from the root) to override the setup by this annotation
+         */
+        String configKey() default "";
     }
 }
