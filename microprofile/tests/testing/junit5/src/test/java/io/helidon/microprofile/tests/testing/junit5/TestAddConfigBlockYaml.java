@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,6 @@
 
 package io.helidon.microprofile.tests.testing.junit5;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-
 import jakarta.inject.Inject;
 
 import io.helidon.microprofile.testing.junit5.AddConfigBlock;
@@ -27,13 +24,16 @@ import io.helidon.microprofile.testing.junit5.HelidonTest;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
 @HelidonTest
 @AddConfigBlock(type = "yaml", value = """
     another1:
       key: "another1.value"
     another2:
       key: "another2.value"
-""")
+    """)
 class TestAddConfigBlockYaml {
 
     @Inject

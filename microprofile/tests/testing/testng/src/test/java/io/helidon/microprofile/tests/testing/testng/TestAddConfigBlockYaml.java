@@ -33,7 +33,7 @@ import org.testng.annotations.Test;
       key: "another1.value"
     another2:
       key: "another2.value"
-""")
+    """)
 public class TestAddConfigBlockYaml {
 
     @Inject

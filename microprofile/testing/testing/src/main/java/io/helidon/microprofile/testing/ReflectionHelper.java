@@ -59,12 +59,27 @@ class ReflectionHelper {
      *
      * @param method   base method
      * @param override override method
-     * @return {@code true} if overrides, {@code false otherwise}
+     * @return {@code true} if overrides, {@code false} otherwise
      */
     static boolean isOverride(Method method, Method override) {
         return override.getName().equals(method.getName())
                && override.getReturnType().isAssignableFrom(method.getReturnType())
                && Arrays.equals(override.getParameterTypes(), method.getParameterTypes());
+    }
+
+    /**
+     * Test if the given instance has a default method by name. If the method does not exist, return {@code false}.
+     *
+     * @param instance  instance
+     * @param name      method name
+     * @return {@code true} if is default, {@code false} otherwise
+     */
+    static boolean isDefaultMethod(Object instance, String name) {
+        try {
+            return instance.getClass().getMethod(name).isDefault();
+        } catch (NoSuchMethodException e) {
+            return false;
+        }
     }
 
     /**
