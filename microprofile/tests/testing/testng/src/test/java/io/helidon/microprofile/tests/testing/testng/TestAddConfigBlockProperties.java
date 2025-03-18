@@ -21,7 +21,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import jakarta.inject.Inject;
 
-import io.helidon.microprofile.testing.Configuration;
 import io.helidon.microprofile.testing.testng.AddConfigBlock;
 import io.helidon.microprofile.testing.testng.HelidonTest;
 
@@ -33,7 +32,6 @@ import org.testng.annotations.Test;
     some.key1=some.value1
     some.key2=some.value2
     """)
-@Configuration(configSources = "configBlock.properties")
 public class TestAddConfigBlockProperties {
 
     @Inject

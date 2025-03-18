@@ -37,6 +37,7 @@ import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 import static io.helidon.microprofile.testing.ReflectionHelper.invoke;
+import static io.helidon.microprofile.testing.ReflectionHelper.isDefaultMethod;
 import static io.helidon.microprofile.testing.ReflectionHelper.requireStatic;
 
 /**
@@ -61,6 +62,7 @@ class HelidonTestConfigSynthetic extends HelidonTestConfigDelegate {
     HelidonTestConfigSynthetic(HelidonTestInfo<?> testInfo, Runnable onUpdate) {
         this.testInfo = testInfo;
         this.onUpdate = onUpdate;
+        map.put(ConfigSource.CONFIG_ORDINAL, "1000");
         map.put("server.port", "0");
         map.put("mp.config.profile", "test");
         testInfo.addConfigs().forEach(this::update);
@@ -147,8 +149,7 @@ class HelidonTestConfigSynthetic extends HelidonTestConfigDelegate {
 
     private Config buildConfig() {
         List<ConfigSource> configSources = new ArrayList<>();
-        ConfigSource configSource = MpConfigSources.create(testInfo.id(), map);
-        configSources.add(addConfigOrdinal(configSource, "1000"));
+        configSources.add(MpConfigSources.create(testInfo.id(), map));
         blocks.forEach((type, values) -> {
             for (String value : values) {
                 ConfigSource config = MpConfigSources.create(type, new StringReader(value));
@@ -157,7 +158,7 @@ class HelidonTestConfigSynthetic extends HelidonTestConfigDelegate {
         });
         for (Method m : methods) {
             ConfigSource config = invoke(ConfigSource.class, requireStatic(m), null);
-            configSources.add(addConfigOrdinal(config, "800"));
+            configSources.add(new ConfigSourceWrapper(config));
         }
         for (String source : resources) {
             String filename = source.trim();
@@ -174,10 +175,6 @@ class HelidonTestConfigSynthetic extends HelidonTestConfigDelegate {
                 .addDiscoveredConverters();
         configSources.forEach(builder::withSources);
         return builder.build();
-    }
-
-    private ConfigSource addConfigOrdinal(ConfigSource config, String ordinal) {
-        return addConfigOrdinal(config, "Map", ordinal);
     }
 
     private ConfigSource addConfigOrdinal(ConfigSource config, String type, String ordinal) {
@@ -201,6 +198,35 @@ class HelidonTestConfigSynthetic extends HelidonTestConfigDelegate {
         } catch (IOException e) {
             throw new UncheckedIOException(String.format(
                     "Failed to read '%s' from classpath", name), e);
+        }
+    }
+
+    private record ConfigSourceWrapper(ConfigSource delegate) implements ConfigSource {
+        @Override
+        public Set<String> getPropertyNames() {
+            return delegate.getPropertyNames();
+        }
+
+        @Override
+        public String getValue(String propertyName) {
+            return delegate.getValue(propertyName);
+        }
+
+        @Override
+        public String getName() {
+            return delegate.getName();
+        }
+
+        @Override
+        public Map<String, String> getProperties() {
+            return delegate.getProperties();
+        }
+
+        @Override
+        public int getOrdinal() {
+            boolean isDefault = isDefaultMethod(delegate, "getOrdinal");
+            boolean isDefaultOrdinal = delegate.getOrdinal() == ConfigSource.DEFAULT_ORDINAL;
+            return isDefault && isDefaultOrdinal ? 800 : delegate.getOrdinal();
         }
     }
 }

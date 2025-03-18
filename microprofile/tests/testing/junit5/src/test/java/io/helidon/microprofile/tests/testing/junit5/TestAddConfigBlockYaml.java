@@ -18,7 +18,6 @@ package io.helidon.microprofile.tests.testing.junit5;
 
 import jakarta.inject.Inject;
 
-import io.helidon.microprofile.testing.Configuration;
 import io.helidon.microprofile.testing.junit5.AddConfigBlock;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
@@ -35,7 +34,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
     another2:
       key: "another2.value"
     """)
-@Configuration(configSources = "configBlock.yaml")
 class TestAddConfigBlockYaml {
 
     @Inject
