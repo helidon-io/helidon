@@ -44,14 +44,35 @@ as well as how to grow or shrink the number of _permits_ available in the system
 
 Helidon now includes support for two independent concurrency limit strategies:
 fixed and AIMD (Arithmetic Increase Multiplicative Decrease) as well as an SPI
-to provide alternative `LimitProvider` implementations. These
-concurrency strategies are configured _as a feature_ for each network socket in the
-webserver. As always, if configured directly as a webserver feature, it would
-apply to the _default_ socket only.
+to provide alternative `LimitProvider` implementations.
 
-The following example uses a fixed concurrency strategy to limit the number
-of concurrent requests to 1000, a queue of 200 requests to accommodate
+Concurrency limits can be configured directly on the Webserver or as a _feature_.
+When set at the Webserver level, they will affect all traffic inbound to the server,
+effectively limiting the number of requests processed by the internal _listener_
+&mdash;or listeners if more than one socket is defined. When set as a feature,
+they will work as a filter applied after routing and only to HTTP traffic. In
+most cases, setting limits at the Webserver level will be simpler and most
+effective.
+
+The following example uses a fixed concurrency strategy established at the
+Webserver level &mdash;impacting only the _default_ socket&mdash; that limits
+the number of concurrent requests to 1000, a queue of 200 requests to accommodate
 potential request bursts and a queue timeout of 1 second:
+[source,yaml]
+----
+server:
+  concurrency-limit:
+    fixed:
+      permits: 1000
+      queue-length: 200
+      queue-timeout: PT1S
+----
+
+With this configuration, after all 1000 permits are consumed, subsequent requests
+will be queued, if space is available, and any request that sits in the queue for more than
+1 second will be rejected.
+
+The same use case but defined as a feature will look as follows:
 
 [source,yaml]
 ----
@@ -65,9 +86,8 @@ server:
           queue-timeout: PT1S
 ----
 
-With this configuration, after all 1000 permits are consumed, subsequent requests
-will be queued, if possible, and any request that sits in the queue for more than
-1 second will be rejected.
+As described above, when configured as a feature, the limits will only apply to
+HTTP traffic and will execute after HTTP routing.
 
 Instead of fixing the number of permits to a given value, the AIMD strategy
 allows the set of permits to grow arithmetically and shrink multiplicatively
@@ -75,21 +95,19 @@ as needed, based on the actual time that it takes to process requests. AIMD
 can dynamically adjust the number of available permits to ensure a certain
 _quality of service_, possibly for a subset of all the requests received.
 It is generally preferred to serve a subset of clients efficiently than
-all clients inefficiently, and this type of tradeoff can be defined using
+all clients inefficiently, and this type of trade-off can be defined using
 an AIMD strategy. For example,
 
 [source,yaml]
 ----
 server:
-  features:
-    limits:
-      concurrency-limit:
-        aimd:
-          min-limit: 100
-          max-limit: 1000
-          initial-limit: 500
-          timeout: "PT0.5S"
-          backoff-ratio: 0.75
+  concurrency-limit:
+    aimd:
+      min-limit: 100
+      max-limit: 1000
+      initial-limit: 500
+      timeout: "PT0.5S"
+      backoff-ratio: 0.75
 ----
 
 With this configuration, the initial number of permits starts at 500 and
@@ -109,17 +127,15 @@ of the example above, but with a queue of size 300 and a queue timeout of
 [source,yaml]
 ----
 server:
-  features:
-    limits:
-      concurrency-limit:
-        aimd:
-          min-limit: 100
-          max-limit: 1000
-          initial-limit: 500
-          timeout: "PT0.5S"
-          backoff-ratio: 0.75
-          queue-length: 300
-          queue-timeout: PT1S
+  concurrency-limit:
+    aimd:
+      min-limit: 100
+      max-limit: 1000
+      initial-limit: 500
+      timeout: "PT0.5S"
+      backoff-ratio: 0.75
+      queue-length: 300
+      queue-timeout: PT1S
 ----
 
 NOTE: Queues can be useful to accommodate short bursts of
@@ -128,8 +144,7 @@ is exhausted. Queueing is disabled by default in both fixed and
 AIMD strategies, so `queue-length` must be set to a positive number
 to enable this feature.
 
-Neither of the two strategies shown above enables
-queues by default.
+Neither of the two strategies shown above enables queues by default.
 
 For more information about configuring these Concurrency Limit
 strategies see:
@@ -146,14 +161,12 @@ but can be enabled as follows:
 [source,yaml]
 ----
 server:
-  features:
-    limits:
-      concurrency-limit:
-        fixed:
-          permits: 1000
-          queue-length: 200
-          queue-timeout: PT1S
-          enable-metrics: true       # turn on metrics!
+  concurrency-limit:
+    fixed:
+      permits: 1000
+      queue-length: 200
+      queue-timeout: PT1S
+      enable-metrics: true       # turn on metrics!
 ----
 
 The following tables describe the metrics that are available for each of the
