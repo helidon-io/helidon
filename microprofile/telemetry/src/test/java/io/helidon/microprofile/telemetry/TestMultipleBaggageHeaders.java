@@ -65,24 +65,6 @@ class TestMultipleBaggageHeaders {
             assertThat("Baggage-checking endpoint response", response.body(), allOf(containsString("k1=val1"),
                                                                                     containsString("k2=val2")));
         }
-        //        String requestBody = new StringJoiner(System.lineSeparator())
-        //                .add("GET " + webTarget.getUri() + " HTTP/1.1")
-        //                .add("Host: localhost")
-        //                .add("Connection: close")
-        //                .add("Content-Type: application/json")
-        //                .add("Accept: text/plain")
-        //                .add("Accept-Language: en-US")
-        //                .add("Accept-Charset: utf-8")
-        //                .add("Baggage: k1=val1")
-        //                .add("Baggage: k2=val2")
-        //                .toString();
-        //         result = URI.create(webTarget.getUri().toString() + "/baggage").toURL().getContent();
-
-        //        assertThat("Response status from /baggage", response.statusCode(), is(equalTo(200)));
-        //        assertThat("Returned baggage settings",
-        //                   response.body(),
-        //                   allOf(containsString("k1=val1"),
-        //                         containsString("k2=val2")));
     }
 
 }
