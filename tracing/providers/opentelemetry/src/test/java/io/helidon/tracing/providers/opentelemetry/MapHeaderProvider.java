@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ record MapHeaderProvider(Map<String, List<String>> values) implements HeaderProv
 
     @Override
     public Iterable<String> getAll(String key) {
-        return values.get(key);
+        return values.getOrDefault(key, List.of());
     }
 
     @Override

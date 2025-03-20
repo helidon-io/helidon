@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.tracing.HeaderConsumer;
@@ -105,7 +106,19 @@ class TestSpanAndBaggage {
         Span span = tracer.spanBuilder("inbound").parent(spanContextOpt.get()).start();
         span.end();
         assertThat("Inbound baggage bag1", span.baggage().get("bag1"), OptionalMatcher.optionalValue(is("val1")));
-        assertThat("Inbound baggage bag1", span.baggage().get("bag2"), OptionalMatcher.optionalValue(is("val2")));
+        assertThat("Inbound baggage bag2", span.baggage().get("bag2"), OptionalMatcher.optionalValue(is("val2")));
+    }
+
+    @Test
+    void testMultiIncomingBaggage() {
+        Tracer tracer = Tracer.global();
+        HeaderProvider inboundHeaders = new RepeatableKeyHeaderProvider(List.of(Map.entry("baggage", List.of("bag1=val1")),
+                                                                                Map.entry("baggage", List.of("bag2=val2"))));
+        Optional<SpanContext> spanContextOpt = tracer.extract(inboundHeaders);
+        assertThat("Span context from inbound headers", spanContextOpt, OptionalMatcher.optionalPresent());
+        SpanContext spanContext = spanContextOpt.get();
+        assertThat("Inbound baggage bag1", spanContext.baggage().get("bag1"), OptionalMatcher.optionalValue(is("val1")));
+        assertThat("Inbound baggage bag2", spanContext.baggage().get("bag2"), OptionalMatcher.optionalValue(is("val2")));
     }
 
     @Test
@@ -157,6 +170,48 @@ class TestSpanAndBaggage {
             span.end(x);
         } finally {
             span.end();
+        }
+    }
+
+    /**
+     * Stands in for an HTTP request in which a given header can occur more than once (perhaps each with multiple values).
+     */
+    private static class RepeatableKeyHeaderProvider implements HeaderProvider {
+
+        private final List<Map.Entry<String, List<String>>> values;
+
+        private RepeatableKeyHeaderProvider(List<Map.Entry<String, List<String>>> headers) {
+            this.values = List.copyOf(headers);
+        }
+
+        @Override
+        public Iterable<String> keys() {
+            return values
+                    .stream()
+                    .map(Map.Entry::getKey)
+                    .toList();
+        }
+
+        @Override
+        public Optional<String> get(String key) {
+            // This is a test class so we don't worry about a key appearing first with no elements in its list.
+            return values.stream()
+                    .filter(entry -> entry.getKey().equals(key))
+                    .flatMap(entry -> entry.getValue().stream())
+                    .findFirst();
+        }
+
+        @Override
+        public Iterable<String> getAll(String key) {
+            return values.stream()
+                    .filter(entry -> entry.getKey().equals(key))
+                    .flatMap(entry -> entry.getValue().stream())
+                    .collect(Collectors.toList());
+        }
+
+        @Override
+        public boolean contains(String key) {
+            return values.stream().anyMatch(entry -> entry.getKey().equals(key));
         }
     }
 

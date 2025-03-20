@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.StringJoiner;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
@@ -214,7 +215,9 @@ class OpenTelemetryTracer implements Tracer {
 
         @Override
         public String get(HeaderProvider headerProvider, String s) {
-            return headerProvider.get(s).orElse(null);
+            StringJoiner joiner = new StringJoiner(",").setEmptyValue("");
+            headerProvider.getAll(s).forEach(joiner::add);
+            return joiner.toString();
         }
     }
 

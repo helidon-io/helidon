@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.microprofile.telemetry;
 
+import java.util.List;
 import java.util.Optional;
 
 import io.helidon.tracing.HeaderProvider;
@@ -35,7 +36,7 @@ record RequestContextHeaderProvider(MultivaluedMap<String, String> headers) impl
 
     @Override
     public Iterable<String> getAll(String key) {
-        return headers.get(key);
+        return headers.getOrDefault(key, List.of());
     }
 
     @Override
