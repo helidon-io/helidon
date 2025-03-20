@@ -969,7 +969,7 @@ public final class OidcConfig extends TenantConfigImpl {
         private boolean tokenSignatureValidation = true;
         private boolean idTokenSignatureValidation = true;
         private boolean accessTokenIpCheck = true;
-        private final WebClientConfig.Builder webClientConfigBuilder = WebClientConfig.builder()
+        private WebClientConfig.Builder webClientConfigBuilder = WebClientConfig.builder()
                 .addService(WebClientTracing.create())
                 .servicesDiscoverServices(false)
                 .mediaContext(MediaContext.builder()
@@ -1790,9 +1790,27 @@ public final class OidcConfig extends TenantConfigImpl {
             return this;
         }
 
+        /**
+         * Merge builder passed via parameter with the preconfigured OIDC WebClientConfig builder.
+         *
+         * @param builder webclient config builder
+         * @return updated builder instance
+         */
         @ConfiguredOption
         public Builder webclientConfig(WebClientConfig.Builder builder) {
             this.webClientConfigBuilder.from(builder);
+            return this;
+        }
+
+        /**
+         * Set the new WebClientConfig to the OIDC. It replaces default configurations.
+         *
+         * @param config webclient config instance
+         * @return updated builder instance
+         */
+        @ConfiguredOption
+        public Builder webclientConfig(WebClientConfig config) {
+            this.webClientConfigBuilder = WebClientConfig.builder().from(config);
             return this;
         }
 
