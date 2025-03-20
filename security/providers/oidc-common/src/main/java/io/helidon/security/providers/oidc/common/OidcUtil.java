@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,35 +47,6 @@ final class OidcUtil {
             return OidcConfig.Builder.DEFAULT_SERVER_TYPE;
         }
         return serverType;
-    }
-
-    static WebClientConfig.Builder webClientBaseBuilder(String proxyProtocol,
-                                                        String proxyHost,
-                                                        int proxyPort,
-                                                        boolean relativeUris,
-                                                        Duration clientTimeout) {
-        WebClientConfig.Builder webClientBuilder = WebClient.builder()
-                .addService(WebClientTracing.create())
-                .servicesDiscoverServices(false)
-                .mediaContext(MediaContext.builder()
-                                      .mediaSupportsDiscoverServices(false)
-                                      .addMediaSupport(JsonpSupport.create(Config.empty()))
-                                      .build())
-                .socketOptions(SocketOptions.builder()
-                                       .connectTimeout(clientTimeout)
-                                       .readTimeout(clientTimeout)
-                                       .build());
-
-        if (proxyHost != null) {
-            Proxy.ProxyType proxyType = Proxy.ProxyType.valueOf(proxyProtocol.toUpperCase());
-            webClientBuilder.proxy(Proxy.builder()
-                                           .type(proxyType)
-                                           .host(proxyHost)
-                                           .port(proxyPort)
-                                           .build())
-                    .relativeUris(relativeUris);
-        }
-        return webClientBuilder;
     }
 
     static void validateExists(Errors.Collector collector, Object value, String name, String configKey) {
