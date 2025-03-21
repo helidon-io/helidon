@@ -84,6 +84,11 @@
             <groupId>io.helidon.tracing</groupId>
             <artifactId>helidon-tracing</artifactId>
         </dependency>
+        <!-- Jaeger support uses the otlp GRPC exporter; users do not choose. -->
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-otlp</artifactId>
+        </dependency>
         <dependency>
             <!-- redirecting Jaeger slf4j logging to JUL logging -->
             <groupId>org.slf4j</groupId>
@@ -108,11 +113,6 @@
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-sdk-extension-autoconfigure</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-exporter-otlp</artifactId>
             <scope>test</scope>
         </dependency>
         <!-- -->

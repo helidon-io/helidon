@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -129,6 +129,12 @@ class OpenTracingTracer implements Tracer {
     @Override
     public Tracer register(SpanListener listener) {
         spanListeners.add(listener);
+        return this;
+    }
+
+    @Override
+    public Tracer unregister(SpanListener listener) {
+        spanListeners.remove(listener);
         return this;
     }
 
