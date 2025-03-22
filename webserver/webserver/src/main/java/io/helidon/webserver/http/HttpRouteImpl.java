@@ -22,22 +22,37 @@ import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.PathMatcher;
 import io.helidon.http.PathMatchers;
+import io.helidon.http.ServerRequestHeaders;
 import io.helidon.webserver.WebServer;
 
 class HttpRouteImpl extends HttpRouteBase implements HttpRoute {
     private final Handler handler;
     private final Predicate<Method> methodPredicate;
     private final PathMatcher pathMatcher;
+    private final Predicate<ServerRequestHeaders> headersPredicate;
 
     HttpRouteImpl(HttpRoute.Builder builder) {
         this.handler = builder.handler();
         this.methodPredicate = builder.methodPredicate();
         this.pathMatcher = builder.pathPredicate();
+        this.headersPredicate = builder.headersPredicate();
     }
 
     @Override
     public PathMatchers.MatchResult accepts(HttpPrologue prologue) {
         if (!methodPredicate.test(prologue.method())) {
+            return PathMatchers.MatchResult.notAccepted();
+        }
+
+        return pathMatcher.match(prologue.uriPath());
+    }
+
+    @Override
+    public PathMatchers.MatchResult accepts(HttpPrologue prologue, ServerRequestHeaders headers) {
+        if (!methodPredicate.test(prologue.method())) {
+            return PathMatchers.MatchResult.notAccepted();
+        }
+        if (!headersPredicate.test(headers)) {
             return PathMatchers.MatchResult.notAccepted();
         }
 

@@ -22,6 +22,7 @@ import io.helidon.config.Config;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
+import io.helidon.testing.junit5.Testing;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -29,13 +30,8 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@Testing.Test
 class TimeoutMetricsTest {
-
-    @BeforeAll
-    static void setupTest() {
-        FaultTolerance.config(Config.create());
-    }
-
     @Test
     void testTimeout() {
         Timeout timeout;

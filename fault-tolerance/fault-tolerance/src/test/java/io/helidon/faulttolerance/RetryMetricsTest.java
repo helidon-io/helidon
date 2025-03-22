@@ -21,9 +21,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import io.helidon.config.Config;
-import io.helidon.logging.common.LogConfig;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Tag;
+import io.helidon.testing.junit5.Testing;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@Testing.Test
 class RetryMetricsTest {
 
     @BeforeAll
@@ -45,11 +46,11 @@ class RetryMetricsTest {
         Counter callsCounter;
 
         retry = Retry.builder()
-                     .calls(3)
-                     .overallTimeout(Duration.ofSeconds(5))
-                     .delay(Duration.ofMillis(0))
-                     .name("flaky")     // same name
-                     .build();
+                .calls(3)
+                .overallTimeout(Duration.ofSeconds(5))
+                .delay(Duration.ofMillis(0))
+                .name("flaky")     // same name
+                .build();
         retry.invoke(new FlakySupplier(2));
         callsCounter = MetricsUtils.counter(Retry.FT_RETRY_CALLS_TOTAL, Tag.create("name", "flaky"));
         assertThat(callsCounter.count(), is(3L));
@@ -57,11 +58,11 @@ class RetryMetricsTest {
         assertThat(retryCounter.count(), is(2L));
 
         retry = Retry.builder()
-                     .calls(4)
-                     .overallTimeout(Duration.ofSeconds(5))
-                     .delay(Duration.ofMillis(0))
-                     .name("flaky")     // same name
-                     .build();
+                .calls(4)
+                .overallTimeout(Duration.ofSeconds(5))
+                .delay(Duration.ofMillis(0))
+                .name("flaky")     // same name
+                .build();
         retry.invoke(new FlakySupplier(3));
         assertThat(callsCounter.count(), is(7L));
         assertThat(retryCounter.count(), is(5L));

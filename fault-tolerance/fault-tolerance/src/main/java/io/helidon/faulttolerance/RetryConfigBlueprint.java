@@ -26,7 +26,9 @@ import io.helidon.builder.api.Prototype;
 /**
  * {@link Retry} configuration bean.
  */
-// @ConfigBean(value = "fault-tolerance.retries", repeatable = true, wantDefaultConfigBean = true)
+//@ConfigDriven.ConfigBean
+//@ConfigDriven.Repeatable
+//@ConfigDriven.WantDefault
 @Prototype.Blueprint(decorator = RetryConfigBlueprint.BuilderDecorator.class)
 @Prototype.Configured("fault-tolerance.retries")
 interface RetryConfigBlueprint extends Prototype.Factory<Retry> {

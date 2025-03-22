@@ -50,6 +50,7 @@ module io.helidon.microprofile.server {
     requires transitive jakarta.cdi;
     requires transitive jakarta.json;
     requires transitive jakarta.ws.rs;
+    requires io.helidon.service.registry;
 
     exports io.helidon.microprofile.server;
 

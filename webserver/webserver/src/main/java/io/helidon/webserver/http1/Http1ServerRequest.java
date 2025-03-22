@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -218,6 +218,11 @@ abstract class Http1ServerRequest implements RoutingRequest {
     @Override
     public Optional<ProxyProtocolData> proxyProtocolData() {
         return ctx.proxyProtocolData();
+    }
+
+    @Override
+    public String toString() {
+        return prologue.rawProtocol() + " " + prologue.method() + " " + path().rawPathNoParams();
     }
 
     private UriInfo createUriInfo() {
