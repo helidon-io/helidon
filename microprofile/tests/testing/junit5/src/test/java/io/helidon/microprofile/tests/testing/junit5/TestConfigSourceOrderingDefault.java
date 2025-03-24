@@ -40,7 +40,7 @@ import static org.hamcrest.Matchers.iterableWithSize;
         foo=configBlock
         """)
 @Configuration(configSources = "ordinal-default.properties")
-public class TestConfigSourceOrderingDefault {
+class TestConfigSourceOrderingDefault {
 
     private static final List<Ordering> ORDERINGS = List.of(
             new Ordering(1000, "addConfig"),

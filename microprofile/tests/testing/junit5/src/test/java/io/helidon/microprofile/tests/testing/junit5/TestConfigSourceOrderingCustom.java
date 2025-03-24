@@ -42,7 +42,7 @@ import static org.hamcrest.Matchers.iterableWithSize;
         config_ordinal=998
         """)
 @Configuration(configSources = "ordinal-custom.properties")
-public class TestConfigSourceOrderingCustom {
+class TestConfigSourceOrderingCustom {
 
     private final List<Ordering> ORDERINGS = List.of(
             new Ordering(999, "addConfig"),
