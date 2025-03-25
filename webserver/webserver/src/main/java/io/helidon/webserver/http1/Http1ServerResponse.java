@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 import java.util.ServiceLoader;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
@@ -437,6 +438,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
         BlockingOutputStream bos = new BlockingOutputStream(headers,
                                                             trailers,
+                                                            beforeTrailers(),
                                                             this::status,
                                                             () -> streamResult,
                                                             dataWriter,
@@ -500,9 +502,11 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         private boolean closing = false;
         private final boolean validateHeaders;
         private final boolean isNoEntityStatus;
+        private final Consumer<ServerResponseTrailers> beforeTrailers;
 
         private BlockingOutputStream(ServerResponseHeaders headers,
                                      WritableHeaders<?> trailers,
+                                     Consumer<ServerResponseTrailers> beforeTrailers,
                                      Supplier<Status> status,
                                      Supplier<String> streamResult,
                                      DataWriter dataWriter,
@@ -515,6 +519,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                                      boolean isNoEntityStatus) {
             this.headers = headers;
             this.trailers = trailers;
+            this.beforeTrailers = beforeTrailers;
             this.status = status;
             this.streamResult = streamResult;
             this.dataWriter = dataWriter;
@@ -613,6 +618,9 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             if (sendTrailers) {
                 // not optimized, trailers enabled: we need to write trailers
                 trailers.set(STREAM_RESULT_NAME, streamResult.get());
+                if (beforeTrailers != null) {
+                    beforeTrailers.accept(ServerResponseTrailers.wrap(trailers));
+                }
                 BufferData buffer = BufferData.growing(128);
                 writeHeaders(trailers, buffer, this.validateHeaders);
                 buffer.write('\r');        // "\r\n" - empty line after headers

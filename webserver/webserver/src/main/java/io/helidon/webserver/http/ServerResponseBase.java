@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
@@ -33,6 +34,7 @@ import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.ServerRequestHeaders;
+import io.helidon.http.ServerResponseTrailers;
 import io.helidon.http.Status;
 import io.helidon.http.encoding.ContentEncoder;
 import io.helidon.http.encoding.ContentEncodingContext;
@@ -71,6 +73,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     private boolean reroute;
     private UriQuery rerouteQuery;
     private String reroutePath;
+    private Consumer<ServerResponseTrailers> beforeTrailers;
 
     /**
      * Create server response.
@@ -185,6 +188,16 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     @Override
     public boolean isNexted() {
         return nexted;
+    }
+
+    @Override
+    public ServerResponse beforeTrailers(Consumer<ServerResponseTrailers> beforeTrailers) {
+        this.beforeTrailers = beforeTrailers;
+        return this;
+    }
+
+    protected Consumer<ServerResponseTrailers> beforeTrailers() {
+        return beforeTrailers;
     }
 
     /**

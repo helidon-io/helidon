@@ -538,8 +538,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                                                    sendListener,
                                                                    writer,
                                                                    request,
-                                                                   !request.headers()
-                                                                           .contains(HeaderValues.CONNECTION_CLOSE),
+                                                                   !headers.contains(HeaderValues.CONNECTION_CLOSE),
                                                                    http1Config.validateResponseHeaders());
 
             routing.route(ctx, request, response);
