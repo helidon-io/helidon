@@ -132,7 +132,7 @@
         <version.lib.narayana>7.0.0.Final</version.lib.narayana>
         <version.lib.neo4j>5.28.3</version.lib.neo4j>
         <version.lib.netty>4.1.118.Final</version.lib.netty>
-        <version.lib.oci>3.57.2</version.lib.oci>
+        <version.lib.oci>3.61.0</version.lib.oci>
         <version.lib.ojdbc.family>23</version.lib.ojdbc.family>
         <!--
             UCP versions 21.10.0.0 and up throw NPEs. There is a test to catch them.
