@@ -33,7 +33,7 @@ public enum PkceChallengeMethod {
     /**
      * No hashing will be applied. Challenge string will be the same as verifier.
      */
-    PLAIN( "plain", it -> it),
+    PLAIN("plain", it -> it),
 
     /**
      * SHA-256 algorithm is used to hash the verifier value.
