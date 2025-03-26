@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,13 +34,31 @@ class GrpcRouteHandler<ReqT, ResT> extends GrpcRoute {
     private final MethodDescriptor<ReqT, ResT> method;
     private final PathMatcher pathMatcher;
     private final ServerCallHandler<ReqT, ResT> callHandler;
+    private final Descriptors.FileDescriptor proto;
 
     private GrpcRouteHandler(MethodDescriptor<ReqT, ResT> method,
                              PathMatcher pathMatcher,
-                             ServerCallHandler<ReqT, ResT> callHandler) {
+                             ServerCallHandler<ReqT, ResT> callHandler,
+                             Descriptors.FileDescriptor proto) {
         this.method = method;
         this.pathMatcher = pathMatcher;
         this.callHandler = callHandler;
+        this.proto = proto;
+    }
+
+    @Override
+    String serviceName() {
+        return method.getServiceName();
+    }
+
+    /**
+     * Provides access to proto file descriptor.
+     *
+     * @return descriptor or {@code null} if not defined.
+     */
+    @Override
+    public Descriptors.FileDescriptor proto() {
+        return proto;
     }
 
     static <ReqT, ResT> GrpcRouteHandler<ReqT, ResT> unary(Descriptors.FileDescriptor proto,
@@ -95,7 +113,8 @@ class GrpcRouteHandler<ReqT, ResT> extends GrpcRoute {
                 + method.getMethodDescriptor().getBareMethodName();
         return new GrpcRouteHandler<>((MethodDescriptor<ReqT, ResT>) method.getMethodDescriptor(),
                                       PathMatchers.exact(path),
-                                      (ServerCallHandler<ReqT, ResT>) method.getServerCallHandler());
+                                      (ServerCallHandler<ReqT, ResT>) method.getServerCallHandler(),
+                                      null);
     }
 
     @Override
@@ -146,7 +165,7 @@ class GrpcRouteHandler<ReqT, ResT> extends GrpcRoute {
                 .setType(getMethodType(mtd)).setFullMethodName(path).setRequestMarshaller(reqMarshaller)
                 .setResponseMarshaller(resMarshaller).setSampledToLocalTracing(true);
 
-        return new GrpcRouteHandler<>(grpcDesc.build(), PathMatchers.exact(path), callHandler);
+        return new GrpcRouteHandler<>(grpcDesc.build(), PathMatchers.exact(path), callHandler, proto);
     }
 
 
@@ -165,7 +184,7 @@ class GrpcRouteHandler<ReqT, ResT> extends GrpcRoute {
     private static <ResT, ReqT> GrpcRouteHandler<ReqT, ResT> grpc(MethodDescriptor<ReqT, ResT> grpcDesc,
                                                                   ServerCallHandler<ReqT, ResT> callHandler,
                                                                   Descriptors.FileDescriptor proto) {
-        return new GrpcRouteHandler<>(grpcDesc, PathMatchers.exact(grpcDesc.getFullMethodName()), callHandler);
+        return new GrpcRouteHandler<>(grpcDesc, PathMatchers.exact(grpcDesc.getFullMethodName()), callHandler, proto);
     }
 
     private static String getClassName(Descriptors.Descriptor descriptor) {
