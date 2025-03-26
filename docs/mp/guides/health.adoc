@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -51,8 +51,7 @@ mvn -U archetype:generate -DinteractiveMode=false \
 
 === Using the Built-In Health Checks
 
-Helidon has a set of built-in health checks that are automatically enabled to report various
-health check statuses that are commonly used:
+Helidon has a set of built-in health checks:
 
 * deadlock detection
 * available disk space
@@ -61,10 +60,14 @@ health check statuses that are commonly used:
 The following example will demonstrate how to use the built-in health checks.  These examples are all executed
 from the root directory of your project (helidon-quickstart-mp).
 
+[source,xml]
+.Include dependency for the built-in health checks
+include::{rootdir}/mp/health.adoc[tag=built-in-health-checks-depc]
+
 [source,bash]
-.Build the application, skipping unit tests, then run it:
+.Build the application then run it:
 ----
-mvn package -DskipTests=true
+mvn package
 java -jar target/helidon-quickstart-mp.jar
 ----
 

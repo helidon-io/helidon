@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -85,6 +85,7 @@ If full control over the dependencies is required, and you want to minimize the 
 To enable built-in health checks add the following dependency
 (or use the xref:introduction/microprofile.adoc[helidon-microprofile bundle] )
 
+//tag::built-in-health-checks-depc[]
 [source,xml]
 ----
 <dependency>
@@ -92,7 +93,7 @@ To enable built-in health checks add the following dependency
     <artifactId>helidon-health-checks</artifactId>
 </dependency>
 ----
-
+//end::built-in-health-checks-depc[]
 
 == Usage
 
