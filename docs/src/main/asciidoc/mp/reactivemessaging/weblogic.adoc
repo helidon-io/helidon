@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -26,7 +26,33 @@
 
 include::{rootdir}/includes/mp.adoc[]
 
-:jakarta-version: Jakarta EE {version-lib-jakarta-ee}
+:jersey-url: https://eclipse-ee4j.github.io/jersey.github.io/documentation/latest
+:jersey-link: {jersey-url}[Eclipse Jersey]
+:jakarta-version: Jakarta EE {version-lib-jakarta-core}
+
+:wls-version: 14.1.1.0
+:wls-root-url: https://docs.oracle.com/en/middleware/standalone/weblogic-server/{wls-version}
+
+:wls-jaxrs-url: {wls-root-url}/restf/develop-restful-service.html#GUID-8C2E2918-B157-49BE-8BCA-125C87E4B3E3
+:wls-jaxrs-link: {wls-jaxrs-url}[Developing and Securing RESTful Web Services for Oracle WebLogic Server]
+
+:wls-jaxrs-client-url: {wls-root-url}/restf/develop-restful-client.html#GUID-F50F4FB3-8A25-439F-8554-484F1C58315C
+:wls-jaxrs-client-link: {wls-jaxrs-url}[Developing RESTful Web Service Clients for Oracle WebLogic Server]
+
+:wls-jms-url: {wls-root-url}/wlshe/integrating-oracle-weblogic-server-jms-helidon.html#GUID-8E1A4C48-D7C9-4599-B0C1-89E1FEA823B2
+:wls-jms-link: {wls-jms-url}[Integrating WebLogic JMS with Helidon]
+
+:wls-thin-url: {wls-root-url}/saclt/wlthint3client.html#GUID-D352B8F0-1B9D-43E8-A675-BBFE7E4DE1E9
+:wls-thin-link: {wls-thin-url}[Weblogic thin T3 client]
+
+:wls-soap-url: {wls-root-url}/wlshe/integrating-oracle-weblogic-server-web-services-helidon.html#GUID-DA893D15-13CB-49AF-AD5B-43FD716618BB
+:wls-soap-link: {wls-soap-url}[Integrating Oracle WebLogic Server Web Services with Helidon]
+
+:wls-sso-url: {wls-root-url}/wlshe/integrating-oracle-weblogic-and-helidon-sso-oci.html#GUID-D54EE368-0D7F-4DBB-9279-CC5BDDB76725
+:wls-sso-link: {wls-sso-url}[Integrating Oracle WebLogic Cluster and Helidon Applications for SSO on OCI Using IDCS]
+
+:osdc-url: https://edelivery.oracle.com/osdc/faces/Home.jspx
+:osdc-link: {osdc-url}[Oracle Software Delivery Cloud]
 
 
 == Contents
