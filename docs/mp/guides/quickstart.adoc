@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -60,6 +60,21 @@ cd helidon-quickstart-mp
 TIP: If you want to use the generated project as a starter
 for your own application, then you can replace groupId, artifactId
 and package with values appropriate for your application.
+
+The <<Health and Metrics,Health and Metrics>> section below describes how Helidon supports
+those observability features. Helidon further provides some optional built-in health checks.
+To include them in your application add the following dependency to your project's
+`pom.xml` file:
+
+[source.xml]
+.Addition to `pom.xml` for Helidon-provided built-in health checks
+----
+<dependency>
+    <groupId>io.helidon.health</groupId>
+    <artifactId>helidon-health-checks</artifactId>
+    <scope>runtime</scope>
+</dependency>
+----
 
 [source,bash]
 .Build the Application

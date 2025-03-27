@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -60,6 +60,16 @@ health check statuses that are commonly used:
 
 The following example will demonstrate how to use the built-in health checks.  These examples are all executed
 from the root directory of your project (helidon-quickstart-mp).
+
+[source,xml]
+.Add a dependency to your `pom.xml` file to include the built-in health checks:
+----
+<dependency>
+    <groupId>io.helidon.health</groupId>
+    <artifactId>helidon-health-checks</artifactId>
+    <scope>runtime</scope>
+</dependency>
+----
 
 [source,bash]
 .Build the application, skipping unit tests, then run it:
