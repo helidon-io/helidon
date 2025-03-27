@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -33,6 +32,8 @@ import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.media.ReadableEntity;
+import io.helidon.service.registry.ServiceRegistryException;
+import io.helidon.service.registry.Services;
 import io.helidon.webclient.api.HttpClientRequest;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.Proxy;
@@ -63,9 +64,7 @@ import static org.glassfish.jersey.client.ClientProperties.getValue;
 
 class HelidonConnector implements Connector {
     static final System.Logger LOGGER = System.getLogger(HelidonConnector.class.getName());
-
-    private static final int DEFAULT_TIMEOUT = 10000;
-    private static final Map<String, String> EMPTY_MAP_LIST = Map.of("", "");
+    private static final String CONNECTOR_CONFIG_ROOT = "jersey.connector.webclient";
 
     private static final String HELIDON_VERSION = "Helidon/" + Version.VERSION + " (java "
             + PropertiesHelper.getSystemProperty("java.runtime.version") + ")";
@@ -78,42 +77,68 @@ class HelidonConnector implements Connector {
     private final Proxy proxy;
 
     @SuppressWarnings("unchecked")
-    HelidonConnector(Client client, Configuration config) {
+    HelidonConnector(Client client, Configuration configuration) {
         // create underlying HTTP client
-        Map<String, Object> properties = config.getProperties();
+        Map<String, Object> properties = configuration.getProperties();
         WebClientConfig.Builder builder = WebClientConfig.builder();
 
-        // use config for client
-        Config helidonConfig = helidonConfig(config).orElse(Config.empty());
-        builder.config(helidonConfig);
+        // use config from property first then registry
+        var helidonConfig = configuration.getProperty(HelidonProperties.CONFIG);
+        if (helidonConfig != null) {
+            if (helidonConfig instanceof Config) {
+                builder.config((Config) helidonConfig);
+            } else {
+                LOGGER.log(System.Logger.Level.WARNING,
+                           String.format("Ignoring Helidon Connector config at '%s'", HelidonProperties.CONFIG));
+                builder.config(configFromRegistry());
+            }
+        } else {
+            builder.config(configFromRegistry());
+        }
 
         // proxy support
-        proxy = ProxyBuilder.createProxy(config).orElse(Proxy.create());
+        proxy = ProxyBuilder.createProxy(configuration).orElse(Proxy.create());
 
-        // possibly override config with properties
+        // possibly override config with properties defined in Jersey client
+        // property values are ignored if cannot be converted to correct type
         if (properties.containsKey(CONNECT_TIMEOUT)) {
-            builder.connectTimeout(Duration.ofMillis(getValue(properties, CONNECT_TIMEOUT, DEFAULT_TIMEOUT)));
+            Integer connectTimeout = getValue(properties, CONNECT_TIMEOUT, Integer.class);
+            if (connectTimeout != null) {
+                builder.connectTimeout(Duration.ofMillis(connectTimeout));
+            }
         }
         if (properties.containsKey(READ_TIMEOUT)) {
-            builder.readTimeout(Duration.ofMillis(getValue(properties, READ_TIMEOUT, DEFAULT_TIMEOUT)));
+            Integer readTimeout = getValue(properties, READ_TIMEOUT, Integer.class);
+            if (readTimeout != null) {
+                builder.readTimeout(Duration.ofMillis(readTimeout));
+            }
         }
         if (properties.containsKey(FOLLOW_REDIRECTS)) {
-            builder.followRedirects(getValue(properties, FOLLOW_REDIRECTS, true));
+            Boolean followRedirects = getValue(properties, FOLLOW_REDIRECTS, Boolean.class);
+            if (followRedirects != null) {
+                builder.followRedirects(followRedirects);
+            }
         }
         if (properties.containsKey(EXPECT_100_CONTINUE)) {
-            builder.sendExpectContinue(getValue(properties, EXPECT_100_CONTINUE, true));
+            Boolean expect100Continue = getValue(properties, EXPECT_100_CONTINUE, Boolean.class);
+            if (expect100Continue != null) {
+                builder.sendExpectContinue(expect100Continue);
+            }
         }
 
-        // whether WebClient TLS has been already set via config
-        boolean helidonConfigTlsSet = helidonConfig.map(hc -> hc.get("tls").exists()).orElse(false);
-        boolean isJerseyClient = client instanceof JerseyClient;
-        // whether Jersey client has non-default SslContext set. If so, we should honor these settings
-        boolean jerseyHasDefaultSsl = isJerseyClient && ((JerseyClient) client).isDefaultSslContext();
-
-        if (!helidonConfigTlsSet || !isJerseyClient || !jerseyHasDefaultSsl) {  // prefer Tls over SSLContext
-            if (properties.containsKey(TLS)) {
-                builder.tls(getValue(properties, TLS, Tls.class));
-            } else if (client.getSslContext() != null) {
+        // first check property and then the Jersey client SSL config
+        boolean isTlsSet = false;
+        if (properties.containsKey(TLS)) {
+            Tls tls = getValue(properties, TLS, Tls.class);
+            if (tls != null) {
+                builder.tls(tls);
+                isTlsSet = true;
+            }
+        }
+        if (!isTlsSet && client.getSslContext() != null) {
+            boolean isJerseyClient = client instanceof JerseyClient;
+            boolean jerseyHasDefaultSsl = isJerseyClient && ((JerseyClient) client).isDefaultSslContext();
+            if (!isJerseyClient || !jerseyHasDefaultSsl) {
                 builder.tls(Tls.builder().sslContext(client.getSslContext()).build());
             }
         }
@@ -129,12 +154,18 @@ class HelidonConnector implements Connector {
 
         // default headers
         if (properties.containsKey(DEFAULT_HEADERS)) {
-            builder.defaultHeadersMap(getValue(properties, DEFAULT_HEADERS, EMPTY_MAP_LIST));
+            Map<String, String> defaultHeaders = getValue(properties, DEFAULT_HEADERS, Map.class);
+            if (defaultHeaders != null) {
+                builder.defaultHeadersMap(defaultHeaders);
+            }
         }
 
         // connection sharing defaults to false in this connector
         if (properties.containsKey(SHARE_CONNECTION_CACHE)) {
-            builder.shareConnectionCache(getValue(properties, SHARE_CONNECTION_CACHE, false));
+            Boolean shareConnectionCache = getValue(properties, SHARE_CONNECTION_CACHE, Boolean.class);
+            if (shareConnectionCache != null) {
+                builder.shareConnectionCache(shareConnectionCache);
+            }
         }
 
         webClient = builder.build();
@@ -302,22 +333,16 @@ class HelidonConnector implements Connector {
         return proxy;
     }
 
-    /**
-     * Returns the Helidon Connector configuration, if available.
-     *
-     * @param configuration from Jakarta REST
-     * @return an optional config
-     */
-    static Optional<Config> helidonConfig(Configuration configuration) {
-        Object helidonConfig = configuration.getProperty(HelidonProperties.CONFIG);
-        if (helidonConfig != null) {
-            if (!(helidonConfig instanceof Config)) {
-                LOGGER.log(System.Logger.Level.WARNING,
-                        String.format("Ignoring Helidon Connector config at '%s'", HelidonProperties.CONFIG));
-            } else {
-                return Optional.of((Config) helidonConfig);
+    Config configFromRegistry() {
+        try {
+            io.helidon.common.config.Config cfg = Services.get(io.helidon.common.config.Config.class);
+            if (cfg instanceof Config config) {
+                return config.get(CONNECTOR_CONFIG_ROOT);
             }
+        } catch (ServiceRegistryException e) {
+            // falls through
         }
-        return Optional.empty();
+        LOGGER.log(System.Logger.Level.TRACE, "Unable to find Config in service registry");
+        return Config.empty();
     }
 }
