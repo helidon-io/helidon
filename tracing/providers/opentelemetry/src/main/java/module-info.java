@@ -34,8 +34,11 @@ module io.helidon.tracing.providers.opentelemetry {
     requires io.helidon.common.configurable;
     requires io.helidon.common.context;
 
-    requires static io.opentelemetry.exporter.internal;
     requires static io.opentelemetry.exporter.otlp;
+    requires static io.opentelemetry.exporter.zipkin;
+    requires static io.opentelemetry.exporter.logging;
+    requires static io.opentelemetry.exporter.logging.otlp;
+
 
     exports io.helidon.tracing.providers.opentelemetry;
 

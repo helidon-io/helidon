@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ ifndef::rootdir[:rootdir: {docdir}/../..]
 Helidon is integrated with the Zipkin tracer.
 
 The Zipkin builder is loaded through `ServiceLoader` and configured. You could
-also use the Zipkin builder directly, though this would create a source-code dependency
+also use the link:{tracing-zipkin-provider-javadoc-baseurl}/ZipkinTracerBuilder.html[Zipkin builder] directly from your code, though this would create a source-code dependency
 on the Zipkin tracer.
 
 include::{rootdir}/includes/dependencies.adoc[]
@@ -33,8 +33,10 @@ include::{rootdir}/includes/dependencies.adoc[]
 <dependency>
     <groupId>io.helidon.tracing.providers</groupId>
     <artifactId>helidon-tracing-providers-zipkin</artifactId>
+    <scope>runtime</scope> <!--1-->
 </dependency>
 ----
+<1> If your code uses the `ZipkinTracingBuilder` directly from your code, remove the `<scope>runtime</scope>` line from the dependency.
 // end::zipkin-dependency[]
 
 // tag::zipkin-configuration[]

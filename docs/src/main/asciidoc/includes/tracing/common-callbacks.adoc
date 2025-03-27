@@ -116,9 +116,11 @@ The following tables list specifically what operations the proxies permit.
 
 |====
 
-=== Adding a Listener
+=== Adding and Removing a Listener
 ==== Explicitly Registering a Listener on a link:{tracing-javadoc}/Tracer.html[`Tracer`]
 Create a `{listener-type}` instance and invoke the `Tracer#register({listener-type})` method to make the listener known to that tracer.
+
+To remove a previously-registered listener invoke `Trace#unregister({listener-type})`.
 
 ==== Automatically Registering a Listener on all `Tracer` Instances
 

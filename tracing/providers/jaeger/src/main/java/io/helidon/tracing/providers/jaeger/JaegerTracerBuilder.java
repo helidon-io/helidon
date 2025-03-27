@@ -270,15 +270,8 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     public JaegerTracerBuilder config(Config config) {
         config.get("enabled").asBoolean().ifPresent(this::enabled);
         config.get("service").asString().ifPresent(this::serviceName);
-        config.get("protocol").asString().ifPresent(this::collectorProtocol);
-        config.get("host").asString().ifPresent(this::collectorHost);
-        config.get("port").asInt().ifPresent(this::collectorPort);
-        config.get("path").asString().ifPresent(this::collectorPath);
         config.get("sampler-type").asString().as(SamplerType::create).ifPresent(this::samplerType);
-        config.get("sampler-param").asDouble().ifPresent(this::samplerParam);
-        config.get("private-key-pem").map(io.helidon.common.configurable.Resource::create).ifPresent(this::privateKey);
-        config.get("client-cert-pem").map(io.helidon.common.configurable.Resource::create).ifPresent(this::clientCertificate);
-        config.get("trusted-cert-pem").map(io.helidon.common.configurable.Resource::create).ifPresent(this::trustedCertificates);
+        config.get("sampler-param").asDouble().ifPresent(this::samplerParam);config.get("private-key-pem").map(io.helidon.common.configurable.Resource::create).ifPresent(this::privateKey);
         config.get("propagation").asList(String.class)
                 .ifPresent(propagationStrings -> {
                     propagationStrings.stream()
@@ -312,10 +305,6 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
 
         config.get("span-processor-type").asString()
                 .ifPresent(it -> spanProcessorType(SpanProcessorType.valueOf(it.toUpperCase())));
-        config.get("exporter-timeout").as(Duration.class).ifPresent(this::exporterTimeout);
-        config.get("schedule-delay").as(Duration.class).ifPresent(this::scheduleDelay);
-        config.get("max-queue-size").asInt().ifPresent(this::maxQueueSize);
-        config.get("max-export-batch-size").asInt().ifPresent(this::maxExportBatchSize);
 
         return this;
     }

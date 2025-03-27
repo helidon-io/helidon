@@ -200,10 +200,14 @@ Remember that operations on the `nativeOtelSpan` variable _do not_ notify span l
 include::{rootdir}/includes/tracing/common-spans.adoc[]
 
 == Configuration
+The following sections describe how to control Helidon tracing using configuration.
 
-The following configuration should be supported by all tracer implementations (if feasible)
+=== Tracing Provider Configuration
+The various Helidon tracing implementations share much of the tracing configuration, but there are some provider-specific settings and some default values differ. Later sections describe each provider and its configuration in detail:
 
-include::{rootdir}/config/io_helidon_tracing_Tracer.adoc[tag=config,levelOffset=1]
+* <<jaeger-tracing,Jaeger tracing>>
+* <<zipkin-tracing,Zipkin tracing>>
+* <<otel-tracing,OpenTelemetry tracing>>
 
 === Traced Spans Configuration
 
@@ -342,6 +346,14 @@ include::{sourcedir}/se/TracingSnippets.java[tag=snippet_5, indent=0]
 include::{rootdir}/includes/tracing/tracer-jaeger.adoc[tag=jaeger-dependency]
 include::{rootdir}/includes/tracing/tracer-jaeger.adoc[tag=jaeger-configuration]
 
+
+:tracer-provider-name: Jaeger
+:tracer-port-default: 14250
+:tracer-protocol-default: yyy
+:tracer-path-default: zzzz
+include::{rootdir}/includes/tracing/tracer-common.adoc[tag=common-config-start]
+include::{rootdir}/includes/tracing/tracer-common.adoc[tag=common-config-end]
+
 === Jaeger Tracing Metrics [[jaeger-tracing-metrics]]
 
 As the <<jaeger-tracing, Jaeger Tracing>> section describes, you can use Jaeger tracing in your Helidon application.
@@ -352,6 +364,33 @@ As the <<jaeger-tracing, Jaeger Tracing>> section describes, you can use Jaeger 
 include::{rootdir}/includes/tracing/tracer-zipkin.adoc[tag=zipkin-dependency]
 include::{rootdir}/includes/tracing/tracer-zipkin.adoc[tag=zipkin-configuration]
 
+:tracer-provider-name: Zipkin
+:tracer-port-default: xxx
+:tracer-protocol-default: yyy
+:tracer-path-default: zzzz
+include::{rootdir}/includes/tracing/tracer-common.adoc[tag=common-config-start]
+include::{rootdir}/includes/tracing/tracer-common.adoc[tag=common-config-end]
+
+
+=== OpenTelemetry Tracing [[otel-tracing]]
+
+
+:tracer-provider-name: OpenTelemetry
+:tracer-port-default: 4317 for grpc, 4318 for http/protobuf
+:tracer-protocol-default: http
+:tracer-path-default: zzzz
+include::{rootdir}/includes/tracing/tracer-common.adoc[tag=common-config-start]
+| `exporter-protocol` | link:???`OtlpExporterProtocol` | `grpc` | Protocol
+| `exporter-timeout` | `Duration` | | Transmission timeout for the exporter.
+| `compression` | string | | Type of compression to use for transmitting traces.
+| `headers` | string[] | | Comma-separated expressions `key=value` for headers to send with each export transmission.
+| `sampler-type` | link??`SamplerType` | `parentbased_always_on` | Type of sampler for gathering traces.
+| `sampler-param` | `Number` | | Depends on the `sampler-type`.
+| schedule-delay, max-queue-size, max-export-batch-size,span-processor-type - double-check for others
+include::{rootdir}/includes/tracing/tracer-common.adoc[tag=common-config-end]
+
+// Ideally we could use the following for the specific implementation classes, but the generated .adoc files for the classes does not contain the property information.
+// include::{rootdir}/config/io_helidon_tracing_Tracer.adoc[tag=config,levelOffset=1]
 
 == Reference
 

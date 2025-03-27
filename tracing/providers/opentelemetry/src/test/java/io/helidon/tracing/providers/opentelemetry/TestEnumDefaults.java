@@ -40,17 +40,17 @@ class TestEnumDefaults {
 
     @Test
     void checkExporterProtocolDefault() {
-        OpenTelemetryTracerBuilder.ExporterProtocol defaultFromString = OpenTelemetryTracerBuilder.ExporterProtocol.create(
-                OpenTelemetryTracerBuilder.ExporterProtocol.DEFAULT_STRING);
+        OtlpExporterProtocol defaultFromString = OtlpExporterProtocol.from(
+                OtlpExporterProtocol.DEFAULT_STRING);
 
         assertThat("Exporter protocol default",
                    defaultFromString,
-                   equalTo(OpenTelemetryTracerBuilder.ExporterProtocol.GRPC));
+                   equalTo(OtlpExporterProtocol.GRPC));
     }
 
     @Test
     void checkSamplerTypeDefault() {
-        OpenTelemetryTracerBuilder.SamplerType defaultFromString = OpenTelemetryTracerBuilder.SamplerType.create(
+        OpenTelemetryTracerBuilder.SamplerType defaultFromString = OpenTelemetryTracerBuilder.SamplerType.from(
                 OpenTelemetryTracerBuilder.SamplerType.DEFAULT_STRING);
 
         assertThat("Sampler type default",
@@ -60,7 +60,7 @@ class TestEnumDefaults {
 
     @Test
     void checkSpanProcessorTypeDefault() {
-        OpenTelemetryTracerBuilder.SpanProcessorType defaultFromString = OpenTelemetryTracerBuilder.SpanProcessorType.create(
+        OpenTelemetryTracerBuilder.SpanProcessorType defaultFromString = OpenTelemetryTracerBuilder.SpanProcessorType.from(
                 OpenTelemetryTracerBuilder.SpanProcessorType.DEFAULT_STRING);
 
         assertThat("Span processor type default",
