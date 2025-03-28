@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,7 +69,7 @@ class JmsSnippets {
         // tag::snippet_3[]
         @Incoming("from-jms")
         @Acknowledgment(Acknowledgment.Strategy.MANUAL)
-        public CompletionStage<?> consumeJms(JmsMessage<String> msg) {
+        public CompletionStage<Void> consumeJms(JmsMessage<String> msg) {
             System.out.println("JMS says: " + msg.getPayload());
             return msg.ack();
         }
