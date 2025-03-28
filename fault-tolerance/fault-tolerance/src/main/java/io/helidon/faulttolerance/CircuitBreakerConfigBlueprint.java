@@ -24,16 +24,30 @@ import java.util.concurrent.ExecutorService;
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
-//@ConfigDriven.ConfigBean
-//@ConfigDriven.WantDefault
-//@ConfigDriven.Repeatable
+/**
+ * Configuration of a circuit breaker.
+ */
 @Prototype.Blueprint(decorator = CircuitBreakerConfigBlueprint.BuilderDecorator.class)
 @Prototype.Configured("fault-tolerance.circuit-breakers")
 interface CircuitBreakerConfigBlueprint extends Prototype.Factory<CircuitBreaker> {
+    /**
+     * Default error ratio.
+     */
     int DEFAULT_ERROR_RATIO = 60;
+    /**
+     * Default success threshold.
+     */
     int DEFAULT_SUCCESS_THRESHOLD = 1;
+    /**
+     * Default volume.
+     */
     int DEFAULT_VOLUME = 10;
 
+    /**
+     * Name of this circuit breaker.
+     *
+     * @return name
+     */
     Optional<String> name();
 
     /**

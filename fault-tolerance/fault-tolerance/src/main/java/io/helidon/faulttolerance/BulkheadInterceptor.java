@@ -22,12 +22,12 @@ import io.helidon.common.types.TypedElementInfo;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistry;
 
-@Service.NamedByType(FaultTolerance.Bulkhead.class)
+@Service.NamedByType(Ft.Bulkhead.class)
 @Weight(FaultTolerance.WEIGHT_BULKHEAD)
 @Service.Singleton
 class BulkheadInterceptor extends InterceptorBase<Bulkhead> {
     BulkheadInterceptor(ServiceRegistry registry) {
-        super(registry, Bulkhead.class, FaultTolerance.Bulkhead.class);
+        super(registry, Bulkhead.class, Ft.Bulkhead.class);
     }
 
     @Override

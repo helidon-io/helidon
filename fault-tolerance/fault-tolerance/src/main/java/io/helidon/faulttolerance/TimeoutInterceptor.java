@@ -24,12 +24,12 @@ import io.helidon.common.types.TypedElementInfo;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistry;
 
-@Service.NamedByType(FaultTolerance.Timeout.class)
+@Service.NamedByType(Ft.Timeout.class)
 @Weight(FaultTolerance.WEIGHT_TIMEOUT)
 @Service.Singleton
 class TimeoutInterceptor extends InterceptorBase<Timeout> {
     TimeoutInterceptor(ServiceRegistry registry) {
-        super(registry, Timeout.class, FaultTolerance.Timeout.class);
+        super(registry, Timeout.class, Ft.Timeout.class);
     }
 
     @Override

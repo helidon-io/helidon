@@ -61,32 +61,6 @@ public final class Http {
     }
 
     /**
-     * Listener socket assigned to this endpoint.
-     * This only makes sense for server side, as it is binding endpoint to a server socket.
-     */
-    @Target(ElementType.TYPE)
-    @Retention(RetentionPolicy.CLASS)
-    @Documented
-    public @interface Listener {
-        /**
-         * Name of a routing to bind this application/service to.
-         *
-         * @return name of a routing (or listener host/port) on WebServer
-         */
-        String value();
-
-        /**
-         * Set to true if the {@link #value()} MUST be configured.
-         * <p>
-         * The endpoint is bound to default listener if the {@link #value()} listener is not configured
-         * on webserver, and this is set to {@code false}.
-         *
-         * @return {@code true} to enforce existence of the named routing
-         */
-        boolean required() default false;
-    }
-
-    /**
      * HTTP Method. Can be used as a meta annotation.
      */
     @Retention(RetentionPolicy.CLASS)
@@ -160,32 +134,6 @@ public final class Http {
          * @return name of the path parameter
          */
         String value();
-    }
-
-    /**
-     * Status that should be returned. Only use when not setting it explicitly.
-     * If an exception is thrown from the method, status is determined based on
-     * error handling.
-     * <p>
-     * You can use {@code _INT} constants from {@link io.helidon.http.Status} for
-     * {@link #value()}.
-     */
-    @Retention(RetentionPolicy.RUNTIME)
-    @Documented
-    public @interface Status {
-        /**
-         * Status code to use.
-         *
-         * @return status code
-         */
-        int value();
-
-        /**
-         * If this is a non-standard status, add a custom reason to it.
-         *
-         * @return reason to use
-         */
-        String reason() default "";
     }
 
     /**

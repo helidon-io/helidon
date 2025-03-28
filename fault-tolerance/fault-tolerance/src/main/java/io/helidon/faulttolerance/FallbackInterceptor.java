@@ -28,7 +28,7 @@ import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryException;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
-@Service.NamedByType(FaultTolerance.Fallback.class)
+@Service.NamedByType(Ft.Fallback.class)
 @Weight(FaultTolerance.WEIGHT_FALLBACK)
 @Service.Singleton
 class FallbackInterceptor extends InterceptorBase<Fallback> {
@@ -37,7 +37,7 @@ class FallbackInterceptor extends InterceptorBase<Fallback> {
 
     @Service.Inject
     FallbackInterceptor(ServiceRegistry registry) {
-        super(registry, Fallback.class, FaultTolerance.Fallback.class);
+        super(registry, Fallback.class, Ft.Fallback.class);
     }
 
     @Override

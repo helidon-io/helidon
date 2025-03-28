@@ -32,6 +32,10 @@ public final class DeclarativeTypes {
      */
     public static final TypeName COMMON_MAPPERS = TypeName.create("io.helidon.common.mapper.Mappers");
     /**
+     * Weight type.
+     */
+    public static final TypeName WEIGHT = TypeName.create("io.helidon.common.Weight");
+    /**
      * Common config type.
      */
     public static final TypeName CONFIG = TypeName.create("io.helidon.common.config.Config");

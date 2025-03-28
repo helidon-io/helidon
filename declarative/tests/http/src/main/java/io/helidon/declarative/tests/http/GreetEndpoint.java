@@ -27,7 +27,7 @@ import io.helidon.common.Default;
 import io.helidon.common.context.Context;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Configuration;
-import io.helidon.faulttolerance.FaultTolerance;
+import io.helidon.faulttolerance.Ft;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.http.HttpException;
@@ -81,13 +81,13 @@ class GreetEndpoint implements GreetEndpointApi {
         return response("World");
     }
 
-    @FaultTolerance.Fallback(value = "fallback", applyOn = IllegalStateException.class)
+    @Ft.Fallback(value = "fallback", applyOn = IllegalStateException.class)
     @Override
     public String failingFallback(@Http.HeaderParam(HeaderNames.HOST_NAME) String host) {
         throw new IllegalStateException("Failed");
     }
 
-    @FaultTolerance.Retry(name = "named")
+    @Ft.Retry(name = "named")
     @RestServer.Header(name = "X-Header", value = "X-Value")
     @RestServer.ComputedHeader(name = "X-Computed", producerClass = ServerHeaderProducer.class)
     @Override
@@ -99,7 +99,7 @@ class GreetEndpoint implements GreetEndpointApi {
         throw new IllegalStateException("Failed");
     }
 
-    @FaultTolerance.CircuitBreaker(name = "named")
+    @Ft.CircuitBreaker(name = "named")
     @Override
     public String breaker() {
         Instant now = Instant.now();
@@ -111,7 +111,7 @@ class GreetEndpoint implements GreetEndpointApi {
         throw new HttpException("Failed", Status.FORBIDDEN_403);
     }
 
-    @FaultTolerance.Timeout(time = "PT1S")
+    @Ft.Timeout(time = "PT1S")
     @Override
     public String timeout(@Http.QueryParam("sleepSeconds") Optional<Integer> sleep) {
         try {
@@ -144,10 +144,7 @@ class GreetEndpoint implements GreetEndpointApi {
      *
      * @param greetingMessage the entity
      */
-    @Http.PUT
-    @Http.Path("/greeting")
-    @Http.Status(Status.NO_CONTENT_204_CODE)
-    @Http.Consumes(MediaTypes.APPLICATION_JSON_VALUE)
+    @RestServer.Status(Status.NO_CONTENT_204_CODE)
     @Override
     public void updateGreetingHandler(@Http.Entity JsonObject greetingMessage) {
         if (!greetingMessage.containsKey("greeting")) {

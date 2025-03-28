@@ -164,12 +164,13 @@ public final class RestServer {
      * If an exception is thrown from the method, status is determined based on
      * error handling.
      * <p>
-     * You can use {@code _INT} constants from {@link io.helidon.http.Status} for
+     * You can use {@code _CODE} constants from {@link io.helidon.http.Status} for
      * {@link #value()}.
      */
     @Retention(RetentionPolicy.RUNTIME)
     @Documented
     @Inherited
+    @Target(ElementType.METHOD)
     public @interface Status {
         /**
          * Status code to use.

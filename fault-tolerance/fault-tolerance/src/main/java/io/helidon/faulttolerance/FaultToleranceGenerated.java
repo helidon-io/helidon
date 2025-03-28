@@ -40,13 +40,14 @@ public final class FaultToleranceGenerated {
     @Service.Contract
     public interface FallbackMethod<T, S> extends FtMethod {
         /**
-         * Fallback method generated based on the {@link io.helidon.faulttolerance.FaultTolerance.Fallback} annotation.
+         * Fallback method generated based on the {@link io.helidon.faulttolerance.Ft.Fallback} annotation.
          * This generated type will check if the throwable should be handled or not, and either throws it, or executes the fallback.
          *
          * @param service service instance
          * @param throwable throwable thrown by the original code (if check, it is wrapped in a runtime exception)
          * @param arguments original arguments to the method
          * @return result obtained from the fallback method (or throws the throwable if fallback should not be done)
+         * @throws java.lang.Throwable as declared by the original method
          */
         T fallback(S service, Throwable throwable, Object... arguments) throws Throwable;
     }
@@ -73,7 +74,7 @@ public final class FaultToleranceGenerated {
     public interface CircuitBreakerMethod extends FtMethod {
         /**
          * Provide a circuit breaker instance that should be used with this method.
-         * If the {@link io.helidon.faulttolerance.FaultTolerance.CircuitBreaker} annotation contains a name, we will attempt to obtain the named instance from
+         * If the {@link io.helidon.faulttolerance.Ft.CircuitBreaker} annotation contains a name, we will attempt to obtain the named instance from
          * registry. If such a named instance does not exist a new circuit breaker will be created from the annotation.
          *
          * @return circuit breaker instance

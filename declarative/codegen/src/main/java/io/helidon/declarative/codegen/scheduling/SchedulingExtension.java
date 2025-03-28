@@ -23,19 +23,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.CodegenValidator;
 import io.helidon.codegen.classmodel.ClassModel;
-import io.helidon.codegen.classmodel.Constructor;
 import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.codegen.classmodel.Method;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.Annotations;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -48,6 +46,7 @@ import io.helidon.service.codegen.ServiceCodegenTypes;
 import io.helidon.service.codegen.spi.RegistryCodegenExtension;
 
 import static io.helidon.declarative.codegen.DeclarativeTypes.CONFIG;
+import static io.helidon.declarative.codegen.DeclarativeTypes.WEIGHT;
 import static io.helidon.declarative.codegen.scheduling.SchedulingTypes.CRON;
 import static io.helidon.declarative.codegen.scheduling.SchedulingTypes.CRON_ANNOTATION;
 import static io.helidon.declarative.codegen.scheduling.SchedulingTypes.CRON_INVOCATION;
@@ -58,7 +57,6 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_
 
 class SchedulingExtension implements RegistryCodegenExtension {
     private static final TypeName GENERATOR = TypeName.create(SchedulingExtension.class);
-    private static final AtomicInteger TYPE_COUNTER = new AtomicInteger();
 
     private final RegistryCodegenContext ctx;
 
@@ -73,35 +71,28 @@ class SchedulingExtension implements RegistryCodegenExtension {
             types.put(info.typeName(), info);
         }
 
-        List<Scheduled> allScheduled = new ArrayList<>();
-        Collection<TypedElementInfo> elements = roundContext.annotatedElements(FIXED_RATE_ANNOTATION);
-        AtomicInteger scheduledCounter = new AtomicInteger();
+        Map<TypeName, List<Scheduled>> scheduledByType = new HashMap<>();
 
-        for (TypedElementInfo element : elements) {
-            TypeInfo typeInfo = enclosingTypeInfo(types, element);
-            processFixedRate(roundContext, allScheduled, typeInfo, element, scheduledCounter);
-        }
-        elements = roundContext.annotatedElements(CRON_ANNOTATION);
-        for (TypedElementInfo element : elements) {
-            TypeInfo typeInfo = enclosingTypeInfo(types, element);
-            processCron(roundContext, allScheduled, typeInfo, element, scheduledCounter);
-        }
+        addFixedRate(roundContext, scheduledByType);
+        addCron(roundContext, scheduledByType);
 
-        generateScheduledStarter(roundContext, allScheduled);
+        scheduledByType.forEach((type, schedules) -> {
+            TypeInfo typeInfo = types.get(type);
+            if (typeInfo == null) {
+                typeInfo = roundContext.typeInfo(type).orElseThrow(() -> new CodegenException("No type info found for type "
+                                                                                                      + type));
+            }
+            checkTypeIsService(roundContext, typeInfo);
+            generateScheduledStarter(roundContext, typeInfo, schedules);
+        });
     }
 
-    private void generateScheduledStarter(RegistryRoundContext roundContext, List<Scheduled> allScheduled) {
-        if (allScheduled.isEmpty()) {
-            return;
-        }
+    private void generateScheduledStarter(RegistryRoundContext roundContext, TypeInfo typeInfo, List<Scheduled> schedules) {
+        TypeName serviceType = typeInfo.typeName();
+        String className = serviceType.className() + "__ScheduledStarter";
 
-        int typeCounter = TYPE_COUNTER.getAndIncrement();
-        String className = "Declarative__ScheduledStarter";
-        if (typeCounter != 0) {
-            className = className + "_" + typeCounter;
-        }
         TypeName generatedType = TypeName.builder()
-                .packageName(packageName(allScheduled))
+                .packageName(serviceType.packageName())
                 .className(className)
                 .build();
 
@@ -119,48 +110,44 @@ class SchedulingExtension implements RegistryCodegenExtension {
                 .addAnnotation(runLevel)
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE);
 
-        Map<TypeName, String> serviceToFields = new HashMap<>();
-        collectServiceTypes(serviceToFields, allScheduled);
+        // use the same weight
+        typeInfo.findAnnotation(WEIGHT)
+                .ifPresent(classModel::addAnnotation);
 
-        // add service and futures fields
-        addFields(classModel, serviceToFields, allScheduled);
-        // add service dependency for each service
-        addConstructor(classModel, serviceToFields);
+        // add service dependency, config, and fields
+        addConstructorAndFields(classModel, serviceType, schedules.size());
         // start each scheduler
-        addPostConstruct(classModel, serviceToFields, allScheduled);
+        addPostConstruct(classModel, serviceType, schedules);
         // stop each future
-        addPreDestroy(classModel, serviceToFields, allScheduled);
+        addPreDestroy(classModel, schedules.size());
         // and a nice toString()
-        addToString(classModel, serviceToFields);
+        addToString(classModel, serviceType);
 
         roundContext.addGeneratedType(generatedType, classModel, GENERATOR);
     }
 
-    private void addToString(ClassModel.Builder classModel, Map<TypeName, String> serviceToFields) {
+    private void addToString(ClassModel.Builder classModel, TypeName serviceType) {
         classModel.addMethod(toString -> toString
                 .accessModifier(AccessModifier.PUBLIC)
                 .returnType(TypeNames.STRING)
                 .name("toString")
+                .addAnnotation(Annotations.OVERRIDE)
                 .addContent("return \"ScheduledStarter for ")
-                .addContent(serviceToFields.keySet()
-                                    .stream()
-                                    .map(TypeName::fqName)
-                                    .collect(Collectors.joining(", ")))
+                .addContent(serviceType.fqName())
                 .addContentLine("\";")
         );
     }
 
     private void addPreDestroy(ClassModel.Builder classModel,
-                               Map<TypeName, String> serviceToFields,
-                               List<Scheduled> allScheduled) {
+                               int scheduledSize) {
         Method.Builder postConstruct = Method.builder()
                 .addAnnotation(Annotation.create(ServiceCodegenTypes.SERVICE_ANNOTATION_PRE_DESTROY))
                 .name("preDestroy")
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE);
 
-        for (Scheduled scheduled : allScheduled) {
+        for (int i = 0; i < scheduledSize; i++) {
             postConstruct.addContent("this.task_")
-                    .addContent(String.valueOf(scheduled.index()))
+                    .addContent(String.valueOf(i))
                     .addContentLine(".close();");
         }
 
@@ -168,31 +155,36 @@ class SchedulingExtension implements RegistryCodegenExtension {
     }
 
     private void addPostConstruct(ClassModel.Builder classModel,
-                                  Map<TypeName, String> serviceToFields,
-                                  List<Scheduled> allScheduled) {
+                                  TypeName serviceType,
+                                  List<Scheduled> schedules) {
         Method.Builder postConstruct = Method.builder()
                 .addAnnotation(Annotation.create(ServiceCodegenTypes.SERVICE_ANNOTATION_POST_CONSTRUCT))
                 .name("postConstruct")
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE);
 
-        postConstruct.addContentLine("var config = configSupplier.get();");
-        postConstruct.addContentLine("var classConfig = config.get(getClass().getName());");
+        postConstruct.addContentLine("var config = configSupplier.get();")
+                .addContent("var classConfig = config.get(\"")
+                .addContent(serviceType.fqName())
+                .addContentLine("\");")
+                .addContentLine("var service = serviceSupplier.get();")
+                .addContentLine("");
 
-        for (Scheduled scheduled : allScheduled) {
-            addStartScheduled(postConstruct, serviceToFields, scheduled);
+        for (int i = 0; i < schedules.size(); i++) {
+            Scheduled scheduled = schedules.get(i);
+            addStartScheduled(postConstruct, scheduled, i);
         }
 
         classModel.addMethod(postConstruct);
     }
 
-    private void addStartScheduled(Method.Builder postConstruct, Map<TypeName, String> serviceToFields, Scheduled scheduled) {
+    private void addStartScheduled(Method.Builder postConstruct, Scheduled scheduled, int index) {
         /*
         this.task_1 = FixedRate.builder()
-            .task(service_1::scheduledTask)
+            .task(service::scheduledTask)
             .build();
          */
         postConstruct.addContent("this.")
-                .addContent("task_" + scheduled.index())
+                .addContent("task_" + index)
                 .addContent(" = ");
         scheduled.createScheduledContent(postConstruct);
 
@@ -219,16 +211,12 @@ class SchedulingExtension implements RegistryCodegenExtension {
 
         if (scheduled.hasParameter()) {
             postConstruct
-                    .addContent(".task(")
-                    .addContent(serviceToFields.get(scheduled.serviceType()))
-                    .addContent("::")
+                    .addContent(".task(service::")
                     .addContent(scheduled.methodName())
                     .addContentLine(")");
         } else {
             postConstruct
-                    .addContent(".task(sinv -> ")
-                    .addContent(serviceToFields.get(scheduled.serviceType()))
-                    .addContent(".")
+                    .addContent(".task(sinv -> service.")
                     .addContent(scheduled.methodName())
                     .addContentLine("())");
         }
@@ -238,101 +226,54 @@ class SchedulingExtension implements RegistryCodegenExtension {
                 .decreaseContentPadding();
     }
 
-    private void addConstructor(ClassModel.Builder classModel, Map<TypeName, String> serviceToFields) {
+    private void addConstructorAndFields(ClassModel.Builder classModel, TypeName serviceType, int schedulesSize) {
         TypeName configSupplierType = TypeName.builder(TypeNames.SUPPLIER)
                 .addTypeArgument(CONFIG)
                 .build();
+        TypeName serviceSupplierType = TypeName.builder(TypeNames.SUPPLIER)
+                .addTypeArgument(serviceType)
+                .build();
 
-        /*
-         StarterType(Service1 service1, Service2 service2) {
-         */
-        Constructor.Builder ctr = Constructor.builder()
+        classModel.addField(service -> service
+                        .accessModifier(AccessModifier.PRIVATE)
+                        .isFinal(true)
+                        .type(serviceSupplierType)
+                        .name("serviceSupplier"))
+                .addField(configSupplier -> configSupplier
+                        .accessModifier(AccessModifier.PRIVATE)
+                        .isFinal(true)
+                        .name("configSupplier")
+                        .type(configSupplierType)
+                );
+
+        for (int i = 0; i < schedulesSize; i++) {
+            final int index = i;
+            classModel.addField(service -> service
+                    .accessModifier(AccessModifier.PRIVATE)
+                    .isVolatile(true)
+                    .type(SchedulingTypes.TASK)
+                    .name("task_" + index));
+        }
+
+        classModel.addConstructor(ctr -> ctr
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .addParameter(configSupplier -> configSupplier
                         .name("configSupplier")
                         .type(configSupplierType)
                         .name("configSupplier")
                 )
-                .addContentLine("this.configSupplier = configSupplier;");
-
-        classModel.addField(configSupplier -> configSupplier
-                .accessModifier(AccessModifier.PRIVATE)
-                .isFinal(true)
-                .name("configSupplier")
-                .type(configSupplierType)
-        );
-
-        serviceToFields.forEach((type, fieldName) -> {
-            ctr.addParameter(service -> service
-                    .type(type)
-                    .name(fieldName));
-            ctr.addContent("this.")
-                    .addContent(fieldName)
-                    .addContent(" = ")
-                    .addContent(fieldName)
-                    .addContentLine(";");
-        });
-
-        classModel.addConstructor(ctr);
+                .addParameter(service -> service
+                        .type(serviceSupplierType)
+                        .name("serviceSupplier"))
+                .addContentLine("this.configSupplier = configSupplier;")
+                .addContent("this.serviceSupplier = serviceSupplier;"));
     }
 
-    private void addFields(ClassModel.Builder classModel, Map<TypeName, String> serviceToFields, List<Scheduled> allScheduled) {
-        // private final ServiceType service_1;
-        // private final Task task_1;
-        serviceToFields.forEach((type, fieldName) -> {
-            classModel.addField(service -> service
-                    .accessModifier(AccessModifier.PRIVATE)
-                    .isFinal(true)
-                    .type(type)
-                    .name(fieldName));
-        });
+    private void processCron(List<Scheduled> allScheduled,
+                             TypedElementInfo element) {
 
-        for (Scheduled scheduled : allScheduled) {
-            classModel.addField(service -> service
-                    .accessModifier(AccessModifier.PRIVATE)
-                    .isVolatile(true)
-                    .type(SchedulingTypes.TASK)
-                    .name("task_" + scheduled.index()));
-        }
-    }
-
-    private void collectServiceTypes(Map<TypeName, String> serviceToFields, List<Scheduled> allScheduled) {
-        int counter = 0;
-        for (Scheduled scheduled : allScheduled) {
-            TypeName typeName = scheduled.serviceType();
-
-            String fieldName = serviceToFields.get(typeName);
-            if (fieldName == null) {
-                fieldName = "service_" + counter++;
-                serviceToFields.put(typeName, fieldName);
-            }
-        }
-    }
-
-    private String packageName(List<Scheduled> allScheduled) {
-        String found = null;
-        for (Scheduled s : allScheduled) {
-            String packageName = s.serviceType().packageName();
-            if (found == null) {
-                found = packageName;
-                continue;
-            }
-            if (found.length() > packageName.length()) {
-                found = packageName;
-            }
-        }
-        return found;
-    }
-
-    private void processCron(RegistryRoundContext roundContext,
-                             List<Scheduled> allScheduled,
-                             TypeInfo typeInfo,
-                             TypedElementInfo element,
-                             AtomicInteger scheduledCounter) {
-        // type must be injectable
-        checkTypeIsService(roundContext, typeInfo, CRON_ANNOTATION);
         // there can be a method argument, but it must be of correct type
-        boolean hasInvocationArgument = checkAndHasArgument(typeInfo, element, CRON_INVOCATION);
+        boolean hasInvocationArgument = checkAndHasArgument(element, CRON_ANNOTATION, CRON_INVOCATION);
 
         // read annotation values
         // read annotation values
@@ -343,24 +284,18 @@ class SchedulingExtension implements RegistryCodegenExtension {
                 .filter(Predicate.not(String::isEmpty));
 
         // add for processing
-        allScheduled.add(new Cron(typeInfo.typeName(),
-                                  element.elementName(),
+        allScheduled.add(new Cron(element.elementName(),
                                   hasInvocationArgument,
-                                  scheduledCounter.getAndIncrement(),
                                   expression,
                                   concurrent,
                                   configKey));
     }
 
-    private void processFixedRate(RegistryRoundContext roundContext,
-                                  List<Scheduled> allScheduled,
-                                  TypeInfo typeInfo,
-                                  TypedElementInfo element,
-                                  AtomicInteger scheduledCounter) {
-        // type must be injectable
-        checkTypeIsService(roundContext, typeInfo, FIXED_RATE_ANNOTATION);
+    private void processFixedRate(List<Scheduled> allScheduled,
+                                  TypeName enclosingType,
+                                  TypedElementInfo element) {
         // there can be a method argument, but it must be of correct type
-        boolean hasInvocationArgument = checkAndHasArgument(typeInfo, element, FIXED_RATE_INVOCATION);
+        boolean hasInvocationArgument = checkAndHasArgument(element, FIXED_RATE_ANNOTATION, FIXED_RATE_INVOCATION);
 
         // read annotation values
         Annotation annotation = element.annotation(FIXED_RATE_ANNOTATION);
@@ -368,23 +303,21 @@ class SchedulingExtension implements RegistryCodegenExtension {
         String delayBy = annotation.stringValue("delayBy").orElse("PT0S");
         String delayType = annotation.stringValue("delayType").orElse("SINCE_PREVIOUS_START");
         Optional<String> configKey = annotation.stringValue("configKey")
-                        .filter(Predicate.not(String::isEmpty));
+                .filter(Predicate.not(String::isEmpty));
 
-        CodegenValidator.validateDuration(typeInfo.typeName(), element, FIXED_RATE_ANNOTATION, "interval", rate);
-        CodegenValidator.validateDuration(typeInfo.typeName(), element, FIXED_RATE_ANNOTATION, "delayBy", delayBy);
+        CodegenValidator.validateDuration(enclosingType, element, FIXED_RATE_ANNOTATION, "interval", rate);
+        CodegenValidator.validateDuration(enclosingType, element, FIXED_RATE_ANNOTATION, "delayBy", delayBy);
 
         // add for processing
-        allScheduled.add(new FixedRate(typeInfo.typeName(),
-                                       element.elementName(),
+        allScheduled.add(new FixedRate(element.elementName(),
                                        hasInvocationArgument,
-                                       scheduledCounter.getAndIncrement(),
                                        rate,
                                        delayBy,
                                        delayType,
                                        configKey));
     }
 
-    private boolean checkAndHasArgument(TypeInfo typeInfo, TypedElementInfo element, TypeName invocationArgumentType) {
+    private boolean checkAndHasArgument(TypedElementInfo element, TypeName annotationType, TypeName invocationArgumentType) {
         List<TypedElementInfo> typedElementInfos = element.parameterArguments();
         if (typedElementInfos.size() == 1
                 && typedElementInfos.getFirst().typeName().equals(invocationArgumentType)) {
@@ -392,56 +325,65 @@ class SchedulingExtension implements RegistryCodegenExtension {
         } else if (typedElementInfos.isEmpty()) {
             return false;
         } else {
-            throw new CodegenException("Scheduling methods may have zero or one arguments. The argument for @FixedRate "
-                                               + "must be of type " + FIXED_RATE_INVOCATION.fqName() + ".",
+            throw new CodegenException("Scheduling methods may have zero or one arguments. The argument for @"
+                                               + annotationType.fqName()
+                                               + " must be of type " + invocationArgumentType.fqName() + ".",
                                        element.originatingElementValue());
         }
     }
 
-    private void checkTypeIsService(RegistryRoundContext roundContext, TypeInfo typeInfo, TypeName annotationType) {
+    private void checkTypeIsService(RegistryRoundContext roundContext, TypeInfo typeInfo) {
         Optional<ClassModel.Builder> descriptor = roundContext.generatedType(ctx.descriptorType(typeInfo.typeName()));
         if (descriptor.isEmpty()) {
-            throw new CodegenException("Type annotated with @" + annotationType.classNameWithEnclosingNames()
-                                               + " is not a service itself. It must be annotated with "
+            throw new CodegenException("Type annotated with one of the scheduling annotations is not a service itself."
+                                               + " It must be annotated with "
                                                + SERVICE_ANNOTATION_SINGLETON.classNameWithEnclosingNames() + ".",
                                        typeInfo.originatingElementValue());
         }
     }
 
-    private TypeInfo enclosingTypeInfo(Map<TypeName, TypeInfo> types, TypedElementInfo element) {
+    private TypeName enclosingType(TypedElementInfo element) {
         Optional<TypeName> enclosingType = element.enclosingType();
         if (enclosingType.isEmpty()) {
             throw new CodegenException("Element " + element + " does not have an enclosing type",
                                        element.originatingElementValue());
         }
-        TypeName typeName = enclosingType.get();
-        TypeInfo typeInfo = types.get(typeName);
-        if (typeInfo == null) {
-            throw new CodegenException("Method enclosing type is not part of this processing round. Method: "
-                                               + typeName.fqName() + "." + element.elementName(),
-                                       element.originatingElementValue());
+        return enclosingType.get();
+    }
+
+    private void addFixedRate(RegistryRoundContext roundContext,
+                              Map<TypeName, List<Scheduled>> scheduledByType) {
+        Collection<TypedElementInfo> elements = roundContext.annotatedElements(FIXED_RATE_ANNOTATION);
+        for (TypedElementInfo element : elements) {
+            TypeName enclosingType = enclosingType(element);
+            var allScheduled = scheduledByType.computeIfAbsent(enclosingType, k -> new ArrayList<>());
+            processFixedRate(allScheduled, enclosingType, element);
         }
-        return typeInfo;
+    }
+
+    private void addCron(RegistryRoundContext roundContext,
+                         Map<TypeName, List<Scheduled>> scheduledByType) {
+        var elements = roundContext.annotatedElements(CRON_ANNOTATION);
+        for (TypedElementInfo element : elements) {
+            TypeName enclosingType = enclosingType(element);
+            var allScheduled = scheduledByType.computeIfAbsent(enclosingType, k -> new ArrayList<>());
+            processCron(allScheduled, element);
+        }
+
     }
 
     private interface Scheduled {
         boolean hasParameter();
 
-        TypeName serviceType();
-
         String methodName();
-
-        int index();
 
         void createScheduledContent(ContentBuilder<?> content);
 
         Optional<String> configKey();
     }
 
-    private record Cron(TypeName serviceType,
-                        String methodName,
+    private record Cron(String methodName,
                         boolean hasParameter,
-                        int index,
                         String expression,
                         boolean concurrent,
                         Optional<String> configKey)
@@ -466,10 +408,8 @@ class SchedulingExtension implements RegistryCodegenExtension {
         }
     }
 
-    private record FixedRate(TypeName serviceType,
-                             String methodName,
+    private record FixedRate(String methodName,
                              boolean hasParameter,
-                             int index,
                              String rate,
                              String delayBy,
                              String delayType,

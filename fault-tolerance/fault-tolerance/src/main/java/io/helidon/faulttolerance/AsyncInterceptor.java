@@ -27,12 +27,12 @@ import io.helidon.service.registry.Interception;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistry;
 
-@Service.NamedByType(FaultTolerance.Async.class)
+@Service.NamedByType(Ft.Async.class)
 @Weight(FaultTolerance.WEIGHT_ASYNC)
 @Service.Singleton
 class AsyncInterceptor extends InterceptorBase<Async> implements Interception.Interceptor {
     AsyncInterceptor(ServiceRegistry registry) {
-        super(registry, Async.class, FaultTolerance.Async.class);
+        super(registry, Async.class, Ft.Async.class);
     }
 
     @Override

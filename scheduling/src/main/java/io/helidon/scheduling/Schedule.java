@@ -23,7 +23,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import io.helidon.scheduling.FixedRate.DelayType;
-import io.helidon.service.registry.Interception;
 
 import static io.helidon.scheduling.FixedRate.DelayType.SINCE_PREVIOUS_START;
 
@@ -42,7 +41,6 @@ public final class Schedule {
     @Retention(RetentionPolicy.RUNTIME)
     @Documented
     @Target(ElementType.METHOD)
-    @Interception.Intercepted
     public @interface FixedRate {
         /**
          * Fixed interval for periodical invocation.
@@ -249,7 +247,6 @@ public final class Schedule {
     @Retention(RetentionPolicy.RUNTIME)
     @Documented
     @Target(ElementType.METHOD)
-    @Interception.Intercepted
     public @interface Cron {
         /**
          * Cron expression specifying period for invocation.

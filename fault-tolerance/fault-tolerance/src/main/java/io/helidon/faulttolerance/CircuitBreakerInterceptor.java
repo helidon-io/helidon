@@ -21,12 +21,12 @@ import io.helidon.common.types.TypedElementInfo;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistry;
 
-@Service.NamedByType(FaultTolerance.CircuitBreaker.class)
+@Service.NamedByType(Ft.CircuitBreaker.class)
 @Weight(FaultTolerance.WEIGHT_CIRCUIT_BREAKER)
 @Service.Singleton
 class CircuitBreakerInterceptor extends InterceptorBase<CircuitBreaker> {
     CircuitBreakerInterceptor(ServiceRegistry registry) {
-        super(registry, CircuitBreaker.class, FaultTolerance.CircuitBreaker.class);
+        super(registry, CircuitBreaker.class, Ft.CircuitBreaker.class);
     }
 
     @SuppressWarnings("OptionalGetWithoutIsPresent")

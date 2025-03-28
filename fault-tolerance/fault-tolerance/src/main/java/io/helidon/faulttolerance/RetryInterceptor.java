@@ -21,12 +21,12 @@ import io.helidon.common.types.TypedElementInfo;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistry;
 
-@Service.NamedByType(FaultTolerance.Retry.class)
+@Service.NamedByType(Ft.Retry.class)
 @Weight(FaultTolerance.WEIGHT_RETRY)
 @Service.Singleton
 class RetryInterceptor extends InterceptorBase<Retry> {
     RetryInterceptor(ServiceRegistry registry) {
-        super(registry, Retry.class, FaultTolerance.Retry.class);
+        super(registry, Retry.class, Ft.Retry.class);
     }
 
     @SuppressWarnings("OptionalGetWithoutIsPresent")

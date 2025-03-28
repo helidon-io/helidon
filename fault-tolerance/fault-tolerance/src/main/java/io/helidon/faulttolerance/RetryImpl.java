@@ -121,22 +121,22 @@ class RetryImpl implements Retry {
         }
     }
 
-    public void checkTimeout(RetryContext<?> context, long nanoTime) {
+    @Override
+    public long retryCounter() {
+        return retryCounter.get();
+    }
+
+    void checkTimeout(RetryContext<?> context, long nanoTime) {
         if ((nanoTime - context.startedNanos) > maxTimeNanos) {
             RetryTimeoutException te = new RetryTimeoutException("Execution took too long. Already executing for: "
                                                                          + TimeUnit.NANOSECONDS.toMillis(
-                                                                             nanoTime - context.startedNanos)
+                    nanoTime - context.startedNanos)
                                                                          + " ms, must be lower than overallTimeout duration of: "
                                                                          + TimeUnit.NANOSECONDS.toMillis(maxTimeNanos)
                                                                          + " ms.",
                                                                  context.throwable());
             throw te;
         }
-    }
-
-    @Override
-    public long retryCounter() {
-        return retryCounter.get();
     }
 
     private Optional<Long> computeDelay(RetryContext<?> context, int currentCallIndex) {
