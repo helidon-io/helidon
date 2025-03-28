@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,22 +66,6 @@ abstract class Type extends ModelComponent {
     }
 
     abstract TypeName typeName();
-
-    private static String extractBoundTypeName(TypeName instance) {
-        return instance.resolvedName();
-    }
-
-    private static String calcName(TypeName instance) {
-        String className;
-        if (instance.enclosingNames().isEmpty()) {
-            className = instance.className();
-        } else {
-            className = String.join(".", instance.enclosingNames()) + "." + instance.className();
-        }
-
-        return (instance.primitive() || instance.packageName().isEmpty())
-                ? className : instance.packageName() + "." + className;
-    }
 
     abstract String fqTypeName();
     abstract String resolvedTypeName();
