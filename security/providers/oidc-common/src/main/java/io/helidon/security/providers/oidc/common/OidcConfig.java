@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,17 +28,22 @@ import io.helidon.common.Errors;
 import io.helidon.common.LazyValue;
 import io.helidon.common.config.Config;
 import io.helidon.common.configurable.Resource;
+import io.helidon.common.socket.SocketOptions;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.cors.CrossOriginConfig;
 import io.helidon.http.SetCookie;
+import io.helidon.http.media.MediaContext;
+import io.helidon.http.media.jsonp.JsonpSupport;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.providers.oidc.common.spi.TenantConfigFinder;
 import io.helidon.security.util.TokenHandler;
+import io.helidon.webclient.api.Proxy;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.api.WebClientConfig;
+import io.helidon.webclient.tracing.WebClientTracing;
 
 /**
  * Configuration of OIDC usable from all resources that utilize OIDC specification, such as security provider, web server
@@ -881,6 +886,12 @@ public final class OidcConfig extends TenantConfigImpl {
          */
         PRIVATE_KEY_JWT,
         /**
+         * Authentication is done via the client certificate used with MTLS.
+         * The Returned access token is bound to this client certificate.
+         * The Client needs to have a certificate authenticator set for this to properly work and MTLS enabled for the OIDC.
+         */
+        CERTIFICATE,
+        /**
          * The Client does not authenticate itself at the Token Endpoint, either because it uses only the Implicit Flow (and so
          * does not use the Token Endpoint) or because it is a Public Client with no Client Secret or other authentication
          * mechanism.
@@ -958,6 +969,13 @@ public final class OidcConfig extends TenantConfigImpl {
         private boolean tokenSignatureValidation = true;
         private boolean idTokenSignatureValidation = true;
         private boolean accessTokenIpCheck = true;
+        private WebClientConfig.Builder webClientConfigBuilder = WebClientConfig.builder()
+                .addService(WebClientTracing.create())
+                .servicesDiscoverServices(false)
+                .mediaContext(MediaContext.builder()
+                                      .mediaSupportsDiscoverServices(false)
+                                      .addMediaSupport(JsonpSupport.create(Config.empty()))
+                                      .build());
 
         protected Builder() {
         }
@@ -995,11 +1013,10 @@ public final class OidcConfig extends TenantConfigImpl {
                 }
             }
 
-            this.webClientBuilderSupplier = () -> OidcUtil.webClientBaseBuilder(proxyProtocol,
-                                                                                proxyHost,
-                                                                                proxyPort,
-                                                                                relativeUris,
-                                                                                clientTimeout());
+            this.webClientBuilderSupplier = () -> webClientBaseBuilder(proxyProtocol,
+                                                                       proxyHost,
+                                                                       proxyPort,
+                                                                       relativeUris);
             this.webClient = webClientBuilderSupplier.get().build();
 
             if (!tokenSignatureValidation) {
@@ -1014,6 +1031,25 @@ public final class OidcConfig extends TenantConfigImpl {
             }
 
             return new OidcConfig(this);
+        }
+
+        private WebClientConfig.Builder webClientBaseBuilder(String proxyProtocol,
+                                                             String proxyHost,
+                                                             int proxyPort,
+                                                             boolean relativeUris) {
+            WebClientConfig.Builder toReturn = WebClientConfig.builder()
+                    .from(webClientConfigBuilder);
+
+            if (proxyHost != null && toReturn.proxy().isEmpty()) {
+                Proxy.ProxyType proxyType = Proxy.ProxyType.valueOf(proxyProtocol.toUpperCase());
+                toReturn.proxy(Proxy.builder()
+                                       .type(proxyType)
+                                       .host(proxyHost)
+                                       .port(proxyPort)
+                                       .build())
+                        .relativeUris(relativeUris);
+            }
+            return toReturn;
         }
 
         /**
@@ -1086,6 +1122,10 @@ public final class OidcConfig extends TenantConfigImpl {
 
             config.get("tenants").asList(Config.class)
                     .ifPresent(confList -> confList.forEach(tenantConfig -> tenantFromConfig(config, tenantConfig)));
+
+            config.get("webclient-config")
+                    .as(Config.class)
+                    .ifPresent(conf -> webclientConfig(WebClientConfig.builder().config(conf)));
 
             return this;
         }
@@ -1184,7 +1224,8 @@ public final class OidcConfig extends TenantConfigImpl {
          * @param relativeUris relative URIs flag
          * @return updated builder instance
          */
-        @ConfiguredOption("false")
+        @ConfiguredOption(value = "false", deprecated = true)
+        @Deprecated(since = "4.2.1", forRemoval = true)
         public Builder relativeUris(boolean relativeUris) {
             this.relativeUris = relativeUris;
             return this;
@@ -1276,7 +1317,8 @@ public final class OidcConfig extends TenantConfigImpl {
          * @param protocol protocol to use (such as https)
          * @return updated builder instance
          */
-        @ConfiguredOption(value = DEFAULT_PROXY_PROTOCOL)
+        @ConfiguredOption(value = DEFAULT_PROXY_PROTOCOL, deprecated = true)
+        @Deprecated(since = "4.2.1", forRemoval = true)
         public Builder proxyProtocol(String protocol) {
             this.proxyProtocol = protocol;
             return this;
@@ -1291,7 +1333,8 @@ public final class OidcConfig extends TenantConfigImpl {
          * @see #proxyProtocol(String)
          * @see #proxyPort(int)
          */
-        @ConfiguredOption
+        @ConfiguredOption(deprecated = true)
+        @Deprecated(since = "4.2.1", forRemoval = true)
         public Builder proxyHost(String proxyHost) {
             if ((proxyHost == null) || proxyHost.isEmpty()) {
                 this.proxyHost = null;
@@ -1309,6 +1352,7 @@ public final class OidcConfig extends TenantConfigImpl {
          * @return updated builder instance
          */
         @ConfiguredOption("80")
+        @Deprecated(since = "4.2.1", forRemoval = true)
         public Builder proxyPort(int proxyPort) {
             this.proxyPort = proxyPort;
             return this;
@@ -1746,5 +1790,40 @@ public final class OidcConfig extends TenantConfigImpl {
             return this;
         }
 
+        /**
+         * Merge builder passed via parameter with the preconfigured OIDC WebClientConfig builder.
+         *
+         * @param builder webclient config builder
+         * @return updated builder instance
+         */
+        @ConfiguredOption
+        public Builder webclientConfig(WebClientConfig.Builder builder) {
+            this.webClientConfigBuilder.from(builder);
+            return this;
+        }
+
+        /**
+         * Set the new WebClientConfig to the OIDC. It replaces default configurations.
+         *
+         * @param config webclient config instance
+         * @return updated builder instance
+         */
+        @ConfiguredOption
+        public Builder webclientConfig(WebClientConfig config) {
+            this.webClientConfigBuilder = WebClientConfig.builder().from(config);
+            return this;
+        }
+
+        @Override
+        public Builder clientTimeout(Duration duration) {
+            super.clientTimeout(duration);
+            SocketOptions.Builder newSocketBuilder = webClientConfigBuilder.socketOptions()
+                    .map(so -> SocketOptions.builder().from(so))
+                    .orElse(SocketOptions.builder())
+                    .connectTimeout(duration)
+                    .readTimeout(duration);
+            webClientConfigBuilder.socketOptions(newSocketBuilder);
+            return this;
+        }
     }
 }
