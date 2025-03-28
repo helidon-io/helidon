@@ -1,0 +1,78 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2025 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+ifndef::rootdir[:rootdir: {docdir}/../..]
+ifndef::flavor-lc[:flavor-lc: se]
+:feature-name: Common Tracing
+
+// tag::common-config-start[]
+// The .adoc generation from the various XXXTracerBuilder classes overwrite the same Tracer .adoc file.
+// So instead we compose the table of config settings manually. Many entries are common to all providers (with different defaults in some cases)
+// and other settings are specific to particular providers. So provide a separately-addressable start and end to
+// the table so individual providers can insert their own specific settings as needed.
+//
+// An .adoc file which includes this section should assign these attributes:
+// :tracer-provider-name:
+// :tracer-port-default:
+// :tracer-protocol-default:
+// :tracer-path-default:
+.{tracer-provider-name} Tracing Configuration
+|====
+| key | type | default value | description
+| `enabled` | boolean | `true` | Whether tracing is enabled for the application.
+| `host` | string | | Host for connecting to transmit traces.
+| `port` | int a| {tracer-port-default} | Port for  connecting to transmit traces.
+| `protocol` | string | {tracer-protocol-default} | Protocol (e.g., `http`) for connecting to transmit traces.
+| `registerGlobal` | boolean | `true` | Whether the tracer built should be set as the global tracer.
+| `path` | string | {tracer-path-default} | Path for connecting to transmit traces.
+| `service-name` | string | |  Identifies the service represented by the tracer. (required)
+| `tags` | string[] | | Comma-separated expressions `key=string-value` for tracer-level tags.
+| `int-tags` | int[] | | Comma-separated expressions `key=int-value` for tracer-level tags.
+| `boolean-tags` | boolean[] | | Comma-separated expressions `key=boolean-value` for tracer-level tags.
+// end::common-config-start[]
+// tag::common-config-end[]
+|====
+// end::common-config-end[]
+
+// tag::provider-specific-intro[]
+// Pages using this should declare:
+// :tracer-provider-name: Provider (e.g., OpenTelemetry)
+// :tracer-provider-name-lc: provider (e.g., opentelemetry) suitable for use in a dependency or a package name
+// :tracer-provider-builder-javadoc:
+Helidon is integrated with the {tracer-provider-name} tracer.
+
+The {tracer-provider-name} builder is loaded through `ServiceLoader` and configured. You could
+also use the link:{tracer-provider-builder-javadoc}[{tracer-provider-name} builder] directly from your code, though this would create a source-code dependency
+on the {tracer-provider-name} tracer.
+
+// end::provider-specific-intro[]
+
+// tag::dependency[]
+include::{rootdir}/includes/dependencies.adoc[]
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.tracing.providers</groupId>
+    <artifactId>helidon-tracing-providers-{tracer-provider-name-lc}</artifactId>
+    <scope>runtime</scope> <!--1-->
+</dependency>
+----
+<1> If your code uses the `{tracer-provider-name}TracerBuilder` directly from your code, remove the `<scope>runtime</scope>` line from the dependency.
+
+// end::dependency[]
