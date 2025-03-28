@@ -25,11 +25,11 @@ import io.opentelemetry.sdk.trace.export.SpanExporter;
 /**
  * Common configurable elements for any span processor implementation.
  */
-public abstract class SpanProcessorConfig {
+public abstract class SpanProcessorConfiguration {
 
     private final String exporterName;
 
-    protected SpanProcessorConfig(Builder<?, ?> builder) {
+    protected SpanProcessorConfiguration(Builder<?, ?> builder) {
         exporterName = builder.exporterName;
     }
 
@@ -37,28 +37,28 @@ public abstract class SpanProcessorConfig {
         return exporterName;
     }
 
-    static SpanProcessorConfig create(Config spanProcessorConfig) {
+    static SpanProcessorConfiguration create(Config spanProcessorConfig) {
         return builder(spanProcessorConfig).build();
     }
 
-    static Builder<?, ?> builder(OpenTelemetryTracerBuilder.SpanProcessorType spanProcessorType) {
+    static Builder<?, ?> builder(SpanProcessorType spanProcessorType) {
         return switch (spanProcessorType) {
-            case BATCH -> BatchSpanProcessorConfig.builder();
-            case SIMPLE -> SimpleSpanProcessorConfig.builder();
+            case BATCH -> BatchSpanProcessorConfiguration.builder();
+            case SIMPLE -> SimpleSpanProcessorConfiguration.builder();
         };
     }
 
     static Builder<?, ?> builder(Config spanProcessorConfig) {
         return builder(spanProcessorConfig.get("processor-type")
-                .as(OpenTelemetryTracerBuilder.SpanProcessorType.class)
-                .orElse(OpenTelemetryTracerBuilder.SpanProcessorType.DEFAULT))
+                .as(SpanProcessorType.class)
+                .orElse(SpanProcessorType.DEFAULT))
                 .config(spanProcessorConfig);
     }
 
     abstract SpanProcessor spanProcessor(SpanExporter spanExporter);
 
     @Configured
-    static abstract class Builder<B extends Builder<B, T>, T extends SpanProcessorConfig> implements io.helidon.common.Builder<B, T> {
+    static abstract class Builder<B extends Builder<B, T>, T extends SpanProcessorConfiguration> implements io.helidon.common.Builder<B, T> {
 
         private String exporterName = "@default";
 

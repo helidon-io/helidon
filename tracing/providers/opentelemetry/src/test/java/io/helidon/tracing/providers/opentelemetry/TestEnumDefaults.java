@@ -26,14 +26,14 @@ class TestEnumDefaults {
     @Test
     void checkPropagationFormatDefault() {
 
-        OpenTelemetryTracerBuilder.PropagationFormat[] defaultsFromString =
+        ContextPropagation[] defaultsFromString =
                 // These are the defaults documented in the "Properties for context propagation" section here:
                 // https://opentelemetry.io/docs/languages/java/configuration/#properties-general
-                {OpenTelemetryTracerBuilder.PropagationFormat.TRACE_CONTEXT,
-                        OpenTelemetryTracerBuilder.PropagationFormat.BAGGAGE};
+                {ContextPropagation.TRACE_CONTEXT,
+                        ContextPropagation.BAGGAGE};
 
         assertThat("Propagation format defaults",
-                   OpenTelemetryTracerBuilder.PropagationFormat.DEFAULT,
+                   ContextPropagation.DEFAULT,
                    hasItems(defaultsFromString));
 
     }
@@ -50,21 +50,21 @@ class TestEnumDefaults {
 
     @Test
     void checkSamplerTypeDefault() {
-        OpenTelemetryTracerBuilder.SamplerType defaultFromString = OpenTelemetryTracerBuilder.SamplerType.from(
-                OpenTelemetryTracerBuilder.SamplerType.DEFAULT_STRING);
+        SamplerType defaultFromString = SamplerType.from(
+                SamplerType.DEFAULT_STRING);
 
         assertThat("Sampler type default",
                    defaultFromString,
-                   equalTo(OpenTelemetryTracerBuilder.SamplerType.PARENT_BASED_ALWAYS_ON));
+                   equalTo(SamplerType.PARENT_BASED_ALWAYS_ON));
     }
 
     @Test
     void checkSpanProcessorTypeDefault() {
-        OpenTelemetryTracerBuilder.SpanProcessorType defaultFromString = OpenTelemetryTracerBuilder.SpanProcessorType.from(
-                OpenTelemetryTracerBuilder.SpanProcessorType.DEFAULT_STRING);
+        SpanProcessorType defaultFromString = SpanProcessorType.from(
+                SpanProcessorType.DEFAULT_NAME);
 
         assertThat("Span processor type default",
                    defaultFromString,
-                   equalTo(OpenTelemetryTracerBuilder.SpanProcessorType.BATCH));
+                   equalTo(SpanProcessorType.BATCH));
     }
 }

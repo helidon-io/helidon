@@ -50,4 +50,7 @@ module io.helidon.tracing.providers.opentelemetry {
     provides io.helidon.common.context.spi.DataPropagationProvider
             with io.helidon.tracing.providers.opentelemetry.OpenTelemetryDataPropagationProvider;
 
+    provides io.helidon.config.spi.ConfigMapperProvider
+            with io.helidon.tracing.providers.opentelemetry.OtelConfigMapper;
+
 }

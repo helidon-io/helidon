@@ -29,14 +29,14 @@ import io.helidon.config.metadata.ConfiguredOption;
 /**
  * Settings for an OTLP http/protobuf or grpc span exporter.
  */
-public abstract class OtlpSpanExporterConfig extends SpanExporterConfig.Basic {
+public abstract class OtlpSpanExporterConfiguration extends SpanExporterConfiguration.Basic {
 
-    protected OtlpSpanExporterConfig(Builder<?, ?> builder) {
+    protected OtlpSpanExporterConfiguration(Builder<?, ?> builder) {
         super(builder);
     }
 
     @Configured
-    public static abstract class Builder<B extends Builder<B, T>, T extends OtlpSpanExporterConfig> extends SpanExporterConfig.Basic.Builder<B, T> {
+    public static abstract class Builder<B extends Builder<B, T>, T extends OtlpSpanExporterConfiguration> extends SpanExporterConfiguration.Basic.Builder<B, T> {
         private final Map<String, String> headers = new HashMap<>();
         // Collector protocol (scheme)
         private String collectorProtocol = "http";

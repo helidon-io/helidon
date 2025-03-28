@@ -39,17 +39,16 @@ class TestOtelConfigViaHelidonConfig {
                     - exporter-name: "@default"
                     - exporter-name: test-zipkin-exporter
                   span-exporters:
-                    - type: otlp
-                      protocol: http/protobuf
+                    - exporter-protocol: http/protobuf
                       compression: gzip
                     - type: zipkin
                       name: test-zipkin-exporter
                       protocol: http""";
 
         Config config = Config.just(ConfigSources.create(yaml, MediaTypes.APPLICATION_YAML));
-        OpenTelemetryTracerBuilder builder = OpenTelemetryTracer.builder().config(config.get("tracing"));
+        OpenTelemetryConfig otelConfig = OpenTelemetryConfig.create(config);
 
-        Tracer tracer = builder.build();
+
 
     }
 }

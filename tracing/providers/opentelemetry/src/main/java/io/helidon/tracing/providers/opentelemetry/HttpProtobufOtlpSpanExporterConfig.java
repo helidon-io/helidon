@@ -22,7 +22,7 @@ import io.opentelemetry.sdk.trace.export.SpanExporter;
 /**
  * Span exporter config for OTLP span exporter using the http/protobuf protocol.
  */
-public class HttpProtobufOtlpSpanExporterConfig extends OtlpSpanExporterConfig {
+public class HttpProtobufOtlpSpanExporterConfig extends OtlpSpanExporterConfiguration {
 
     private final SpanExporter spanExporter;
 
@@ -56,7 +56,7 @@ public class HttpProtobufOtlpSpanExporterConfig extends OtlpSpanExporterConfig {
     /**
      * Builder for OTLP span exporter config using the http/protobuf protocol.
      */
-    public static class Builder extends OtlpSpanExporterConfig.Builder<Builder, HttpProtobufOtlpSpanExporterConfig> {
+    public static class Builder extends OtlpSpanExporterConfiguration.Builder<Builder, HttpProtobufOtlpSpanExporterConfig> {
 
         public Builder() {
             super("http",

@@ -24,11 +24,11 @@ import io.opentelemetry.sdk.trace.export.SpanExporter;
 /**
  * Settings for an OpenTelemetry Zipkin exporter.
  */
-public class ZipkinSpanExporterConfig extends SpanExporterConfig.Basic {
+public class ZipkinSpanExporterConfiguration extends SpanExporterConfiguration.Basic {
 
     private final SpanExporter spanExporter;
 
-    private ZipkinSpanExporterConfig(Builder builder) {
+    private ZipkinSpanExporterConfiguration(Builder builder) {
         super(builder);
         var exporterBuilder = ZipkinSpanExporter.builder();
         builder.apply(exporterBuilder::setEndpoint, exporterBuilder::setCompression, exporterBuilder::setReadTimeout);
@@ -46,7 +46,7 @@ public class ZipkinSpanExporterConfig extends SpanExporterConfig.Basic {
      * @param zipkinSpanExporterConfig config node containing Zipkin span exporter settings
      * @return the corresponding config object for an OpenTelemetry {@code ZipkinSpanExporter}
      */
-    public static ZipkinSpanExporterConfig create(Config zipkinSpanExporterConfig) {
+    public static ZipkinSpanExporterConfiguration create(Config zipkinSpanExporterConfig) {
         return builder().config(zipkinSpanExporterConfig).build();
     }
 
@@ -56,7 +56,7 @@ public class ZipkinSpanExporterConfig extends SpanExporterConfig.Basic {
     }
 
     @Configured
-    public static class Builder extends SpanExporterConfig.Basic.Builder<Builder, ZipkinSpanExporterConfig> {
+    public static class Builder extends SpanExporterConfiguration.Basic.Builder<Builder, ZipkinSpanExporterConfiguration> {
 
         protected Builder() {
             super("http", "localhost", 9411, "/api/v2/spans", null, null);
@@ -77,8 +77,8 @@ public class ZipkinSpanExporterConfig extends SpanExporterConfig.Basic {
          *
          * @return resulting {@code ZipkinSpanExporter}
          */
-        public ZipkinSpanExporterConfig build() {
-            return new ZipkinSpanExporterConfig(this);
+        public ZipkinSpanExporterConfiguration build() {
+            return new ZipkinSpanExporterConfiguration(this);
         }
     }
 }

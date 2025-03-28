@@ -25,9 +25,9 @@ import io.opentelemetry.sdk.trace.export.SpanExporter;
 /**
  * Settings for a simple span processor (no settings beyond the inherited span exporter name).
  */
-class SimpleSpanProcessorConfig extends SpanProcessorConfig {
+class SimpleSpanProcessorConfiguration extends SpanProcessorConfiguration {
 
-    private SimpleSpanProcessorConfig(Builder builder) {
+    private SimpleSpanProcessorConfiguration(Builder builder) {
         super(builder);
     }
 
@@ -40,11 +40,11 @@ class SimpleSpanProcessorConfig extends SpanProcessorConfig {
     }
 
     @Configured(description = "OTEL simple span processor configuration")
-    static class Builder extends SpanProcessorConfig.Builder<Builder, SimpleSpanProcessorConfig> {
+    static class Builder extends SpanProcessorConfiguration.Builder<Builder, SimpleSpanProcessorConfiguration> {
 
         @Override
-        public SimpleSpanProcessorConfig build() {
-            return new SimpleSpanProcessorConfig(this);
+        public SimpleSpanProcessorConfiguration build() {
+            return new SimpleSpanProcessorConfiguration(this);
         }
     }
 

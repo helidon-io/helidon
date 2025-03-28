@@ -16,14 +16,13 @@
 
 package io.helidon.tracing.providers.opentelemetry;
 
-import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter;
 import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
 
 /**
  * Span exporter config for OTLP span exporter using the grpc protocol.
  */
-public class GrpcOtlpSpanExporterConfig extends OtlpSpanExporterConfig {
+public class OtlpGrpcSpanExporterConfig extends OtlpSpanExporterConfiguration {
 
     private final SpanExporter spanExporter;
 
@@ -36,7 +35,7 @@ public class GrpcOtlpSpanExporterConfig extends OtlpSpanExporterConfig {
         return new Builder();
     }
 
-    protected GrpcOtlpSpanExporterConfig(Builder builder) {
+    protected OtlpGrpcSpanExporterConfig(Builder builder) {
         super(builder);
         var exporterBuilder = OtlpGrpcSpanExporter.builder();
         builder.apply(exporterBuilder::setEndpoint,
@@ -56,7 +55,7 @@ public class GrpcOtlpSpanExporterConfig extends OtlpSpanExporterConfig {
     /**
      * Builder for an OTLP span exporter config using the grpc protocol.
      */
-    public static class Builder extends OtlpSpanExporterConfig.Builder<Builder, GrpcOtlpSpanExporterConfig> {
+    public static class Builder extends OtlpSpanExporterConfiguration.Builder<Builder, OtlpGrpcSpanExporterConfig> {
         public Builder() {
             super("grpc",
                   "localhost",
@@ -68,8 +67,8 @@ public class GrpcOtlpSpanExporterConfig extends OtlpSpanExporterConfig {
         }
 
         @Override
-        public GrpcOtlpSpanExporterConfig build() {
-            return new GrpcOtlpSpanExporterConfig(this);
+        public OtlpGrpcSpanExporterConfig build() {
+            return new OtlpGrpcSpanExporterConfig(this);
         }
     }
 }

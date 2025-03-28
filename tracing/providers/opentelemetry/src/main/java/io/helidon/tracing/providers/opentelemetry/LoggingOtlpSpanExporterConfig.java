@@ -19,7 +19,7 @@ package io.helidon.tracing.providers.opentelemetry;
 import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingSpanExporter;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
 
-class LoggingOtlpSpanExporterConfig extends SpanExporterConfig{
+class LoggingOtlpSpanExporterConfig extends SpanExporterConfiguration {
 
     private final SpanExporter exporter = OtlpJsonLoggingSpanExporter.create();
 
@@ -36,7 +36,7 @@ class LoggingOtlpSpanExporterConfig extends SpanExporterConfig{
         return exporter;
     }
 
-    static class Builder extends SpanExporterConfig.Builder<Builder, LoggingOtlpSpanExporterConfig> {
+    static class Builder extends SpanExporterConfiguration.Builder<Builder, LoggingOtlpSpanExporterConfig> {
 
         @Override
         public LoggingOtlpSpanExporterConfig build() {

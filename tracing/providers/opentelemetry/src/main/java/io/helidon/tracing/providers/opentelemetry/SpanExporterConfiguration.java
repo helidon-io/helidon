@@ -29,9 +29,9 @@ import io.opentelemetry.sdk.trace.export.SpanExporter;
  * Provides a config-based description of an OpenTelemetry span exporter and construction of the corresponding span
  * exporter based on that configuration.
  */
-public abstract class SpanExporterConfig {
+public abstract class SpanExporterConfiguration {
 
-    protected SpanExporterConfig(Builder<?, ?> builder) {
+    protected SpanExporterConfiguration(Builder<?, ?> builder) {
     }
 
     /**
@@ -39,10 +39,10 @@ public abstract class SpanExporterConfig {
      *
      * @return new builder
      */
-    public static Builder<?, ?> builder(OpenTelemetryTracerBuilder.ExporterType type) {
+    public static Builder<?, ?> builder(ExporterType type) {
         return switch (type) {
             case CONSOLE -> ConsoleSpanExporterConfig.builder();
-            case ZIPKIN -> ZipkinSpanExporterConfig.builder();
+            case ZIPKIN -> ZipkinSpanExporterConfiguration.builder();
             case LOGGING_OTLP -> LoggingOtlpSpanExporterConfig.builder();
             case OTLP -> throw new IllegalArgumentException("OTLP span exporter requires exporter protocol");
         };
@@ -56,17 +56,17 @@ public abstract class SpanExporterConfig {
      * @return builder corresponding to the configuration
      */
     public static Builder<?, ?> builder(Config tracingConfig) {
-        OpenTelemetryTracerBuilder.ExporterType exporterType = tracingConfig.get("type")
-                .as(OpenTelemetryTracerBuilder.ExporterType.class)
-                .orElse(OpenTelemetryTracerBuilder.ExporterType.OTLP);
-        if (exporterType != OpenTelemetryTracerBuilder.ExporterType.OTLP) {
+        ExporterType exporterType = tracingConfig.get("type")
+                .as(ExporterType.class)
+                .orElse(ExporterType.OTLP);
+        if (exporterType != ExporterType.OTLP) {
             return builder(exporterType);
         }
         OtlpExporterProtocol otlpExporterProtocol = tracingConfig.get("protocol")
                 .asString().as(OtlpExporterProtocol::from)
                 .orElse(OtlpExporterProtocol.GRPC);
         return switch (otlpExporterProtocol) {
-            case GRPC -> GrpcOtlpSpanExporterConfig.builder();
+            case GRPC -> OtlpGrpcSpanExporterConfig.builder();
             case HTTP_PROTOBUF -> HttpProtobufOtlpSpanExporterConfig.builder();
         };
     }
@@ -77,7 +77,7 @@ public abstract class SpanExporterConfig {
      * @param tracingConfig config node containing settings for a span exporter
      * @return {@code SpanExporterConfig} based on the configuration
      */
-    public static SpanExporterConfig create(Config tracingConfig) {
+    public static SpanExporterConfiguration create(Config tracingConfig) {
         return builder(tracingConfig).build();
     }
 
@@ -91,14 +91,14 @@ public abstract class SpanExporterConfig {
     /**
      * Configuration common to span exporters which transmit tracing data to another process and support compression and timeouts.
      */
-    static abstract class Basic extends SpanExporterConfig {
+    static abstract class Basic extends SpanExporterConfiguration {
 
         protected Basic(Builder<?, ?> builder) {
             super(builder);
         }
 
         @Configured(description = "Settings for a span exporter which transmits data to another process")
-        static abstract class Builder<B extends Builder<B, T>, T extends Basic> extends SpanExporterConfig.Builder<B, T> {
+        static abstract class Builder<B extends Builder<B, T>, T extends Basic> extends SpanExporterConfiguration.Builder<B, T> {
 
             private String protocol;
             private String host;
@@ -217,20 +217,20 @@ public abstract class SpanExporterConfig {
     }
 
     @Configured(description = "Span exporter settings")
-    public static abstract class Builder<B extends Builder<B, T>, T extends SpanExporterConfig>
+    public static abstract class Builder<B extends Builder<B, T>, T extends SpanExporterConfiguration>
             implements io.helidon.common.Builder<B, T> {
 
-        private OpenTelemetryTracerBuilder.ExporterType exporterType;
+        private ExporterType exporterType;
 
         /**
          * Exporter type for the span exporter.
          *
-         * @param exporterType {@link io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracerBuilder.ExporterType} of
+         * @param exporterType {@link ExporterType} of
          *                     the span exporter
          * @return updated builder
          */
         @ConfiguredOption(value = "OTLP")
-        public B type(OpenTelemetryTracerBuilder.ExporterType exporterType) {
+        public B type(ExporterType exporterType) {
             this.exporterType = exporterType;
             return identity();
         }
@@ -242,11 +242,11 @@ public abstract class SpanExporterConfig {
          * @return updated builder
          */
         public B config(Config spanExporterConfig) {
-            spanExporterConfig.get("type").as(OpenTelemetryTracerBuilder.ExporterType.class).ifPresent(this::type);
+            spanExporterConfig.get("type").as(ExporterType.class).ifPresent(this::type);
             return identity();
         }
 
-        protected OpenTelemetryTracerBuilder.ExporterType type() {
+        protected ExporterType type() {
             return exporterType;
         }
     }

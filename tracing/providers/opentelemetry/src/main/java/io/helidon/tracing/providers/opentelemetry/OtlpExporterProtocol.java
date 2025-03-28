@@ -27,26 +27,41 @@ public enum OtlpExporterProtocol {
     /**
      * grpc OpenTelemetry protocol.
      */
-    GRPC("grpc", 4317),
+    GRPC("grpc", 4317, ""),
 
     /**
      * http/protobuf OpenTelemetry protocol.
      */
-    HTTP_PROTOBUF("http/protobuf", 4318);
+    HTTP_PROTOBUF("http/protobuf", 4318, "v1/span");
 
     private static final EnumMapperProvider MAPPER_PROVIDER = new EnumMapperProvider();
     static final String DEFAULT_STRING = "grpc";
-    static final OtlpExporterProtocol DEFAULT = from(DEFAULT_STRING);
-    private final String protocol;
+    static final String DEFAULT_NAME = "GRPC";
+    static final OtlpExporterProtocol DEFAULT = GRPC;
+    private final String otelConfigValue;
     private final int defaultPort;
+    private final String defaultPath;
 
-    OtlpExporterProtocol(String protocol, int defaultPort) {
-        this.protocol = protocol;
+    OtlpExporterProtocol(String otelConfigValue, int defaultPort, String defaultPath) {
+        this.otelConfigValue = otelConfigValue;
         this.defaultPort = defaultPort;
+        this.defaultPath = defaultPath;
+    }
+
+    String defaultProtocol() {
+        return "http";
     }
 
     int defaultPort() {
         return defaultPort;
+    }
+
+    String defaultHost() {
+        return "localhost";
+    }
+
+    String defaultPath() {
+        return defaultPath;
     }
 
     /**
@@ -58,7 +73,7 @@ public enum OtlpExporterProtocol {
     static OtlpExporterProtocol from(Config configNode) {
         return configNode.asString()
                 .as(OtlpExporterProtocol::from)
-                .orElseGet(() -> configNode.as(OtlpExporterProtocol.class).orElseThrow());
+                .orElse(OtlpExporterProtocol.DEFAULT);
     }
 
     /**
@@ -68,9 +83,9 @@ public enum OtlpExporterProtocol {
      * @return corresponding {@code OtlpExporterProtocol} value
      */
     static OtlpExporterProtocol from(String protocol) {
-        for (OtlpExporterProtocol otlpExporterProtocol : OtlpExporterProtocol.values()) {
-            if (otlpExporterProtocol.protocol.equals(protocol) || otlpExporterProtocol.name().equals(protocol)) {
-                return otlpExporterProtocol;
+        for (OtlpExporterProtocol candidate : OtlpExporterProtocol.values()) {
+            if (candidate.otelConfigValue.equals(protocol) || candidate.name().equals(protocol)) {
+                return candidate;
             }
         }
         throw new IllegalArgumentException("Unknown exporter protocol: " + protocol + "; expected one of "

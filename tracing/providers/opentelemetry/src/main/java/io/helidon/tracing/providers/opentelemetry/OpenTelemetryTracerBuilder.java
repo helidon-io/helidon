@@ -17,14 +17,11 @@ package io.helidon.tracing.providers.opentelemetry;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import io.helidon.common.config.Config;
 import io.helidon.config.metadata.Configured;
@@ -34,15 +31,10 @@ import io.helidon.tracing.TracerBuilder;
 
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
-import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.common.AttributesBuilder;
-import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
 import io.opentelemetry.context.propagation.ContextPropagators;
 import io.opentelemetry.context.propagation.TextMapPropagator;
-import io.opentelemetry.extension.trace.propagation.B3Propagator;
-import io.opentelemetry.extension.trace.propagation.JaegerPropagator;
-import io.opentelemetry.extension.trace.propagation.OtTracePropagator;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
@@ -95,7 +87,7 @@ import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
  *     OpenTelemetry can propagate span information to other processes in many ways and permits multiple of them to be
  *     active. By default, Helidon prepares propagation with the W3C headers using the {@code tracecontext} and {@code baggage}
  *     propagation formats. The application can override the default using configuration or invoking the
- *     {@link #addPropagation(io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracerBuilder.PropagationFormat)} method.
+ *     {@link #addPropagation(ContextPropagation)} method.
  *     Note that invoking {@code addPropagation} causes Helidon to discard the defaults rather than adding to them.
  *     (This is the same way propagation config works with the Jaeger tracing integration.)
  *     </li>
@@ -136,16 +128,16 @@ public class OpenTelemetryTracerBuilder implements TracerBuilder<OpenTelemetryTr
     static final boolean DEFAULT_ENABLED = true;
     private static final System.Logger LOGGER = System.getLogger(OpenTelemetryTracerBuilder.class.getName());
 
-    private final Map<String, SpanExporterConfig> spanExporterConfigs = new HashMap<>();
+    private final Map<String, SpanExporterConfiguration> spanExporterConfigs = new HashMap<>();
     private final Map<String, SpanExporter> spanExporters = new HashMap<>();
 
-    private final List<SpanProcessorConfig> spanProcessorConfigs = new ArrayList<>();
+    private final List<SpanProcessorConfiguration> spanProcessorConfigs = new ArrayList<>();
     private final List<SpanProcessor> spanProcessors = new ArrayList<>();
 
     private final Map<String, String> tags = new HashMap<>();
 
     // Propagation formats explicitly set on the builder by the app or inferred from config
-    private final EnumSet<PropagationFormat> propagationFormats = EnumSet.copyOf(PropagationFormat.DEFAULT);
+    private final EnumSet<ContextPropagation> contextPropagations = EnumSet.copyOf(ContextPropagation.DEFAULT);
 
     private boolean global = true;
     private boolean enabled = DEFAULT_ENABLED;
@@ -163,8 +155,8 @@ public class OpenTelemetryTracerBuilder implements TracerBuilder<OpenTelemetryTr
     // At most one of the following two fields will be active. If the app invokes spanExporterConfig then
     // that clears the builder. Similarly, if the build method detects any individual top-level span exporter setting then it
     // uses an ad hoc builder for the top-level exporter and clears any previously-assigned top-level span exporter config.
-    private SpanExporterConfig.Builder<?, ?> topLevelSpanExporterConfigBuilder;
-    private SpanExporterConfig topLevelSpanExporterConfig;
+    private SpanExporterConfiguration.Builder<?, ?> topLevelSpanExporterConfigBuilder;
+    private SpanExporterConfiguration topLevelSpanExporterConfig;
 
     private byte[] privateKey;
     private byte[] certificate;
@@ -293,7 +285,7 @@ public class OpenTelemetryTracerBuilder implements TracerBuilder<OpenTelemetryTr
      * @return updated builder
      */
     @ConfiguredOption(kind = ConfiguredOption.Kind.MAP)
-    public OpenTelemetryTracerBuilder spanExporters(Map<String, SpanExporterConfig> spanExporters) {
+    public OpenTelemetryTracerBuilder spanExporters(Map<String, SpanExporterConfiguration> spanExporters) {
         this.spanExporterConfigs.clear();
         this.spanExporterConfigs.putAll(spanExporters);
         return this;
@@ -319,7 +311,7 @@ public class OpenTelemetryTracerBuilder implements TracerBuilder<OpenTelemetryTr
      * @param spanExporterConfig the span exporter
      * @return updated builder
      */
-    public OpenTelemetryTracerBuilder addSpanExporter(String exporterName, SpanExporterConfig spanExporterConfig) {
+    public OpenTelemetryTracerBuilder addSpanExporter(String exporterName, SpanExporterConfiguration spanExporterConfig) {
         verifyUniqueSpanExporterName(exporterName);
         spanExporterConfigs.put(exporterName, spanExporterConfig);
         return this;
@@ -332,7 +324,7 @@ public class OpenTelemetryTracerBuilder implements TracerBuilder<OpenTelemetryTr
      * @return updated builder
      */
     @ConfiguredOption
-    public OpenTelemetryTracerBuilder spanProcessors(List<SpanProcessorConfig> spanProcessorConfigs) {
+    public OpenTelemetryTracerBuilder spanProcessors(List<SpanProcessorConfiguration> spanProcessorConfigs) {
         this.spanProcessorConfigs.clear();
         this.spanProcessorConfigs.addAll(spanProcessorConfigs);
         return this;
@@ -355,7 +347,7 @@ public class OpenTelemetryTracerBuilder implements TracerBuilder<OpenTelemetryTr
      * @param spanProcessorConfig span processor builder to add
      * @return updated builder
      */
-    public OpenTelemetryTracerBuilder addSpanProcessor(SpanProcessorConfig spanProcessorConfig) {
+    public OpenTelemetryTracerBuilder addSpanProcessor(SpanProcessorConfiguration spanProcessorConfig) {
         spanProcessorConfigs.add(spanProcessorConfig);
         return this;
     }
@@ -478,7 +470,7 @@ public class OpenTelemetryTracerBuilder implements TracerBuilder<OpenTelemetryTr
 
         // Propagations
         tracingConfig.get("propagation").asNodeList().ifPresent(nodes -> nodes.stream()
-                .map(PropagationFormat::from)
+                .map(ContextPropagation::from)
                 .forEach(this::addPropagation));
 
         return this;
@@ -499,20 +491,20 @@ public class OpenTelemetryTracerBuilder implements TracerBuilder<OpenTelemetryTr
     /**
      * Propagation format to add.
      *
-     * @param format {@link io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracerBuilder.PropagationFormat} to add
+     * @param format {@link ContextPropagation} to add
      * @return updated builder
      */
     @ConfiguredOption(key = "propagation",
                       kind = ConfiguredOption.Kind.LIST,
-                      type = PropagationFormat.class,
-                      value = PropagationFormat.DEFAULT_STRING)
-    public OpenTelemetryTracerBuilder addPropagation(PropagationFormat format) {
+                      type = ContextPropagation.class,
+                      value = ContextPropagation.DEFAULT_STRING)
+    public OpenTelemetryTracerBuilder addPropagation(ContextPropagation format) {
         Objects.requireNonNull(format);
         if (isPropagationFormatsDefaulted) {
             isPropagationFormatsDefaulted = false;
-            propagationFormats.clear();
+            contextPropagations.clear();
         }
-        propagationFormats.add(format);
+        contextPropagations.add(format);
         return this;
     }
 
@@ -581,7 +573,7 @@ public class OpenTelemetryTracerBuilder implements TracerBuilder<OpenTelemetryTr
     /**
      * Sampler type to use for sampling spans.
      *
-     * @param samplerType {@link io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracerBuilder.SamplerType} to use
+     * @param samplerType {@link SamplerType} to use
      * @return updated builder
      */
     @ConfiguredOption(SamplerType.DEFAULT_STRING)
@@ -678,10 +670,10 @@ public class OpenTelemetryTracerBuilder implements TracerBuilder<OpenTelemetryTr
      * Type of {@link io.opentelemetry.sdk.trace.SpanProcessor} Helidon should create automatically. Allowed values also
      * include the OpenTelemetry-style values ({@code }
      *
-     * @param spanProcessorType {@link io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracerBuilder.SpanProcessorType}
+     * @param spanProcessorType {@link SpanProcessorType}
      * @return updated builder
      */
-    @ConfiguredOption(SpanProcessorType.DEFAULT_STRING)
+    @ConfiguredOption(SpanProcessorType.DEFAULT_NAME)
     public OpenTelemetryTracerBuilder spanProcessorType(SpanProcessorType spanProcessorType) {
         this.topLevelSpanProcessorType = spanProcessorType;
         return this;
@@ -739,10 +731,10 @@ public class OpenTelemetryTracerBuilder implements TracerBuilder<OpenTelemetryTr
         }
     }
 
-    private SpanExporterConfig convenienceSpanExporterConfig() {
+    private SpanExporterConfiguration convenienceSpanExporterConfig() {
         ExporterType convenienceExporterType = Objects.requireNonNullElse(topLevelExporterType, ExporterType.DEFAULT);
-        SpanExporterConfig.Builder<?, ?> builder = SpanExporterConfig.builder(convenienceExporterType);
-        if (builder instanceof OtlpSpanExporterConfig.Builder<?, ?> otlpBuilder) {
+        SpanExporterConfiguration.Builder<?, ?> builder = SpanExporterConfiguration.builder(convenienceExporterType);
+        if (builder instanceof OtlpSpanExporterConfiguration.Builder<?, ?> otlpBuilder) {
             headers.forEach(otlpBuilder::addHeader);
             if (certificate != null) {
                 otlpBuilder.clientCertificate(certificate);
@@ -776,11 +768,11 @@ public class OpenTelemetryTracerBuilder implements TracerBuilder<OpenTelemetryTr
         return builder.build();
     }
 
-    private SpanProcessorConfig convenienceSpanProcessorConfig() {
+    private SpanProcessorConfiguration convenienceSpanProcessorConfig() {
         SpanProcessorType convenienceExporterType = Objects.requireNonNullElse(topLevelSpanProcessorType,
                                                                                SpanProcessorType.DEFAULT);
-        SpanProcessorConfig.Builder<?, ?> builder = SpanProcessorConfig.builder(convenienceExporterType);
-        if (builder instanceof BatchSpanProcessorConfig.Builder batchBuilder) {
+        SpanProcessorConfiguration.Builder<?, ?> builder = SpanProcessorConfiguration.builder(convenienceExporterType);
+        if (builder instanceof BatchSpanProcessorConfiguration.Builder batchBuilder) {
             if (scheduleDelay != null) {
                 batchBuilder.scheduleDelay(scheduleDelay);
             }
@@ -831,13 +823,13 @@ public class OpenTelemetryTracerBuilder implements TracerBuilder<OpenTelemetryTr
         spanExporterConfigs.forEach(spanExporterConfig -> {
             String exporterName = spanExporterConfig.get("name").asString().orElse("@default");
             addSpanExporter(exporterName,
-                            SpanExporterConfig.create(spanExporterConfig));
+                            SpanExporterConfiguration.create(spanExporterConfig));
         });
     }
 
     private void addSpanProcessors(List<Config> spanProcessorConfigs) {
         spanProcessorConfigs.forEach(spanProcessorConfig -> {
-            addSpanProcessor(SpanProcessorConfig.builder(spanProcessorConfig).build());
+            addSpanProcessor(SpanProcessorConfiguration.builder(spanProcessorConfig).build());
         });
     }
 
@@ -851,8 +843,8 @@ public class OpenTelemetryTracerBuilder implements TracerBuilder<OpenTelemetryTr
     }
 
     private Iterable<TextMapPropagator> propagators() {
-        return propagationFormats.stream()
-                .map(PropagationFormat::propagator)
+        return contextPropagations.stream()
+                .map(ContextPropagation::propagator)
                 .toList();
     }
 
@@ -874,212 +866,4 @@ public class OpenTelemetryTracerBuilder implements TracerBuilder<OpenTelemetryTr
         };
     }
 
-    /**
-     * Types of OpenTelemetry span exporters supported via Helidon {@code tracing} configuration.
-     * <p>
-     * See <a href="https://opentelemetry.io/docs/languages/java/configuration/#properties-exporters">OTel exporters</a>.
-     */
-    public enum ExporterType {
-
-        /**
-         * OpenTelemetry Protocol {@link io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter} and
-         * {@link io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter}.
-         */
-        OTLP,
-
-        /**
-         * Zipkin {@link io.opentelemetry.exporter.zipkin.ZipkinSpanExporter}.
-         */
-        ZIPKIN,
-
-        /**
-         * Console ({@link io.opentelemetry.exporter.logging.LoggingSpanExporter}.
-         */
-        CONSOLE,
-
-        /**
-         * JSON logging to console {@link io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingSpanExporter}.
-         */
-        LOGGING_OTLP;
-
-        static final ExporterType DEFAULT = OTLP;
-    }
-
-    /**
-     * Known OpenTelemetry trace context propagation formats.
-     */
-    public enum PropagationFormat {
-
-        /**
-         * W3C trace context propagation.
-         */
-        TRACE_CONTEXT("tracecontext", W3CTraceContextPropagator::getInstance),
-
-        /**
-         * W3C baggage propagation.
-         */
-        BAGGAGE("baggage", W3CBaggagePropagator::getInstance),
-
-        /**
-         * Zipkin B3 trace context propagation using a single header.
-         */
-        B3("b3", B3Propagator::injectingSingleHeader),
-
-        /**
-         * Zipkin B3 trace context propagation using multiple headers.
-         */
-        B3_MULTI("b3multi", B3Propagator::injectingMultiHeaders),
-
-        /**
-         * Jaeger trace context propagation format.
-         */
-        JAEGER("jaeger", JaegerPropagator::getInstance),
-
-        /**
-         * OT trace format propagation.
-         */
-        OT_TRACE("ottrace", OtTracePropagator::getInstance);
-
-        static final String DEFAULT_STRING = "tracecontext,baggage";
-        static final EnumSet<PropagationFormat> DEFAULT = EnumSet.of(TRACE_CONTEXT, BAGGAGE);
-
-        private final String format;
-        private final Supplier<TextMapPropagator> propagatorSupplier;
-
-        PropagationFormat(String format, Supplier<TextMapPropagator> propagatorSupplier) {
-            this.format = format;
-            this.propagatorSupplier = propagatorSupplier;
-        }
-
-        /**
-         * Converts the config node to a {@code PropagationFormat} enum value, using the normal enum mapping plus the
-         * OTel-friendly values.
-         *
-         * @param configNode config node to map
-         * @return {@code PropagationFormat} value corresponding to the config node
-         */
-        static PropagationFormat from(Config configNode) {
-            return configNode.asString()
-                    .as(PropagationFormat::from)
-                    .orElseGet(() -> configNode.as(PropagationFormat.class).orElseThrow());
-        }
-
-        /**
-         * Converts the specified string to a {@code PropagationFormat} enum value, using the enum name as well as the
-         * OTel-friendly values.
-         *
-         * @param value string to convert
-         * @return {@code PropagationFormat} value corresponding to the provided string
-         */
-        static PropagationFormat from(String value) {
-            for (PropagationFormat propagationFormat : PropagationFormat.values()) {
-                if (propagationFormat.format.equals(value) || propagationFormat.name().equals(value)) {
-                    return propagationFormat;
-                }
-            }
-            throw new IllegalArgumentException("Unknown propagation format: "
-                                                       + value
-                                                       + "; expected one or more of "
-                                                       + Arrays.toString(PropagationFormat.values()));
-        }
-
-        TextMapPropagator propagator() {
-            return propagatorSupplier.get();
-        }
-    }
-
-    /**
-     * Sampler types valid for OpenTelemetry tracing.
-     * <p>
-     * This enum intentionally omits {@code jaeger-remote} as that requires an additional library.
-     * Users who want to use that sampler can add the dependency themselves and prepare the OpenTelemetry
-     * objects explicitly rather than using this builder.
-     * <p>
-     * Helidon recognizes the string values as documented in the OpenTelemetry documentation
-     * <a href="https://opentelemetry.io/docs/languages/java/configuration/#properties-traces">Properties: traces; Properties
-     * for sampler</a>.
-     */
-    public enum SamplerType {
-        /**
-         * Always on sampler.
-         */
-        ALWAYS_ON("always_on"),
-
-        /**
-         * Always off sampler.
-         */
-        ALWAYS_OFF("always_off"),
-
-        /**
-         * Trace ID ratio-based sampler.
-         */
-        TRACE_ID_RATIO("traceidratio"),
-
-        /**
-         * Parent-based always-on sampler.
-         */
-        PARENT_BASED_ALWAYS_ON("parentbased_always_on"),
-
-        /**
-         * Parent-based always-off sampler.
-         */
-        PARENT_BASED_ALWAYS_OFF("parentbased_always_off"),
-
-        /**
-         * Parent-based trace ID ration-based sampler.
-         */
-        PARENT_BASED_TRACE_ID_RATIO("parentbased_traceidratio");
-
-        static final String DEFAULT_STRING = "parentbased_always_on";
-        static final SamplerType DEFAULT = from(DEFAULT_STRING);
-
-        private final String config;
-
-        SamplerType(String config) {
-            this.config = config;
-        }
-
-        static SamplerType from(String value) {
-            for (SamplerType samplerType : SamplerType.values()) {
-                if (samplerType.config.equals(value) || samplerType.name().equals(value)) {
-                    return samplerType;
-                }
-            }
-            throw new IllegalArgumentException("Unknown sample type: " + value + "; expected one of "
-                                                       + Arrays.toString(SamplerType.values()));
-        }
-    }
-
-    /**
-     * Span Processor type. Batch is default for production.
-     */
-    public enum SpanProcessorType {
-        /**
-         * Simple Span Processor.
-         */
-        SIMPLE("simple"),
-        /**
-         * Batch Span Processor.
-         */
-        BATCH("batch");
-
-        static final String DEFAULT_STRING = "batch";
-        static final SpanProcessorType DEFAULT = from(DEFAULT_STRING);
-        private final String processorType;
-
-        SpanProcessorType(String processorType) {
-            this.processorType = processorType;
-        }
-
-        static SpanProcessorType from(String value) {
-            for (SpanProcessorType spanProcessorType : SpanProcessorType.values()) {
-                if (spanProcessorType.processorType.equals(value) || spanProcessorType.name().equals(value)) {
-                    return spanProcessorType;
-                }
-            }
-            throw new IllegalArgumentException("Unknown span processor type: " + value + "; expected one of "
-                                                       + Arrays.toString(SpanProcessorType.values()));
-
-        }
-    }
 }

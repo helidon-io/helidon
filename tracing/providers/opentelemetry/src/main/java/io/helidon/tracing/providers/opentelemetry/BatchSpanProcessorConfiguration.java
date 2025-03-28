@@ -21,7 +21,6 @@ import io.helidon.common.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 
-import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter;
 import io.opentelemetry.sdk.trace.SpanProcessor;
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
@@ -29,7 +28,7 @@ import io.opentelemetry.sdk.trace.export.SpanExporter;
 /**
  * Settings for an OpenTelemetry batch span processor.
  */
-class BatchSpanProcessorConfig extends SpanProcessorConfig {
+class BatchSpanProcessorConfiguration extends SpanProcessorConfiguration {
 
     private final Builder builder;
 
@@ -41,7 +40,7 @@ class BatchSpanProcessorConfig extends SpanProcessorConfig {
         return new Builder();
     }
 
-    private BatchSpanProcessorConfig(Builder builder) {
+    private BatchSpanProcessorConfiguration(Builder builder) {
         super(builder);
         this.builder = builder;
     }
@@ -66,7 +65,7 @@ class BatchSpanProcessorConfig extends SpanProcessorConfig {
     }
 
     @Configured(description = "OTEL batch span processor configuration")
-    static class Builder extends SpanProcessorConfig.Builder<Builder, BatchSpanProcessorConfig> {
+    static class Builder extends SpanProcessorConfiguration.Builder<Builder, BatchSpanProcessorConfiguration> {
 
         private Duration exporterTimeout;
         private Duration scheduleDelay;
@@ -78,8 +77,8 @@ class BatchSpanProcessorConfig extends SpanProcessorConfig {
          *
          * @return a new {@code BatchSpanProcessor}
          */
-        public BatchSpanProcessorConfig build() {
-            return new BatchSpanProcessorConfig(this);
+        public BatchSpanProcessorConfiguration build() {
+            return new BatchSpanProcessorConfiguration(this);
         }
 
         /**
