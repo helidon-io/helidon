@@ -51,6 +51,12 @@ inputs:
   free-space:
     description: Whether to aggressively free disk space on the runner
     default: 'false'
+  setup-latest-java:
+    description: Setup latest stable java version
+    default: 'false'
+  cache-key-prefix:
+    description: Add a prefix to cache key
+    default: ''
 runs:
   using: "composite"
   steps:
@@ -78,10 +84,18 @@ runs:
         check-for-updates: 'false'
         set-java-home: 'false'
     - name: Set up JDK
+      if: ${{ inputs.setup-latest-java == 'false' }}
       uses: actions/setup-java@v4.1.0
       with:
         distribution: ${{ env.JAVA_DISTRO }}
         java-version: ${{ env.JAVA_VERSION }}
+    - name: Set up JDK ea-stable
+      if: ${{ inputs.setup-latest-java == 'true' }}
+      uses: oracle-actions/setup-java@v1
+      with:
+        website: jdk.java.net
+        release: ea
+        version: stable
     - name: Cache local Maven repository (read-write)
       if: ${{ inputs.maven-cache == 'read-write' }}
       uses: actions/cache@v4.2.0
@@ -93,9 +107,9 @@ runs:
           !.m2/repository/io/helidon/**
         enableCrossOsArchive: true
         # only hash top-level poms to keep it fast
-        key: local-maven-${{ hashFiles('*/pom.xml', 'pom.xml') }}
+        key: ${{ inputs.cache-key-prefix }}local-maven-${{ hashFiles('*/pom.xml', 'pom.xml') }}
         restore-keys: |
-          local-maven-
+          ${{ inputs.cache-key-prefix }}local-maven-
     - name: Cache local Maven repository (read-only)
       if: ${{ inputs.maven-cache == 'read-only' }}
       uses: actions/cache/restore@v4.2.0
@@ -104,9 +118,9 @@ runs:
           .m2/repository/**/*.*
           !.m2/repository/io/helidon/**
         enableCrossOsArchive: true
-        key: local-maven-${{ hashFiles('*/pom.xml', 'pom.xml') }}
+        key: ${{ inputs.cache-key-prefix }}local-maven-${{ hashFiles('*/pom.xml', 'pom.xml') }}
         restore-keys: |
-          local-maven-
+          ${{ inputs.cache-key-prefix }}local-maven-
     - name: Build cache (read-write)
       if: ${{ inputs.build-cache == 'read-write' }}
       uses: actions/cache@v4.2.0
@@ -115,7 +129,7 @@ runs:
           ./**/target/**
           .m2/repository/io/helidon/**
         enableCrossOsArchive: true
-        key: build-cache-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.build-cache-id }}
+        key: ${{ inputs.cache-key-prefix }}build-cache-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.build-cache-id }}
         restore-keys: |
           build-cache-${{ github.run_id }}-${{ github.run_attempt }}-
           build-cache-${{ github.run_id }}-
@@ -128,10 +142,10 @@ runs:
           .m2/repository/io/helidon/**
         enableCrossOsArchive: true
         fail-on-cache-miss: true
-        key: build-cache-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.build-cache-id }}
+        key: ${{ inputs.cache-key-prefix }}build-cache-${{ github.run_id }}-${{ github.run_attempt }}-${{ inputs.build-cache-id }}
         restore-keys: |
-          build-cache-${{ github.run_id }}-${{ github.run_attempt }}-
-          build-cache-${{ github.run_id }}-
+          ${{ inputs.cache-key-prefix }}build-cache-${{ github.run_id }}-${{ github.run_attempt }}-
+          ${{ inputs.cache-key-prefix }}build-cache-${{ github.run_id }}-
     - name: Exec
       env:
         MVN_ARGS: |
@@ -150,7 +164,7 @@ runs:
           **/target/failsafe-reports/**
           **/target/it/**/*.log
     - name: Archive artifacts
-      if: ${{ inputs.artifact-name != '' && inputs.artifact-path != ''  && always() }}
+      if: ${{ inputs.artifact-name != '' && inputs.artifact-path != '' && always() }}
       uses: actions/upload-artifact@v4
       with:
         if-no-files-found: 'ignore'
