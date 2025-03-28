@@ -451,7 +451,10 @@ class CoreServiceRegistry implements ServiceRegistry, Scopes {
             ServiceInfo serviceInfo = servicesByType.get(contractType.type());
             if (serviceInfo == null) {
                 Set<ServiceInfo> serviceInfos = new TreeSet<>(SERVICE_INFO_COMPARATOR);
-                serviceInfos.addAll(servicesByContract.get(contractType));
+                Set<ServiceInfo> currentInfos = servicesByContract.get(contractType);
+                if (currentInfos != null) {
+                    serviceInfos.addAll(currentInfos);
+                }
 
                 // each instance will have its own descriptor
                 VirtualDescriptor vt = new VirtualDescriptor(contractType.type(), weight, instance);

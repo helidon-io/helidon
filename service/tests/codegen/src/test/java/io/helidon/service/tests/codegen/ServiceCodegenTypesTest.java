@@ -96,6 +96,7 @@ class ServiceCodegenTypesTest {
         checkField(toCheck, checked, fields, "SERVICE_ANNOTATION_EXTERNAL_CONTRACTS", Service.ExternalContracts.class);
         checkField(toCheck, checked, fields, "SERVICE_ANNOTATION_DESCRIPTOR", Service.Descriptor.class);
         checkField(toCheck, checked, fields, "SERVICE_ANNOTATION_GENERATE_BINDING", Service.GenerateBinding.class);
+        checkField(toCheck, checked, fields, "SERVICE_ANNOTATION_ENTRY_POINT", Service.EntryPoint.class);
         checkField(toCheck, checked, fields, "SERVICE_DEPENDENCY", Dependency.class);
         checkField(toCheck, checked, fields, "SERVICE_DEPENDENCY_CONTEXT", DependencyContext.class);
         checkField(toCheck, checked, fields, "SERVICE_DESCRIPTOR", ServiceDescriptor.class);

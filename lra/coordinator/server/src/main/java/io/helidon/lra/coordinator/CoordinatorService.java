@@ -121,16 +121,7 @@ public class CoordinatorService implements HttpService {
         shuttingDown = true;
         Stream.of(recoveryTask, persistTask)
                 .filter(Objects::nonNull)
-                .forEach(task -> {
-                    task.executor().shutdown();
-                    try {
-                        if (!task.executor().awaitTermination(5, TimeUnit.SECONDS)) {
-                            LOGGER.log(Level.WARNING, "Shutdown of the scheduled task took too long.");
-                        }
-                    } catch (InterruptedException e) {
-                        LOGGER.log(Level.WARNING, "Shutdown of the scheduled task was interrupted.", e);
-                    }
-                });
+                .forEach(Task::close);
         lraPersistentRegistry.save();
     }
 

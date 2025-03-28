@@ -498,6 +498,24 @@ public final class Service {
     }
 
     /**
+     * Instruction for the Helidon Service Codegen to generate method metadata for methods
+     * meta-annotated with this annotation.
+     * <p>
+     * An entry point is the first method invoked when Helidon is called from outside (i.e. an HTTP request),
+     * or through some internal means (such as scheduling).
+     * <p>
+     * This annotation is required on annotations defining endpoints (i.e. HTTP Method annotations) to enable
+     * {@link io.helidon.service.registry.EntryPointInterceptor} to work.
+     * <p>
+     * This annotation is used by framework developers that need to extend the set of entry points of an
+     * application.
+     */
+    @Retention(RetentionPolicy.CLASS)
+    @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
+    public @interface EntryPoint {
+    }
+
+    /**
      * Provides an ability to create more than one service instance from a single service definition.
      * This is useful when the cardinality can only be determined at runtime.
      *
