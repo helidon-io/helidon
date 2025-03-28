@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbExecute;
@@ -38,24 +38,24 @@ class LraDatabasePersistentRegistry implements LraPersistentRegistry {
     private static final Pattern LRA_ID_PATTERN = Pattern.compile(".*/([^/?]+).*");
     private final Map<String, LraImpl> lraMap = Collections.synchronizedMap(new HashMap<>());
     private final Config config;
-    private final Supplier<DbClient> dbClient;
+    private final LazyValue<DbClient> dbClient;
     private final Boolean persistent;
 
     LraDatabasePersistentRegistry(Config config) {
         this.config = config;
         this.persistent = config.get("persistence").asBoolean().orElse(true);
         if (persistent) {
-            this.dbClient = () -> DbClient.builder()
+            this.dbClient = LazyValue.create(() -> DbClient.builder()
                     .config(config.get("db"))
-                    .build();
+                    .build());
             DbTransaction tx = dbClient.get().transaction();
             tx.namedDml("create-lra-table");
             tx.namedDml("create-participant-table");
             tx.commit();
         } else {
-            this.dbClient = () -> {
+            this.dbClient = LazyValue.create(() -> {
                 throw new IllegalStateException("Persistence is not enabled");
-            };
+            });
         }
     }
 
