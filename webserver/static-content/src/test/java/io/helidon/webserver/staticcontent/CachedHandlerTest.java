@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,19 @@
 package io.helidon.webserver.staticcontent;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.Optional;
+import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.media.type.MediaType;
@@ -41,6 +50,7 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalPresent;
+import static java.lang.System.Logger.Level.TRACE;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -51,6 +61,7 @@ import static org.mockito.Mockito.when;
 
 @SuppressWarnings("removal")
 class CachedHandlerTest {
+    private static final System.Logger LOGGER = System.getLogger(CachedHandlerTest.class.getName());
     private static final MediaType MEDIA_TYPE_ICON = MediaTypes.create("image/x-icon");
     private static final Header ICON_TYPE = HeaderValues.create(HeaderNames.CONTENT_TYPE, MEDIA_TYPE_ICON.text());
     private static final Header RESOURCE_CONTENT_LENGTH = HeaderValues.create(HeaderNames.CONTENT_LENGTH, 7);
@@ -262,5 +273,80 @@ class CachedHandlerTest {
         assertThat("This should be a cached redirect handler", cached, instanceOf(CachedHandlerRedirect.class));
         CachedHandlerRedirect redirectHandler = (CachedHandlerRedirect) cached;
         assertThat(redirectHandler.location(), is("/nested/"));
+    }
+
+    @Test
+    void zipFileClosedTest() throws IOException {
+        var tmpJarFile = createTmpJarFile();
+        var testClassLoader = new TestClassLoader(tmpJarFile);
+        var req = mock(ServerRequest.class);
+        when(req.headers()).thenReturn(ServerRequestHeaders.create());
+        when(req.prologue()).thenReturn(HttpPrologue.create("http/1.1", "http", "1.1", Method.GET, "/resource.txt", false));
+        when(req.query()).thenReturn(UriQuery.empty());
+
+        Stream.generate(() -> {
+                    var baos = new ByteArrayOutputStream();
+                    var res = mock(ServerResponse.class);
+                    when(res.headers()).thenReturn(ServerResponseHeaders.create());
+                    when(res.outputStream()).thenReturn(baos);
+
+                    for (int i = 0; i < 100; i++) {
+                        var service = (ClassPathContentHandler) StaticContentFeature.createService(
+                                ClasspathHandlerConfig
+                                        .builder()
+                                        .location("/web")
+                                        .classLoader(testClassLoader)
+                                        .build()
+                        );
+
+                        try {
+                            service.doHandle(Method.GET, "/resource.txt", req, res, false);
+                            assertThat(baos.toString(), is("Content"));
+                            baos.reset();
+                        } catch (IOException | URISyntaxException e) {
+                            throw new RuntimeException(e);
+                        }
+
+                    }
+                    return null;
+                })
+                .limit(10)
+                .parallel()
+                .toList();
+    }
+
+    private static class TestClassLoader extends ClassLoader {
+        private final File tmpJarFile;
+
+        public TestClassLoader(File tmpJarFile) {
+            super(Thread.currentThread().getContextClassLoader());
+            this.tmpJarFile = tmpJarFile;
+        }
+
+        @Override
+        public URL getResource(String name) {
+            if ("web/resource.txt".equals(name)) {
+                try {
+                    var url = URI.create("jar:file:" + tmpJarFile.getPath() + "!/resource.txt").toURL();
+                    LOGGER.log(TRACE, () -> "Fake jar resource URL: " + url);
+                    return url;
+                } catch (MalformedURLException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            return super.getResource(name);
+        }
+    }
+
+    private static File createTmpJarFile() throws IOException {
+        File jarFile = File.createTempFile("helidon-closed-zip-test-", "jar");
+        try (var fos = new FileOutputStream(jarFile);
+                var zipOut = new ZipOutputStream(fos)) {
+            var zipEntry = new ZipEntry("resource.txt");
+            zipOut.putNextEntry(zipEntry);
+            var bytes = "Content".getBytes(StandardCharsets.UTF_8);
+            zipOut.write(bytes, 0, bytes.length);
+        }
+        return jarFile;
     }
 }
