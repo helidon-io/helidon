@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -151,6 +151,11 @@ public class StaticContentFeature implements Weighted, ServerFeature, RuntimeTyp
     @Override
     public String type() {
         return STATIC_CONTENT_ID;
+    }
+
+    @Override
+    public double weight() {
+        return config.weight();
     }
 
     @Override
