@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -120,6 +120,7 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
                     .filter(ElementInfoPredicates::isStatic)
                     .filter(ElementInfoPredicates.elementName("builder"))
                     .filter(ElementInfoPredicates::hasNoArgs)
+                    .filter(it -> it.typeName().className().equals("Builder"))
                     .findFirst()
                     .map(it -> new FactoryMethod(builderCandidate,
                                                  copyGenericTypes(builderCandidate, it.typeName()),
