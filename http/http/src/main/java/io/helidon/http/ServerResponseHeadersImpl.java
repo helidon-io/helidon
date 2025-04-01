@@ -24,7 +24,7 @@ import java.util.function.Predicate;
 import io.helidon.common.LazyValue;
 
 class ServerResponseHeadersImpl extends HeadersImpl<ServerResponseHeaders> implements ServerResponseHeaders {
-    private static final LazyValue<ZonedDateTime> START_OF_YEAR_1970 = LazyValue.create(
+    static final LazyValue<ZonedDateTime> START_OF_YEAR_1970 = LazyValue.create(
             () -> ZonedDateTime.of(1970, 1, 1, 0, 0, 0, 0, ZoneId.of("GMT+0")));
 
     ServerResponseHeadersImpl() {
@@ -42,25 +42,25 @@ class ServerResponseHeadersImpl extends HeadersImpl<ServerResponseHeaders> imple
 
     @Override
     public ServerResponseHeaders clearCookie(SetCookie cookie) {
-        clearCookie(cookie, cookie::equals);
+        clearCookie(this, cookie, cookie::equals);
         return this;
     }
 
     @Override
     public ServerResponseHeaders clearCookie(String name) {
-        clearCookie(SetCookie.builder(name, "").build(), c -> c.name().equals(name));
+        clearCookie(this, SetCookie.builder(name, "").build(), c -> c.name().equals(name));
         return this;
     }
 
-    private void clearCookie(SetCookie cookie, Predicate<SetCookie> predicate) {
+    static void clearCookie(ServerResponseHeaders headers, SetCookie cookie, Predicate<SetCookie> predicate) {
         // expiredCookie same as cookie but with different expiration
         SetCookie expiredCookie = SetCookie.builder(cookie)
                 .expires(START_OF_YEAR_1970.get())
                 .build();
 
         // update or add new header?
-        if (contains(HeaderNames.SET_COOKIE)) {
-            remove(HeaderNames.SET_COOKIE, it -> {
+        if (headers.contains(HeaderNames.SET_COOKIE)) {
+            headers.remove(HeaderNames.SET_COOKIE, it -> {
                 List<String> currentValues = it.allValues();
                 String[] newValues = new String[currentValues.size()];
                 boolean found = false;
@@ -80,10 +80,10 @@ class ServerResponseHeadersImpl extends HeadersImpl<ServerResponseHeaders> imple
                     values[values.length - 1] = expiredCookie.text();   // adds expired cookie
                     newValues = values;
                 }
-                set(HeaderValues.create(HeaderNames.SET_COOKIE, newValues));
+                headers.set(HeaderValues.create(HeaderNames.SET_COOKIE, newValues));
             });
         } else {
-            addCookie(expiredCookie);
+            headers.addCookie(expiredCookie);
         }
     }
 }

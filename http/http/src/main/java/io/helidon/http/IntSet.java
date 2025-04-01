@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,8 +69,11 @@ class IntSet {
      * @param i value
      */
     public void add(int i) {
-        data[i / 64] |= (1L << (i % 64));
-        size++;
+        long mask = (1L << (i % 64));
+        if ((data[i / 64] & mask) == 0) {
+            data[i / 64] |= mask;
+            size++;
+        }
     }
 
     /**
@@ -79,8 +82,11 @@ class IntSet {
      * @param i value
      */
     public void remove(int i) {
-        data[i / 64] &= ~(1L << (i % 64));
-        size--;
+        long mask = (1L << (i % 64));
+        if ((data[i / 64] & mask) > 0) {
+            data[i / 64] &= ~mask;
+            size--;
+        }
     }
 
     /**

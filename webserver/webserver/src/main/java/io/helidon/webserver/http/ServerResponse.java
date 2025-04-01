@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -205,6 +205,25 @@ public interface ServerResponse {
      * @return headers
      */
     ServerResponseHeaders headers();
+
+    /**
+     * Tracks header changes to allow rollbacks. If {@link #rollbackHeaders()} is never
+     * called all changes are final.
+     *
+     * @return the headers
+     */
+    default ServerResponseHeaders trackHeaders() {
+        return headers();
+    }
+
+    /**
+     * Rolls back changes made to headers since {@link #trackHeaders()} was called.
+     *
+     * @return the headers after rollback
+     */
+    default ServerResponseHeaders rollbackHeaders() {
+        return headers();
+    }
 
     /**
      * Response trailers (mutable).
