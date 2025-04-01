@@ -56,6 +56,7 @@
         <module>toolbox</module>
         <module>events</module>
         <module>maven-plugin</module>
+        <module>replacement</module>
     </modules>
 
 </project>

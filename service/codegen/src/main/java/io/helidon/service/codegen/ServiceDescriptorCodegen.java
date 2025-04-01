@@ -288,6 +288,7 @@ public class ServiceDescriptorCodegen {
         qualifiedProvider(classModel, service);
         scopeHandler(typeInfo, classModel, contracts);
         factoryType(classModel, service, service.providerType());
+        replacementMethod(classModel, service);
 
         // service type is an implicit contract
         Set<ResolvedType> metaInfServiceContracts = new HashSet<>(contracts);
@@ -302,7 +303,7 @@ public class ServiceDescriptorCodegen {
         roundCtx.addDescriptor(serviceTypeName,
                                service.descriptorType(),
                                classModel,
-                               weight(typeInfo).orElse(Weighted.DEFAULT_WEIGHT),
+                               weight(service, typeInfo).orElse(Weighted.DEFAULT_WEIGHT),
                                metaInfServiceContracts,
                                metaInfFactoryContracts,
                                typeInfo.originatingElementValue());
@@ -382,6 +383,7 @@ public class ServiceDescriptorCodegen {
         weightMethod(classModel, service);
         runLevelMethod(classModel, service);
         factoryType(classModel, service, FactoryType.NONE);
+        replacementMethod(classModel, service);
 
         // service type is an implicit contract
         Set<ResolvedType> serviceContracts = new HashSet<>(contracts);
@@ -390,10 +392,27 @@ public class ServiceDescriptorCodegen {
         roundCtx.addDescriptor(serviceTypeName,
                                service.descriptorType(),
                                classModel,
-                               weight(serviceDescriptor.typeInfo()).orElse(Weighted.DEFAULT_WEIGHT),
+                               weight(service, serviceDescriptor.typeInfo()).orElse(Weighted.DEFAULT_WEIGHT),
                                serviceContracts,
                                Set.of(),
                                serviceDescriptor.typeInfo().originatingElementValue());
+    }
+
+    private void replacementMethod(ClassModel.Builder classModel, DescribedService service) {
+        if (!service.isReplacement() && service.superType().empty()) {
+            return;
+        }
+
+        Method.Builder method = Method.builder()
+                .name("isReplacement")
+                .returnType(TypeNames.PRIMITIVE_BOOLEAN)
+                .addAnnotation(Annotations.OVERRIDE)
+                .accessModifier(AccessModifier.PUBLIC)
+                .addContent("return ")
+                .addContent(String.valueOf(service.isReplacement()))
+                .addContentLine(";");
+
+        classModel.addMethod(method.build());
     }
 
     private static void addAnnotationValue(ContentBuilder<?> contentBuilder, Object objectValue) {
@@ -2006,7 +2025,7 @@ public class ServiceDescriptorCodegen {
 
         boolean hasSuperType = service.superType().present();
         // double weight()
-        Optional<Double> weight = weight(typeInfo);
+        Optional<Double> weight = weight(service, typeInfo);
 
         if (!hasSuperType && weight.isEmpty()) {
             return;
@@ -2022,9 +2041,20 @@ public class ServiceDescriptorCodegen {
                 .addContentLine("return " + usedWeight + ";"));
     }
 
-    private Optional<Double> weight(TypeInfo typeInfo) {
-        return typeInfo.findAnnotation(TypeName.create(Weight.class))
+    private Optional<Double> weight(DescribedService service, TypeInfo typeInfo) {
+        var declaredWeight = typeInfo.findAnnotation(TypeName.create(Weight.class))
                 .flatMap(Annotation::doubleValue);
+
+        if (declaredWeight.isPresent()) {
+            return declaredWeight;
+        }
+
+        if (service.isReplacement()) {
+            // as described in documentation of @Service.Replacement
+            return Optional.of(Weighted.DEFAULT_WEIGHT + 10);
+        }
+
+        return Optional.empty();
     }
 
     private void runLevelMethod(ClassModel.Builder classModel, DescribedService service) {

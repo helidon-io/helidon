@@ -128,4 +128,13 @@ public interface ServiceInfo extends Weighted {
     default FactoryType factoryType() {
         return FactoryType.SERVICE;
     }
+
+    /**
+     * Is this service a replacement of other services.
+     *
+     * @return {@code true} if this should replace all services with lower order (weight + name), defaults to {@code false}
+     */
+    default boolean isReplacement() {
+        return false;
+    }
 }
