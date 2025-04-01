@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,15 +53,19 @@ public final class BitsSubstitution {
         if (data1 == data2) {
             return 0;
         }
-        int len = Math.min(data1.length, data2.length);
-        for (int i = 0; i < len; i++) {
+        int len1 = data1.length;
+        int len2 = data2.length;
+        if (len1 != len2) {
+            return len1 > len2 ? 1 : -1;
+        }
+        for (int i = 0; i < len1; i++) {
             char b = data1[i];
             char b2 = data2[i];
             if (b != b2) {
                 return b > b2 ? 1 : -1;
             }
         }
-        return Integer.signum(data1.length - data2.length);
+        return 0;
     }
 
     /**
@@ -86,15 +90,19 @@ public final class BitsSubstitution {
         if (data1 == data2) {
             return 0;
         }
-        int len = Math.min(data1.length, data2.length);
-        for (int i = 0; i < len; i++) {
+        int len1 = data1.length;
+        int len2 = data2.length;
+        if (len1 != len2) {
+            return len1 > len2 ? 1 : -1;
+        }
+        for (int i = 0; i < len1; i++) {
             byte b = data1[i];
             byte b2 = data2[i];
             if (b != b2) {
                 return b > b2 ? 1 : -1;
             }
         }
-        return Integer.signum(data1.length - data2.length);
+        return 0;
     }
 
     /**
