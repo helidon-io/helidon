@@ -99,7 +99,7 @@
         <version.lib.kafka>3.8.1</version.lib.kafka>
         <!-- Kotlin: dependency convergence requirement, we never use this directly -->
         <version.lib.kotlin>1.9.10</version.lib.kotlin>
-        <version.lib.langchain4j>0.35.0</version.lib.langchain4j>
+        <version.lib.langchain4j>0.36.2</version.lib.langchain4j>
         <version.lib.langchain4j.oracle>0.1.0</version.lib.langchain4j.oracle>
         <version.lib.log4j>2.21.1</version.lib.log4j>
         <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
