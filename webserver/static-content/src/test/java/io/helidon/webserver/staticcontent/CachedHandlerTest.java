@@ -17,14 +17,14 @@
 package io.helidon.webserver.staticcontent;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -316,9 +316,9 @@ class CachedHandlerTest {
     }
 
     private static class TestClassLoader extends ClassLoader {
-        private final File tmpJarFile;
+        private final Path tmpJarFile;
 
-        public TestClassLoader(File tmpJarFile) {
+        public TestClassLoader(Path tmpJarFile) {
             super(Thread.currentThread().getContextClassLoader());
             this.tmpJarFile = tmpJarFile;
         }
@@ -327,7 +327,7 @@ class CachedHandlerTest {
         public URL getResource(String name) {
             if ("web/resource.txt".equals(name)) {
                 try {
-                    var url = URI.create("jar:file:" + tmpJarFile.getPath() + "!/resource.txt").toURL();
+                    var url = URI.create("jar:file:" + tmpJarFile.toAbsolutePath().normalize() + "!/resource.txt").toURL();
                     LOGGER.log(TRACE, () -> "Fake jar resource URL: " + url);
                     return url;
                 } catch (MalformedURLException e) {
@@ -338,9 +338,9 @@ class CachedHandlerTest {
         }
     }
 
-    private static File createTmpJarFile() throws IOException {
-        File jarFile = File.createTempFile("helidon-closed-zip-test-", "jar");
-        try (var fos = new FileOutputStream(jarFile);
+    private static Path createTmpJarFile() throws IOException {
+        Path jarFile = Files.createTempFile("helidon-closed-zip-test-", "jar");
+        try (var fos = Files.newOutputStream(jarFile);
                 var zipOut = new ZipOutputStream(fos)) {
             var zipEntry = new ZipEntry("resource.txt");
             zipOut.putNextEntry(zipEntry);
