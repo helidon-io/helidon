@@ -327,10 +327,11 @@ class CachedHandlerTest {
         public URL getResource(String name) {
             if ("web/resource.txt".equals(name)) {
                 try {
-                    var url = URI.create("jar:file:" + tmpJarFile.toAbsolutePath().normalize() + "!/resource.txt").toURL();
+                    var uri = tmpJarFile.toUri();
+                    var url = new URI("jar:file", null, uri.getPath() + "!/resource.txt", null).toURL();
                     LOGGER.log(TRACE, () -> "Fake jar resource URL: " + url);
                     return url;
-                } catch (MalformedURLException e) {
+                } catch (MalformedURLException | URISyntaxException e) {
                     throw new RuntimeException(e);
                 }
             }
