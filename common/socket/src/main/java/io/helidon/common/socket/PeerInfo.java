@@ -44,7 +44,8 @@ public interface PeerInfo {
         if (socketAddress instanceof InetSocketAddress inetSocketAddress) {
             return inetSocketAddress.getAddress().getHostAddress();
         }
-        throw new IllegalArgumentException("Unsupported socket address type, InetSocketAddress expected but: " + socketAddress.getClass());
+        throw new IllegalArgumentException("Unsupported socket address type, InetSocketAddress expected but: "
+                                                   + socketAddress.getClass());
     }
 
     /**
