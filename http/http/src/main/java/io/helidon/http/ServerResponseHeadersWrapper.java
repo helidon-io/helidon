@@ -38,7 +38,7 @@ import io.helidon.common.media.type.MediaType;
 public class ServerResponseHeadersWrapper implements ServerResponseHeaders {
 
     private final ServerResponseHeaders delegate;
-    private Function<ServerResponseHeaders, ServerResponseHeaders> rollbackFunction = h -> h;
+    private Function<ServerResponseHeaders, ServerResponseHeaders> rollbackFunction = Function.identity();
 
     /**
      * Creates a new headers wrapper with rollback capabilities.
