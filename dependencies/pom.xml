@@ -42,14 +42,14 @@
         <version.lib.brave-opentracing>1.0.0</version.lib.brave-opentracing>
         <version.lib.reactivestreams>1.0.4</version.lib.reactivestreams>
         <!-- Force upgrade byte-buddy latest Java -->
-        <version.lib.byte-buddy>1.15.10</version.lib.byte-buddy>
+        <version.lib.byte-buddy>1.17.5</version.lib.byte-buddy>
         <version.lib.commons-logging>1.2</version.lib.commons-logging>
         <version.lib.cron-utils>9.2.1</version.lib.cron-utils>
         <version.lib.dropwizard.metrics>4.1.2</version.lib.dropwizard.metrics>
         <version.lib.eclipselink>3.0.3</version.lib.eclipselink>
         <!-- Force upgrade to ASM 9.7.0 Once eclipselink is upgraded this can be removed -->
         <!-- Needed to support Java 23 -->
-        <version.lib.eclipselink.asm>9.7.0</version.lib.eclipselink.asm>
+        <version.lib.eclipselink.asm>9.8.0</version.lib.eclipselink.asm>
         <version.lib.el-impl>4.0.2</version.lib.el-impl>
         <version.lib.etcd4j>2.18.0</version.lib.etcd4j>
         <version.lib.failsafe>2.3.1</version.lib.failsafe>
