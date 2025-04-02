@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ class AqSnippets {
     // tag::snippet_3[]
     @Incoming("from-aq")
     @Acknowledgment(Acknowledgment.Strategy.MANUAL)
-    public CompletionStage<?> consumeAq(AqMessage<String> msg) {
+    public CompletionStage<Void> consumeAq(AqMessage<String> msg) {
         // direct commit
         //msg.getDbConnection().commit();
         System.out.println("Oracle AQ says: " + msg.getPayload());
