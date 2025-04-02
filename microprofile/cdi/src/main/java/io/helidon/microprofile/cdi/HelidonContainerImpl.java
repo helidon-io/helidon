@@ -34,7 +34,7 @@ import io.helidon.common.Weighted;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.features.HelidonFeatures;
-import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.common.features.metadata.HelidonFlavor;
 import io.helidon.config.mp.MpConfig;
 import io.helidon.config.mp.MpConfigProviderResolver;
 import io.helidon.logging.common.LogConfig;
