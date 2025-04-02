@@ -55,7 +55,7 @@
         Changing these version requires approval for a new third party dependency!
         -->
         <version.lib.arquillian>1.7.0.Alpha10</version.lib.arquillian>
-        <version.lib.asm>9.7.1</version.lib.asm>
+        <version.lib.asm>9.8</version.lib.asm>
         <version.lib.checkstyle>9.1</version.lib.checkstyle>
         <version.lib.commons-io>2.11.0</version.lib.commons-io>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
