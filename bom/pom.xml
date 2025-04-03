@@ -1685,6 +1685,11 @@
                 <artifactId>helidon-declarative-codegen</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.service</groupId>
+                <artifactId>helidon-service-jndi</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
 
             <!-- Discovery -->
             <dependency>

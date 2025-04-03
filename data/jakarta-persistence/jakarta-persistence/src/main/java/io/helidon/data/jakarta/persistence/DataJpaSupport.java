@@ -70,7 +70,7 @@ class DataJpaSupport implements DataSupport {
         // Jakarta Persistence 3.1 workaround
         PersistenceUnitTransactionType transactionType
                 = (PersistenceUnitTransactionType) factory.getProperties().get(TRANSACTION_TYPE);
-        int counter = initTransaction(factory);
+        int counter = initTransaction(factory, transactionType);
         try {
             beginTransaction(transactionType, type);
             T result = task.call();
@@ -101,7 +101,7 @@ class DataJpaSupport implements DataSupport {
         // Jakarta Persistence 3.1 workaround
         PersistenceUnitTransactionType transactionType
                 = (PersistenceUnitTransactionType) factory.getProperties().get(TRANSACTION_TYPE);
-        int counter = initTransaction(factory);
+        int counter = initTransaction(factory, transactionType);
         try {
             beginTransaction(transactionType, type);
             task.run();
@@ -131,7 +131,7 @@ class DataJpaSupport implements DataSupport {
         // Jakarta Persistence 3.1 workaround
         PersistenceUnitTransactionType transactionType
                 = (PersistenceUnitTransactionType) factory.getProperties().get(TRANSACTION_TYPE);
-        int counter = initTransaction(factory);
+        int counter = initTransaction(factory, transactionType);
         beginManualTransaction(counter, transactionType, type);
         try {
             return task.apply(new ManualTransaction(transactionType, type));
@@ -153,7 +153,7 @@ class DataJpaSupport implements DataSupport {
         // Jakarta Persistence 3.1 workaround
         PersistenceUnitTransactionType transactionType
                 = (PersistenceUnitTransactionType) factory.getProperties().get(TRANSACTION_TYPE);
-        int counter = initTransaction(factory);
+        int counter = initTransaction(factory, transactionType);
         beginManualTransaction(counter, transactionType, type);
         try {
             task.accept(new ManualTransaction(transactionType, type));
@@ -175,7 +175,7 @@ class DataJpaSupport implements DataSupport {
         // Jakarta Persistence 3.1 workaround
         PersistenceUnitTransactionType transactionType
                 = (PersistenceUnitTransactionType) factory.getProperties().get(TRANSACTION_TYPE);
-        int counter = initTransaction(factory);
+        int counter = initTransaction(factory, transactionType);
         beginManualTransaction(counter, transactionType, type);
         // No validation of transaction life-cycle is possible without UserTransaction being AutoClosable
         return new UserTransaction(counter, transactionType, type);
@@ -209,8 +209,8 @@ class DataJpaSupport implements DataSupport {
         }
     }
 
-    private static int initTransaction(EntityManagerFactory factory) {
-        return TransactionContext.getInstance().initTransaction(factory);
+    private static int initTransaction(EntityManagerFactory factory, PersistenceUnitTransactionType transactionType) {
+        return TransactionContext.getInstance().initTransaction(factory, transactionType);
     }
 
     private static void closeTransaction(int counter) {

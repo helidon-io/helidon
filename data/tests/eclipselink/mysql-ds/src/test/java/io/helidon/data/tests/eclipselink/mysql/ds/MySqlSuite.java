@@ -137,7 +137,6 @@ public class MySqlSuite implements SuiteProvider, SuiteResolver {
     private static final class Registry {
         private static final ServiceRegistryManager REGISTRY_MANAGER = ServiceRegistryManager.create();
         private static final ServiceRegistry REGISTRY = REGISTRY_MANAGER.registry();
-        ;
     }
 
     @Suite(MySqlSuite.class)
