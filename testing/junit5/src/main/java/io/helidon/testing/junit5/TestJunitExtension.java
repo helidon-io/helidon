@@ -46,6 +46,7 @@ import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
+import org.junit.platform.commons.support.ModifierSupport;
 
 /**
  * Helidon JUnit extension, added through {@link io.helidon.testing.junit5.Testing.Test}.
@@ -386,6 +387,11 @@ public class TestJunitExtension implements Extension,
         for (Method declaredMethod : requiredTestClass.getDeclaredMethods()) {
             var annotation = declaredMethod.getAnnotation(TestRegistry.AfterShutdown.class);
             if (annotation != null) {
+                if (!ModifierSupport.isStatic(declaredMethod)) {
+                    throw new TestException("Cannot invoke @TestRegistry.AfterShutdown annotated method "
+                                                    + declaredMethod.getName() + ", as it is not static");
+                }
+
                 try {
                     declaredMethod.setAccessible(true);
                     declaredMethod.invoke(null);

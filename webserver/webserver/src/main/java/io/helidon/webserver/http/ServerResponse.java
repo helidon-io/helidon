@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,11 +31,13 @@ import io.helidon.http.NotFoundException;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.ServerResponseTrailers;
 import io.helidon.http.Status;
+import io.helidon.service.registry.Service;
 import io.helidon.webserver.http.spi.Sink;
 
 /**
  * Http server response.
  */
+@Service.Describe(Service.PerRequest.class)
 public interface ServerResponse {
     /**
      * Status of the response.
