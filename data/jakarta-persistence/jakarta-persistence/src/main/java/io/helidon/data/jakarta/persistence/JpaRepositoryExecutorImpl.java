@@ -32,6 +32,13 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.PersistenceException;
+import jakarta.persistence.SynchronizationType;
+import jakarta.transaction.HeuristicMixedException;
+import jakarta.transaction.HeuristicRollbackException;
+import jakarta.transaction.NotSupportedException;
+import jakarta.transaction.RollbackException;
+import jakarta.transaction.SystemException;
+import jakarta.transaction.TransactionManager;
 
 import static io.helidon.data.jakarta.persistence.JpaExtensionImpl.TRANSACTION_TYPE;
 
@@ -42,6 +49,7 @@ import static io.helidon.data.jakarta.persistence.JpaExtensionImpl.TRANSACTION_T
 class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
 
     private static final Logger LOGGER = System.getLogger(JpaRepositoryExecutorImpl.class.getName());
+
     // Execute persistence session task outside active transaction scope
     // Transaction handling depends on current PersistenceUnitTransactionType
     private static final Map<PersistenceUnitTransactionType, DataRunner> EXECUTORS = Map.of(
@@ -58,9 +66,15 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
 
     // Instance shared by all repository instances
     private final EntityManagerFactory factory;
+    private final PersistenceUnitTransactionType transactionType;
 
     JpaRepositoryExecutorImpl(EntityManagerFactory factory) {
         this.factory = factory;
+        if (factory.getProperties().containsKey(TRANSACTION_TYPE)) {
+            this.transactionType = (PersistenceUnitTransactionType) factory.getProperties().get(TRANSACTION_TYPE);
+        } else {
+            throw new DataException(String.format("Missing %s property in EntityManagerFactory.", TRANSACTION_TYPE));
+        }
     }
 
     @Override
@@ -71,11 +85,7 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
     // Execute task with EntityManager instance and return result
     @Override
     public <R, E extends Throwable> R call(Functions.CheckedFunction<EntityManager, R, E> task) {
-        // Jakarta Persistence 3.2 compliant code disabled
-        // PersistenceUnitTransactionType transactionType = factory.getTransactionType();
-        // Jakarta Persistence 3.1 workaround
-        PersistenceUnitTransactionType transactionType
-                = (PersistenceUnitTransactionType) factory.getProperties().get(TRANSACTION_TYPE);
+        // Jakarta Persistence 3.2 compliant code disabled, using Jakarta Persistence 3.1 workaround
         if (LOGGER.isLoggable(Level.DEBUG)) {
             for (Map.Entry<String, Object> entry : factory.getProperties().entrySet()) {
                 LOGGER.log(Level.DEBUG, String.format("Property %s :: %s", entry.getKey(), entry.getValue()));
@@ -87,15 +97,15 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
                 LOGGER.log(Level.DEBUG, String.format("Running transaction task [%x]", this.hashCode()));
             }
             return TRANSACTION.get(transactionType)
-                    .call(entityManager(), task);
+                    .call(this, entityManager(), task);
         } else {
             // The case when explicit transaction is not active
             // Don't have access to thread life-cycle so EntityManager is closed after the task
             if (LOGGER.isLoggable(Level.DEBUG)) {
                 LOGGER.log(Level.DEBUG, String.format("Running standalone task [%x]", this.hashCode()));
             }
-            try (EntityManager em = factory.createEntityManager()) {
-                return EXECUTORS.get(transactionType).call(em, task);
+            try (EntityManager em = getNonTxManager()) {
+                return EXECUTORS.get(transactionType).call(this, em, task);
             }
         }
     }
@@ -103,42 +113,84 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
     // Execute task with EntityManager instance
     @Override
     public <E extends Throwable> void run(Functions.CheckedConsumer<EntityManager, E> task) {
-        // Jakarta Persistence 3.2 compliant code disabled
-        // PersistenceUnitTransactionType transactionType = factory.getTransactionType();
-        // Jakarta Persistence 3.1 workaround
-        PersistenceUnitTransactionType transactionType
-                = (PersistenceUnitTransactionType) factory.getProperties().get(TRANSACTION_TYPE);
+        // Jakarta Persistence 3.2 compliant code disabled, using Jakarta Persistence 3.1 workaround
         if (isTransactionActive()) {
             // The case when explicit transaction is active
             if (LOGGER.isLoggable(Level.DEBUG)) {
                 LOGGER.log(Level.DEBUG, String.format("Running transaction task [%x]", this.hashCode()));
             }
             TRANSACTION.get(transactionType)
-                    .run(entityManager(), task);
+                    .run(this, entityManager(), task);
         } else {
             // The case when explicit transaction is not active
             // Don't have access to thread life-cycle so EntityManager is closed after the task
             if (LOGGER.isLoggable(Level.DEBUG)) {
                 LOGGER.log(Level.DEBUG, String.format("Running standalone task [%x]", this.hashCode()));
             }
-            try (EntityManager em = factory.createEntityManager()) {
-                EXECUTORS.get(transactionType).run(em, task);
+            try (EntityManager em = getNonTxManager()) {
+                EXECUTORS.get(transactionType).run(this, em, task);
             }
         }
     }
 
-    private static void setRollbackOnlyTransaction() {
+    // Get EntityManager outside transaction scope
+    // In JTA environment this EntityManager must be synchronized manually with new transaction started in executor
+    private EntityManager getNonTxManager() {
+        return transactionType == PersistenceUnitTransactionType.RESOURCE_LOCAL
+                ? factory.createEntityManager()
+                : factory.createEntityManager(SynchronizationType.UNSYNCHRONIZED);
+    }
+
+    // Get EntityManager inside transaction scope
+    // In JTA environment this EntityManager is already synchronized with current transaction
+    private EntityManager entityManager() {
+        return TransactionContext.getInstance().entityManager(factory, transactionType);
+    }
+
+    private void setRollbackOnlyTransaction() {
         if (isTransactionActive()) {
-            TransactionContext.getInstance().setRollbackOnlyTransaction();
+            if (transactionType == PersistenceUnitTransactionType.JTA) {
+                try {
+                    transactionManager().setRollbackOnly();
+                } catch (SystemException e) {
+                    throw new DataException("Marking transaction as rollback only failed", e);
+                }
+            } else {
+                TransactionContext.getInstance().setRollbackOnlyTransaction();
+            }
         }
     }
 
-    private static boolean isTransactionActive() {
-        return TransactionContext.getInstance().isTransactionActive();
+    // JTA provider shall be present when JTA transaction type is active.
+    private boolean isTransactionActive() {
+        return TransactionContext.getInstance().isTransactionActive(transactionType);
+        /*
+        if (transactionType == PersistenceUnitTransactionType.JTA) {
+            try {
+                int status = transactionManager().getStatus();
+                System.out.println("--- transactionManager().getStatus() " + status);
+                // STATUS_UNKNOWN:
+                // A transaction is associated with the target object but its current status cannot be determined.
+                // This is a transient condition and a subsequent invocation will ultimately return a different status.
+                if (status == Status.STATUS_UNKNOWN) {
+                    status = transactionManager().getStatus();
+                }
+                return status != Status.STATUS_NO_TRANSACTION;
+            } catch (SystemException e) {
+                throw new DataException("Transaction status check failed", e);
+            }
+        } else {
+            return TransactionContext.getInstance().isTransactionActive(transactionType);
+        }
+        */
     }
 
-    private EntityManager entityManager() {
-        return TransactionContext.getInstance().entityManager();
+    // Used when JtaProvider is available
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
+    private static TransactionManager transactionManager() {
+        return JpaExtensionImpl.jta()
+                .get()
+                .transactionManager();
     }
 
     // Common task runner with PersistenceException mapping
@@ -148,7 +200,9 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
         }
 
         @Override
-        public <R, E extends Throwable> R call(EntityManager em, Functions.CheckedFunction<EntityManager, R, E> task)
+        public <R, E extends Throwable> R call(JpaRepositoryExecutor executor,
+                                               EntityManager em,
+                                               Functions.CheckedFunction<EntityManager, R, E> task)
                 throws DataException {
             try {
                 return task.apply(em);
@@ -162,7 +216,9 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
         }
 
         @Override
-        public <E extends Throwable> void run(EntityManager em, Functions.CheckedConsumer<EntityManager, E> task)
+        public <E extends Throwable> void run(JpaRepositoryExecutor executor,
+                                              EntityManager em,
+                                              Functions.CheckedConsumer<EntityManager, E> task)
                 throws DataException {
             try {
                 task.accept(em);
@@ -201,49 +257,111 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
     // Task runner with new JTA transaction
     private static final class JtaDataRunner extends AbstractDataRunner {
 
-        @Override
-        public <R, E extends Throwable> R call(EntityManager em, Functions.CheckedFunction<EntityManager, R, E> task) {
-            em.joinTransaction();
-            return super.call(em, task);
+        private final TransactionManager transactionManager;
+
+        JtaDataRunner() {
+            super();
+            if (JpaExtensionImpl.jta().isPresent()) {
+                transactionManager = transactionManager();
+            } else {
+                transactionManager = null;
+            }
         }
 
         @Override
-        public <E extends Throwable> void run(EntityManager em, Functions.CheckedConsumer<EntityManager, E> task) {
-            em.joinTransaction();
-            super.run(em, task);
+        public <R, E extends Throwable> R call(JpaRepositoryExecutor executor,
+                                               EntityManager em,
+                                               Functions.CheckedFunction<EntityManager, R, E> task) {
+            try {
+                transactionManager.begin();
+                em.joinTransaction();
+                try {
+                    R result = super.call(executor, em, task);
+                    try {
+                        transactionManager.commit();
+                    } catch (RollbackException | HeuristicMixedException | HeuristicRollbackException e) {
+                        throw new DataException("Could not commit JTA transaction", e);
+                    }
+                    return result;
+                } catch (DataException e) {
+                    transactionManager.rollback();
+                    throw e;
+                    // This shall never be thrown, it means bug in the exception handling code
+                } catch (RuntimeException e) {
+                    transactionManager.rollback();
+                    LOGGER.log(Level.WARNING, "Unhandled exception thrown in data repository task.", e);
+                    throw e;
+                }
+            } catch (SystemException | NotSupportedException e) {
+                throw new DataException("Could not handle JTA transaction", e);
+            }
         }
+
+        @Override
+        public <E extends Throwable> void run(JpaRepositoryExecutor executor,
+                                              EntityManager em,
+                                              Functions.CheckedConsumer<EntityManager, E> task) {
+            // TODO:  This may be executed outside transaction context !!!
+            try {
+                transactionManager.begin();
+                em.joinTransaction();
+                try {
+                    super.run(executor, em, task);
+                    try {
+                        transactionManager.commit();
+                    } catch (RollbackException | HeuristicMixedException | HeuristicRollbackException e) {
+                        throw new DataException("Could not commit JTA transaction", e);
+                    }
+                } catch (DataException e) {
+                    transactionManager.rollback();
+                    throw e;
+                    // This shall never be thrown, it means bug in the exception handling code
+                } catch (RuntimeException e) {
+                    transactionManager.rollback();
+                    LOGGER.log(Level.WARNING, "Unhandled exception thrown in data repository task.", e);
+                    throw e;
+                }
+            } catch (SystemException | NotSupportedException e) {
+                throw new DataException("Could not handle JTA transaction", e);
+            }
+        }
+
     }
 
     // Task runner with local transaction already in progress
     private static class ResourceLocalDataRunnerInTx extends AbstractDataRunner {
 
         @Override
-        public <R, E extends Throwable> R call(EntityManager em, Functions.CheckedFunction<EntityManager, R, E> task) {
+        public <R, E extends Throwable> R call(JpaRepositoryExecutor executor,
+                                               EntityManager em,
+                                               Functions.CheckedFunction<EntityManager, R, E> task) {
             try {
-                return super.call(em, task);
+                return super.call(executor, em, task);
                 // Any exception in the task shall be wrapped by DataException
             } catch (DataException e) {
-                setRollbackOnlyTransaction();
+                ((JpaRepositoryExecutorImpl) executor).setRollbackOnlyTransaction();
                 throw e;
                 // This shall never be thrown, it means bug in the exception handling code
             } catch (RuntimeException e) {
-                setRollbackOnlyTransaction();
+                ((JpaRepositoryExecutorImpl) executor).setRollbackOnlyTransaction();
                 LOGGER.log(Level.WARNING, "Unhandled exception thrown in data repository task.", e);
                 throw e;
             }
         }
 
         @Override
-        public <E extends Throwable> void run(EntityManager em, Functions.CheckedConsumer<EntityManager, E> task) {
+        public <E extends Throwable> void run(JpaRepositoryExecutor executor,
+                                              EntityManager em,
+                                              Functions.CheckedConsumer<EntityManager, E> task) {
             try {
-                super.run(em, task);
+                super.run(executor, em, task);
                 // Any exception in the task shall be wrapped by DataException
             } catch (DataException e) {
-                setRollbackOnlyTransaction();
+                ((JpaRepositoryExecutorImpl) executor).setRollbackOnlyTransaction();
                 throw e;
                 // This shall never be thrown, it means bug in the exception handling code
             } catch (RuntimeException e) {
-                setRollbackOnlyTransaction();
+                ((JpaRepositoryExecutorImpl) executor).setRollbackOnlyTransaction();
                 LOGGER.log(Level.WARNING, "Unhandled exception thrown in data repository task.", e);
                 throw e;
             }
@@ -254,11 +372,13 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
     private static class ResourceLocalDataRunner extends AbstractDataRunner {
 
         @Override
-        public <R, E extends Throwable> R call(EntityManager em, Functions.CheckedFunction<EntityManager, R, E> task) {
+        public <R, E extends Throwable> R call(JpaRepositoryExecutor executor,
+                                               EntityManager em,
+                                               Functions.CheckedFunction<EntityManager, R, E> task) {
             EntityTransaction et = em.getTransaction();
             et.begin();
             try {
-                R result = super.call(em, task);
+                R result = super.call(executor, em, task);
                 et.commit();
                 return result;
                 // Any exception in the task shall be wrapped by DataException
@@ -278,11 +398,13 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
         }
 
         @Override
-        public <E extends Throwable> void run(EntityManager em, Functions.CheckedConsumer<EntityManager, E> task) {
+        public <E extends Throwable> void run(JpaRepositoryExecutor executor,
+                                              EntityManager em,
+                                              Functions.CheckedConsumer<EntityManager, E> task) {
             EntityTransaction et = em.getTransaction();
             et.begin();
             try {
-                super.run(em, task);
+                super.run(executor, em, task);
                 et.commit();
                 // Any exception in the task shall be wrapped by DataException
             } catch (DataException e) {

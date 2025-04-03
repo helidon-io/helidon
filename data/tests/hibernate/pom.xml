@@ -34,6 +34,7 @@
     <modules>
         <module>mysql</module>
         <module>mysql-ds</module>
+        <module>mysql-jta</module>
         <module>ucp</module>
     </modules>
 

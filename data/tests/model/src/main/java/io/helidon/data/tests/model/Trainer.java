@@ -15,6 +15,7 @@
  */
 package io.helidon.data.tests.model;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -50,6 +51,7 @@ public class Trainer {
         this.id = id;
         this.name = name;
         this.team = team;
+        this.pokemons = Collections.emptyList();
     }
 
     public int getId() {
@@ -111,6 +113,16 @@ public class Trainer {
         sb.append(team.toString());
         sb.append("}");
         return sb.toString();
+    }
+
+    /**
+     * Creates clone of provided {@link Trainer} instance.
+     *
+     * @param src source instance to be cloned
+     * @return the clone
+     */
+    public static Trainer clone(Trainer src) {
+        return new Trainer(src.getId(), src.getName(), Team.clone(src.getTeam()));
     }
 
 }

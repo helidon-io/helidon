@@ -148,6 +148,7 @@ public class InitialData {
             108, new Pokemon(108, TRAINERS[3], "Meowth", 85, true, List.of(TYPES[1])),
             109, new Pokemon(109, TRAINERS[3], "Magikarp", 51, true, List.of(TYPES[11]))
     );
+
     private static final System.Logger LOGGER = System.getLogger(InitialData.class.getName());
 
     private InitialData() {

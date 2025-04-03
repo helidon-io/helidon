@@ -19,8 +19,11 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.concurrent.Callable;
 
+import io.helidon.common.Functions;
 import io.helidon.service.registry.Interception;
+import io.helidon.service.registry.Services;
 
 /**
  * Transaction annotations and types.
@@ -144,6 +147,140 @@ public final class Tx {
     @Retention(RetentionPolicy.SOURCE)
     @Target({ElementType.TYPE, ElementType.METHOD})
     public @interface Unsupported { }
+
+    /**
+     * Execute provided task as database transaction.
+     * Transaction is handled automatically. Task computes and returns result.
+     *
+     * @param task task to run in transaction
+     * @param <T>  the result type of the task
+     * @return computed task result
+     * @throws TxException when result computation failed
+     */
+    public static <T> T transaction(Callable<T> task) {
+        return transaction(Type.REQUIRED, task);
+    }
+
+    /**
+     * Execute provided task as database transaction.
+     * Transaction is handled automatically. Task computes and returns result.
+     *
+     * @param type transaction type
+     * @param task task to run in transaction
+     * @param <T>  the result type of the task
+     * @return computed task result
+     * @throws TxException when result computation failed
+     */
+    public static <T> T transaction(Type type, Callable<T> task) {
+        return Services.get(TxSupport.class)
+                .transaction(type, task);
+    }
+
+    /**
+     * Execute provided task as database transaction.
+     * Transaction is handled automatically. Task does not return any result.
+     *
+     * @param task task to run in transaction
+     * @throws TxException when task computation failed
+     */
+    public static void transaction(Functions.CheckedRunnable<Exception> task) {
+        transaction(Type.REQUIRED, task);
+    }
+
+    /**
+     * Execute provided task as database transaction.
+     * Transaction is handled automatically. Task does not return any result.
+     *
+     * @param type transaction type
+     * @param task task to run in transaction
+     * @throws TxException when task computation failed
+     */
+    public static void transaction(Type type, Functions.CheckedRunnable<Exception> task) {
+        Services.get(TxSupport.class)
+                .transaction(type,
+                             () -> {
+                                 task.run();
+                                 return null;
+                             });
+    }
+
+/* Removed: need to decide whether this is needed at all
+
+    /**
+     * Execute provided task as database transaction.
+     * Transaction is finished manually. Task computes and returns result.
+     *
+     * @param task task to run in transaction
+     * @param <T>  the result type of the task
+     * @return computed task result
+     * /
+    public static <T> T transaction(Function<Transaction, T> task) {
+        return transaction(Type.REQUIRED, task);
+    }
+
+    /**
+     * Execute provided task as database transaction.
+     * Transaction is finished manually. Task computes and returns result.
+     *
+     * @param type transaction type
+     * @param task task to run in transaction
+     * @param <T>  the result type of the task
+     * @return computed task result
+     * /
+    public static <T> T transaction(Type type, Function<Transaction, T> task) {
+        return Services.get(TxSupport.class)
+                .transaction(type, task);
+    }
+
+    /**
+     * Execute provided task as database transaction.
+     * Transaction is handled automatically. Task does not return any result.
+     *
+     * @param task task to run in transaction
+     * /
+    public static void transaction(Consumer<Transaction> task) {
+        transaction(Type.REQUIRED, task);
+    }
+
+    /**
+     * Execute provided task as database transaction.
+     * Transaction is handled automatically. Task does not return any result.
+     *
+     * @param type transaction type
+     * @param task task to run in transaction
+     * /
+    public static void transaction(Type type, Consumer<Transaction> task) {
+        Services.get(TxSupport.class)
+                .transaction(type,
+                             t -> {
+                                 task.accept(t);
+                                 return null;
+                             });
+    }
+
+    /**
+     * Start transaction.
+     * Transaction is finished manually.
+     *
+     * @return transaction handler
+     * /
+    public static Transaction transaction() {
+        return transaction(Type.REQUIRED);
+    }
+
+    /**
+     * Start transaction.
+     * Transaction is finished manually.
+     *
+     * @param type transaction type
+     * @return transaction handler
+     * /
+    public static Transaction transaction(Type type) {
+        return Services.get(TxSupport.class)
+                .transaction(type);
+    }
+
+*/
 
     /**
      * The {@link Transaction} interface defines methods that allow user code to manage transaction boundaries.
