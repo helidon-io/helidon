@@ -73,14 +73,4 @@ interface SqlConfigBlueprint {
     @Option.Configured
     Optional<String> dataSource();
 
-    /**
-     * Whether {@link javax.sql.DataSource} is JTA data source.
-     * Default value is {@code false}.
-     *
-     * @return value of {@code true} when {@link javax.sql.DataSource} is JTA data source
-     *         or {@code false} otherwise
-     */
-    @Option.Configured
-    Optional<Boolean> jtaDataSource();
-
 }

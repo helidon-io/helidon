@@ -15,9 +15,11 @@
  */
 package io.helidon.data.tests.model;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Objects;
 
 import jakarta.persistence.Entity;
@@ -180,6 +182,23 @@ public class Pokemon {
         }
         sb.append("]}");
         return sb.toString();
+    }
+
+    /**
+     * Creates clone of provided {@link Pokemon} instance.
+     *
+     * @param src source instance to be cloned
+     * @return the clone
+     */
+    public static Pokemon clone(Pokemon src) {
+        List<Type> newTypes = new ArrayList<>(src.getTypes().size());
+        src.getTypes().forEach(type -> newTypes.addLast(Type.clone(type)));
+        return new Pokemon(src.getId(),
+                    Trainer.clone(src.getTrainer()),
+                    src.getName(),
+                    src.getHp(),
+                    src.isAlive(),
+                    List.copyOf(newTypes));
     }
 
     private boolean typesEquals(Collection<Type> collection) {

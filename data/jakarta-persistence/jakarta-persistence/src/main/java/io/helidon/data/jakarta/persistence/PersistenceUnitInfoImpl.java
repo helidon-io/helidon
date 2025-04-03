@@ -48,6 +48,7 @@ import jakarta.persistence.spi.PersistenceUnitTransactionType;
 class PersistenceUnitInfoImpl implements PersistenceUnitInfo {
 
     private static final String WEBINF_CLASSES_STR = "WEB-INF/classes/";
+
     private final PersistenceConfiguration config;
     private final ClassLoader classLoader;
     private final ClassLoader originalClassLoader;
