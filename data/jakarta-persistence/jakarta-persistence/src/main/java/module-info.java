@@ -26,7 +26,9 @@ module io.helidon.data.jakarta.persistence {
     requires io.helidon.data.jakarta.persistence.gapi;
 
     requires io.helidon.transaction;
+    requires io.helidon.transaction.jta;
     requires io.helidon.service.registry;
+    requires jakarta.transaction;
 
     exports io.helidon.data.jakarta.persistence;
     exports io.helidon.data.jakarta.persistence.spi;

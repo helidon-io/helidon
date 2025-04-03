@@ -17,6 +17,10 @@ package io.helidon.transaction.narayana;
 
 import java.util.Optional;
 
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+
 import io.helidon.service.registry.Services;
 import io.helidon.transaction.jta.JtaProvider;
 
@@ -32,6 +36,14 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.startsWith;
 
 public class TestLookup {
+
+    static {
+        // Make sure the JNDI factory is specified
+        if (!System.getProperties().containsKey(Context.INITIAL_CONTEXT_FACTORY)) {
+            System.setProperty(Context.INITIAL_CONTEXT_FACTORY, "io.helidon.service.jndi.NamingFactory");
+        }
+    }
+
     // JtaProvider.get() shall return NarayanaProvider instance
     @Test
     void testLookup() {
@@ -68,6 +80,14 @@ public class TestLookup {
         TransactionSynchronizationRegistry tsr = provider.get().transactionSynchronizationRegistry();
         assertThat(tsr, notNullValue());
         assertThat(tsr.getClass().getName(), startsWith("com.arjuna.ats"));
+    }
+
+    // Test JNDI lookup of TransactionManager
+    @Test
+    void testTransactionManagerLookup() throws NamingException {
+        InitialContext ctx = new InitialContext();
+        TransactionManager tm = (TransactionManager) ctx.lookup("java:comp/TransactionManager");
+        assertThat(tm, notNullValue());
     }
 
 }

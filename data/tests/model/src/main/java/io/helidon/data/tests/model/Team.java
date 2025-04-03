@@ -84,4 +84,14 @@ public class Team {
         return sb.toString();
     }
 
+    /**
+     * Creates clone of provided {@link Team} instance.
+     *
+     * @param src source instance to be cloned
+     * @return the clone
+     */
+    public static Team clone(Team src) {
+        return new Team(src.getId(), src.getName());
+    }
+
 }
