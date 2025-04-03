@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.ServerResponseHeadersWrapper;
 import io.helidon.http.ServerResponseTrailers;
 import io.helidon.http.Status;
 import io.helidon.http.http2.Http2Exception;
@@ -41,11 +42,11 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     private static final System.Logger LOGGER = System.getLogger(Http2ServerResponse.class.getName());
 
     private final ConnectionContext ctx;
-    private final ServerResponseHeaders headers;
     private final ServerResponseTrailers trailers;
     private final Http2ServerRequest request;
     private final Http2ServerStream stream;
 
+    private ServerResponseHeaders headers;
     private boolean isSent;
     private boolean streamingEntity;
     private long bytesWritten;
@@ -183,6 +184,20 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
 
     @Override
     public ServerResponseHeaders headers() {
+        return headers;
+    }
+
+    @Override
+    public ServerResponseHeaders trackHeaders() {
+        headers = ServerResponseHeadersWrapper.create(headers);
+        return headers;
+    }
+
+    @Override
+    public ServerResponseHeaders rollbackHeaders() {
+        if (headers instanceof ServerResponseHeadersWrapper wrapper) {
+            headers = wrapper.rollback();
+        }
         return headers;
     }
     @Override
