@@ -687,6 +687,26 @@ So if we supported `List<Supplier<Contract>>`, we would still need to resolve al
 for this purpose. If a supplier is need to break dependency cycle, use `Supplier<List<Contract>>`, and you will get instances
 resolved only once you call `get()` on the supplier.
 
+## Replacing implementations
+
+To replace an implementation for injection points that expect zero or one instance, simply create a service with a higher weight than the one existing in the system.
+
+There may be cases where we want to replace implementations where a `List` is requested.
+For such cases introducing a higher-weight service would not yield the expected result - we would get a combined list.
+For these cases, you can create a `@Service.Replacement` service (this is not a scope!).
+Default weight for services annotated with `@Service.Replacement` is `Weighted.DEFAULT_WEIGHT + 10`.
+
+The resolution of services works as follows:
+- find all service descriptors that satisfy the lookup (i.e. the contract requested)
+- order them by weight (secondary ordering via `TypeName.compare(TypeName)`)
+- use all services up to (and including) the first service that is a replacement
+
+As a result, if there is a single replacement service with the highest weight, only results from that service will be used
+(this is the expected use case for replacement).
+This can be used in tests, or in production if a replacement of a service that is always on classpath is needed.
+
+There is also an alternative to disable service discovery and list all service descriptors in `ServiceRegistryConfig`.
+
 # Glossary
 
 | Term            | Description                                                                                                                                                                                                   |

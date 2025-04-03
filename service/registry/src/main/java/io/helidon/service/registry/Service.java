@@ -498,6 +498,18 @@ public final class Service {
     }
 
     /**
+     * Replace all service contract implementations with instances provided by this service, if it has the highest weight.
+     * <p>
+     * Default weight of services annotated with this annotation is
+     * ({@link io.helidon.common.Weighted#DEFAULT_WEIGHT} + 10).
+     */
+    @Documented
+    @Retention(RetentionPolicy.CLASS)
+    @Target(ElementType.TYPE)
+    public @interface Replacement {
+    }
+
+    /**
      * Provides an ability to create more than one service instance from a single service definition.
      * This is useful when the cardinality can only be determined at runtime.
      *
