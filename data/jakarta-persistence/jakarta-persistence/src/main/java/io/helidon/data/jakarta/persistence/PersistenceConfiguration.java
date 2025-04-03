@@ -377,11 +377,14 @@ public final class PersistenceConfiguration {
         if (LOGGER.isLoggable(Level.DEBUG)) {
             LOGGER.log(Level.DEBUG, "Database connection initialization");
         }
+        // Transactions setup depends on Jakarta Transaction provider availability
+        transactionType(JpaExtensionImpl.isJta()
+                                ? PersistenceUnitTransactionType.JTA
+                                : PersistenceUnitTransactionType.RESOURCE_LOCAL);
         // Only exactly one of the following options is possible, DataSource or URL
         // - DataSource
         if (dataJpaConfig.dataSource().isPresent()) {
             configureDataSource(dataJpaConfig.dataSource().get(),
-                                dataJpaConfig.jtaDataSource().orElse(false),
                                 registry);
         }
         // - URL as connection-string
@@ -410,12 +413,12 @@ public final class PersistenceConfiguration {
     }
 
     // Configure DataSource using name from Config
-    private void configureDataSource(String dataSourceName, boolean isJta, ServiceRegistry registry) {
+    private void configureDataSource(String dataSourceName, ServiceRegistry registry) {
         DataSource ds = registry.get(Lookup.builder()
                                              .addContract(DataSource.class)
                                              .addQualifier(Qualifier.createNamed(dataSourceName))
                                              .build());
-        if (isJta) {
+        if (JpaExtensionImpl.isJta()) {
             jtaDataSource(ds);
         } else {
             nonJtaDataSource(ds);
