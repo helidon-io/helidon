@@ -87,8 +87,12 @@
                         <java.util.logging.config.file>
                             ${project.build.testOutputDirectory}/logging.properties
                         </java.util.logging.config.file>
+                        <foo>systemProperty</foo>
                     </systemPropertyVariables>
                     <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
+                    <environmentVariables>
+                        <foo>environmentProperty</foo>
+                    </environmentVariables>
                 </configuration>
             </plugin>
         </plugins>

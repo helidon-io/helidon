@@ -31,7 +31,7 @@ import org.testng.annotations.Test;
 @AddConfigBlock("""
     some.key1=some.value1
     some.key2=some.value2
-""")
+    """)
 public class TestAddConfigBlockProperties {
 
     @Inject

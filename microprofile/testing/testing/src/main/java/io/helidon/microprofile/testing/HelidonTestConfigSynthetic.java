@@ -37,6 +37,7 @@ import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 import static io.helidon.microprofile.testing.ReflectionHelper.invoke;
+import static io.helidon.microprofile.testing.ReflectionHelper.isDefaultMethod;
 import static io.helidon.microprofile.testing.ReflectionHelper.requireStatic;
 
 /**
@@ -151,17 +152,20 @@ class HelidonTestConfigSynthetic extends HelidonTestConfigDelegate {
         configSources.add(MpConfigSources.create(testInfo.id(), map));
         blocks.forEach((type, values) -> {
             for (String value : values) {
-                configSources.add(MpConfigSources.create(type, new StringReader(value)));
+                ConfigSource config = MpConfigSources.create(type, new StringReader(value));
+                configSources.add(addConfigOrdinal(config, type, "900"));
             }
         });
         for (Method m : methods) {
-            configSources.add(invoke(ConfigSource.class, requireStatic(m), null));
+            ConfigSource config = invoke(ConfigSource.class, requireStatic(m), null);
+            configSources.add(new ConfigSourceWrapper(config));
         }
         for (String source : resources) {
             String filename = source.trim();
             for (URL url : resources(filename)) {
                 String type = extension(filename);
-                configSources.add(MpConfigSources.create(type, url));
+                ConfigSource config = MpConfigSources.create(type, url);
+                configSources.add(addConfigOrdinal(config, type, "700"));
             }
         }
         ConfigBuilder builder = ConfigProviderResolver.instance()
@@ -171,6 +175,12 @@ class HelidonTestConfigSynthetic extends HelidonTestConfigDelegate {
                 .addDiscoveredConverters();
         configSources.forEach(builder::withSources);
         return builder.build();
+    }
+
+    private ConfigSource addConfigOrdinal(ConfigSource config, String type, String ordinal) {
+        Map<String, String> properties = new HashMap<>(config.getProperties());
+        properties.putIfAbsent(ConfigSource.CONFIG_ORDINAL, ordinal);
+        return MpConfigSources.create(type, properties);
     }
 
     private static String extension(String filename) {
@@ -188,6 +198,35 @@ class HelidonTestConfigSynthetic extends HelidonTestConfigDelegate {
         } catch (IOException e) {
             throw new UncheckedIOException(String.format(
                     "Failed to read '%s' from classpath", name), e);
+        }
+    }
+
+    private record ConfigSourceWrapper(ConfigSource delegate) implements ConfigSource {
+        @Override
+        public Set<String> getPropertyNames() {
+            return delegate.getPropertyNames();
+        }
+
+        @Override
+        public String getValue(String propertyName) {
+            return delegate.getValue(propertyName);
+        }
+
+        @Override
+        public String getName() {
+            return delegate.getName();
+        }
+
+        @Override
+        public Map<String, String> getProperties() {
+            return delegate.getProperties();
+        }
+
+        @Override
+        public int getOrdinal() {
+            boolean isDefault = isDefaultMethod(delegate, "getOrdinal");
+            boolean isDefaultOrdinal = delegate.getOrdinal() == ConfigSource.DEFAULT_ORDINAL;
+            return isDefault && isDefaultOrdinal ? 800 : delegate.getOrdinal();
         }
     }
 }
