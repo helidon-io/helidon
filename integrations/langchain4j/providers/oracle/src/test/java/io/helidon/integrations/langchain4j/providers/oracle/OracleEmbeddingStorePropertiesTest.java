@@ -35,6 +35,7 @@ class OracleEmbeddingStorePropertiesTest {
         var config = OracleEmbeddingStoreConfig.create(Services.get(Config.class)
                                                                .get(OracleEmbeddingStoreConfig.CONFIG_ROOT));
         assertThat(config, is(notNullValue()));
+        assertThat(config.enable(), is(true));
         assertThat(config.dataSource().isPresent(), is(true));
         assertThat(config.dataSource().get(), is("datasource"));
         assertThat(config.exactSearch().isPresent(), is(true));
