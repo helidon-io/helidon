@@ -17,6 +17,7 @@
 package io.helidon.data.jakarta.persistence;
 
 import java.io.Closeable;
+import java.lang.System.Logger.Level;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
@@ -24,11 +25,18 @@ import java.util.Stack;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
+import jakarta.persistence.SynchronizationType;
 
 // Instances of EntityManagerStorage are bound with ThreadLocal so this class shall be thread safe
+
+/**
+ *
+ */
 final class EntityManagerStorage implements Closeable {
     private static final System.Logger LOGGER = System.getLogger(EntityManagerStorage.class.getName());
 
+    @SuppressWarnings("deprecation")
+    private final PersistenceUnitTransactionType transactionType;
     private final EntityManagerFactory factory;
     // Current EntityManager instance is at the top of the stack
     private final Stack<StackItem> current;
@@ -39,7 +47,9 @@ final class EntityManagerStorage implements Closeable {
     // Entity manager used while transaction is suspended
     private EntityManager suspended;
 
-    EntityManagerStorage(EntityManagerFactory factory) {
+    EntityManagerStorage(EntityManagerFactory factory,
+                         @SuppressWarnings("deprecation") PersistenceUnitTransactionType transactionType) {
+        this.transactionType = transactionType;
         this.factory = factory;
         this.suspended = null;
         this.current = new Stack<>();
@@ -51,12 +61,12 @@ final class EntityManagerStorage implements Closeable {
         try {
             managers.forEach(manager -> {
                 // This shall not happen until user code hacks something
-                if (LOGGER.isLoggable(System.Logger.Level.DEBUG) && !manager.isOpen()) {
-                    LOGGER.log(System.Logger.Level.DEBUG,
+                if (LOGGER.isLoggable(Level.DEBUG) && !manager.isOpen()) {
+                    LOGGER.log(Level.DEBUG,
                                "Closing already closed EntityManager");
                 }
-                if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
-                    LOGGER.log(System.Logger.Level.TRACE, "Closing EntityManager");
+                if (LOGGER.isLoggable(Level.TRACE)) {
+                    LOGGER.log(Level.TRACE, "Closing EntityManager");
                 }
                 manager.close();
             });
@@ -66,12 +76,12 @@ final class EntityManagerStorage implements Closeable {
         if (suspended != null) {
             try {
                 // This shall not happen until user code hacks something
-                if (LOGGER.isLoggable(System.Logger.Level.DEBUG) && !suspended.isOpen()) {
-                    LOGGER.log(System.Logger.Level.DEBUG,
+                if (LOGGER.isLoggable(Level.DEBUG) && !suspended.isOpen()) {
+                    LOGGER.log(Level.DEBUG,
                                "Closing already closed EntityManager");
                 }
-                if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
-                    LOGGER.log(System.Logger.Level.TRACE,
+                if (LOGGER.isLoggable(Level.TRACE)) {
+                    LOGGER.log(Level.TRACE,
                                "Closing EntityManager of suspended state");
                 }
                 suspended.close();
@@ -103,8 +113,8 @@ final class EntityManagerStorage implements Closeable {
     // EntityManager to be used while transaction is suspended
     void addSuspendedManager(int counter) {
         if (suspended == null) {
-            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
-                LOGGER.log(System.Logger.Level.TRACE,
+            if (LOGGER.isLoggable(Level.TRACE)) {
+                LOGGER.log(Level.TRACE,
                            "Creating EntityManager of suspended state");
             }
             suspended = factory.createEntityManager();
@@ -124,8 +134,8 @@ final class EntityManagerStorage implements Closeable {
         if (current.isEmpty()) {
             throw new IllegalStateException("Current EntityManager scope is empty");
         }
-        if (LOGGER.isLoggable(System.Logger.Level.DEBUG) && current.size() != counter) {
-            LOGGER.log(System.Logger.Level.DEBUG,
+        if (LOGGER.isLoggable(Level.DEBUG) && current.size() != counter) {
+            LOGGER.log(Level.DEBUG,
                        "Transaction level %d and internal stack size %d do not match",
                        counter,
                        current.size());
@@ -168,10 +178,12 @@ final class EntityManagerStorage implements Closeable {
     // Use from pool if not empty or create a new one.
     private EntityManager getManager() {
         if (managers.isEmpty()) {
-            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
-                LOGGER.log(System.Logger.Level.TRACE, "Creating EntityManager");
+            if (LOGGER.isLoggable(Level.TRACE)) {
+                LOGGER.log(Level.TRACE, "Creating EntityManager");
             }
-            return factory.createEntityManager();
+            return transactionType == PersistenceUnitTransactionType.RESOURCE_LOCAL
+                    ? factory.createEntityManager()
+                    : factory.createEntityManager(SynchronizationType.SYNCHRONIZED);
         } else {
             EntityManager manager = managers.removeLast();
             if (!manager.isOpen()) {

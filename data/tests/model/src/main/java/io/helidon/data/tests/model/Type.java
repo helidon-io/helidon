@@ -84,4 +84,14 @@ public class Type {
         return sb.toString();
     }
 
+    /**
+     * Creates clone of provided {@link Type} instance.
+     *
+     * @param src source instance to be cloned
+     * @return the clone
+     */
+    public static Type clone(Type src) {
+        return new Type(src.getId(), src.getName());
+    }
+
 }
