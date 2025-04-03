@@ -16,7 +16,6 @@
 
 package io.helidon.common.socket;
 
-import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.security.Principal;
 import java.security.cert.Certificate;
@@ -32,21 +31,6 @@ public interface PeerInfo {
      * @return address
      */
     SocketAddress address();
-
-    /**
-     * Returns the IP address string in textual presentation.
-     *
-     * @return the raw IP address in a string format.
-     * @throws java.lang.IllegalStateException In case socket address is not {@link java.net.InetSocketAddress}.
-     */
-    default String hostAddress() {
-        SocketAddress socketAddress = address();
-        if (socketAddress instanceof InetSocketAddress inetSocketAddress) {
-            return inetSocketAddress.getAddress().getHostAddress();
-        }
-        throw new IllegalArgumentException("Unsupported socket address type, InetSocketAddress expected but: "
-                                                   + socketAddress.getClass());
-    }
 
     /**
      * Host of the peer.
