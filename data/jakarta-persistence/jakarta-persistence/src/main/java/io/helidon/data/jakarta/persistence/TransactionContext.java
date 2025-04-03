@@ -16,8 +16,10 @@
 
 package io.helidon.data.jakarta.persistence;
 
+import io.helidon.service.registry.Service;
 import io.helidon.transaction.Tx;
 import io.helidon.transaction.TxException;
+import io.helidon.transaction.jta.TxLifeCycle;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
@@ -28,12 +30,14 @@ final class TransactionContext {
     private static final LocalContext INSTANCE = new LocalContext();
 
     private EntityManagerStorage storage;
+    private final JtaTransactionStorage jtaStorage;
 
     // Transaction method level (starts from 1)
     private int counter;
 
     private TransactionContext() {
         storage = null;
+        jtaStorage = new JtaTransactionStorage();
         counter = 0;
     }
 
@@ -41,12 +45,14 @@ final class TransactionContext {
         return INSTANCE.get();
     }
 
-    // Initialize transaction context and return transaction counter for close call
-    int initTransaction(EntityManagerFactory factory) {
+    // Local API: Initialize transaction context and return transaction counter for close call
+    // EntityManagerFactory instance is known
+    int initTransaction(EntityManagerFactory factory,
+                        @SuppressWarnings("deprecation") PersistenceUnitTransactionType transactionType) {
         // Initialize EntityManager and EntityTransaction with top level call
         if (counter == 0) {
             if (storage == null) {
-                storage = new EntityManagerStorage(factory);
+                storage = new EntityManagerStorage(factory, transactionType);
             }
             // Validate entity manager for subsequent calls
         } else {
@@ -71,7 +77,8 @@ final class TransactionContext {
     }
 
     // Start transaction and add it to stack
-    void beginTransaction(PersistenceUnitTransactionType transactionType, Tx.Type type) {
+    void beginTransaction(@SuppressWarnings("deprecation") PersistenceUnitTransactionType transactionType,
+                          Tx.Type type) {
         counter++;
         switch (transactionType) {
         case PersistenceUnitTransactionType.JTA:
@@ -184,7 +191,8 @@ final class TransactionContext {
     }
 
     // Commit transaction and remove it from stack
-    void commitTransaction(PersistenceUnitTransactionType transactionType, Tx.Type type) {
+    void commitTransaction(@SuppressWarnings("deprecation") PersistenceUnitTransactionType transactionType,
+                           Tx.Type type) {
         switch (transactionType) {
         case PersistenceUnitTransactionType.JTA:
             if (counter == 0) {
@@ -234,7 +242,7 @@ final class TransactionContext {
                     throw new TxException(String.format(
                             "Running transaction of %s Tx.Type inside reused transaction scope",
                             type.name()));
-                    // This should not happen until internal state is damaged
+                // This should not happen until internal state is damaged
                 case INACTIVE:
                     throw new TxException(String.format(
                             "Running transaction of %s Tx.Type outside transaction scope",
@@ -286,7 +294,8 @@ final class TransactionContext {
     }
 
     // Rollback transaction and remove it from stack
-    void rollbackTransaction(PersistenceUnitTransactionType transactionType, Tx.Type type) {
+    void rollbackTransaction(@SuppressWarnings("deprecation") PersistenceUnitTransactionType transactionType,
+                             Tx.Type type) {
         try {
             switch (transactionType) {
             case PersistenceUnitTransactionType.JTA:
@@ -397,8 +406,12 @@ final class TransactionContext {
         }
     }
 
-    EntityManager entityManager() {
-        return storage.current();
+    EntityManager entityManager(EntityManagerFactory factory, PersistenceUnitTransactionType transactionType) {
+        if (transactionType == PersistenceUnitTransactionType.JTA) {
+            return jtaStorage.manager(factory);
+        } else {
+            return storage.current();
+        }
     }
 
     // Set transaction as rollback only if active
@@ -406,8 +419,70 @@ final class TransactionContext {
         storage.transaction().setRollbackOnly();
     }
 
-    boolean isTransactionActive() {
-        return counter > 0;
+    boolean isTransactionActive(PersistenceUnitTransactionType transactionType) {
+        if (transactionType == PersistenceUnitTransactionType.JTA) {
+            return jtaStorage.isTxMethodRunning();
+        } else {
+            return counter > 0;
+        }
+    }
+
+    // Handle JTA transaction life-cycle: method begin
+    private void jtaStart() {
+        jtaStorage.start();
+    }
+
+    // Handle JTA transaction life-cycle: method end
+    private void jtaEnd() {
+        jtaStorage.end();
+    }
+
+    // Handle JTA transaction life-cycle: begin
+    private void jtaBegin() {
+        jtaStorage.begin();
+    }
+
+    // Handle JTA transaction life-cycle: commit
+    private void jtaCommit() {
+        jtaStorage.commit();
+    }
+
+    // Handle JTA transaction life-cycle: rollback
+    private void jtaRollback() {
+        jtaStorage.rollback();
+    }
+
+    /**
+     * Process JTA API transaction life-cycle events.
+     */
+    @Service.Singleton
+    static class JtaLifeCycle implements TxLifeCycle {
+
+        @Override
+        public void start() {
+            TransactionContext.getInstance().jtaStart();
+        }
+
+        @Override
+        public void end() {
+            TransactionContext.getInstance().jtaEnd();
+        }
+
+        @Override
+        public void begin(String txIdentity) {
+            TransactionContext.getInstance().jtaBegin();
+        }
+
+        @Override
+        public void commit(String txIdentity) {
+            TransactionContext.getInstance().jtaCommit();
+        }
+
+        @Override
+        public void rollback(String txIdentity) {
+            TransactionContext.getInstance().jtaRollback();
+        }
+
     }
 
     // Used in begin method to simplify internal states dispatching

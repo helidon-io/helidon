@@ -106,27 +106,29 @@ public interface JpaRepositoryExecutor extends AutoCloseable {
 
     /**
      * Persistence tasks executor.
+     * Instances are stored in static {@link java.util.Map} so executor context is passed as an argument.
      */
-    // DataRunner
     interface DataRunner {
         /**
          * Call persistence session task and return result.
          *
+         * @param executor executor context
          * @param em   persistence session
          * @param task task to call
          * @param <R>  task result type
          * @param <E>  type of (checked) exception that can be thrown
          * @return task result
          */
-        <R, E extends Throwable> R call(EntityManager em, Functions.CheckedFunction<EntityManager, R, E> task);
+        <R, E extends Throwable> R call(JpaRepositoryExecutor executor, EntityManager em, Functions.CheckedFunction<EntityManager, R, E> task);
 
         /**
          * Run persistence session task with no result.
          *
+         * @param executor executor context
          * @param em   persistence session
          * @param task task to run
          * @param <E>  type of (checked) exception that can be thrown
          */
-        <E extends Throwable> void run(EntityManager em, Functions.CheckedConsumer<EntityManager, E> task);
+        <E extends Throwable> void run(JpaRepositoryExecutor executor, EntityManager em, Functions.CheckedConsumer<EntityManager, E> task);
     }
 }
