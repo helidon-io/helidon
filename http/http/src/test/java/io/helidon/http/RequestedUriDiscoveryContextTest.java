@@ -89,6 +89,7 @@ public class RequestedUriDiscoveryContextTest {
 
     @ParameterizedTest
     @MethodSource("params")
+    @Deprecated(forRemoval = true, since = "4.2.1")
     void stringAddress(InetSocketAddress remotePeerAddress, AllowList allowList, String expected) throws UnknownHostException {
         if (!allowList.prototype().allowed().getFirst().equals("localhost")) {
             Assumptions.abort("IP address filtering is not supported by deprecated api.");

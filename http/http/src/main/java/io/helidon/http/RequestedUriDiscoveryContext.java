@@ -18,8 +18,6 @@ package io.helidon.http;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import io.helidon.common.config.Config;
 import io.helidon.common.configurable.AllowList;
@@ -67,37 +65,24 @@ public interface RequestedUriDiscoveryContext {
      * {@link RequestedUriDiscoveryContext} and the specified request-related information.
      *
      * @param remoteAddress remote address from the request
-     * @param localAddress local address from the request
-     * @param requestPath path from the request
-     * @param headers request headers
-     * @param query query information from the request
-     * @param isSecure whether the request is secure
+     * @param localAddress  local address from the request
+     * @param requestPath   path from the request
+     * @param headers       request headers
+     * @param query         query information from the request
+     * @param isSecure      whether the request is secure
      * @return {@code UriInfo} which reconstructs, as well as possible, the requested URI from the originating client
-     * @deprecated Use {@link RequestedUriDiscoveryContext#uriInfo(java.net.InetSocketAddress, java.net.InetSocketAddress, String, ServerRequestHeaders, io.helidon.common.uri.UriQuery, boolean)}
+     * @deprecated Use
+     *         {@link RequestedUriDiscoveryContext#uriInfo(java.net.InetSocketAddress, java.net.InetSocketAddress, String,
+     *         ServerRequestHeaders, io.helidon.common.uri.UriQuery, boolean)}
      */
-    @Deprecated(since = "4.2.0")
+    @Deprecated(forRemoval = true, since = "4.2.1")
     default UriInfo uriInfo(String remoteAddress,
                             String localAddress,
                             String requestPath,
                             ServerRequestHeaders headers,
                             UriQuery query,
                             boolean isSecure) {
-
-        Pattern p = Pattern.compile("([^/]*)/(\\[[^]]+\\]|[^:]+|<unresolved>):?([0-9]*)");
-        Matcher remoteMatcher = p.matcher(remoteAddress);
-        Matcher localMatcher = p.matcher(localAddress);
-        if (remoteMatcher.matches() && localMatcher.matches()) {
-            String remotePort = remoteMatcher.group(3);
-            String localPort = localMatcher.group(3);
-
-            return uriInfo(InetSocketAddress.createUnresolved(remoteMatcher.group(1),
-                                                              remotePort.isEmpty() ? 0 : Integer.parseInt(remotePort)),
-                           InetSocketAddress.createUnresolved(localMatcher.group(1),
-                                                              localPort.isEmpty() ? 0 : Integer.parseInt(remotePort)),
-                           requestPath, headers, query, isSecure);
-        }
-
-        throw new IllegalArgumentException("Invalid remote: " + remoteAddress + " or local address: " + localAddress);
+        return UriInfoCompatibilityHelper.uriInfo(this, remoteAddress, localAddress, requestPath, headers, query, isSecure);
     }
 
     /**
@@ -105,11 +90,11 @@ public interface RequestedUriDiscoveryContext {
      * {@link RequestedUriDiscoveryContext} and the specified request-related information.
      *
      * @param remoteAddress remote address from the request
-     * @param localAddress local address from the request
-     * @param requestPath path from the request
-     * @param headers request headers
-     * @param query query information from the request
-     * @param isSecure whether the request is secure
+     * @param localAddress  local address from the request
+     * @param requestPath   path from the request
+     * @param headers       request headers
+     * @param query         query information from the request
+     * @param isSecure      whether the request is secure
      * @return {@code UriInfo} which reconstructs, as well as possible, the requested URI from the originating client
      */
     UriInfo uriInfo(InetSocketAddress remoteAddress,
