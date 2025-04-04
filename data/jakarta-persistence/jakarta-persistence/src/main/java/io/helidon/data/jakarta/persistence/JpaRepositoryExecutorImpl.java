@@ -20,6 +20,7 @@ import java.lang.System.Logger.Level;
 import java.util.Map;
 
 import io.helidon.common.Functions;
+import io.helidon.common.types.TypeName;
 import io.helidon.data.DataException;
 import io.helidon.data.EntityExistsException;
 import io.helidon.data.EntityNotFoundException;
@@ -27,18 +28,16 @@ import io.helidon.data.NoResultException;
 import io.helidon.data.NonUniqueResultException;
 import io.helidon.data.OptimisticLockException;
 import io.helidon.data.jakarta.persistence.gapi.JpaRepositoryExecutor;
+import io.helidon.service.registry.ServiceRegistryException;
+import io.helidon.service.registry.Services;
+import io.helidon.transaction.Tx;
+import io.helidon.transaction.TxSupport;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.PersistenceException;
 import jakarta.persistence.SynchronizationType;
-import jakarta.transaction.HeuristicMixedException;
-import jakarta.transaction.HeuristicRollbackException;
-import jakarta.transaction.NotSupportedException;
-import jakarta.transaction.RollbackException;
-import jakarta.transaction.SystemException;
-import jakarta.transaction.TransactionManager;
 
 import static io.helidon.data.jakarta.persistence.JpaExtensionImpl.TRANSACTION_TYPE;
 
@@ -147,50 +146,15 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
         return TransactionContext.getInstance().entityManager(factory, transactionType);
     }
 
-    private void setRollbackOnlyTransaction() {
+    private void setRollbackOnlyResourceLocalTransaction() {
         if (isTransactionActive()) {
-            if (transactionType == PersistenceUnitTransactionType.JTA) {
-                try {
-                    transactionManager().setRollbackOnly();
-                } catch (SystemException e) {
-                    throw new DataException("Marking transaction as rollback only failed", e);
-                }
-            } else {
-                TransactionContext.getInstance().setRollbackOnlyTransaction();
-            }
+            TransactionContext.getInstance().setRollbackOnlyTransaction();
         }
     }
 
     // JTA provider shall be present when JTA transaction type is active.
     private boolean isTransactionActive() {
         return TransactionContext.getInstance().isTransactionActive(transactionType);
-        /*
-        if (transactionType == PersistenceUnitTransactionType.JTA) {
-            try {
-                int status = transactionManager().getStatus();
-                System.out.println("--- transactionManager().getStatus() " + status);
-                // STATUS_UNKNOWN:
-                // A transaction is associated with the target object but its current status cannot be determined.
-                // This is a transient condition and a subsequent invocation will ultimately return a different status.
-                if (status == Status.STATUS_UNKNOWN) {
-                    status = transactionManager().getStatus();
-                }
-                return status != Status.STATUS_NO_TRANSACTION;
-            } catch (SystemException e) {
-                throw new DataException("Transaction status check failed", e);
-            }
-        } else {
-            return TransactionContext.getInstance().isTransactionActive(transactionType);
-        }
-        */
-    }
-
-    // Used when JtaProvider is available
-    @SuppressWarnings("OptionalGetWithoutIsPresent")
-    private static TransactionManager transactionManager() {
-        return JpaExtensionImpl.jta()
-                .get()
-                .transactionManager();
     }
 
     // Common task runner with PersistenceException mapping
@@ -202,8 +166,7 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
         @Override
         public <R, E extends Throwable> R call(JpaRepositoryExecutor executor,
                                                EntityManager em,
-                                               Functions.CheckedFunction<EntityManager, R, E> task)
-                throws DataException {
+                                               Functions.CheckedFunction<EntityManager, R, E> task) {
             try {
                 return task.apply(em);
             } catch (PersistenceException e) {
@@ -218,8 +181,7 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
         @Override
         public <E extends Throwable> void run(JpaRepositoryExecutor executor,
                                               EntityManager em,
-                                              Functions.CheckedConsumer<EntityManager, E> task)
-                throws DataException {
+                                              Functions.CheckedConsumer<EntityManager, E> task) {
             try {
                 task.accept(em);
             } catch (PersistenceException e) {
@@ -254,76 +216,45 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
     private static final class JtaDataRunnerInTx extends AbstractDataRunner {
     }
 
-    // Task runner with new JTA transaction
+    // Task runner with new JTA transaction. Delegates transaction handling to JtaTxSupport.
     private static final class JtaDataRunner extends AbstractDataRunner {
 
-        private final TransactionManager transactionManager;
+        private static final String JTA_TX_SUPPORT = "io.helidon.transaction.jta.JtaTxSupport";
+        private final TxSupport txSupport;
+
+        // FIXME: doing it the dirty way now to keep the code working while helidon-transaction-jta is in dependencies
+        private static TxSupport initJtaTxSupport() {
+            try {
+                return (TxSupport) Services.first(TypeName.create(JTA_TX_SUPPORT)).orElse(null);
+            } catch (ServiceRegistryException e) {
+                return null;
+            }
+        }
 
         JtaDataRunner() {
             super();
-            if (JpaExtensionImpl.jta().isPresent()) {
-                transactionManager = transactionManager();
-            } else {
-                transactionManager = null;
-            }
+            txSupport = initJtaTxSupport();
         }
 
         @Override
         public <R, E extends Throwable> R call(JpaRepositoryExecutor executor,
                                                EntityManager em,
                                                Functions.CheckedFunction<EntityManager, R, E> task) {
-            try {
-                transactionManager.begin();
+            return txSupport.transaction(Tx.Type.REQUIRED, () -> {
                 em.joinTransaction();
-                try {
-                    R result = super.call(executor, em, task);
-                    try {
-                        transactionManager.commit();
-                    } catch (RollbackException | HeuristicMixedException | HeuristicRollbackException e) {
-                        throw new DataException("Could not commit JTA transaction", e);
-                    }
-                    return result;
-                } catch (DataException e) {
-                    transactionManager.rollback();
-                    throw e;
-                    // This shall never be thrown, it means bug in the exception handling code
-                } catch (RuntimeException e) {
-                    transactionManager.rollback();
-                    LOGGER.log(Level.WARNING, "Unhandled exception thrown in data repository task.", e);
-                    throw e;
-                }
-            } catch (SystemException | NotSupportedException e) {
-                throw new DataException("Could not handle JTA transaction", e);
-            }
-        }
+                return super.call(executor, em, task);
+            });
+       }
 
         @Override
         public <E extends Throwable> void run(JpaRepositoryExecutor executor,
                                               EntityManager em,
                                               Functions.CheckedConsumer<EntityManager, E> task) {
-            // TODO:  This may be executed outside transaction context !!!
-            try {
-                transactionManager.begin();
+            txSupport.transaction(Tx.Type.REQUIRED, () -> {
                 em.joinTransaction();
-                try {
-                    super.run(executor, em, task);
-                    try {
-                        transactionManager.commit();
-                    } catch (RollbackException | HeuristicMixedException | HeuristicRollbackException e) {
-                        throw new DataException("Could not commit JTA transaction", e);
-                    }
-                } catch (DataException e) {
-                    transactionManager.rollback();
-                    throw e;
-                    // This shall never be thrown, it means bug in the exception handling code
-                } catch (RuntimeException e) {
-                    transactionManager.rollback();
-                    LOGGER.log(Level.WARNING, "Unhandled exception thrown in data repository task.", e);
-                    throw e;
-                }
-            } catch (SystemException | NotSupportedException e) {
-                throw new DataException("Could not handle JTA transaction", e);
-            }
+                super.run(executor, em, task);
+                return null;
+            });
         }
 
     }
@@ -339,11 +270,11 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
                 return super.call(executor, em, task);
                 // Any exception in the task shall be wrapped by DataException
             } catch (DataException e) {
-                ((JpaRepositoryExecutorImpl) executor).setRollbackOnlyTransaction();
+                ((JpaRepositoryExecutorImpl) executor).setRollbackOnlyResourceLocalTransaction();
                 throw e;
                 // This shall never be thrown, it means bug in the exception handling code
             } catch (RuntimeException e) {
-                ((JpaRepositoryExecutorImpl) executor).setRollbackOnlyTransaction();
+                ((JpaRepositoryExecutorImpl) executor).setRollbackOnlyResourceLocalTransaction();
                 LOGGER.log(Level.WARNING, "Unhandled exception thrown in data repository task.", e);
                 throw e;
             }
@@ -357,15 +288,16 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
                 super.run(executor, em, task);
                 // Any exception in the task shall be wrapped by DataException
             } catch (DataException e) {
-                ((JpaRepositoryExecutorImpl) executor).setRollbackOnlyTransaction();
+                ((JpaRepositoryExecutorImpl) executor).setRollbackOnlyResourceLocalTransaction();
                 throw e;
                 // This shall never be thrown, it means bug in the exception handling code
             } catch (RuntimeException e) {
-                ((JpaRepositoryExecutorImpl) executor).setRollbackOnlyTransaction();
+                ((JpaRepositoryExecutorImpl) executor).setRollbackOnlyResourceLocalTransaction();
                 LOGGER.log(Level.WARNING, "Unhandled exception thrown in data repository task.", e);
                 throw e;
             }
         }
+
     }
 
     // Task runner with new local transaction
