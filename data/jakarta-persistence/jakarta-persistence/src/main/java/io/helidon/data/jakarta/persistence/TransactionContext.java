@@ -16,10 +16,8 @@
 
 package io.helidon.data.jakarta.persistence;
 
-import io.helidon.service.registry.Service;
 import io.helidon.transaction.Tx;
 import io.helidon.transaction.TxException;
-import io.helidon.transaction.jta.TxLifeCycle;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
@@ -427,62 +425,8 @@ final class TransactionContext {
         }
     }
 
-    // Handle JTA transaction life-cycle: method begin
-    private void jtaStart() {
-        jtaStorage.start();
-    }
-
-    // Handle JTA transaction life-cycle: method end
-    private void jtaEnd() {
-        jtaStorage.end();
-    }
-
-    // Handle JTA transaction life-cycle: begin
-    private void jtaBegin() {
-        jtaStorage.begin();
-    }
-
-    // Handle JTA transaction life-cycle: commit
-    private void jtaCommit() {
-        jtaStorage.commit();
-    }
-
-    // Handle JTA transaction life-cycle: rollback
-    private void jtaRollback() {
-        jtaStorage.rollback();
-    }
-
-    /**
-     * Process JTA API transaction life-cycle events.
-     */
-    @Service.Singleton
-    static class JtaLifeCycle implements TxLifeCycle {
-
-        @Override
-        public void start() {
-            TransactionContext.getInstance().jtaStart();
-        }
-
-        @Override
-        public void end() {
-            TransactionContext.getInstance().jtaEnd();
-        }
-
-        @Override
-        public void begin(String txIdentity) {
-            TransactionContext.getInstance().jtaBegin();
-        }
-
-        @Override
-        public void commit(String txIdentity) {
-            TransactionContext.getInstance().jtaCommit();
-        }
-
-        @Override
-        public void rollback(String txIdentity) {
-            TransactionContext.getInstance().jtaRollback();
-        }
-
+    JtaTransactionStorage jtaStorage() {
+        return jtaStorage;
     }
 
     // Used in begin method to simplify internal states dispatching
