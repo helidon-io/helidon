@@ -20,7 +20,6 @@ import java.lang.System.Logger.Level;
 import java.util.Map;
 
 import io.helidon.common.Functions;
-import io.helidon.common.types.TypeName;
 import io.helidon.data.DataException;
 import io.helidon.data.EntityExistsException;
 import io.helidon.data.EntityNotFoundException;
@@ -28,7 +27,6 @@ import io.helidon.data.NoResultException;
 import io.helidon.data.NonUniqueResultException;
 import io.helidon.data.OptimisticLockException;
 import io.helidon.data.jakarta.persistence.gapi.JpaRepositoryExecutor;
-import io.helidon.service.registry.ServiceRegistryException;
 import io.helidon.service.registry.Services;
 import io.helidon.transaction.Tx;
 import io.helidon.transaction.TxSupport;
@@ -219,17 +217,7 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
     // Task runner with new JTA transaction. Delegates transaction handling to JtaTxSupport.
     private static final class JtaDataRunner extends AbstractDataRunner {
 
-        private static final String JTA_TX_SUPPORT = "io.helidon.transaction.jta.JtaTxSupport";
         private final TxSupport txSupport;
-
-        // FIXME: doing it the dirty way now to keep the code working while helidon-transaction-jta is in dependencies
-        private static TxSupport initJtaTxSupport() {
-            try {
-                return (TxSupport) Services.first(TypeName.create(JTA_TX_SUPPORT)).orElse(null);
-            } catch (ServiceRegistryException e) {
-                return null;
-            }
-        }
 
         JtaDataRunner() {
             super();
@@ -240,6 +228,7 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
         public <R, E extends Throwable> R call(JpaRepositoryExecutor executor,
                                                EntityManager em,
                                                Functions.CheckedFunction<EntityManager, R, E> task) {
+            checkTxSupport();
             return txSupport.transaction(Tx.Type.REQUIRED, () -> {
                 em.joinTransaction();
                 return super.call(executor, em, task);
@@ -250,11 +239,29 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
         public <E extends Throwable> void run(JpaRepositoryExecutor executor,
                                               EntityManager em,
                                               Functions.CheckedConsumer<EntityManager, E> task) {
+            checkTxSupport();
             txSupport.transaction(Tx.Type.REQUIRED, () -> {
                 em.joinTransaction();
                 super.run(executor, em, task);
                 return null;
             });
+        }
+
+        // PERF: This check is being run with every task execution but doing it in constructor will crash
+        //       the whole application with RESOURCE_LOCAL TxSupport
+        private void checkTxSupport() {
+            // FIXME: null check is temporary, this module will have own RESOURCE_LOCAL TxSupport implemented
+            if (txSupport == null) {
+                throw new DataException("No TxSupport is available.");
+            }
+            if (txSupport.type() != TxSupport.Type.JTA) {
+                throw new DataException(String.format("Cannot handle JTA transaction with %s TxSupport.",
+                                                      txSupport.type().name()));
+            }
+        }
+
+        private static TxSupport initJtaTxSupport() {
+            return Services.first(TxSupport.class).orElse(null);
         }
 
     }
