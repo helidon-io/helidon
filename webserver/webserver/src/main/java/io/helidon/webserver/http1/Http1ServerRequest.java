@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.http1;
 
+import java.net.InetSocketAddress;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Supplier;
@@ -221,13 +222,19 @@ abstract class Http1ServerRequest implements RoutingRequest {
     }
 
     private UriInfo createUriInfo() {
-        return ctx.listenerContext().config().requestedUriDiscoveryContext()
-                .orElse(DEFAULT_REQUESTED_URI_DISCOVERY_CONTEXT)
-                .uriInfo(remotePeer().address().toString(),
-                         localPeer().address().toString(),
-                         path.absolute().path(),
-                         headers,
-                         query(),
-                         isSecure());
+        if (remotePeer().address() instanceof InetSocketAddress remoteAddress
+                && localPeer().address() instanceof InetSocketAddress localAddress) {
+
+            return ctx.listenerContext().config().requestedUriDiscoveryContext()
+                    .orElse(DEFAULT_REQUESTED_URI_DISCOVERY_CONTEXT)
+                    .uriInfo(remoteAddress,
+                             localAddress,
+                             path.absolute().path(),
+                             headers,
+                             query(),
+                             isSecure());
+        }
+
+        throw new IllegalStateException("Only peer addresses of InetSocketAddress type are supported");
     }
 }
