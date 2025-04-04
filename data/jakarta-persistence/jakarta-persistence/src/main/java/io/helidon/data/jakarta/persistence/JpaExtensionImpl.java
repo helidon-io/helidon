@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -32,8 +31,6 @@ import io.helidon.data.jakarta.persistence.gapi.JpaEntityProvider;
 import io.helidon.data.jakarta.persistence.spi.JakartaPersistenceExtension;
 import io.helidon.data.sql.common.SqlDriver;
 import io.helidon.service.registry.ServiceRegistry;
-import io.helidon.service.registry.Services;
-import io.helidon.transaction.jta.JtaProvider;
 
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.spi.PersistenceProvider;
@@ -53,7 +50,6 @@ class JpaExtensionImpl implements JakartaPersistenceExtension {
     private static final System.Logger LOGGER = System.getLogger(JpaExtensionImpl.class.getName());
     // Temporary code for Jakarta Persistence 3.1 compliant initialization
     private static final List<PersistenceProvider> PERSISTENCE_PROVIDERS = persistenceProviders();
-    private static final Optional<JtaProvider> JTA = Services.first(JtaProvider.class);
 
     private final DataConfig dataConfig;
     private final DataJpaConfig dataJpaConfig;
@@ -133,14 +129,6 @@ class JpaExtensionImpl implements JakartaPersistenceExtension {
         return HelidonServiceLoader
                 .create(ServiceLoader.load(PersistenceProvider.class))
                 .asList();
-    }
-
-    static boolean isJta() {
-        return JTA.isPresent();
-    }
-
-    static Optional<JtaProvider> jta() {
-        return JTA;
     }
 
 }
