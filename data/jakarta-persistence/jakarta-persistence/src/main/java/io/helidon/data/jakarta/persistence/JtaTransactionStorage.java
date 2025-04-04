@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 
 import io.helidon.data.DataException;
+import io.helidon.service.registry.Service;
+import io.helidon.transaction.TxLifeCycle;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
@@ -92,8 +94,8 @@ class JtaTransactionStorage {
             txDepth = initialDepth;
         }
 
-        // Here we may remove all EntityManager instances from the Map with counter == 0
-        // (top level transaction call was finished) to limit EntityManager life-cycle to
+        // Here we may remove all EntityManager instances from the Map when
+        // top level transaction call was finished to limit EntityManager life-cycle to
         // top level transaction scope.
         if (txMethodsDepth == 0) {
             txManagers.values().forEach(EntityManager::close);
@@ -176,6 +178,49 @@ class JtaTransactionStorage {
         em = factory.createEntityManager(SynchronizationType.UNSYNCHRONIZED);
         nonTxManagers.put(factory, em);
         return em;
+    }
+
+    /**
+     * Process JTA API transaction life-cycle events.
+     */
+    @Service.Singleton
+    static class JtaLifeCycle implements TxLifeCycle {
+
+        @Override
+        public void start() {
+            TransactionContext.getInstance()
+                    .jtaStorage()
+                    .start();
+        }
+
+        @Override
+        public void end() {
+            TransactionContext.getInstance()
+                    .jtaStorage()
+                    .end();
+        }
+
+        @Override
+        public void begin(String txIdentity) {
+            TransactionContext.getInstance()
+                    .jtaStorage()
+                    .begin();
+        }
+
+        @Override
+        public void commit(String txIdentity) {
+            TransactionContext.getInstance()
+                    .jtaStorage()
+                    .commit();
+        }
+
+        @Override
+        public void rollback(String txIdentity) {
+            TransactionContext.getInstance()
+                    .jtaStorage()
+                    .rollback();
+        }
+
     }
 
 }
