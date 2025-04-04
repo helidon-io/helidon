@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.webserver.tests;
 import java.util.List;
 
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
+import io.helidon.http.BadRequestException;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.Header;
@@ -30,7 +31,7 @@ import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.DirectHandlers;
-import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http1.Http1Route;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
@@ -42,7 +43,6 @@ import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-
 
 @ServerTest
 class BadRequestTest {
@@ -59,10 +59,16 @@ class BadRequestTest {
     }
 
     @SetUpRoute
-    static void routing(HttpRules builder) {
+    static void routing(HttpRouting.Builder builder) {
+        builder.get("/bad-request", (req, res) -> {
+            throw new BadRequestException("Bad request in routing");
+        });
         builder.route(Http1Route.route(Method.GET,
                                        "/",
-                                       (req, res) -> res.send("Hi")));
+                                       (req, res) -> res.send("Hi")))
+                // error handler for bad requests throw during routing
+                .error(BadRequestException.class, (req, res, e) ->
+                        res.send(e.getMessage()));
     }
 
     @SetUpServer
@@ -177,6 +183,18 @@ class BadRequestTest {
         assertThat(response, containsString("400 " + CUSTOM_REASON_PHRASE));
         assertThat(response, containsString("Connection: close"));
         assertThat(response, containsString(CUSTOM_ENTITY));
+    }
+
+    @Test
+    void testBadRequestInRouting() {
+        var response = client.get("/bad-request")
+                .request(String.class);
+
+        String entity = response.entity();
+
+        // should have been handled by routing error handler
+        assertThat(entity, is("Bad request in routing"));
+        assertThat(response.status(), is(Status.OK_200));
     }
 
     private static DirectHandler.TransportResponse badRequestHandler(DirectHandler.TransportRequest request,

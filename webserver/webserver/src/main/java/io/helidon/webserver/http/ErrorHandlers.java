@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,15 +82,6 @@ public final class ErrorHandlers {
             throw e;
         } catch (RequestException e) {
             handleRequestException(ctx, request, response, e);
-        } catch (BadRequestException e) {
-            // bad request exception MUST be handled by direct handlers
-            handleRequestException(ctx, request, response, RequestException.builder()
-                    .message(e.getMessage())
-                    .cause(e)
-                    .type(DirectHandler.EventType.BAD_REQUEST)
-                    .status(e.status())
-                    .setKeepAlive(e.keepAlive())
-                    .build());
         } catch (InternalServerException e) {
             // this is the place error handling must be done
             // check if error handler exists for cause - if so, use it
@@ -116,6 +107,9 @@ public final class ErrorHandlers {
                 handleError(ctx, request, response, exception, errorHandler);
             }
         } catch (RuntimeException e) {
+            // this handles also all HttpException instances, including BadRequestException, as this was thrown
+            // from routing, where we already have a full request and response, so we can handle it in user's error handler
+            // it only re-throws the BadRequestException if there is no user handler for it
             handleError(ctx, request, response, e);
         } catch (Throwable e) {
             if (e.getCause() instanceof SocketException se) {
@@ -185,6 +179,10 @@ public final class ErrorHandlers {
     }
 
     private void unhandledError(ConnectionContext ctx, ServerRequest request, RoutingResponse response, Throwable e) {
+        if (e instanceof BadRequestException bre) {
+            // maybe there is a direct handler for this exception, falling back to original behavior
+            throw bre;
+        }
         if (e instanceof HttpException httpException) {
             handleRequestException(ctx, request, response, RequestException.builder()
                     .cause(e)
