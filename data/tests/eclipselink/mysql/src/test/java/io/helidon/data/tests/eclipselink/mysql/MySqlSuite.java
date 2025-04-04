@@ -58,7 +58,12 @@ public class MySqlSuite implements SuiteProvider {
         container.start();
         // Update URL in config with exposed port
         System.setProperty("sql.mysql.port", String.valueOf(container.getMappedPort(3306)));
-        data = Services.get(DataRegistry.class);
+        try {
+            data = Services.get(DataRegistry.class);
+        } catch (Throwable t) {
+            t.printStackTrace();
+            throw t;
+        }
         pokemonRepository = data.repository(PokemonRepository.class);
         // Initialize database content
         pokemonRepository.run(InitialData::init);
