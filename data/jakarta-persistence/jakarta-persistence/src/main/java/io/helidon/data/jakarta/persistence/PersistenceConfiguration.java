@@ -26,9 +26,11 @@ import java.util.Objects;
 
 import javax.sql.DataSource;
 
+import io.helidon.common.types.TypeName;
 import io.helidon.service.registry.Lookup;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.ServiceRegistry;
+import io.helidon.service.registry.Services;
 
 import jakarta.persistence.SharedCacheMode;
 import jakarta.persistence.ValidationMode;
@@ -47,6 +49,7 @@ public final class PersistenceConfiguration {
     private final List<Class<?>> managedClasses = new ArrayList<>();
     private final List<String> mappingFileNames = new ArrayList<>();
     private final Map<String, Object> properties = new HashMap<>();
+    private final boolean isJta;
     private String provider;
     private DataSource jtaDataSource;
     private DataSource nonJtaDataSource;
@@ -63,6 +66,9 @@ public final class PersistenceConfiguration {
     private PersistenceConfiguration(String name) {
         Objects.requireNonNull(name, "Persistence unit name should not be null");
         this.name = name;
+        // Check whether JTA transaction module is on classpath:
+        // JTA module contains io.helidon.transaction.jta.JtaProvider service
+        this.isJta = Services.first(TypeName.create("io.helidon.transaction.jta.JtaProvider")).isPresent();
     }
 
     /**
@@ -378,7 +384,7 @@ public final class PersistenceConfiguration {
             LOGGER.log(Level.DEBUG, "Database connection initialization");
         }
         // Transactions setup depends on Jakarta Transaction provider availability
-        transactionType(JpaExtensionImpl.isJta()
+        transactionType(isJta
                                 ? PersistenceUnitTransactionType.JTA
                                 : PersistenceUnitTransactionType.RESOURCE_LOCAL);
         // Only exactly one of the following options is possible, DataSource or URL
@@ -418,7 +424,7 @@ public final class PersistenceConfiguration {
                                              .addContract(DataSource.class)
                                              .addQualifier(Qualifier.createNamed(dataSourceName))
                                              .build());
-        if (JpaExtensionImpl.isJta()) {
+        if (isJta) {
             jtaDataSource(ds);
         } else {
             nonJtaDataSource(ds);
