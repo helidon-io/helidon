@@ -41,12 +41,12 @@
         </dependency>
         <dependency>
             <groupId>com.oracle.database.jdbc</groupId>
-            <artifactId>ojdbc11-production</artifactId>
+            <artifactId>ojdbc17-production</artifactId>
             <type>pom</type>
             <exclusions>
                 <exclusion>
                     <groupId>com.oracle.database.jdbc</groupId>
-                    <artifactId>ucp11</artifactId>
+                    <artifactId>ucp17</artifactId>
                 </exclusion>
                 <exclusion>
                     <!-- Contains JAXP impl, so we exclude it to not interfere -->
