@@ -14,12 +14,17 @@ class MockTxSupport implements TxSupport {
     }
 
     @Override
+    public Type type() {
+        return Type.RESOURCE_LOCAL;
+    }
+
+    @Override
     public <T> T transaction(Tx.Type type, Callable<T> task) {
         this.type = type;
         return null;
     }
 
-    Tx.Type type() {
+    Tx.Type txType() {
         return type;
     }
 
