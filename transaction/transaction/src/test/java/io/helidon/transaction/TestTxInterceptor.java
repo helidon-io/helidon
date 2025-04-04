@@ -54,7 +54,7 @@ public class TestTxInterceptor {
     void testTxMandatory() {
         LOGGER.log(Level.DEBUG, "Running TestInterceptor.testTxMandatory()");
         dao.txMandatory();
-        assertThat(support.type(), is(Tx.Type.MANDATORY));
+        assertThat(support.txType(), is(Tx.Type.MANDATORY));
     }
 
     // Verify that interceptor was called and set type to NEW
@@ -62,7 +62,7 @@ public class TestTxInterceptor {
     void testTxNew() {
         LOGGER.log(Level.DEBUG, "Running TestInterceptor.testTxNew()");
         dao.txNew();
-        assertThat(support.type(), is(Tx.Type.NEW));
+        assertThat(support.txType(), is(Tx.Type.NEW));
     }
 
     // Verify that interceptor was called and set type to NEVER
@@ -70,7 +70,7 @@ public class TestTxInterceptor {
     void testTxNever() {
         LOGGER.log(Level.DEBUG, "Running TestInterceptor.testTxNever()");
         dao.txNever();
-        assertThat(support.type(), is(Tx.Type.NEVER));
+        assertThat(support.txType(), is(Tx.Type.NEVER));
     }
     @Test
 
@@ -78,7 +78,7 @@ public class TestTxInterceptor {
     void testTxRequired() {
         LOGGER.log(Level.DEBUG, "Running TestInterceptor.testTxRequired()");
         dao.txRequired();
-        assertThat(support.type(), is(Tx.Type.REQUIRED));
+        assertThat(support.txType(), is(Tx.Type.REQUIRED));
     }
 
     // Verify that interceptor was called and set type to SUPPORTED
@@ -86,7 +86,7 @@ public class TestTxInterceptor {
     void testTxSupported() {
         LOGGER.log(Level.DEBUG, "Running TestInterceptor.testTxSupported()");
         dao.txSupported();
-        assertThat(support.type(), is(Tx.Type.SUPPORTED));
+        assertThat(support.txType(), is(Tx.Type.SUPPORTED));
     }
 
     // Verify that interceptor was called and set type to UNSUPPORTED
@@ -94,7 +94,7 @@ public class TestTxInterceptor {
     void testTxUnsupported() {
         LOGGER.log(Level.DEBUG, "Running TestInterceptor.testTxUnsupported()");
         dao.txUnsupported();
-        assertThat(support.type(), is(Tx.Type.UNSUPPORTED));
+        assertThat(support.txType(), is(Tx.Type.UNSUPPORTED));
     }
 
     @Service.Singleton
