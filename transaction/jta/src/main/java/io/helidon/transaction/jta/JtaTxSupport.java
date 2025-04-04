@@ -22,6 +22,7 @@ import java.util.concurrent.Callable;
 import io.helidon.service.registry.Service;
 import io.helidon.transaction.Tx;
 import io.helidon.transaction.TxException;
+import io.helidon.transaction.TxLifeCycle;
 import io.helidon.transaction.TxSupport;
 
 import jakarta.transaction.HeuristicMixedException;
