@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.webserver.http;
 import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 import io.helidon.common.GenericType;
@@ -213,6 +214,17 @@ public interface ServerResponse {
      * or response doesn't contain trailer declaration headers {@code Trailer: <trailer-name>}
      */
     ServerResponseTrailers trailers();
+
+    /**
+     * Callback to update any last minute trailers before they are written to the
+     * output stream.
+     *
+     * @param beforeTrailers consumer of mutable trailers
+     * @return this instance
+     */
+    default ServerResponse beforeTrailers(Consumer<ServerResponseTrailers> beforeTrailers) {
+        return this;
+    }
 
     /**
      * Description of the result of output stream processing.

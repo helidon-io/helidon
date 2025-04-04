@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 import io.helidon.common.buffers.BufferData;
@@ -135,6 +136,10 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                                                         !sendTrailers);
 
             if (sendTrailers) {
+                Consumer<ServerResponseTrailers> beforeTrailers = beforeTrailers();
+                if (beforeTrailers != null) {
+                    beforeTrailers.accept(trailers);
+                }
                 bytesWritten += stream.writeTrailers(Http2Headers.create(trailers));
             }
 
@@ -168,7 +173,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         outputStream = new BlockingOutputStream(request, this, () -> {
             this.isSent = true;
             afterSend();
-        });
+        }, beforeTrailers());
         if (outputStreamFilter == null) {
             return contentEncode(outputStream);
         } else {
@@ -255,10 +260,12 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         private boolean closed;
         private boolean firstByte = true;
         private long bytesWritten;
+        private final Consumer<ServerResponseTrailers> beforeTrailers;
 
         private BlockingOutputStream(Http2ServerRequest request,
                                      Http2ServerResponse response,
-                                     Runnable responseCloseRunnable) {
+                                     Runnable responseCloseRunnable,
+                                     Consumer<ServerResponseTrailers> beforeTrailers) {
             this.request = request;
             this.response = response;
             this.headers = response.headers;
@@ -266,6 +273,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             this.stream = response.stream;
             this.status = response.status();
             this.responseCloseRunnable = responseCloseRunnable;
+            this.beforeTrailers = beforeTrailers;
         }
 
         @Override
@@ -375,6 +383,9 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         private void sendTrailers(){
             if (response.streamResult != null) {
                 trailers.set(STREAM_RESULT_NAME, response.streamResult);
+            }
+            if (beforeTrailers != null) {
+                beforeTrailers.accept(ServerResponseTrailers.wrap(trailers));
             }
 
             Http2Headers http2Headers = Http2Headers.create(trailers);
