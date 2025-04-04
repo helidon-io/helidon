@@ -53,6 +53,10 @@ class JtaTxSupport implements TxSupport {
         this.txListeners = txListeners;
     }
 
+    @Override
+    public Type type() {
+        return Type.JTA;
+    }
 
     @Override
     public <T> T transaction(Tx.Type type, Callable<T> task) {
