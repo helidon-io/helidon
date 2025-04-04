@@ -202,6 +202,11 @@ public class MySqlSuite implements SuiteProvider, SuiteResolver {
 
     @Suite(MySqlSuite.class)
     @Testcontainers(disabledWithoutDocker = true)
+    public static class TestTxMethods extends io.helidon.data.tests.common.TestTxMethods {
+    }
+
+    @Suite(MySqlSuite.class)
+    @Testcontainers(disabledWithoutDocker = true)
     public static class TestTxAnnotations extends io.helidon.data.tests.common.TestTxAnnotations {
     }
 

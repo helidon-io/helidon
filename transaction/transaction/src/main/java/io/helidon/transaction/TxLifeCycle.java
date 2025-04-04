@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.transaction.jta;
+package io.helidon.transaction;
 
 /**
  * Transaction event listener service.
- * Each JTA transaction method life-cycle contains exactly two events:<ul>
+ * Each transaction method life-cycle contains exactly two events:<ul>
  *     <li><i>start</i> when transaction method was started</li>
  *     <li><i>end</i> when transaction method was finished</li>
  *  * </ul>
- * Each new JTA transaction life-cycle contains exactly two events:<ul>
+ * Each new transaction life-cycle contains exactly two events:<ul>
  *     <li><i>begin</i> when transaction was started</li>
  *     <li><i>commit/rollback</i> when transaction was finished</li>
  * </ul>
@@ -29,33 +29,33 @@ package io.helidon.transaction.jta;
 public interface TxLifeCycle {
 
     /**
-     * JTA transaction method was started.
+     * Transaction method was started.
      */
     void start();
 
     /**
-     * JTA transaction method was finished.
+     * Transaction method was finished.
      */
     void end();
 
     /**
-     * New JTA transaction was created.
+     * New transaction was created.
      *
      * @param txIdentity JTA transaction identifier
      */
     void begin(String txIdentity);
 
     /**
-     * New JTA transaction was completed.
+     * New transaction was completed.
      *
      * @param txIdentity JTA transaction identifier
      */
     void commit(String txIdentity);
 
     /**
-     * New JTA transaction was rolled back.
+     * New transaction was rolled back.
      *
-     * @param txIdentity JTA transaction identifier
+     * @param txIdentity transaction identifier
      */
     void rollback(String txIdentity);
 
