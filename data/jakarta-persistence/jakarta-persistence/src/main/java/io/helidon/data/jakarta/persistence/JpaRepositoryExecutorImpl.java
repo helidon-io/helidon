@@ -249,14 +249,15 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
 
         // PERF: This check is being run with every task execution but doing it in constructor will crash
         //       the whole application with RESOURCE_LOCAL TxSupport
+        // This must be done better after RESOURCE_LOCAL code is rewritten.
         private void checkTxSupport() {
             // FIXME: null check is temporary, this module will have own RESOURCE_LOCAL TxSupport implemented
             if (txSupport == null) {
                 throw new DataException("No TxSupport is available.");
             }
-            if (txSupport.type() != TxSupport.Type.JTA) {
+            if (!"jta".equalsIgnoreCase(txSupport.type())) {
                 throw new DataException(String.format("Cannot handle JTA transaction with %s TxSupport.",
-                                                      txSupport.type().name()));
+                                                      txSupport.type()));
             }
         }
 

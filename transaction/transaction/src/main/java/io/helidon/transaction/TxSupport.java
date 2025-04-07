@@ -24,11 +24,12 @@ import java.util.concurrent.Callable;
 public interface TxSupport {
 
     /**
-     * Type of the transaction API support.
+     * Type of the transaction API support, e.g. {@code "jta"}, {@code "resource-local"}.
+     * Never returns {@code null}.
      *
      * @return the transaction API support
      */
-    Type type();
+    String type();
 
     /**
      * Execute provided task as database transaction.
@@ -65,15 +66,5 @@ public interface TxSupport {
     Tx.Transaction transaction(Tx.Type type);
 
 */
-
-    /**
-     * Transaction API support.
-     */
-    enum Type {
-        /** Implementation of thi interface supports Jakarta Transaction API. */
-        JTA,
-        /** Implementation of thi interface supports only resource local transactions. */
-        RESOURCE_LOCAL
-    }
 
 }
