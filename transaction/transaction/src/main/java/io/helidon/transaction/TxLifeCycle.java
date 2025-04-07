@@ -17,6 +17,9 @@ package io.helidon.transaction;
 
 /**
  * Transaction event listener service.
+ * Notifications from the transactions implemented in {@link TxSupport} interface.
+ * Implementation of this interface must be a service in service registry.
+ * <p>
  * Each transaction method life-cycle contains exactly two events:<ul>
  *     <li><i>start</i> when transaction method was started</li>
  *     <li><i>end</i> when transaction method was finished</li>
