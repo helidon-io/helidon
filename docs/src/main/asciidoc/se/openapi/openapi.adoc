@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -83,7 +83,7 @@ Then add that instance or builder to your application's routing. The <<#register
 [[config]]
 == Configuration
 
-Helidon SE OpenAPI configuration supports the following settings:
+Helidon SE OpenAPI configuration supports the settings described below in the `server.features.openapi` section.
 
 include::{rootdir}/config/io_helidon_openapi_OpenApiFeature.adoc[leveloffset=+1,tag=config]
 
@@ -93,6 +93,24 @@ include::{rootdir}/config/io_helidon_openapi_OpenApiFeature.adoc[leveloffset=+1,
 
 Helidon SE provides a link:{helidon-github-examples-url}/openapi[complete OpenAPI example]
 based on the SE QuickStart sample app.
+
+=== Configure OpenAPI behavior
+The following example shows how to use configuration to customize how OpenAPI works, in this case changing the
+endpoint where Helidon provides the OpenAPI document.
+
+.Configure OpenAPI behavior
+[source,yaml]
+----
+server:
+  port: 8080                  <1>
+  host: 0.0.0.0
+  features:
+    openapi:                  <2>
+      web-context: /myopenapi <3>
+----
+<1> The `port` and `host` settings are for the server as a whole, not specifically for OpenAPI.
+<2> The `openapi` subsection within `features` contains OpenAPI settings.
+<3> Changes the endpoint for returning the OpenAPI document from the default `/openapi` to `/myopenapi`.
 
 Most Helidon {flavor-uc} applications need only add the dependency as explained above; Helidon discovers and registers OpenAPI
 automatically. The example below shows how to create and register `OpenApiFeature` explicitly instead.
