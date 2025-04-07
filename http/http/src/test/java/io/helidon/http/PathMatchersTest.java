@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.http;
+package io.helidon.http;
 
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.helidon.http.PathMatcher;
-import io.helidon.http.PathMatchers;
 import io.helidon.common.uri.UriPath;
 
 import org.hamcrest.Description;
@@ -35,7 +33,17 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 class PathMatchersTest {
     @Test
-    public void testNormalization() {
+    void testRegexQuantifier() {
+        var matcher = PathMatchers.pattern("/{id:\\w{2}}/name");
+        var patternMatcher = (PathMatchers.PatternPathMatcher) matcher;
+
+        var actualPattern = patternMatcher.pattern();
+
+        assertThat(actualPattern.pattern(), is("/(?<gfXdbHQlk0>\\w{2})/name"));
+    }
+
+    @Test
+    void testNormalization() {
         assertThat("/a/./b", pathMatcherMatches("/a/b"));
         assertThat("/a/b/../c", pathMatcherMatches("/a/c"));
     }
@@ -89,7 +97,7 @@ class PathMatchersTest {
     }
 
     @Test
-    public void testOptionals() {
+    void testOptionals() {
         assertThat("/foo/bar", pathMatcherMatches("/foo[/bar]"));
         assertThat("/foo", pathMatcherMatches("/foo[/bar]"));
         assertThat("/foo/ba", not(pathMatcherMatches("/foo[/bar]")));
