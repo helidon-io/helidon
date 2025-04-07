@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,5 +38,17 @@ public interface ServerResponseTrailers extends WritableHeaders<ServerResponseTr
      */
     static ServerResponseTrailers create(Headers existing) {
         return new ServerResponseTrailersImpl(WritableHeaders.create(existing));
+    }
+
+    /**
+     * Create a new instance of mutable server response trailers by wrapping
+     * existing writable trailers. Any updates to this class will also impact
+     * the underlying trailers.
+     *
+     * @param existing trailers to wrap
+     * @return new server response trailers
+     */
+    static ServerResponseTrailers wrap(WritableHeaders<?> existing) {
+        return new ServerResponseTrailersImpl(existing);
     }
 }
