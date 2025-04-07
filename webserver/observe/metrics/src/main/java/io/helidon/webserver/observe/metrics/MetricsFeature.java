@@ -92,6 +92,8 @@ class MetricsFeature {
                 postRequestProcessing(prms, req, res, null, kpiContext);
             } catch (Exception e) {
                 postRequestProcessing(prms, req, res, e, kpiContext);
+                // we cannot just consume an exception and ignore error handling
+                throw e;
             }
         });
     }
