@@ -14,8 +14,8 @@ class MockTxSupport implements TxSupport {
     }
 
     @Override
-    public Type type() {
-        return Type.RESOURCE_LOCAL;
+    public String type() {
+        return "test";
     }
 
     @Override
