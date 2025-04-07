@@ -71,7 +71,7 @@ public final class PersistenceConfiguration {
         // FIXME: isPresent() check is temporary, this module will have own RESOURCE_LOCAL TxSupport implemented
         //        so Optional won't be required
         Optional<TxSupport> txSupport = Services.first(TxSupport.class);
-        this.isJta = txSupport.isPresent() && txSupport.get().type() == TxSupport.Type.JTA;
+        this.isJta = txSupport.isPresent() && "jta".equalsIgnoreCase(txSupport.get().type());
         if (LOGGER.isLoggable(Level.DEBUG)) {
             LOGGER.log(Level.DEBUG,
                        String.format("Configuring %s persistence provider in %s transaction mode.",
