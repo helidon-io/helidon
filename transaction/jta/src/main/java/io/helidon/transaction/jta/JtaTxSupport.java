@@ -54,8 +54,8 @@ class JtaTxSupport implements TxSupport {
     }
 
     @Override
-    public Type type() {
-        return Type.JTA;
+    public String type() {
+        return "jta";
     }
 
     @Override
