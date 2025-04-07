@@ -196,6 +196,11 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
         return this;
     }
 
+    /**
+     * Gets consumer for server response trailers if registered on this response.
+     *
+     * @return consumer if registered or {@code null} otherwise
+     */
     protected Consumer<ServerResponseTrailers> beforeTrailers() {
         return beforeTrailers;
     }
