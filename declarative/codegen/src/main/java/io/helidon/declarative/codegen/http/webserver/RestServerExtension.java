@@ -61,7 +61,7 @@ import io.helidon.service.codegen.spi.RegistryCodegenExtension;
 
 import static io.helidon.codegen.CodegenUtil.toConstantName;
 import static io.helidon.declarative.codegen.DeclarativeTypes.SINGLETON_ANNOTATION;
-import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_ENTITY_PARAM_ANNOTATION;
+import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_ENTITY_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_HEADER_PARAM_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_METHOD;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_METHOD_ANNOTATION;
@@ -320,7 +320,7 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
         if (Annotations.findFirst(HTTP_PATH_PARAM_ANNOTATION, annotations).isPresent()) {
             method.addPathParameter(parameter);
         }
-        if (Annotations.findFirst(HTTP_ENTITY_PARAM_ANNOTATION, annotations).isPresent()) {
+        if (Annotations.findFirst(HTTP_ENTITY_ANNOTATION, annotations).isPresent()) {
             method.entityParameter(parameter);
         }
     }

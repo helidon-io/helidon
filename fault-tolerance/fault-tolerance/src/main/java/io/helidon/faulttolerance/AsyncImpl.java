@@ -49,7 +49,7 @@ class AsyncImpl implements Async {
         this.config = config;
     }
 
-    AsyncImpl(AsyncConfig config, boolean internal) {
+    AsyncImpl(AsyncConfig config) {
         this.executor = config.executor().orElseGet(() -> FaultTolerance.executor().get());
         this.onStart = config.onStart().orElseGet(CompletableFuture::new);
         this.config = config;

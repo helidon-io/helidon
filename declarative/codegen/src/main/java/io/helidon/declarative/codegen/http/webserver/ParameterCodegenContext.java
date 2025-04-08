@@ -109,9 +109,9 @@ public interface ParameterCodegenContext {
     int methodIndex();
 
     /**
-     * Method index (related to order of processing), to allow generation of unique names.
+     * Parameter index (related to order of processing), to allow generation of unique names.
      *
-     * @return method index
+     * @return parameter index
      * @see #paramIndex()
      */
     int paramIndex();

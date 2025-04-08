@@ -21,14 +21,14 @@ import java.util.Optional;
 import io.helidon.common.types.Annotation;
 import io.helidon.declarative.codegen.http.webserver.spi.HttpParameterCodegenProvider;
 
-import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_ENTITY_PARAM_ANNOTATION;
+import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_ENTITY_ANNOTATION;
 
 class ParamProviderHttpEntity extends AbstractParametersProvider implements HttpParameterCodegenProvider {
     @Override
     public boolean codegen(ParameterCodegenContext ctx) {
 
         Optional<Annotation> first = ctx.annotations().stream()
-                .filter(it -> HTTP_ENTITY_PARAM_ANNOTATION.equals(it.typeName()))
+                .filter(it -> HTTP_ENTITY_ANNOTATION.equals(it.typeName()))
                 .findFirst();
 
         if (first.isEmpty()) {

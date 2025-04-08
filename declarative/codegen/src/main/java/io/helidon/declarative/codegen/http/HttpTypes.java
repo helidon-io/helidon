@@ -77,7 +77,7 @@ public final class HttpTypes {
     /**
      * Http.Entity annotation.
      */
-    public static final TypeName HTTP_ENTITY_PARAM_ANNOTATION = TypeName.create("io.helidon.http.Http.Entity");
+    public static final TypeName HTTP_ENTITY_ANNOTATION = TypeName.create("io.helidon.http.Http.Entity");
     /**
      * HTTP media type.
      */
