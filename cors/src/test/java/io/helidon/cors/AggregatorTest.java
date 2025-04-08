@@ -50,6 +50,11 @@ class AggregatorTest {
                                addToMap(7, CrossOriginConfig.builder()
                                        .allowMethods("GET", "PUT")
                                        .build()));
+        builder.addCrossOrigin("/openintegration/{+}",
+                               addToMap(8, CrossOriginConfig.builder()
+                                       .allowMethods("GET", "PUT")
+                                       .build()));
+
         builder.addPathlessCrossOrigin(addToMap(3, CrossOriginConfig.builder()
                 .allowMethods("GET", "HEAD", "OPTIONS")
                 .build()));
@@ -97,13 +102,12 @@ class AggregatorTest {
     void testSpecialCharacters() {
         /*
         The first two checks should match the entries added for those two specific paths (IDs 6 and 7 respectively).
-        The second two checks make sure that wildcarded matches--the "pathless" entry ID 3--work with paths containing
-        dots or spaces.
+        The second two checks make sure that wildcarded matches work with paths containing dots or spaces.
          */
         checkMatch("/openintegration/v10/ui/space in path", "GET", 6);
         checkMatch("/openintegration/v1.0/ui/dotInPath", "GET", 7);
-        checkMatch("/openintegration/v20/ui/space in path", "GET", 3);
-        checkMatch("/openintegration/v2.0/ui/dot and space in path", "GET", 3);
+        checkMatch("/openintegration/v20/ui/space in path", "GET", 8);
+        checkMatch("/openintegration/v2.0/ui/dot and space in path", "GET", 8);
     }
 
     private static CrossOriginConfig addToMap(int ID, CrossOriginConfig coc) {
