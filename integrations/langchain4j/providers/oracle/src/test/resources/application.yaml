@@ -17,6 +17,7 @@
 langchain4j:
   oracle:
     embedding-store:
+      enabled: true
       data-source: "datasource"
       exact-search: false
       vector-index-create-option: "CREATE_IF_NOT_EXISTS"
