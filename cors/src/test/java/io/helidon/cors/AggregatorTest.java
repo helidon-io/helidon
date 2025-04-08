@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,14 @@ class AggregatorTest {
         builder.addCrossOrigin("/greet", addToMap(2, CrossOriginConfig.builder()
                 .allowMethods("GET")
                 .build()));
+        builder.addCrossOrigin("/openintegration/v10/ui/space in path",
+                               addToMap(6, CrossOriginConfig.builder()
+                                       .allowMethods("GET", "PUT")
+                                       .build()));
+        builder.addCrossOrigin("/openintegration/v1.0/ui/dotInPath",
+                               addToMap(7, CrossOriginConfig.builder()
+                                       .allowMethods("GET", "PUT")
+                                       .build()));
         builder.addPathlessCrossOrigin(addToMap(3, CrossOriginConfig.builder()
                 .allowMethods("GET", "HEAD", "OPTIONS")
                 .build()));
@@ -51,6 +59,7 @@ class AggregatorTest {
         builder.addCrossOrigin("/greet/{+}", addToMap(5, CrossOriginConfig.builder()
                 .allowMethods("POST")
                 .build()));
+
 
         aggregator = builder.build();
     }
@@ -82,6 +91,19 @@ class AggregatorTest {
     void testWildcardedPath() {
         checkNoMatch("/greet", "POST");
         checkMatch("/greet/sub", "POST", 5);
+    }
+
+    @Test
+    void testSpecialCharacters() {
+        /*
+        The first two checks should match the entries added for those two specific paths (IDs 6 and 7 respectively).
+        The second two checks make sure that wildcarded matches--the "pathless" entry ID 3--work with paths containing
+        dots or spaces.
+         */
+        checkMatch("/openintegration/v10/ui/space in path", "GET", 6);
+        checkMatch("/openintegration/v1.0/ui/dotInPath", "GET", 7);
+        checkMatch("/openintegration/v20/ui/space in path", "GET", 3);
+        checkMatch("/openintegration/v2.0/ui/dot and space in path", "GET", 3);
     }
 
     private static CrossOriginConfig addToMap(int ID, CrossOriginConfig coc) {
