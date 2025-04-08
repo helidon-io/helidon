@@ -28,6 +28,7 @@ A few codegen features that are available:
 
 The following Helidon features can be used to create a new declarative feature 
 
+TODO: metrics, tracing - maybe allow update of service code
 1. Interceptors - metrics, tracing, logging etc.
 2. Injection (service factory) - for any feature where we expect the user to inject a specific service that the feature provides (AI, declarative rest client etc.)
 3. Code generation - for any feature that needs additional code to minimize runtime lookups and handling; ideally we should have injection points that can be bound at build time (as opposed to runtime registry lookups)
@@ -90,6 +91,7 @@ Parameters defined by qualifiers (may be an `Optional`, supports `Mappers`):
 
 ### Configuration
 
+TODO: we must have Listener name configurable per rest server endpoint
 There are currently no configurable options for HTTP endpoints.
 
 ### Implementation
@@ -215,30 +217,30 @@ Configuration override for annotation values is currently not supported.
 ### Implementation
 
 #### Fallback
-A `ClassName_methodName__Fallback` class is generated for each fallback, named with the
-fully qualified method name and fully qualified parameters, such as:
-`io.helidon.declarative.tests.http.GreetEndpoint.failingFallback(java.lang.String)` (i.e. a unique identification of the annotated method).
-The generated type is invoked from the fallback interceptor. The `fallback` method decides whether to re-throw the exception (if it should be skipped), or calls the fallback method (if it should be applied).
+An element interceptor class `ClassName_methodName__Fallback` is generated for each `@Ft.Fallback` annotated method.
+The generated type implements the fallback functionality without the use of reflection. The `fallback` method decides whether to re-throw the exception (if it should be skipped), or calls the fallback method (if it should be applied).
 
 #### Async
-Implemented as a simple interceptor.
+An element interceptor class `ClassName_methodName__Async` is generated for each `@Ft.Async` annotated method. 
+The `Async` instance can be named - in this case the generated code tries to get a named instance from the registry and use it. If not available, a new async is produced.
+The `ExecutorService` used with produced async can be named - in this case the generated code tries to get a named executor from the service registry and use it. If not available, no executor is explicitly configured.
 
 #### Retry
-A class `ClassName_methodName__Retry` is generated for each retry, named with the fully qualified method name and fully qualified parameters, such as:
-`io.helidon.declarative.tests.http.GreetEndpoint.retriable()` (i.e. a unique identification of the annotated method).
-Teh generated type is invoked from the retry interceptor to obtain a `Retry` instance.
+An element interceptor class `ClassName_methodName__Retry` is generated for each `@Ft.Retry` annotated method.
+The `Retry` instance can be named - in this case the generated code tries to get a named instance from the registry and use it. If not available, a new retry instance is produced from annotation properties.
 
 #### Timeout
-Implemented as a simple interceptor.
+An element interceptor class `ClassName_methodName__Timeout` is generated for each `@Ft.Timeout` annotated method.
+The `Timeout` instance can be named - in this case the generated code tries to get a named instance from the registry and use it. If not available, a new timeout instance is produced from annotation properties.
 
 #### Bulkhead
-Implemented as a simple interceptor.
+An element interceptor class `ClassName_methodName__Bulkhead` is generated for each `@Ft.Bulkhead` annotated method.
+The `Bulkhead` instance can be named - in this case the generated code tries to get a named instance from the registry and use it. If not available, a new bulkhead instance is produced from annotation properties.
+
 
 #### Circuit Breaker
-A `ClassName_methodName__CircuitBreaker` class is generated for each circuit breakder, named with the
-fully qualified method name and fully qualified parameters, such as:
-`io.helidon.declarative.tests.http.GreetEndpoint.breaker()` (i.e. a unique identification of the annotated method).
-The generated type is invoked from the interceptor to obtain a `CircuitBreaker` instance.
+An element interceptor class `ClassName_methodName__CircuitBreaker` is generated for each `@Ft.CircuitBreaker` annotated method.
+The `CircuitBreaker` instance can be named - in this case the generated code tries to get a named instance from the registry and use it. If not available, a new circuit breaker instance is produced from annotation properties.
 
 ## Template
 ### Declaration

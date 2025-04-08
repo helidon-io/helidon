@@ -53,7 +53,7 @@ import jakarta.json.JsonObject;
  * <p>
  * The message is returned as a JSON object.
  */
-@RestServer.Listener(value = "@default", required = true)
+@RestServer.Listener("@default")
 @RestServer.Endpoint
 @Service.Singleton
 class GreetEndpoint implements GreetEndpointApi {
@@ -156,15 +156,6 @@ class GreetEndpoint implements GreetEndpointApi {
     }
 
     /**
-     * Return a worldly greeting message.
-     */
-    @Http.GET
-    @Http.Produces("text/plain")
-    String getDefaultMessageHandlerPlain(Context context) {
-        return stringResponse("World");
-    }
-
-    /**
      * Set the greeting to use in future messages.
      *
      * @param greetingMessage the entity
@@ -179,6 +170,15 @@ class GreetEndpoint implements GreetEndpointApi {
         JsonObject response = response("World");
         greeting.set(greetingMessage.getString("greeting"));
         return response;
+    }
+
+    /**
+     * Return a worldly greeting message.
+     */
+    @Http.GET
+    @Http.Produces("text/plain")
+    String getDefaultMessageHandlerPlain(Context context) {
+        return stringResponse("World");
     }
 
     String fallback(String host) {

@@ -16,13 +16,26 @@
 
 package io.helidon.faulttolerance;
 
-import io.helidon.service.registry.Service;
+import io.helidon.common.Functions;
+import io.helidon.common.UncheckedException;
+import io.helidon.service.registry.Interception;
+import io.helidon.service.registry.InterceptionContext;
 
 /**
  * Types used only in generated code (and of course when reading the generated code).
  */
 public final class FaultToleranceGenerated {
     private FaultToleranceGenerated() {
+    }
+
+    private static Exception findCause(UncheckedException e) {
+        Throwable cause = e.getCause();
+
+        if (cause instanceof Exception ex) {
+            return ex;
+        }
+
+        return e;
     }
 
     /**
@@ -32,31 +45,24 @@ public final class FaultToleranceGenerated {
     }
 
     /**
-     * A generated service to support fallback without reflection.
-     *
-     * @param <T> type of the response of the method
-     * @param <S> type of the service that hosts the method
+     * A generated service to create or get retry.
      */
-    @Service.Contract
-    public interface FallbackMethod<T, S> extends FtMethod {
+    public abstract static class RetryMethod implements Interception.ElementInterceptor {
         /**
-         * Fallback method generated based on the {@link io.helidon.faulttolerance.Ft.Fallback} annotation.
-         * This generated type will check if the throwable should be handled or not, and either throws it, or executes the fallback.
-         *
-         * @param service service instance
-         * @param throwable throwable thrown by the original code (if check, it is wrapped in a runtime exception)
-         * @param arguments original arguments to the method
-         * @return result obtained from the fallback method (or throws the throwable if fallback should not be done)
-         * @throws java.lang.Throwable as declared by the original method
+         * Constructor with no side effects.
          */
-        T fallback(S service, Throwable throwable, Object... arguments) throws Throwable;
-    }
+        protected RetryMethod() {
+        }
 
-    /**
-     * A generated service to support retries without resorting to Class.forName() for exception types.
-     */
-    @Service.Contract
-    public interface RetryMethod extends FtMethod {
+        @Override
+        public <V> V proceed(InterceptionContext ctx, Chain<V> chain, Object... args) throws Exception {
+            try {
+                return retry().invoke(Functions.unchecked(() -> chain.proceed(args)));
+            } catch (UncheckedException e) {
+                throw findCause(e);
+            }
+        }
+
         /**
          * Provide a retry instance that should be used with this method.
          * If the retry annotation contains a name, we will attempt to obtain the named instance from
@@ -64,21 +70,168 @@ public final class FaultToleranceGenerated {
          *
          * @return retry instance
          */
-        Retry retry();
+        protected abstract Retry retry();
+    }
+
+    /**
+     * A generated service to create or get timeout.
+     */
+    public abstract static class TimeoutMethod implements Interception.ElementInterceptor {
+        /**
+         * Constructor with no side effects.
+         */
+        protected TimeoutMethod() {
+        }
+
+        @Override
+        public <V> V proceed(InterceptionContext ctx, Chain<V> chain, Object... args) throws Exception {
+            try {
+                return timeout().invoke(Functions.unchecked(() -> chain.proceed(args)));
+            } catch (UncheckedException e) {
+                throw findCause(e);
+            }
+        }
+
+        /**
+         * Provide a timeout instance that should be used with this method.
+         * If the timeout annotation contains a name, we will attempt to obtain the named instance from
+         * registry. If such a named instance does not exist a new instance would be created from the annotation.
+         *
+         * @return timeout instance
+         */
+        protected abstract Timeout timeout();
     }
 
     /**
      * A generated service to support circuit breaker without resorting to Class.forName() for exception types.
      */
-    @Service.Contract
-    public interface CircuitBreakerMethod extends FtMethod {
+    public abstract static class CircuitBreakerMethod implements Interception.ElementInterceptor {
+        /**
+         * Constructor with no side effects.
+         */
+        protected CircuitBreakerMethod() {
+        }
+
+        @Override
+        public <V> V proceed(InterceptionContext ctx, Chain<V> chain, Object... args) throws Exception {
+            try {
+                return circuitBreaker().invoke(Functions.unchecked(() -> chain.proceed(args)));
+            } catch (UncheckedException e) {
+                throw findCause(e);
+            }
+        }
+
         /**
          * Provide a circuit breaker instance that should be used with this method.
-         * If the {@link io.helidon.faulttolerance.Ft.CircuitBreaker} annotation contains a name, we will attempt to obtain the named instance from
-         * registry. If such a named instance does not exist a new circuit breaker will be created from the annotation.
+         * If the {@link io.helidon.faulttolerance.Ft.CircuitBreaker} annotation contains a name, we will attempt to obtain
+         * the named instance from registry. If such a named instance does not exist a new instance would be created
+         * from the annotation.
          *
          * @return circuit breaker instance
          */
-        CircuitBreaker circuitBreaker();
+        protected abstract CircuitBreaker circuitBreaker();
+    }
+
+    /**
+     * A generated service to support bulkhead.
+     */
+    public abstract static class BulkheadMethod implements Interception.ElementInterceptor {
+        /**
+         * Constructor with no side effects.
+         */
+        protected BulkheadMethod() {
+        }
+
+        @Override
+        public <V> V proceed(InterceptionContext ctx, Chain<V> chain, Object... args) throws Exception {
+            try {
+                return bulkhead().invoke(Functions.unchecked(() -> chain.proceed(args)));
+            } catch (UncheckedException e) {
+                throw findCause(e);
+            }
+        }
+
+        /**
+         * Provide a bulkhead instance that should be used with this method.
+         * If the {@link io.helidon.faulttolerance.Ft.Bulkhead} annotation contains a name, we will attempt to obtain
+         * the named instance from registry. If such a named instance does not exist a new instance would be created
+         * from the annotation.
+         *
+         * @return bulkhead instance
+         */
+        protected abstract Bulkhead bulkhead();
+    }
+
+    /**
+     * A generated service to support async.
+     */
+    public abstract static class AsyncMethod implements Interception.ElementInterceptor {
+        /**
+         * Constructor with no side effects.
+         */
+        protected AsyncMethod() {
+        }
+
+        @Override
+        public <V> V proceed(InterceptionContext ctx, Chain<V> chain, Object... args) throws Exception {
+            try {
+                return async().invoke(Functions.unchecked(() -> chain.proceed(args))).get();
+            } catch (UncheckedException e) {
+                throw findCause(e);
+            }
+        }
+
+        /**
+         * Provide an async instance that should be used with this method.
+         * If the {@link io.helidon.faulttolerance.Ft.Async} annotation contains a name, we will attempt to obtain
+         * the named instance from registry. If such a named instance does not exist a new instance would be created
+         * from the annotation.
+         *
+         * @return async instance
+         */
+        protected abstract Async async();
+    }
+
+    /**
+     * A generated service to support {@link io.helidon.faulttolerance.Fallback}.
+     *
+     * @param <T> service type
+     */
+    public abstract static class FallbackMethod<T> implements Interception.ElementInterceptor {
+        /**
+         * Constructor with no side effects.
+         */
+        protected FallbackMethod() {
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public <V> V proceed(InterceptionContext ctx, Chain<V> chain, Object... args) {
+            try {
+                return chain.proceed(args);
+            } catch (Throwable t) {
+                try {
+                    return (V) fallback((T) ctx.serviceInstance().orElse(null), t, args);
+                } catch (RuntimeException e) {
+                    e.addSuppressed(t);
+                    throw e;
+                } catch (Throwable x) {
+                    x.addSuppressed(t);
+                    throw new SupplierException("Failed to invoke fallback method for: " + ctx.elementInfo(),
+                                                x);
+                }
+            }
+        }
+
+        /**
+         * Generated implementation of this method will invoke the fallback for exceptions that are valid.
+         *
+         * @param service service instance
+         * @param t       throwable that was thrown
+         * @param params  parameters of the method
+         * @return the expected result
+         * @throws Throwable throwable in case the provided {@code t} should be skipped
+         */
+        protected abstract Object fallback(T service, Throwable t, Object... params) throws Throwable;
     }
 }

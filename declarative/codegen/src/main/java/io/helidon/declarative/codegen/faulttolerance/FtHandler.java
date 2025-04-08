@@ -114,7 +114,7 @@ abstract class FtHandler {
                                   element.originatingElementValue());
     }
 
-    void addErrorChecker(ClassModel.Builder classModel, Annotation annotation) {
+    void addErrorChecker(ClassModel.Builder classModel, Annotation annotation, boolean addErrorCheckConstant) {
         // we need set of throwables to apply on, skip on, and error check fields
         List<TypeName> applyOn = annotation.typeValues("applyOn")
                 .orElseGet(List::of);
@@ -139,15 +139,17 @@ abstract class FtHandler {
                 .update(it -> throwableSet(it, skipOn))
         );
 
-        classModel.addField(errorChecker -> errorChecker
-                .accessModifier(AccessModifier.PRIVATE)
-                .isFinal(true)
-                .isStatic(true)
-                .type(FtTypes.ERROR_CHECKER)
-                .name("ERROR_CHECKER")
-                .addContent(FtTypes.ERROR_CHECKER)
-                .addContent(".create(SKIP_ON, APPLY_ON)")
-        );
+        if (addErrorCheckConstant) {
+            classModel.addField(errorChecker -> errorChecker
+                    .accessModifier(AccessModifier.PRIVATE)
+                    .isFinal(true)
+                    .isStatic(true)
+                    .type(FtTypes.ERROR_CHECKER)
+                    .name("ERROR_CHECKER")
+                    .addContent(FtTypes.ERROR_CHECKER)
+                    .addContent(".create(SKIP_ON, APPLY_ON)")
+            );
+        }
     }
 
     private void throwableSet(Field.Builder field, List<TypeName> listOfThrowables) {

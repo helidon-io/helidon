@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,13 +35,13 @@ import io.helidon.service.codegen.ServiceCodegenTypes;
 
 import static io.helidon.codegen.CodegenValidator.validateDuration;
 import static io.helidon.declarative.codegen.DeclarativeTypes.WEIGHT;
-import static io.helidon.declarative.codegen.faulttolerance.FtTypes.CIRCUIT_BREAKER;
-import static io.helidon.declarative.codegen.faulttolerance.FtTypes.CIRCUIT_BREAKER_ANNOTATION;
+import static io.helidon.declarative.codegen.faulttolerance.FtTypes.TIMEOUT;
+import static io.helidon.declarative.codegen.faulttolerance.FtTypes.TIMEOUT_ANNOTATION;
 
-class CircuitBreakerHandler extends FtHandler {
+final class TimeoutHandler extends FtHandler {
 
-    CircuitBreakerHandler(RegistryCodegenContext ctx) {
-        super(ctx, CIRCUIT_BREAKER_ANNOTATION);
+    TimeoutHandler(RegistryCodegenContext ctx) {
+        super(ctx, TIMEOUT_ANNOTATION);
     }
 
     @Override
@@ -54,19 +54,19 @@ class CircuitBreakerHandler extends FtHandler {
         TypeName enclosingTypeName = enclosingType.typeName();
 
         // class definition
-        classModel.superType(FtTypes.CIRCUIT_BREAKER_GENERATED_METHOD)
+        classModel.superType(FtTypes.TIMEOUT_GENERATED_METHOD)
                 .addAnnotation(Annotation.builder()
                                        .typeName(WEIGHT)
-                                       .putValue("value", InterceptorWeights.WEIGHT_CIRCUIT_BREAKER)
+                                       .putValue("value", InterceptorWeights.WEIGHT_TIMEOUT)
                                        .build());
 
         // generate the class body
-        circuitBreakerBody(classModel,
-                           enclosingTypeName,
-                           element,
-                           generatedType,
-                           element.elementName(),
-                           annotation);
+        timeoutBody(classModel,
+                    enclosingTypeName,
+                    element,
+                    generatedType,
+                    element.elementName(),
+                    annotation);
 
         // add type to context
         addType(roundContext,
@@ -76,61 +76,61 @@ class CircuitBreakerHandler extends FtHandler {
                 element);
     }
 
-    private void circuitBreakerBody(ClassModel.Builder classModel,
-                                    TypeName enclosingTypeName,
-                                    TypedElementInfo element,
-                                    TypeName generatedType,
-                                    String methodName,
-                                    Annotation annotation) {
-        addErrorChecker(classModel, annotation, false);
+    private void timeoutBody(ClassModel.Builder classModel,
+                             TypeName enclosingTypeName,
+                             TypedElementInfo element,
+                             TypeName generatedType,
+                             String methodName,
+                             Annotation annotation) {
 
-        classModel.addField(circuitBreaker -> circuitBreaker
+        classModel.addField(timeout -> timeout
                 .accessModifier(AccessModifier.PRIVATE)
                 .isFinal(true)
-                .type(CIRCUIT_BREAKER)
-                .name("breaker"));
+                .type(TIMEOUT)
+                .name("timeout"));
 
-        String name = annotation.stringValue("name").filter(Predicate.not(String::isBlank))
+        String name = annotation.stringValue("name")
+                .filter(Predicate.not(String::isBlank))
                 .orElse(null);
 
         /*
-        Constructor (may inject named CircuitBreaker)
+        Constructor (may inject named Timeout)
          */
         var ctr = Constructor.builder()
                 .addAnnotation(Annotation.create(ServiceCodegenTypes.SERVICE_ANNOTATION_INJECT))
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE);
 
         if (name == null) {
-            ctr.addContentLine("this.breaker = produceBreaker();");
+            ctr.addContentLine("this.timeout = produceTimeout();");
         } else {
             // named, inject
-            ctr.addParameter(namedCircuitBreaker -> namedCircuitBreaker
-                            .name("namedBreaker")
+            ctr.addParameter(namedTimeout -> namedTimeout
+                            .name("namedTimeout")
                             .type(TypeName.builder()
                                           .from(TypeNames.OPTIONAL)
-                                          .addTypeArgument(CIRCUIT_BREAKER)
+                                          .addTypeArgument(TIMEOUT)
                                           .build())
                             .addAnnotation(namedAnnotation(name)))
-                    .addContent("this.breaker = namedBreaker.orElseGet(")
+                    .addContent("this.timeout = namedTimeout.orElseGet(")
                     .addContent(generatedType)
-                    .addContentLine("::produceBreaker);");
+                    .addContentLine("::produceTimeout);");
         }
 
         classModel.addConstructor(ctr);
 
         /*
-        CircuitBreaker method (implementing abstract method)
+        Timeout method (implementing abstract method)
          */
-        classModel.addMethod(circuitBreaker -> circuitBreaker
-                .name("circuitBreaker")
+        classModel.addMethod(timeout -> timeout
+                .name("timeout")
                 .addAnnotation(Annotations.OVERRIDE)
-                .returnType(CIRCUIT_BREAKER)
-                .accessModifier(AccessModifier.PUBLIC)
-                .addContentLine("return breaker;")
+                .returnType(TIMEOUT)
+                .accessModifier(AccessModifier.PROTECTED)
+                .addContentLine("return timeout;")
         );
 
         /*
-        Produce circuitBreaker method (from annotation values)
+        Produce timeout method (from annotation values)
          */
         String customName;
         if (name == null) {
@@ -142,52 +142,48 @@ class CircuitBreakerHandler extends FtHandler {
                     + "." + element.signature().text();
         }
 
-        classModel.addMethod(produceCircuitBreaker -> produceCircuitBreaker
+        classModel.addMethod(produceTimeout -> produceTimeout
                 .accessModifier(AccessModifier.PRIVATE)
                 .isStatic(true)
-                .returnType(CIRCUIT_BREAKER)
-                .name("produceBreaker")
-                .update(builder -> produceBreakerMethodBody(enclosingTypeName, element, builder, annotation, customName))
+                .returnType(TIMEOUT)
+                .name("produceTimeout")
+                .update(builder -> produceTimeoutMethodBody(enclosingTypeName,
+                                                            element,
+                                                            builder,
+                                                            annotation,
+                                                            customName))
         );
     }
 
-    private void produceBreakerMethodBody(TypeName typeName,
+    private void produceTimeoutMethodBody(TypeName typeName,
                                           TypedElementInfo element,
                                           Method.Builder builder,
                                           Annotation annotation,
                                           String customName) {
-        String delayDuration = validateDuration(typeName,
-                                                element,
-                                                CIRCUIT_BREAKER_ANNOTATION,
-                                                "delay",
-                                                annotation.stringValue("delay").orElse("PT5S"));
-        int errorRatio = annotation.intValue("errorRatio").orElse(60);
-        int volume = annotation.intValue("volume").orElse(10);
-        int successThreshold = annotation.intValue("successThreshold").orElse(1);
+
+        String timeout = validateDuration(typeName,
+                                          element,
+                                          TIMEOUT_ANNOTATION,
+                                          "time",
+                                          annotation.stringValue("time").orElse("PT10S"));
+        boolean currentThread = annotation.booleanValue("currentThread")
+                .orElse(false);
 
         builder.addContent("return ")
-                .addContent(CIRCUIT_BREAKER)
+                .addContent(TIMEOUT)
                 .addContentLine(".builder()")
                 .increaseContentPadding()
                 .increaseContentPadding()
-                .addContentLine(".applyOn(APPLY_ON)")
-                .addContentLine(".skipOn(SKIP_ON)")
-                .addContent(".delay(")
-                .addContent(Duration.class)
-                .addContent(".parse(\"")
-                .addContent(delayDuration)
-                .addContentLine("\"))")
                 .addContent(".name(\"")
                 .addContent(customName)
                 .addContentLine("\")")
-                .addContent(".errorRatio(")
-                .addContent(String.valueOf(errorRatio))
-                .addContentLine(")")
-                .addContent(".volume(")
-                .addContent(String.valueOf(volume))
-                .addContentLine(")")
-                .addContent(".successThreshold(")
-                .addContent(String.valueOf(successThreshold))
+                .addContent(".timeout(")
+                .addContent(Duration.class)
+                .addContent(".parse(\"")
+                .addContent(timeout)
+                .addContentLine("\"))")
+                .addContent(".currentThread(")
+                .addContent(String.valueOf(currentThread))
                 .addContentLine(")")
                 .addContentLine(".build();")
                 .decreaseContentPadding()

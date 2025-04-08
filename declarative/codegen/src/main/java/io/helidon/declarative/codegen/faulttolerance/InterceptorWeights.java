@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,16 @@
  * limitations under the License.
  */
 
-package io.helidon.faulttolerance;
+package io.helidon.declarative.codegen.faulttolerance;
 
-class AsyncException extends RuntimeException {
-    AsyncException(Throwable cause) {
-        super(cause);
+class InterceptorWeights {
+    static final double WEIGHT_RETRY = 10;
+    static final double WEIGHT_BULKHEAD = 20;
+    static final double WEIGHT_CIRCUIT_BREAKER = 30;
+    static final double WEIGHT_TIMEOUT = 40;
+    static final double WEIGHT_ASYNC = 50;
+    static final double WEIGHT_FALLBACK = 60;
+
+    private InterceptorWeights() {
     }
 }

@@ -43,7 +43,10 @@ public class FtExtensionProvider implements RegistryCodegenExtensionProvider {
     public Set<TypeName> supportedAnnotations() {
         return Set.of(FtTypes.FALLBACK_ANNOTATION,
                       FtTypes.RETRY_ANNOTATION,
-                      FtTypes.CIRCUIT_BREAKER_ANNOTATION);
+                      FtTypes.CIRCUIT_BREAKER_ANNOTATION,
+                      FtTypes.BULKHEAD_ANNOTATION,
+                      FtTypes.TIMEOUT_ANNOTATION,
+                      FtTypes.ASYNC_ANNOTATION);
     }
 
     @Override

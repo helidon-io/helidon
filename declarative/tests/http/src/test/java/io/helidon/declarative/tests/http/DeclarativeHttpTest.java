@@ -39,16 +39,16 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ServerTest
-class MainTest {
+class DeclarativeHttpTest {
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
 
     private final Http1Client client;
     private final ServiceRegistry registry;
     private final URI serverUri;
 
-    protected MainTest(Http1Client client,
-                       ServiceRegistry registry,
-                       URI serverUri) {
+    protected DeclarativeHttpTest(Http1Client client,
+                                  ServiceRegistry registry,
+                                  URI serverUri) {
         this.client = client;
         this.registry = registry;
         this.serverUri = serverUri;

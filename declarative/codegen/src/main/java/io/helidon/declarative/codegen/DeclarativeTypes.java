@@ -17,6 +17,7 @@
 package io.helidon.declarative.codegen;
 
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
@@ -48,6 +49,13 @@ public final class DeclarativeTypes {
      * {@link java.lang.Throwable}.
      */
     public static final TypeName THROWABLE = TypeName.create(Throwable.class);
+
+    /**
+     * Type name for {@code io.helidon.service.registry.Interception.ElementInterceptor}.
+     */
+    public static final TypeName ELEMENT_INTERCEPTOR =
+            TypeName.create("io.helidon.service.registry.Interception.ElementInterceptor");
+
     /**
      * Annotation instance for {@link io.helidon.service.codegen.ServiceCodegenTypes#SERVICE_ANNOTATION_SINGLETON}.
      */
@@ -62,6 +70,10 @@ public final class DeclarativeTypes {
                                                               .build())
                                      .build())
             .build();
+    /**
+     * Type name for {@link java.util.concurrent.ExecutorService}.
+     */
+    public static final TypeName EXECUTOR_SERVICE = TypeName.create(ExecutorService.class);
 
     private DeclarativeTypes() {
     }

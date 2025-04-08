@@ -34,9 +34,26 @@ final class FtTypes {
     static final TypeName CIRCUIT_BREAKER_ANNOTATION =
             TypeName.create("io.helidon.faulttolerance.Ft.CircuitBreaker");
     static final TypeName CIRCUIT_BREAKER = TypeName.create("io.helidon.faulttolerance.CircuitBreaker");
-    static final TypeName CIRCUIT_BREAKER_CONFIG = TypeName.create("io.helidon.faulttolerance.CircuitBreakerConfig");
     static final TypeName CIRCUIT_BREAKER_GENERATED_METHOD =
             TypeName.create("io.helidon.faulttolerance.FaultToleranceGenerated.CircuitBreakerMethod");
+
+    static final TypeName BULKHEAD_ANNOTATION =
+            TypeName.create("io.helidon.faulttolerance.Ft.Bulkhead");
+    static final TypeName BULKHEAD = TypeName.create("io.helidon.faulttolerance.Bulkhead");
+    static final TypeName BULKHEAD_GENERATED_METHOD =
+            TypeName.create("io.helidon.faulttolerance.FaultToleranceGenerated.BulkheadMethod");
+
+    static final TypeName TIMEOUT_ANNOTATION =
+            TypeName.create("io.helidon.faulttolerance.Ft.Timeout");
+    static final TypeName TIMEOUT = TypeName.create("io.helidon.faulttolerance.Timeout");
+    static final TypeName TIMEOUT_GENERATED_METHOD =
+            TypeName.create("io.helidon.faulttolerance.FaultToleranceGenerated.TimeoutMethod");
+
+    static final TypeName ASYNC_ANNOTATION =
+            TypeName.create("io.helidon.faulttolerance.Ft.Async");
+    static final TypeName ASYNC = TypeName.create("io.helidon.faulttolerance.Async");
+    static final TypeName ASYNC_GENERATED_METHOD =
+            TypeName.create("io.helidon.faulttolerance.FaultToleranceGenerated.AsyncMethod");
 
     private FtTypes() {
     }

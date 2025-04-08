@@ -214,10 +214,9 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
         builder.annotations(typeAnnotations);
 
         Annotations.findFirst(REST_SERVER_LISTENER, typeAnnotations)
-                .ifPresent(listener -> {
-                    listener.stringValue().ifPresent(builder::listener);
-                    listener.booleanValue("required").ifPresent(builder::listenerRequired);
-                });
+                .flatMap(listener -> listener.stringValue())
+                .ifPresent(builder::listener);
+        builder.listenerRequired(true);
 
         path(typeAnnotations, builder);
         produces(typeAnnotations, builder);

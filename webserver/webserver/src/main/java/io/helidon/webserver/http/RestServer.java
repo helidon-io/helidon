@@ -147,16 +147,6 @@ public final class RestServer {
          * @return name of a routing (or listener host/port) on WebServer
          */
         String value();
-
-        /**
-         * Set to true if the {@link #value()} MUST be configured.
-         * <p>
-         * The endpoint is bound to default listener if the {@link #value()} listener is not configured
-         * on webserver, and this is set to {@code false}.
-         *
-         * @return {@code true} to enforce existence of the named routing
-         */
-        boolean required() default false;
     }
 
     /**

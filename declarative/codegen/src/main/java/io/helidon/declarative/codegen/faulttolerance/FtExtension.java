@@ -43,6 +43,9 @@ class FtExtension implements RegistryCodegenExtension {
         new FallbackHandler(ctx).process(roundContext, types);
         new RetryHandler(ctx).process(roundContext, types);
         new CircuitBreakerHandler(ctx).process(roundContext, types);
+        new BulkheadHandler(ctx).process(roundContext, types);
+        new TimeoutHandler(ctx).process(roundContext, types);
+        new AsyncHandler(ctx).process(roundContext, types);
     }
 
 }

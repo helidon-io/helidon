@@ -17,7 +17,6 @@
 package io.helidon.declarative.codegen.faulttolerance;
 
 import java.time.Duration;
-import java.util.UUID;
 import java.util.function.Predicate;
 
 import io.helidon.codegen.classmodel.ClassModel;
@@ -35,6 +34,7 @@ import io.helidon.service.codegen.RegistryRoundContext;
 import io.helidon.service.codegen.ServiceCodegenTypes;
 
 import static io.helidon.codegen.CodegenValidator.validateDuration;
+import static io.helidon.declarative.codegen.DeclarativeTypes.WEIGHT;
 import static io.helidon.declarative.codegen.faulttolerance.FtTypes.RETRY;
 import static io.helidon.declarative.codegen.faulttolerance.FtTypes.RETRY_ANNOTATION;
 import static io.helidon.declarative.codegen.faulttolerance.FtTypes.RETRY_CONFIG;
@@ -55,7 +55,11 @@ final class RetryHandler extends FtHandler {
         TypeName enclosingTypeName = enclosingType.typeName();
 
         // class definition
-        classModel.addInterface(FtTypes.RETRY_GENERATED_METHOD);
+        classModel.superType(FtTypes.RETRY_GENERATED_METHOD)
+                .addAnnotation(Annotation.builder()
+                                       .typeName(WEIGHT)
+                                       .putValue("value", InterceptorWeights.WEIGHT_RETRY)
+                                       .build());
 
         // generate the class body
         retryBody(classModel,
@@ -79,7 +83,7 @@ final class RetryHandler extends FtHandler {
                            TypeName generatedType,
                            String methodName,
                            Annotation annotation) {
-        addErrorChecker(classModel, annotation);
+        addErrorChecker(classModel, annotation, false);
 
         classModel.addField(retry -> retry
                 .accessModifier(AccessModifier.PRIVATE)
@@ -122,7 +126,7 @@ final class RetryHandler extends FtHandler {
                 .name("retry")
                 .addAnnotation(Annotations.OVERRIDE)
                 .returnType(RETRY)
-                .accessModifier(AccessModifier.PUBLIC)
+                .accessModifier(AccessModifier.PROTECTED)
                 .addContentLine("return retry;")
         );
 
@@ -131,12 +135,12 @@ final class RetryHandler extends FtHandler {
          */
         String customName;
         if (name == null) {
-            // this is not fully random, but we may only get conflict on the same type, same method name
             customName = enclosingTypeName.fqName()
-                    + "." + methodName + "-"
-                    + System.identityHashCode(enclosingTypeName);
+                    + "." + element.signature().text();
         } else {
-            customName = name + "-" + UUID.randomUUID();
+            // as the named instance was not found, use the name and our unique signature
+            customName = name + "-" + enclosingTypeName.fqName()
+                    + "." + element.signature().text();
         }
 
         classModel.addMethod(produceRetry -> produceRetry

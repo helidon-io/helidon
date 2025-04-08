@@ -38,6 +38,7 @@ import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.RegistryRoundContext;
 
 import static io.helidon.declarative.codegen.DeclarativeTypes.THROWABLE;
+import static io.helidon.declarative.codegen.DeclarativeTypes.WEIGHT;
 import static io.helidon.declarative.codegen.faulttolerance.FtTypes.FALLBACK_ANNOTATION;
 import static io.helidon.declarative.codegen.faulttolerance.FtTypes.FALLBACK_GENERATED_METHOD;
 
@@ -50,17 +51,21 @@ class FallbackHandler extends FtHandler {
     void process(RegistryRoundContext roundContext,
                  TypeInfo enclosingType,
                  TypedElementInfo element,
-                 Annotation annotation,
+                 Annotation fallbackAnnotation,
                  TypeName generatedType,
                  ClassModel.Builder classModel) {
         TypeName enclosingTypeName = enclosingType.typeName();
 
         // class definition
-        classModel.addInterface(fallbackMethodType(element.typeName(), enclosingTypeName));
+        classModel.superType(fallbackType(enclosingTypeName))
+                .addAnnotation(Annotation.builder()
+                                       .typeName(WEIGHT)
+                                       .putValue("value", InterceptorWeights.WEIGHT_FALLBACK)
+                                       .build());
 
         // generate the class body
-        fallbackMethod(classModel, enclosingType, element, annotation);
-        // parameterTypesMethod(classModel, element.parameterArguments());
+        addErrorChecker(classModel, fallbackAnnotation, true);
+        fallbackMethod(classModel, enclosingType, element, fallbackAnnotation);
 
         // add type to context
         addType(roundContext,
@@ -75,14 +80,12 @@ class FallbackHandler extends FtHandler {
                                 TypedElementInfo element,
                                 Annotation fallbackAnnotation) {
 
-        addErrorChecker(classModel, fallbackAnnotation);
-
         String fallbackMethodName = fallbackAnnotation.value()
                 .orElseThrow(() -> new CodegenException("value is mandatory on Fallback annotation. Missing for: " + element));
         TypeName returnType = element.typeName();
         boolean isVoid = TypeNames.PRIMITIVE_VOID.equals(returnType) || TypeNames.BOXED_VOID.equals(returnType);
 
-        // then the implementation of interface method to fallback
+        // then the implementation of method to fallback
         List<TypeName> expectedArguments = element.parameterArguments()
                 .stream()
                 .map(TypedElementInfo::typeName)
@@ -151,7 +154,7 @@ class FallbackHandler extends FtHandler {
         // and the invocation of the fallback
         classModel.addMethod(fallback -> fallback
                 .addAnnotation(Annotations.OVERRIDE)
-                .accessModifier(AccessModifier.PUBLIC)
+                .accessModifier(AccessModifier.PROTECTED)
                 .returnType(returnType.boxed())
                 .name("fallback")
                 .addParameter(serviceParam -> serviceParam
@@ -229,9 +232,8 @@ class FallbackHandler extends FtHandler {
         }
     }
 
-    private TypeName fallbackMethodType(TypeName returnType, TypeName enclosingType) {
+    private TypeName fallbackType(TypeName enclosingType) {
         return TypeName.builder(FALLBACK_GENERATED_METHOD)
-                .addTypeArgument(returnType.boxed())
                 .addTypeArgument(enclosingType)
                 .build();
     }

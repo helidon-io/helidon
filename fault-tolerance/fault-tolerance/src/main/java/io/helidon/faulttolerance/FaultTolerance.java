@@ -56,15 +56,7 @@ public final class FaultTolerance {
      */
     public static final String FT_METRICS_DEFAULT_ENABLED = "ft.metrics.default-enabled";
 
-    static final double WEIGHT_RETRY = 10;
-    static final double WEIGHT_BULKHEAD = 20;
-    static final double WEIGHT_CIRCUIT_BREAKER = 30;
-    static final double WEIGHT_TIMEOUT = 40;
-    static final double WEIGHT_ASYNC = 50;
-    static final double WEIGHT_FALLBACK = 60;
-
     private static final System.Logger LOGGER = System.getLogger(FaultTolerance.class.getName());
-
     private static final AtomicReference<LazyValue<ExecutorService>> EXECUTOR = new AtomicReference<>();
     private static final AtomicReference<Config> CONFIG = new AtomicReference<>();
 
