@@ -116,7 +116,6 @@ class TestingNgSnippets {
 
         @CustomMetaAnnotation
         class MyTest {
-
         }
         // end::snippet_2[]
     }

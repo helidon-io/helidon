@@ -140,7 +140,6 @@ class TestingJunit5Snippets {
 
         @CustomMetaAnnotation
         class MyTest {
-
         }
         // end::snippet_4[]
     }
