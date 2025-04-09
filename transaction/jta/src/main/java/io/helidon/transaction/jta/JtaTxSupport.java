@@ -19,6 +19,8 @@ import java.lang.System.Logger.Level;
 import java.util.List;
 import java.util.concurrent.Callable;
 
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.service.registry.Service;
 import io.helidon.transaction.Tx;
 import io.helidon.transaction.TxException;
@@ -40,6 +42,7 @@ import jakarta.transaction.TransactionManager;
  * This is the default TxSupport service linking transaction API with JTA.
  */
 @Service.Singleton
+@Weight(Weighted.DEFAULT_WEIGHT)
 class JtaTxSupport implements TxSupport {
 
     private static final System.Logger LOGGER = System.getLogger(JtaTxSupport.class.getName());
@@ -527,7 +530,7 @@ class JtaTxSupport implements TxSupport {
 
     // Notify TxLifeCycle listeners about transaction method start
     private void start() {
-        txListeners.forEach(TxLifeCycle::start);
+        txListeners.forEach(listener -> listener.start(this.type()));
     }
 
     // Notify TxLifeCycle listeners about transaction method end
