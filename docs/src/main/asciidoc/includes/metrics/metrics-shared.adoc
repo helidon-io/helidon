@@ -172,6 +172,7 @@ Clients can request a particular output format.
 | JSON | Header `Accept: application/json`
 |====
 
+[[scope-specific-retrieval]]
 Clients can also limit the report by specifying the scope as a query parameter in the request URL:
 
 * `{metrics-endpoint}?scope=base`
@@ -267,6 +268,156 @@ ifdef::mp-flavor[`Histogram`]
 |====
 ^1^ The OpenMetrics/Prometheus output format reports a timer as a `summary` with units of `seconds`.
 
+==== JSON Format
+Unlike OpenMetrics/Prometheus output, which combines the data and the metadata in a single response,
+you use an HTTP `GET` request to retrieve metrics JSON _data_ and an `OPTIONS` request to retrieve _metadata_ in JSON
+format.
+
+Helidon groups {metrics} in the same scope together in JSON output as shown in the following example.
+
+.JSON metrics output structured by scope (partial)
+[source,json]
+----
+{
+  "application": {  <1>
+    "getTimer": {
+      "type": "timer",
+      "unit": "seconds",
+      "description": "Timer for getting the default greeting"
+    }
+  },
+  "vendor": {       <1>
+    "requests.count": {
+      "type": "counter",
+      "description": "Each request (regardless of HTTP method) will increase this counter"
+    }
+  },
+  "base": {         <1>
+    "cpu.systemLoadAverage": {
+      "type": "gauge",
+      "description": "Displays the system load average for the last minute."
+    },
+    "classloader.loadedClasses.count": {
+      "type": "gauge",
+      "description": "Displays the number of classes that are currently loaded in the Java virtual machine."
+    }
+  }
+}
+----
+<1> Note the `application`, `vendor`, and `base` sections.
+
+If an HTTP request <<scope-specific-retrieval,selects by scope>>, the output omits the extra level of structure that identifies
+the scope as shown in the following example.
+
+.JSON metrics output for the `base` scope (partial)
+[source,json]
+----
+{
+  "cpu.systemLoadAverage": {
+    "type": "gauge",
+     "description": "Displays the system load average for the last minute."
+  },
+  "classloader.loadedClasses.count": {
+    "type": "gauge",
+    "description": "Displays the number of classes that are currently loaded in the Java virtual machine."
+  }
+}
+----
+
+===== Understanding the JSON Metrics Data Format
+The Helidon JSON format expresses each {metric} as either a single value (for example, a counter) or a structure
+with multiple values (for example, a timer).
+
+.JSON output for a single-valued {metric} (for example, `Counter`)
+[source,json]
+----
+"requests.count": 5
+----
+
+.JSON output for a multi-valued {metric} (for example, `Timer`)
+[source,json]
+----
+"getTimer": {
+  "count": 3,
+  "max": 0.0030455,
+  "mean": 0.0011060836666666666,
+  "elapsedTime": 0.003318251,
+  "p0.5": 0.000151552,
+  "p0.75": 0.003141632,
+  "p0.95": 0.003141632,
+  "p0.98": 0.003141632,
+  "p0.99": 0.003141632,
+  "p0.999": 0.003141632
+}
+----
+
+By default, Helidon formats time values contained in JSON output as seconds. You can change this
+behavior <<controlling_timer_output,as described below>>.
+
+===== Understanding the JSON Metrics Metadata Format
+Access the metrics endpoint with an HTTP `OPTIONS` request and the `Accept: application/json` header to
+retrieve metadata in JSON format.
+
+.Example `Counter` metadata
+[source,json]
+----
+"requests.count": {
+  "type": "counter",
+  "description": "Each request (regardless of HTTP method) will increase this counter"
+    }
+----
+
+.Example `Timer` metadata
+[source,json]
+----
+"getTimer": {
+  "type": "timer",
+  "unit": "seconds",
+  "description": "Timer for getting the default greeting"
+}
+----
+Generally, the output for a given {metric} reflects only the metadata that the application or Helidon code explicitly
+set on that {metric}.
+
+One exception is that metadata for a timer always includes the `unit` field.
+By default, Helidon formats timer data in JSON output as seconds, regardless of any explicit `baseUnit` setting
+applied to the timers.
+But as <<controlling_timer_output,described below>> you can change this behavior which can lead to different timers being
+formatted using different units. Checking the metadata is the only way to know for sure what units Helidon used to
+express a given timer, so Helidon always includes `unit` in timer metadata.
+
+[[controlling_timer_output]]
+===== Controlling JSON Timer Output
+By default, Helidon expresses timer data as seconds.
+
+You can change this using configuration:
+ifdef::se-flavor[]
+
+.Setting default timer units for JSON in `application.yaml`
+[source,yaml,subs=+quotes]
+----
+metrics:
+  timers:
+    json-units-default: _units_ <1>
+----
+endif::se-flavor[]
+ifdef::mp-flavor[]
+
+.Setting default timer units for JSON in `META-INF/microprofile-config.properties`
+[source.properties,subs=+quotes]
+----
+metrics.timers.json-units-default=_units_ # <1>
+----
+endif::mp-flavor[]
+<1> For _units_ specify any valid name for a
+link:{jdk-javadoc-url}/java.base/java/util/concurrent/TimeUnit.html[`TimeUnit`] value (`SECONDS`, `MILLISECONDS`, etc.)
+
+Helidon formats each timer's data as follows:
+
+1. If code set `baseUnit` on the timer, Helidon uses those units for that timer.
+2. Otherwise, Helidon uses the default units you configured.
+
+To enable the JSON output behavior from Helidon 3, specify `json-units-default` as `NANOSECONDS`.
 // end::usage-retrieving[]
 
 // tag::metric-registry-api[]
