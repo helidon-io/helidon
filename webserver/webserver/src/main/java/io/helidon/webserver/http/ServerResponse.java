@@ -208,6 +208,25 @@ public interface ServerResponse {
     ServerResponseHeaders headers();
 
     /**
+     * Tracks header changes to allow rollbacks. If {@link #rollbackHeaders()} is never
+     * called all changes are final.
+     *
+     * @return the headers
+     */
+    default ServerResponseHeaders trackHeaders() {
+        return headers();
+    }
+
+    /**
+     * Rolls back changes made to headers since {@link #trackHeaders()} was called.
+     *
+     * @return the headers after rollback
+     */
+    default ServerResponseHeaders rollbackHeaders() {
+        return headers();
+    }
+
+    /**
      * Response trailers (mutable).
      * @return trailers
      * @throws java.lang.IllegalStateException if client didn't ask for trailers with {@code TE: trailers} header in request

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,13 @@ import java.util.HashSet;
 import java.util.Random;
 
 import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class IntSetTest {
+
     @RepeatedTest(20)
     void test() {
         IntSet set = new IntSet(14);
@@ -44,5 +46,25 @@ class IntSetTest {
         }
 
         assertThat(actual, is(expected));
+    }
+
+    @Test
+    void testAddSize() {
+        IntSet set = new IntSet(5);
+        set.add(1);
+        assertThat(set.size(), is(1));
+        set.add(1);
+        assertThat(set.size(), is(1));
+    }
+
+    @Test
+    void testRemoveSize() {
+        IntSet set = new IntSet(5);
+        set.add(1);
+        set.add(2);
+        assertThat(set.size(), is(2));
+        set.remove(1);
+        set.remove(1);
+        assertThat(set.size(), is(1));
     }
 }

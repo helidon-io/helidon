@@ -40,6 +40,7 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
 import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.ServerResponseHeadersWrapper;
 import io.helidon.http.ServerResponseTrailers;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
@@ -73,10 +74,10 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     private final Http1ConnectionListener sendListener;
     private final DataWriter dataWriter;
     private final Http1ServerRequest request;
-    private final ServerResponseHeaders headers;
     private final ServerResponseTrailers trailers;
     private final boolean keepAlive;
 
+    private ServerResponseHeaders headers;
     private boolean streamingEntity;
     private boolean isSent;
     private ClosingBufferedOutputStream outputStream;
@@ -245,6 +246,20 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
     @Override
     public ServerResponseHeaders headers() {
+        return headers;
+    }
+
+    @Override
+    public ServerResponseHeaders trackHeaders() {
+        headers = ServerResponseHeadersWrapper.create(headers);
+        return headers;
+    }
+
+    @Override
+    public ServerResponseHeaders rollbackHeaders() {
+        if (headers instanceof ServerResponseHeadersWrapper wrapper) {
+            headers = wrapper.rollback();
+        }
         return headers;
     }
 
