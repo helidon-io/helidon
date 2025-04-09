@@ -14,27 +14,27 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.tests.testing.testng;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-
-import jakarta.inject.Inject;
+package io.helidon.microprofile.tests.testing.junit5;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
-import io.helidon.microprofile.testing.testng.AddBean;
-import io.helidon.microprofile.testing.testng.AddConfig;
-import io.helidon.microprofile.testing.testng.AddConfigBlock;
-import io.helidon.microprofile.testing.testng.Configuration;
-import io.helidon.microprofile.testing.testng.HelidonTest;
+import jakarta.inject.Inject;
+
+import io.helidon.microprofile.testing.junit5.AddBean;
+import io.helidon.microprofile.testing.junit5.AddConfig;
+import io.helidon.microprofile.testing.junit5.AddConfigBlock;
+import io.helidon.microprofile.testing.junit5.Configuration;
+import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-@TestMetaAnnotation.MetaAnnotation
-public class TestMetaAnnotation {
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
+@TestClassLevelMetaAnnotation.MetaAnnotation
+class TestClassLevelMetaAnnotation {
 
     @Inject
     MyBean bean;

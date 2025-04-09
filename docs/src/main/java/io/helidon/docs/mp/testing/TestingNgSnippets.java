@@ -118,5 +118,29 @@ class TestingNgSnippets {
         class MyTest {
         }
         // end::snippet_2[]
+
+        // tag::snippet_3[]
+        @AddBean(FirstBean.class)
+        @AddBean(SecondBean.class)
+        @DisableDiscovery
+        @Target(ElementType.METHOD)
+        @Retention(RetentionPolicy.RUNTIME)
+        public @interface MyTestMethod {
+        }
+
+        @HelidonTest
+        class MyTest {
+
+            @Test // <1>
+            @MyTestMethod
+            void testOne() {
+            }
+
+            @Test // <1>
+            @MyTestMethod
+            void testTwo() {
+            }
+        }
+        // end::snippet_3[]
     }
 }

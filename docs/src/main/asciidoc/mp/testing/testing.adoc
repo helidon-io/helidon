@@ -90,11 +90,18 @@ include::{sourcedir}/mp/testing/TestingJunit5Snippets.java[tag=snippet_2, indent
 ----
 
 === Using meta-annotations
-`@HelidonTest` can be used in a meta-annotation:
+Meta-annotations are supported on both test classes and test methods and can be used as a composition mechanism.
 
 [source,java]
+.Class-level meta-annotation example
 ----
 include::{sourcedir}/mp/testing/TestingJunit5Snippets.java[tag=snippet_4, indent=0]
+----
+
+[source,java]
+.Method-level meta-annotation example
+----
+include::{sourcedir}/mp/testing/TestingJunit5Snippets.java[tag=snippet_5, indent=0]
 ----
 
 == API

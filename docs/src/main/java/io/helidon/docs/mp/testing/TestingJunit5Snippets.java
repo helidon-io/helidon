@@ -142,5 +142,28 @@ class TestingJunit5Snippets {
         class MyTest {
         }
         // end::snippet_4[]
+
+        // tag::snippet_5[]
+        @Test
+        @AddBean(FirstBean.class)
+        @AddBean(SecondBean.class)
+        @DisableDiscovery
+        @Target(ElementType.METHOD)
+        @Retention(RetentionPolicy.RUNTIME)
+        public @interface MyTestMethod {
+        }
+
+        @HelidonTest
+        class MyTest {
+
+            @MyTestMethod
+            void testOne() {
+            }
+
+            @MyTestMethod
+            void testTwo() {
+            }
+        }
+        // end::snippet_5[]
     }
 }
