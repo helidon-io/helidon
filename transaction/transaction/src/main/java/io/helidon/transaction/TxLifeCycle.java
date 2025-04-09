@@ -33,8 +33,12 @@ public interface TxLifeCycle {
 
     /**
      * Transaction method was started.
+     *
+     * @param type the type of the transaction API support, {@link TxSupport#type()},
+     *             passed from {@link TxSupport} implementation to the {@link TxLifeCycle}
+     *            implementation
      */
-    void start();
+    void start(String type);
 
     /**
      * Transaction method was finished.

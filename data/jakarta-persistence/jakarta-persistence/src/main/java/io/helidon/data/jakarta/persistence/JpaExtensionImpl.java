@@ -31,6 +31,7 @@ import io.helidon.data.jakarta.persistence.gapi.JpaEntityProvider;
 import io.helidon.data.jakarta.persistence.spi.JakartaPersistenceExtension;
 import io.helidon.data.sql.common.SqlDriver;
 import io.helidon.service.registry.ServiceRegistry;
+import io.helidon.transaction.TxSupport;
 
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.spi.PersistenceProvider;
@@ -56,8 +57,12 @@ class JpaExtensionImpl implements JakartaPersistenceExtension {
     private final ServiceRegistry registry;
     private final List<JpaEntityProvider<?>> entityProviders;
     private final Set<Class<?>> entities;
+    private final TxSupport txSupport;
 
-    JpaExtensionImpl(DataConfig dataConfig, ServiceRegistry registry, List<JpaEntityProvider<?>> providers) {
+    JpaExtensionImpl(DataConfig dataConfig,
+                     ServiceRegistry registry,
+                     List<JpaEntityProvider<?>> providers,
+                     TxSupport txSupport) {
         this.registry = registry;
         this.entityProviders = providers;
         this.dataConfig = dataConfig;
@@ -65,12 +70,13 @@ class JpaExtensionImpl implements JakartaPersistenceExtension {
         this.entities = providers.stream()
                 .map(JpaEntityProvider::entityClass)
                 .collect(Collectors.toUnmodifiableSet());
+        this.txSupport = txSupport;
     }
 
     @Override
     public EntityManagerFactory createFactory() {
         SqlDriver driverSource = SqlDriver.create(dataJpaConfig);
-        PersistenceConfiguration config = PersistenceConfiguration.create(dataConfig.name());
+        PersistenceConfiguration config = PersistenceConfiguration.create(dataConfig.name(), txSupport);
         dataJpaConfig.validate();
         config.configureConnection(dataJpaConfig, driverSource.driverClass(), registry);
         config.configureScripts(dataJpaConfig);
