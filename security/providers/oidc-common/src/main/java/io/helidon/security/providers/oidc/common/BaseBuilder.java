@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -444,7 +444,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B,
      * @param checkAudience whether the audience claim will be checked ({@code true}) or not ({@code false})
      * @return updated builder instance
      */
-    @ConfiguredOption("false")
+    @ConfiguredOption("true")
     public B checkAudience(boolean checkAudience) {
         this.checkAudience = checkAudience;
         return identity();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,11 +25,14 @@ class OidcUtil {
     private OidcUtil() {
     }
 
-    static void updateRequest(OidcConfig.RequestType type, TenantConfig tenantConfig, Parameters.Builder form) {
-        if (type == OidcConfig.RequestType.CODE_TO_TOKEN
-                && tenantConfig.tokenEndpointAuthentication() == OidcConfig.ClientAuthentication.CLIENT_SECRET_POST) {
-            form.add("client_id", tenantConfig.clientId());
-            form.add("client_secret", tenantConfig.clientSecret());
+    static void updateRequest(OidcConfig.RequestType type,
+                              TenantConfig tenantConfig,
+                              Parameters.Builder form) {
+        if (type == OidcConfig.RequestType.CODE_TO_TOKEN || type == OidcConfig.RequestType.ID_AND_SECRET_TO_TOKEN) {
+            if (tenantConfig.tokenEndpointAuthentication() == OidcConfig.ClientAuthentication.CLIENT_SECRET_POST) {
+                form.add("client_id", tenantConfig.clientId());
+                form.add("client_secret", tenantConfig.clientSecret());
+            }
         }
     }
 
