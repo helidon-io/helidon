@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.server;
+package io.helidon.jersey.webserver;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -26,6 +26,7 @@ import java.security.Principal;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.WeakHashMap;
@@ -33,6 +34,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
+import io.helidon.common.config.Config;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.uri.UriInfo;
@@ -43,7 +45,6 @@ import io.helidon.http.HeaderValues;
 import io.helidon.http.InternalServerException;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;
-import io.helidon.microprofile.server.HelidonHK2InjectionManagerFactory.InjectionManagerWrapper;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
@@ -56,8 +57,6 @@ import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.GenericType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
-import org.eclipse.microprofile.config.Config;
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.glassfish.jersey.CommonProperties;
 import org.glassfish.jersey.internal.MapPropertiesDelegate;
 import org.glassfish.jersey.internal.inject.InjectionManager;
@@ -71,7 +70,10 @@ import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.server.spi.Container;
 import org.glassfish.jersey.server.spi.ContainerResponseWriter;
 
-class JaxRsService implements HttpService {
+/**
+ * WebServer {@link io.helidon.webserver.http.HttpService} that adds support for a JAX-RS application.
+ */
+public class JaxRsService implements HttpService {
     /**
      * If set to {@code "true"}, Jersey will ignore responses in exceptions.
      */
@@ -97,53 +99,38 @@ class JaxRsService implements HttpService {
         this.application = getApplication(resourceConfig);
     }
 
-    static JaxRsService create(ResourceConfig resourceConfig, InjectionManager injectionManager) {
+    /**
+     * Create a new JAX-RS integration service with the default injection manager.
+     *
+     * @param config         configuration, used to configure Jersey
+     * @param resourceConfig containing application resources
+     * @return a new service to register with the WebServer
+     */
+    public static JaxRsService create(Config config,
+                                      ResourceConfig resourceConfig) {
+        Objects.requireNonNull(config);
+        Objects.requireNonNull(resourceConfig);
 
-        Config config = ConfigProvider.getConfig();
-
-        // Silence warnings from Jersey by disabling the default data source provider. See 9019.
-        // To pass TCK we support a system property to control whether or not we disable the default provider
-        // We also support the property via MicroProfile config in case a user wants to control the property.
-        boolean disableDatasourceProvider = config.getOptionalValue(DISABLE_DATASOURCE_PROVIDER, Boolean.class)
-                .orElseGet(() -> Boolean.parseBoolean(System.getProperty(DISABLE_DATASOURCE_PROVIDER, "true")));
-        if (!resourceConfig.hasProperty(CommonProperties.PROVIDER_DEFAULT_DISABLE) && disableDatasourceProvider) {
-            resourceConfig.addProperties(Map.of(CommonProperties.PROVIDER_DEFAULT_DISABLE, "DATASOURCE"));
-        }
-        if (!resourceConfig.hasProperty(ServerProperties.WADL_FEATURE_DISABLE)) {
-            resourceConfig.addProperties(Map.of(ServerProperties.WADL_FEATURE_DISABLE, "true"));
-        }
-
-        InjectionManager ij = injectionManager == null ? null : new InjectionManagerWrapper(injectionManager, resourceConfig);
-        ApplicationHandler appHandler = new ApplicationHandler(resourceConfig,
-                                                               new WebServerBinder(),
-                                                               ij);
-        Container container = new HelidonJerseyContainer(appHandler);
-
-        // This configuration via system properties is for the Jersey Client API. Any
-        // response in an exception will be mapped to an empty one to prevent data leaks
-        // unless property in config is set to false.
-        // See https://github.com/eclipse-ee4j/jersey/pull/4641.
-        if (!System.getProperties().contains(IGNORE_EXCEPTION_RESPONSE)) {
-            System.setProperty(CommonProperties.ALLOW_SYSTEM_PROPERTIES_PROVIDER, "true");
-            String ignore = config.getOptionalValue(IGNORE_EXCEPTION_RESPONSE, String.class).orElse("true");
-            System.setProperty(IGNORE_EXCEPTION_RESPONSE, ignore);
-        }
-
-        return new JaxRsService(resourceConfig, appHandler, container);
+        return doCreate(config, resourceConfig, null);
     }
 
-    private static String basePath(UriPath path) {
-        String reqPath = path.path();
-        String absPath = path.absolute().path();
-        String basePath = absPath.substring(0, absPath.length() - reqPath.length() + 1);
+    /**
+     * Create a new JAX-RS integration service with a custom injection manager.
+     *
+     * @param config           configuration, used to configure Jersey
+     * @param resourceConfig   containing application resources
+     * @param injectionManager injection manager to use
+     * @return a new service to register with the WebServer
+     * @see #create(io.helidon.common.config.Config, org.glassfish.jersey.server.ResourceConfig)
+     */
+    public static JaxRsService create(Config config,
+                                      ResourceConfig resourceConfig,
+                                      InjectionManager injectionManager) {
+        Objects.requireNonNull(config);
+        Objects.requireNonNull(resourceConfig);
+        Objects.requireNonNull(injectionManager);
 
-        if (absPath.isEmpty() || basePath.isEmpty()) {
-            return "/";
-        } else if (basePath.charAt(basePath.length() - 1) != '/') {
-            return basePath + "/";
-        } else {
-            return basePath;
-        }
+        return doCreate(config, resourceConfig, injectionManager);
     }
 
     @Override
@@ -169,6 +156,56 @@ class JaxRsService implements HttpService {
                 LOGGER.log(Level.DEBUG, "Exception during shutdown of Jersey", e);
             }
             LOGGER.log(Level.WARNING, "Exception while shutting down Jersey's application handler " + e.getMessage());
+        }
+    }
+
+    private static JaxRsService doCreate(Config config,
+                                         ResourceConfig resourceConfig,
+                                         InjectionManager injectionManager) {
+
+        // Silence warnings from Jersey by disabling the default data source provider. See 9019.
+        // To pass TCK we support a system property to control whether or not we disable the default provider
+        // We also support the property via MicroProfile config in case a user wants to control the property.
+        boolean disableDatasourceProvider = config.get(DISABLE_DATASOURCE_PROVIDER)
+                .asBoolean()
+                .orElseGet(() -> Boolean.parseBoolean(System.getProperty(DISABLE_DATASOURCE_PROVIDER, "true")));
+
+        if (!resourceConfig.hasProperty(CommonProperties.PROVIDER_DEFAULT_DISABLE) && disableDatasourceProvider) {
+            resourceConfig.addProperties(Map.of(CommonProperties.PROVIDER_DEFAULT_DISABLE, "DATASOURCE"));
+        }
+        if (!resourceConfig.hasProperty(ServerProperties.WADL_FEATURE_DISABLE)) {
+            resourceConfig.addProperties(Map.of(ServerProperties.WADL_FEATURE_DISABLE, "true"));
+        }
+
+        ApplicationHandler appHandler = new ApplicationHandler(resourceConfig,
+                                                               new WebServerBinder(),
+                                                               injectionManager);
+        Container container = new HelidonJerseyContainer(appHandler);
+
+        // This configuration via system properties is for the Jersey Client API. Any
+        // response in an exception will be mapped to an empty one to prevent data leaks
+        // unless property in config is set to false.
+        // See https://github.com/eclipse-ee4j/jersey/pull/4641.
+        if (!System.getProperties().contains(IGNORE_EXCEPTION_RESPONSE)) {
+            System.setProperty(CommonProperties.ALLOW_SYSTEM_PROPERTIES_PROVIDER, "true");
+            String ignore = config.get(IGNORE_EXCEPTION_RESPONSE).asString().orElse("true");
+            System.setProperty(IGNORE_EXCEPTION_RESPONSE, ignore);
+        }
+
+        return new JaxRsService(resourceConfig, appHandler, container);
+    }
+
+    private static String basePath(UriPath path) {
+        String reqPath = path.path();
+        String absPath = path.absolute().path();
+        String basePath = absPath.substring(0, absPath.length() - reqPath.length() + 1);
+
+        if (absPath.isEmpty() || basePath.isEmpty()) {
+            return "/";
+        } else if (basePath.charAt(basePath.length() - 1) != '/') {
+            return basePath + "/";
+        } else {
+            return basePath;
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import io.helidon.config.mp.MpConfig;
+import io.helidon.jersey.webserver.JaxRsService;
+import io.helidon.microprofile.server.HelidonHK2InjectionManagerFactory.InjectionManagerWrapper;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -272,8 +276,16 @@ public class JaxRsCdiExtension implements Extension {
 
         ResourceConfig resourceConfig = jaxRsApplication.resourceConfig();
 
-        return JaxRsService.create(resourceConfig,
-                                   injectionManager);
+        if (injectionManager == null) {
+            return JaxRsService.create(MpConfig.toHelidonConfig(ConfigProvider.getConfig()),
+                                       resourceConfig);
+        }
+
+        InjectionManager wrappedIm = new InjectionManagerWrapper(injectionManager, resourceConfig);
+
+        return JaxRsService.create(MpConfig.toHelidonConfig(ConfigProvider.getConfig()),
+                                   resourceConfig,
+                                   wrappedIm);
     }
 
     Optional<String> findContextRoot(io.helidon.config.Config config, JaxRsApplication jaxRsApplication) {
