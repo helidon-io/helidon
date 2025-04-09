@@ -16,6 +16,14 @@
 package io.helidon.docs.mp.testing;
 
 import io.helidon.microprofile.testing.testng.HelidonTest;
+import io.helidon.microprofile.testing.AddBean;
+import io.helidon.microprofile.testing.DisableDiscovery;
+
+import java.lang.annotation.Annotation;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -88,5 +96,51 @@ class TestingNgSnippets {
             }
         }
         // end::snippet_1[]
+    }
+
+    class Snippet2 {
+
+        class FirstBean {}
+
+        class SecondBean {}
+
+        // tag::snippet_2[]
+        @HelidonTest
+        @AddBean(FirstBean.class)
+        @AddBean(SecondBean.class)
+        @DisableDiscovery
+        @Target(ElementType.TYPE)
+        @Retention(RetentionPolicy.RUNTIME)
+        public @interface CustomMetaAnnotation {
+        }
+
+        @CustomMetaAnnotation
+        class AnnotationOnClass {
+        }
+        // end::snippet_2[]
+
+        // tag::snippet_3[]
+        @AddBean(FirstBean.class)
+        @AddBean(SecondBean.class)
+        @DisableDiscovery
+        @Target(ElementType.METHOD)
+        @Retention(RetentionPolicy.RUNTIME)
+        public @interface MyTestMethod {
+        }
+
+        @HelidonTest
+        class AnnotationOnMethod {
+
+            @Test // <1>
+            @MyTestMethod
+            void testOne() {
+            }
+
+            @Test // <1>
+            @MyTestMethod
+            void testTwo() {
+            }
+        }
+        // end::snippet_3[]
     }
 }

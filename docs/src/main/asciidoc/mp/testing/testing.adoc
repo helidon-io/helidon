@@ -89,6 +89,21 @@ NOTE: The test instance is not re-used between CDI container, using a dedicated 
 include::{sourcedir}/mp/testing/TestingJunit5Snippets.java[tag=snippet_2, indent=0]
 ----
 
+=== Using meta-annotations
+Meta-annotations are supported on both test classes and test methods and can be used as a composition mechanism.
+
+[source,java]
+.Class-level meta-annotation example
+----
+include::{sourcedir}/mp/testing/TestingJunit5Snippets.java[tag=snippet_4, indent=0]
+----
+
+[source,java]
+.Method-level meta-annotation example
+----
+include::{sourcedir}/mp/testing/TestingJunit5Snippets.java[tag=snippet_5, indent=0]
+----
+
 == API
 
 include::{rootdir}/mp/testing/testing-common.adoc[tag=api]

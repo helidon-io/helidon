@@ -69,6 +69,22 @@ I.e. By default, the test instance is re-used between test methods.
 
 NOTE: The test instance is not re-used between CDI container, using a dedicated CDI container implies a new test instance
 
+=== Using meta-annotations
+Meta-annotations are supported on both test classes and test methods and can be used as a composition mechanism.
+
+[source,java]
+.Class-level meta-annotation
+----
+include::{sourcedir}/mp/testing/TestingNgSnippets.java[tag=snippet_2, indent=0]
+----
+
+[source,java]
+.Method-level meta-annotation
+----
+include::{sourcedir}/mp/testing/TestingNgSnippets.java[tag=snippet_3, indent=0]
+----
+1. `org.testng.annotations.Test` is not inheritable and should be placed on methods
+
 == API
 
 include::{rootdir}/mp/testing/testing-common.adoc[tag=api]

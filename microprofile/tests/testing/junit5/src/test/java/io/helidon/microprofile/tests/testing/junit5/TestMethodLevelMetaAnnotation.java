@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,17 @@
 
 package io.helidon.microprofile.tests.testing.junit5;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-
+import io.helidon.microprofile.testing.AddBean;
+import io.helidon.microprofile.testing.AddConfig;
+import io.helidon.microprofile.testing.AddConfigBlock;
+import io.helidon.microprofile.testing.Configuration;
 import jakarta.inject.Inject;
 
-import io.helidon.microprofile.testing.junit5.AddBean;
-import io.helidon.microprofile.testing.junit5.AddConfig;
-import io.helidon.microprofile.testing.junit5.AddConfigBlock;
-import io.helidon.microprofile.testing.junit5.Configuration;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
+
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -33,11 +35,11 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@TestMetaAnnotation.MetaAnnotation
-class TestMetaAnnotation {
+@HelidonTest
+class TestMethodLevelMetaAnnotation {
 
     @Inject
-    MyBean bean;
+    private MyBean bean;
 
     @Inject
     @ConfigProperty(name = "some.key1")
@@ -59,8 +61,8 @@ class TestMetaAnnotation {
     @ConfigProperty(name = "second-key")
     private String anotherValue;
 
-    @Test
-    void testIt() {
+    @MyTestMethod
+    void testAnnotationComposition() {
         assertThat(bean.hello(), is("hello"));
         assertThat(value1, is("some.value1"));
         assertThat(value2, is("some.value2"));
@@ -69,6 +71,10 @@ class TestMetaAnnotation {
         assertThat(anotherValue, is("test-custom-config-second-value"));
     }
 
+
+    @Test
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.RUNTIME)
     @AddBean(MyBean.class)
     @AddConfigBlock("""
             some.key1=some.value1
@@ -76,15 +82,13 @@ class TestMetaAnnotation {
         """)
     @AddConfig(key = "second-key", value = "test-custom-config-second-value")
     @Configuration(configSources = {"testConfigSources.properties", "testConfigSources.yaml"})
-    @HelidonTest
-    @Retention(RetentionPolicy.RUNTIME)
-    @interface MetaAnnotation {
-    }
+    public @interface MyTestMethod { }
+
 
     static class MyBean {
-
-        String hello() {
+        public String hello() {
             return "hello";
         }
     }
+
 }
