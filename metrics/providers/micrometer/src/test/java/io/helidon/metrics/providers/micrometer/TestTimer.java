@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 
@@ -66,5 +67,20 @@ class TestTimer {
         assertThat("Updated Micrometer value",
                    t.totalTime(TimeUnit.MILLISECONDS),
                    is(fromMicrometer));
+    }
+
+    @Test
+    void testUnitsInToStringMicrometer() {
+        Timer defaultedUnitTimer = meterRegistry.getOrCreate(Timer.builder("defaultedUnitTimer"));
+
+        defaultedUnitTimer.record(Duration.ofMillis(4256));
+
+        String defaultedOutput = defaultedUnitTimer.toString();
+        try {
+            assertThat("Defaulted unit timer toString", defaultedOutput, containsString("PT4.256S"));
+        } finally {
+            meterRegistry.remove(defaultedUnitTimer);
+        }
+
     }
 }

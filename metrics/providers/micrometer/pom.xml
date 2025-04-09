@@ -69,6 +69,11 @@
             <groupId>io.prometheus</groupId>
             <artifactId>simpleclient_tracer_common</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-yaml</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

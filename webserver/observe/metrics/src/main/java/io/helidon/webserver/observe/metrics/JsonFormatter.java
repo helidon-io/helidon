@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -166,7 +166,7 @@ class JsonFormatter implements MeterRegistryFormatter {
                 // add this meter's contribution to the output.
                 MetricOutputBuilder metricOutputBuilder = meterOutputBuilderMapToUpdate
                         .computeIfAbsent(metricOutputKey(meter),
-                                         k -> MetricOutputBuilder.create(meter));
+                                         k -> MetricOutputBuilder.create(meter, metricsConfig));
                 metricOutputBuilder.add(meter);
                 isAnyOutput.set(true);
             }
@@ -210,7 +210,7 @@ class JsonFormatter implements MeterRegistryFormatter {
                 JsonObjectBuilder builderForThisName = metadataOutputBuilderWithinParent
                         .computeIfAbsent(name, k -> JSON.createObjectBuilder());
                 addNonEmpty(builderForThisName, "type", meter.type().typeName());
-                meter.baseUnit().ifPresent(u -> addNonEmpty(builderForThisName, "unit", u));
+                addUnit(meter, builderForThisName);
                 meter.description().ifPresent(d -> addNonEmpty(builderForThisName, "description", d));
                 isAnyOutput.set(true);
 
@@ -247,6 +247,31 @@ class JsonFormatter implements MeterRegistryFormatter {
             metadataOutputBuildersIgnoringScope.forEach(top::add);
         }
         return isAnyOutput.get() ? Optional.of(top.build()) : Optional.empty();
+    }
+
+    private void addUnit(Meter meter, JsonObjectBuilder builder) {
+        if (meter instanceof Timer timer) {
+            // For timers, we are going to use *some* units for output, so always set the metadata to whatever we decide to use
+            // even if the units were not explicitly set on this specific timer.
+            addNonEmpty(builder, "unit", timerUnitsToUse(timer));
+        } else {
+            meter.baseUnit().ifPresent(u -> addNonEmpty(builder, "unit", u));
+        }
+    }
+
+    private String timerUnitsToUse(Timer timer) {
+        return timerUnitsToUse(timer, metricsConfig);
+    }
+
+    private static String timerUnitsToUse(Timer timer, MetricsConfig metricsConfig) {
+        // If the config setting is not there, we always use seconds. Otherwise, we use the units set on the timer
+        // if there is one and the default setting from config otherwise.
+        return metricsConfig.jsonUnitsDefault().isEmpty()
+                ? TimeUnit.SECONDS.name()
+                : timer.baseUnit()
+                        .orElse(metricsConfig.jsonUnitsDefault()
+                                        .orElse(MetricsConfig.DEFAULT_JSON_UNITS_DEFAULT)
+                                        .name());
     }
 
     /**
@@ -353,12 +378,12 @@ class JsonFormatter implements MeterRegistryFormatter {
 
         protected abstract void apply(JsonObjectBuilder builder);
 
-        private static MetricOutputBuilder create(Meter meter) {
+        private static MetricOutputBuilder create(Meter meter, MetricsConfig metricsConfig) {
             return meter instanceof Counter
                     || meter instanceof io.helidon.metrics.api.Gauge
                     || meter instanceof FunctionalCounter
                     ? new Flat(meter)
-                    : new Structured(meter);
+                    : new Structured(meter, metricsConfig);
         }
 
         private static void addNarrowed(JsonObjectBuilder builder, String nameWithTags, Number number) {
@@ -428,9 +453,11 @@ class JsonFormatter implements MeterRegistryFormatter {
 
             private final List<Meter> children = new ArrayList<>();
             private final JsonObjectBuilder sameNameBuilder = JSON.createObjectBuilder();
+            private final MetricsConfig metricsConfig;
 
-            Structured(Meter meter) {
+            Structured(Meter meter, MetricsConfig metricsConfig) {
                 super(meter);
+                this.metricsConfig = metricsConfig;
             }
 
             @Override
@@ -459,11 +486,12 @@ class JsonFormatter implements MeterRegistryFormatter {
                         sameNameBuilder.add(valueId("total", childID), typedChild.totalAmount());
                         addDetails(typedChild.snapshot(), childID, null);
                     } else if (child instanceof Timer typedChild) {
+                        TimeUnit timeUnit = TimeUnit.valueOf(timerUnitsToUse(typedChild, metricsConfig));
                         sameNameBuilder.add(valueId("count", childID), typedChild.count());
-                        sameNameBuilder.add(valueId("max", childID), typedChild.max(TimeUnit.SECONDS));
-                        sameNameBuilder.add(valueId("mean", childID), typedChild.mean(TimeUnit.SECONDS));
-                        sameNameBuilder.add(valueId("elapsedTime", childID), typedChild.totalTime(TimeUnit.SECONDS));
-                        addDetails(typedChild.snapshot(), childID, timeUnit(typedChild));
+                        sameNameBuilder.add(valueId("max", childID), typedChild.max(timeUnit));
+                        sameNameBuilder.add(valueId("mean", childID), typedChild.mean(timeUnit));
+                        sameNameBuilder.add(valueId("elapsedTime", childID), typedChild.totalTime(timeUnit));
+                        addDetails(typedChild.snapshot(), childID, timeUnit);
                     } else if (child instanceof FunctionalCounter typedChild) {
                         sameNameBuilder.add(valueId("count", childID), typedChild.count());
                     } else if (child instanceof Gauge typedChild) {

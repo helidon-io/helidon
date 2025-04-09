@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,11 @@ import java.time.Duration;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
+import io.helidon.common.media.type.MediaTypes;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import io.helidon.metrics.api.Clock;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
@@ -31,6 +35,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -219,6 +224,70 @@ class TestTimer {
         assertThat("After sample stop",
                    t.totalTime(TimeUnit.MILLISECONDS),
                    greaterThanOrEqualTo((double) waitTime));
+
+    }
+
+    @Test
+    void testCompatibilityWithRelease3() {
+        String metricsConfig = """
+                metrics:
+                  timers:
+                    base-units-default: nanoseconds""";
+
+        Config config = Config.just(ConfigSources.create(metricsConfig, MediaTypes.APPLICATION_YAML));
+        MeterRegistry localMeterRegistry = Metrics.createMeterRegistry(MetricsConfig.builder().config(config.get("metrics"))
+                                                                               .build());
+        Timer defaultUnitsTimer = localMeterRegistry.getOrCreate(Timer.builder("defaultUnitsTimer"));
+
+        defaultUnitsTimer.record(Duration.ofMillis(150));
+
+        String defaultOutput = defaultUnitsTimer.toString();
+
+        try {
+            assertThat("Default timer toString", defaultOutput, containsString("PT0.15S"));
+        } finally {
+            localMeterRegistry.remove(defaultUnitsTimer);
+        }
+    }
+
+    @Test
+    void testUnitsInToStringWithDefaultMilliseconds() {
+        String metricsConfig = """
+                metrics:
+                  timers:
+                    base-units-default: milliseconds""";
+
+        Config config = Config.just(ConfigSources.create(metricsConfig, MediaTypes.APPLICATION_YAML));
+        MeterRegistry localMeterRegistry = Metrics.createMeterRegistry(MetricsConfig.builder().config(config.get("metrics"))
+                                                                               .build());
+        Timer timer = localMeterRegistry.getOrCreate(Timer.builder("forToStringTest")
+                                                        .baseUnit("milliseconds"));
+
+        Timer otherTimer = localMeterRegistry.getOrCreate(Timer.builder("otherToStringTest")
+                                                             .baseUnit("seconds"));
+        Timer defaultUnitsTimer = localMeterRegistry.getOrCreate(Timer.builder("defaultUnitsTimer"));
+        Timer secondsUnitsTimer = localMeterRegistry.getOrCreate(Timer.builder("secondsUnitsTimer")
+                        .baseUnit("SECONDS"));
+
+        timer.record(Duration.ofMillis(125));
+        otherTimer.record(Duration.ofMillis(1300));
+        defaultUnitsTimer.record(Duration.ofMillis(150));
+        secondsUnitsTimer.record(Duration.ofMillis(4500));
+
+        String output = timer.toString();
+        String otherOutput = otherTimer.toString();
+        String defaultOutput = defaultUnitsTimer.toString();
+        String secondsOutput = secondsUnitsTimer.toString();
+
+        try {
+            assertThat("Timer toString", output, containsString("PT0.125S"));
+            assertThat("Other timer toString", otherOutput, containsString("PT1.3S"));
+            assertThat("Default timer toString", defaultOutput, containsString("PT0.15S"));
+            assertThat("Seconds timer toString", secondsOutput, containsString("PT4.5S"));
+        } finally {
+            Stream.of(timer, otherTimer, defaultUnitsTimer, secondsUnitsTimer)
+                            .forEach(localMeterRegistry::remove);
+        }
 
     }
 

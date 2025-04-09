@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@ package io.helidon.metrics.providers.micrometer;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -31,16 +33,28 @@ import io.micrometer.core.instrument.Clock;
 
 class MTimer extends MMeter<io.micrometer.core.instrument.Timer> implements io.helidon.metrics.api.Timer {
 
+    /*
+    Micrometer timers, unlike other Micrometer meters, do not provide a way to assign the baseUnit setting. Instead, you can
+    specify what units you want when you get values from the timer. So that the JSON formatter can prepare the output we
+    save the base unit as part of this wrapper around the Micrometer timer.
+     */
+    private final Optional<TimeUnit> baseTimeUnit;
+
     private MTimer(Meter.Id id, io.micrometer.core.instrument.Timer delegate, Builder builder) {
         super(id, delegate, builder);
+        baseTimeUnit = builder.baseUnit()
+                .map(v -> v.toUpperCase(Locale.ROOT))
+                .map(TimeUnit::valueOf);
     }
 
     private MTimer(Meter.Id id, io.micrometer.core.instrument.Timer delegate) {
         super(id, delegate);
+        baseTimeUnit = Optional.empty();
     }
 
     private MTimer(Meter.Id id, io.micrometer.core.instrument.Timer delegate, Optional<String> scope) {
         super(id, delegate, scope);
+        baseTimeUnit = Optional.empty();
     }
 
     static MTimer create(Meter.Id id, io.micrometer.core.instrument.Timer timer) {
@@ -87,6 +101,11 @@ class MTimer extends MMeter<io.micrometer.core.instrument.Timer> implements io.h
                 return clock.monotonicTime();
             }
         }));
+    }
+
+    @Override
+    public Optional<String> baseUnit() {
+        return baseTimeUnit.map(TimeUnit::name);
     }
 
     @Override
@@ -156,12 +175,27 @@ class MTimer extends MMeter<io.micrometer.core.instrument.Timer> implements io.h
 
     @Override
     public String toString() {
-        TimeUnit baseTimeUnit = delegate().baseTimeUnit();
         return stringJoiner()
                 .add("count=" + delegate().count())
-                .add("totalTime=" + Duration.of((long) delegate().totalTime(baseTimeUnit),
-                                                baseTimeUnit.toChronoUnit()))
+                .add("totalTime=" + Duration.ofNanos((long) delegate().totalTime(TimeUnit.NANOSECONDS)))
+                .add("baseUnit=" + baseTimeUnit)
                 .toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof MTimer mTimer)) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        return Objects.equals(baseTimeUnit, mTimer.baseTimeUnit);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), baseTimeUnit);
     }
 
     static class Sample implements io.helidon.metrics.api.Timer.Sample {
@@ -267,7 +301,7 @@ class MTimer extends MMeter<io.micrometer.core.instrument.Timer> implements io.h
 
         @Override
         public Iterable<Duration> buckets() {
-            return List.of(buckets);
+            return buckets == null ? List.of() : List.of(buckets);
         }
 
         @Override
