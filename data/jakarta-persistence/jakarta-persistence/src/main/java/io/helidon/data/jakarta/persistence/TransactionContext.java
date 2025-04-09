@@ -16,26 +16,40 @@
 
 package io.helidon.data.jakarta.persistence;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import io.helidon.data.DataException;
+import io.helidon.service.registry.Service;
 import io.helidon.transaction.Tx;
 import io.helidon.transaction.TxException;
+import io.helidon.transaction.TxLifeCycle;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 
 // ThreadLocal storage
 final class TransactionContext {
+
     private static final System.Logger LOGGER = System.getLogger(TransactionContext.class.getName());
     private static final LocalContext INSTANCE = new LocalContext();
 
+    @Deprecated
     private EntityManagerStorage storage;
+
+    private final Context context;
     private final JtaTransactionStorage jtaStorage;
+    private final LocalTransactionStorage localStorage;
 
     // Transaction method level (starts from 1)
+    @Deprecated
     private int counter;
 
     private TransactionContext() {
         storage = null;
+        context = new Context();
         jtaStorage = new JtaTransactionStorage();
+        localStorage = new LocalTransactionStorage();
         counter = 0;
     }
 
@@ -404,12 +418,12 @@ final class TransactionContext {
         }
     }
 
+    // FIXME: transactionType shall be removed after resource local transactions redesign
     EntityManager entityManager(EntityManagerFactory factory, PersistenceUnitTransactionType transactionType) {
-        if (transactionType == PersistenceUnitTransactionType.JTA) {
-            return jtaStorage.manager(factory);
-        } else {
-            return storage.current();
-        }
+        return switch (transactionType) {
+            case JTA -> jtaStorage.manager(factory, context);
+            case RESOURCE_LOCAL -> storage.current();
+        };
     }
 
     // Set transaction as rollback only if active
@@ -417,16 +431,24 @@ final class TransactionContext {
         storage.transaction().setRollbackOnly();
     }
 
+    // FIXME: transactionType shall be removed after resource local transactions redesign
     boolean isTransactionActive(PersistenceUnitTransactionType transactionType) {
-        if (transactionType == PersistenceUnitTransactionType.JTA) {
-            return jtaStorage.isTxMethodRunning();
-        } else {
-            return counter > 0;
-        }
+        return switch (transactionType) {
+            case JTA -> context.isTxMethodRunning();
+            case RESOURCE_LOCAL -> counter > 0;
+        };
+    }
+
+    Context context() {
+        return context;
     }
 
     JtaTransactionStorage jtaStorage() {
         return jtaStorage;
+    }
+
+    LocalTransactionStorage localStorage() {
+        return localStorage;
     }
 
     // Used in begin method to simplify internal states dispatching
@@ -457,6 +479,195 @@ final class TransactionContext {
             return newTx
                     ? NEW
                     : active ? ACTIVE : INACTIVE;
+        }
+
+    }
+
+    // Current thread context.
+    // Contains counters to evaluate transaction methods being called and new transaction levels started.
+    static final class Context {
+
+        // Transaction methods depth counter.
+        private int txMethodsDepth;
+        // Transaction depth counter.
+        private int txDepth;
+        // Transaction depth when transaction was started (before new JTA transaction was eventually started)
+        // This must be stack to keep values for individual method call levels.
+        private final List<Integer> initialTxDepth;
+        private PersistenceUnitTransactionType txType;
+
+        Context() {
+            txMethodsDepth = 0;
+            txDepth = 0;
+            initialTxDepth = new ArrayList<>();
+            txType = null;
+        }
+
+        int txMethodsDepth() {
+            return txMethodsDepth;
+        }
+
+        int txDepth() {
+            return txDepth;
+        }
+
+        boolean isTxMethodRunning() {
+            return txMethodsDepth > 0;
+        }
+
+        PersistenceUnitTransactionType txType() {
+            // Sanity check, transaction mode is available between top level transaction method start and end calls.
+            if (txMethodsDepth <= 0) {
+                throw new IllegalStateException("Transaction mode requested outside transaction method execution");
+            }
+            return txType;
+        }
+
+        void start(PersistenceUnitTransactionType txType) {
+            // Validate transaction mode. It shall not change while transaction methods are being executed.
+            // Transaction mode change means bug int the code.
+            if (txMethodsDepth == 0) {
+                this.txType = txType;
+            } else {
+                if (this.txType != txType) {
+                    throw new IllegalStateException(
+                            String.format("Transaction mode changed from %s to %s while transaction is being executed",
+                                          this.txType.name(),
+                                          txType.name()));
+                }
+            }
+            txMethodsDepth++;
+            initialTxDepth.addLast(txDepth);
+            // Initialize to current state before JTA starts transaction handling
+            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                LOGGER.log(System.Logger.Level.DEBUG,
+                           String.format("%s transaction method marked as started on level %d [%d].",
+                                         txType.name(),
+                                         txMethodsDepth,
+                                         Thread.currentThread().hashCode()));
+            }
+        }
+
+        void end() {
+            // Decrement counter first to make it always happen
+            int methodsDepth = txMethodsDepth--;
+            if (txMethodsDepth < 0) {
+                throw new DataException("Closing non existent JTA transaction level");
+            }
+            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                LOGGER.log(System.Logger.Level.DEBUG,
+                           String.format("%s transaction method marked as ended on level %d [%d].",
+                                         txType.name(),
+                                         methodsDepth,
+                                         Thread.currentThread().hashCode()));
+            }
+
+            // Transaction depth sanity check before current method level ends.
+            // If the check fails, there was no commit or rollback after transaction was started.
+            // Log warning and fix transaction depth counter.
+            int initialDepth = initialTxDepth.removeLast();
+            if (initialDepth != txDepth) {
+                if (LOGGER.isLoggable(System.Logger.Level.WARNING)) {
+                    LOGGER.log(System.Logger.Level.WARNING,
+                               String.format("New transaction was started but never finished with commit or rollback [%d]",
+                                             Thread.currentThread().hashCode()));
+                }
+                txDepth = initialDepth;
+            }
+        }
+
+        void begin() {
+            txDepth++;
+            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                LOGGER.log(System.Logger.Level.DEBUG,
+                           String.format("New %s transaction begin on level %d:%d [%d].",
+                                         txType.name(),
+                                         txMethodsDepth,
+                                         txDepth,
+                                         Thread.currentThread().hashCode()));
+            }
+        }
+
+        void commit() {
+            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                LOGGER.log(System.Logger.Level.DEBUG,
+                           String.format("New %s transaction commit on level %d:%d [%d].",
+                                         txType.name(),
+                                         txMethodsDepth,
+                                         txDepth,
+                                         Thread.currentThread().hashCode()));
+            }
+            txDepth--;
+        }
+
+        void rollback() {
+            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                LOGGER.log(System.Logger.Level.DEBUG,
+                           String.format("New %s transaction rollback on level %d:%d [%d].",
+                                         txType.name(),
+                                         txMethodsDepth,
+                                         txDepth,
+                                         Thread.currentThread().hashCode()));
+            }
+            txDepth--;
+        }
+
+   }
+
+    /**
+     * Process JTA API transaction life-cycle events.
+     */
+    @Service.Singleton
+    static class JtaLifeCycle implements TxLifeCycle {
+
+        @Override
+        public void start(String type) {
+            PersistenceUnitTransactionType txType = "jta".equalsIgnoreCase(type)
+                    ? PersistenceUnitTransactionType.JTA
+                    : PersistenceUnitTransactionType.RESOURCE_LOCAL;
+            TransactionContext transactionContext = TransactionContext.getInstance();
+            transactionContext.context()
+                    .start(txType);
+            if (transactionContext.context().txType() == PersistenceUnitTransactionType.RESOURCE_LOCAL) {
+                transactionContext.localStorage.start();
+            }
+        }
+
+        @Override
+        public void end() {
+            TransactionContext transactionContext = TransactionContext.getInstance();
+            PersistenceUnitTransactionType txType = transactionContext.context().txType();
+            transactionContext.context().end();
+            switch (txType) {
+                case JTA -> transactionContext.jtaStorage()
+                        .end(transactionContext.context());
+                case RESOURCE_LOCAL -> transactionContext.localStorage()
+                        .end(transactionContext.context());
+            }
+        }
+
+        @Override
+        public void begin(String txIdentity) {
+            TransactionContext transactionContext = TransactionContext.getInstance();
+            transactionContext.context().begin();
+        }
+
+        @Override
+        public void commit(String txIdentity) {
+            TransactionContext transactionContext = TransactionContext.getInstance();
+            if (transactionContext.context().txType() == PersistenceUnitTransactionType.RESOURCE_LOCAL) {
+                transactionContext.localStorage.commit(transactionContext.context());
+            }
+            transactionContext.context().commit();
+        }
+
+        @Override
+        public void rollback(String txIdentity) {
+            TransactionContext transactionContext = TransactionContext.getInstance();
+            if (transactionContext.context().txType() == PersistenceUnitTransactionType.RESOURCE_LOCAL) {
+                transactionContext.localStorage.rollback(transactionContext.context());
+            }
+            transactionContext.context().rollback();
         }
 
     }
