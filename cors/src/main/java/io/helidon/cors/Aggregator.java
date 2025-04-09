@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.function.Supplier;
 
 import io.helidon.common.config.Config;
 import io.helidon.common.config.ConfigValue;
+import io.helidon.common.uri.UriEncoding;
 import io.helidon.common.uri.UriPath;
 import io.helidon.cors.LogHelper.MatcherChecks;
 import io.helidon.http.PathMatcher;
@@ -327,7 +328,8 @@ public class Aggregator {
         }
 
         boolean matches(String path, String method) {
-            return matcher.match(UriPath.create(path)).accepted() && get().matches(method);
+            return matcher.match(UriPath.create(UriEncoding.encode(path, UriEncoding.Type.PATH))).accepted()
+                    && get().matches(method);
         }
 
         PathMatcher matcher() {
