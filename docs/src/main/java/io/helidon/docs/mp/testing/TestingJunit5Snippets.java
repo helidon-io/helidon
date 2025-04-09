@@ -139,7 +139,7 @@ class TestingJunit5Snippets {
         }
 
         @CustomMetaAnnotation
-        class MyTest {
+        class AnnotationOnClass {
         }
         // end::snippet_4[]
 
@@ -154,7 +154,7 @@ class TestingJunit5Snippets {
         }
 
         @HelidonTest
-        class MyTest {
+        class AnnotationOnMethod {
 
             @MyTestMethod
             void testOne() {

@@ -115,7 +115,7 @@ class TestingNgSnippets {
         }
 
         @CustomMetaAnnotation
-        class MyTest {
+        class AnnotationOnClass {
         }
         // end::snippet_2[]
 
@@ -129,7 +129,7 @@ class TestingNgSnippets {
         }
 
         @HelidonTest
-        class MyTest {
+        class AnnotationOnMethod {
 
             @Test // <1>
             @MyTestMethod
