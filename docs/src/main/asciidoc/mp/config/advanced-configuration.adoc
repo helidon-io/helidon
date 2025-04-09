@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -87,7 +87,7 @@ include::{sourcedir}/mp/config/AdvancedConfigurationSnippets.java[tag=snippet_2,
 Custom Config Sources are loaded using the Java Service Loader pattern, by implementing
 either `org.eclipse.microprofile.config.spi.ConfigSource`,
 or `org.eclipse.microprofile.config.spi.ConfigSourceProvider` SPI and registering
-it as a service (Using `pass:[META-INF/services/${class-name}]` file when using classpath, or
+it as a service (Using pass:normal[`META-INF/services/${class-name}`] file when using classpath, or
 using the `provides` statement in `module-info.java` when using module path).
 
 The interface `org.eclipse.microprofile.config.spi.ConfigSource` requires implementation of the following methods:
@@ -172,7 +172,7 @@ sources:
 
 == Extending Meta-Config to Create a Custom Config Source Type
 
-Helidon meta-config by default supports the following types: environment-variables, system-properties, properties, yaml, hocon and json. Users can also extend meta-config to create a custom config source type by loading it using the Java Service Loader pattern. This is achieved  by implementing `io.helidon.config.mp.spi.MpMetaConfigProvider` SPI and registering it as a service (Using `pass:[META-INF/services/${class-name}]` file when using classpath, or using the `provides` statement in `module-info.java` when using module path).
+Helidon meta-config by default supports the following types: environment-variables, system-properties, properties, yaml, hocon and json. Users can also extend meta-config to create a custom config source type by loading it using the Java Service Loader pattern. This is achieved  by implementing `io.helidon.config.mp.spi.MpMetaConfigProvider` SPI and registering it as a service (Using pass:normal[`META-INF/services/${class-name}`] file when using classpath, or using the `provides` statement in `module-info.java` when using module path).
 
 The interface `io.helidon.config.mp.spi.MpMetaConfigProvider` requires implementation of the following methods:
 
