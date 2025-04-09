@@ -25,21 +25,25 @@ import io.helidon.data.jakarta.persistence.spi.JakartaPersistenceExtension;
 import io.helidon.data.jakarta.persistence.spi.JakartaPersistenceExtensionProvider;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistry;
+import io.helidon.transaction.TxSupport;
 
 @Weight(90)
 @Service.Singleton
 class JpaExtensionProviderService implements JakartaPersistenceExtensionProvider {
     private final List<JpaEntityProvider<?>> providers;
     private final ServiceRegistry registry;
+    private final TxSupport txSupport;
 
     @Service.Inject
-    JpaExtensionProviderService(List<JpaEntityProvider<?>> providers, ServiceRegistry registry) {
+    JpaExtensionProviderService(List<JpaEntityProvider<?>> providers, ServiceRegistry registry, TxSupport txSupport) {
         this.providers = providers;
         this.registry = registry;
+        this.txSupport = txSupport;
     }
 
     @Override
     public JakartaPersistenceExtension create(DataConfig config) {
-        return new JpaExtensionImpl(config, registry, providers);
+        return new JpaExtensionImpl(config, registry, providers, txSupport);
     }
+
 }

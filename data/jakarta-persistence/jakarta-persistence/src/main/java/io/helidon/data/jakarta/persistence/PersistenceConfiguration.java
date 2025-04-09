@@ -23,14 +23,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 
 import javax.sql.DataSource;
 
 import io.helidon.service.registry.Lookup;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.ServiceRegistry;
-import io.helidon.service.registry.Services;
 import io.helidon.transaction.TxSupport;
 
 import jakarta.persistence.SharedCacheMode;
@@ -63,15 +61,13 @@ public final class PersistenceConfiguration {
      *
      * @param name the name of the persistence unit, which may be used by
      *             the persistence provider for logging and error reporting
+     * @param txSupport transaction handling support
      */
-    private PersistenceConfiguration(String name) {
+    private PersistenceConfiguration(String name, TxSupport txSupport) {
         Objects.requireNonNull(name, "Persistence unit name should not be null");
         this.name = name;
         // Check whether JTA TxSupport is available
-        // FIXME: isPresent() check is temporary, this module will have own RESOURCE_LOCAL TxSupport implemented
-        //        so Optional won't be required
-        Optional<TxSupport> txSupport = Services.first(TxSupport.class);
-        this.isJta = txSupport.isPresent() && "jta".equalsIgnoreCase(txSupport.get().type());
+        this.isJta = "jta".equalsIgnoreCase(txSupport.type());
         if (LOGGER.isLoggable(Level.DEBUG)) {
             LOGGER.log(Level.DEBUG,
                        String.format("Configuring %s persistence provider in %s transaction mode.",
@@ -84,10 +80,11 @@ public final class PersistenceConfiguration {
      * Create a new empty (named) configuration.
      *
      * @param name name of the persistence unit
+     * @param txSupport transaction handling support
      * @return a new instance
      */
-    public static PersistenceConfiguration create(String name) {
-        return new PersistenceConfiguration(name);
+    public static PersistenceConfiguration create(String name, TxSupport txSupport) {
+        return new PersistenceConfiguration(name, txSupport);
     }
 
     /**
