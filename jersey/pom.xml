@@ -41,6 +41,7 @@
         <module>server</module>
         <module>jsonp</module>
         <module>common</module>
+        <module>webserver</module>
     </modules>
 
     <profiles>
