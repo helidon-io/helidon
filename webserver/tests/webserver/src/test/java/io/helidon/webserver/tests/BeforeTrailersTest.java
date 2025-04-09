@@ -16,9 +16,8 @@
 
 package io.helidon.webserver.tests;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import io.helidon.http.Header;
+import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
@@ -26,7 +25,6 @@ import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -34,7 +32,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
 class BeforeTrailersTest {
-    static private final AtomicBoolean CALLED = new AtomicBoolean();
+    private static final HeaderName HELIDON = HeaderNames.create("helidon");
 
     private final WebClient client;
 
@@ -48,8 +46,7 @@ class BeforeTrailersTest {
                     if (req.path().path().equals("/trailers")) {
                         res.header(HeaderNames.TRAILER, "helidon");
                         res.beforeTrailers(trailers -> {
-                            trailers.add(HeaderNames.create("helidon"), "rocks");
-                            CALLED.set(true);
+                            trailers.add(HELIDON, "rocks");
                         });
                     }
                     chain.proceed();
@@ -57,16 +54,11 @@ class BeforeTrailersTest {
                 .any((req, res) -> res.send("hello"));
     }
 
-    @BeforeEach
-    void reset() {
-        CALLED.set(false);
-    }
-
     @Test
     void testNoBeforeTrailers() {
         try (HttpClientResponse res = client.get("/noTrailers").request()) {
             assertThat(res.status().code(), is(200));
-            assertThat(CALLED.get(), is(false));
+            assertThat(res.trailers().contains(HELIDON), is(false));
         }
     }
 
@@ -74,9 +66,8 @@ class BeforeTrailersTest {
     void testBeforeTrailers() {
         try (HttpClientResponse res = client.get("/trailers").request()) {
             assertThat(res.status().code(), is(200));
-            assertThat(CALLED.get(), is(true));
             assertThat(res.entity().as(String.class), is("hello"));     // need to read entity
-            Header trailer = res.trailers().get(HeaderNames.create("helidon"));
+            Header trailer = res.trailers().get(HELIDON);
             assertThat(trailer.get(), is("rocks"));
         }
     }
