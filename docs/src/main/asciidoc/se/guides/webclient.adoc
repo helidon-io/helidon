@@ -193,7 +193,7 @@ Hello David!
 ----
 
 It is also possible to change the greeting word by using a PUT request to `/greet/greeting` path. The request also
-needs to include a body with JSON type and using a structure like `pass:[{"greeting" : "value"}]`.
+needs to include a body with JSON type and using a structure like pass:normal[`{"greeting" : "value"}`].
 
 [source,java]
 .Modify the application greeting:

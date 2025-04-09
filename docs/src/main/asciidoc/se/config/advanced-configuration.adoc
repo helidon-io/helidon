@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -486,7 +486,7 @@ for more detail.
 
 === Tokens
 A token reference is a key token starting with `$`, optionally enclosed between
- `{` and `}`, i.e. `$ref` or `${ref}`. Even a key composed of more than one token
+ `{` and `}`, i.e. `$ref` or pass:normal[`${ref}`]. Even a key composed of more than one token
  can be referenced in another key, i.e. `${env.ref}`.
 
 As an example use case, you can use token references to declare the default values (see
