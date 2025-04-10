@@ -106,12 +106,6 @@ public class MySqlSuite implements SuiteProvider {
     @Testing.Test
     @Suite(MySqlSuite.class)
     @Testcontainers(disabledWithoutDocker = true)
-    public static class TestTransaction extends io.helidon.data.tests.common.TestTransaction {
-    }
-
-    @Testing.Test
-    @Suite(MySqlSuite.class)
-    @Testcontainers(disabledWithoutDocker = true)
     public static class TestQbmnProjection extends io.helidon.data.tests.common.TestQbmnProjection {
     }
 
@@ -144,4 +138,17 @@ public class MySqlSuite implements SuiteProvider {
     @Testcontainers(disabledWithoutDocker = true)
     public static class TestQueryByAnnotation extends io.helidon.data.tests.common.TestQueryByAnnotation {
     }
+
+    @Testing.Test
+    @Suite(MySqlSuite.class)
+    @Testcontainers(disabledWithoutDocker = true)
+    public static class TestTxMethods extends io.helidon.data.tests.common.TestTxMethods {
+    }
+
+    @Testing.Test
+    @Suite(MySqlSuite.class)
+    @Testcontainers(disabledWithoutDocker = true)
+    public static class TestTxAnnotations extends io.helidon.data.tests.common.TestTxAnnotations {
+    }
+
 }

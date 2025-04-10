@@ -147,9 +147,13 @@ public class TestTxAnnotations {
         Pokemon secondSaved = Pokemon.clone(NEW_POKEMONS.get(107));
         Result result = dao.newInNew(firstSaved, secondSaved);
         assertThat(result.firstDb().isPresent(), is(true));
-        assertThat(result.secondDb().isPresent(), is(true));
         assertThat(result.firstDb().get(), is(firstSaved));
-        assertThat(result.secondDb().get(), is(secondSaved));
+        // Hibernate EM does not see content of inner transaction in the outer one
+        //assertThat(result.secondDb().isPresent(), is(true));
+        //assertThat(result.secondDb().get(), is(secondSaved));
+        Optional<Pokemon> secondFromDb = pokemonRepository.findById(secondSaved.getId());
+        assertThat(secondFromDb.isPresent(), is(true));
+        assertThat(secondFromDb.get(), is(secondSaved));
     }
 
     @Test
@@ -190,9 +194,9 @@ public class TestTxAnnotations {
         Pokemon secondSaved = Pokemon.clone(NEW_POKEMONS.get(107));
         Result result = dao.unsupportedInNew(firstSaved, secondSaved);
         assertThat(result.firstDb().isPresent(), is(true));
-        assertThat(result.secondDb().isPresent(), is(true));
+        // Value is stored outside transaction and not synchronized to the database
+        assertThat(result.secondDb().isPresent(), is(false));
         assertThat(result.firstDb().get(), is(firstSaved));
-        assertThat(result.secondDb().get(), is(secondSaved));
     }
 
     @Test
@@ -281,9 +285,13 @@ public class TestTxAnnotations {
         Pokemon secondSaved = Pokemon.clone(NEW_POKEMONS.get(109));
         Result result = dao.newInRequired(firstSaved, secondSaved);
         assertThat(result.firstDb().isPresent(), is(true));
-        assertThat(result.secondDb().isPresent(), is(true));
         assertThat(result.firstDb().get(), is(firstSaved));
-        assertThat(result.secondDb().get(), is(secondSaved));
+        // Hibernate EM does not see content of inner transaction in the outer one
+        //assertThat(result.secondDb().isPresent(), is(true));
+        //assertThat(result.secondDb().get(), is(secondSaved));
+        Optional<Pokemon> secondFromDb = pokemonRepository.findById(secondSaved.getId());
+        assertThat(secondFromDb.isPresent(), is(true));
+        assertThat(secondFromDb.get(), is(secondSaved));
     }
 
     @Test
@@ -324,9 +332,9 @@ public class TestTxAnnotations {
         Pokemon secondSaved = Pokemon.clone(NEW_POKEMONS.get(109));
         Result result = dao.unsupportedInRequired(firstSaved, secondSaved);
         assertThat(result.firstDb().isPresent(), is(true));
-        assertThat(result.secondDb().isPresent(), is(true));
+        // Value is stored outside transaction and not synchronized to the database
+        assertThat(result.secondDb().isPresent(), is(false));
         assertThat(result.firstDb().get(), is(firstSaved));
-        assertThat(result.secondDb().get(), is(secondSaved));
     }
 
     @Test
