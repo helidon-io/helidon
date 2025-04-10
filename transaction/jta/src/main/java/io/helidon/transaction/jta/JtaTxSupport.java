@@ -157,7 +157,7 @@ class JtaTxSupport implements TxSupport {
                                String.format("Starting @Tx.New with active transaction [%d].",
                                              Thread.currentThread().hashCode()));
                 }
-                previous = suspend();
+                previous = suspend(true);
                 break;
             case Status.STATUS_NO_TRANSACTION:
                 if (LOGGER.isLoggable(Level.DEBUG)) {
@@ -173,7 +173,7 @@ class JtaTxSupport implements TxSupport {
                                String.format("Starting @Tx.New with transaction marked for rollback [%d].",
                                              Thread.currentThread().hashCode()));
                 }
-                previous = suspend();
+                previous = suspend(true);
                 break;
             case Status.STATUS_PREPARING:
                 throw new TxException("Starting @Tx.New with transaction being prepared for commit.");
@@ -341,14 +341,14 @@ class JtaTxSupport implements TxSupport {
                                String.format("Starting @Tx.Unsupported with active transaction [%d].",
                                              Thread.currentThread().hashCode()));
                 }
-                return runInSuspendedTxScope(suspend(), task);
+                return runInSuspendedTxScope(suspend(true), task);
             case Status.STATUS_MARKED_ROLLBACK:
                 if (LOGGER.isLoggable(Level.DEBUG)) {
                     LOGGER.log(Level.DEBUG,
                                String.format("Starting @Tx.Unsupported outside transaction scope [%d].",
                                              Thread.currentThread().hashCode()));
                 }
-                return runInSuspendedTxScope(suspend(), task);
+                return runInSuspendedTxScope(suspend(true), task);
             // This seems to be valid use-case, do not log warning
             case Status.STATUS_NO_TRANSACTION:
                 if (LOGGER.isLoggable(Level.DEBUG)) {
@@ -394,7 +394,7 @@ class JtaTxSupport implements TxSupport {
             throw new TxException("Transaction task failed.", e);
         } finally {
             if (suspended != null) {
-                resume(suspended);
+                resume(suspended, true);
             }
         }
     }
@@ -428,10 +428,10 @@ class JtaTxSupport implements TxSupport {
             return result;
         } finally {
             try {
-                suspend();
+                suspend(false);
             } finally {
                 if (previous != null) {
-                    resume(previous);
+                    resume(previous, true);
                 }
             }
         }
@@ -441,7 +441,7 @@ class JtaTxSupport implements TxSupport {
         try {
             // Used only when JtaProvider is present
             int txStatus = transactionManager().getStatus();
-            // STATUS_UNKNOWN:
+            // According to javadoc of STATUS_UNKNOWN:
             // A transaction is associated with the target object but its current status cannot be determined.
             // This is a transient condition and a subsequent invocation will ultimately return a different status.
             if (txStatus == Status.STATUS_UNKNOWN) {
@@ -465,11 +465,15 @@ class JtaTxSupport implements TxSupport {
         }
     }
 
-    private Transaction suspend() {
+    // boolean propagate - whether to propagate to event listeners
+    private Transaction suspend(boolean propagate) {
         try {
             Transaction suspended = transactionManager().suspend();
             if (suspended == null) {
                 throw new NullPointerException("No transaction instance is available.");
+            }
+            if (propagate) {
+                suspend(Integer.toString(System.identityHashCode(suspended)));
             }
             return suspended;
         } catch (SystemException e) {
@@ -477,11 +481,16 @@ class JtaTxSupport implements TxSupport {
         }
     }
 
-    private void resume(Transaction tx) {
+    // boolean propagate - whether to propagate to event listeners
+    private void resume(Transaction tx, boolean propagate) {
         try {
             transactionManager().resume(tx);
         } catch (SystemException | InvalidTransactionException e) {
             throw new TxException("Transaction resume failed", e);
+        } finally {
+            if (propagate) {
+                resume(Integer.toString(System.identityHashCode(tx)));
+            }
         }
     }
 
@@ -551,6 +560,16 @@ class JtaTxSupport implements TxSupport {
     // Notify TxLifeCycle listeners about transaction rollback call
     private void rollback(String txIdentity) {
         txListeners.forEach(l -> l.rollback(txIdentity));
+    }
+
+    // Notify TxLifeCycle listeners about transaction being suspended
+    private void suspend(String txIdentity) {
+        txListeners.forEach(l -> l.suspend(txIdentity));
+    }
+
+    // Notify TxLifeCycle listeners about transaction being resumed
+    private void resume(String txIdentity) {
+        txListeners.forEach(l -> l.resume(txIdentity));
     }
 
 }

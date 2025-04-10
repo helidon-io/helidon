@@ -16,13 +16,7 @@
 
 package io.helidon.data.spi;
 
-import java.util.concurrent.Callable;
-import java.util.function.Consumer;
-import java.util.function.Function;
-
-import io.helidon.common.Functions;
 import io.helidon.data.DataConfig;
-import io.helidon.transaction.Tx;
 
 /**
  * Implemented by each support (such as Jakarta persistence, Eclipselink native, SQL native etc.).
@@ -42,58 +36,6 @@ public interface DataSupport extends AutoCloseable {
      * @return type uniquely identifying this support
      */
     String type();
-
-    /**
-     * Execute provided task as database transaction.
-     * Transaction is handled automatically. Task computes and returns result.
-     *
-     * @param type transaction type
-     * @param task task to run in transaction
-     * @param <T>  the result type of the task
-     * @return computed task result
-     * @throws io.helidon.data.DataException when result computation failed
-     */
-    <T> T transaction(Tx.Type type, Callable<T> task);
-
-    /**
-     * Execute provided task as database transaction.
-     * Transaction is handled automatically. Task does not return any result.
-     *
-     * @param type transaction type
-     * @param task task to run in transaction
-     * @param <E>  type of thrown (checked) exception
-     * @throws io.helidon.data.DataException when task computation failed
-     */
-    <E extends Throwable> void transaction(Tx.Type type, Functions.CheckedRunnable<E> task);
-
-    /**
-     * Execute provided task as database transaction.
-     * Transaction is finished manually. Task computes and returns result.
-     *
-     * @param type transaction type
-     * @param task task to run in transaction
-     * @param <T>  the result type of the task
-     * @return computed task result
-     */
-    <T> T transaction(Tx.Type type, Function<Tx.Transaction, T> task);
-
-    /**
-     * Execute provided task as database transaction.
-     * Transaction is handled automatically. Task does not return any result.
-     *
-     * @param type transaction type
-     * @param task task to run in transaction
-     */
-    void transaction(Tx.Type type, Consumer<Tx.Transaction> task);
-
-    /**
-     * Start transaction.
-     * Transaction is finished manually.
-     *
-     * @param type transaction type
-     * @return transaction handler
-     */
-    Tx.Transaction transaction(Tx.Type type);
 
     /**
      * Data config that was used to create this instance.
