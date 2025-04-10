@@ -188,140 +188,6 @@ public class OraDbSuite implements SuiteProvider, SuiteResolver {
 
     @Suite(OraDbSuite.class)
     @Testcontainers(disabledWithoutDocker = true)
-    public static class TestTransaction extends io.helidon.data.tests.common.TestTransaction {
-
-        // 2nd level transaction support seems to be broken with Hibernate
-
-        @Test
-        @Override
-        public void testAutomaticMandatory2ndLevel() {
-            LOGGER.log(System.Logger.Level.DEBUG, "Skipped testAutomaticMandatory2ndLevel");
-            assumeTrue(false);
-        }
-
-        @Test
-        @Override
-        public void testAutomaticNever2ndLevel() {
-            LOGGER.log(System.Logger.Level.DEBUG, "Skipped testAutomaticNever2ndLevel");
-            assumeTrue(false);
-        }
-
-        @Test
-        @Override
-        public void testAutomaticNew2ndLevel() {
-            LOGGER.log(System.Logger.Level.DEBUG, "Skipped testAutomaticNew2ndLevel");
-            assumeTrue(false);
-        }
-
-        @Test
-        @Override
-        public void testAutomaticRequired2ndLevel() {
-            LOGGER.log(System.Logger.Level.DEBUG, "Skipped testAutomaticRequired2ndLevel");
-            assumeTrue(false);
-        }
-
-        @Test
-        @Override
-        public void testAutomaticSupported2ndLevel() {
-            LOGGER.log(System.Logger.Level.DEBUG, "Skipped testAutomaticSupported2ndLevel");
-            assumeTrue(false);
-        }
-
-        @Test
-        @Override
-        public void testAutomaticUnsupported2ndLevel() {
-            LOGGER.log(System.Logger.Level.DEBUG, "Skipped testAutomaticUnsupported2ndLevel");
-            assumeTrue(false);
-        }
-
-        @Test
-        @Override
-        public void testManualMandatory2ndLevel() {
-            LOGGER.log(System.Logger.Level.DEBUG, "Skipped testManualMandatory2ndLevel");
-            assumeTrue(false);
-        }
-
-        @Test
-        @Override
-        public void testManualNever2ndLevel() {
-            LOGGER.log(System.Logger.Level.DEBUG, "Skipped testManualNever2ndLevel");
-            assumeTrue(false);
-        }
-
-        @Test
-        @Override
-        public void testManualNew2ndLevel() {
-            LOGGER.log(System.Logger.Level.DEBUG, "Skipped testManualNew2ndLevel");
-            assumeTrue(false);
-        }
-
-        @Test
-        @Override
-        public void testManualRequired2ndLevel() {
-            LOGGER.log(System.Logger.Level.DEBUG, "Skipped testManualRequired2ndLevel");
-            assumeTrue(false);
-        }
-
-        @Test
-        @Override
-        public void testManualSupported2ndLevel() {
-            LOGGER.log(System.Logger.Level.DEBUG, "Skipped testManualSupported2ndLevel");
-            assumeTrue(false);
-        }
-
-        @Test
-        @Override
-        public void testManualUnsupported2ndLevel() {
-            LOGGER.log(System.Logger.Level.DEBUG, "Skipped testUnsupported2ndLevel");
-            assumeTrue(false);
-        }
-
-        @Test
-        @Override
-        public void testUserMandatory2ndLevel() {
-            LOGGER.log(System.Logger.Level.DEBUG, "Skipped testUserMandatory2ndLevel");
-            assumeTrue(false);
-        }
-
-        @Test
-        @Override
-        public void testUserNever2ndLevel() {
-            LOGGER.log(System.Logger.Level.DEBUG, "Skipped testUserNever2ndLevel");
-            assumeTrue(false);
-        }
-
-        @Test
-        @Override
-        public void testUserNew2ndLevel() {
-            LOGGER.log(System.Logger.Level.DEBUG, "Skipped testUserNew2ndLevel");
-            assumeTrue(false);
-        }
-
-        @Test
-        @Override
-        public void testUserRequired2ndLevel() {
-            LOGGER.log(System.Logger.Level.DEBUG, "Skipped testUserRequired2ndLevel");
-            assumeTrue(false);
-        }
-
-        @Test
-        @Override
-        public void testUserSupported2ndLevel() {
-            LOGGER.log(System.Logger.Level.DEBUG, "Skipped testUserSupported2ndLevel");
-            assumeTrue(false);
-        }
-
-        @Test
-        @Override
-        public void testUserUnsupported2ndLevel() {
-            LOGGER.log(System.Logger.Level.DEBUG, "Skipped testUserUnsupported2ndLevel");
-            assumeTrue(false);
-        }
-
-    }
-
-    @Suite(OraDbSuite.class)
-    @Testcontainers(disabledWithoutDocker = true)
     public static class TestQbmnProjection extends io.helidon.data.tests.common.TestQbmnProjection {
     }
 
@@ -438,6 +304,16 @@ public class OraDbSuite implements SuiteProvider, SuiteResolver {
     @Suite(OraDbSuite.class)
     @Testcontainers(disabledWithoutDocker = true)
     public static class TestQueryByAnnotation extends io.helidon.data.tests.common.TestQueryByAnnotation {
+    }
+
+    @Suite(OraDbSuite.class)
+    @Testcontainers(disabledWithoutDocker = true)
+    public static class TestTxMethods extends io.helidon.data.tests.common.TestTxMethods {
+    }
+
+    @Suite(OraDbSuite.class)
+    @Testcontainers(disabledWithoutDocker = true)
+    public static class TestTxAnnotations extends io.helidon.data.tests.common.TestTxAnnotations {
     }
 
 }

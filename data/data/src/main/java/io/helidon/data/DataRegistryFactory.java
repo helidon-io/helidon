@@ -21,19 +21,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import io.helidon.common.Functions;
 import io.helidon.data.spi.DataSupport;
 import io.helidon.data.spi.RepositoryProvider;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceInstance;
-import io.helidon.transaction.Tx;
 
 @Service.Singleton
 class DataRegistryFactory implements Service.ServicesFactory<DataRegistry> {
@@ -121,29 +116,6 @@ class DataRegistryFactory implements Service.ServicesFactory<DataRegistry> {
             support.close();
         }
 
-        @Override
-        public <T> T transaction(Tx.Type type, Callable<T> task) {
-            return support.transaction(type, task);
-        }
-
-        @Override
-        public <E extends Throwable> void transaction(Tx.Type type, Functions.CheckedRunnable<E> task) {
-            support.transaction(type, task);
-        }
-
-        @Override
-        public <T> T transaction(Tx.Type type, Function<Tx.Transaction, T> task) {
-            return support.transaction(type, task);
-        }
-
-        @Override
-        public void transaction(Tx.Type type, Consumer<Tx.Transaction> task) {
-            support.transaction(type, task);
-        }
-
-        @Override
-        public Tx.Transaction transaction(Tx.Type type) {
-            return support.transaction(type);
-        }
     }
+
 }
