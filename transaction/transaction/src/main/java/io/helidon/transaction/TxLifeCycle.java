@@ -48,22 +48,36 @@ public interface TxLifeCycle {
     /**
      * New transaction was created.
      *
-     * @param txIdentity JTA transaction identifier
+     * @param txIdentity transaction identifier
      */
     void begin(String txIdentity);
 
     /**
-     * New transaction was completed.
+     * Current transaction was completed.
      *
-     * @param txIdentity JTA transaction identifier
+     * @param txIdentity transaction identifier
      */
     void commit(String txIdentity);
 
     /**
-     * New transaction was rolled back.
+     * Current transaction was rolled back.
      *
      * @param txIdentity transaction identifier
      */
     void rollback(String txIdentity);
+
+    /**
+     * Current transaction was suspended.
+     *
+     * @param txIdentity transaction identifier
+     */
+    void suspend(String txIdentity);
+
+    /**
+     * Current transaction was resumed.
+     *
+     * @param txIdentity transaction identifier
+     */
+    void resume(String txIdentity);
 
 }

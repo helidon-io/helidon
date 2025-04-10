@@ -173,11 +173,6 @@ public class OraDbSuite implements SuiteProvider, SuiteResolver {
 
     @Suite(OraDbSuite.class)
     @Testcontainers(disabledWithoutDocker = true)
-    public static class TestTransaction extends io.helidon.data.tests.common.TestTransaction {
-    }
-
-    @Suite(OraDbSuite.class)
-    @Testcontainers(disabledWithoutDocker = true)
     public static class TestQbmnProjection extends io.helidon.data.tests.common.TestQbmnProjection {
     }
 
@@ -266,6 +261,16 @@ public class OraDbSuite implements SuiteProvider, SuiteResolver {
     @Suite(OraDbSuite.class)
     @Testcontainers(disabledWithoutDocker = true)
     public static class TestQueryByAnnotation extends io.helidon.data.tests.common.TestQueryByAnnotation {
+    }
+
+    @Suite(OraDbSuite.class)
+    @Testcontainers(disabledWithoutDocker = true)
+    public static class TestTxMethods extends io.helidon.data.tests.common.TestTxMethods {
+    }
+
+    @Suite(OraDbSuite.class)
+    @Testcontainers(disabledWithoutDocker = true)
+    public static class TestTxAnnotations extends io.helidon.data.tests.common.TestTxAnnotations {
     }
 
 }
