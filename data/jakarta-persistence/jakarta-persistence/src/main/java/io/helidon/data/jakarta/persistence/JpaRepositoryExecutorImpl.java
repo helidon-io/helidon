@@ -33,7 +33,6 @@ import io.helidon.transaction.TxSupport;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.PersistenceException;
 import jakarta.persistence.SynchronizationType;
 
@@ -57,9 +56,9 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
     // Execute persistence session task in active transaction scope
     private static final Map<PersistenceUnitTransactionType, DataRunner> TRANSACTION = Map.of(
             PersistenceUnitTransactionType.JTA,
-            new JtaDataRunnerInTx(),
+            new DataRunnerInTx(PersistenceUnitTransactionType.JTA),
             PersistenceUnitTransactionType.RESOURCE_LOCAL,
-            new ResourceLocalDataRunnerInTx());
+            new DataRunnerInTx(PersistenceUnitTransactionType.RESOURCE_LOCAL));
 
     // Instance shared by all repository instances
     private final EntityManagerFactory factory;
@@ -94,16 +93,15 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
                 LOGGER.log(Level.DEBUG, String.format("Running transaction task [%x]", this.hashCode()));
             }
             return TRANSACTION.get(transactionType)
-                    .call(this, entityManager(), task);
+                    .call(this, task);
         } else {
             // The case when explicit transaction is not active
             // Don't have access to thread life-cycle so EntityManager is closed after the task
             if (LOGGER.isLoggable(Level.DEBUG)) {
                 LOGGER.log(Level.DEBUG, String.format("Running standalone task [%x]", this.hashCode()));
             }
-            try (EntityManager em = getNonTxManager()) {
-                return EXECUTORS.get(transactionType).call(this, em, task);
-            }
+            return EXECUTORS.get(transactionType)
+                    .call(this, task);
         }
     }
 
@@ -117,16 +115,15 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
                 LOGGER.log(Level.DEBUG, String.format("Running transaction task [%x]", this.hashCode()));
             }
             TRANSACTION.get(transactionType)
-                    .run(this, entityManager(), task);
+                    .run(this, task);
         } else {
             // The case when explicit transaction is not active
             // Don't have access to thread life-cycle so EntityManager is closed after the task
             if (LOGGER.isLoggable(Level.DEBUG)) {
                 LOGGER.log(Level.DEBUG, String.format("Running standalone task [%x]", this.hashCode()));
             }
-            try (EntityManager em = getNonTxManager()) {
-                EXECUTORS.get(transactionType).run(this, em, task);
-            }
+            EXECUTORS.get(transactionType)
+                    .run(this, task);
         }
     }
 
@@ -144,15 +141,9 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
         return TransactionContext.getInstance().entityManager(factory, transactionType);
     }
 
-    private void setRollbackOnlyResourceLocalTransaction() {
-        if (isTransactionActive()) {
-            TransactionContext.getInstance().setRollbackOnlyTransaction();
-        }
-    }
-
     // JTA provider shall be present when JTA transaction type is active.
     private boolean isTransactionActive() {
-        return TransactionContext.getInstance().isTransactionActive(transactionType);
+        return TransactionContext.getInstance().isTransactionActive();
     }
 
     // Common task runner with PersistenceException mapping
@@ -161,7 +152,6 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
         private AbstractDataRunner() {
         }
 
-        @Override
         public <R, E extends Throwable> R call(JpaRepositoryExecutor executor,
                                                EntityManager em,
                                                Functions.CheckedFunction<EntityManager, R, E> task) {
@@ -176,7 +166,6 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
             }
         }
 
-        @Override
         public <E extends Throwable> void run(JpaRepositoryExecutor executor,
                                               EntityManager em,
                                               Functions.CheckedConsumer<EntityManager, E> task) {
@@ -211,7 +200,29 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
     }
 
     // Task runner with JTA transaction already in progress
-    private static final class JtaDataRunnerInTx extends AbstractDataRunner {
+    private static final class DataRunnerInTx extends AbstractDataRunner {
+
+        private final PersistenceUnitTransactionType txType;
+
+        DataRunnerInTx(PersistenceUnitTransactionType txType) {
+            this.txType = txType;
+        }
+
+        @Override
+        public <R, E extends Throwable> R call(JpaRepositoryExecutor executor,
+                                               Functions.CheckedFunction<EntityManager, R, E> task) {
+            EntityManager em = TransactionContext.getInstance()
+                    .entityManager(executor.factory(), txType);
+            return call(executor, em, task);
+        }
+
+        @Override
+        public <E extends Throwable> void run(JpaRepositoryExecutor executor, Functions.CheckedConsumer<EntityManager, E> task) {
+            EntityManager em = TransactionContext.getInstance()
+                    .entityManager(executor.factory(), txType);
+            run(executor, em, task);
+        }
+
     }
 
     // Task runner with new JTA transaction. Delegates transaction handling to JtaTxSupport.
@@ -226,23 +237,25 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
 
         @Override
         public <R, E extends Throwable> R call(JpaRepositoryExecutor executor,
-                                               EntityManager em,
                                                Functions.CheckedFunction<EntityManager, R, E> task) {
             checkTxSupport();
             return txSupport.transaction(Tx.Type.REQUIRED, () -> {
+                EntityManager em = TransactionContext.getInstance()
+                        .entityManager(executor.factory(), PersistenceUnitTransactionType.JTA);
                 em.joinTransaction();
-                return super.call(executor, em, task);
+                return call(executor, em, task);
             });
        }
 
         @Override
         public <E extends Throwable> void run(JpaRepositoryExecutor executor,
-                                              EntityManager em,
                                               Functions.CheckedConsumer<EntityManager, E> task) {
             checkTxSupport();
             txSupport.transaction(Tx.Type.REQUIRED, () -> {
+                EntityManager em = TransactionContext.getInstance()
+                        .entityManager(executor.factory(), PersistenceUnitTransactionType.JTA);
                 em.joinTransaction();
-                super.run(executor, em, task);
+                run(executor, em, task);
                 return null;
             });
         }
@@ -251,10 +264,6 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
         //       the whole application with RESOURCE_LOCAL TxSupport
         // This must be done better after RESOURCE_LOCAL code is rewritten.
         private void checkTxSupport() {
-            // FIXME: null check is temporary, this module will have own RESOURCE_LOCAL TxSupport implemented
-            if (txSupport == null) {
-                throw new DataException("No TxSupport is available.");
-            }
             if (!"jta".equalsIgnoreCase(txSupport.type())) {
                 throw new DataException(String.format("Cannot handle JTA transaction with %s TxSupport.",
                                                       txSupport.type()));
@@ -267,99 +276,53 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
 
     }
 
-    // Task runner with local transaction already in progress
-    private static class ResourceLocalDataRunnerInTx extends AbstractDataRunner {
-
-        @Override
-        public <R, E extends Throwable> R call(JpaRepositoryExecutor executor,
-                                               EntityManager em,
-                                               Functions.CheckedFunction<EntityManager, R, E> task) {
-            try {
-                return super.call(executor, em, task);
-                // Any exception in the task shall be wrapped by DataException
-            } catch (DataException e) {
-                ((JpaRepositoryExecutorImpl) executor).setRollbackOnlyResourceLocalTransaction();
-                throw e;
-                // This shall never be thrown, it means bug in the exception handling code
-            } catch (RuntimeException e) {
-                ((JpaRepositoryExecutorImpl) executor).setRollbackOnlyResourceLocalTransaction();
-                LOGGER.log(Level.WARNING, "Unhandled exception thrown in data repository task.", e);
-                throw e;
-            }
-        }
-
-        @Override
-        public <E extends Throwable> void run(JpaRepositoryExecutor executor,
-                                              EntityManager em,
-                                              Functions.CheckedConsumer<EntityManager, E> task) {
-            try {
-                super.run(executor, em, task);
-                // Any exception in the task shall be wrapped by DataException
-            } catch (DataException e) {
-                ((JpaRepositoryExecutorImpl) executor).setRollbackOnlyResourceLocalTransaction();
-                throw e;
-                // This shall never be thrown, it means bug in the exception handling code
-            } catch (RuntimeException e) {
-                ((JpaRepositoryExecutorImpl) executor).setRollbackOnlyResourceLocalTransaction();
-                LOGGER.log(Level.WARNING, "Unhandled exception thrown in data repository task.", e);
-                throw e;
-            }
-        }
-
-    }
-
     // Task runner with new local transaction
     private static class ResourceLocalDataRunner extends AbstractDataRunner {
 
+        private final TxSupport txSupport;
+
+        ResourceLocalDataRunner() {
+            super();
+            txSupport = initJtaTxSupport();
+        }
+
         @Override
         public <R, E extends Throwable> R call(JpaRepositoryExecutor executor,
-                                               EntityManager em,
                                                Functions.CheckedFunction<EntityManager, R, E> task) {
-            EntityTransaction et = em.getTransaction();
-            et.begin();
-            try {
-                R result = super.call(executor, em, task);
-                et.commit();
-                return result;
-                // Any exception in the task shall be wrapped by DataException
-            } catch (DataException e) {
-                if (et.isActive()) {
-                    et.rollback();
-                }
-                throw e;
-                // This shall never be thrown, it means bug in the exception handling code
-            } catch (RuntimeException e) {
-                if (et.isActive()) {
-                    et.rollback();
-                }
-                LOGGER.log(Level.WARNING, "Unhandled exception thrown in data repository task.", e);
-                throw e;
-            }
+            checkTxSupport();
+            return txSupport.transaction(Tx.Type.REQUIRED, () -> {
+                EntityManager em = TransactionContext.getInstance()
+                        .entityManager(executor.factory(), PersistenceUnitTransactionType.RESOURCE_LOCAL);
+                return call(executor, em, task);
+            });
         }
 
         @Override
         public <E extends Throwable> void run(JpaRepositoryExecutor executor,
-                                              EntityManager em,
                                               Functions.CheckedConsumer<EntityManager, E> task) {
-            EntityTransaction et = em.getTransaction();
-            et.begin();
-            try {
-                super.run(executor, em, task);
-                et.commit();
-                // Any exception in the task shall be wrapped by DataException
-            } catch (DataException e) {
-                if (et.isActive()) {
-                    et.rollback();
-                }
-                throw e;
-                // This shall never be thrown, it means bug in the exception handling code
-            } catch (RuntimeException e) {
-                if (et.isActive()) {
-                    et.rollback();
-                }
-                LOGGER.log(Level.WARNING, "Unhandled exception thrown in data repository task.", e);
-                throw e;
+            checkTxSupport();
+            txSupport.transaction(Tx.Type.REQUIRED, () -> {
+                EntityManager em = TransactionContext.getInstance()
+                        .entityManager(executor.factory(), PersistenceUnitTransactionType.RESOURCE_LOCAL);
+                run(executor, em, task);
+                return null;
+            });
+        }
+
+        // PERF: This check is being run with every task execution but doing it in constructor will crash
+        //       the whole application with RESOURCE_LOCAL TxSupport
+        // This must be done better after RESOURCE_LOCAL code is rewritten.
+        private void checkTxSupport() {
+            if (!"resource-local".equalsIgnoreCase(txSupport.type())) {
+                throw new DataException(String.format("Cannot handle JTA transaction with %s TxSupport.",
+                                                      txSupport.type()));
             }
         }
+
+        private static TxSupport initJtaTxSupport() {
+            return Services.first(TxSupport.class).orElse(null);
+        }
+
     }
+
 }

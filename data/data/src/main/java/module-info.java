@@ -31,7 +31,6 @@ module io.helidon.data {
 
     requires io.helidon.service.registry;
 
-    requires transitive io.helidon.transaction;
     requires transitive io.helidon.builder.api;
     requires transitive io.helidon.common.config;
 
