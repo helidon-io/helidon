@@ -202,7 +202,12 @@ class JaxRsService implements HttpService {
     }
 
     private void doHandle(Context ctx, ServerRequest req, ServerResponse res) {
-        ServerResponseHeaders savedResponseHeaders = ServerResponseHeaders.create(res.headers());
+        // save headers in case MP request processing fails
+        ServerResponseHeaders savedResponseHeaders = null;
+        if (req.listenerContext().config().copyRestoreHeaders()) {
+            savedResponseHeaders = ServerResponseHeaders.create(res.headers());
+        }
+
         BaseUriRequestUri uris = BaseUriRequestUri.resolve(req);
         ContainerRequest requestContext = new ContainerRequest(uris.baseUri,
                                                                uris.requestUri,
@@ -252,7 +257,9 @@ class JaxRsService implements HttpService {
                 if (res instanceof RoutingResponse routing) {
                     if (routing.reset()) {
                         res.status(Status.OK_200);
-                        savedResponseHeaders.forEach(res::header);
+                        if (savedResponseHeaders != null) {
+                            savedResponseHeaders.forEach(res::header);
+                        }
                         routing.next();
                     }
                 }
