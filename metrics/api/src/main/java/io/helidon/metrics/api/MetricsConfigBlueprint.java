@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 
 import io.helidon.builder.api.Option;
@@ -60,6 +61,8 @@ interface MetricsConfigBlueprint {
      * Config key for KPI metrics settings.
      */
     String KEY_PERFORMANCE_INDICATORS_CONFIG_KEY = "key-performance-indicators";
+
+    TimeUnit DEFAULT_JSON_UNITS_DEFAULT = TimeUnit.SECONDS;
 
     @Prototype.FactoryMethod
     static List<Tag> createTags(Config globalTagExpression) {
@@ -249,6 +252,18 @@ interface MetricsConfigBlueprint {
     @Option.Configured
     @Option.Default(BuiltInMeterNameFormat.DEFAULT)
     BuiltInMeterNameFormat builtInMeterNameFormat();
+
+    /**
+     * Default units for timer output in JSON if not specified on a given timer.
+     * <p>
+     * If the configuration key is absent, the Helidon JSON output uses {@link java.util.concurrent.TimeUnit#SECONDS}.
+     * If the configuration key is present, Helidon formats each timer using that timer's specific units (if set) and
+     * the config value otherwise.
+     *
+     * @return default {@link java.util.concurrent.TimeUnit} to use for JSON timer output
+     */
+    @Option.Configured("timers.json-units-default")
+    Optional<TimeUnit> jsonUnitsDefault();
 
     /**
      * Reports whether the specified scope is enabled, according to any scope configuration that
