@@ -15,13 +15,6 @@
  */
 package io.helidon.data;
 
-import java.util.concurrent.Callable;
-import java.util.function.Consumer;
-import java.util.function.Function;
-
-import io.helidon.common.Functions;
-import io.helidon.transaction.Tx;
-
 public class TestHelidonData implements DataRegistry {
 
     private final DataConfig repositoryConfig;
@@ -32,29 +25,6 @@ public class TestHelidonData implements DataRegistry {
 
     @Override
     public <T extends Data.GenericRepository<?, ?>> T repository(Class<? super T> repository) {
-        return null;
-    }
-
-    @Override
-    public <T> T transaction(Tx.Type type, Callable<T> task) {
-        return null;
-    }
-
-    @Override
-    public <E extends Throwable> void transaction(Tx.Type type, Functions.CheckedRunnable<E> task) {
-    }
-
-    @Override
-    public <T> T transaction(Tx.Type type, Function<Tx.Transaction, T> task) {
-        return null;
-    }
-
-    @Override
-    public void transaction(Tx.Type type, Consumer<Tx.Transaction> task) {
-    }
-
-    @Override
-    public Tx.Transaction transaction(Tx.Type type) {
         return null;
     }
 
