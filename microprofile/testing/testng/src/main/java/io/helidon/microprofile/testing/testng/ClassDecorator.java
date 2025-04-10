@@ -33,8 +33,6 @@ import static io.helidon.microprofile.testing.Instrumented.isInstrumented;
  *     <li>It is used to hide the instrumented name in the test results</li>
  *     <li>It is installed on every method using {@link ITestNGMethod#setTestClass(ITestClass)}</li>
  * </ul>
- *
- * @param delegate delegate
  */
 record ClassDecorator(ITestClass delegate) implements ITestClass, ITestClassConfigInfo {
 
@@ -46,11 +44,11 @@ record ClassDecorator(ITestClass delegate) implements ITestClass, ITestClassConf
      * @param tc test class
      * @return decorated test class
      */
-    static ITestClass decorate(ITestClass tc) {
-        if (!(tc instanceof ClassDecorator)) {
+    static ClassDecorator decorate(ITestClass tc) {
+        if (!(tc instanceof ClassDecorator cd)) {
             return CACHE.computeIfAbsent(tc, ClassDecorator::new);
         }
-        return tc;
+        return cd;
     }
 
     @Override
@@ -75,13 +73,21 @@ record ClassDecorator(ITestClass delegate) implements ITestClass, ITestClassConf
 
     @Override
     public String getName() {
-        Class<?> realClass = getRealClass();
+        Class<?> realClass = delegate.getRealClass();
         return isInstrumented(realClass) ? realClass.getSuperclass().getName() : realClass.getName();
     }
 
     @Override
     public Class<?> getRealClass() {
-        return delegate.getRealClass();
+        Class<?> realClass = delegate.getRealClass();
+        // hide the instrumented class name in test results
+        String callerClass = StackWalker.getInstance()
+                .walk(s -> s.skip(1).map(StackWalker.StackFrame::getClassName)
+                        .findFirst().orElseThrow());
+        if (!callerClass.startsWith("org.testng.") || callerClass.startsWith("org.testng.reporters.")) {
+            return isInstrumented(realClass) ? realClass.getSuperclass() : realClass;
+        }
+        return realClass;
     }
 
     private ITestNGMethod[] processMethods(ITestNGMethod[] methods) {

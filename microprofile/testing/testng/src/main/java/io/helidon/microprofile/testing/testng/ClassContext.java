@@ -34,6 +34,7 @@ import io.helidon.microprofile.testing.HelidonTestInfo;
 import io.helidon.microprofile.testing.HelidonTestInfo.ClassInfo;
 import io.helidon.microprofile.testing.HelidonTestInfo.MethodInfo;
 
+import org.testng.IClass;
 import org.testng.ITestClass;
 import org.testng.ITestNGMethod;
 
@@ -62,7 +63,7 @@ class ClassContext {
     ClassContext(ITestClass tc, Semaphore semaphore, HelidonTestNgListenerBase listener) {
         this.listener = listener;
         this.semaphore = semaphore;
-        this.classInfo = classInfo(tc.getRealClass());
+        this.classInfo = classInfo(realClass(tc));
         this.methods = methodInfos(classInfo,
                 tc.getTestMethods(),
                 tc.getBeforeTestMethods(),
@@ -219,5 +220,12 @@ class ClassContext {
 
     private static Method realMethod(ITestNGMethod tm) {
         return tm.getConstructorOrMethod().getMethod();
+    }
+
+    private static Class<?> realClass(IClass tc) {
+        if (tc instanceof ClassDecorator(ITestClass delegate)) {
+            return delegate.getRealClass();
+        }
+        return tc.getRealClass();
     }
 }

@@ -426,7 +426,11 @@ public abstract class HelidonTestExtension implements Extension {
                            @Destroyed(ApplicationScoped.class)
                            Object ignored) {
 
-        afterStop.forEach(m -> invoke(Void.class, m, null));
+        try {
+            afterStop.forEach(m -> invoke(Void.class, m, null));
+        } finally {
+            testConfig.restore();
+        }
     }
 
     private void processAnnotated(Annotated elt, Set<Class<? extends Annotation>> types, Consumer<Annotation> action) {

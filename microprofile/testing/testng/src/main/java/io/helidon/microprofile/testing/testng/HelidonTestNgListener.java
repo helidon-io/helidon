@@ -176,9 +176,7 @@ public class HelidonTestNgListener extends HelidonTestNgListenerBase implements 
     @Override
     public List<IMethodInstance> intercept(List<IMethodInstance> methods, ITestContext context) {
         LOGGER.log(Level.DEBUG, () -> "intercept - methods: " + methods.stream()
-                .map(m -> m.getMethod().getConstructorOrMethod().getMethod())
-                .map(m -> m.getDeclaringClass().getName() + "#" + m.getName())
-                .collect(joining(",")));
+                .map(this::name).collect(joining(",")));
 
         // group the methods that share the same container
         List<IMethodInstance> shared = new ArrayList<>();
@@ -199,9 +197,7 @@ public class HelidonTestNgListener extends HelidonTestNgListenerBase implements 
             result.sort(Comparator.comparingInt(e -> e.getMethod().getPriority()));
 
             LOGGER.log(Level.DEBUG, () -> "intercept - sorted methods: " + result.stream()
-                    .map(m -> m.getMethod().getConstructorOrMethod().getMethod())
-                    .map(m -> m.getDeclaringClass().getName() + "#" + m.getName())
-                    .collect(joining(",")));
+                    .map(this::name).collect(joining(",")));
 
             return result;
         }
@@ -308,5 +304,10 @@ public class HelidonTestNgListener extends HelidonTestNgListenerBase implements 
                 () -> ServiceRegistryManager.create().registry());
 
         return context;
+    }
+
+    private String name(IMethodInstance mi) {
+        ITestNGMethod tm = mi.getMethod();
+        return tm.getTestClass().getName() + "#" + tm.getMethodName();
     }
 }

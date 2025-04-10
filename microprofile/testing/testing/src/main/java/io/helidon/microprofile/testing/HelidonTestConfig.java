@@ -88,4 +88,13 @@ class HelidonTestConfig extends HelidonTestConfigDelegate {
             delegate = syntheticConfig;
         }
     }
+
+    /**
+     * Restore the original config.
+     */
+    void restore() {
+        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        ConfigProviderResolver resolver = ConfigProviderResolver.instance();
+        resolver.registerConfig(originalConfig, cl);
+    }
 }
