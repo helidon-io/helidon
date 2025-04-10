@@ -24,6 +24,7 @@ import io.helidon.microprofile.testing.HelidonTestInfo;
 import io.helidon.microprofile.testing.HelidonTestInfo.ClassInfo;
 import io.helidon.microprofile.testing.HelidonTestInfo.MethodInfo;
 
+import org.testng.IClass;
 import org.testng.IClassListener;
 import org.testng.IConfigurationListener;
 import org.testng.IInvokedMethod;
@@ -130,15 +131,14 @@ abstract class HelidonTestNgListenerBase implements IInvokedMethodListener,
 
     @Override
     public void onBeforeClass(ITestClass tc) {
-        Class<?> cls = tc.getRealClass();
-        if (filterClass(cls)) {
+        if (filterClass(realClass(tc))) {
             classContext(tc).beforeClass();
         }
     }
 
     @Override
     public void onAfterClass(ITestClass tc) {
-        if (filterClass(tc.getRealClass())) {
+        if (filterClass(realClass(tc))) {
             classContext(tc).afterClass();
         }
     }
@@ -149,6 +149,13 @@ abstract class HelidonTestNgListenerBase implements IInvokedMethodListener,
     }
 
     private static Class<?> realClass(ITestResult tr) {
-        return tr.getTestClass().getRealClass();
+        return realClass(tr.getTestClass());
+    }
+
+    private static Class<?> realClass(IClass tc) {
+        if (tc instanceof ClassDecorator(ITestClass delegate)) {
+            return delegate.getRealClass();
+        }
+        return tc.getRealClass();
     }
 }
