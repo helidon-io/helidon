@@ -36,6 +36,7 @@ class LocalTransactionStorage {
 
     // Stack sanity check
     private final List<Integer> initialStackSize;
+    // Value holder for stacked nested Tx.New calls, contains context.txDepth() values
     private final List<Stack> stack;
     private final Map<EntityManagerFactory, EntityManager> nonTxManagers;
 
@@ -66,19 +67,38 @@ class LocalTransactionStorage {
         }
     }
 
-    void commit(TransactionContext.Context context) {
-        stack.getLast().close();
-        stack.removeLast();
+    void begin(TransactionContext.Context context, String txIdentity) {
+        stack().identity(txIdentity);
+        // Stack size check, failure may be caused only by bug in the code
+        if (stack.size() != context.txDepth()) {
+            throw new IllegalStateException(
+                    String.format("Local transaction stack size %d does not match transaction depth %d",
+                                  stack.size(),
+                                  context.txDepth()));
+        }
     }
 
-    void rollback(TransactionContext.Context context) {
-        stack.getLast().close();
-        stack.removeLast();
+    void commit(TransactionContext.Context context, String txIdentity) {
+        stack(context, txIdentity).close();
+        removeStack();
+    }
+
+    void rollback(TransactionContext.Context context, String txIdentity) {
+        stack(context, txIdentity).close();
+        removeStack();
+    }
+
+    void suspend(TransactionContext.Context context, String txIdentity) {
+        stack(context, txIdentity).suspend();
+    }
+
+    void resume(TransactionContext.Context context, String txIdentity) {
+        stack(context, txIdentity).resume();
     }
 
     EntityManager manager(EntityManagerFactory factory, TransactionContext.Context context) {
         if (context.txMethodsDepth() == 0) {
-            throw new DataException("EntityManager requested outside transaction method");
+           throw new DataException("EntityManager requested outside transaction method");
         }
         if (context.txDepth() == 0 || stack().isSuspend()) {
             return nonTxManager(factory);
@@ -120,12 +140,36 @@ class LocalTransactionStorage {
         stack.addLast(new Stack());
     }
 
+    private void removeStack() {
+        stack.removeLast();
+    }
+
     private Stack stack() {
         return stack.getLast();
     }
 
-    private boolean newTransaction() {
-        return stack.size() == initialStackSize.getLast() + 1;
+    // PERF: Stack sanity checks slow down stack access a bit, but code is more safe
+    private Stack stack(TransactionContext.Context context, String identity) {
+        // Stack size check, failure may be caused only by bug in the code
+        if (stack.size() != context.txDepth()) {
+            throw new IllegalStateException(
+                    String.format("Local transaction stack size %d does not match transaction depth %d",
+                                  stack.size(),
+                                  context.txDepth()));
+        }
+        Stack stack = this.stack.getLast();
+        // Stack identity check, failure may be caused only by bug in the code
+        if (!stack.checkIdentity(identity)) {
+            throw new IllegalStateException(
+                    String.format("Local transaction identity %s does not match provided identity %s",
+                                  stack.identity(),
+                                  identity));
+        }
+        return stack;
+    }
+
+    private boolean emptyStack() {
+        return stack.isEmpty();
     }
 
     @Service.Singleton
@@ -149,30 +193,20 @@ class LocalTransactionStorage {
 
         LocalTransactionManager() {
         }
-
         void begin() {
             LocalTransactionStorage storage = TransactionContext.getInstance().localStorage();
             storage.addStack();
         }
 
-        LocalTransaction suspend() {
-            LocalTransaction transaction = TransactionContext.getInstance()
-                    .localStorage()
-                    .stack();
-            transaction.suspend();
-            return transaction;
-        }
-
-        void resume(LocalTransaction transaction) {
-            transaction.resume();
-        }
-
         LocalTransaction getTransaction() {
-            LocalTransactionStorage storage = TransactionContext.getInstance().localStorage();
-
             return TransactionContext.getInstance()
                     .localStorage()
                     .stack();
+        }
+
+        boolean isTransactionActive() {
+            LocalTransactionStorage storage = TransactionContext.getInstance().localStorage();
+            return !storage.emptyStack() && !storage.stack().isSuspend();
         }
 
     }
@@ -185,18 +219,16 @@ class LocalTransactionStorage {
 
         void setRollbackOnly();
 
-        void suspend();
-
-        void resume();
-
     }
 
     private static final class Stack implements LocalTransaction {
 
+        private String identity;
         private Map<EntityManagerFactory, EntityManager> managers;
         private boolean suspend;
 
         Stack() {
+            identity = null;
             managers = new HashMap<>();
             suspend = false;
         }
@@ -204,6 +236,26 @@ class LocalTransactionStorage {
         void close() {
             managers.values().forEach(EntityManager::close);
             managers.clear();
+        }
+
+        String identity() {
+            return identity;
+        }
+
+        void identity(String identity) {
+            // May be caused only by bug in the code
+            if (this.identity != null) {
+                throw new IllegalStateException("Resource local transaction identity was already set");
+            }
+            this.identity = identity;
+        }
+
+        boolean checkIdentity(String identity) {
+            // May be caused only by bug in the code
+            if (this.identity == null) {
+                throw new IllegalStateException("Resource local transaction identity was not set");
+            }
+            return this.identity.equals(identity);
         }
 
         Map<EntityManagerFactory, EntityManager> managers () {
@@ -264,16 +316,14 @@ class LocalTransactionStorage {
             });
         }
 
-        @Override
-        public void suspend() {
+        void suspend() {
             if (suspend) {
                 throw new TxException("Cannot suspend already suspended local transaction");
             }
             suspend = true;
         }
 
-        @Override
-        public void resume() {
+        void resume() {
             if (!suspend) {
                 throw new TxException("Cannot resume active local transaction");
             }

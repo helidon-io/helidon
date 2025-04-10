@@ -20,16 +20,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.ServiceLoader;
-import java.util.concurrent.Callable;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
-import io.helidon.common.Functions.CheckedRunnable;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.config.Config;
 import io.helidon.common.config.ConfigException;
 import io.helidon.data.spi.DataProvider;
-import io.helidon.transaction.Tx;
 
 /**
  * Registry of repositories that also provides methods for handling transactions.
@@ -122,115 +117,6 @@ public interface DataRegistry extends AutoCloseable {
      * @throws io.helidon.data.DataException in case the repository is not a valid type for this registry
      */
     <T extends Data.GenericRepository<?, ?>> T repository(Class<? super T> repository);
-
-    /**
-     * Execute provided task as database transaction.
-     * Transaction is handled automatically. Task computes and returns result.
-     *
-     * @param task task to run in transaction
-     * @param <T>  the result type of the task
-     * @return computed task result
-     * @throws DataException when result computation failed
-     */
-    default <T> T transaction(Callable<T> task) {
-        return transaction(Tx.Type.REQUIRED, task);
-    }
-
-    /**
-     * Execute provided task as database transaction.
-     * Transaction is handled automatically. Task computes and returns result.
-     *
-     * @param type transaction type
-     * @param task task to run in transaction
-     * @param <T>  the result type of the task
-     * @return computed task result
-     * @throws DataException when result computation failed
-     */
-    <T> T transaction(Tx.Type type, Callable<T> task);
-
-    /**
-     * Execute provided task as database transaction.
-     * Transaction is handled automatically. Task does not return any result.
-     *
-     * @param task task to run in transaction
-     * @param <E>  type of thrown (checked) exception
-     * @throws DataException when task computation failed
-     */
-    default <E extends Throwable> void transaction(CheckedRunnable<E> task) {
-        transaction(Tx.Type.REQUIRED, task);
-    }
-
-    /**
-     * Execute provided task as database transaction.
-     * Transaction is handled automatically. Task does not return any result.
-     *
-     * @param type transaction type
-     * @param task task to run in transaction
-     * @param <E>  type of thrown (checked) exception
-     * @throws DataException when task computation failed
-     */
-    <E extends Throwable> void transaction(Tx.Type type, CheckedRunnable<E> task);
-
-    /**
-     * Execute provided task as database transaction.
-     * Transaction is finished manually. Task computes and returns result.
-     *
-     * @param task task to run in transaction
-     * @param <T>  the result type of the task
-     * @return computed task result
-     */
-    default <T> T transaction(Function<Tx.Transaction, T> task) {
-        return transaction(Tx.Type.REQUIRED, task);
-    }
-
-    /**
-     * Execute provided task as database transaction.
-     * Transaction is finished manually. Task computes and returns result.
-     *
-     * @param type transaction type
-     * @param task task to run in transaction
-     * @param <T>  the result type of the task
-     * @return computed task result
-     */
-    <T> T transaction(Tx.Type type, Function<Tx.Transaction, T> task);
-
-    /**
-     * Execute provided task as database transaction.
-     * Transaction is handled automatically. Task does not return any result.
-     *
-     * @param task task to run in transaction
-     */
-    default void transaction(Consumer<Tx.Transaction> task) {
-        transaction(Tx.Type.REQUIRED, task);
-    }
-
-    /**
-     * Execute provided task as database transaction.
-     * Transaction is handled automatically. Task does not return any result.
-     *
-     * @param type transaction type
-     * @param task task to run in transaction
-     */
-    void transaction(Tx.Type type, Consumer<Tx.Transaction> task);
-
-    /**
-     * Start transaction.
-     * Transaction is finished manually.
-     *
-     * @return transaction handler
-     */
-    default Tx.Transaction transaction() {
-        return transaction(Tx.Type.REQUIRED);
-    }
-
-    /**
-     * Start transaction.
-     * Transaction is finished manually.
-     *
-     * @param type transaction type
-     * @return transaction handler
-     */
-    Tx.Transaction transaction(Tx.Type type);
 
     private static DataConfig fromObject(Config config, String name) {
         Config namedConfig = config.get(name);
