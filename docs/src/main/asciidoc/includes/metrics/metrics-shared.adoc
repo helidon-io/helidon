@@ -412,7 +412,7 @@ endif::mp-flavor[]
 <1> For _units_ specify any valid name for a
 link:{jdk-javadoc-url}/java.base/java/util/concurrent/TimeUnit.html[`TimeUnit`] value (`SECONDS`, `MILLISECONDS`, etc.)
 
-Helidon formats each timer's data as follows:
+If you have configured `json-units-default`, Helidon formats each timer's data as follows:
 
 1. If code set `baseUnit` on the timer, Helidon uses those units for that timer.
 2. Otherwise, Helidon uses the default units you configured.
