@@ -78,7 +78,15 @@ class LocalTxSupport implements TxSupport {
      * If called inside a transaction context, method execution will then continue under that context.
      */
     private <T> T txMandatory(Callable<T> task) throws TxException {
-        return null;
+        if (!transactionManager().isTransactionActive()) {
+            throw new TxException("Starting @Tx.Mandatory transaction outside transaction scope.");
+        }
+        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+            LOGGER.log(System.Logger.Level.DEBUG,
+                       String.format("Starting @Tx.Mandatory with active resource local transaction [%d].",
+                                     Thread.currentThread().hashCode()));
+        }
+        return runInCurrentTxScope(transaction(), task);
     }
 
     /**
@@ -92,7 +100,23 @@ class LocalTxSupport implements TxSupport {
      * must be completed, and the previously suspended transaction must be resumed.
      */
     private <T> T txNew(Callable<T> task) throws TxException {
-        return null;
+        LocalTransaction previous;
+        if (transactionManager().isTransactionActive()) {
+            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                LOGGER.log(System.Logger.Level.DEBUG,
+                           String.format("Starting @Tx.New with active resource local transaction [%d].",
+                                         Thread.currentThread().hashCode()));
+            }
+            previous = suspend();
+        } else {
+            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                LOGGER.log(System.Logger.Level.DEBUG,
+                           String.format("Starting @Tx.New outside transaction scope [%d].",
+                                         Thread.currentThread().hashCode()));
+            }
+            previous = null;
+        }
+        return runInNewTxScope(previous, task);
     }
 
     /**
@@ -102,7 +126,16 @@ class LocalTxSupport implements TxSupport {
      * If called inside a transaction context, the {@link TxException} must be thrown.
      */
     private <T> T txNever(Callable<T> task) throws TxException {
-        return null;
+        if (transactionManager().isTransactionActive()) {
+            throw new TxException("Starting @Tx.Never with active transaction.");
+        } else {
+            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                LOGGER.log(System.Logger.Level.DEBUG,
+                           String.format("Starting @Tx.Never outside transaction scope [%d].",
+                                         Thread.currentThread().hashCode()));
+            }
+        }
+        return runOutsideTxScope(task);
     }
 
     /**
@@ -114,7 +147,21 @@ class LocalTxSupport implements TxSupport {
      * If called inside a transaction context, the method execution must then continue inside this transaction context.
      */
     private <T> T txRequired(Callable<T> task) throws TxException {
-        return null;
+        if (transactionManager().isTransactionActive()) {
+            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                LOGGER.log(System.Logger.Level.DEBUG,
+                           String.format("Starting @Tx.Required with active resource local transaction [%d].",
+                                         Thread.currentThread().hashCode()));
+            }
+            return runInCurrentTxScope(transaction(), task);
+        } else {
+            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                LOGGER.log(System.Logger.Level.DEBUG,
+                           String.format("Starting @Tx.Required outside transaction scope [%d].",
+                                         Thread.currentThread().hashCode()));
+            }
+            return runInNewTxScope(null, task);
+        }
     }
 
     /**
@@ -124,7 +171,21 @@ class LocalTxSupport implements TxSupport {
      * If called inside a transaction context, the method execution must then continue inside this transaction context.
      */
     private <T> T txSupported(Callable<T> task) throws TxException {
-        return null;
+        if (transactionManager().isTransactionActive()) {
+            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                LOGGER.log(System.Logger.Level.DEBUG,
+                           String.format("Starting @Tx.Supported with active resource local transaction [%d].",
+                                         Thread.currentThread().hashCode()));
+            }
+            return runInCurrentTxScope(transaction(), task);
+        } else {
+            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                LOGGER.log(System.Logger.Level.DEBUG,
+                           String.format("Starting @Tx.Supported outside transaction scope [%d].",
+                                         Thread.currentThread().hashCode()));
+            }
+            return runOutsideTxScope(task);
+        }
     }
 
     /**
@@ -136,7 +197,21 @@ class LocalTxSupport implements TxSupport {
      * by the interceptor that suspended it after the method execution has completed.
      */
     private <T> T txUnsupported(Callable<T> task) throws TxException {
-        return null;
+        if (transactionManager().isTransactionActive()) {
+            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                LOGGER.log(System.Logger.Level.DEBUG,
+                           String.format("Starting @Tx.Unsupported with active resource local transaction [%d].",
+                                         Thread.currentThread().hashCode()));
+            }
+            return runInSuspendedTxScope(suspend(), task);
+        } else {
+            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                LOGGER.log(System.Logger.Level.DEBUG,
+                           String.format("Starting @Tx.Unsupported outside transaction scope [%d].",
+                                         Thread.currentThread().hashCode()));
+            }
+            return runOutsideTxScope(task);
+        }
     }
 
     private <T> T runOutsideTxScope(Callable<T> task) {
@@ -191,12 +266,8 @@ class LocalTxSupport implements TxSupport {
             commit(current);
             return result;
         } finally {
-            try {
-                suspend();
-            } finally {
-                if (previous != null) {
-                    resume(previous);
-                }
+            if (previous != null) {
+                resume(previous);
             }
         }
     }
@@ -205,25 +276,29 @@ class LocalTxSupport implements TxSupport {
         return provider.transactionManager();
     }
 
+    private LocalTransaction transaction() {
+        return transactionManager().getTransaction();
+    }
 
     private LocalTransaction suspend() {
-        LocalTransaction suspended = transactionManager().suspend();
+        LocalTransaction suspended = transactionManager().getTransaction();
         if (suspended == null) {
             throw new NullPointerException("No transaction instance is available.");
         }
+        suspend(Integer.toString(System.identityHashCode(suspended)));
         return suspended;
     }
 
     private void resume(LocalTransaction tx) {
-            transactionManager().resume(tx);
+        resume(Integer.toString(System.identityHashCode(tx)));
     }
 
     // Transaction begin with listeners notification
     private LocalTransaction begin() {
-            transactionManager().begin();
-            LocalTransaction tx = transactionManager().getTransaction();
-            begin(Integer.toString(System.identityHashCode(tx)));
-            return tx;
+        transactionManager().begin();
+        LocalTransaction tx = transactionManager().getTransaction();
+        begin(Integer.toString(System.identityHashCode(tx)));
+        return tx;
     }
 
     // Transaction commit with listeners notification
@@ -266,6 +341,16 @@ class LocalTxSupport implements TxSupport {
     // Notify TxLifeCycle listeners about transaction rollback call
     private void rollback(String txIdentity) {
         txListeners.forEach(l -> l.rollback(txIdentity));
+    }
+
+    // Notify TxLifeCycle listeners about transaction being suspended
+    private void suspend(String txIdentity) {
+        txListeners.forEach(l -> l.suspend(txIdentity));
+    }
+
+    // Notify TxLifeCycle listeners about transaction being resumed
+    private void resume(String txIdentity) {
+        txListeners.forEach(l -> l.resume(txIdentity));
     }
 
 }
