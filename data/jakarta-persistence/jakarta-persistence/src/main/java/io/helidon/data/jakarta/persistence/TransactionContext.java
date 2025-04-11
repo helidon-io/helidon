@@ -240,6 +240,8 @@ final class TransactionContext {
                         .end(transactionContext.context());
                 case RESOURCE_LOCAL -> transactionContext.localStorage()
                         .end(transactionContext.context());
+                default -> throw new IllegalStateException(String.format("Unknown PersistenceUnitTransactionType value %s",
+                                                                         transactionContext.context().txType().name()));
             }
         }
 
@@ -252,6 +254,8 @@ final class TransactionContext {
                         .begin(transactionContext.context(), txIdentity);
                 case RESOURCE_LOCAL -> transactionContext.localStorage()
                         .begin(transactionContext.context(), txIdentity);
+                default -> throw new IllegalStateException(String.format("Unknown PersistenceUnitTransactionType value %s",
+                                                                         transactionContext.context().txType().name()));
             }
         }
 
@@ -263,6 +267,8 @@ final class TransactionContext {
                         .commit(transactionContext.context(), txIdentity);
                 case RESOURCE_LOCAL -> transactionContext.localStorage()
                         .commit(transactionContext.context(), txIdentity);
+                default -> throw new IllegalStateException(String.format("Unknown PersistenceUnitTransactionType value %s",
+                                                                         transactionContext.context().txType().name()));
             }
             transactionContext.context().commit();
         }
@@ -275,6 +281,8 @@ final class TransactionContext {
                         .rollback(transactionContext.context(), txIdentity);
                 case RESOURCE_LOCAL -> transactionContext.localStorage()
                         .rollback(transactionContext.context(), txIdentity);
+                default -> throw new IllegalStateException(String.format("Unknown PersistenceUnitTransactionType value %s",
+                                                                         transactionContext.context().txType().name()));
             }
             transactionContext.context().rollback();
         }
@@ -287,6 +295,8 @@ final class TransactionContext {
                         .suspend(transactionContext.context(), txIdentity);
                 case RESOURCE_LOCAL -> transactionContext.localStorage()
                         .suspend(transactionContext.context(), txIdentity);
+                default -> throw new IllegalStateException(String.format("Unknown PersistenceUnitTransactionType value %s",
+                                                                         transactionContext.context().txType().name()));
             }
         }
 
@@ -298,6 +308,8 @@ final class TransactionContext {
                         .resume(transactionContext.context(), txIdentity);
                 case RESOURCE_LOCAL -> transactionContext.localStorage()
                         .resume(transactionContext.context(), txIdentity);
+                default -> throw new IllegalStateException(String.format("Unknown PersistenceUnitTransactionType value %s",
+                                                                         transactionContext.context().txType().name()));
             }
         }
 
