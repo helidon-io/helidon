@@ -152,7 +152,7 @@
         <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>
         <version.lib.opentracing.tracerresolver>0.1.8</version.lib.opentracing.tracerresolver>
         <version.lib.perfmark-api>0.25.0</version.lib.perfmark-api>
-        <version.lib.parsson>1.1.6</version.lib.parsson>
+        <version.lib.parsson>1.1.7</version.lib.parsson>
         <version.lib.postgresql>42.7.2</version.lib.postgresql>
         <version.lib.prometheus>0.16.0</version.lib.prometheus>
         <version.lib.reactivestreams>1.0.4</version.lib.reactivestreams>
