@@ -16,6 +16,7 @@
 package io.helidon.http;
 
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -97,8 +98,8 @@ public interface RequestedUriDiscoveryContext {
      * @param isSecure      whether the request is secure
      * @return {@code UriInfo} which reconstructs, as well as possible, the requested URI from the originating client
      */
-    UriInfo uriInfo(InetSocketAddress remoteAddress,
-                    InetSocketAddress localAddress,
+    UriInfo uriInfo(SocketAddress remoteAddress,
+                    SocketAddress localAddress,
                     String requestPath,
                     ServerRequestHeaders headers,
                     UriQuery query,
@@ -301,8 +302,8 @@ public interface RequestedUriDiscoveryContext {
             }
 
             @Override
-            public UriInfo uriInfo(InetSocketAddress remoteAddress,
-                                   InetSocketAddress localAddress,
+            public UriInfo uriInfo(SocketAddress remoteAddress,
+                                   SocketAddress localAddress,
                                    String requestPath,
                                    ServerRequestHeaders headers,
                                    UriQuery query,
@@ -315,11 +316,11 @@ public interface RequestedUriDiscoveryContext {
 
                 // Note: enabled() returns true if discovery is explicitly enabled or if either
                 // requestedUriDiscoveryTypes or trustedProxies is set.
-                if (enabled) {
+                if (enabled && remoteAddress instanceof InetSocketAddress remoteInetAddress) {
                     // Host with ip address fallback or ip address only
-                    if (trustedProxies.test(remoteAddress.getHostString())
-                            || (remoteAddress.getAddress() != null
-                                    && trustedProxies.test(remoteAddress.getAddress().getHostAddress()))) {
+                    if (trustedProxies.test(remoteInetAddress.getHostString())
+                            || (remoteInetAddress.getAddress() != null
+                                    && trustedProxies.test(remoteInetAddress.getAddress().getHostAddress()))) {
 
                         // Once we discover trusted information using one of the discovery discoveryTypes, we do not mix in
                         // information from other discoveryTypes.
@@ -369,13 +370,17 @@ public interface RequestedUriDiscoveryContext {
                 }
 
                 uriInfo.path(path == null ? requestPath : path);
-                uriInfo.host(localAddress.getHostString()); // this is the fallback
+
                 if (authority != null) {
                     uriInfo.authority(authority); // this is the second possibility
                 }
+
                 if (host != null) {
                     uriInfo.host(host); // and this one has priority
+                } else if (localAddress instanceof InetSocketAddress inetLocalAddress) {
+                    uriInfo.host(inetLocalAddress.getHostString()); // this is the fallback
                 }
+
                 if (port != -1) {
                     uriInfo.port(port);
                 }

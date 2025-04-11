@@ -16,7 +16,6 @@
 
 package io.helidon.webserver.http1;
 
-import java.net.InetSocketAddress;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Supplier;
@@ -222,19 +221,13 @@ abstract class Http1ServerRequest implements RoutingRequest {
     }
 
     private UriInfo createUriInfo() {
-        if (remotePeer().address() instanceof InetSocketAddress remoteAddress
-                && localPeer().address() instanceof InetSocketAddress localAddress) {
-
-            return ctx.listenerContext().config().requestedUriDiscoveryContext()
-                    .orElse(DEFAULT_REQUESTED_URI_DISCOVERY_CONTEXT)
-                    .uriInfo(remoteAddress,
-                             localAddress,
-                             path.absolute().path(),
-                             headers,
-                             query(),
-                             isSecure());
-        }
-
-        throw new IllegalStateException("Only peer addresses of InetSocketAddress type are supported");
+        return ctx.listenerContext().config().requestedUriDiscoveryContext()
+                .orElse(DEFAULT_REQUESTED_URI_DISCOVERY_CONTEXT)
+                .uriInfo(remotePeer().address(),
+                         localPeer().address(),
+                         path.absolute().path(),
+                         headers,
+                         query(),
+                         isSecure());
     }
 }
