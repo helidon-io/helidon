@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.transaction;
+package io.helidon.transaction.spi;
 
 import java.util.concurrent.Callable;
+
+import io.helidon.transaction.Tx;
 //import java.util.function.Function;
 
 /**
@@ -39,7 +41,7 @@ public interface TxSupport {
      * @param task task to run in transaction
      * @param <T>  the result type of the task
      * @return computed task result
-     * @throws TxException when result computation failed
+     * @throws io.helidon.transaction.TxException when result computation failed
      */
     <T> T transaction(Tx.Type type, Callable<T> task);
 

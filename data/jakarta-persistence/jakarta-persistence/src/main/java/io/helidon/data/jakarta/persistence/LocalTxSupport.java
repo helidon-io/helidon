@@ -26,8 +26,8 @@ import io.helidon.data.jakarta.persistence.LocalTransactionStorage.LocalTransact
 import io.helidon.service.registry.Service;
 import io.helidon.transaction.Tx;
 import io.helidon.transaction.TxException;
-import io.helidon.transaction.TxLifeCycle;
-import io.helidon.transaction.TxSupport;
+import io.helidon.transaction.spi.TxLifeCycle;
+import io.helidon.transaction.spi.TxSupport;
 
 /**
  * Resource local transaction handling support.

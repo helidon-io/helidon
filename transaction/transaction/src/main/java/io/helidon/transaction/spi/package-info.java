@@ -13,35 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.transaction;
 
-import java.util.concurrent.Callable;
-
-import io.helidon.service.registry.Service;
-import io.helidon.transaction.spi.TxSupport;
-
-@Service.Singleton
-class MockTxSupport implements TxSupport {
-
-    private Tx.Type type;
-
-    MockTxSupport() {
-        this.type = null;
-    }
-
-    @Override
-    public String type() {
-        return "test";
-    }
-
-    @Override
-    public <T> T transaction(Tx.Type type, Callable<T> task) {
-        this.type = type;
-        return null;
-    }
-
-    Tx.Type txType() {
-        return type;
-    }
-
-}
+/**
+ * Service provider interfaces for transaction API.
+ */
+package io.helidon.transaction.spi;

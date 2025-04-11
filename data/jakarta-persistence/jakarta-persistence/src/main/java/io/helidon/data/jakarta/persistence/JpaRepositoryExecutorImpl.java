@@ -29,7 +29,7 @@ import io.helidon.data.OptimisticLockException;
 import io.helidon.data.jakarta.persistence.gapi.JpaRepositoryExecutor;
 import io.helidon.service.registry.Services;
 import io.helidon.transaction.Tx;
-import io.helidon.transaction.TxSupport;
+import io.helidon.transaction.spi.TxSupport;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
