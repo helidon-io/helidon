@@ -18,6 +18,7 @@ package io.helidon.transaction;
 import io.helidon.service.registry.Interception;
 import io.helidon.service.registry.InterceptionContext;
 import io.helidon.service.registry.Service;
+import io.helidon.transaction.spi.TxSupport;
 
 class TxInterceptor {
 
