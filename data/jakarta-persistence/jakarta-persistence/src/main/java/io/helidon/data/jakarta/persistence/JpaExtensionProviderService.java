@@ -25,7 +25,7 @@ import io.helidon.data.jakarta.persistence.spi.JakartaPersistenceExtension;
 import io.helidon.data.jakarta.persistence.spi.JakartaPersistenceExtensionProvider;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistry;
-import io.helidon.transaction.TxSupport;
+import io.helidon.transaction.spi.TxSupport;
 
 @Weight(90)
 @Service.Singleton
