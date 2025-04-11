@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ public class Descriptors {
     /**
      * Get all service descriptors from the array of descriptors discovered from classpath (or other source).
      *
-     * @param location where was thi array obtained (such as "Classpath URL: ...")
+     * @param location where was this array obtained (such as "Classpath URL: ...")
      * @param moduleRegistries array of modules
      * @return a list of descriptor metadata
      * @throws java.lang.IllegalStateException in case the format is not as expected

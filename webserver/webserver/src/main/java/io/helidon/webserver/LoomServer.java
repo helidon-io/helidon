@@ -38,7 +38,7 @@ import io.helidon.common.Weights;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.features.HelidonFeatures;
-import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.common.features.metadata.HelidonFlavor;
 import io.helidon.common.resumable.Resumable;
 import io.helidon.common.resumable.ResumableSupport;
 import io.helidon.common.tls.Tls;
