@@ -34,7 +34,6 @@ import io.helidon.transaction.TxSupport;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceException;
-import jakarta.persistence.SynchronizationType;
 
 import static io.helidon.data.jakarta.persistence.JpaExtensionImpl.TRANSACTION_TYPE;
 
@@ -125,20 +124,6 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
             EXECUTORS.get(transactionType)
                     .run(this, task);
         }
-    }
-
-    // Get EntityManager outside transaction scope
-    // In JTA environment this EntityManager must be synchronized manually with new transaction started in executor
-    private EntityManager getNonTxManager() {
-        return transactionType == PersistenceUnitTransactionType.RESOURCE_LOCAL
-                ? factory.createEntityManager()
-                : factory.createEntityManager(SynchronizationType.UNSYNCHRONIZED);
-    }
-
-    // Get EntityManager inside transaction scope
-    // In JTA environment this EntityManager is already synchronized with current transaction
-    private EntityManager entityManager() {
-        return TransactionContext.getInstance().entityManager(factory, transactionType);
     }
 
     // JTA provider shall be present when JTA transaction type is active.
