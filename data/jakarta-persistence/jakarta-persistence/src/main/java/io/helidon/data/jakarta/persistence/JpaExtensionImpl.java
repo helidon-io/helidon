@@ -31,7 +31,7 @@ import io.helidon.data.jakarta.persistence.gapi.JpaEntityProvider;
 import io.helidon.data.jakarta.persistence.spi.JakartaPersistenceExtension;
 import io.helidon.data.sql.common.SqlDriver;
 import io.helidon.service.registry.ServiceRegistry;
-import io.helidon.transaction.TxSupport;
+import io.helidon.transaction.spi.TxSupport;
 
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.spi.PersistenceProvider;
