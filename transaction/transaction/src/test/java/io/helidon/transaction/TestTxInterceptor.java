@@ -19,6 +19,7 @@ import java.lang.System.Logger.Level;
 
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.Services;
+import io.helidon.transaction.spi.TxSupport;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
