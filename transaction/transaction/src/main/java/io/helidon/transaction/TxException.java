@@ -40,4 +40,5 @@ public class TxException extends RuntimeException {
     public TxException(String message, Throwable cause) {
         super(requireNonNull(message), requireNonNull(cause));
     }
+
 }

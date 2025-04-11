@@ -21,7 +21,7 @@ import java.util.List;
 
 import io.helidon.data.DataException;
 import io.helidon.service.registry.Service;
-import io.helidon.transaction.TxLifeCycle;
+import io.helidon.transaction.spi.TxLifeCycle;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;

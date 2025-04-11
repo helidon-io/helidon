@@ -164,12 +164,6 @@ public class MySqlSuite implements SuiteProvider, SuiteResolver {
     public static class TestCrudRepository extends io.helidon.data.tests.common.TestCrudRepository {
     }
 
-/*
-    @Suite(MySqlSuite.class)
-    @Testcontainers(disabledWithoutDocker = true)
-    public static class TestTransaction extends io.helidon.data.tests.common.TestTransaction {
-    }
-*/
     @Suite(MySqlSuite.class)
     @Testcontainers(disabledWithoutDocker = true)
     public static class TestQbmnProjection extends io.helidon.data.tests.common.TestQbmnProjection {
