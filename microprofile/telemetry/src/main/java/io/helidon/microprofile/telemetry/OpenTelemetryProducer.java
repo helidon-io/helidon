@@ -20,8 +20,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import io.helidon.config.Config;
+import io.helidon.tracing.TracerBuilder;
 import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
 import io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracerProvider;
 
@@ -85,6 +88,18 @@ class OpenTelemetryProducer {
      */
     @PostConstruct
     private void init() {
+
+//        // Initialize the Helidon OTel builder using normal Helidon config first.
+//        // Then process any OTel settings in microprofile-config.properties so, if present, they
+//        // override whatever might be in the Helidon config.
+//
+//        TracerBuilder<?> tracerBuilder = TracerBuilder.create(config);
+//        Map<String, Consumer<String>> otelSettings = Map.of(
+//                "otel.sdk.disabled", (String v) -> System.setProperty("otel.sdk.disabled", v),
+//                "otel.traces.exporter",
+//
+//        )
+
 
         telemetryProperties  = Collections.unmodifiableMap(getTelemetryProperties());
 
