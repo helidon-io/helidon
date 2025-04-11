@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.config.Config;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.MeterRegistry;
@@ -37,8 +36,6 @@ class MetricsUtils {
     private static final LazyValue<MetricsFactory> METRICS_FACTORY = LazyValue.create(MetricsFactory::getInstance);
     private static final LazyValue<MeterRegistry> METRICS_REGISTRY = LazyValue.create(Metrics::globalRegistry);
 
-    private static volatile Boolean defaultEnabled;
-
     private MetricsUtils() {
     }
 
@@ -49,11 +46,10 @@ class MetricsUtils {
      * @return value of metrics flag
      */
     static boolean defaultEnabled() {
-        if (defaultEnabled == null) {
-            Config config = FaultTolerance.config();
-            defaultEnabled = config.get(FT_METRICS_DEFAULT_ENABLED).asBoolean().orElse(false);
-        }
-        return defaultEnabled;
+        return FaultTolerance.config()
+                .get(FT_METRICS_DEFAULT_ENABLED)
+                .asBoolean()
+                .orElse(false);
     }
 
     static <T extends Number> void gaugeBuilder(String name, Supplier<T> supplier, Tag... tags) {

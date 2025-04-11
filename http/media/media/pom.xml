@@ -34,6 +34,18 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-media-type</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-parameters</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-config</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-uri</artifactId>
         </dependency>
         <dependency>

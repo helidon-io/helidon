@@ -45,6 +45,7 @@ module io.helidon.webserver {
     requires transitive io.helidon.http.encoding;
     requires transitive io.helidon.http.media;
     requires transitive io.helidon.common.concurrency.limits;
+    requires io.helidon.service.registry;
 
     // provides multiple packages due to intentional cyclic dependency
     // we want to support HTTP/1.1 by default (we could fully separate it, but the API would be harder to use

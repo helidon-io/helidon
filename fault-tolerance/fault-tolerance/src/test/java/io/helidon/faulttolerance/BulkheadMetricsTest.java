@@ -28,6 +28,7 @@ import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
+import io.helidon.testing.junit5.Testing;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -43,13 +44,8 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
+@Testing.Test
 class BulkheadMetricsTest extends BulkheadBaseTest {
-
-    @BeforeAll
-    static void setupTest() {
-        LogConfig.configureRuntime();
-        FaultTolerance.config(Config.create());
-    }
 
     @Test
     void testBulkhead() throws InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {

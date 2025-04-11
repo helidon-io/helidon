@@ -24,8 +24,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
+import io.helidon.common.config.Config;
 import io.helidon.common.configurable.ThreadPoolSupplier;
-import io.helidon.config.Config;
+import io.helidon.service.registry.Services;
 
 import static java.lang.System.Logger.Level.ERROR;
 
@@ -43,7 +44,6 @@ import static java.lang.System.Logger.Level.ERROR;
  *     <li>{@link io.helidon.faulttolerance.Timeout} - time out a request if it takes too long</li>
  * </ul>
  *
- * @see #config(io.helidon.config.Config)
  * @see #executor()
  * @see #builder()
  */
@@ -57,9 +57,8 @@ public final class FaultTolerance {
     public static final String FT_METRICS_DEFAULT_ENABLED = "ft.metrics.default-enabled";
 
     private static final System.Logger LOGGER = System.getLogger(FaultTolerance.class.getName());
-
     private static final AtomicReference<LazyValue<ExecutorService>> EXECUTOR = new AtomicReference<>();
-    private static final AtomicReference<Config> CONFIG = new AtomicReference<>(Config.empty());
+    private static final AtomicReference<Config> CONFIG = new AtomicReference<>();
 
     static {
         EXECUTOR.set(LazyValue.create(() -> ThreadPoolSupplier.builder()
@@ -74,9 +73,13 @@ public final class FaultTolerance {
 
     /**
      * Configure Helidon wide defaults from a config instance.
+     * The default is now to use {@link io.helidon.service.registry.Services#get(Class)} to get
+     * a configuration. This method will work as it used to, but fallback will always
+     * be to the config instance provided by service registry.
      *
      * @param config config to read fault tolerance configuration
      */
+    @Deprecated(forRemoval = true, since = "4.3.0")
     public static void config(Config config) {
         CONFIG.set(config);
     }
@@ -155,7 +158,11 @@ public final class FaultTolerance {
     }
 
     static Config config() {
-        return CONFIG.get();
+        var config = CONFIG.get();
+        if (config == null) {
+            return Services.get(Config.class);
+        }
+        return config;
     }
 
     abstract static class BaseBuilder<B extends BaseBuilder<B>> {
