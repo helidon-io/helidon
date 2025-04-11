@@ -23,7 +23,7 @@ package io.helidon.transaction;
  * Each transaction method life-cycle contains exactly two events:<ul>
  *     <li><i>start</i> when transaction method was started</li>
  *     <li><i>end</i> when transaction method was finished</li>
- *  * </ul>
+ * </ul>
  * Each new transaction life-cycle contains exactly two events:<ul>
  *     <li><i>begin</i> when transaction was started</li>
  *     <li><i>commit/rollback</i> when transaction was finished</li>
