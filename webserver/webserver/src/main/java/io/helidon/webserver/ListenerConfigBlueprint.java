@@ -410,15 +410,15 @@ interface ListenerConfigBlueprint {
     ErrorHandling errorHandling();
 
     /**
-     * Save and restore response headers before and after passing a request to Jersey
+     * Copy and restore response headers before and after passing a request to Jersey
      * for processing. If Jersey fails to handle the request, and the Webserver continues
      * processing the request, it needs to make sure the original headers are restored.
-     * Turn on this flag if you expect Webserver handlers to execute after Jersey
-     * handlers fail to process requests in your app.
+     * Turn off this flag to avoid the extra overhead of copying headers when no handler
+     * executes after Jersey returns.
      *
      * @return copy/restore header setting
      */
     @Option.Configured
-    @Option.Default("false")
-    boolean copyRestoreHeaders();
+    @Option.Default("true")
+    boolean restoreResponseHeaders();
 }

@@ -204,7 +204,7 @@ class JaxRsService implements HttpService {
     private void doHandle(Context ctx, ServerRequest req, ServerResponse res) {
         // save headers in case MP request processing fails
         ServerResponseHeaders savedResponseHeaders = null;
-        if (req.listenerContext().config().copyRestoreHeaders()) {
+        if (req.listenerContext().config().restoreResponseHeaders()) {
             savedResponseHeaders = ServerResponseHeaders.create(res.headers());
         }
 
