@@ -258,7 +258,7 @@ class LocalTransactionStorage {
             return this.identity.equals(identity);
         }
 
-        Map<EntityManagerFactory, EntityManager> managers () {
+        Map<EntityManagerFactory, EntityManager> managers() {
             return managers;
         }
 
