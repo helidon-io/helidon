@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,15 @@
  */
 package io.helidon.microprofile.server;
 
+import io.helidon.config.mp.MpConfig;
+import io.helidon.jersey.webserver.JaxRsService;
 import io.helidon.microprofile.config.ConfigCdiExtension;
-import io.helidon.microprofile.server.JaxRsCdiExtension;
-import io.helidon.microprofile.server.JaxRsService;
-import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.microprofile.testing.junit5.AddConfig;
 import io.helidon.microprofile.testing.junit5.AddExtension;
 import io.helidon.microprofile.testing.junit5.DisableDiscovery;
 import io.helidon.microprofile.testing.junit5.HelidonTest;
 
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.junit.jupiter.api.Test;
@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Test that it is possible to override {@code IGNORE_EXCEPTION_RESPONSE} in
- * Jersey using config. See {@link io.helidon.microprofile.server.JaxRsService}
+ * Jersey using config. See {@link io.helidon.jersey.webserver.JaxRsService}
  * for more information.
  */
 @HelidonTest
@@ -48,7 +48,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 class JerseyPropertiesTest {
     @Test
     void testIgnoreExceptionResponseOverride() {
-        assertNotNull(JaxRsService.create(new ResourceConfig(), null));
+        assertNotNull(JaxRsService.create(MpConfig.toHelidonConfig(ConfigProvider.getConfig()),
+                                          new ResourceConfig()));
         assertThat(System.getProperty(IGNORE_EXCEPTION_RESPONSE), is("false"));
     }
 }

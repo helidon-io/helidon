@@ -40,6 +40,7 @@ import io.helidon.config.Config;
 import io.helidon.config.mp.Prioritized;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
+import io.helidon.jersey.webserver.JaxRsService;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.webserver.ListenerConfig;
