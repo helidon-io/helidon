@@ -29,7 +29,7 @@ import javax.sql.DataSource;
 import io.helidon.service.registry.Lookup;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.ServiceRegistry;
-import io.helidon.transaction.TxSupport;
+import io.helidon.transaction.spi.TxSupport;
 
 import jakarta.persistence.SharedCacheMode;
 import jakarta.persistence.ValidationMode;
