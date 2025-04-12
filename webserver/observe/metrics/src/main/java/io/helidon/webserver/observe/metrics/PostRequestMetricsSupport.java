@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,11 +42,9 @@ public interface PostRequestMetricsSupport {
      * @param task the work to perform
      */
     static void recordPostProcessingWork(ServerRequest request, BiConsumer<ServerResponse, Throwable> task) {
-        PostRequestMetricsSupport prms = request.context()
+        request.context()
                 .get(PostRequestMetricsSupport.class)
-                .orElseThrow();
-
-        prms.registerPostRequestWork(task);
+                .ifPresent(prms -> prms.registerPostRequestWork(task));
     }
 
     /**
