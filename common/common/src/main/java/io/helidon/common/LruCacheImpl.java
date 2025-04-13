@@ -15,9 +15,9 @@
  */
 package io.helidon.common;
 
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Optional;
+import java.util.SequencedMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -32,7 +32,7 @@ import java.util.function.Supplier;
  * @param <V> type of the values of the map
  */
 final class LruCacheImpl<K, V> implements LruCache<K, V> {
-    private final LinkedHashMap<K, V> backingMap = new LinkedHashMap<>();
+    private final SequencedMap<K, V> backingMap = new LinkedHashMap<>();
     private final ReadWriteLock rwLock = new ReentrantReadWriteLock(true);
     private final Lock readLock = rwLock.readLock();
     private final Lock writeLock = rwLock.writeLock();
@@ -47,15 +47,13 @@ final class LruCacheImpl<K, V> implements LruCache<K, V> {
     public Optional<V> get(K key) {
         readLock.lock();
 
-        V value;
         try {
-            value = backingMap.get(key);
+            V value = backingMap.get(key);
+            if (null == value) {
+                return Optional.empty();
+            }
         } finally {
             readLock.unlock();
-        }
-
-        if (null == value) {
-            return Optional.empty();
         }
 
         writeLock.lock();
@@ -65,14 +63,15 @@ final class LruCacheImpl<K, V> implements LruCache<K, V> {
 
             // TODO this hurts - we just need to move the key to the last position
             // maybe this should be replaced with a list and a map?
-            value = backingMap.get(key);
-            if (null == value) {
+            V freshValue = backingMap.get(key);
+            if (null == freshValue) {
                 return Optional.empty();
             }
+            //LRU policy
             backingMap.remove(key);
-            backingMap.put(key, value);
+            backingMap.putLast(key, freshValue);
 
-            return Optional.of(value);
+            return Optional.of(freshValue);
         } finally {
             writeLock.unlock();
         }
@@ -93,20 +92,18 @@ final class LruCacheImpl<K, V> implements LruCache<K, V> {
     public Optional<V> put(K key, V value) {
         writeLock.lock();
         try {
-            V currentValue = backingMap.remove(key);
-            if (null == currentValue) {
-                // need to free space - we did not make the map smaller
-                if (backingMap.size() >= capacity) {
-                    Iterator<V> iterator = backingMap.values().iterator();
-                    iterator.next();
-                    iterator.remove();
-                }
-            }
-
-            backingMap.put(key, value);
-            return Optional.ofNullable(currentValue);
+            V oldValue = backingMap.putLast(key, value);
+            reduceSize();
+            return Optional.ofNullable(oldValue);
         } finally {
             writeLock.unlock();
+        }
+    }
+
+    private void reduceSize() {
+
+        while (backingMap.size() > capacity) {
+            backingMap.pollFirstEntry();
         }
     }
 
