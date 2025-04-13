@@ -14,19 +14,17 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.common.features.api.Preview;
 
 /**
  * Provides integration with Ollama models.
  */
-@Feature(value = "Langchain4j Ollama",
-         description = "Langchain4j Ollama Provider Integration",
-         in = {HelidonFlavor.SE, HelidonFlavor.MP},
-         path = {"Langchain4j", "Ollama"}
-)
-@Preview
+@Features.Name("Langchain4j Ollama")
+@Features.Description("Langchain4j Ollama Provider Integration")
+@Features.Flavor({HelidonFlavor.SE, HelidonFlavor.MP})
+@Features.Path({"Langchain4j", "Ollama"})
+@Features.Preview
 module io.helidon.integrations.langchain4j.providers.ollama {
     requires static io.helidon.common.features.api;
 
@@ -36,6 +34,7 @@ module io.helidon.integrations.langchain4j.providers.ollama {
     requires transitive io.helidon.service.registry;
     requires transitive io.helidon.integrations.langchain4j;
     requires transitive io.helidon.common.config;
+    requires langchain4j.http.client;
 
     exports io.helidon.integrations.langchain4j.providers.ollama;
 }

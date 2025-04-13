@@ -14,19 +14,17 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.common.features.api.Preview;
+import io.helidon.common.features.api.Features;
 
 /**
  * Provides integration with OpenAi models.
  */
-@Feature(value = "Langchain4j OpenAI",
-         description = "Langchain4j OpenAI Provider Integration",
-         in = {HelidonFlavor.SE, HelidonFlavor.MP},
-         path = {"Langchain4j", "OpenAI"}
-)
-@Preview
+@Features.Name("Langchain4j OpenAI")
+@Features.Description("Langchain4j OpenAI Provider Integration")
+@Features.Flavor({HelidonFlavor.SE, HelidonFlavor.MP})
+@Features.Path({"Langchain4j", "OpenAI"})
+@Features.Preview
 module io.helidon.integrations.langchain4j.providers.openai {
     requires static io.helidon.common.features.api;
 
@@ -36,6 +34,8 @@ module io.helidon.integrations.langchain4j.providers.openai {
     requires transitive io.helidon.service.registry;
     requires transitive io.helidon.integrations.langchain4j;
     requires transitive io.helidon.common.config;
+    requires org.apache.opennlp.tools;
+    requires langchain4j.http.client;
 
     exports io.helidon.integrations.langchain4j.providers.openai;
 }

@@ -14,17 +14,25 @@
  * limitations under the License.
  */
 
+import io.helidon.integrations.langchain4j.codegen.ModelConfigCodegenProvider;
+import io.helidon.integrations.langchain4j.codegen.ModelFactoryCodegenProvider;
+
 /**
  * Code generation for Langchain4j AI services.
  */
 module io.helidon.integrations.langchain4j.codegen {
     requires transitive io.helidon.codegen;
     requires io.helidon.service.codegen;
+    requires io.helidon.common.types;
+    requires io.helidon.codegen.classmodel;
 
     exports io.helidon.integrations.langchain4j.codegen;
 
     provides io.helidon.codegen.spi.CodegenExtensionProvider
-            with io.helidon.integrations.langchain4j.codegen.AiServiceCodegenProvider;
+            with io.helidon.integrations.langchain4j.codegen.AiServiceCodegenProvider,
+                    ModelFactoryCodegenProvider,
+                    ModelConfigCodegenProvider;
+
     provides io.helidon.codegen.spi.TypeMapperProvider
             with io.helidon.integrations.langchain4j.codegen.LcToolsMapperProvider;
 }

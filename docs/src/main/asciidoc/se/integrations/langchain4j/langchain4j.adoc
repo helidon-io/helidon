@@ -90,6 +90,12 @@ Supports https://docs.langchain4j.dev/tutorials/ai-services/[LangChain4J's AI Se
     ** xref:cohere.adoc#_coherescoringmodel[`CohereScoringModel`]
 * xref:oracle.adoc[*Oracle*]
     ** xref:oracle.adoc#_oracleembeddingmodel[`OracleEmbeddingStore`]
+* xref:jlama.adoc[*Jlama*]
+    ** xref:jlama.adoc#_jlamachatmodel[`JlamaChatModel`]
+    ** xref:jlama.adoc#_jlamastreamingchatmodel[`JlamaStreamingChatModel`]
+    ** xref:jlama.adoc#_jlamaembeddingmodel[`JlamaEmbeddingModel`]
+    ** xref:jlama.adoc#_jlamalanguagemodel[`JlamaLanguageModel`]
+* xref:codegen-provider.adoc[*LangChain4J Model Provider Generator*]
 
 NOTE: This integration does not limit the use of other LangChain4J components in your application. The components listed above receive special treatment, meaning they can be automatically created based on configuration.
 
@@ -217,9 +223,9 @@ LangChain4J AI Services provide a declarative and type-safe way to define AI-pow
 Helidon's LangChain4J integration introduces a declarative Helidon Inject-based approach for creating AI Services. It supports the following components:
 
 * *Chat Model*:
-    ** `dev.langchain4j.model.chat.ChatLanguageModel`
+    ** `dev.langchain4j.model.chat.ChatModel`
 * *Streaming Chat Model*:
-    ** `dev.langchain4j.model.chat.StreamingChatLanguageModel`
+    ** `dev.langchain4j.model.chat.StreamingChatModel`
 * *Chat Memory* :
     ** `dev.langchain4j.memory.ChatMemory`
 * *Chat Memory Provider*:
@@ -306,4 +312,7 @@ For more details, read the https://docs.langchain4j.dev/tutorials/tools#high-lev
 ** xref:open-ai.adoc[Open AI]
 ** xref:ollama.adoc[Ollama]
 ** xref:cohere.adoc[Cohere]
+** xref:oracle.adoc[Oracle]
+** xref:jlama.adoc[Jlama]
+** xref:codegen-provider.adoc[Code generated Lc4j Provider]
 

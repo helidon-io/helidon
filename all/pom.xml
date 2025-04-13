@@ -832,6 +832,14 @@
             <artifactId>helidon-integrations-langchain4j-providers-oracle</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.integrations.langchain4j.providers</groupId>
+            <artifactId>helidon-integrations-langchain4j-providers-oci-genai</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.langchain4j.providers</groupId>
+            <artifactId>helidon-integrations-langchain4j-providers-jlama</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.openapi</groupId>
             <artifactId>helidon-openapi</artifactId>
         </dependency>
