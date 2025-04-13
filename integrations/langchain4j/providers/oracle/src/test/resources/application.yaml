@@ -18,12 +18,26 @@ langchain4j:
   oracle:
     embedding-store:
       enabled: true
-      data-source: "datasource"
+      data-source.service-registry.named: customDs
       exact-search: false
-      vector-index-create-option: "CREATE_IF_NOT_EXISTS"
+      vector-index: "CREATE_IF_NOT_EXISTS"
+      json-index:
+        - name: "jsonIndexName"
+          is-bitmap: false
+          create-option: CREATE_IF_NOT_EXISTS
+        - name: "jsonIndexName2"
+          is-bitmap: false
+          create-option: CREATE_NONE
+      ivf-index:
+        - name: "ivfIndexName"
+          is-bitmap: false
+          create-option: CREATE_IF_NOT_EXISTS
+        - name: "ivfIndexName2"
+          is-bitmap: false
+          create-option: CREATE_NONE
       embedding-table:
-        create-option: "CREATE_IF_NOT_EXISTS"
-        name: "name"
+        create-option: "CREATE_NONE"
+        name: "TEST_EMBEDDING_TABLE_NAME"
         id-column: "idColumn"
         embedding-column: "embeddingColumn"
         text-column: "textColumn"

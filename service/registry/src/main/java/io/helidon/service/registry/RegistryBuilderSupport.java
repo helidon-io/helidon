@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -105,6 +105,41 @@ public class RegistryBuilderSupport {
             return (registry.get().first(contract));
         } else {
             return Services.first(contract);
+        }
+    }
+
+    /**
+     * Retrieves the first matching service based on the provided contract, qualifiers,
+     * and the current configuration. Allows for combining explicitly configured values
+     * with discovered values from a registry.
+     *
+     * @param <T>           the type of the service contract
+     * @param registry      an optional service registry to use, if explicitly provided
+     * @param contract      the contract that is requested
+     * @param existingValue an optional existing value, to be used if already present
+     * @param useRegistry   a flag indicating whether to use the service registry
+     * @param namedQualifier an optional qualifier name to filter the services
+     * @return an optional containing the matching service, if found
+     */
+    public static <T> Optional<T> service(Optional<ServiceRegistry> registry,
+                                          TypeName contract,
+                                          Optional<T> existingValue,
+                                          boolean useRegistry,
+                                          Optional<String> namedQualifier) {
+        if (existingValue.isPresent() || !useRegistry) {
+            return existingValue;
+        }
+
+        var lookup = Lookup.builder()
+                .addContract(contract)
+                .update(builder -> namedQualifier.map(Qualifier::createNamed)
+                        .ifPresent(builder::addQualifier))
+                .build();
+
+        if (registry.isPresent()) {
+            return registry.get().first(lookup);
+        } else {
+            return GlobalServiceRegistry.registry().first(lookup);
         }
     }
 }

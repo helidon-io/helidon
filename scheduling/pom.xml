@@ -29,6 +29,10 @@
     <artifactId>helidon-scheduling</artifactId>
     <name>Helidon Scheduling</name>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.cronutils</groupId>

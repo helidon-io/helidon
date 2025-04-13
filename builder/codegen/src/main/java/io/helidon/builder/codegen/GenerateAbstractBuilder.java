@@ -53,6 +53,8 @@ import static io.helidon.common.types.TypeNames.SET;
 
 final class GenerateAbstractBuilder {
 
+    private static final String SERVICE_REGISTRY_CONFIG_KEY = "service-registry";
+
     private GenerateAbstractBuilder() {
     }
 
@@ -385,10 +387,21 @@ final class GenerateAbstractBuilder {
         if (configured.configured()) {
             for (PrototypeProperty child : properties) {
                 if (child.configuredOption().configured() && !child.configuredOption().provider()) {
-                    // registry service can never reach here, as they do not support Option.Configured
+                    if (child.registryService()) {
+                        // Injectable option can have a qualifier configured instead of an actual value
+                        builder.addContent("if (!config.get(")
+                                .addContentLiteral(child.configuredOption().configKey() + "." + SERVICE_REGISTRY_CONFIG_KEY)
+                                .addContentLine(").exists()) {")
+                                .increaseContentPadding();
+                    }
+
                     child.typeHandler().generateFromConfig(builder,
                                                            child.configuredOption(),
                                                            child.factoryMethods());
+                    if (child.registryService()) {
+                        builder.decreaseContentPadding()
+                                .addContentLine("}");
+                    }
                 }
             }
         }
@@ -595,7 +608,7 @@ final class GenerateAbstractBuilder {
         if (typeContext.typeInfo().supportsServiceRegistry() || typeContext.propertyData().hasProvider()) {
             boolean configured = typeContext.configuredData().configured();
 
-            if (configured && typeContext.propertyData().hasProvider()) {
+            if (configured) {
                 // need to have a non-null config instance
                 preBuildBuilder.addContent("var config = this.config == null ? ")
                         .addContent(Types.COMMON_CONFIG)
@@ -747,6 +760,53 @@ final class GenerateAbstractBuilder {
                     .addContent(property.name())
                     .addContentLine("DiscoverServices));");
         } else {
+
+            // Example: .of("@default") or .empty()
+            var namedQualifierFromAnnotation = property.qualifiers()
+                    .stream()
+                    .filter(a -> a.typeName().fqName().equals("io.helidon.service.registry.Service.Named"))
+                    .flatMap(annotation -> annotation.stringValue().stream())
+                    .findFirst()
+                    .map(s -> ".of(\"" + s + "\")")
+                    .orElse(".empty()");
+
+            preBuildBuilder
+                    .addContent("Optional<String> ")
+                    .addContent(property.name())
+                    .addContent("Qualifier = ");
+
+            if (property.configuredOption().configured()) {
+                /* Configured named qualifier wins over annotation
+                Example:
+                Optional<String> regionQualifier = config.get("region.service-registry.named")
+                        .asString().asOptional()
+                        .or(() -> Optional.of("@default"));
+                */
+                preBuildBuilder
+                        .addContent("config.get(")
+                        .addContentLiteral(property.configuredOption().configKey() + "." + SERVICE_REGISTRY_CONFIG_KEY + ".named")
+                        .addContentLine(")")
+                        .increaseContentPadding()
+                        .addContentLine(".asString().asOptional()")
+                        .addContent(".or(() -> ")
+                        .addContent(TypeNames.OPTIONAL).addContent(namedQualifierFromAnnotation)
+                        .addContentLine(");")
+                        .decreaseContentPadding();
+            } else {
+                /* Example:
+                Optional<String> regionQualifier = Optional.of("@default");
+                */
+                preBuildBuilder
+                        .addContent(TypeNames.OPTIONAL)
+                        .addContent(namedQualifierFromAnnotation)
+                        .addContentLine(";");
+            }
+
+            /*
+            RegistryBuilderSupport.service(registry, TypeName.create("com.oracle.bmc.Region"), regionQualifiers,
+            Optional.ofNullable(region), regionDiscoverServices)
+            .ifPresent(this::region);
+            */
             preBuildBuilder
                     .addContent(REGISTRY_BUILDER_SUPPORT)
                     .addContent(".service(registry, ")
@@ -757,9 +817,14 @@ final class GenerateAbstractBuilder {
                     .addContent(property.name())
                     .addContent("), ")
                     .addContent(property.name())
-                    .addContent("DiscoverServices).ifPresent(this::")
+                    .addContent("DiscoverServices, ")
+                    .addContent(property.name())
+                    .addContentLine("Qualifier)")
+                    .increaseContentPadding()
+                    .addContent(".ifPresent(this::")
                     .addContent(property.setterName())
-                    .addContentLine(");");
+                    .addContentLine(");")
+                    .decreaseContentPadding();
         }
     }
 

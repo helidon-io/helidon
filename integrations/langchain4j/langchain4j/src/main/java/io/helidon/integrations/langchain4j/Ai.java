@@ -66,8 +66,8 @@ public final class Ai {
      *
      * <p>The primary components include:</p>
      * <ul>
-     *   <li>{@code dev.langchain4j.model.chat.ChatLanguageModel} or
-     *   {@code dev.langchain4j.model.chat.StreamingChatLanguageModel} -
+     *   <li>{@code dev.langchain4j.model.chat.ChatModel} or
+     *   {@code dev.langchain4j.model.chat.StreamingChatModel} -
      *       Models that handle chat-based language interactions.</li>
      *   <li>{@code dev.langchain4j.memory.ChatMemory} or {@code dev.langchain4j.memory.chat.ChatMemoryProvider} -
      *       Components for storing and managing chat memory.</li>
@@ -86,8 +86,8 @@ public final class Ai {
      * <p>If {@code autoDiscovery} is set to {@code false}, only components explicitly specified using annotations
      * are included in the service, allowing manual control over the service composition.</p>
      *
-     * <p>At a minimum, either a {@code dev.langchain4j.model.chat.ChatLanguageModel} or
-     * {@code dev.langchain4j.model.chat.StreamingChatLanguageModel} is required for the service to function
+     * <p>At a minimum, either a {@code dev.langchain4j.model.chat.ChatModel} or
+     * {@code dev.langchain4j.model.chat.StreamingChatModel} is required for the service to function
      * effectively.</p>
      */
     @Target(TYPE)

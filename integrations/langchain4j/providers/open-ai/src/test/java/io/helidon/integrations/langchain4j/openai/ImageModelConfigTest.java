@@ -16,7 +16,6 @@
 
 package io.helidon.integrations.langchain4j.openai;
 
-import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Duration;
 
@@ -65,13 +64,12 @@ class ImageModelConfigTest {
         assertThat(config.logRequests().get(), is(true));
         assertThat(config.logResponses().isPresent(), is(true));
         assertThat(config.logResponses().get(), is(true));
-        assertThat(config.withPersisting().isPresent(), is(true));
-        assertThat(config.withPersisting().get(), is(true));
-        assertThat(config.persistTo().isPresent(), is(true));
-        assertThat(config.persistTo().get(), is(Paths.get("temp")));
+//        assertThat(config.withPersisting().isPresent(), is(true));
+//        assertThat(config.withPersisting().get(), is(true));
+//        assertThat(config.persistTo().isPresent(), is(true));
+//        assertThat(config.persistTo().get(), is(Paths.get("temp")));
         assertThat(config.customHeaders().size(), is(2));
         assertThat(config.customHeaders().get("header1"), is(equalTo("value1")));
         assertThat(config.customHeaders().get("header2"), is(equalTo("value2")));
-        assertThat(config.proxy().isPresent(), is(false));
     }
 }

@@ -33,6 +33,7 @@ import static io.helidon.builder.codegen.Types.PROTOTYPE_API;
 import static io.helidon.builder.codegen.Types.PROTOTYPE_FACTORY_METHOD;
 import static io.helidon.builder.codegen.Types.RUNTIME_API;
 import static io.helidon.codegen.CodegenUtil.capitalize;
+import static io.helidon.codegen.ElementInfoPredicates.elementName;
 import static io.helidon.common.types.TypeNames.OBJECT;
 
 /*
@@ -118,9 +119,17 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
                     .stream()
                     .filter(ElementInfoPredicates::isMethod)
                     .filter(ElementInfoPredicates::isStatic)
-                    .filter(ElementInfoPredicates.elementName("builder"))
+                    .filter(elementName("builder"))
                     .filter(ElementInfoPredicates::hasNoArgs)
                     .filter(it -> it.typeName().className().equals("Builder"))
+                    // Has to have public no-param build method returning right type
+                    .filter(it -> ctx.typeInfo(it.typeName()).stream()
+                            .flatMap(builderTypeInfo -> builderTypeInfo.elementInfo().stream())
+                            .filter(ElementInfoPredicates::isMethod)
+                            .filter(ElementInfoPredicates::isPublic)
+                            .filter(ElementInfoPredicates::hasNoArgs)
+                            .filter(m -> m.typeName().equals(typeInfo.typeName()))
+                            .anyMatch(elementName("build")))
                     .findFirst()
                     .map(it -> new FactoryMethod(builderCandidate,
                                                  copyGenericTypes(builderCandidate, it.typeName()),
@@ -367,7 +376,7 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
                 // @FactoryMethod
                 .filter(ElementInfoPredicates.hasAnnotation(PROTOTYPE_FACTORY_METHOD))
                 // createMyProperty
-                .filter(ElementInfoPredicates.elementName(methodName))
+                .filter(elementName(methodName))
                 // must have a single parameter of the correct type
                 .filter(ElementInfoPredicates.hasParams(paramType))
                 .map(TypedElementInfo::typeName)

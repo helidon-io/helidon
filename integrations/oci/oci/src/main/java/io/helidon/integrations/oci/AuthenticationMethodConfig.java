@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.integrations.oci;
 
+import java.io.ByteArrayInputStream;
 import java.lang.System.Logger.Level;
 import java.util.Optional;
 
@@ -76,7 +77,7 @@ class AuthenticationMethodConfig implements OciAuthenticationMethod {
         if (config.privateKey().isPresent()) {
             // as a resource (classpath, file system, base64, plain text)
             Resource resource = config.privateKey().get();
-            builder.privateKeySupplier(resource::stream);
+            builder.privateKeySupplier(() -> new ByteArrayInputStream(config.privateKey().get().bytes()));
         } else {
             // or as the default location in user.home/.oci/oic_api_key.pem
             String keyFile = System.getProperty("user.home");

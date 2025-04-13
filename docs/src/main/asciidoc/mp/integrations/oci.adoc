@@ -29,6 +29,7 @@ include::{rootdir}/includes/mp.adoc[]
 
 - <<Overview, Overview>>
 - <<maven-coordinates, Maven Coordinates>>
+- <<_authentication, Authentication>>
 - <<_accessing_oci_services, Accessing OCI Services>>
 - <<References, References>>
 

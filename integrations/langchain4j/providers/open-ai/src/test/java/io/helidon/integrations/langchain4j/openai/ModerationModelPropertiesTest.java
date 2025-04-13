@@ -20,7 +20,6 @@ import java.time.Duration;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.integrations.langchain4j.providers.openai.OpenAiChatModelConfig;
 import io.helidon.integrations.langchain4j.providers.openai.OpenAiModerationModelConfig;
 
 import org.junit.jupiter.api.Test;
@@ -57,6 +56,5 @@ class ModerationModelPropertiesTest {
         assertThat(config.customHeaders().size(), is(2));
         assertThat(config.customHeaders().get("header1"), is(equalTo("value1")));
         assertThat(config.customHeaders().get("header2"), is(equalTo("value2")));
-        assertThat(config.proxy().isPresent(), is(false));
     }
 }

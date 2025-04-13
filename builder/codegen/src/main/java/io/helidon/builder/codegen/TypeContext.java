@@ -1,6 +1,5 @@
-
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +17,14 @@
 package io.helidon.builder.codegen;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.ElementInfoPredicates;
@@ -214,10 +215,11 @@ record TypeContext(
                 .stream()
                 .filter(ElementInfoPredicates::isMethod)
                 .anyMatch(ElementInfoPredicates.hasAnnotation(Types.OPTION_PROVIDER));
-        supportsServiceRegistry |= blueprint.elementInfo()
-                        .stream()
-                        .filter(ElementInfoPredicates::isMethod)
-                        .anyMatch(ElementInfoPredicates.hasAnnotation(Types.OPTION_REGISTRY_SERVICE));
+        supportsServiceRegistry |= Stream.concat(Stream.of(blueprint), blueprint.interfaceTypeInfo().stream())
+                .map(TypeInfo::elementInfo)
+                .flatMap(Collection::stream)
+                .filter(ElementInfoPredicates::isMethod)
+                .anyMatch(ElementInfoPredicates.hasAnnotation(Types.OPTION_REGISTRY_SERVICE));
 
         TypeInformation typeInformation = new TypeInformation(supportsServiceRegistry,
                                                               blueprint,
