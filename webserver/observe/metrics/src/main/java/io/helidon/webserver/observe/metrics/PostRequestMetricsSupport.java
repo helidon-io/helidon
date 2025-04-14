@@ -44,7 +44,8 @@ public interface PostRequestMetricsSupport {
     static void recordPostProcessingWork(ServerRequest request, BiConsumer<ServerResponse, Throwable> task) {
         request.context()
                 .get(PostRequestMetricsSupport.class)
-                .ifPresent(prms -> prms.registerPostRequestWork(task));
+                .ifPresentOrElse(prms -> prms.registerPostRequestWork(task),
+                                 PostRequestMetricsSupportImpl::logMessageAboutMissingKpiDataStructure);
     }
 
     /**
