@@ -32,8 +32,6 @@ class PostRequestMetricsSupportImpl implements PostRequestMetricsSupport {
         return new PostRequestMetricsSupportImpl();
     }
 
-    // @Deprecated - We should be able to remote this and its call once we update how KPI metrics are handled on multiple sockets.
-    @Deprecated(forRemoval = true, since = "4.2.1")
     static void logMessageAboutMissingKpiDataStructure() {
         if (!loggedMessageAboutMissingKpiDataStructure) {
             loggedMessageAboutMissingKpiDataStructure = true;
