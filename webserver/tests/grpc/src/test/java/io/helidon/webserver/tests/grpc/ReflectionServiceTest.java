@@ -56,7 +56,7 @@ class ReflectionServiceTest extends BaseServiceTest {
 
     @SetUpServer
     static void setupServer(WebServerConfig.Builder builder) {
-        builder.addFeature(GrpcReflectionFeature.create());
+        builder.addFeature(GrpcReflectionFeature.builder().enabled(true).build());
     }
 
     @SetUpRoute
@@ -92,7 +92,7 @@ class ReflectionServiceTest extends BaseServiceTest {
         Set<String> names = serviceResponses.stream()
                 .map(ServiceResponse::getName)
                 .collect(Collectors.toSet());
-        assertThat(names, hasItems("StringService", "ServerReflection"));
+        assertThat(names, hasItems("StringService", "grpc.reflection.v1.ServerReflection"));
     }
 
     @Test

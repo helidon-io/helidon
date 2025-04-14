@@ -138,14 +138,15 @@ class GrpcRouteHandler<ReqT, ResT> extends GrpcRoute {
                                                                   String serviceName,
                                                                   String methodName,
                                                                   ServerCallHandler<ReqT, ResT> callHandler) {
-        Descriptors.ServiceDescriptor svc = proto.findServiceByName(serviceName);
+        String simpleName = getSimpleName(serviceName);
+        Descriptors.ServiceDescriptor svc = proto.findServiceByName(simpleName);
         if (svc == null) {
-            throw new IllegalArgumentException("Unable to find gRPC service '" + serviceName + "'");
+            throw new IllegalArgumentException("Unable to find gRPC service '" + simpleName + "'");
         }
         Descriptors.MethodDescriptor mtd = svc.findMethodByName(methodName);
         if (mtd == null) {
             throw new IllegalArgumentException("Unable to find gRPC method '" + methodName
-                    + "' in service '" + serviceName + "'");
+                    + "' in service '" + simpleName + "'");
         }
         String path = svc.getFullName() + "/" + methodName;
 
@@ -161,7 +162,7 @@ class GrpcRouteHandler<ReqT, ResT> extends GrpcRoute {
         MethodDescriptor.Marshaller<ResT> resMarshaller = ProtoMarshaller.get(responseType);
 
         MethodDescriptor.Builder<ReqT, ResT> grpcDesc = MethodDescriptor.<ReqT, ResT>newBuilder()
-                .setFullMethodName(MethodDescriptor.generateFullMethodName(serviceName, methodName))
+                .setFullMethodName(MethodDescriptor.generateFullMethodName(simpleName, methodName))
                 .setType(getMethodType(mtd)).setFullMethodName(path).setRequestMarshaller(reqMarshaller)
                 .setResponseMarshaller(resMarshaller).setSampledToLocalTracing(true);
 
@@ -246,5 +247,10 @@ class GrpcRouteHandler<ReqT, ResT> extends GrpcRoute {
             return MethodDescriptor.MethodType.SERVER_STREAMING;
         }
         return MethodDescriptor.MethodType.UNARY;
+    }
+
+    private static String getSimpleName(String fullName) {
+        int k = fullName.lastIndexOf('.');
+        return k < 0 ? fullName : fullName.substring(k + 1);
     }
 }

@@ -48,10 +48,11 @@ interface GrpcReflectionConfigBlueprint extends Prototype.Factory<GrpcReflection
     String name();
 
     /**
-     * This feature can be disabled.
+     * This feature can be enabled.
      *
      * @return whether the feature is enabled
      */
-    @Option.DefaultBoolean(true)
+    @Option.Configured
+    @Option.DefaultBoolean(false)
     boolean enabled();
 }

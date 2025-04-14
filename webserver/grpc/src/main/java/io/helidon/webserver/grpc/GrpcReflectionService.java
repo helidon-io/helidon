@@ -62,7 +62,8 @@ class GrpcReflectionService implements GrpcService {
 
     @Override
     public String serviceName() {
-        return "ServerReflection";
+        List<Descriptors.ServiceDescriptor> services = proto().getServices();
+        return services.getFirst().getFullName();       // only one service
     }
 
     @Override
