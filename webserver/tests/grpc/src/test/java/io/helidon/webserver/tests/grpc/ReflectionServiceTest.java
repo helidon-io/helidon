@@ -30,6 +30,8 @@ import io.grpc.stub.StreamObserver;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import io.helidon.webserver.Router;
 import io.helidon.webserver.WebServer;
@@ -95,12 +97,18 @@ class ReflectionServiceTest extends BaseServiceTest {
         assertThat(names, hasItems("StringService", "grpc.reflection.v1.ServerReflection"));
     }
 
-    @Test
-    void testFindSymbol() throws InterruptedException {
+    /**
+     * Tests find symbol for service, method and type.
+     * @param symbol the symbol to look for
+     * @throws InterruptedException if the waiting time expires
+     */
+    @ParameterizedTest
+    @CsvSource({"StringService", "StringService.Upper", "StringMessage"})
+    void testFindSymbol(String symbol) throws InterruptedException {
         TestObserver<ServerReflectionResponse> res = new TestObserver<>(1);
         StreamObserver<ServerReflectionRequest> req = stub.serverReflectionInfo(res);
         req.onNext(ServerReflectionRequest.newBuilder()
-                           .setFileContainingSymbol("StringService")
+                           .setFileContainingSymbol(symbol)
                            .build());
         req.onCompleted();
         res.await(5, TimeUnit.SECONDS);

@@ -19,7 +19,6 @@ package io.helidon.webserver.grpc;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.lang.System.Logger.Level;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -111,36 +110,60 @@ class GrpcReflectionService implements GrpcService {
     }
 
     private ServerReflectionResponse findSymbol(ServerReflectionRequest req) {
-        List<GrpcRouting> grpcRoutings = GrpcReflectionFeature.socketGrpcRoutings().get(socket);
+        String symbol = req.getFileContainingSymbol();
+        ByteString byteString = FILE_DESCRIPTOR_CACHE.get(symbol);
+        if (byteString != null) {
+            return fileDescResponse(byteString);
+        }
 
-        // looks for a service that matches the name in the reflection request
+        List<GrpcRouting> grpcRoutings = GrpcReflectionFeature.socketGrpcRoutings().get(socket);
         for (GrpcRouting grpcRouting : grpcRoutings) {
             for (GrpcRoute grpcRoute : grpcRouting.routes()) {
-                String serviceName = grpcRoute.serviceName();
-                if (req.getFileContainingSymbol().equals(serviceName)) {
-                    ByteString byteString = FILE_DESCRIPTOR_CACHE.get(serviceName);
-                    if (byteString == null) {
-                        Descriptors.FileDescriptor fileDesc = grpcRoute.proto();
-                        if (fileDesc == null) {
-                            LOGGER.log(Level.DEBUG, "Unable to access proto file for service " + serviceName());
-                            continue;
-                        }
-                        DescriptorProtos.FileDescriptorProto proto = fileDesc.toProto();
-                        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-                            proto.writeTo(baos);
-                            byteString = ByteString.copyFrom(baos.toByteArray());
-                            FILE_DESCRIPTOR_CACHE.putIfAbsent(serviceName, byteString);
-                        } catch (IOException e) {
-                            throw new UncheckedIOException(e);
+                Descriptors.FileDescriptor fileDesc = grpcRoute.proto();
+
+                // scan through services and methods
+                List<Descriptors.ServiceDescriptor> services = fileDesc.getServices();
+                for (Descriptors.ServiceDescriptor service : services) {
+                    if (service.getFullName().equals(symbol)) {
+                        return symbolFound(fileDesc, symbol);
+                    }
+                    List<Descriptors.MethodDescriptor> methods = service.getMethods();
+                    for (Descriptors.MethodDescriptor method : methods) {
+                        if (method.getFullName().equals(symbol)) {
+                            return symbolFound(fileDesc, symbol);
                         }
                     }
-                    FileDescriptorResponse.Builder builder = FileDescriptorResponse.newBuilder();
-                    builder.addFileDescriptorProto(byteString);
-                    return ServerReflectionResponse.newBuilder().setFileDescriptorResponse(builder.build()).build();
+                }
+
+                // scan through message types
+                List<Descriptors.Descriptor> types = fileDesc.getMessageTypes();
+                for (Descriptors.Descriptor type : types) {
+                    if (type.getFullName().equals(symbol)) {
+                        return symbolFound(fileDesc, symbol);
+                    }
                 }
             }
         }
-        return notFound("Unable to find proto file for " + req.getFileContainingSymbol());
+        return notFound("Unable to find proto file for " + symbol);
+    }
+
+    private ServerReflectionResponse symbolFound(Descriptors.FileDescriptor fileDesc, String symbol) {
+        ByteString byteString;
+        DescriptorProtos.FileDescriptorProto proto = fileDesc.toProto();
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            proto.writeTo(baos);
+            byteString = ByteString.copyFrom(baos.toByteArray());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        FILE_DESCRIPTOR_CACHE.putIfAbsent(symbol, byteString);
+        return fileDescResponse(byteString);
+    }
+
+    private ServerReflectionResponse fileDescResponse(ByteString byteString) {
+        FileDescriptorResponse.Builder builder = FileDescriptorResponse.newBuilder();
+        builder.addFileDescriptorProto(byteString);
+        return ServerReflectionResponse.newBuilder().setFileDescriptorResponse(builder.build()).build();
     }
 
     private ServerReflectionResponse notImplemented(String message) {
