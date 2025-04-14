@@ -18,9 +18,10 @@ package io.helidon.data.tests.model;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -168,8 +169,8 @@ public class Pokemon {
         sb.append(hp);
         sb.append(", alive=");
         sb.append(alive);
-        sb.append(", keeper=");
-        sb.append(trainer.toString());
+        sb.append(", trainer=");
+        sb.append(trainer != null ? trainer.toString() : "null");
         sb.append(", types=[");
         boolean first = true;
         for (Type type : types) {
@@ -210,18 +211,16 @@ public class Pokemon {
         if (types.size() != collection.size()) {
             return false;
         }
-        Iterator<Type> typeIterator = types.iterator();
-        Iterator<Type> collectionIterator = collection.iterator();
-        int size = types.size();
-        for (int i = 0; i < size; i++) {
-            if (typeIterator.hasNext() && collectionIterator.hasNext()) {
-                if (!Objects.equals(typeIterator.next(), collectionIterator.next())) {
-                    return false;
-                }
+        Set<Type> collectionSet = new HashSet<>(collection.size());
+        collectionSet.addAll(collection);
+        for (Type type : types) {
+            if (collectionSet.contains(type)) {
+                collectionSet.remove(type);
             } else {
                 return false;
             }
         }
-        return true;
+        return collectionSet.isEmpty();
     }
+
 }
