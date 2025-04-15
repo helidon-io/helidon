@@ -18,29 +18,24 @@ package io.helidon.data.sql.common;
 import io.helidon.builder.api.Prototype;
 import io.helidon.data.DataException;
 
-class SqlConfigSupport {
+final class SqlConfigSupport {
 
     private SqlConfigSupport() {
         throw new UnsupportedOperationException("No instances of SqlConfigSupport are allowed");
     }
 
-    /**
-     * Validate SQL specific configuration content.
-     * Database connection must be configured by exactly one of the supported options.
-     *
-     * @param config the configuration
-     */
-    @Prototype.PrototypeMethod
-    static void validate(SqlConfig config) {
-        if (config.connectionString().isEmpty()) {
-            if (config.dataSource().isEmpty()) {
-                throw new DataException("Both connection string and DataSource config options are missing");
-            }
-        } else {
-            if (config.dataSource().isPresent()) {
-                throw new DataException("Both connection string and DataSource config options are present");
+    static class Decorator implements Prototype.BuilderDecorator<SqlConfig.BuilderBase<?, ?>> {
+        @Override
+        public void decorate(SqlConfig.BuilderBase<?, ?> target) {
+            if (target.connection().isEmpty()) {
+                if (target.dataSource().isEmpty()) {
+                    throw new DataException("Both connection and DataSource config options are missing");
+                }
+            } else {
+                if (target.dataSource().isPresent()) {
+                    throw new DataException("Both connection and DataSource config options are present");
+                }
             }
         }
     }
-
 }

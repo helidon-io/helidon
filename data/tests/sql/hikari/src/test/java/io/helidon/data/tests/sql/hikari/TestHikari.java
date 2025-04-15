@@ -67,9 +67,8 @@ class TestHikari {
         assertThat(hikariDataSourceConfig.password().isPresent(), is(true));
         assertThat(new String(hikariDataSourceConfig.password().get()),
                    is(config.get("data-source.0.provider.hikari.password").as(String.class).get()));
-        assertThat(hikariDataSourceConfig.connectionString().isPresent(), is(true));
-        assertThat(hikariDataSourceConfig.connectionString().get(),
-                   is(config.get("data-source.0.provider.hikari.connection-string").as(String.class).get()));
+        assertThat(hikariDataSourceConfig.url(),
+                   is(config.get("data-source.0.provider.hikari.url").as(String.class).get()));
     }
 
     @Test
