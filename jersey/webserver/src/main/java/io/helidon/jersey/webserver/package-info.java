@@ -15,6 +15,6 @@
  */
 
 /**
- * Jersey integration with Helidon SE WebServer.
+ * Jersey integration with Helidon WebServer.
  */
 package io.helidon.jersey.webserver;
