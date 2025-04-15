@@ -17,6 +17,7 @@
 package io.helidon.service.jndi;
 
 import java.util.Hashtable;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.naming.Context;
 import javax.naming.NamingException;
@@ -26,10 +27,24 @@ import javax.naming.spi.InitialContextFactory;
  * Implementation of the initial context factory for JNDI.
  */
 public class NamingFactory implements InitialContextFactory {
+    private static final AtomicBoolean REGISTERED = new AtomicBoolean(false);
+
     /**
      * Public constructor is required by contract of {@link javax.naming.spi.InitialContextFactory}.
      */
     public NamingFactory() {
+    }
+
+    /**
+     * Register the initial context factory if not yet registered.
+     */
+    public static void register() {
+        if (REGISTERED.compareAndSet(false, true)) {
+            String property = System.getProperty(Context.INITIAL_CONTEXT_FACTORY);
+            if (property == null) {
+                System.setProperty(Context.INITIAL_CONTEXT_FACTORY, NamingFactory.class.getName());
+            }
+        }
     }
 
     @Override

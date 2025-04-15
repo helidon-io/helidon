@@ -25,11 +25,11 @@ public interface SqlDriver {
     /**
      * Create a new driver instance from the Helidon data configuration.
      *
-     * @param dataConfig configuration
+     * @param connectionConfig configuration
      * @return a new driver instance
      */
-    static SqlDriver create(SqlConfigBlueprint dataConfig) {
-        return SqlDriverImpl.create(dataConfig);
+    static SqlDriver create(ConnectionConfig connectionConfig) {
+        return SqlDriverImpl.create(connectionConfig);
     }
 
     /**

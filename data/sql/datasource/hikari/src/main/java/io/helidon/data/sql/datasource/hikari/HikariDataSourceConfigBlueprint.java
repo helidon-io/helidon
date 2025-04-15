@@ -20,14 +20,14 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.data.sql.common.ConnectionConfig;
 import io.helidon.data.sql.datasource.ProviderConfig;
-import io.helidon.data.sql.datasource.common.DataSourceProviderConfig;
 import io.helidon.data.sql.datasource.spi.DataSourceConfigProvider;
 
 @Prototype.Blueprint
 @Prototype.Configured(root = false, value = HikariDataSourceProviderService.PROVIDER_TYPE)
 @Prototype.Provides(DataSourceConfigProvider.class)
-interface HikariDataSourceConfigBlueprint extends DataSourceProviderConfig, ProviderConfig {
+interface HikariDataSourceConfigBlueprint extends ConnectionConfig, ProviderConfig {
 
     /**
      * Type of this provider.
@@ -101,15 +101,6 @@ interface HikariDataSourceConfigBlueprint extends DataSourceProviderConfig, Prov
      */
     @Option.Configured
     Optional<Long> connectionTimeout();
-
-    /**
-     * Set JDBC driver class name.
-     * See {@link com.zaxxer.hikari.HikariConfig#setDriverClassName(String)} for details.
-     *
-     * @return the JDBC driver class name
-     */
-    @Option.Configured
-    Optional<String> driverClassName();
 
     /**
      * Add properties (name/value pair) that will be used to configure the connection pool health check.
