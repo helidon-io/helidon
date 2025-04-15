@@ -21,8 +21,8 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.data.sql.common.ConnectionConfig;
 import io.helidon.data.sql.datasource.ProviderConfig;
-import io.helidon.data.sql.datasource.common.DataSourceProviderConfig;
 
 /**
  * UCP specific configuration for {@link javax.sql.DataSource}.
@@ -35,7 +35,7 @@ import io.helidon.data.sql.datasource.common.DataSourceProviderConfig;
  */
 @Prototype.Blueprint
 @Prototype.Configured(root = false)
-interface UcpDataSourceConfigBlueprint extends DataSourceProviderConfig, ProviderConfig {
+interface UcpDataSourceConfigBlueprint extends ConnectionConfig, ProviderConfig {
 
     /**
      * Type of this provider.

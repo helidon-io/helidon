@@ -17,10 +17,10 @@ package io.helidon.transaction.narayana;
 
 import java.util.Optional;
 
-import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
+import io.helidon.service.jndi.NamingFactory;
 import io.helidon.service.registry.Services;
 import io.helidon.transaction.jta.JtaProvider;
 
@@ -36,12 +36,8 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.startsWith;
 
 public class TestLookup {
-
     static {
-        // Make sure the JNDI factory is specified
-        if (!System.getProperties().containsKey(Context.INITIAL_CONTEXT_FACTORY)) {
-            System.setProperty(Context.INITIAL_CONTEXT_FACTORY, "io.helidon.service.jndi.NamingFactory");
-        }
+        NamingFactory.register();
     }
 
     // JtaProvider.get() shall return NarayanaProvider instance

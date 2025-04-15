@@ -26,7 +26,7 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.data.DataConfig;
 import io.helidon.data.DataRegistry;
-import io.helidon.data.sql.common.SqlConfig;
+import io.helidon.data.sql.common.ConnectionConfig;
 import io.helidon.data.sql.testing.SqlTestContainerConfig;
 import io.helidon.data.sql.testing.TestConfigFactory;
 import io.helidon.data.tests.common.InitialData;
@@ -59,7 +59,7 @@ public class OraDbSuite implements SuiteProvider, SuiteResolver {
     private static final DockerImageName IMAGE = DockerImageName.parse(
             "container-registry.oracle.com/database/free");
     private static final String CONFIG_FILE = "application.yaml";
-    private static final String URL_NODE = "data-source.0.provider.ucp.connection-string";
+    private static final String URL_NODE = "data-source.0.provider.ucp.url";
     private static final int DB_PORT = 1521;
 
     @Container
@@ -76,10 +76,8 @@ public class OraDbSuite implements SuiteProvider, SuiteResolver {
             Config dsConfig1 = dsConfig.get("0");
             if (dsConfig1.exists()) {
                 Config poolConfig = dsConfig1.get("provider.ucp");
-                SqlConfig sqlConfig = SqlConfig.builder()
-                        .config(poolConfig)
-                        .build();
-                sqlConfig.password()
+                ConnectionConfig connectionConfig = ConnectionConfig.create(poolConfig);
+                connectionConfig.password()
                         .ifPresent(password -> container.withEnv("ORACLE_PWD", new String(password)));
                 container.withExposedPorts(DB_PORT)
                         .waitingFor(Wait.forHealthcheck()

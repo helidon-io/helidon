@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.data.jakarta.persistence.gapi;
+package io.helidon.data.jakarta.persistence;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;

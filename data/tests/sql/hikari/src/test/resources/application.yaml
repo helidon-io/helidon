@@ -21,4 +21,4 @@ data-source:
       # DataSource config
       username: "test"
       password: "password"
-      connection-string: "jdbc:mysql://localhost:3306/testdb"
+      url: "jdbc:mysql://localhost:3306/testdb"

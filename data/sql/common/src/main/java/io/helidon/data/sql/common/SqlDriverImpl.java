@@ -20,44 +20,33 @@ import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.data.DataException;
 
 record SqlDriverImpl(Class<? extends Driver> driverClass, Driver driver) implements SqlDriver {
-    static SqlDriver create(SqlConfigBlueprint dataConfig) {
+    static SqlDriver create(ConnectionConfig connectionConfig) {
         // Try URL as 1st option
-        if (dataConfig.connectionString().isPresent()) {
-            String url = dataConfig.connectionString().get();
-            try {
-                Driver driver = DriverManager.getDriver(url);
-                return new SqlDriverImpl(driver.getClass(), driver);
-            } catch (SQLException e) {
-                throw new DataException(String.format("No %s supporting JDBC driver found on classpath", url), e);
+
+        Optional<String> driverClassName = connectionConfig.jdbcDriverClassName();
+        if (driverClassName.isPresent()) {
+            String driverClass = driverClassName.get();
+            var foundDriver = DriverManager.drivers()
+                    .filter(it -> it.getClass().getName().equals(driverClass))
+                    .findFirst();
+
+            if (foundDriver.isPresent()) {
+                return new SqlDriverImpl(foundDriver.get().getClass(), foundDriver.get());
             }
+
+            throw new DataException(String.format("No %s JDBC driver found on classpath", driverClass));
         }
-        // Try driver class as 2nd option
-        if (dataConfig.jdbcDriverClassName().isPresent()) {
-            String driverClass = dataConfig.jdbcDriverClassName().get();
-            AtomicReference<Driver> driverReference = new AtomicReference<>(null);
-            DriverManager.drivers().forEach(driver -> {
-                if (driverClass.equals(driver.getClass().getName())) {
-                    driverReference.compareAndSet(null, driver);
-                }
-            });
-            if (driverReference.get() != null) {
-                return new SqlDriverImpl(driverReference.get().getClass(), driverReference.get());
-            } else {
-                throw new DataException(String.format("No %s JDBC driver found on classpath", driverClass));
-            }
-        }
-        // Grab 1st driver available on classpath as a fallback
-        Optional<? extends Driver> maybeDriver = DriverManager.drivers().findFirst();
-        if (maybeDriver.isPresent()) {
-            Driver driver = maybeDriver.get();
+
+        String url = connectionConfig.url();
+        try {
+            Driver driver = DriverManager.getDriver(url);
             return new SqlDriverImpl(driver.getClass(), driver);
-        } else {
-            throw new DataException("No JDBC driver found on classpath");
+        } catch (SQLException e) {
+            throw new DataException(String.format("No %s supporting JDBC driver found on classpath", url), e);
         }
     }
 }
