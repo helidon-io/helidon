@@ -719,11 +719,6 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.data.sql.datasource</groupId>
-                <artifactId>helidon-data-sql-datasource-common</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.data.sql.datasource</groupId>
                 <artifactId>helidon-data-sql-datasource-hikari</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
