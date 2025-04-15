@@ -23,7 +23,7 @@ import java.util.function.Supplier;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.data.sql.common.SqlConfig;
+import io.helidon.data.sql.common.ConnectionConfig;
 import io.helidon.data.sql.testing.SqlTestContainerConfig;
 import io.helidon.data.sql.testing.TestConfigFactory;
 import io.helidon.service.registry.Service;
@@ -56,9 +56,7 @@ public class MySqlSuite implements SuiteProvider, SuiteResolver {
             Config dsConfig1 = dsConfig.get("0");
             if (dsConfig1.exists()) {
                 Config poolConfig = dsConfig1.get("provider.hikari");
-                SqlTestContainerConfig.configureContainer(SqlConfig.builder()
-                                                                  .config(poolConfig)
-                                                                  .build(),
+                SqlTestContainerConfig.configureContainer(ConnectionConfig.create(poolConfig),
                                                           container);
             }
         }
@@ -67,10 +65,10 @@ public class MySqlSuite implements SuiteProvider, SuiteResolver {
     @BeforeSuite
     public void beforeSuite() {
         container.start();
-        String oldUrl = config.get("data-source.0.provider.hikari.connection-string").as(String.class).get();
+        String oldUrl = config.get("data-source.0.provider.hikari.url").as(String.class).get();
         String url = SqlTestContainerConfig.replacePortInUrl(oldUrl, container.getMappedPort(3306));
         Map<String, String> updatedNodes = new HashMap<>(1);
-        updatedNodes.put("data-source.0.provider.hikari.connection-string", url);
+        updatedNodes.put("data-source.0.provider.hikari.url", url);
         Config newConfig = Config.create(ConfigSources.create(updatedNodes), ConfigSources.create(config));
         Supplier<TestConfigFactory> configProvider = Registry.REGISTRY.supply(TestConfigFactory.class);
         List<Service.QualifiedInstance<io.helidon.common.config.Config>> services = configProvider.get().services();

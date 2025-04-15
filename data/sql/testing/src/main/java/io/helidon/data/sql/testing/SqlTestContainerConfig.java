@@ -17,10 +17,12 @@
 package io.helidon.data.sql.testing;
 
 import java.lang.reflect.Method;
+import java.util.Optional;
 
 import io.helidon.common.config.Config;
 import io.helidon.data.DataConfig;
 import io.helidon.data.ProviderConfig;
+import io.helidon.data.sql.common.ConnectionConfig;
 import io.helidon.data.sql.common.SqlConfig;
 
 import org.testcontainers.containers.JdbcDatabaseContainer;
@@ -46,21 +48,23 @@ public final class SqlTestContainerConfig {
                 .map(DataConfig::provider)
                 .filter(provider -> provider instanceof SqlConfig)
                 .map(SqlConfig.class::cast)
-                .ifPresent(sqlConfig -> configureContainer(sqlConfig, container));
+                .flatMap(SqlConfig::connection)
+                .ifPresent(connectionConfig -> configureContainer(connectionConfig, container));
     }
 
     /**
      * Configure the test container from the {@link SqlConfig}.
      *
-     * @param sqlConfig SQL specific configuration
-     * @param container container to configure (before it is started)
+     * @param connectionConfig SQL specific configuration
+     * @param container        container to configure (before it is started)
      */
-    public static void configureContainer(SqlConfig sqlConfig, JdbcDatabaseContainer<?> container) {
-        sqlConfig.username().ifPresent(container::withUsername);
-        sqlConfig.password()
+    public static void configureContainer(ConnectionConfig connectionConfig, JdbcDatabaseContainer<?> container) {
+
+        connectionConfig.username().ifPresent(container::withUsername);
+        connectionConfig.password()
                 .map(String::new)
                 .ifPresent(container::withPassword);
-        sqlConfig.connectionString()
+        Optional.of(connectionConfig.url())
                 .map(ConfigUtils::uriFromDbUrl)
                 .map(ConfigUtils::dbNameFromUri)
                 .ifPresent(container::withDatabaseName);
@@ -92,16 +96,19 @@ public final class SqlTestContainerConfig {
         var targetConfigBuilder = DataConfig.builder()
                 .name(dataConfig.name());
         SqlConfig originalConfig = (SqlConfig) dataConfig.provider();
-        SqlConfig.BuilderBase<?, ?> targetSqlConfigBuilder = targetConfigBuilder(originalConfig)
-                .username(username)
-                .password(password);
+        SqlConfig.BuilderBase<?, ?> targetSqlConfigBuilder = targetConfigBuilder(originalConfig);
 
-        originalConfig.connectionString()
-                .map(it -> replacePortInUrl(it, mappedPort))
-                .ifPresent(targetSqlConfigBuilder::connectionString);
+        if (originalConfig.connection().isPresent()) {
+            targetSqlConfigBuilder.connection(connection -> connection.username(username)
+                    .password(password)
+                    .update(it -> originalConfig.connection()
+                            .map(ConnectionConfig::url)
+                            .map(url -> replacePortInUrl(url, mappedPort))
+                            .ifPresent(it::url)));
 
-        targetConfigBuilder
-                .provider(invokeBuild(targetSqlConfigBuilder));
+            targetConfigBuilder
+                    .provider(invokeBuild(targetSqlConfigBuilder));
+        }
 
         return targetConfigBuilder.build();
     }
@@ -147,10 +154,9 @@ public final class SqlTestContainerConfig {
             int typeSep = src.indexOf(':', jdbcSep + 1);
             String dbType = src.substring(jdbcSep + 1, typeSep);
             // Keeping switch here to simplify future extension
-            return switch (dbType) {
-                case "oracle" -> src.indexOf(":@");
-                default -> src.indexOf("://");
-            };
+            return "oracle".equals(dbType)
+                    ? src.indexOf(":@")
+                    : src.indexOf("://");
         } else {
             throw new IllegalArgumentException("Database JDBC url has nothing after \"jdbc:\" prefix");
         }

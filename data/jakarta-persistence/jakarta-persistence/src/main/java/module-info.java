@@ -20,13 +20,12 @@
 module io.helidon.data.jakarta.persistence {
 
     requires transitive jakarta.persistence;
+    requires transitive io.helidon.service.registry;
 
     requires io.helidon.data;
     requires io.helidon.data.sql.common;
-    requires io.helidon.data.jakarta.persistence.gapi;
-
     requires io.helidon.transaction;
-    requires io.helidon.service.registry;
+    requires java.naming;
 
     exports io.helidon.data.jakarta.persistence;
     exports io.helidon.data.jakarta.persistence.spi;
