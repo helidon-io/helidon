@@ -27,7 +27,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>helidon-data-sql-datasource-hikari</artifactId>
-    <name>Helidon Data Hikari DataSource</name>
+    <name>Helidon Data SQL DataSource Hikari</name>
 
     <dependencies>
         <dependency>
@@ -51,12 +51,12 @@
             <artifactId>helidon-service-registry</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.data.sql.datasource</groupId>
-            <artifactId>helidon-data-sql-datasource</artifactId>
+            <groupId>io.helidon.data.sql</groupId>
+            <artifactId>helidon-data-sql-common</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.data.sql.datasource</groupId>
-            <artifactId>helidon-data-sql-datasource-common</artifactId>
+            <artifactId>helidon-data-sql-datasource</artifactId>
         </dependency>
         <dependency>
             <groupId>com.zaxxer</groupId>

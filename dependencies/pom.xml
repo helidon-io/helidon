@@ -41,6 +41,9 @@
         <version.lib.brave-opentracing>1.0.0</version.lib.brave-opentracing>
         <version.lib.bytebuddy>1.17.5</version.lib.bytebuddy>
         <version.lib.commons-codec>1.16.0</version.lib.commons-codec>
+        <version.lib.commons-compress>1.27.1</version.lib.commons-compress>
+        <version.lib.commons-io>2.16.1</version.lib.commons-io>
+        <version.lib.commons-lang>3.16.0</version.lib.commons-lang>
         <version.lib.commons-logging>1.2</version.lib.commons-logging>
         <version.lib.cron-utils>9.2.1</version.lib.cron-utils>
         <version.lib.database.messaging>19.3.0.0</version.lib.database.messaging>
@@ -1215,6 +1218,24 @@
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
                 <version>${version.lib.commons-codec}</version>
+            </dependency>
+            <dependency>
+                <!-- version managed to fix issues in third party dependency -->
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>${version.lib.commons-compress}</version>
+            </dependency>
+            <dependency>
+                <!-- version managed to align with commons-compress version above -->
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${version.lib.commons-lang}</version>
+            </dependency>
+            <dependency>
+                <!-- version managed to align with commons-compress version above -->
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${version.lib.commons-io}</version>
             </dependency>
             <dependency>
                 <groupId>io.micronaut</groupId>
