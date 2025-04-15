@@ -39,7 +39,7 @@ public class MySqlSuite implements SuiteProvider, SuiteResolver {
 
     private static final System.Logger LOGGER = System.getLogger(MySqlSuite.class.getName());
 
-    private static final String URL_NODE = "data.provider.jakarta.connection-string";
+    private static final String URL_NODE = "data.provider.jakarta.connection.url";
     private static final int DB_PORT = 3306;
     @Container
     private final MySQLContainer<?> container;

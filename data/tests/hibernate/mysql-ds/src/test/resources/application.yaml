@@ -19,7 +19,7 @@ data-source:
     provider.hikari:
       username: "test"
       password: "password"
-      connection-string: "jdbc:mysql://localhost:3306/testdb"
+      url: "jdbc:mysql://localhost:3306/testdb"
 
 data:
   provider.jakarta:
