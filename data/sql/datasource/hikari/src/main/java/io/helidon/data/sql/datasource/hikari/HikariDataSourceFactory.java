@@ -64,8 +64,8 @@ public class HikariDataSourceFactory {
         dataSourceConfig.connectionInitSql().ifPresent(hikariConfig::setConnectionInitSql);
         dataSourceConfig.connectionTestQuery().ifPresent(hikariConfig::setConnectionTestQuery);
         dataSourceConfig.connectionTimeout().ifPresent(hikariConfig::setConnectionTimeout);
-        dataSourceConfig.connectionString().ifPresent(hikariConfig::setJdbcUrl);
-        dataSourceConfig.driverClassName().ifPresent(hikariConfig::setDriverClassName);
+        hikariConfig.setJdbcUrl(dataSourceConfig.url());
+        dataSourceConfig.jdbcDriverClassName().ifPresent(hikariConfig::setDriverClassName);
         dataSourceConfig.healthCheckProperties().forEach(hikariConfig::addHealthCheckProperty);
         dataSourceConfig.idleTimeout().ifPresent(hikariConfig::setIdleTimeout);
         dataSourceConfig.initializationFailTimeout().ifPresent(hikariConfig::setInitializationFailTimeout);

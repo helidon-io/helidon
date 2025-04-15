@@ -37,4 +37,6 @@ module io.helidon.service.jndi {
     requires java.naming;
 
     exports io.helidon.service.jndi;
+
+    provides javax.naming.spi.InitialContextFactory with io.helidon.service.jndi.NamingFactory;
 }

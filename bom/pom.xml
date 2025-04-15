@@ -670,67 +670,62 @@
             <dependency>
                 <groupId>io.helidon.data</groupId>
                 <artifactId>helidon-data</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.data.jakarta.persistence</groupId>
-                <artifactId>helidon-data-jakarta-persistence-gapi</artifactId>
-                <version>${project.version}</version>
+                <version>${helidon.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.helidon.data.jakarta.persistence</groupId>
                 <artifactId>helidon-data-jakarta-persistence</artifactId>
-                <version>${project.version}</version>
+                <version>${helidon.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.helidon.data.codegen</groupId>
                 <artifactId>helidon-data-codegen</artifactId>
-                <version>${project.version}</version>
+                <version>${helidon.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.helidon.data.codegen</groupId>
                 <artifactId>helidon-data-codegen-common</artifactId>
-                <version>${project.version}</version>
+                <version>${helidon.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.helidon.data.codegen</groupId>
                 <artifactId>helidon-data-codegen-parser</artifactId>
-                <version>${project.version}</version>
+                <version>${helidon.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.helidon.data.codegen</groupId>
                 <artifactId>helidon-data-codegen-query</artifactId>
-                <version>${project.version}</version>
+                <version>${helidon.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.helidon.data.sql</groupId>
                 <artifactId>helidon-data-sql-common</artifactId>
-                <version>${project.version}</version>
+                <version>${helidon.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.helidon.data.sql</groupId>
                 <artifactId>helidon-data-sql-testing</artifactId>
-                <version>${project.version}</version>
+                <version>${helidon.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.helidon.data.sql.datasource</groupId>
                 <artifactId>helidon-data-sql-datasource</artifactId>
-                <version>${project.version}</version>
+                <version>${helidon.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.helidon.data.sql.datasource</groupId>
                 <artifactId>helidon-data-sql-datasource-common</artifactId>
-                <version>${project.version}</version>
+                <version>${helidon.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.helidon.data.sql.datasource</groupId>
                 <artifactId>helidon-data-sql-datasource-hikari</artifactId>
-                <version>${project.version}</version>
+                <version>${helidon.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.helidon.data.sql.datasource</groupId>
                 <artifactId>helidon-data-sql-datasource-ucp</artifactId>
-                <version>${project.version}</version>
+                <version>${helidon.version}</version>
             </dependency>
 
             <!-- db client -->

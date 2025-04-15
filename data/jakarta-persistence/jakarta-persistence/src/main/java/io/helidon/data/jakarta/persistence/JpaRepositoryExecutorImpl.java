@@ -26,7 +26,6 @@ import io.helidon.data.EntityNotFoundException;
 import io.helidon.data.NoResultException;
 import io.helidon.data.NonUniqueResultException;
 import io.helidon.data.OptimisticLockException;
-import io.helidon.data.jakarta.persistence.gapi.JpaRepositoryExecutor;
 import io.helidon.service.registry.Services;
 import io.helidon.transaction.Tx;
 import io.helidon.transaction.spi.TxSupport;
