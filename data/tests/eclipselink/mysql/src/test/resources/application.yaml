@@ -19,10 +19,11 @@ sql:
 
 data:
   provider.jakarta:
-    username: "test"
-    password: "password"
-    connection-string: "jdbc:mysql://localhost:${sql.mysql.port}/testdb"
-    jdbc-driver-class-name: "com.mysql.cj.jdbc.Driver"
+    connection:
+      username: "test"
+      password: "password"
+      url: "jdbc:mysql://localhost:${sql.mysql.port}/testdb"
+      jdbc-driver-class-name: "com.mysql.cj.jdbc.Driver"
     # EclipseLink properties
     properties:
       eclipselink.target-database: "MySQL"

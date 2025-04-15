@@ -24,10 +24,10 @@ class JakartaPersistenceTypes {
     static final TypeName DATA_EXCEPTION = TypeName.create("io.helidon.data.DataException");
     static final TypeName DATA_SOURCE_ANNOTATION = TypeName.create("io.helidon.data.Data.DataSource");
     static final TypeName BASE_REPOSITORY_EXECUTOR = TypeName.create(
-            "io.helidon.data.jakarta.persistence.gapi.JpaRepositoryExecutor");
+            "io.helidon.data.jakarta.persistence.JpaRepositoryExecutor");
     static final TypeName REPOSITORY_FACTORY = TypeName.create("io.helidon.data.spi.RepositoryFactory");
     static final TypeName REPOSITORY_PROVIDER = TypeName.create("io.helidon.data.spi.RepositoryProvider");
-    static final TypeName EXECUTOR = TypeName.create("io.helidon.data.jakarta.persistence.gapi.JpaRepositoryExecutor");
+    static final TypeName EXECUTOR = TypeName.create("io.helidon.data.jakarta.persistence.JpaRepositoryExecutor");
 
     static final TypeName ENTITY_MANAGER = TypeName.create("jakarta.persistence.EntityManager");
     // SessionRepository<EntityManager>

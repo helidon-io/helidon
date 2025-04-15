@@ -59,7 +59,7 @@ public class EntityCodegenProvider implements CodegenExtensionProvider {
     private static final class EntityCodegen implements CodegenExtension {
         private static final TypeName GENERATOR = TypeName.create(EntityCodegen.class);
         private static final TypeName ENTITY_PROVIDER = TypeName.create(
-                "io.helidon.data.jakarta.persistence.gapi.JpaEntityProvider");
+                "io.helidon.data.jakarta.persistence.spi.JpaEntityProvider");
 
         private EntityCodegen() {
         }
@@ -87,19 +87,6 @@ public class EntityCodegenProvider implements CodegenExtensionProvider {
 
             classModel.addConstructor(ctr -> ctr
                     .accessModifier(AccessModifier.PACKAGE_PRIVATE)
-                    .addContentLine("// This line is to ensure GraalVM native image can add this for reflection "
-                                            + "without additional configuration")
-                    .addContentLine("// It is needed as JPA (in this version) only supports string definition of entities")
-                    .addContentLine("try {")
-                    .addContent(Class.class)
-                    .addContent(".forName(\"")
-                    .addContent(trigger.fqName())
-                    .addContentLine("\");")
-                    .addContent("} catch (")
-                    .addContent(Exception.class)
-                    .addContentLine(" ignored) {")
-                    .addContentLine("// ignored here, will fail when initializing JPA")
-                    .addContentLine("}")
             );
 
             classModel.addMethod(entityClass -> entityClass

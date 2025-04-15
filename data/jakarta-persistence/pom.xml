@@ -32,7 +32,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>gapi</module>
         <module>codegen</module>
         <module>jakarta-persistence</module>
     </modules>

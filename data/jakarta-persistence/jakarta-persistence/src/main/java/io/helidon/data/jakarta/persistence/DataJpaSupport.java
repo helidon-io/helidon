@@ -19,6 +19,8 @@ package io.helidon.data.jakarta.persistence;
 import java.util.Set;
 import java.util.function.Function;
 
+import javax.naming.Context;
+
 import io.helidon.data.DataConfig;
 import io.helidon.data.jakarta.persistence.spi.JakartaPersistenceExtension;
 import io.helidon.data.spi.DataSupport;
@@ -26,9 +28,14 @@ import io.helidon.data.spi.RepositoryFactory;
 
 import jakarta.persistence.EntityManagerFactory;
 
-@SuppressWarnings("deprecation")
 class DataJpaSupport implements DataSupport {
-    private static final System.Logger LOGGER = System.getLogger(DataJpaSupport.class.getName());
+    static {
+        // Make sure we have JNDI lookup available.
+        String property = System.getProperty(Context.INITIAL_CONTEXT_FACTORY);
+        if (property == null) {
+            System.setProperty(Context.INITIAL_CONTEXT_FACTORY, "io.helidon.service.jndi.NamingFactory");
+        }
+    }
 
     private final DataConfig config;
     private final EntityManagerFactory factory;
