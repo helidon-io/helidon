@@ -18,14 +18,14 @@ package io.helidon.microprofile.config;
 
 import java.util.NoSuchElementException;
 
-import io.helidon.microprofile.testing.AddExtension;
-import io.helidon.microprofile.testing.DisableDiscovery;
-import io.helidon.microprofile.testing.junit5.HelidonTest;
-
 import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.se.SeContainer;
+import jakarta.enterprise.inject.se.SeContainerInitializer;
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -35,10 +35,14 @@ import static org.hamcrest.Matchers.theInstance;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@AddExtension(ConfigCdiExtension.class)
-@DisableDiscovery
-@HelidonTest
 class ProviderAndInstanceTest {
+
+    // Can't use HelidonTest (it depends on a MicroProfile Config CDI implementation, which this project is, so that's a
+    // circular dependency). Have to do it by hand.
+    private SeContainer container;
+
+    // A contextal reference to this.
+    private ProviderAndInstanceTest self;
 
     @Inject
     @ConfigProperty(name = "camelCase") // exists; see <environmentVariables> in pom.xml
@@ -54,40 +58,62 @@ class ProviderAndInstanceTest {
 
     @Inject
     @ConfigProperty(name = "nonexistent")
-    private Provider<String> nonExistentProvider;
+    private Provider<String> nonExistentProvider;    
 
+    @Inject
+    ProviderAndInstanceTest() {
+        super();
+    }
+    
+    @BeforeEach
+    @SuppressWarnings("unchecked")
+    void startContainer() {
+        this.container = SeContainerInitializer.newInstance()
+            .disableDiscovery()
+            .addBeanClasses(this.getClass())
+            .addExtensions(ConfigCdiExtension.class)
+            .initialize();
+        this.self = this.container.select(this.getClass()).get();
+    }
+
+    @AfterEach
+    void closeContainer() {
+        this.self = null;
+        this.container.close();
+    }
+    
     @Test
     void testInstanceForExistingProperty() {
-        assertThat(this.camelCaseInstance.get(), is("no"));
+        assertThat(self.camelCaseInstance.get(), is("no"));
     }
 
     @Test
     void testProviderForExistingProperty() {
-        assertThat(this.camelCaseProvider.get(), is("no"));
+        assertThat(self.camelCaseProvider.get(), is("no"));
     }
 
     @Test
     void testInstanceForNonExistentProperty() {
         // The MicroProfile Config specification ends up effectively and inadvertently requiring that an Instance be
         // resolvable, even when a configuration value for the relevant configuration property name is not supplied.
-        assertThat(this.nonExistentInstance.isResolvable(), is(true));
-        assertThat(this.nonExistentInstance.iterator().hasNext(), is(true)); // !
+        assertThat(self.nonExistentInstance.isResolvable(), is(true));
+        assertThat(self.nonExistentInstance.iterator().hasNext(), is(true)); // !
 
         // It's resolvable but:
-        assertThrows(NoSuchElementException.class, this.nonExistentInstance::get);
+        assertThrows(NoSuchElementException.class, self.nonExistentInstance::get);
     }
 
     @Test
     void testProviderForNonExistentProperty() {
-        assertThrows(NoSuchElementException.class, this.nonExistentProvider::get);
+        assertThrows(NoSuchElementException.class, self.nonExistentProvider::get);
     }
 
     @Test
     void testContainerImplementsProviderAndInstance() {
-        assertThat(this.camelCaseInstance.getClass().getName(), startsWith("org.jboss."));
-        assertThat(this.camelCaseProvider.getClass().getName(), startsWith("org.jboss."));
-        assertThat(this.camelCaseInstance, is(this.camelCaseProvider));
-        assertThat(this.camelCaseInstance, not(theInstance(this.camelCaseProvider)));
+        assertThat(self.camelCaseInstance.getClass().getName(), startsWith("org.jboss."));
+        assertThat(self.camelCaseProvider.getClass().getName(), startsWith("org.jboss."));
+        assertThat(self.camelCaseInstance, is(self.camelCaseProvider));
+        assertThat(self.camelCaseInstance, not(theInstance(self.camelCaseProvider)));
     }
 
 }

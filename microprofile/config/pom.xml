@@ -64,20 +64,9 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile.testing</groupId>
-            <artifactId>helidon-microprofile-testing-junit5</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.microprofile.cdi</groupId>
             <artifactId>helidon-microprofile-cdi</artifactId>
             <scope>test</scope>
-            <exclusions>
-              <exclusion>
-                <groupId>io.helidon.microprofile.server</groupId>
-                <artifactId>helidon-microprofile-server</artifactId>
-              </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>jakarta.enterprise</groupId>
