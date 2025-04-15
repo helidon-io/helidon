@@ -202,8 +202,8 @@ class GrpcReflectionService implements GrpcService {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        FILE_DESCRIPTOR_CACHE.putIfAbsent(symbol, byteString);
-        return fileDescResponse(byteString);
+        ByteString cachedValue = FILE_DESCRIPTOR_CACHE.putIfAbsent(symbol, byteString);
+        return fileDescResponse(cachedValue != null ? cachedValue : byteString);
     }
 
     private ServerReflectionResponse fileDescResponse(ByteString byteString) {

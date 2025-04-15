@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -32,15 +32,11 @@ include::{rootdir}/includes/se.adoc[]
 ** <<gRPC Server Routing, gRPC Server Routing>>
 ** <<Service Implementation, Service Implementation>>
 - <<Configuration, Configuration>>
-** <<Configuring the gRPC Server in the Code, Configuring the gRPC Server in the Code>>
+** <<Configuring the gRPC Server, Configuring the gRPC Server>>
+** <<Configuring the gRPC Reflection Service, Configuring the gRPC Reflection Service>>
 - <<Examples, Examples>>
 
 == Overview
-
-gRPC scope is temporarily smaller in Helidon, please follow issue
-https://github.com/helidon-io/helidon/issues/5418
-As this is still work in progress, the WebServer gRPC module is release in preview mode, as we may introduce backward
-incompatible changes to our APIs, so we can re-introduce features.
 
 The Helidon gRPC server provides a framework for creating link:http://grpc.io/[gRPC] applications.
 While it allows you to deploy any standard gRPC service that
@@ -50,10 +46,10 @@ extent), using Helidon gRPC framework to implement your services has a number of
 benefits:
 
 * It allows you to define both HTTP and gRPC services using a similar programming
-model, simplifying the learning curve for developers.
+model, simplifying the learning curve for developers
 
 * It provides a number of helper methods that make service implementation
-significantly simpler.
+significantly simpler
 
 * It allows you to run gRPC and HTTP endpoints on the same WebServer, and even on the same port.
 
@@ -163,7 +159,7 @@ link:{grpc-server-javadoc-base-url}/io/helidon/webserver/grpc/ResponseHelper.htm
 Configure the gRPC server using the Helidon configuration framework, either programmatically
 or via a configuration file.
 
-=== Configuring the gRPC Server in the Code
+=== Configuring the gRPC Server
 
 Currently, we do not have any custom configuration options for gRPC protocol.
 
@@ -177,6 +173,45 @@ include::{sourcedir}/se/grpc/ServerSnippets.java[tag=snippet_3, indent=0]
 
 <1> Configure HTTP routing of the server
 <2> Configure gRPC routing of the server
+
+=== Configuring the gRPC Reflection Service
+
+When a gRPC client interacts with a server, it needs to have access to the
+proto file in order to learn about the available services, methods and
+message types in use. For many applications this information is simply
+_common knowledge_ between the two parties. However, in some cases, especially
+while developing a new service, it is convenient to use tools such as `grpcurl`
+to test the service. One way to do that is to specify the proto file as
+an argument as follows:
+
+[source,bash]
+----
+>> grpcurl -proto strings.proto -d '{ "text": "hello world" }' localhost:8080 StringService.Split
+----
+
+The parameter `-proto` is used by `grpcurl` to learn about the methods and
+messages types available in the proto file, and ultimately execute the
+requested gRPC call.
+
+Helidon now includes a gRPC reflection service that can be queried by tools
+such as `grpcurl` to learn about the available services &mdash;similar to
+OpenAPI for REST services. The reflection service is implemented as a
+_feature_ and can be enabled programmatically when adding the feature, or
+via config as follows:
+
+[source,yaml]
+----
+  features:
+    grpc-reflection:
+      enabled: true
+----
+
+The feature accepts a list of sockets, or if omitted as a seen above,
+it would enable the feature on all sockets.
+For security reasons, the gRPC reflection service is
+_disabled by default_; if enabled, it is recommended to disable
+the feature for production to avoid any unwanted requests. For more information about
+gRPC reflection, see https://grpc.io/docs/guides/reflection/[gRPC Reflection].
 
 == Examples
 
