@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -62,6 +63,7 @@ import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
 import jakarta.enterprise.inject.spi.ProcessBean;
 import jakarta.enterprise.inject.spi.ProcessObserverMethod;
 import jakarta.enterprise.inject.spi.WithAnnotations;
+import jakarta.inject.Provider;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.ConfigValue;
@@ -187,11 +189,13 @@ public class ConfigCdiExtension implements Extension {
         Set<Type> types = ips.stream()
                 .map(InjectionPoint::getType)
                 .map(it -> {
-                    if (it instanceof Class) {
-                        Class<?> clazz = (Class<?>) it;
-                        if (clazz.isPrimitive()) {
-                            return REPLACED_TYPES.getOrDefault(clazz, clazz);
-                        }
+                    if (it instanceof Class clazz && clazz.isPrimitive()) {
+                        return REPLACED_TYPES.getOrDefault(clazz, clazz);
+                    } else if (it instanceof ParameterizedType p && Provider.class.isAssignableFrom((Class<?>) p.getRawType())) {
+                        // The CDI implementation itself implements jakarta.inject.Provider<X> for all X and
+                        // jakarta.enterprise.inject.Instance<X> for all X (a Provider<X> subtype); other beans must
+                        // not
+                        return p.getActualTypeArguments()[0];
                     }
                     return it;
                 })
@@ -251,19 +255,19 @@ public class ConfigCdiExtension implements Extension {
                                        + " container initialization. This will not work nicely with Graal native-image");
         }
 
-        return produce(configKey, ip.getType(), defaultValue(annotation), configKey.equals(fullPath.replace('$', '.')));
+        return produce(configKey, ip, defaultValue(annotation), configKey.equals(fullPath.replace('$', '.')));
     }
 
     /*
      * Produce configuration value from injection point.
      *
      * @param configKey actual configuration key to find
-     * @param type type of the injected field/parameter
+     * @param ip the injection point
      * @param defaultValue default value to be used
      * @param defaultConfigKey whether the configKey is constructed from class name and field
      * @return produced value to be injected
      */
-    private Object produce(String configKey, Type type, String defaultValue, boolean defaultConfigKey) {
+    private Object produce(String configKey, InjectionPoint ip, String defaultValue, boolean defaultConfigKey) {
         /*
              Supported types
              group x:
@@ -274,13 +278,19 @@ public class ConfigCdiExtension implements Extension {
                 x[] - where x is one of the above
 
              group z:
-                Provider<y>
                 Optional<y>
                 Supplier<y>
 
              group z':
                 Map<String, String> - a detached key/value mapping of whole subtree
              */
+        Type type = ip.getType();
+        if (type instanceof ParameterizedType pt && Provider.class.isAssignableFrom((Class<?>) pt.getRawType())) {
+            // The CDI implementation itself implements jakarta.inject.Provider<X> for all X and
+            // jakarta.enterprise.inject.Instance<X> for all X (a Provider<X> subtype); other beans must
+            // not
+            type = pt.getActualTypeArguments()[0];
+        }
         FieldTypes fieldTypes = FieldTypes.create(type);
         org.eclipse.microprofile.config.Config config = ConfigProvider.getConfig();
 
