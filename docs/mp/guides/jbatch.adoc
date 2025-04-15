@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ For this example, add the IBM JBatch implementation and the `derby` embedded DB 
 ----
 <dependencies>
     <dependency>
-        <groupId>com.imb.jbatch</groupId>
+        <groupId>com.ibm.jbatch</groupId>
         <artifactId>com.ibm.jbatch.container</artifactId>
     </dependency>
     <dependency>
