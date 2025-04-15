@@ -32,11 +32,7 @@ public class JndiTest {
 
     static {
         // make sure the JNDI factory is specified
-        String property = System.getProperty(Context.INITIAL_CONTEXT_FACTORY);
-        if (property == null) {
-            // it may not be on the classpath, but we need it registered, in case it is, so "new InitialContext()" works
-            System.setProperty(Context.INITIAL_CONTEXT_FACTORY, "io.helidon.service.jndi.NamingFactory");
-        }
+        NamingFactory.register();
     }
 
     @Test

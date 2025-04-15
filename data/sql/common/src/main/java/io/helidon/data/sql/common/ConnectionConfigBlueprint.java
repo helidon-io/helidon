@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,24 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.data.sql.datasource.common;
+
+package io.helidon.data.sql.common;
 
 import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
-@Prototype.Blueprint(createFromConfigPublic = false, createEmptyPublic = false)
+/**
+ * Configuration of a JDBC connection to a database.
+ */
+@Prototype.Blueprint
 @Prototype.Configured
-interface DataSourceProviderConfigBlueprint {
-
+interface ConnectionConfigBlueprint {
     /**
-     * Database connection string.
+     * Database connection url.
      *
-     * @return the connection string
+     * @return the connection url
      */
     @Option.Configured
-    Optional<String> connectionString();
+    String url();
 
     /**
      * Username for the database connection.
@@ -49,4 +52,12 @@ interface DataSourceProviderConfigBlueprint {
     @Option.Confidential
     Optional<char[]> password();
 
+    /**
+     * JDBC driver class for database connection.
+     *
+     * @return the JDBC driver class name
+     */
+    @Option.Configured
+    @Option.Redundant
+    Optional<String> jdbcDriverClassName();
 }

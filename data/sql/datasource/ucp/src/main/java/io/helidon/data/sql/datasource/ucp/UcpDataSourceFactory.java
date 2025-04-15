@@ -68,7 +68,7 @@ public class UcpDataSourceFactory {
     }
 
     private DataSource create() {
-        dataSourceConfig.connectionString().ifPresent(this::setURL);
+        this.setURL(dataSourceConfig.url());
         dataSourceConfig.username().ifPresent(this::setUser);
         dataSourceConfig.password().ifPresent(this::setPassword);
         dataSourceConfig.abandonedConnectionTimeout().ifPresent(this::abandonedConnectionTimeout);

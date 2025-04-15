@@ -17,7 +17,6 @@
 package io.helidon.data.jakarta.persistence;
 
 import java.lang.System.Logger.Level;
-import java.sql.Driver;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,6 +25,8 @@ import java.util.Objects;
 
 import javax.sql.DataSource;
 
+import io.helidon.data.sql.common.ConnectionConfig;
+import io.helidon.data.sql.common.SqlDriver;
 import io.helidon.service.registry.Lookup;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.ServiceRegistry;
@@ -380,11 +381,9 @@ public final class PersistenceConfiguration {
      * Copies database connection configuration into persistence unit configuration.
      *
      * @param dataJpaConfig source Helidon data Configuration
-     * @param driverClass   JDBC driver class
      * @param registry      service registry
      */
     public void configureConnection(DataJpaConfig dataJpaConfig,
-                                    Class<? extends Driver> driverClass,
                                     ServiceRegistry registry) {
         if (LOGGER.isLoggable(Level.DEBUG)) {
             LOGGER.log(Level.DEBUG, "Database connection initialization");
@@ -396,18 +395,19 @@ public final class PersistenceConfiguration {
         if (dataJpaConfig.dataSource().isPresent()) {
             configureDataSource(dataJpaConfig.dataSource().get(),
                                 registry);
-        }
-        // - URL as connection-string
-        if (dataJpaConfig.connectionString().isPresent()) {
+        } else {
+            // we have a hard check that either dataSource or connection is configured, we can call get
+            ConnectionConfig connectionConfig = dataJpaConfig.connection().get();
+            // connection directly to database
+            SqlDriver driverSource = SqlDriver.create(connectionConfig);
             // Set JDBC driver found by DriverManager when no value was configured
             // This is required only with URL
-            dataJpaConfig.jdbcDriverClassName()
-                    .ifPresentOrElse(value -> property("jakarta.persistence.jdbc.driver", value),
-                                     () -> property("jakarta.persistence.jdbc.driver", driverClass.getName()));
-            // Connection may be configured using connectionString, username and password or using DataSource
-            dataJpaConfig.username()
+            property("jakarta.persistence.jdbc.driver", driverSource.driverClass().getName());
+
+            // Connection may be configured using connectionUri, username and password or using DataSource
+            connectionConfig.username()
                     .ifPresent(value -> property("jakarta.persistence.jdbc.user", value));
-            dataJpaConfig.password()
+            connectionConfig.password()
                     .ifPresent(value -> property(
                             "jakarta.persistence.jdbc.password",
                             // Temporary removed, because EclipseLink 4.0 fails with password as char[]
@@ -417,8 +417,7 @@ public final class PersistenceConfiguration {
                             //        ? value : new String(value)));
                             // EclipseLink 4.0 workaround
                             new String(value)));
-            dataJpaConfig.connectionString()
-                    .ifPresent(value -> property("jakarta.persistence.jdbc.url", value));
+            property("jakarta.persistence.jdbc.url", connectionConfig.url());
         }
     }
 

@@ -20,9 +20,9 @@ import java.util.List;
 
 import io.helidon.common.Weight;
 import io.helidon.data.DataConfig;
-import io.helidon.data.jakarta.persistence.gapi.JpaEntityProvider;
 import io.helidon.data.jakarta.persistence.spi.JakartaPersistenceExtension;
 import io.helidon.data.jakarta.persistence.spi.JakartaPersistenceExtensionProvider;
+import io.helidon.data.jakarta.persistence.spi.JpaEntityProvider;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.transaction.spi.TxSupport;

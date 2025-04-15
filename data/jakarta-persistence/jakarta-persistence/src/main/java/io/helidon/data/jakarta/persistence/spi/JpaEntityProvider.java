@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.data.jakarta.persistence.gapi;
+package io.helidon.data.jakarta.persistence.spi;
 
 import io.helidon.service.registry.Service;
 
@@ -23,8 +23,7 @@ import io.helidon.service.registry.Service;
  * Jakarta Persistence compliant runtime without provider specific extension.
  * <p>
  * Entity providers are discovered using service registry.
- * Entity classes may be provided as class names in Config. But this requires {@link Class#forName(String)}
- * to be called for each of the class name and will not work with GraalVM native image.
+ * Entity classes may be provided as class names in Config.
  * This interface allows alternative entity classes configuration.
  *
  * @param <T> type of the entity supported by this provider
