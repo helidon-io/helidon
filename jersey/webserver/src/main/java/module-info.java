@@ -35,4 +35,5 @@ module io.helidon.jersey.webserver {
     requires transitive io.helidon.webserver;
 
     exports io.helidon.jersey.webserver;
+    opens io.helidon.jersey.webserver to org.glassfish.hk2.locator;
 }
