@@ -369,6 +369,12 @@ public interface RequestedUriDiscoveryContext {
                     authority = headers.first(HeaderNames.HOST).orElse(null);
                 }
 
+                if (host == null
+                        && authority == null
+                        && localAddress instanceof InetSocketAddress localInetAddress) {
+                    uriInfo.host(localInetAddress.getHostString()); // fallback
+                }
+
                 uriInfo.path(path == null ? requestPath : path);
 
                 if (authority != null) {
@@ -377,8 +383,6 @@ public interface RequestedUriDiscoveryContext {
 
                 if (host != null) {
                     uriInfo.host(host); // and this one has priority
-                } else if (localAddress instanceof InetSocketAddress inetLocalAddress) {
-                    uriInfo.host(inetLocalAddress.getHostString()); // this is the fallback
                 }
 
                 if (port != -1) {
