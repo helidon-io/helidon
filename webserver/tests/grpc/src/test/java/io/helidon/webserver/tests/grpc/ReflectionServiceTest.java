@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import io.grpc.reflection.v1.ExtensionRequest;
 import io.grpc.reflection.v1.FileDescriptorResponse;
 import io.grpc.reflection.v1.ServerReflectionGrpc;
 import io.grpc.reflection.v1.ServerReflectionRequest;
@@ -112,6 +113,44 @@ class ReflectionServiceTest extends BaseServiceTest {
                            .build());
         req.onCompleted();
         res.await(5, TimeUnit.SECONDS);
+        List<ServerReflectionResponse> responses = res.getResponses();
+        assertThat(responses.size(), is(1));
+        ServerReflectionResponse response = responses.getFirst();
+        FileDescriptorResponse fileResponse = response.getFileDescriptorResponse();
+        assertThat(fileResponse.getFileDescriptorProtoCount(), is(1));
+        assertThat(fileResponse.getFileDescriptorProto(0).size(), greaterThan(1));
+    }
+
+    @Test
+    void testFile() throws InterruptedException {
+        TestObserver<ServerReflectionResponse> res = new TestObserver<>(1);
+        StreamObserver<ServerReflectionRequest> req = stub.serverReflectionInfo(res);
+        req.onNext(ServerReflectionRequest.newBuilder()
+                           .setFileByFilename("strings.proto")
+                           .build());
+        req.onCompleted();
+        res.await(500, TimeUnit.SECONDS);
+        List<ServerReflectionResponse> responses = res.getResponses();
+        assertThat(responses.size(), is(1));
+        ServerReflectionResponse response = responses.getFirst();
+        FileDescriptorResponse fileResponse = response.getFileDescriptorResponse();
+        assertThat(fileResponse.getFileDescriptorProtoCount(), is(1));
+        assertThat(fileResponse.getFileDescriptorProto(0).size(), greaterThan(1));
+    }
+
+    @Test
+    void testExtension() throws InterruptedException {
+        TestObserver<ServerReflectionResponse> res = new TestObserver<>(1);
+        StreamObserver<ServerReflectionRequest> req = stub.serverReflectionInfo(res);
+        req.onNext(ServerReflectionRequest.newBuilder()
+                           .setFileContainingExtension(
+                                   ExtensionRequest.newBuilder()
+                                           .setContainingType("StringMessage")
+                                           .setExtensionNumber(100)
+                                           .build())
+                           .build());
+        req.onCompleted();
+        res.await(500, TimeUnit.SECONDS);
         List<ServerReflectionResponse> responses = res.getResponses();
         assertThat(responses.size(), is(1));
         ServerReflectionResponse response = responses.getFirst();

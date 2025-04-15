@@ -40,7 +40,6 @@ import io.grpc.stub.StreamObserver;
  * Grpc reflection service.
  */
 class GrpcReflectionService implements GrpcService {
-    private static final System.Logger LOGGER = System.getLogger(GrpcReflectionService.class.getName());
 
     /**
      * Caches FileDescriptorProto representations as byte strings to avoid serialization
@@ -91,13 +90,15 @@ class GrpcReflectionService implements GrpcService {
 
     private ServerReflectionResponse processRequest(ServerReflectionRequest req) {
         return switch (req.getMessageRequestCase().getNumber()) {
-            case ServerReflectionRequest.LIST_SERVICES_FIELD_NUMBER -> listServices(req);
+            case ServerReflectionRequest.LIST_SERVICES_FIELD_NUMBER -> listServices();
+            case ServerReflectionRequest.FILE_BY_FILENAME_FIELD_NUMBER -> findFile(req);
             case ServerReflectionRequest.FILE_CONTAINING_SYMBOL_FIELD_NUMBER -> findSymbol(req);
-            default -> notImplemented("Not implemented");
+            case ServerReflectionRequest.FILE_CONTAINING_EXTENSION_FIELD_NUMBER -> findExtensionField(req);
+            default -> notImplemented();
         };
     }
 
-    private ServerReflectionResponse listServices(ServerReflectionRequest req) {
+    private ServerReflectionResponse listServices() {
         List<GrpcRouting> grpcRoutings = GrpcReflectionFeature.socketGrpcRoutings().get(socket);
 
         ListServiceResponse.Builder builder = ListServiceResponse.newBuilder();
@@ -107,6 +108,26 @@ class GrpcReflectionService implements GrpcService {
             }
         }
         return ServerReflectionResponse.newBuilder().setListServicesResponse(builder).build();
+    }
+
+    private ServerReflectionResponse findFile(ServerReflectionRequest req) {
+        String fileName = req.getFileByFilename();
+        String cachedFileNameKey = "/" + fileName;      // not a legal identifier
+        ByteString byteString = FILE_DESCRIPTOR_CACHE.get(cachedFileNameKey);
+        if (byteString != null) {
+            return fileDescResponse(byteString);
+        }
+
+        List<GrpcRouting> grpcRoutings = GrpcReflectionFeature.socketGrpcRoutings().get(socket);
+        for (GrpcRouting grpcRouting : grpcRoutings) {
+            for (GrpcRoute grpcRoute : grpcRouting.routes()) {
+                Descriptors.FileDescriptor fileDesc = grpcRoute.proto();
+                if (fileDesc.getFile().getFullName().equals(fileName)) {
+                    return symbolFound(fileDesc, cachedFileNameKey);
+                }
+            }
+        }
+        return notFound("Unable to find file name " + fileName);
     }
 
     private ServerReflectionResponse findSymbol(ServerReflectionRequest req) {
@@ -147,6 +168,31 @@ class GrpcReflectionService implements GrpcService {
         return notFound("Unable to find proto file for " + symbol);
     }
 
+    private ServerReflectionResponse findExtensionField(ServerReflectionRequest req) {
+        String type = req.getFileContainingExtension().getContainingType();
+        int number = req.getFileContainingExtension().getExtensionNumber();
+        String cachedFileNameKey = number + type;      // not a legal identifier
+        ByteString byteString = FILE_DESCRIPTOR_CACHE.get(cachedFileNameKey);
+        if (byteString != null) {
+            return fileDescResponse(byteString);
+        }
+
+        List<GrpcRouting> grpcRoutings = GrpcReflectionFeature.socketGrpcRoutings().get(socket);
+        for (GrpcRouting grpcRouting : grpcRoutings) {
+            for (GrpcRoute grpcRoute : grpcRouting.routes()) {
+                Descriptors.FileDescriptor fileDesc = grpcRoute.proto();
+                List<Descriptors.FieldDescriptor> extensions = fileDesc.getExtensions();
+                for (Descriptors.FieldDescriptor extension : extensions) {
+                    if (extension.getContainingType().getFullName().equals(type)
+                            && extension.toProto().getNumber() == number) {
+                        return symbolFound(fileDesc, cachedFileNameKey);
+                    }
+                }
+            }
+        }
+        return notFound("Unable to find proto file for " + type);
+    }
+
     private ServerReflectionResponse symbolFound(Descriptors.FileDescriptor fileDesc, String symbol) {
         ByteString byteString;
         DescriptorProtos.FileDescriptorProto proto = fileDesc.toProto();
@@ -166,10 +212,10 @@ class GrpcReflectionService implements GrpcService {
         return ServerReflectionResponse.newBuilder().setFileDescriptorResponse(builder.build()).build();
     }
 
-    private ServerReflectionResponse notImplemented(String message) {
+    private ServerReflectionResponse notImplemented() {
         return ServerReflectionResponse.newBuilder().setErrorResponse(
                 ErrorResponse.newBuilder().setErrorCode(Status.UNIMPLEMENTED.getCode().value())
-                        .setErrorMessage(message).build()).build();
+                        .setErrorMessage("Reflection request not implemented").build()).build();
     }
 
     private ServerReflectionResponse notFound(String message) {
