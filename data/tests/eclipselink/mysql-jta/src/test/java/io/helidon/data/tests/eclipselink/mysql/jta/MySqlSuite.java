@@ -21,13 +21,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import javax.naming.Context;
-
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.data.DataConfig;
 import io.helidon.data.DataRegistry;
-import io.helidon.data.sql.common.SqlConfig;
+import io.helidon.data.sql.common.ConnectionConfig;
 import io.helidon.data.sql.testing.SqlTestContainerConfig;
 import io.helidon.data.sql.testing.TestConfigFactory;
 import io.helidon.data.tests.common.InitialData;
@@ -56,7 +54,7 @@ public class MySqlSuite implements SuiteProvider, SuiteResolver {
     private static final DockerImageName IMAGE = DockerImageName.parse("mysql:8.0");
     private static final String CONFIG_FILE = "application.yaml";
     private static final String PROVIDER_NODE = "data-source.0.provider.hikari";
-    private static final String URL_NODE = PROVIDER_NODE + ".connection-string";
+    private static final String URL_NODE = PROVIDER_NODE + ".url";
     private static final int DB_PORT = 3306;
 
     @Container
@@ -70,18 +68,12 @@ public class MySqlSuite implements SuiteProvider, SuiteResolver {
         this.container = new MySQLContainer<>(IMAGE);
         // Container setup is defined in data-source node
         Config poolConfig = config.get(PROVIDER_NODE);
-        SqlTestContainerConfig.configureContainer(SqlConfig.builder()
-                                                          .config(poolConfig)
-                                                          .build(),
+        SqlTestContainerConfig.configureContainer(ConnectionConfig.create(poolConfig),
                                                   container);
     }
 
     @BeforeSuite
     public void beforeSuite() {
-        // Make sure the JNDI factory is specified
-        if (!System.getProperties().containsKey(Context.INITIAL_CONTEXT_FACTORY)) {
-            System.setProperty(Context.INITIAL_CONTEXT_FACTORY, "io.helidon.service.jndi.NamingFactory");
-        }
         container.start();
         // Config must be updated to contain proper database URL and this change must be propagated
         // to Config service factory

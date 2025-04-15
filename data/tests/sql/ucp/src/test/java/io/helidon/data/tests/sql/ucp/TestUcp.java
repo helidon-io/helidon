@@ -67,9 +67,8 @@ class TestUcp {
         assertThat(ucpDataSourceConfig.password().isPresent(), is(true));
         assertThat(new String(ucpDataSourceConfig.password().get()),
                    is(config.get("data-source.0.provider.ucp.password").as(String.class).get()));
-        assertThat(ucpDataSourceConfig.connectionString().isPresent(), is(true));
-        assertThat(ucpDataSourceConfig.connectionString().get(),
-                   is(config.get("data-source.0.provider.ucp.connection-string").as(String.class).get()));
+        assertThat(ucpDataSourceConfig.url(),
+                   is(config.get("data-source.0.provider.ucp.url").as(String.class).get()));
     }
 
     @Test

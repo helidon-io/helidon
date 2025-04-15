@@ -49,7 +49,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.data.jakarta.persistence</groupId>
-            <artifactId>helidon-data-jakarta-persistence-gapi</artifactId>
+            <artifactId>helidon-data-jakarta-persistence</artifactId>
         </dependency>
     </dependencies>
 

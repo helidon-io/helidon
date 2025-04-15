@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.data.sql.datasource.common;
+package io.helidon.data.sql.datasource;
 
 import java.util.List;
 import java.util.Objects;
@@ -21,7 +21,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.helidon.common.config.Config;
-import io.helidon.data.sql.datasource.DataSourceConfig;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.Service;
 
@@ -54,7 +53,7 @@ class DataSourceConfigFactory implements Service.ServicesFactory<DataSourceConfi
      * @param configurations {@link javax.sql.DataSource} configs to use
      * @return a new factory instance to registry with
      *         {@link
-     *         io.helidon.service.registry.ServiceConfig.Builder#putServiceInstance(io.helidon.service.registry.ServiceDescriptor,
+     *         io.helidon.service.registry.ServiceRegistryConfig.Builder#putServiceInstance(io.helidon.service.registry.ServiceDescriptor,
      *         Object)}
      */
     public static DataSourceConfigFactory create(List<DataSourceConfig> configurations) {

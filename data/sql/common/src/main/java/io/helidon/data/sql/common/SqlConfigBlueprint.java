@@ -28,42 +28,17 @@ import io.helidon.builder.api.Prototype;
  * Database connection must be configured by exactly one of the options
  * mentioned above.
  */
-@Prototype.Blueprint(createFromConfigPublic = false, createEmptyPublic = false)
-@Prototype.CustomMethods(SqlConfigSupport.class)
+@Prototype.Blueprint(createFromConfigPublic = false, createEmptyPublic = false, decorator = SqlConfigSupport.Decorator.class)
 @Prototype.Configured
 interface SqlConfigBlueprint {
     /**
-     * Database connection string.
+     * Configuration of a connection to a database.
+     * Alternative is to use {@link SqlConfig.Builder#dataSource()}.
      *
-     * @return the connection string
+     * @return connection configuration
      */
     @Option.Configured
-    Optional<String> connectionString();
-
-    /**
-     * Username for the database connection.
-     *
-     * @return the username
-     */
-    @Option.Configured
-    Optional<String> username();
-
-    /**
-     * Password for the database connection.
-     *
-     * @return the password
-     */
-    @Option.Configured
-    @Option.Confidential
-    Optional<char[]> password();
-
-    /**
-     * JDBC driver class for database connection.
-     *
-     * @return the JDBC driver class name
-     */
-    @Option.Configured
-    Optional<String> jdbcDriverClassName();
+    Optional<ConnectionConfig> connection();
 
     /**
      * Name of the {@link javax.sql.DataSource}.

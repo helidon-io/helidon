@@ -21,4 +21,4 @@ data-source:
       # DataSource config
       username: "system"
       password: "oracle123"
-      connection-string: "jdbc:oracle:thin:@localhost:1521/FREE"
+      url: "jdbc:oracle:thin:@localhost:1521/FREE"

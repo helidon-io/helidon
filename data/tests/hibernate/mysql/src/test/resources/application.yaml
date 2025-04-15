@@ -15,10 +15,11 @@
 #
 data:
   provider.jakarta:
-    username: "test"
-    password: "password"
-    connection-string: "jdbc:mysql://localhost:3306/testdb"
-    jdbc-driver-class-name: "com.mysql.cj.jdbc.Driver"
+    connection:
+      username: "test"
+      password: "password"
+      url: "jdbc:mysql://localhost:3306/testdb"
+      jdbc-driver-class-name: "com.mysql.cj.jdbc.Driver"
     # Hibernate properties
     properties:
       hibernate.dialect: "org.hibernate.dialect.MySQLDialect"

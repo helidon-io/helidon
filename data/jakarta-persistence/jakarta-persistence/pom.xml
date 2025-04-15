@@ -64,10 +64,6 @@
             <artifactId>helidon-data-sql-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.data.jakarta.persistence</groupId>
-            <artifactId>helidon-data-jakarta-persistence-gapi</artifactId>
-        </dependency>
-        <dependency>
             <groupId>jakarta.persistence</groupId>
             <artifactId>jakarta.persistence-api</artifactId>
         </dependency>
