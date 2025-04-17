@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,13 @@
 
 /**
  * API required to describe features in module descriptor.
+ * All deprecated annotations are processed by the {@code helidon-common-features-processor}, all new annotations
+ * are handled by {@code helidon-common-features-codegen}.
  *
- * @see io.helidon.common.features.api.Feature
+ * @see io.helidon.common.features.api.Features
  */
 module io.helidon.common.features.api {
+    requires transitive io.helidon.common.features.metadata;
 
     exports io.helidon.common.features.api;
 
