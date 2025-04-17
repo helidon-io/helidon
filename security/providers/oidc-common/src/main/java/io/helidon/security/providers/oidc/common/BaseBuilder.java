@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,7 +80,12 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B,
         Errors.Collector collector = Errors.collector();
 
         OidcUtil.validateExists(collector, clientId, "Client Id", "client-id");
-        OidcUtil.validateExists(collector, clientSecret, "Client Secret", "client-secret");
+        if (tokenEndpointAuthentication != OidcConfig.ClientAuthentication.CLIENT_CERTIFICATE || serverType.equals("idcs")) {
+            //This client secret validation should happen in case when token endpoint authentication is not client certificate
+            // OR the server is not IDCS. It will be needed for IDCS later even with client certificate. IDCS does not support
+            //client certificate authentication when exchanging code to token.
+            OidcUtil.validateExists(collector, clientSecret, "Client Secret", "client-secret");
+        }
         OidcUtil.validateExists(collector, identityUri, "Identity URI", "identity-uri");
 
         if (audience == null && !optionalAudience && identityUri != null) {
@@ -279,6 +284,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B,
         switch (tokenEndpointAuthentication) {
         case CLIENT_SECRET_BASIC:
         case CLIENT_SECRET_POST:
+        case CLIENT_CERTIFICATE:
         case NONE:
             break;
         default:

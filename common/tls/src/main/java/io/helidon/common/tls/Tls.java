@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -208,14 +208,18 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
             parameters.setEndpointIdentificationAlgorithm(this.sslParameters.getEndpointIdentificationAlgorithm());
             parameters.setMaximumPacketSize(this.sslParameters.getMaximumPacketSize());
             parameters.setNamedGroups(this.sslParameters.getNamedGroups());
-            parameters.setNeedClientAuth(this.sslParameters.getNeedClientAuth());
             parameters.setProtocols(this.sslParameters.getProtocols());
             parameters.setSignatureSchemes(this.sslParameters.getSignatureSchemes());
             parameters.setSNIMatchers(this.sslParameters.getSNIMatchers());
             parameters.setUseCipherSuitesOrder(this.sslParameters.getUseCipherSuitesOrder());
-            parameters.setWantClientAuth(this.sslParameters.getWantClientAuth());
+            if (this.sslParameters.getNeedClientAuth()) {
+                parameters.setNeedClientAuth(this.sslParameters.getNeedClientAuth());
+            }
+            if (this.sslParameters.getWantClientAuth()) {
+                parameters.setWantClientAuth(this.sslParameters.getWantClientAuth());
+            }
 
-            sslSocket.setSSLParameters(sslParameters);
+            sslSocket.setSSLParameters(parameters);
             return sslSocket;
         } catch (IOException e) {
             throw new UncheckedIOException(e);

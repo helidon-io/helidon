@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -427,7 +427,7 @@ public final class OidcFeature implements HttpFeature {
                 .uri(tenant.tokenEndpointUri())
                 .header(HeaderValues.ACCEPT_JSON);
 
-        OidcUtil.updateRequest(OidcConfig.RequestType.CODE_TO_TOKEN, tenantConfig, form);
+        OidcUtil.updateRequest(OidcConfig.RequestType.CODE_TO_TOKEN, tenantConfig, form, post);
 
         try (HttpClientResponse response = post.submit(form.build())) {
             if (response.status().family() == Status.Family.SUCCESSFUL) {
