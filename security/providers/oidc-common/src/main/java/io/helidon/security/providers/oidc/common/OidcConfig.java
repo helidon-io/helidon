@@ -1060,11 +1060,10 @@ public final class OidcConfig extends TenantConfigImpl {
          * @param config configuration located on node with OIDC configuration keys (e.g. client-id)
          * @return updated builder instance
          */
-        @ConfiguredOption(type = WebClientConfig.class,
-                          key = "webclient",
+        @ConfiguredOption(key = "webclient",
+                          type = WebClient.class,
                           description = "WebClient configuration used for outbound requests to the identity server. "
-                                  + "This configurations sets the configured values to "
-                                  + "the OIDC WebClient default configuration.")
+                                  + "This configuration sets the values to the OIDC WebClient default configuration.")
         public Builder config(Config config) {
             super.config(config);
             // mandatory configuration
