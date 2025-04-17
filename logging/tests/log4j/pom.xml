@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.logging.tests</groupId>
         <artifactId>helidon-logging-tests-project</artifactId>
-        <version>4.2.1-SNAPSHOT</version>
+        <version>4.2.1</version>
     </parent>
 
     <artifactId>helidon-logging-tests-log4j</artifactId>
