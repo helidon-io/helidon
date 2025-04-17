@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -422,6 +422,11 @@ public final class OidcFeature implements HttpFeature {
                 .add("grant_type", "authorization_code")
                 .add("code", code)
                 .add("redirect_uri", redirectUri(req, tenantName));
+
+        if (oidcConfig.pkceEnabled()) {
+            String verifier = stateCookie.getString("pkceVerifier");
+            form.add("code_verifier", verifier);
+        }
 
         HttpClientRequest post = webClient.post()
                 .uri(tenant.tokenEndpointUri())
