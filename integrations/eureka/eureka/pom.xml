@@ -22,7 +22,7 @@
     <parent>
         <groupId>io.helidon.integrations</groupId>
         <artifactId>helidon-integrations-eureka-project</artifactId>
-        <version>4.2.0-SNAPSHOT</version>
+        <version>4.2.1-SNAPSHOT</version>
     </parent>
 
     <groupId>io.helidon.integrations.eureka</groupId>

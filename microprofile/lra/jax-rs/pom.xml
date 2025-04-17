@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.microprofile.lra</groupId>
         <artifactId>helidon-microprofile-lra-project</artifactId>
-        <version>4.2.0-SNAPSHOT</version>
+        <version>4.2.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-microprofile-lra</artifactId>

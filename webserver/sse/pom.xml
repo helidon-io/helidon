@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.webserver</groupId>
         <artifactId>helidon-webserver-project</artifactId>
-        <version>4.2.0-SNAPSHOT</version>
+        <version>4.2.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-webserver-sse</artifactId>

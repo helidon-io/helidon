@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.microprofile.tests.tck</groupId>
         <artifactId>helidon-microprofile-tests-tck-inject</artifactId>
-        <version>4.2.0-SNAPSHOT</version>
+        <version>4.2.1-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-microprofile-tests-tck-inject-test</artifactId>
     <name>Helidon Microprofile Tests TCK Inject</name>
