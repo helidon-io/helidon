@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -338,6 +338,17 @@ server.static.classpath.welcome=resource.html
 # server.static.classpath.context=/static-cp
 ----
 
+=== Re-direct root using `server.base-path`
+To redirect requests for the root path (`/`) to another path you can use the `server.base-path` property:
+[source,yaml]
+----
+server:
+  base-path: /static/index.html
+----
+For any HTTP request for `/` this will return a 301 with the `Location:` header set to the value of `server.base-path`.
+This is often used with Static Content Support to serve a specific `index.html`  when `/` is requested.
+Note that this feature is not for setting a context root for applications. To configure alternate context roots see
+see xref:jaxrs/jaxrs-applications.adoc#_setting_application_path[Setting Application Path].
 
 === Example configuration of routing
 

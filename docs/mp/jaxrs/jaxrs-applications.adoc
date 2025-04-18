@@ -23,10 +23,12 @@
 
 include::{rootdir}/includes/mp.adoc[]
 
-== Contents
-
+== Content
 - <<Overview, Overview>>
+- <<Discovery of JAX-RS Beans, Discovery of REST Beans>>
+- <<Setting Application Path, Setting Application Path>>
 - <<Usage, Usage>>
+- <<Injection Managers in Helidon, Injection Managers in Helidon>>
 - <<Configuration, Configuration>>
 
 == Overview
@@ -78,6 +80,37 @@ both return empty sets.
 
 NOTE: As noted above, the JAX-RS `Application` class exposes the `getSingletons` method which returns instances of resources, providers, or features. Currently Helidon can invoke this method multiple times. You should expect multiple invocations of the `getSingletons` method. If you want to return the same instances on all calls, then cache the values yourself.
 
+== Setting Application Path
+The application path, also known as context root, is the base URI used to serve all resource URIs provided
+by `@Path` annotation. This section describes how to set it with an annotation or configuration file.
+When an `Application` subclass is provided, use the `@ApplicationPath`:
+[source,java]
+----
+@ApplicationPath("/my-application")
+public class MyApplication extends Application {
+
+}
+----
+The served resources can be reached through `/my-application/{myResources}` endpoint. It can be overridden
+by configuration file.
+Example of custom application path using `.yaml` file:
+[source,yaml]
+----
+io.helidon.examples.MyApplication:
+  routing-path:
+    path: "/my-application"
+----
+The same configuration works for `.properties` file:
+[source,properties]
+----
+io.helidon.examples.MyApplication.routing-path.path=/my-application
+----
+If an `Application` is not provided, a _synthetic_ subclass is created and can be configured using
+this property:
+[source,properties]
+----
+jakarta.ws.rs.core.Application.routing-path.path=/my-application
+----
 
 == Usage
 
