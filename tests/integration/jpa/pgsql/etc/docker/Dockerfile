@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-FROM oraclelinux:9-slim
+FROM container-registry.oracle.com/os/oraclelinux:9-slim
 
 RUN microdnf install postgresql-server && microdnf clean all
 RUN mkdir -p /var/run/postgresql && \

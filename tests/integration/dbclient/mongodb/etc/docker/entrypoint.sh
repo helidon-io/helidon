@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (c) 2024 Oracle and/or its affiliates.
+# Copyright (c) 2024, 2025 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,8 +17,9 @@
 set -Eeom pipefail
 
 mkdir -p /data/db
+mkdir -p /var/log/mongodb
 
-# redirect stdout and stderr and stderr to log file
+# redirect stdout and stderr to log file
 : > /var/log/mongodb/mongod.log
 exec 2> >(tee -a /var/log/mongodb/mongod.log >&2) > >(tee -a /var/log/mongodb/mongod.log)
 

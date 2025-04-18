@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2024 Oracle and/or its affiliates.
+# Copyright (c) 2024, 2025 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-FROM oraclelinux:9-slim
+FROM container-registry.oracle.com/os/oraclelinux:9-slim
 
 RUN microdnf install postgresql-server && microdnf clean all
 RUN mkdir -p /var/run/postgresql && \
