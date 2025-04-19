@@ -130,4 +130,12 @@ public final class Interception {
             V proceed(Object[] args) throws Exception;
         }
     }
+
+    /**
+     * Interceptor for a specific element and annotation.
+     * Implementations of this interface are {@link io.helidon.service.registry.Service.Named} by the
+     * fully qualified target type + "." + element signature.
+     */
+    public interface ElementInterceptor extends Interceptor {
+    }
 }

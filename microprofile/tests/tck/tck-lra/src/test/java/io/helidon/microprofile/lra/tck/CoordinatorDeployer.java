@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,8 +29,10 @@ import io.helidon.microprofile.arquillian.HelidonContainerConfiguration;
 import io.helidon.microprofile.arquillian.HelidonDeployableContainer;
 import io.helidon.microprofile.server.ServerCdiExtension;
 
+import jakarta.annotation.Priority;
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.spi.CDI;
+import jakarta.interceptor.Interceptor;
 import org.jboss.arquillian.container.spi.Container;
 import org.jboss.arquillian.container.spi.event.container.AfterDeploy;
 import org.jboss.arquillian.container.spi.event.container.BeforeStart;
@@ -93,7 +95,7 @@ public class CoordinatorDeployer {
         startedFuture.complete(null);
     }
 
-    public void beforeUndeploy(@Observes BeforeUnDeploy event, Container container) {
+    public void beforeUndeploy(@Priority(Interceptor.Priority.PLATFORM_AFTER) @Observes BeforeUnDeploy event, Container container) {
         startedFuture = new CompletableFuture<>();
         // Gracefully stop the container so coordinator gets the chance to persist lra registry
         try {

@@ -32,11 +32,13 @@ import io.helidon.http.NotFoundException;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.ServerResponseTrailers;
 import io.helidon.http.Status;
+import io.helidon.service.registry.Service;
 import io.helidon.webserver.http.spi.Sink;
 
 /**
  * Http server response.
  */
+@Service.Describe(Service.PerRequest.class)
 public interface ServerResponse {
     /**
      * Status of the response.

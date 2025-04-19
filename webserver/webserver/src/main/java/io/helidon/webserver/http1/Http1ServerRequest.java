@@ -220,6 +220,11 @@ abstract class Http1ServerRequest implements RoutingRequest {
         return ctx.proxyProtocolData();
     }
 
+    @Override
+    public String toString() {
+        return prologue.rawProtocol() + " " + prologue.method() + " " + path().rawPathNoParams();
+    }
+
     private UriInfo createUriInfo() {
         return ctx.listenerContext().config().requestedUriDiscoveryContext()
                 .orElse(DEFAULT_REQUESTED_URI_DISCOVERY_CONTEXT)
