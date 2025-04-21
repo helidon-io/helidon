@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.integrations.microstream</groupId>
         <artifactId>helidon-integrations-microstream-project</artifactId>
-        <version>4.2.1-SNAPSHOT</version>
+        <version>4.2.1</version>
     </parent>
 
     <artifactId>helidon-integrations-microstream</artifactId>
