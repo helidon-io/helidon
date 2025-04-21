@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -348,10 +348,11 @@ public final class SecretBundleNodeConfigSource
     }
 
     /**
-     * An {@link AbstractConfigSourceBuilder} that {@linkplain #build() builds} {@link SecretBundleNodeConfigSource}
-     * instances.
+     * An {@link AbstractConfigSourceBuilder} and {@link PollableSource.Builder} that {@linkplain #build() builds}
+     * {@link SecretBundleNodeConfigSource} instances.
      */
-    public static final class Builder extends AbstractSecretBundleConfigSource.Builder<Builder> {
+    public static final class Builder extends AbstractSecretBundleConfigSource.Builder<Builder>
+        implements PollableSource.Builder<Builder> {
 
         private String compartmentOcid;
         private Supplier<? extends Vaults> vaultsSupplier;
@@ -425,6 +426,7 @@ public final class SecretBundleNodeConfigSource
          * @see PollableSource
          * @see PollingStrategy
          */
+        @Override // PollableSource.Builder<Builder>
         public Builder pollingStrategy(PollingStrategy pollingStrategy) {
             return super.pollingStrategy(pollingStrategy);
         }
