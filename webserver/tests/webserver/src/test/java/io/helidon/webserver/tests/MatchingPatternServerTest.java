@@ -40,6 +40,7 @@ class MatchingPatternServerTest extends MatchingPatternBase {
                 .get("/greet1/*", HANDLER)
                 .get("/greet2/greet/*", HANDLER)
                 .get("/greet3[/greet]", HANDLER)
+                .get("/greet4/*/*", HANDLER)
                 .register("/greet-service", new GreetService());
     }
 }

@@ -19,6 +19,7 @@ package io.helidon.http;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
@@ -61,22 +62,10 @@ public final class PathMatchers {
      *
      * @param pathToMatch the path must be prefixed by the provided path
      * @return prefix match path matcher
-     * @deprecated use {@link #prefix(String, String)} instead to preserve original pattern
      */
-    @Deprecated(forRemoval = true, since = "4.3.0")
     public static PathMatcher prefix(String pathToMatch) {
-         return prefix(pathToMatch, null);
-    }
-
-    /**
-     * Prefix match path matcher that stores original path pattern.
-     *
-     * @param pathToMatch matching path such as "/foo"
-     * @param pathPattern complete path pattern such as "/foo/*"
-     * @return prefix match path matcher
-     */
-    public static PathMatcher prefix(String pathToMatch, String pathPattern) {
-        return new PrefixPathMatcher(fixPrefix(pathToMatch), pathPattern);
+        Objects.requireNonNull(pathToMatch);
+        return new PrefixPathMatcher(fixPrefix(pathToMatch));
     }
 
     /**
@@ -180,7 +169,7 @@ public final class PathMatchers {
         }
 
         if (prefix) {
-            return prefix(checkPattern + "/", pathPattern);
+            return prefix(checkPattern + "/");
         }
         return exact(pathPattern);
     }
@@ -355,11 +344,9 @@ public final class PathMatchers {
     static final class PrefixPathMatcher implements PathMatcher {
         private final String prefix;
         private final String exactMatch;
-        private final String pathPattern;
 
-        PrefixPathMatcher(String prefix, String pathPattern) {
+        PrefixPathMatcher(String prefix) {
             this.prefix = prefix;
-            this.pathPattern = pathPattern;
             if (prefix.endsWith("/")) {
                 exactMatch = prefix.substring(0, prefix.length() - 1);
             } else {
@@ -420,7 +407,7 @@ public final class PathMatchers {
 
         @Override
         public Optional<String> matchingElement() {
-            return Optional.ofNullable(pathPattern);
+            return Optional.of(exactMatch + "/*");
         }
 
         @Override

@@ -80,6 +80,11 @@ abstract class MatchingPatternBase {
             String message = response.as(String.class);
             assertThat(message, is("/greet2/greet/*"));
         }
+        try (Http1ClientResponse response = client.get("/greet4/greet/john").request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            String message = response.as(String.class);
+            assertThat(message, is("/greet4/*/*"));
+        }
     }
 
     @Test
