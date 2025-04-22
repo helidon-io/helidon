@@ -19,6 +19,7 @@ package io.helidon.http;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -60,9 +61,22 @@ public final class PathMatchers {
      *
      * @param pathToMatch the path must be prefixed by the provided path
      * @return prefix match path matcher
+     * @deprecated use {@link #prefix(String, String)} instead to preserve original pattern
      */
+    @Deprecated(forRemoval = true, since = "4.3.0")
     public static PathMatcher prefix(String pathToMatch) {
-        return new PrefixPathMatcher(fixPrefix(pathToMatch));
+         return prefix(pathToMatch, null);
+    }
+
+    /**
+     * Prefix match path matcher that stores original path pattern.
+     *
+     * @param pathToMatch matching path such as "/foo"
+     * @param pathPattern complete path pattern such as "/foo/*"
+     * @return prefix match path matcher
+     */
+    public static PathMatcher prefix(String pathToMatch, String pathPattern) {
+        return new PrefixPathMatcher(fixPrefix(pathToMatch), pathPattern);
     }
 
     /**
@@ -134,7 +148,7 @@ public final class PathMatchers {
                                                     + ", index: " + (iter.index() - 1));
         }
 
-        return new PatternPathMatcher(regexp.toString(), paramToGroupName);
+        return new PatternPathMatcher(regexp.toString(), paramToGroupName, pattern);
     }
 
     /**
@@ -166,7 +180,7 @@ public final class PathMatchers {
         }
 
         if (prefix) {
-            return prefix(checkPattern + "/");
+            return prefix(checkPattern + "/", pathPattern);
         }
         return exact(pathPattern);
     }
@@ -328,6 +342,11 @@ public final class PathMatchers {
         }
 
         @Override
+        public Optional<String> matchingElement() {
+            return Optional.of(path);
+        }
+
+        @Override
         public String toString() {
             return "exact: " + path;
         }
@@ -336,9 +355,11 @@ public final class PathMatchers {
     static final class PrefixPathMatcher implements PathMatcher {
         private final String prefix;
         private final String exactMatch;
+        private final String pathPattern;
 
-        PrefixPathMatcher(String prefix) {
+        PrefixPathMatcher(String prefix, String pathPattern) {
             this.prefix = prefix;
+            this.pathPattern = pathPattern;
             if (prefix.endsWith("/")) {
                 exactMatch = prefix.substring(0, prefix.length() - 1);
             } else {
@@ -398,6 +419,11 @@ public final class PathMatchers {
         }
 
         @Override
+        public Optional<String> matchingElement() {
+            return Optional.ofNullable(pathPattern);
+        }
+
+        @Override
         public String toString() {
             return "prefix: " + prefix;
         }
@@ -410,12 +436,14 @@ public final class PathMatchers {
         private final Pattern pattern;
         private final Pattern leftPattern;
         private final String patternString;
+        private final String sourcePattern;
 
-        PatternPathMatcher(String pattern, Map<String, String> paramToGroupName) {
+        PatternPathMatcher(String pattern, Map<String, String> paramToGroupName, String sourcePattern) {
             this.patternString = pattern;
             this.pattern = Pattern.compile(pattern);
             this.leftPattern = Pattern.compile(pattern + "(?<" + RIGHT_PART_PARAM_NAME + ">/.+)?");
             this.paramToGroupName = paramToGroupName;
+            this.sourcePattern = sourcePattern;
         }
 
         @Override
@@ -458,6 +486,11 @@ public final class PathMatchers {
 
         Pattern pattern() {
             return pattern;
+        }
+
+        @Override
+        public Optional<String> matchingElement() {
+            return Optional.of(sourcePattern);
         }
 
         private Parameters extractParams(Matcher matcher) {
