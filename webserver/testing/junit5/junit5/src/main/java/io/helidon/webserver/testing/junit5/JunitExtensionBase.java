@@ -96,7 +96,8 @@ abstract class JunitExtensionBase extends TestJunitExtension implements AfterAll
                 features = (List<ServerFeature>) result;
             } catch (ClassCastException e) {
                 throw new IllegalArgumentException("Method " + method + " annotated with " + SetUpFeatures.class.getSimpleName()
-                                                           + " returned a result that is not a List. Supported is List<? extends ServerFeature>.", e);
+                                                           + " returned a result that is not a List. Supported is "
+                                                           + "List<? extends ServerFeature>.", e);
             }
             try {
                 for (ServerFeature feature : features) {
