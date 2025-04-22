@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2025 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -76,6 +76,41 @@ startup to the test class instantiation (which is too late, as the method source
 
 *If you want to use method sources that use CDI with repeatable tests, please do not use `@Configuration(useExisting=true)`*
 
+==== Configuration Ordering
+The ordering of the test configuration can be controlled using the mechanism defined by the
+link:{microprofile-config-spec-url}#_configsource_ordering[MicroProfile Config specification].
+
+NOTE: The configuration expressed with `@AddConfig` has a fixed ordinal value
+of `1000`
+
+By default `@Configuration.configSources` has lower priority than
+`@AddConfig`. It can be changed via `config_ordinal` .
+
+[source,properties]
+.Test resource (additional-config.properties)
+----
+app.greeting=Hello from resource
+config_ordinal=1001 # value is bigger than fixed ordinal value `@AddConfig`
+----
+
+[source,java]
+.Code sample
+----
+@HelidonTest
+@AddConfig(key = "app.greeting", value = "Hello from annotation")
+@Configuration(configSources = "additional-config.properties")
+class TestExample {
+    @Inject
+    @ConfigProperty(name = "app.greeting")
+    private String message; // property from `additional-config.properties` will be injected
+
+    @Test
+    void testGreeting() {
+        assertThat(message, is("Hello from resource"));
+    }
+}
+----
+
 === Usage - added parameters and injection types
 The following types are available for injection (when a single CDI container is used per test class):
 
@@ -109,8 +144,14 @@ In addition to this simplification, the following annotations are supported:
 |`@io.helidon.microprofile.tests.junit5.AddConfig`
 |Used to add one or more configuration properties to MicroProfile config without the need of creating a `microprofile-config.properties` file
 
-|Used `@io.helidon.microprofile.tests.junit5.DisableDiscovery`
-|to disable automated discovery of beans and extensions
+|`@io.helidon.microprofile.tests.junit5.DisableDiscovery`
+|Used to disable automated discovery of beans and extensions
+
+|`@io.helidon.microprofile.tests.junit5.Configuration`
+|Switch between "synthetic" and "existing" configuration. Add classpath resources to the "synthetic" configuration
+
+|`@io.helidon.microprofile.tests.junit5.Socket`
+|CDI qualifier to inject a JAX-RS client for a named socket
 |===
 
 == Examples
