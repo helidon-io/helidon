@@ -24,7 +24,7 @@ import io.helidon.http.RoutedPath;
  */
 public interface RoutingRequest extends ServerRequest {
     /**
-     * Update path of this request.
+     * Update path of this request. For internal use only to Helidon.
      *
      * @param routedPath routed path, that provides matched path parameters from path pattern
      * @return this instance
@@ -32,7 +32,7 @@ public interface RoutingRequest extends ServerRequest {
     RoutingRequest path(RoutedPath routedPath);
 
     /**
-     * Update prologue of this request.
+     * Update prologue of this request. For internal use only to Helidon.
      *
      * @param newPrologue new prologue to use (on rerouting)
      * @return this instance
@@ -41,8 +41,9 @@ public interface RoutingRequest extends ServerRequest {
 
     /**
      * Update the pattern used to match this request. Such as "/foo/{bar}".
+     *  For internal use only to Helidon.
      *
-     * @param matchingPattern the matching patter
+     * @param matchingPattern the matching pattern
      * @return this instance
      */
     default RoutingRequest matchingPattern(String matchingPattern) {
