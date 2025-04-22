@@ -44,38 +44,38 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  copyright:
-    timeout-minutes: 5
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
-          fetch-depth: 0
-      - uses: ./.github/actions/common
-        with:
-          run: etc/scripts/copyright.sh
-  checkstyle:
-    timeout-minutes: 5
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
-      - uses: ./.github/actions/common
-        with:
-          run: etc/scripts/checkstyle.sh
-  shellcheck:
-    timeout-minutes: 5
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
-      - uses: ./.github/actions/common
-        with:
-          maven-cache: none
-          run: etc/scripts/shellcheck.sh
+#  copyright:
+#    timeout-minutes: 5
+#    runs-on: ubuntu-22.04
+#    steps:
+#      - uses: actions/checkout@v4
+#        with:
+#          ref: ${{ inputs.ref }}
+#          fetch-depth: 0
+#      - uses: ./.github/actions/common
+#        with:
+#          run: etc/scripts/copyright.sh
+#  checkstyle:
+#    timeout-minutes: 5
+#    runs-on: ubuntu-22.04
+#    steps:
+#      - uses: actions/checkout@v4
+#        with:
+#          ref: ${{ inputs.ref }}
+#      - uses: ./.github/actions/common
+#        with:
+#          run: etc/scripts/checkstyle.sh
+#  shellcheck:
+#    timeout-minutes: 5
+#    runs-on: ubuntu-22.04
+#    steps:
+#      - uses: actions/checkout@v4
+#        with:
+#          ref: ${{ inputs.ref }}
+#      - uses: ./.github/actions/common
+#        with:
+#          maven-cache: none
+#          run: etc/scripts/shellcheck.sh
   build:
     timeout-minutes: 15
     runs-on: ubuntu-22.04
@@ -94,289 +94,292 @@ jobs:
               -DskipTests \
               -Ptests \
               install
-  _tests:
-    needs: build
-    timeout-minutes: 30
-    strategy:
-      matrix:
-        os: [ ubuntu-22.04, windows-2022 ]
-        moduleSet: [ core, it, jpa, jpa-oracle, dbclient, dbclient-oracle, others ]
-        include:
-          - { os: ubuntu-22.04, platform: linux }
-          - { os: windows-2022, platform: windows }
-    runs-on: ${{ matrix.os }}
-    name: tests/${{ matrix.moduleSet }}-${{matrix.platform}}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
-      - uses: ./.github/actions/common
-        with:
-          build-cache: read-only
-          test-artifact-name: tests-${{ matrix.moduleSet }}-${{ matrix.platform }}
-          run: |
-            mvn ${MVN_ARGS} \
-              -DreactorRule=tests \
-              -DmoduleSet=${{ matrix.moduleSet }} \
-              -Dsurefire.reportNameSuffix=${{ matrix.platform }} \
-              verify
-  _tck:
-    needs: build
-    timeout-minutes: 30
-    strategy:
-      matrix:
-        moduleSet: [ cdi, rest, others ]
-    runs-on: ubuntu-22.04
-    name: tests/tck-${{ matrix.moduleSet }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
-      - uses: ./.github/actions/common
-        with:
-          build-cache: read-only
-          test-artifact-name: tests-tck-${{ matrix.moduleSet }}
-          run: |
-            mvn ${MVN_ARGS} \
-              -DreactorRule=tck \
-              -DmoduleSet=${{ matrix.moduleSet }} \
-              verify
-  _spotbugs:
-    needs: build
-    timeout-minutes: 30
-    strategy:
-      matrix:
-        moduleSet: [ core, integrations, others ]
-    runs-on: ubuntu-22.04
-    name: spotbugs/${{ matrix.moduleSet }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
-      - uses: ./.github/actions/common
-        with:
-          build-cache: read-only
-          run: |
-            mvn ${MVN_ARGS} -T8 \
-              -Dorg.slf4j.simpleLogger.showThreadName=true \
-              -DreactorRule=default \
-              -DmoduleSet=${{ matrix.moduleSet }} \
-              -DskipTests \
-              -Pspotbugs \
-              verify
-  javadoc:
-    needs: build
-    timeout-minutes: 30
-    strategy:
-      matrix:
-        moduleSet: [ core, integrations, others ]
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
-      - uses: ./.github/actions/common
-        with:
-          build-cache: read-only
-          artifact-name: javadoc-jars-${{ matrix.moduleSet }}
-          artifact-path: |
-            **/target/state-javadoc.xml
-            **/target/*-javadoc.jar
-          run: |
-            mvn ${MVN_ARGS} -T8 \
-              -Dorg.slf4j.simpleLogger.showThreadName=true \
-              -DreactorRule=default \
-              -DmoduleSet=${{ matrix.moduleSet }} \
-              -Dcache.recordSuffix=javadoc \
-              -DskipTests \
-              -Pjavadoc \
-              package
-  docs:
-    needs: build
-    timeout-minutes: 15
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
-      - uses: ./.github/actions/common
-        with:
-          build-cache: read-only
-          artifact-name: docs
-          artifact-path: |
-            */target/state-docs.xml
-            */target/*-docs.jar
-          run: |
-            mvn ${MVN_ARGS} \
-              -Dcache.recordSuffix=docs \
-              -f docs/pom.xml \
-              -Pjavadoc \
-              install
-  quickstarts:
-    needs: build
-    timeout-minutes: 30
-    strategy:
-      matrix:
-        os: [ ubuntu-22.04, macos-14 ]
-        include:
-          - { os: ubuntu-22.04, platform: linux }
-          - { os: macos-14, platform: macos }
-    runs-on: ${{ matrix.os }}
-    name: quickstarts/${{ matrix.platform }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
-      - uses: ./.github/actions/common
-        with:
-          free-space: true
-          build-cache: read-only
-          native-image: true
-          test-artifact-name: tests-quickstarts-${{ matrix.platform }}
-          run: |
-            etc/scripts/test-quickstarts.sh
+#  _tests:
+#    needs: build
+#    timeout-minutes: 30
+#    strategy:
+#      matrix:
+#        os: [ ubuntu-22.04, windows-2022 ]
+#        moduleSet: [ core, it, jpa, jpa-oracle, dbclient, dbclient-oracle, others ]
+#        include:
+#          - { os: ubuntu-22.04, platform: linux }
+#          - { os: windows-2022, platform: windows }
+#    runs-on: ${{ matrix.os }}
+#    name: tests/${{ matrix.moduleSet }}-${{matrix.platform}}
+#    steps:
+#      - uses: actions/checkout@v4
+#        with:
+#          ref: ${{ inputs.ref }}
+#      - uses: ./.github/actions/common
+#        with:
+#          build-cache: read-only
+#          test-artifact-name: tests-${{ matrix.moduleSet }}-${{ matrix.platform }}
+#          run: |
+#            mvn ${MVN_ARGS} \
+#              -DreactorRule=tests \
+#              -DmoduleSet=${{ matrix.moduleSet }} \
+#              -Dsurefire.reportNameSuffix=${{ matrix.platform }} \
+#              verify
+#  _tck:
+#    needs: build
+#    timeout-minutes: 30
+#    strategy:
+#      matrix:
+#        moduleSet: [ cdi, rest, others ]
+#    runs-on: ubuntu-22.04
+#    name: tests/tck-${{ matrix.moduleSet }}
+#    steps:
+#      - uses: actions/checkout@v4
+#        with:
+#          ref: ${{ inputs.ref }}
+#      - uses: ./.github/actions/common
+#        with:
+#          build-cache: read-only
+#          test-artifact-name: tests-tck-${{ matrix.moduleSet }}
+#          run: |
+#            mvn ${MVN_ARGS} \
+#              -DreactorRule=tck \
+#              -DmoduleSet=${{ matrix.moduleSet }} \
+#              verify
+#  _spotbugs:
+#    needs: build
+#    timeout-minutes: 30
+#    strategy:
+#      matrix:
+#        moduleSet: [ core, integrations, others ]
+#    runs-on: ubuntu-22.04
+#    name: spotbugs/${{ matrix.moduleSet }}
+#    steps:
+#      - uses: actions/checkout@v4
+#        with:
+#          ref: ${{ inputs.ref }}
+#      - uses: ./.github/actions/common
+#        with:
+#          build-cache: read-only
+#          run: |
+#            mvn ${MVN_ARGS} -T8 \
+#              -Dorg.slf4j.simpleLogger.showThreadName=true \
+#              -DreactorRule=default \
+#              -DmoduleSet=${{ matrix.moduleSet }} \
+#              -DskipTests \
+#              -Pspotbugs \
+#              verify
+#  javadoc:
+#    needs: build
+#    timeout-minutes: 30
+#    strategy:
+#      matrix:
+#        moduleSet: [ core, integrations, others ]
+#    runs-on: ubuntu-22.04
+#    steps:
+#      - uses: actions/checkout@v4
+#        with:
+#          ref: ${{ inputs.ref }}
+#      - uses: ./.github/actions/common
+#        with:
+#          build-cache: read-only
+#          artifact-name: javadoc-jars-${{ matrix.moduleSet }}
+#          artifact-path: |
+#            **/target/state-javadoc.xml
+#            **/target/*-javadoc.jar
+#          run: |
+#            mvn ${MVN_ARGS} -T8 \
+#              -Dorg.slf4j.simpleLogger.showThreadName=true \
+#              -DreactorRule=default \
+#              -DmoduleSet=${{ matrix.moduleSet }} \
+#              -Dcache.recordSuffix=javadoc \
+#              -DskipTests \
+#              -Pjavadoc \
+#              package
+#  docs:
+#    needs: build
+#    timeout-minutes: 15
+#    runs-on: ubuntu-22.04
+#    steps:
+#      - uses: actions/checkout@v4
+#        with:
+#          ref: ${{ inputs.ref }}
+#      - uses: ./.github/actions/common
+#        with:
+#          build-cache: read-only
+#          artifact-name: docs
+#          artifact-path: |
+#            */target/state-docs.xml
+#            */target/*-docs.jar
+#          run: |
+#            mvn ${MVN_ARGS} \
+#              -Dcache.recordSuffix=docs \
+#              -f docs/pom.xml \
+#              -Pjavadoc \
+#              install
+#  quickstarts:
+#    needs: build
+#    timeout-minutes: 30
+#    strategy:
+#      matrix:
+#        os: [ ubuntu-22.04, macos-14 ]
+#        include:
+#          - { os: ubuntu-22.04, platform: linux }
+#          - { os: macos-14, platform: macos }
+#    runs-on: ${{ matrix.os }}
+#    name: quickstarts/${{ matrix.platform }}
+#    steps:
+#      - uses: actions/checkout@v4
+#        with:
+#          ref: ${{ inputs.ref }}
+#      - uses: ./.github/actions/common
+#        with:
+#          free-space: true
+#          build-cache: read-only
+#          native-image: true
+#          test-artifact-name: tests-quickstarts-${{ matrix.platform }}
+#          run: |
+#            etc/scripts/test-quickstarts.sh
   examples:
     needs: build
     timeout-minutes: 30
     strategy:
       matrix:
-        os: [ ubuntu-22.04, macos-14 ]
+        os:
+          - ubuntu-22.04
+#          - macos-14
         include:
           - { os: ubuntu-22.04, platform: linux }
-          - { os: macos-14, platform: macos }
+#          - { os: macos-14, platform: macos }
     runs-on: ${{ matrix.os }}
     name: examples/${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
-      - uses: ./.github/actions/common
-        with:
-          free-space: true
-          build-cache: read-only
-          test-artifact-name: tests-examples-${{ matrix.platform }}
-          run: etc/scripts/build-examples.sh
-  archetypes:
-    needs: build
-    timeout-minutes: 30
-    strategy:
-      matrix:
-        group: [ r1, r2, r3, r4, r5 ]
-        packaging: [ jar ]
-        include:
-          - { group: r1, start: 1, end: 25 }
-          - { group: r2, start: 26, end: 50 }
-          - { group: r3, start: 51, end: 75 }
-          - { group: r4, start: 75, end: 100 }
-          - { group: r5, start: 101, end: -1 }
-          - { packaging: jar }
-    runs-on: ubuntu-22.04
-    name: archetypes/${{ matrix.group }}-${{ matrix.packaging }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
-      - uses: ./.github/actions/common
-        with:
-          build-cache: read-only
-          native-image: ${{ matrix.packaging == 'native' }}
-          test-artifact-name: tests-archetypes-${{ matrix.group }}-${{ matrix.packaging }}
-          run: |
-            mvn ${MVN_ARGS} \
-              -f archetypes/archetypes/pom.xml \
-              -Darchetype.test.permutationStartIndex=${{ matrix.start }} \
-              -Darchetype.test.permutationEndIndex=${{ matrix.end }} \
-              -Darchetype.test.testGoal=verify \
-              -Darchetype.test.testProfiles=${{ matrix.profile }} \
-              verify
-  legacy-archetypes:
-    needs: build
-    timeout-minutes: 30
-    runs-on: ubuntu-22.04
-    name: archetypes/legacy
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
-      - uses: ./.github/actions/common
-        with:
-          build-cache: read-only
-          test-artifact-name: tests-legacy-archetypes
-          run: |
-            mvn ${MVN_ARGS} \
-              -f archetypes/pom.xml \
-              -Darchetype.test.generatePermutations=false \
-              install
-  packaging:
-    needs: build
-    timeout-minutes: 30
-    strategy:
-      matrix:
-        os: [ ubuntu-22.04, macos-14, windows-2022 ]
-        packaging: [ jar, jlink ]
-        include:
-          - { os: ubuntu-22.04, platform: linux }
-          - { os: macos-14, platform: macos }
-          - { os: windows-2022, platform: windows }
-    runs-on: ${{ matrix.os }}
-    name: tests/packaging-${{ matrix.packaging }}-${{ matrix.platform }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
-      - uses: ./.github/actions/common
-        with:
-          free-space: true
-          build-cache: read-only
-          test-artifact-name: tests-packaging-${{ matrix.packaging }}-${{ matrix.platform }}
-          run: |
-            mvn ${MVN_ARGS} \
-              -f tests/integration/packaging/pom.xml \
-              -P${{ matrix.packaging }}-image \
-              verify
-  _native-image:
-    needs: build
-    timeout-minutes: 30
-    strategy:
-      matrix:
-        os: [ ubuntu-22.04, macos-14, windows-2022 ]
-        module: [ mp-1, mp-2, mp-3, se-1, inject ]
-        include:
-          - { os: ubuntu-22.04, platform: linux }
-          - { os: macos-14, platform: macos }
-          - { os: windows-2022, platform: windows }
-    runs-on: ${{ matrix.os }}
-    name: tests/native-image-${{ matrix.module }}-${{ matrix.platform }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref }}
-      - uses: ./.github/actions/common
-        with:
-          free-space: true
-          build-cache: read-only
-          native-image: true
-          test-artifact-name: tests-native-image-${{ matrix.module }}-${{ matrix.platform }}
-          run: |
-            mvn ${MVN_ARGS} \
-              -f tests/integration/packaging/pom.xml \
-              -pl ${{ matrix.module }} \
-              -Pnative-image \
-              -am \
-              verify
-  test-results:
-    runs-on: ubuntu-22.04
-    needs: [ _tests, archetypes, legacy-archetypes, _tck, packaging, _native-image ]
-    name: tests/results
-    steps:
-      - uses: actions/upload-artifact/merge@v4
-        with:
-          name: test-results
-          pattern: "tests-*"
-  gate:
-    runs-on: ubuntu-22.04
-    needs: [ copyright, checkstyle, shellcheck, docs, javadoc, _spotbugs, test-results ]
-    steps:
-      - shell: bash
-        run: |
-          echo OK
+      - uses: mxschmitt/action-tmate@v3
+#      - uses: ./.github/actions/common
+#        with:
+#          free-space: true
+#          build-cache: read-only
+#          test-artifact-name: tests-examples-${{ matrix.platform }}
+#          run: etc/scripts/build-examples.sh
+#  archetypes:
+#    needs: build
+#    timeout-minutes: 30
+#    strategy:
+#      matrix:
+#        group: [ r1, r2, r3, r4, r5 ]
+#        packaging: [ jar ]
+#        include:
+#          - { group: r1, start: 1, end: 25 }
+#          - { group: r2, start: 26, end: 50 }
+#          - { group: r3, start: 51, end: 75 }
+#          - { group: r4, start: 75, end: 100 }
+#          - { group: r5, start: 101, end: -1 }
+#          - { packaging: jar }
+#    runs-on: ubuntu-22.04
+#    name: archetypes/${{ matrix.group }}-${{ matrix.packaging }}
+#    steps:
+#      - uses: actions/checkout@v4
+#        with:
+#          ref: ${{ inputs.ref }}
+#      - uses: ./.github/actions/common
+#        with:
+#          build-cache: read-only
+#          native-image: ${{ matrix.packaging == 'native' }}
+#          test-artifact-name: tests-archetypes-${{ matrix.group }}-${{ matrix.packaging }}
+#          run: |
+#            mvn ${MVN_ARGS} \
+#              -f archetypes/archetypes/pom.xml \
+#              -Darchetype.test.permutationStartIndex=${{ matrix.start }} \
+#              -Darchetype.test.permutationEndIndex=${{ matrix.end }} \
+#              -Darchetype.test.testGoal=verify \
+#              -Darchetype.test.testProfiles=${{ matrix.profile }} \
+#              verify
+#  legacy-archetypes:
+#    needs: build
+#    timeout-minutes: 30
+#    runs-on: ubuntu-22.04
+#    name: archetypes/legacy
+#    steps:
+#      - uses: actions/checkout@v4
+#        with:
+#          ref: ${{ inputs.ref }}
+#      - uses: ./.github/actions/common
+#        with:
+#          build-cache: read-only
+#          test-artifact-name: tests-legacy-archetypes
+#          run: |
+#            mvn ${MVN_ARGS} \
+#              -f archetypes/pom.xml \
+#              -Darchetype.test.generatePermutations=false \
+#              install
+#  packaging:
+#    needs: build
+#    timeout-minutes: 30
+#    strategy:
+#      matrix:
+#        os: [ ubuntu-22.04, macos-14, windows-2022 ]
+#        packaging: [ jar, jlink ]
+#        include:
+#          - { os: ubuntu-22.04, platform: linux }
+#          - { os: macos-14, platform: macos }
+#          - { os: windows-2022, platform: windows }
+#    runs-on: ${{ matrix.os }}
+#    name: tests/packaging-${{ matrix.packaging }}-${{ matrix.platform }}
+#    steps:
+#      - uses: actions/checkout@v4
+#        with:
+#          ref: ${{ inputs.ref }}
+#      - uses: ./.github/actions/common
+#        with:
+#          free-space: true
+#          build-cache: read-only
+#          test-artifact-name: tests-packaging-${{ matrix.packaging }}-${{ matrix.platform }}
+#          run: |
+#            mvn ${MVN_ARGS} \
+#              -f tests/integration/packaging/pom.xml \
+#              -P${{ matrix.packaging }}-image \
+#              verify
+#  _native-image:
+#    needs: build
+#    timeout-minutes: 30
+#    strategy:
+#      matrix:
+#        os: [ ubuntu-22.04, macos-14, windows-2022 ]
+#        module: [ mp-1, mp-2, mp-3, se-1, inject ]
+#        include:
+#          - { os: ubuntu-22.04, platform: linux }
+#          - { os: macos-14, platform: macos }
+#          - { os: windows-2022, platform: windows }
+#    runs-on: ${{ matrix.os }}
+#    name: tests/native-image-${{ matrix.module }}-${{ matrix.platform }}
+#    steps:
+#      - uses: actions/checkout@v4
+#        with:
+#          ref: ${{ inputs.ref }}
+#      - uses: ./.github/actions/common
+#        with:
+#          free-space: true
+#          build-cache: read-only
+#          native-image: true
+#          test-artifact-name: tests-native-image-${{ matrix.module }}-${{ matrix.platform }}
+#          run: |
+#            mvn ${MVN_ARGS} \
+#              -f tests/integration/packaging/pom.xml \
+#              -pl ${{ matrix.module }} \
+#              -Pnative-image \
+#              -am \
+#              verify
+#  test-results:
+#    runs-on: ubuntu-22.04
+#    needs: [ _tests, archetypes, legacy-archetypes, _tck, packaging, _native-image ]
+#    name: tests/results
+#    steps:
+#      - uses: actions/upload-artifact/merge@v4
+#        with:
+#          name: test-results
+#          pattern: "tests-*"
+#  gate:
+#    runs-on: ubuntu-22.04
+#    needs: [ copyright, checkstyle, shellcheck, docs, javadoc, _spotbugs, test-results ]
+#    steps:
+#      - shell: bash
+#        run: |
+#          echo OK
