@@ -46,16 +46,15 @@ final class LruCacheImpl<K, V> implements LruCache<K, V> {
     @Override
     public Optional<V> get(K key) {
         readLock.lock();
-
+        V value;
         try {
-            V value = backingMap.get(key);
-            if (null == value) {
-                return Optional.empty();
-            }
+            value = backingMap.get(key);
         } finally {
             readLock.unlock();
         }
-
+        if (null == value) {
+            return Optional.empty();
+        }
         writeLock.lock();
         try {
             // make sure the value is the last in the map (I do ignore a race here, as it is not significant)
@@ -63,15 +62,14 @@ final class LruCacheImpl<K, V> implements LruCache<K, V> {
 
             // TODO this hurts - we just need to move the key to the last position
             // maybe this should be replaced with a list and a map?
-            V freshValue = backingMap.get(key);
-            if (null == freshValue) {
+            value = backingMap.get(key);
+            if (null == value) {
                 return Optional.empty();
             }
             //LRU policy
-            backingMap.remove(key);
-            backingMap.putLast(key, freshValue);
+            backingMap.putLast(key, value);
 
-            return Optional.of(freshValue);
+            return Optional.of(value);
         } finally {
             writeLock.unlock();
         }
