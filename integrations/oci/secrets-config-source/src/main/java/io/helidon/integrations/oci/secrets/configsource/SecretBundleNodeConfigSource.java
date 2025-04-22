@@ -20,6 +20,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -49,6 +51,7 @@ import io.helidon.config.spi.PollingStrategy;
 
 import com.oracle.bmc.secrets.Secrets;
 import com.oracle.bmc.secrets.model.Base64SecretBundleContentDetails;
+import com.oracle.bmc.secrets.model.SecretBundle;
 import com.oracle.bmc.secrets.requests.GetSecretBundleRequest;
 import com.oracle.bmc.secrets.responses.GetSecretBundleResponse;
 import com.oracle.bmc.vault.Vaults;
@@ -57,6 +60,10 @@ import com.oracle.bmc.vault.model.SecretSummary;
 import com.oracle.bmc.vault.model.SecretSummary.LifecycleState;
 import com.oracle.bmc.vault.requests.ListSecretsRequest;
 
+// import static com.oracle.bmc.secrets.requests.GetSecretBundleRequest.Stage.Current;
+import static com.oracle.bmc.vault.model.SecretSummary.LifecycleState.Active;
+import static com.oracle.bmc.vault.model.SecretSummary.LifecycleState.CancellingDeletion;
+import static com.oracle.bmc.vault.model.SecretSummary.LifecycleState.Updating;
 import static java.lang.System.Logger.Level.WARNING;
 import static java.time.Instant.now;
 import static java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor;
@@ -74,6 +81,10 @@ public final class SecretBundleNodeConfigSource
 
     private static final String COMPARTMENT_OCID_PROPERTY_NAME = "compartment-ocid";
     private static final Logger LOGGER = System.getLogger(SecretBundleNodeConfigSource.class.getName());
+    // Lifecycle states that a SecretSummary can have that indicate the secret version it represents either exists or
+    // will continue to exist.
+    private static final Collection<? extends LifecycleState> EXTANT_STATES =
+        Collections.unmodifiableCollection(EnumSet.of(Active, CancellingDeletion, Updating));
 
     private final Supplier<Optional<NodeContent>> loader;
     private final Supplier<Stamp> stamper;
@@ -89,7 +100,6 @@ public final class SecretBundleNodeConfigSource
         } else {
             ListSecretsRequest listSecretsRequest = ListSecretsRequest.builder()
                     .compartmentId(b.compartmentOcid)
-                    .lifecycleState(LifecycleState.Active)
                     .vaultId(vaultOcid)
                     .build();
             this.loader = () -> this.load(vaultsSupplier, secretsSupplier, listSecretsRequest);
@@ -118,7 +128,7 @@ public final class SecretBundleNodeConfigSource
         }
         Instant earliestExpiration = null;
         for (SecretSummary ss : secretSummaries) {
-            if (ss.getLifecycleState() == LifecycleState.Active) {
+            if (ss.getLifecycleState() == Active) {
                 java.util.Date d = ss.getTimeOfCurrentVersionExpiry();
                 if (d == null) {
                     d = ss.getTimeOfDeletion();
@@ -203,9 +213,9 @@ public final class SecretBundleNodeConfigSource
         Collection<Callable<Void>> tasks = new ArrayList<>(secretSummaries.size());
         Secrets secrets = secretsSupplier.get();
         for (SecretSummary ss : secretSummaries) {
-            if (ss.getLifecycleState() == LifecycleState.Active) {
+            if (ss.getLifecycleState() == Active) {
                 tasks.add(() -> {
-                    GetSecretBundleResponse response = secrets.getSecretBundle(request(ss.getId()));
+                    GetSecretBundleResponse response = secrets.getSecretBundle(secretBundleRequest(ss.getId()));
                     eTags.add(response.getEtag());
                     return null; // Callable<Void>; null is the only possible return value
                 });
@@ -269,8 +279,11 @@ public final class SecretBundleNodeConfigSource
         }
     }
 
-    private static GetSecretBundleRequest request(String secretId) {
-        return GetSecretBundleRequest.builder().secretId(secretId).build();
+    private static GetSecretBundleRequest secretBundleRequest(String secretId) {
+        return GetSecretBundleRequest.builder()
+                .secretId(secretId)
+                .stage(GetSecretBundleRequest.Stage.Current) // extremely important
+                .build();
     }
 
     // Suppress "[try] auto-closeable resource Vaults has a member method close() that could throw
@@ -279,7 +292,10 @@ public final class SecretBundleNodeConfigSource
     private static Collection<SecretSummary> secretSummaries(Supplier<? extends Vaults> vaultsSupplier,
                                                              ListSecretsRequest listSecretsRequest) {
         try (Vaults v = vaultsSupplier.get()) {
-            return v.listSecrets(listSecretsRequest).getItems();
+            return v.listSecrets(listSecretsRequest).getItems()
+                    .stream()
+                    .filter(ss -> EXTANT_STATES.contains(ss.getLifecycleState()))
+                    .toList();
         } catch (RuntimeException e) {
             throw e;
         } catch (InterruptedException e) {
@@ -298,13 +314,14 @@ public final class SecretBundleNodeConfigSource
                                Consumer<String> eTags) {
         GetSecretBundleResponse response = f.apply(request);
         eTags.accept(response.getEtag());
-        return (Base64SecretBundleContentDetails) response.getSecretBundle().getSecretBundleContent();
+        SecretBundle sb = response.getSecretBundle();
+        return (Base64SecretBundleContentDetails) sb.getSecretBundleContent();
     }
 
     private static ValueNode valueNode(Function<GetSecretBundleRequest, Base64SecretBundleContentDetails> f,
                                        String secretId,
                                        Base64.Decoder base64Decoder) {
-        return valueNode(f.apply(request(secretId)), base64Decoder);
+        return valueNode(f.apply(secretBundleRequest(secretId)), base64Decoder);
     }
 
     private static ValueNode valueNode(Base64SecretBundleContentDetails details, Base64.Decoder base64Decoder) {
