@@ -42,8 +42,6 @@ import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 
-import static io.helidon.webserver.testing.junit5.Junit5Util.withStaticMethods;
-
 /**
  * JUnit5 extension to support Helidon WebServer in tests.
  */
@@ -80,7 +78,9 @@ class HelidonRoutingJunitExtension extends JunitExtensionBase
 
         extensions.forEach(it -> it.beforeAll(context));
 
+        setupFeatures(builder);
         setupServer(builder);
+
         serverConfig = builder.buildPrototype();
 
         initRoutings();
@@ -191,26 +191,6 @@ class HelidonRoutingJunitExtension extends JunitExtensionBase
                 handler.handle(method, socketName, value);
             }
         };
-    }
-
-    private void setupServer(WebServerConfig.Builder builder) {
-        withStaticMethods(testClass(), SetUpServer.class, (setUpServer, method) -> {
-            Class<?>[] parameterTypes = method.getParameterTypes();
-            if (parameterTypes.length != 1) {
-                throw new IllegalArgumentException("Method " + method + " annotated with " + SetUpServer.class.getSimpleName()
-                                                           + " does not have exactly one parameter (WebServerConfig.Builder)");
-            }
-            if (!parameterTypes[0].equals(WebServerConfig.Builder.class)) {
-                throw new IllegalArgumentException("Method " + method + " annotated with " + SetUpServer.class.getSimpleName()
-                                                           + " does not have exactly one parameter (WebServerConfig.Builder)");
-            }
-            try {
-                method.setAccessible(true);
-                method.invoke(null, builder);
-            } catch (IllegalAccessException | InvocationTargetException e) {
-                throw new IllegalStateException("Could not invoke method " + method, e);
-            }
-        });
     }
 
     private interface SetUpRouteHandler {
