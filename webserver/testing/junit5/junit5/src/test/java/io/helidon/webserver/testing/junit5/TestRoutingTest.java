@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,11 +21,13 @@ import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.spi.ServerFeature;
 
 import org.junit.jupiter.api.Test;
 
@@ -88,6 +90,16 @@ class TestRoutingTest {
         router.get("/get", (req, res) -> res.send(ADMIN_ENTITY));
     }
 
+    @SetUpFeatures
+    static List<ServerFeature> features() {
+         return List.of(new TestFeature());
+    }
+
+    @Test
+    void testFeatureSetUp() {
+        assertThat(TestFeature.isSetUp(), is(true));
+    }
+
     @Test
     void testGet() {
         String response = client.get("/get")
@@ -146,6 +158,29 @@ class TestRoutingTest {
         @Override
         public String getName() {
             return name;
+        }
+    }
+
+    private static class TestFeature implements ServerFeature {
+        private static final AtomicBoolean SET_UP = new AtomicBoolean();
+
+        @Override
+        public void setup(ServerFeatureContext featureContext) {
+            SET_UP.set(true);
+        }
+
+        @Override
+        public String name() {
+            return "test";
+        }
+
+        @Override
+        public String type() {
+            return "test";
+        }
+
+        static boolean isSetUp() {
+            return SET_UP.get();
         }
     }
 }
