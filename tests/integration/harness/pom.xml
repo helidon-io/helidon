@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.tests.integration</groupId>
         <artifactId>helidon-tests-integration-project</artifactId>
-        <version>4.2.1-SNAPSHOT</version>
+        <version>4.2.2-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-tests-integration-harness</artifactId>
     <name>Helidon Tests Integration Harness</name>
