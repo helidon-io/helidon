@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,16 +35,20 @@ import io.helidon.webserver.http2.spi.SubProtocolResult;
  */
 public class GrpcProtocolSelector implements Http2SubProtocolSelector {
 
-    private GrpcProtocolSelector() {
+    private final GrpcConfig grpcConfig;
+
+    private GrpcProtocolSelector(GrpcConfig gprcConfig) {
+        this.grpcConfig = gprcConfig;
     }
 
     /**
      * Create a new grpc protocol selector (default).
      *
+     * @param grpcConfig gRPC configuration
      * @return a new default grpc protocol selector for HTTP/2
      */
-    public static GrpcProtocolSelector create() {
-        return new GrpcProtocolSelector();
+    public static GrpcProtocolSelector create(GrpcConfig grpcConfig) {
+        return new GrpcProtocolSelector(grpcConfig);
     }
 
     @Override
@@ -79,14 +83,15 @@ public class GrpcProtocolSelector implements Http2SubProtocolSelector {
                 }
                 return new SubProtocolResult(true,
                                              new GrpcProtocolHandler<>(prologue,
-                                                                     headers,
-                                                                     streamWriter,
-                                                                     streamId,
-                                                                     serverSettings,
-                                                                     clientSettings,
-                                                                     flowControl,
-                                                                     currentStreamState,
-                                                                     route));
+                                                                       headers,
+                                                                       streamWriter,
+                                                                       streamId,
+                                                                       serverSettings,
+                                                                       clientSettings,
+                                                                       flowControl,
+                                                                       currentStreamState,
+                                                                       route,
+                                                                       grpcConfig));
             }
         }
         return NOT_SUPPORTED;
