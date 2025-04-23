@@ -47,7 +47,7 @@
             <artifactId>google-api-client</artifactId>
             <exclusions>
                 <exclusion>
-                    <!-- For dep convergence. Guava wants newer version -->
+                    <!-- For dep convergence. -->
                     <groupId>com.google.j2objc</groupId>
                     <artifactId>j2objc-annotations</artifactId>
                 </exclusion>
