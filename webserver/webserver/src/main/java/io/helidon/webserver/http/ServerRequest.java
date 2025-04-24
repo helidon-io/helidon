@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -120,4 +120,13 @@ public interface ServerRequest extends HttpRequest {
      * @see io.helidon.webserver.ListenerConfig#enableProxyProtocol()
      */
     Optional<ProxyProtocolData> proxyProtocolData();
+
+    /**
+     * The pattern used to match this request. Such as "/foo/{bar}".
+     *
+     * @return matching pattern or {@code ""} if not available
+     */
+    default Optional<String> matchingPattern() {
+        return Optional.empty();
+    }
 }

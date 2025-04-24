@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.webserver.http;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Predicate;
 
 import io.helidon.http.HttpPrologue;
@@ -53,6 +54,15 @@ public interface HttpRoute extends Route {
      * @return handler
      */
     Handler handler();
+
+    /**
+     * Path matcher for this HTTP route.
+     *
+     * @return optional path matcher
+     */
+    default Optional<PathMatcher> pathMatcher() {
+        return Optional.empty();
+    }
 
     /**
      * Fluent API builder for {@link HttpRoute}.

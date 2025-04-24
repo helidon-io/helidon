@@ -62,6 +62,7 @@ abstract class Http1ServerRequest implements RoutingRequest {
 
     private HttpPrologue prologue;
     private Context context;
+    private String matchingPattern;
 
     Http1ServerRequest(ConnectionContext ctx,
                        HttpSecurity security,
@@ -208,6 +209,17 @@ abstract class Http1ServerRequest implements RoutingRequest {
     public Http1ServerRequest prologue(HttpPrologue newPrologue) {
         this.prologue = newPrologue;
         return this;
+    }
+
+    @Override
+    public RoutingRequest matchingPattern(String matchingPattern) {
+        this.matchingPattern = matchingPattern;
+        return this;
+    }
+
+    @Override
+    public Optional<String> matchingPattern() {
+        return Optional.of(matchingPattern);
     }
 
     @Override
