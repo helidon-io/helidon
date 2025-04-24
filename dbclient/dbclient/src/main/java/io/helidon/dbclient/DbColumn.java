@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,16 @@ import java.util.Optional;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperException;
-import io.helidon.common.mapper.Value;
+import io.helidon.common.mapper.OptionalValue;
 
 /**
  * Column data and metadata.
+ * <p>
+ * Column may represent a {@code null} value. Get methods on this class would throw an exception if the
+ * value is null, use {@link #asOptional()}, or one of the mapping methods that support optional values, such as
+ * {@link #ifPresent(java.util.function.Consumer)} to consume such columns.
  */
-public interface DbColumn extends Value<Object> {
+public interface DbColumn extends OptionalValue<Object> {
 
     /**
      * Typed value of this column.
@@ -55,6 +59,12 @@ public interface DbColumn extends Value<Object> {
 
     /**
      * Untyped value of this column, returns java type as provided by the underlying database driver.
+     * <p>
+     * WARNING: for backward compatibility, this method MAY return {@code null} if the underlying column value is null.
+     * As this is not aligned with Helidon APIs, which forbid returns of {@code null}, this will change in future versions.
+     * If you need support for {@code nullable} columns, use the optional-like methods on this type, such as
+     * {@link #isEmpty()}, {@link #isPresent()}, {@link #ifPresent(java.util.function.Consumer)} etc. to handle
+     * {code null} values.
      *
      * @return value of this column
      */

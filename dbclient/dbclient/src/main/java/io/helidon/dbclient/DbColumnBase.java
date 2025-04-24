@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import java.util.function.Function;
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperException;
 import io.helidon.common.mapper.MapperManager;
-import io.helidon.common.mapper.Value;
+import io.helidon.common.mapper.OptionalValue;
 
 /**
  * Base {@link DbColumn} implementation.
@@ -80,47 +80,57 @@ public abstract class DbColumnBase implements DbColumn {
     }
 
     @Override
-    public <N> Value<N> as(Class<N> type) throws MapperException {
-        return Value.create(mapperManager, name(), get(type), "dbclient", "column");
+    public <N> OptionalValue<N> as(Class<N> type) throws MapperException {
+        if (value == null) {
+            return OptionalValue.create(mapperManager, name(), type, "dbclient", "column");
+        }
+        return OptionalValue.create(mapperManager, name(), get(type), "dbclient", "column");
     }
 
     @Override
-    public <N> Value<N> as(GenericType<N> type) throws MapperException {
-        return Value.create(mapperManager, name(), get(type), "dbclient", "column");
+    public <N> OptionalValue<N> as(GenericType<N> type) throws MapperException {
+        if (value == null) {
+            return OptionalValue.create(mapperManager, name(), type, "dbclient", "column");
+        }
+        return OptionalValue.create(mapperManager, name(), get(type), "dbclient", "column");
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public <N> Value<N> as(Function<? super Object, ? extends N> mapper) {
-        return Value.create(mapperManager, name(), mapper.apply(value), "dbclient", "column");
+    public <N> OptionalValue<N> as(Function<? super Object, ? extends N> mapper) {
+        if (value == null) {
+            return OptionalValue.create(mapperManager, name(), (Class<N>) javaType(), "dbclient", "column");
+        }
+        return OptionalValue.create(mapperManager, name(), mapper.apply(value), "dbclient", "column");
     }
 
     @Override
     public Optional<Object> asOptional() throws MapperException {
-        return Optional.of(value);
+        return Optional.ofNullable(value);
     }
 
     @Override
-    public Value<Boolean> asBoolean() {
+    public OptionalValue<Boolean> asBoolean() {
         return as(Boolean.class);
     }
 
     @Override
-    public Value<String> asString() {
+    public OptionalValue<String> asString() {
         return as(String.class);
     }
 
     @Override
-    public Value<Integer> asInt() {
+    public OptionalValue<Integer> asInt() {
         return as(Integer.class);
     }
 
     @Override
-    public Value<Long> asLong() {
+    public OptionalValue<Long> asLong() {
         return as(Long.class);
     }
 
     @Override
-    public Value<Double> asDouble() {
+    public OptionalValue<Double> asDouble() {
         return as(Double.class);
     }
 

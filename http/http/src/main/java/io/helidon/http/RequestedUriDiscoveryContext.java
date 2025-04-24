@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 package io.helidon.http;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -64,15 +66,40 @@ public interface RequestedUriDiscoveryContext {
      * {@link RequestedUriDiscoveryContext} and the specified request-related information.
      *
      * @param remoteAddress remote address from the request
-     * @param localAddress local address from the request
-     * @param requestPath path from the request
-     * @param headers request headers
-     * @param query query information from the request
-     * @param isSecure whether the request is secure
+     * @param localAddress  local address from the request
+     * @param requestPath   path from the request
+     * @param headers       request headers
+     * @param query         query information from the request
+     * @param isSecure      whether the request is secure
+     * @return {@code UriInfo} which reconstructs, as well as possible, the requested URI from the originating client
+     * @deprecated Use
+     *         {@link RequestedUriDiscoveryContext#uriInfo(java.net.InetSocketAddress, java.net.InetSocketAddress, String,
+     *         ServerRequestHeaders, io.helidon.common.uri.UriQuery, boolean)}
+     */
+    @Deprecated(forRemoval = true, since = "4.2.1")
+    default UriInfo uriInfo(String remoteAddress,
+                            String localAddress,
+                            String requestPath,
+                            ServerRequestHeaders headers,
+                            UriQuery query,
+                            boolean isSecure) {
+        return UriInfoCompatibilityHelper.uriInfo(this, remoteAddress, localAddress, requestPath, headers, query, isSecure);
+    }
+
+    /**
+     * Creates a {@link io.helidon.common.uri.UriInfo} object for a request based on the discovery settings in the
+     * {@link RequestedUriDiscoveryContext} and the specified request-related information.
+     *
+     * @param remoteAddress remote address from the request
+     * @param localAddress  local address from the request
+     * @param requestPath   path from the request
+     * @param headers       request headers
+     * @param query         query information from the request
+     * @param isSecure      whether the request is secure
      * @return {@code UriInfo} which reconstructs, as well as possible, the requested URI from the originating client
      */
-    UriInfo uriInfo(String remoteAddress,
-                    String localAddress,
+    UriInfo uriInfo(SocketAddress remoteAddress,
+                    SocketAddress localAddress,
                     String requestPath,
                     ServerRequestHeaders headers,
                     UriQuery query,
@@ -275,8 +302,8 @@ public interface RequestedUriDiscoveryContext {
             }
 
             @Override
-            public UriInfo uriInfo(String remoteAddress,
-                                   String localAddress,
+            public UriInfo uriInfo(SocketAddress remoteAddress,
+                                   SocketAddress localAddress,
                                    String requestPath,
                                    ServerRequestHeaders headers,
                                    UriQuery query,
@@ -289,8 +316,12 @@ public interface RequestedUriDiscoveryContext {
 
                 // Note: enabled() returns true if discovery is explicitly enabled or if either
                 // requestedUriDiscoveryTypes or trustedProxies is set.
-                if (enabled) {
-                    if (trustedProxies.test(hostPart(remoteAddress))) {
+                if (enabled && remoteAddress instanceof InetSocketAddress remoteInetAddress) {
+                    // Host with ip address fallback or ip address only
+                    if (trustedProxies.test(remoteInetAddress.getHostString())
+                            || (remoteInetAddress.getAddress() != null
+                                    && trustedProxies.test(remoteInetAddress.getAddress().getHostAddress()))) {
+
                         // Once we discover trusted information using one of the discovery discoveryTypes, we do not mix in
                         // information from other discoveryTypes.
 
@@ -338,14 +369,22 @@ public interface RequestedUriDiscoveryContext {
                     authority = headers.first(HeaderNames.HOST).orElse(null);
                 }
 
+                if (host == null
+                        && authority == null
+                        && localAddress instanceof InetSocketAddress localInetAddress) {
+                    uriInfo.host(localInetAddress.getHostString()); // fallback
+                }
+
                 uriInfo.path(path == null ? requestPath : path);
-                uriInfo.host(localAddress); // this is the fallback
+
                 if (authority != null) {
                     uriInfo.authority(authority); // this is the second possibility
                 }
+
                 if (host != null) {
                     uriInfo.host(host); // and this one has priority
                 }
+
                 if (port != -1) {
                     uriInfo.port(port);
                 }
@@ -366,11 +405,6 @@ public interface RequestedUriDiscoveryContext {
                 uriInfo.query(query);
 
                 return uriInfo.build();
-            }
-
-            private static String hostPart(String address) {
-                int colon = address.indexOf(':');
-                return colon == -1 ? address : address.substring(0, colon);
             }
 
             private ForwardedDiscovery discoverUsingForwarded(ServerRequestHeaders headers) {
@@ -416,7 +450,7 @@ public interface RequestedUriDiscoveryContext {
 
                 List<String> xForwardedFors = headers.values(HeaderNames.X_FORWARDED_FOR);
                 boolean areProxiesTrusted = true;
-                if (xForwardedFors.size() > 0) {
+                if (!xForwardedFors.isEmpty()) {
                     // Intentionally skip the first X-Forwarded-For value. That is the originating client, and as such it
                     // is not a proxy and we do not need to check its trustworthiness.
                     for (int i = 1; i < xForwardedFors.size(); i++) {

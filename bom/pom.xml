@@ -78,6 +78,11 @@
                 <artifactId>helidon-jersey-media-jsonp</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.jersey</groupId>
+                <artifactId>helidon-jersey-webserver</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- graphQL -->
             <dependency>
                 <groupId>io.helidon.graphql</groupId>
