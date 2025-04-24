@@ -169,6 +169,7 @@ final class HttpRoutingImpl implements HttpRouting {
                 response.resetRouting();
                 RouteCrawler.CrawlerItem next = crawler.next();
                 request.path(next.path());
+                request.matchingPattern(next.matchingElement());
 
                 next.handler().handle(request, response);
                 if (response.shouldReroute()) {
