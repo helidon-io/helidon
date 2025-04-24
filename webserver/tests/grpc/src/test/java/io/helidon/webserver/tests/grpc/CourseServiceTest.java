@@ -81,7 +81,7 @@ public class CourseServiceTest {
     @Test
     void testGetCourses() throws InterruptedException {
         var observer = new TestObserver<Courses.CourseResponse>();
-        CountDownLatch latch = observer.setLatch(1);
+        CountDownLatch latch = observer.latch(1);
         stub.getCourses(Empty.getDefaultInstance(), observer);
         assertThat(latch.await(10, TimeUnit.SECONDS), is(true));
         assertThat(observer.getResponses().size(), is(1));
