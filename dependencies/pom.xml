@@ -66,7 +66,7 @@
         <version.lib.handlebars>4.3.1</version.lib.handlebars>
         <version.lib.hibernate.family>6.3</version.lib.hibernate.family>
         <version.lib.hibernate>${version.lib.hibernate.family}.1.Final</version.lib.hibernate>
-        <version.lib.hibernate-validator>7.0.5.Final</version.lib.hibernate-validator>
+        <version.lib.hibernate-validator>8.0.2.Final</version.lib.hibernate-validator>
         <version.lib.hikaricp>5.0.1</version.lib.hikaricp>
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
         <version.lib.jackson>2.18.1</version.lib.jackson>
