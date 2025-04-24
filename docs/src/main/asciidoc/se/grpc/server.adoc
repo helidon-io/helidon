@@ -193,7 +193,7 @@ The parameter `-proto` is used by `grpcurl` to learn about the methods and
 messages types available in the proto file, and ultimately execute the
 requested gRPC call.
 
-Helidon now includes a gRPC reflection service that can be queried by tools
+Helidon includes a gRPC reflection service that can be queried by tools
 such as `grpcurl` to learn about the available services &mdash;similar to
 OpenAPI for REST services. The reflection service is implemented as a
 _feature_ and can be enabled programmatically when adding the feature, or
@@ -206,7 +206,7 @@ via config as follows:
       enabled: true
 ----
 
-The feature accepts a list of sockets, or if omitted as a seen above,
+The feature accepts a list of sockets, or if omitted as seen above,
 it would enable the feature on all sockets.
 For security reasons, the gRPC reflection service is
 _disabled by default_; if enabled, it is recommended to disable
