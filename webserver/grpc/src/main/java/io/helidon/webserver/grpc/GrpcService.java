@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,12 @@
 
 package io.helidon.webserver.grpc;
 
-import com.google.protobuf.Descriptors;
 import io.grpc.stub.ServerCalls;
 
 /**
  * Grpc service.
  */
-public interface GrpcService {
-    /**
-     * Proto descriptor of this service.
-     *
-     * @return proto file descriptor
-     */
-    Descriptors.FileDescriptor proto();
+public interface GrpcService extends GrpcProto {
 
     /**
      * Service name, defaults to this class simple name.
