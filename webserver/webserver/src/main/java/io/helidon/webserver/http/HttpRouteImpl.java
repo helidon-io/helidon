@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.http;
 
+import java.util.Optional;
 import java.util.function.Predicate;
 
 import io.helidon.http.HttpPrologue;
@@ -47,6 +48,11 @@ class HttpRouteImpl extends HttpRouteBase implements HttpRoute {
     @Override
     public Handler handler() {
         return handler;
+    }
+
+    @Override
+    public Optional<PathMatcher> pathMatcher() {
+        return Optional.of(pathMatcher);
     }
 
     @Override
