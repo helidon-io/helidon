@@ -16,21 +16,30 @@
 
 package io.helidon.webserver;
 
+import io.helidon.config.Configuration;
 import io.helidon.service.registry.Service;
 
 @Service.Singleton
 @Service.RunLevel(Service.RunLevel.SERVER)
 class WebServerStarterService {
-    private final LoomServer server;
+    private static final System.Logger LOGGER = System.getLogger(WebServerStarterService.class.getName());
 
-    WebServerStarterService(LoomServer server) {
+    private final LoomServer server;
+    private final boolean ignoreIncubating;
+
+    WebServerStarterService(LoomServer server, @Configuration.Value("declarative.ignore-incubating") boolean ignoreIncubating) {
         this.server = server;
+        this.ignoreIncubating = ignoreIncubating;
     }
 
     @Service.PostConstruct
     void postConstruct() {
-        if (server != null) {
-            server.start();
+        server.start();
+        if (!ignoreIncubating) {
+            LOGGER.log(System.Logger.Level.WARNING,
+                       "Helidon WebServer is starting through Helidon Declarative. This is currently an incubating feature (and"
+                               + " as such it may be changed including backward incompatible changes). This warning can be "
+                               + "disabled by setting configuration option 'declarative.ignore-incubating' to true");
         }
     }
 
