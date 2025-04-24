@@ -85,7 +85,7 @@ public class EventServiceTest {
 
         StreamObserver<Events.EventRequest> requests = stub.events(observer);
 
-        CountDownLatch latch = observer.setLatch(2);
+        CountDownLatch latch = observer.latch(2);
         requests.onNext(subscribe(19L));
         requests.onNext(subscribe(20L));
 
@@ -104,7 +104,7 @@ public class EventServiceTest {
         assertThat(subscribed.getId(), is(20L));
 
         observer.clear();
-        latch = observer.setLatch(2);
+        latch = observer.latch(2);
         blockingStub.send(message("foo"));
 
         assertThat(latch.await(1, TimeUnit.MINUTES), is(true));
