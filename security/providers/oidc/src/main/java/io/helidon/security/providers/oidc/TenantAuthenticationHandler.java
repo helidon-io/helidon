@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -138,7 +138,7 @@ class TenantAuthenticationHandler {
                         .header(HeaderValues.ACCEPT_JSON)
                         .headers(it -> it.add(HeaderNames.CACHE_CONTROL, "no-cache, no-store, must-revalidate"));
 
-                OidcUtil.updateRequest(OidcConfig.RequestType.INTROSPECT_JWT, tenantConfig, form);
+                OidcUtil.updateRequest(OidcConfig.RequestType.INTROSPECT_JWT, tenantConfig, form, post);
 
                 try (HttpClientResponse response = post.submit(form.build())) {
                     if (response.status().family() == Status.Family.SUCCESSFUL) {

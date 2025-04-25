@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,17 @@
 package io.helidon.webserver.testing.junit5;
 
 import java.net.URI;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.ListenerConfig;
-import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.spi.ServerFeature;
 
 import org.junit.jupiter.api.Test;
 
@@ -55,6 +58,11 @@ class TestServerTest {
         this.customUri = customUri;
     }
 
+    @SetUpFeatures
+    static List<ServerFeature> features() {
+        return List.of(new TestFeature());
+    }
+
     @SetUpServer
     static void setUp(WebServerConfig.Builder builder) {
         Context serverContext = Context.create();
@@ -71,6 +79,11 @@ class TestServerTest {
     @SetUpRoute("socket2")
     static void routing2(HttpRouting.Builder r, ListenerConfig.Builder l) {
         l.writeQueueLength(10);
+    }
+
+    @Test
+    void testFeatureSetUp() {
+        assertThat(TestFeature.isSetUp(), is(true));
     }
 
     @Test
@@ -163,5 +176,28 @@ class TestServerTest {
         assertThat(uri, notNullValue());
         assertThat(uri.getHost(), is("localhost"));
         assertThat(uri.getPort(), is(server.port()));
+    }
+
+    private static class TestFeature implements ServerFeature {
+        private static final AtomicBoolean SET_UP = new AtomicBoolean();
+
+        @Override
+        public void setup(ServerFeatureContext featureContext) {
+            SET_UP.set(true);
+        }
+
+        @Override
+        public String name() {
+            return "test";
+        }
+
+        @Override
+        public String type() {
+            return "test";
+        }
+
+        static boolean isSetUp() {
+            return SET_UP.get();
+        }
     }
 }

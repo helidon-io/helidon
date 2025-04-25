@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,17 +75,20 @@ public class Tenant {
 
         Errors.Collector collector = Errors.collector();
 
+        URI identityUri = tenantConfig.identityUri();
         OidcMetadata oidcMetadata = OidcMetadata.builder()
                 .remoteEnabled(tenantConfig.useWellKnown())
                 .json(tenantConfig.oidcMetadata())
                 .webClient(webClient)
-                .identityUri(tenantConfig.identityUri())
+                .identityUri(identityUri)
                 .collector(collector)
                 .build();
 
+        String serverType = tenantConfig.serverType();
+        String metaKey = resolveMetaKey("token_endpoint", serverType, identityUri);
         URI tokenEndpointUri = oidcMetadata.getOidcEndpoint(collector,
                                                             tenantConfig.tenantTokenEndpointUri().orElse(null),
-                                                            "token_endpoint",
+                                                            metaKey,
                                                             "/oauth2/v1/token");
 
         URI authorizationEndpointUri = oidcMetadata.getOidcEndpoint(collector,
@@ -93,9 +96,10 @@ public class Tenant {
                                                                     "authorization_endpoint",
                                                                     "/oauth2/v1/authorize");
 
+        metaKey = resolveMetaKey("end_session_endpoint", serverType, identityUri);
         URI logoutEndpointUri = oidcMetadata.getOidcEndpoint(collector,
                                                              tenantConfig.tenantLogoutEndpointUri().orElse(null),
-                                                             "end_session_endpoint",
+                                                             metaKey,
                                                              "oauth2/v1/userlogout");
 
         String issuer = tenantConfig.tenantIssuer()
@@ -127,17 +131,19 @@ public class Tenant {
         JwkKeys signJwk = tenantConfig.tenantSignJwk().orElseGet(() -> {
             if (tenantConfig.validateJwtWithJwk()) {
                 // not configured - use default location
+                String jwksMetaKey = resolveMetaKey("jwks_uri", serverType, identityUri);
                 URI jwkUri = oidcMetadata.getOidcEndpoint(collector,
                                                           null,
-                                                          "jwks_uri",
+                                                          jwksMetaKey,
                                                           null);
                 if (jwkUri != null) {
-                    if ("idcs".equals(tenantConfig.serverType())) {
+                    if ("idcs".equals(serverType)) {
                         return IdcsSupport.signJwk(appWebClient,
                                                    webClient,
                                                    tokenEndpointUri,
                                                    jwkUri,
-                                                   tenantConfig.clientTimeout());
+                                                   tenantConfig.clientTimeout(),
+                                                   tenantConfig);
                     } else {
                         return JwkKeys.builder()
                                 .json(webClient.get()
@@ -151,9 +157,10 @@ public class Tenant {
         });
         URI introspectUri = tenantConfig.tenantIntrospectUri().orElse(null);
         if (!tenantConfig.validateJwtWithJwk()) {
+            metaKey = resolveMetaKey("introspection_endpoint", serverType, identityUri);
             introspectUri = oidcMetadata.getOidcEndpoint(collector,
                                                          introspectUri,
-                                                         "introspection_endpoint",
+                                                         metaKey,
                                                          "/oauth2/v1/introspect");
         }
         return new Tenant(tenantConfig,
@@ -164,6 +171,15 @@ public class Tenant {
                           appWebClient,
                           signJwk,
                           introspectUri);
+    }
+
+    private static String resolveMetaKey(String metaKey, String serverType, URI identityUri) {
+        if ("idcs".equals(serverType) && identityUri.toString().contains(".secure.")) {
+            //when server is IDCS and URI has ".secure." defined, we know we are using MTLS and need to obtain
+            //secured endpoint also.
+            return "secure_" + metaKey;
+        }
+        return metaKey;
     }
 
     /**

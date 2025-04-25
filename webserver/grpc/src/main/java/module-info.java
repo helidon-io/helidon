@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,4 +49,6 @@ module io.helidon.webserver.grpc {
             with io.helidon.webserver.grpc.GrpcProtocolProvider;
     provides io.helidon.webserver.spi.ProtocolConfigProvider
             with io.helidon.webserver.grpc.GrpcProtocolConfigProvider;
+    provides io.helidon.webserver.spi.ServerFeatureProvider
+            with io.helidon.webserver.grpc.GrpcReflectionFeatureProvider;
 }

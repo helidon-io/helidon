@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,13 +22,11 @@ import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.webserver.WebServer;
 import io.helidon.webserver.grpc.strings.StringServiceGrpc;
 import io.helidon.webserver.grpc.strings.Strings.StringMessage;
 import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.WebServer;
 
-import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,41 +37,27 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 
 @ServerTest
-abstract class BaseStringServiceTest {
-    private final int port;
+abstract class BaseStringServiceTest extends BaseServiceTest {
 
-    protected ManagedChannel channel;
     protected StringServiceGrpc.StringServiceBlockingStub blockingStub;
     protected StringServiceGrpc.StringServiceStub stub;
 
     BaseStringServiceTest(WebServer server) {
-        this.port = server.port();
+        super(server);
     }
 
     @BeforeEach
     void beforeEach() {
-        channel = channel(port);
+        super.beforeEach();
         blockingStub = StringServiceGrpc.newBlockingStub(channel);
         stub = StringServiceGrpc.newStub(channel);
     }
 
     @AfterEach
     void afterEach() throws InterruptedException {
+        super.afterEach();
         blockingStub = null;
         stub = null;
-        channel.shutdown();
-        if (!channel.awaitTermination(10, TimeUnit.SECONDS)) {
-            System.err.println("Failed to terminate channel");
-        }
-        if (!channel.isTerminated()) {
-            System.err.println("Channel is not terminated!!!");
-        }
-    }
-
-    ManagedChannel channel(int port) {
-        return ManagedChannelBuilder.forAddress("localhost", port)
-                .usePlaintext()
-                .build();
     }
 
     @RepeatedTest(20)
