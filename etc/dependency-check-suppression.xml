@@ -273,5 +273,24 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
    <cve>CVE-2023-28360</cve>
 </suppress>
 
+<!-- False Positives.
+     This CVE is against the XML Database component of Oracle Database Server.
+     The below are client libraries for XML and XML JDBC support.
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: xdb-21.15.0.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/com\.oracle\.database\.xml/xdb@.*$</packageUrl>
+   <cve>CVE-2025-30694</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: xmlparserv2-21.15.0.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/com\.oracle\.database\.xml/xmlparserv2@.*$</packageUrl>
+   <cve>CVE-2025-30694</cve>
+</suppress>
 
 </suppressions>
+
