@@ -683,7 +683,7 @@ To enable HTTP/2 support add the following dependency to your project's `pom.xml
 ----
 <dependency>
     <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver-http2</artifactId>>
+    <artifactId>helidon-webserver-http2</artifactId>
 </dependency>
 ----
 
