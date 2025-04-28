@@ -167,11 +167,8 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
 
         Set<Bean<?>> beans =
             this.beanManager.getBeans(EntityManager.class,
-                                      selectionQualifiers.toArray(new Annotation[0]));
-        if (beans == null) {
-            throw new IllegalStateException("BeanManager returned null set for EntityManager.");
-        }
-
+                                      selectionQualifiers.toArray(new Annotation[selectionQualifiers.size()]));
+        assert beans != null;
         this.oppositeSynchronizationBean = Objects.requireNonNull(this.beanManager.resolve(beans));
 
         // This is a proxy whose scope will be
@@ -184,10 +181,7 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         this.cdiTransactionScopedEntityManager =
             instance.select(CdiTransactionScopedEntityManager.class,
                             cdiTransactionScopedEntityManagerSelectionQualifiersArray).get();
-        if (!this.cdiTransactionScopedEntityManager.getClass().isSynthetic()) {
-            throw new IllegalStateException("Entity manager should have a synthetic class: "
-                                                    + this.cdiTransactionScopedEntityManager.getClass());
-        }
+        assert this.cdiTransactionScopedEntityManager.getClass().isSynthetic();
 
         selectionQualifiers.remove(CdiTransactionScoped.Literal.INSTANCE);
         selectionQualifiers.remove(ContainerManaged.Literal.INSTANCE);

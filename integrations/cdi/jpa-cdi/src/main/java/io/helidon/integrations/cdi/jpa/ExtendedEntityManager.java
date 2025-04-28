@@ -169,9 +169,7 @@ class ExtendedEntityManager extends DelegatingEntityManager {
             // transaction is not in play.
 
             if (this.delegate == null) {
-                if (this.subdelegate != null) {
-                    throw new IllegalStateException("Subdelegate is not null");
-                }
+                assert this.subdelegate == null;
 
                 // For the first time during the lifespan of this
                 // object, create its delegate.  It will be a "normal"
@@ -206,15 +204,9 @@ class ExtendedEntityManager extends DelegatingEntityManager {
                 // field we also had to have assigned a non-null
                 // "normal" EntityManager to our subdelegate field
                 // (see later in this method for proof).
-                if (this.subdelegate == null) {
-                    throw new IllegalStateException("Subdelegate is null");
-                }
-                if (this.subdelegate instanceof CdiTransactionScopedEntityManager) {
-                    throw new IllegalStateException("Subdelegate is of unexpected type: " + subdelegate.getClass().getName());
-                }
-                if (!this.subdelegate.isOpen()) {
-                    throw new IllegalStateException("Subdelegate is closed");
-                }
+                assert this.subdelegate != null;
+                assert !(this.subdelegate instanceof CdiTransactionScopedEntityManager);
+                assert this.subdelegate.isOpen();
 
                 // We are an extended EntityManager, so take that old
                 // "normal" EntityManager subdelegate that we know was
@@ -236,18 +228,10 @@ class ExtendedEntityManager extends DelegatingEntityManager {
             // delegate is "normal" and not stale, and there's no
             // subdelegate to indicate any kind of a transactional
             // situation.
-            if (this.delegate == null) {
-                throw new IllegalStateException("Delegate is null");
-            }
-            if (this.delegate instanceof CdiTransactionScopedEntityManager) {
-                throw new IllegalStateException("Delegate is of unexpected type: " + delegate.getClass().getName());
-            }
-            if (!this.delegate.isOpen()) {
-                throw new IllegalStateException("Delegate is closed");
-            }
-            if (this.subdelegate != null) {
-                throw new IllegalStateException("Subdelegate is not null when we are not in a transaction");
-            }
+            assert this.delegate != null;
+            assert !(this.delegate instanceof CdiTransactionScopedEntityManager);
+            assert this.delegate.isOpen();
+            assert this.subdelegate == null;
 
             returnValue = this.delegate;
 
@@ -265,18 +249,10 @@ class ExtendedEntityManager extends DelegatingEntityManager {
                 // still need our persistence context that was "in"
                 // it.  Fortunately, we saved that off in our
                 // subdelegate field.
-                if (!(this.delegate instanceof CdiTransactionScopedEntityManager)) {
-                    throw new IllegalStateException("Delegate is of unexpected type: " + delegate.getClass().getName());
-                }
-                if (this.subdelegate == null) {
-                    throw new IllegalStateException("Subdelegate is null when in JTA transaction");
-                }
-                if (this.subdelegate instanceof CdiTransactionScopedEntityManager) {
-                    throw new IllegalStateException("Subdelegate is of unexpected type: " + subdelegate.getClass().getName());
-                }
-                if (!this.subdelegate.isOpen()) {
-                    throw new IllegalStateException("Subdelegate is closed");
-                }
+                assert this.delegate instanceof CdiTransactionScopedEntityManager;
+                assert this.subdelegate != null;
+                assert !(this.subdelegate instanceof CdiTransactionScopedEntityManager);
+                assert this.subdelegate.isOpen();
                 this.delegate = this.subdelegate;
                 this.subdelegate = null;
             }
@@ -287,12 +263,8 @@ class ExtendedEntityManager extends DelegatingEntityManager {
                 // either null or a "normal", open EntityManager.  Our
                 // subdelegate must be null whenever our delegate is
                 // not a CdiTransactionScopedEntityManager.
-                if (this.subdelegate != null) {
-                    throw new IllegalStateException("Subdelegate is not null when in a JTA transaction");
-                }
-                if (this.delegate != null && !this.delegate.isOpen()) {
-                    throw new IllegalStateException("Delegate is not null, but it is closed.");
-                }
+                assert this.subdelegate == null;
+                assert this.delegate == null ? true : this.delegate.isOpen();
 
                 // Since we're in a transaction, we have to look for
                 // the @TransactionScoped EntityManager that is
@@ -308,26 +280,14 @@ class ExtendedEntityManager extends DelegatingEntityManager {
                 selectionQualifiers.add(ContainerManaged.Literal.INSTANCE);
                 final Set<Bean<?>> cdiTransactionScopedEntityManagerBeans =
                     this.beanManager.getBeans(CdiTransactionScopedEntityManager.class,
-                                              selectionQualifiers.toArray(new Annotation[0]));
-                if (cdiTransactionScopedEntityManagerBeans == null) {
-                    throw new IllegalStateException("CDI bean manager returned null bean set for "
-                                                            + "CdiTransactionScopedEntityManager");
-                }
-                if (cdiTransactionScopedEntityManagerBeans.isEmpty()) {
-                    throw new IllegalStateException("CDI bean manager returned empty bean set for "
-                                                            + "CdiTransactionScopedEntityManager");
-                }
-
+                                              selectionQualifiers.toArray(new Annotation[selectionQualifiers.size()]));
+                assert cdiTransactionScopedEntityManagerBeans != null;
+                assert !cdiTransactionScopedEntityManagerBeans.isEmpty();
+                @SuppressWarnings("unchecked")
                 final Bean<?> cdiTransactionScopedEntityManagerBean =
-                    this.beanManager.resolve(cdiTransactionScopedEntityManagerBeans);
-                if (cdiTransactionScopedEntityManagerBean == null) {
-                    throw new IllegalStateException("CDI bean manager returned null");
-                }
-                if (!context.getScope().equals(cdiTransactionScopedEntityManagerBean.getScope())) {
-                    throw new IllegalStateException("Invalid scope. Context scope: " + context.getScope()
-                                                            + ", entity manager bean scope: "
-                                                            + cdiTransactionScopedEntityManagerBean.getScope());
-                }
+                    (Bean<CdiTransactionScopedEntityManager>) this.beanManager.resolve(cdiTransactionScopedEntityManagerBeans);
+                assert cdiTransactionScopedEntityManagerBean != null;
+                assert context.getScope().equals(cdiTransactionScopedEntityManagerBean.getScope());
 
                 // Using that bean, check the Context to see if there's
                 // already a container-managed EntityManager enrolled in

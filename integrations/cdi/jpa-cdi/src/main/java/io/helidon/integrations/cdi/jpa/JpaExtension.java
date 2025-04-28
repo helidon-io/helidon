@@ -485,11 +485,15 @@ public class JpaExtension implements Extension {
                     PersistenceProperty[] persistenceProperties = persistenceContext.properties();
                     if (persistenceProperties != null && persistenceProperties.length > 0) {
                         String persistenceUnitName = persistenceContext.unitName();
-                        if (persistenceUnitName == null) {
-                            throw new IllegalStateException("Persistence unit name is null");
-                        }
+                        assert persistenceUnitName != null;
                         PersistenceUnitInfoBean persistenceUnit = this.implicitPersistenceUnits.get(persistenceUnitName);
                         if (persistenceUnit == null) {
+                            String jtaDataSourceName;
+                            if (persistenceUnitName.isEmpty()) {
+                                jtaDataSourceName = null;
+                            } else {
+                                jtaDataSourceName = persistenceUnitName;
+                            }
                             Class<?> javaClass = annotatedType.getJavaClass();
                             URL persistenceUnitRoot = null;
                             ProtectionDomain pd = javaClass.getProtectionDomain();
@@ -712,9 +716,7 @@ public class JpaExtension implements Extension {
         Objects.requireNonNull(event);
 
         InjectionPoint injectionPoint = event.getInjectionPoint();
-        if (injectionPoint == null) {
-            throw new IllegalStateException("InjectionPoint of the event is null.");
-        }
+        assert injectionPoint != null;
 
         this.persistenceUnitQualifiers.add(injectionPoint.getQualifiers());
 

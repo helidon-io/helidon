@@ -56,6 +56,7 @@ import jakarta.persistence.EntityManager;
  */
 @Deprecated(since = "4.0")
 @Vetoed
+@SuppressWarnings("checkstyle:IllegalToken") // deprecated, to be removed
 class CdiTransactionScopedEntityManager extends DelegatingEntityManager {
 
 
@@ -164,9 +165,7 @@ class CdiTransactionScopedEntityManager extends DelegatingEntityManager {
             this.delegate = EntityManagers.createContainerManagedEntityManager(this.instance, this.suppliedQualifiers);
             this.closeDelegate = true;
         }
-        if (this.delegate == null) {
-            throw new IllegalStateException("Entity manager creation failed, method returned null");
-        }
+        assert this.delegate != null;
         return this.delegate;
     }
 
@@ -217,10 +216,7 @@ class CdiTransactionScopedEntityManager extends DelegatingEntityManager {
         this.closed = true;
         if (this.closeDelegate) {
             super.close();
-            if (this.delegate == null || this.delegate.isOpen()) {
-                throw new IllegalStateException("Invalid close result. Entity manager is either null, or still open: "
-                                                        + this.delegate);
-            }
+            assert this.delegate != null ? !this.delegate.isOpen() : true;
         }
     }
 

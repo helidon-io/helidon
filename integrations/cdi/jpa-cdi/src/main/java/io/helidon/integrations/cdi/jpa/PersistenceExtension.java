@@ -1669,6 +1669,7 @@ public final class PersistenceExtension implements Extension {
                 .computeIfAbsent(this, k -> new HashMap<>())
                 .computeIfAbsent(new ProductionId(Set.copyOf(types), Set.copyOf(qualifiers)),
                                  k -> new Production<>(supplier.get(), disposer));
+            production.reference();
             return production.object;
         }
 
