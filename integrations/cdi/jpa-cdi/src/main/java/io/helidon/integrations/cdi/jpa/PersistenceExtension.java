@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1154,8 +1154,6 @@ public final class PersistenceExtension implements Extension {
         }
         if (!userSuppliedPuiBeans && solePui != null) {
             String soleUnitName = solePui.getPersistenceUnitName();
-            assert soleUnitName != null;
-            assert !soleUnitName.isBlank();
             if (!soleUnitName.equals(DEFAULT_PERSISTENCE_UNIT_NAME)) {
                 PersistenceUnitInfoBean pui = solePui;
                 // Provide support for, e.g.:
@@ -1211,8 +1209,6 @@ public final class PersistenceExtension implements Extension {
         if (solePui != null) {
             // Add a bean for the DEFAULT_PERSISTENCE_UNIT_NAME qualifier too.
             String soleUnitName = solePui.getPersistenceUnitName();
-            assert soleUnitName != null;
-            assert !soleUnitName.isBlank();
             if (!soleUnitName.equals(DEFAULT_PERSISTENCE_UNIT_NAME)) {
                 PersistenceUnitInfoBean pui = solePui;
                 Named qualifier = NamedLiteral.of(DEFAULT_PERSISTENCE_UNIT_NAME);
@@ -1252,7 +1248,6 @@ public final class PersistenceExtension implements Extension {
                 addContainerManagedEntityManagerFactoryBeans(event, qualifiers);
             }
         }
-        assert this.entityManagerFactoryQualifiers.isEmpty();
         if (this.transactionsSupported) {
             for (Set<Annotation> qualifiers : this.containerManagedEntityManagerQualifiers) {
                 if (qualifiers.contains(ContainerManaged.Literal.INSTANCE)) {
@@ -1261,10 +1256,8 @@ public final class PersistenceExtension implements Extension {
                     // necessary.
                     addContainerManagedEntityManagerFactoryBeans(event, qualifiers);
                     if (qualifiers.contains(Extended.Literal.INSTANCE)) {
-                        assert !qualifiers.contains(JtaTransactionScoped.Literal.INSTANCE);
                         addExtendedEntityManagerBeans(event, qualifiers);
                     } else {
-                        assert qualifiers.contains(JtaTransactionScoped.Literal.INSTANCE);
                         addJtaTransactionScopedEntityManagerBeans(event, qualifiers);
                     }
                 }
@@ -1676,8 +1669,6 @@ public final class PersistenceExtension implements Extension {
                 .computeIfAbsent(this, k -> new HashMap<>())
                 .computeIfAbsent(new ProductionId(Set.copyOf(types), Set.copyOf(qualifiers)),
                                  k -> new Production<>(supplier.get(), disposer));
-            int rc = production.reference();
-            assert rc > 0;
             return production.object;
         }
 
@@ -1699,8 +1690,6 @@ public final class PersistenceExtension implements Extension {
                         if (map.isEmpty()) {
                             tlMap.remove(this);
                         }
-                    } else {
-                        assert rc > 0;
                     }
                 }
             }
@@ -1766,8 +1755,6 @@ public final class PersistenceExtension implements Extension {
                 if (this.rc == 0) {
                     this.dispose();
                     return true;
-                } else {
-                    assert this.rc > 0 : "Unexpected negative reference count: " + this.rc;
                 }
                 return false;
             }

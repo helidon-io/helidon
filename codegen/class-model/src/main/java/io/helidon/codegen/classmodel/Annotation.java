@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,7 +73,6 @@ public final class Annotation extends CommonComponent {
         Annotation.Builder builder = Annotation.builder()
                 .type(annotationName);
         if (annotationBodyStart > 0) {
-            //TODO this needs to be improved in cases where chars , or = are part of the String value
             String[] valuePairs = annotationDefinition.substring(annotationBodyStart + 1, annotationBodyEnd).split(",");
             for (String valuePair : valuePairs) {
                 String[] keyValue = valuePair.split("=");

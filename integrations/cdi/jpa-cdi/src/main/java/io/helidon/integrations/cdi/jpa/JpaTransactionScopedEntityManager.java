@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,6 +62,7 @@ import jakarta.persistence.metamodel.Metamodel;
  */
 @Deprecated(since = "4.0")
 @Vetoed
+@SuppressWarnings("checkstyle:IllegalToken") // deprecated, to be removed
 final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
 
 
@@ -166,8 +167,11 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
 
         Set<Bean<?>> beans =
             this.beanManager.getBeans(EntityManager.class,
-                                      selectionQualifiers.toArray(new Annotation[selectionQualifiers.size()]));
-        assert beans != null;
+                                      selectionQualifiers.toArray(new Annotation[0]));
+        if (beans == null) {
+            throw new IllegalStateException("BeanManager returned null set for EntityManager.");
+        }
+
         this.oppositeSynchronizationBean = Objects.requireNonNull(this.beanManager.resolve(beans));
 
         // This is a proxy whose scope will be
@@ -180,7 +184,10 @@ final class JpaTransactionScopedEntityManager extends DelegatingEntityManager {
         this.cdiTransactionScopedEntityManager =
             instance.select(CdiTransactionScopedEntityManager.class,
                             cdiTransactionScopedEntityManagerSelectionQualifiersArray).get();
-        assert this.cdiTransactionScopedEntityManager.getClass().isSynthetic();
+        if (!this.cdiTransactionScopedEntityManager.getClass().isSynthetic()) {
+            throw new IllegalStateException("Entity manager should have a synthetic class: "
+                                                    + this.cdiTransactionScopedEntityManager.getClass());
+        }
 
         selectionQualifiers.remove(CdiTransactionScoped.Literal.INSTANCE);
         selectionQualifiers.remove(ContainerManaged.Literal.INSTANCE);

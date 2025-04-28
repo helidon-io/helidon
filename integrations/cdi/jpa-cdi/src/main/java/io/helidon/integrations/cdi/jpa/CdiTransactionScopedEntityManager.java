@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -164,7 +164,9 @@ class CdiTransactionScopedEntityManager extends DelegatingEntityManager {
             this.delegate = EntityManagers.createContainerManagedEntityManager(this.instance, this.suppliedQualifiers);
             this.closeDelegate = true;
         }
-        assert this.delegate != null;
+        if (this.delegate == null) {
+            throw new IllegalStateException("Entity manager creation failed, method returned null");
+        }
         return this.delegate;
     }
 
@@ -215,7 +217,10 @@ class CdiTransactionScopedEntityManager extends DelegatingEntityManager {
         this.closed = true;
         if (this.closeDelegate) {
             super.close();
-            assert this.delegate != null ? !this.delegate.isOpen() : true;
+            if (this.delegate == null || this.delegate.isOpen()) {
+                throw new IllegalStateException("Invalid close result. Entity manager is either null, or still open: "
+                                                        + this.delegate);
+            }
         }
     }
 

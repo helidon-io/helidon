@@ -113,7 +113,7 @@ public class ConfigCdiExtension implements Extension {
             for (InjectionPoint beanInjectionPoint : beanInjectionPoints) {
                 if (beanInjectionPoint != null) {
                     Set<Annotation> qualifiers = beanInjectionPoint.getQualifiers();
-                    assert qualifiers != null;
+
                     for (Annotation qualifier : qualifiers) {
                         if (qualifier instanceof ConfigProperty) {
                             ips.add(beanInjectionPoint);
@@ -147,7 +147,7 @@ public class ConfigCdiExtension implements Extension {
                             && !annotatedParameter.isAnnotationPresent(Observes.class)) {
                         InjectionPoint injectionPoint = beanManager.createInjectionPoint(annotatedParameter);
                         Set<Annotation> qualifiers = injectionPoint.getQualifiers();
-                        assert qualifiers != null;
+
                         for (Annotation qualifier : qualifiers) {
                             if (qualifier instanceof ConfigProperty) {
                                 ips.add(injectionPoint);
