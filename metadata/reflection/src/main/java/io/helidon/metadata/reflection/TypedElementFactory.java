@@ -49,9 +49,10 @@ public final class TypedElementFactory {
      */
     public static TypedElementInfo create(Field field) {
         int modifiers = field.getModifiers();
+        ElementKind kind = field.isEnumConstant() ? ElementKind.ENUM_CONSTANT : ElementKind.FIELD;
 
         var builder = TypedElementInfo.builder()
-                .kind(ElementKind.METHOD)
+                .kind(kind)
                 .annotations(AnnotationFactory.create(field))
                 .accessModifier(accessModifier(modifiers))
                 .elementModifiers(fieldModifiers(modifiers))
@@ -99,7 +100,7 @@ public final class TypedElementFactory {
         int modifiers = parameter.getModifiers();
 
         var builder = TypedElementInfo.builder()
-                .kind(ElementKind.METHOD)
+                .kind(ElementKind.PARAMETER)
                 .annotations(AnnotationFactory.create(parameter))
                 .accessModifier(accessModifier(modifiers))
                 .elementModifiers(paramModifiers(modifiers))

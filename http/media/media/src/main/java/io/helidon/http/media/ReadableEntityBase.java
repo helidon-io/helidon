@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,6 +58,14 @@ public abstract class ReadableEntityBase implements ReadableEntity {
         this.entityProcessedRunnable = new EntityProcessedRunnable(entityProcessedRunnable, entityProcessed);
     }
 
+    /**
+     * Create a new base.
+     *
+     * @param entityRequestedCallback callback invoked when entity is requested
+     * @param readEntityFunction      accepts estimate of needed bytes, returns buffer data (the length of buffer data may differ
+     *                                from the estimate)
+     * @param entityProcessedRunnable runnable to run when entity is fully read
+     */
     protected ReadableEntityBase(Consumer<Boolean> entityRequestedCallback,
                                  Function<Integer, BufferData> readEntityFunction,
                                  Runnable entityProcessedRunnable) {
@@ -154,6 +162,13 @@ public abstract class ReadableEntityBase implements ReadableEntity {
         return true;
     }
 
+    /**
+     * Read entity as a specific generic type.
+     *
+     * @param type type the entity should be coerced into
+     * @return entity value
+     * @param <T> type of the entity
+     */
     protected abstract <T> T entityAs(GenericType<T> type);
 
     /**

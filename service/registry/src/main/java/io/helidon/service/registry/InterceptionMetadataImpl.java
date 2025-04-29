@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,13 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.service.registry.ServiceSupplies.ServiceSupply;
 
 class InterceptionMetadataImpl implements InterceptionMetadata {
+    private static final ResolvedType ELEMENT_INTERCEPTOR = ResolvedType.create(Interception.ElementInterceptor.class);
+
     private final CoreServiceRegistry registry;
 
     private InterceptionMetadataImpl(CoreServiceRegistry registry) {
@@ -55,7 +58,7 @@ class InterceptionMetadataImpl implements InterceptionMetadata {
         Objects.requireNonNull(targetInvoker);
         Objects.requireNonNull(checkedExceptions);
 
-        var interceptors = interceptors(typeAnnotations, element);
+        var interceptors = interceptors(descriptor, typeAnnotations, element);
         if (interceptors.isEmpty()) {
             return targetInvoker;
         } else {
@@ -87,7 +90,7 @@ class InterceptionMetadataImpl implements InterceptionMetadata {
         Objects.requireNonNull(targetInvoker);
         Objects.requireNonNull(checkedExceptions);
 
-        var interceptors = interceptors(typeAnnotations, element);
+        var interceptors = interceptors(descriptor, typeAnnotations, element);
         if (interceptors.isEmpty()) {
             return targetInvoker;
         } else {
@@ -104,7 +107,8 @@ class InterceptionMetadataImpl implements InterceptionMetadata {
         }
     }
 
-    private List<Supplier<Interception.Interceptor>> interceptors(List<Annotation> typeAnnotations,
+    private List<Supplier<Interception.Interceptor>> interceptors(ServiceInfo descriptor,
+                                                                  List<Annotation> typeAnnotations,
                                                                   TypedElementInfo element) {
         // need to find all interceptors for the providers (ordered by weight)
         List<ServiceManager<Interception.Interceptor>> allInterceptors = registry.interceptors();
@@ -112,16 +116,28 @@ class InterceptionMetadataImpl implements InterceptionMetadata {
         List<Supplier<Interception.Interceptor>> result = new ArrayList<>();
 
         for (ServiceManager<Interception.Interceptor> interceptor : allInterceptors) {
-            if (applicable(typeAnnotations, interceptor.descriptor())) {
-                result.add(new ServiceSupply<>(Lookup.EMPTY, List.of(interceptor)));
-                continue;
-            }
-            if (applicable(element.annotations(), interceptor.descriptor())) {
-                result.add(new ServiceSupply<>(Lookup.EMPTY, List.of(interceptor)));
+            if (interceptor.descriptor().contracts().contains(ELEMENT_INTERCEPTOR)) {
+                // interceptors of specific elements (methods, constructors)
+                String elementSignature = descriptor.serviceType().fqName() + "." + element.signature().text();
+                if (applicableElement(elementSignature, interceptor.descriptor())) {
+                    result.add(new ServiceSupply<>(Lookup.EMPTY, List.of(interceptor)));
+                }
+            } else {
+                if (applicable(typeAnnotations, interceptor.descriptor())) {
+                    result.add(new ServiceSupply<>(Lookup.EMPTY, List.of(interceptor)));
+                    continue;
+                }
+                if (applicable(element.annotations(), interceptor.descriptor())) {
+                    result.add(new ServiceSupply<>(Lookup.EMPTY, List.of(interceptor)));
+                }
             }
         }
 
         return result;
+    }
+
+    private boolean applicableElement(String signature, ServiceInfo serviceInfo) {
+        return serviceInfo.qualifiers().contains(Qualifier.createNamed(signature));
     }
 
     private boolean applicable(List<Annotation> typeAnnotations, ServiceInfo serviceInfo) {
