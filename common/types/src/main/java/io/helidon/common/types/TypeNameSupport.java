@@ -355,7 +355,7 @@ final class TypeNameSupport {
     }
 
     private static TypeName createSuper(String typeNames) {
-        // T extends io.helidon.webserver.spi.ServerFeature
+        // T super io.helidon.webserver.spi.ServerFeature
         int index = typeNames.indexOf(" super ");
 
         var builder = TypeName.builder()
