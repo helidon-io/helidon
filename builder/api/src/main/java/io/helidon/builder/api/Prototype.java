@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Prototype is generated from a prototype blueprint, and it is expected to be part of the public API of the module.
@@ -242,6 +244,43 @@ public final class Prototype {
          * @param optionValue option value set by the caller of the setter method
          */
         void decorate(B builder, T optionValue);
+
+        /**
+         * Decorate a list of values, when a setter that replaces values is called.
+         *
+         * @param builder       the target builder being decorated
+         * @param optionValues  option values set by the caller of the setter method
+         */
+        default void decorateSetList(B builder, List<T> optionValues) {
+        }
+
+        /**
+         * Decorate a list of values, when a setter that adds values is called.
+         *
+         * @param builder       the target builder being decorated
+         * @param optionValues  option values set by the caller of the setter method
+         */
+        default void decorateAddList(B builder, List<T> optionValues) {
+        }
+
+        /**
+         * Decorate a set of values, when a setter that replaces values is called.
+         *
+         * @param builder       the target builder being decorated
+         * @param optionValues  option values set by the caller of the setter method
+         */
+        default void decorateSetSet(B builder, Set<T> optionValues) {
+        }
+
+
+        /**
+         * Decorate a set of values, when a setter that adds values is called.
+         *
+         * @param builder       the target builder being decorated
+         * @param optionValues  option values set by the caller of the setter method
+         */
+        default void decorateAddSet(B builder, Set<T> optionValues) {
+        }
     }
 
     /**

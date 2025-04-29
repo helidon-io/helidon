@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import java.util.Set;
 
 import io.helidon.codegen.classmodel.ClassBase;
 import io.helidon.codegen.classmodel.ClassModel;
+import io.helidon.common.types.ModuleTypeInfo;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
@@ -35,6 +36,7 @@ class RoundContextImpl implements RoundContext {
     private final Map<TypeName, List<TypeInfo>> annotationToTypes;
     private final Map<TypeName, Set<TypeName>> metaAnnotated;
     private final List<TypeInfo> types;
+    private final List<ModuleTypeInfo> modules;
     private final CodegenContext ctx;
     private final List<ClassCode> newTypesFromPreviousExtensions;
     private final Collection<TypeName> annotations;
@@ -44,13 +46,15 @@ class RoundContextImpl implements RoundContext {
                      Set<TypeName> annotations,
                      Map<TypeName, List<TypeInfo>> annotationToTypes,
                      Map<TypeName, Set<TypeName>> metaAnnotated,
-                     List<TypeInfo> types) {
+                     List<TypeInfo> types,
+                     List<ModuleTypeInfo> modules) {
         this.ctx = ctx;
         this.newTypesFromPreviousExtensions = newTypes;
         this.annotations = annotations;
         this.annotationToTypes = annotationToTypes;
         this.metaAnnotated = metaAnnotated;
         this.types = types;
+        this.modules = modules;
     }
 
     @Override
@@ -61,6 +65,11 @@ class RoundContextImpl implements RoundContext {
     @Override
     public Collection<TypeInfo> types() {
         return types;
+    }
+
+    @Override
+    public Collection<ModuleTypeInfo> modules() {
+        return modules;
     }
 
     @Override
