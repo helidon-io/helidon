@@ -14,12 +14,8 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Features;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.common.features.api.Preview;
-
-import static io.helidon.common.features.api.HelidonFlavor.MP;
-import static io.helidon.common.features.api.HelidonFlavor.SE;
 
 /**
  * Provides packages related to automatic and unobtrusive <dfn>service instance registration</dfn> in <a
@@ -30,12 +26,11 @@ import static io.helidon.common.features.api.HelidonFlavor.SE;
  *
  * @see io.helidon.integrations.eureka.EurekaRegistrationServerFeatureProvider#create(io.helidon.common.config.Config, String)
  */
-@Feature(value = "EurekaRegistration",
-         description = "Eureka Server Service Instance Registration Integration",
-         in = { SE, MP },
-         path = { "WebServer", "EurekaRegistration" }
-)
-@Preview
+@Features.Name("EurekaRegistration")
+@Features.Description( "Eureka Server Service Instance Registration Integration")
+@Features.Flavor({HelidonFlavor.SE, HelidonFlavor.MP})
+@Features.Path({"WebServer", "EurekaRegistration"})
+@Features.Preview
 module io.helidon.integrations.eureka {
 
     requires transitive io.helidon.builder.api;

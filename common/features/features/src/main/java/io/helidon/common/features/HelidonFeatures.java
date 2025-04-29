@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,12 @@ package io.helidon.common.features;
 
 import java.lang.System.Logger.Level;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -33,6 +33,11 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.NativeImageHelper;
 import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.common.features.metadata.Aot;
+import io.helidon.common.features.metadata.Deprecation;
+import io.helidon.common.features.metadata.FeatureMetadata;
+import io.helidon.common.features.metadata.FeatureStatus;
+import io.helidon.common.features.metadata.Flavor;
 
 /**
  * Helidon Features support.
@@ -68,9 +73,9 @@ public final class HelidonFeatures {
     private static final System.Logger DEPRECATED = System.getLogger(HelidonFeatures.class.getName() + ".deprecated");
     private static final System.Logger INVALID = System.getLogger(HelidonFeatures.class.getName() + ".invalid");
     private static final AtomicBoolean SCANNED = new AtomicBoolean();
-    private static final Map<HelidonFlavor, Set<FeatureDescriptor>> FEATURES = new EnumMap<>(HelidonFlavor.class);
+    private static final Map<HelidonFlavor, Set<FeatureMetadata>> FEATURES = new EnumMap<>(HelidonFlavor.class);
     private static final Map<HelidonFlavor, Map<String, Node>> ROOT_FEATURE_NODES = new EnumMap<>(HelidonFlavor.class);
-    private static final List<FeatureDescriptor> ALL_FEATURES = new LinkedList<>();
+    private static final List<FeatureMetadata> ALL_FEATURES = new LinkedList<>();
 
     private HelidonFeatures() {
     }
@@ -102,16 +107,18 @@ public final class HelidonFeatures {
      */
     public static void nativeBuildTime(ClassLoader classLoader) {
         scan(classLoader);
-        for (FeatureDescriptor feat : ALL_FEATURES) {
-            if (!feat.nativeSupported()) {
-                LOGGER.log(Level.ERROR, "Feature '" + feat.name()
-                        + "' for path '" + feat.stringPath()
-                        + "' IS NOT SUPPORTED in native image. Image may still build and run.");
-            } else {
-                if (!feat.nativeDescription().isBlank()) {
+        for (FeatureMetadata feat : ALL_FEATURES) {
+            if (feat.aot().isPresent()) {
+                Aot aot = feat.aot().get();
+                if (!aot.supported()) {
+                    LOGGER.log(Level.ERROR, "Feature '" + feat.name()
+                            + "' for path '" + feat.stringPath()
+                            + "' IS NOT SUPPORTED in native image. Image may still build and run.");
+                }
+                if (aot.description().isPresent()) {
                     LOGGER.log(Level.WARNING, "Feature '" + feat.name()
                             + "' for path '" + feat.stringPath()
-                            + "' has limited support in native image: " + feat.nativeDescription());
+                            + "' has limited support in native image: " + aot.description().get());
                 }
             }
         }
@@ -129,17 +136,17 @@ public final class HelidonFeatures {
         CURRENT_FLAVOR.compareAndSet(null, flavor);
     }
 
-    static Node ensureNode(Map<String, Node> rootFeatureNodes, String... path) {
+    static Node ensureNode(Map<String, Node> rootFeatureNodes, List<String> path) {
         // last part of the path is the name
-        if (path.length == 1) {
-            return rootFeatureNodes.computeIfAbsent(path[0], Node::new);
+        if (path.size() == 1) {
+            return rootFeatureNodes.computeIfAbsent(path.getFirst(), Node::new);
         }
         // we have a path, let's go through it
 
         // start with root
-        Node lastNode = ensureNode(rootFeatureNodes, path[0]);
-        for (int i = 1; i < path.length; i++) {
-            String pathElement = path[i];
+        Node lastNode = ensureNode(rootFeatureNodes, List.of(path.getFirst()));
+        for (int i = 1; i < path.size(); i++) {
+            String pathElement = path.get(i);
             lastNode = ensureNode(pathElement, lastNode);
         }
 
@@ -150,13 +157,14 @@ public final class HelidonFeatures {
         return parent.children.computeIfAbsent(name, it -> new Node(name));
     }
 
-    private static void register(FeatureDescriptor featureDescriptor) {
-        for (HelidonFlavor flavor : featureDescriptor.flavors()) {
-            String[] path = featureDescriptor.path();
+    private static void register(FeatureMetadata featureDescriptor) {
+        for (Flavor metadataFlavor : featureDescriptor.flavors()) {
+            HelidonFlavor flavor = HelidonFlavor.map(metadataFlavor);
+            List<String> path = featureDescriptor.path();
 
             // all root features for a flavor
-            if (path.length == 1) {
-                FEATURES.computeIfAbsent(flavor, key -> new TreeSet<>(Comparator.comparing(FeatureDescriptor::name)))
+            if (path.size() == 1) {
+                FEATURES.computeIfAbsent(flavor, key -> new TreeSet<>(Comparator.comparing(FeatureMetadata::name)))
                         .add(featureDescriptor);
             }
             var rootFeatures = ROOT_FEATURE_NODES.computeIfAbsent(flavor, it -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
@@ -181,19 +189,19 @@ public final class HelidonFeatures {
 
         scan(Thread.currentThread().getContextClassLoader());
 
-        Set<FeatureDescriptor> features = FEATURES.get(currentFlavor);
+        Set<FeatureMetadata> features = FEATURES.get(currentFlavor);
         if (null == features) {
             LOGGER.log(Level.INFO, "Helidon " + currentFlavor + " " + version + " has no registered features");
         } else {
             String featureString = "[" + features.stream()
-                    .map(FeatureDescriptor::name)
+                    .map(FeatureMetadata::name)
                     .collect(Collectors.joining(", "))
                     + "]";
             LOGGER.log(Level.INFO, "Helidon " + currentFlavor + " " + version + " features: " + featureString);
         }
 
-        List<FeatureDescriptor> invalidFeatures = ALL_FEATURES.stream()
-                .filter(feature -> feature.not(currentFlavor))
+        List<FeatureMetadata> invalidFeatures = ALL_FEATURES.stream()
+                .filter(feature -> feature.invalidFlavors().contains(currentFlavor))
                 .collect(Collectors.toList());
 
         if (!invalidFeatures.isEmpty()) {
@@ -206,24 +214,24 @@ public final class HelidonFeatures {
             if (FEATURES.containsKey(currentFlavor)) {
                 FEATURES.get(currentFlavor)
                         .forEach(feature -> printDetails(feature.name(),
-                                                         ROOT_FEATURE_NODES.get(currentFlavor).get(feature.path()[0]),
+                                                         ROOT_FEATURE_NODES.get(currentFlavor).get(feature.path().getFirst()),
                                                          0));
             }
         } else {
-            List<FeatureDescriptor> allIncubating = new ArrayList<>();
-            List<FeatureDescriptor> allDeprecated = new ArrayList<>();
-            List<FeatureDescriptor> allPreview = new ArrayList<>();
+            List<FeatureMetadata> allIncubating = new ArrayList<>();
+            List<FeatureMetadata> allDeprecated = new ArrayList<>();
+            List<FeatureMetadata> allPreview = new ArrayList<>();
 
             if (ROOT_FEATURE_NODES.containsKey(currentFlavor)) {
                 if (FEATURES.containsKey(currentFlavor)) {
                     FEATURES.get(currentFlavor)
                             .forEach(feature -> {
                                 gatherIncubating(allIncubating,
-                                                 ROOT_FEATURE_NODES.get(currentFlavor).get(feature.path()[0]));
+                                                 ROOT_FEATURE_NODES.get(currentFlavor).get(feature.path().getFirst()));
                                 gatherDeprecated(allDeprecated,
-                                                 ROOT_FEATURE_NODES.get(currentFlavor).get(feature.path()[0]));
+                                                 ROOT_FEATURE_NODES.get(currentFlavor).get(feature.path().getFirst()));
                                 gatherPreview(allPreview,
-                                              ROOT_FEATURE_NODES.get(currentFlavor).get(feature.path()[0]));
+                                              ROOT_FEATURE_NODES.get(currentFlavor).get(feature.path().getFirst()));
                             });
                 }
             }
@@ -247,7 +255,8 @@ public final class HelidonFeatures {
                         .forEach(it -> DEPRECATED.log(Level.INFO,
                                                       "\tDeprecated feature: "
                                                               + it.name()
-                                                              + " since " + it.deprecatedSince()
+                                                              + " since "
+                                                              + it.deprecation().flatMap(Deprecation::since).orElse("?")
                                                               + " ("
                                                               + it.stringPath()
                                                               + ")"));
@@ -268,30 +277,30 @@ public final class HelidonFeatures {
         }
     }
 
-    private static void logInvalid(FeatureDescriptor feature) {
+    private static void logInvalid(FeatureMetadata feature) {
         INVALID.log(Level.WARNING, "\tModule \""
                 + feature.module() + "\" (" + feature.stringPath() + ")"
                 + " is not designed for Helidon "
                 + CURRENT_FLAVOR.get()
-                + ", it should only be used in Helidon " + Arrays.toString(feature.flavors()));
+                + ", it should only be used in Helidon " + feature.flavors());
     }
 
-    private static void gatherIncubating(List<FeatureDescriptor> allIncubating, Node node) {
-        if (node.descriptor != null && node.descriptor.incubating()) {
+    private static void gatherIncubating(List<FeatureMetadata> allIncubating, Node node) {
+        if (node.descriptor != null && node.descriptor.status() == FeatureStatus.INCUBATING) {
             allIncubating.add(node.descriptor);
         }
         node.children().values().forEach(it -> gatherIncubating(allIncubating, it));
     }
 
-    private static void gatherPreview(List<FeatureDescriptor> allPreview, Node node) {
-        if (node.descriptor != null && node.descriptor.preview()) {
+    private static void gatherPreview(List<FeatureMetadata> allPreview, Node node) {
+        if (node.descriptor != null && node.descriptor.status() == FeatureStatus.PREVIEW) {
             allPreview.add(node.descriptor);
         }
         node.children().values().forEach(it -> gatherPreview(allPreview, it));
     }
 
-    private static void gatherDeprecated(List<FeatureDescriptor> allDeprecated, Node node) {
-        if (node.descriptor != null && node.descriptor.deprecated()) {
+    private static void gatherDeprecated(List<FeatureMetadata> allDeprecated, Node node) {
+        if (node.descriptor != null && node.descriptor.status() == FeatureStatus.DEPRECATED) {
             allDeprecated.add(node.descriptor);
         }
         node.children().values().forEach(it -> gatherDeprecated(allDeprecated, it));
@@ -307,9 +316,16 @@ public final class HelidonFeatures {
 
         if (NativeImageHelper.isRuntime()) {
             // make sure we warn about all features
-            for (FeatureDescriptor feature : ALL_FEATURES) {
-                String desc = feature.nativeDescription();
-                if (feature.nativeSupported()) {
+            for (FeatureMetadata feature : ALL_FEATURES) {
+                Optional<Aot> aot = feature.aot();
+                if (aot.isEmpty()) {
+                    continue;
+                }
+
+                String desc = aot.get().description().orElse(null);
+                boolean supported = aot.get().supported();
+
+                if (supported) {
                     if (desc != null && !desc.isBlank()) {
                         LOGGER.log(Level.WARNING, "Native image for feature "
                                 + feature.name()
@@ -340,7 +356,7 @@ public final class HelidonFeatures {
 
     private static void printDetails(String name, Node node, int level) {
 
-        FeatureDescriptor feat = node.descriptor;
+        FeatureMetadata feat = node.descriptor;
         if (feat == null) {
             System.out.println("  ".repeat(level) + name);
         } else {
@@ -353,22 +369,36 @@ public final class HelidonFeatures {
             } else {
                 suffix = "\t";
             }
-            String preview = feat.preview() ? "Preview - " : "";
-            String incubating = feat.incubating() ? "Incubating - " : "";
-            String deprecated = feat.deprecated() ? "Deprecated since " + feat.deprecatedSince() + " - " : "";
+            String preview = feat.status() == FeatureStatus.PREVIEW ? "Preview - " : "";
+            String incubating = feat.status() == FeatureStatus.INCUBATING ? "Incubating - " : "";
+            String deprecated = feat.status() == FeatureStatus.DEPRECATED ? "Deprecated since "
+                    + feat.deprecation().flatMap(Deprecation::since).orElse("?") + " - " : "";
+
             String nativeDesc = "";
-            if (!feat.nativeSupported()) {
-                nativeDesc = " (NOT SUPPORTED in native image)";
-            } else {
-                if (!feat.nativeDescription().isBlank()) {
-                    nativeDesc = " (Native image: " + feat.nativeDescription() + ")";
+            if (feat.aot().isPresent()) {
+                var aot = feat.aot().get();
+                if (!aot.supported()) {
+                    nativeDesc = " (NOT SUPPORTED in native image)";
+                } else {
+                    if (aot.description().isPresent()) {
+                        nativeDesc = " (Native image: " + aot.description().get() + ")";
+                    }
                 }
             }
-            System.out.println(prefix + name + suffix + deprecated + incubating + preview + feat.description() + nativeDesc);
+
+            System.out.println(
+                    prefix
+                            + name
+                            + suffix
+                            + deprecated
+                            + incubating
+                            + preview
+                            + feat.description().orElseGet(feat::name)
+                            + nativeDesc);
         }
 
         node.children.forEach((childName, childNode) -> {
-            FeatureDescriptor descriptor = childNode.descriptor;
+            FeatureMetadata descriptor = childNode.descriptor;
             String actualName;
             if (descriptor == null) {
                 actualName = childName;
@@ -382,7 +412,7 @@ public final class HelidonFeatures {
     static final class Node {
         private final Map<String, Node> children = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         private final String name;
-        private FeatureDescriptor descriptor;
+        private FeatureMetadata descriptor;
 
         Node(String name) {
             this.name = name;
@@ -397,7 +427,7 @@ public final class HelidonFeatures {
             return children;
         }
 
-        void descriptor(FeatureDescriptor featureDescriptor) {
+        void descriptor(FeatureMetadata featureDescriptor) {
             this.descriptor = featureDescriptor;
         }
     }

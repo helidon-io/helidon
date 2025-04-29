@@ -34,7 +34,9 @@
 
     <modules>
         <module>api</module>
+        <module>metadata</module>
         <module>features</module>
+        <module>codegen</module>
         <module>processor</module>
     </modules>
 </project>
